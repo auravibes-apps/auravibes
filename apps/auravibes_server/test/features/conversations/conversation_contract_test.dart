@@ -3,6 +3,59 @@ import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('legacy execution requests decode without capability fields', () {
+    final base = {
+      'workspaceId': 1,
+      'requestId': 'request',
+      'conversationId': 'conversation',
+      'expectedConversationRevision': 1,
+      'expectedProjectionRevision': 1,
+      'clientMessageId': 'message',
+      'content': 'Hello',
+      'attachmentIds': <String>[],
+      'turnId': 'turn',
+      'toolCallId': 'tool',
+      'argumentsDigest': 'digest',
+      'expectedTurnRevision': 1,
+      'decision': 'approve',
+      'stopAll': false,
+    };
+    for (final components in <List<String>?>[
+      null,
+      ['Text', 'Badge'],
+    ]) {
+      final json = {
+        ...base,
+        'a2uiSupportedComponents': ?components,
+      };
+      final start = StartTurnRequest.fromJson(json);
+      final turn = ContinueTurnRequest.fromJson(json);
+      final conversation = ContinueConversationRequest.fromJson(json);
+      final decision = SubmitToolDecisionRequest.fromJson(json);
+      expect(
+        StartTurnRequest.fromJson(start.toJson()).a2uiSupportedComponents,
+        components,
+      );
+      expect(
+        ContinueTurnRequest.fromJson(turn.toJson()).a2uiSupportedComponents,
+        components,
+      );
+      expect(
+        ContinueConversationRequest.fromJson(conversation.toJson())
+            .a2uiSupportedComponents,
+        components,
+      );
+      expect(
+        SubmitToolDecisionRequest.fromJson(decision.toJson())
+            .a2uiSupportedComponents,
+        components,
+      );
+      if (components == null) {
+        expect(start.toJson(), isNot(contains('a2uiSupportedComponents')));
+      }
+    }
+  });
+
   test('turn job payload retains the initiating user', () {
     expect(
       conversationTurnJobPayload('user-1'),

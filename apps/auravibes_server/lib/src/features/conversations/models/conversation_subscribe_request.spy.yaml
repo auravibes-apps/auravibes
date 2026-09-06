@@ -3,3 +3,4 @@ fields:
   workspaceId: int
   conversationId: String
   afterSequence: int
+  a2uiSupportedComponents: List<String>?

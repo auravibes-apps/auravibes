@@ -7,3 +7,5 @@ fields:
   clientMessageId: String
   content: String
   attachmentIds: List<String>
+  metadataJson: String?
+  a2uiSupportedComponents: List<String>?

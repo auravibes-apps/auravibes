@@ -9,3 +9,4 @@ fields:
   attachmentIds: List<String>
   modelSelectionId: String?
   agentId: String?
+  a2uiSupportedComponents: List<String>?

@@ -4,18 +4,26 @@ import 'dart:io';
 
 import 'package:serverpod/serverpod.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show fallbackConversationTitle;
+    show A2uiChatContract, a2uiChatFormCatalogId, fallbackConversationTitle;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    as shared
+    show A2uiIssueCode, A2uiOperationKind, baselineA2uiChatComponents;
 
 import '../../../generated/protocol.dart';
 import '../../objects/object_store.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
+import 'a2ui_protocol.dart' as a2ui_protocol;
 
 const maxConcurrentProviderTurns = 32;
 const maxConcurrentProviderTurnsPerWorkspace = 4;
 const maxProviderTurnsPerWorkspacePerMinute = 60;
 const maxAttachmentBytes = 20 * 1024 * 1024;
 const maxProviderResponseBytes = 1024 * 1024;
+const maxA2uiTurnBytes = 2 * 1024 * 1024;
+const maxA2uiTurnSurfaces = 16;
+const maxA2uiTurnUpdates = 128;
+const maxA2uiTurnComponents = 512;
 
 Stream<T> cancellationCheckedStream<T>(
   Stream<T> source,
@@ -50,15 +58,25 @@ abstract interface class ConversationProgressPublisher {
   Future<void> flush();
 }
 
+abstract interface class ConversationA2uiProgressPublisher {
+  bool get includeA2uiDiagnostics;
+
+  Future<void> a2uiMessage(String payloadJson);
+}
+
 class WakeupConversationProgressPublisher({
   required final Session session,
   required final int workspaceId,
   required final String conversationId,
   required final int sequence,
   required final Future<void> Function(String content) checkpoint,
-}) implements ConversationProgressPublisher {
+}) implements ConversationProgressPublisher, ConversationA2uiProgressPublisher {
   final StringBuffer _content = StringBuffer();
   DateTime? _lastCheckpoint;
+
+  @override
+  bool get includeA2uiDiagnostics =>
+      session.serverpod.runMode == ServerpodRunMode.development;
 
   @override
   Future<void> queued() => Future.value();
@@ -75,6 +93,7 @@ class WakeupConversationProgressPublisher({
         workspaceId: workspaceId,
         conversationId: conversationId,
         sequence: sequence,
+        eventId: const Uuid().v7(),
         kind: ConversationEventType.executionStateChanged,
         actorUserId: '',
         payloadJson: '{}',
@@ -84,6 +103,22 @@ class WakeupConversationProgressPublisher({
     );
     await _checkpoint(force: false);
   }
+
+  @override
+  Future<void> a2uiMessage(String payloadJson) =>
+      SyncWakeups.publishConversationProgress(
+        session,
+        ConversationStreamEvent(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          sequence: sequence,
+          eventId: const Uuid().v7(),
+          kind: ConversationEventType.a2uiMessage,
+          actorUserId: '',
+          payloadJson: payloadJson,
+          createdAt: DateTime.now().toUtc(),
+        ),
+      );
 
   @override
   Future<void> flush() => _checkpoint(force: true);
@@ -103,12 +138,50 @@ class WakeupConversationProgressPublisher({
 
 class ConversationResponseAccumulator({
   required final ConversationProgressPublisher publisher,
+  final Set<String> a2uiSupportedComponents = shared.baselineA2uiChatComponents,
 }) {
   final StringBuffer _content = StringBuffer();
+  final List<String> _a2uiMessages = [];
+  final List<String> _a2uiDiagnosticPayloads = [];
+  final Map<String, Set<shared.A2uiIssueCode>> _a2uiIssuesBySurface = {};
+  final Set<shared.A2uiIssueCode> _a2uiMessageIssues = {};
+  final Set<String> _createdSurfaces = {};
+  final Set<String> _deletedSurfaces = {};
+  final Set<String> _formSurfaces = {};
+  final Map<String, String> _surfaceModes = {};
+  final Map<String, Map<String, Map<String, Object?>>> _surfaceComponents = {};
+  final Set<String> _invalidSurfaces = {};
+  var _a2uiBytes = 0;
+  var _a2uiUpdates = 0;
+  var _a2uiComponents = 0;
+  var _requiresUserAction = false;
   Future<void> _pending = Future.value();
   var _contentBytes = 0;
 
   String get content => _content.toString();
+
+  List<String> get a2uiMessages => List.unmodifiable(_a2uiMessages);
+
+  List<String> get a2uiDiagnosticPayloads =>
+      List.unmodifiable(_a2uiDiagnosticPayloads);
+
+  Map<String, List<String>> get a2uiIssuesBySurface => {
+    for (final entry in _a2uiIssuesBySurface.entries)
+      entry.key: entry.value.map((issue) => issue.name).toList(),
+  };
+
+  List<String> get a2uiMessageIssues =>
+      _a2uiMessageIssues.map((issue) => issue.name).toList();
+
+  bool get requiresUserAction =>
+      _requiresUserAction &&
+      _formSurfaces.any(
+        (surfaceId) =>
+            A2uiChatContract.isRenderableComponentGraph(
+              _surfaceComponents[surfaceId] ?? const {},
+            ) &&
+            !_invalidSurfaces.contains(surfaceId),
+      );
 
   void addText(String text) {
     if (text.isEmpty) return;
@@ -120,7 +193,161 @@ class ConversationResponseAccumulator({
     _pending = _pending.then((_) => publisher.text(text));
   }
 
+  void addA2uiMessage(String payloadJson) {
+    if (a2uiSupportedComponents.isEmpty) return;
+    final payload = _tryDecode(payloadJson);
+    final results = a2ui_protocol
+        .parseA2uiProtocolMessageResults(
+          payload,
+        )
+        .toList(growable: false);
+    if (!a2ui_protocol.isA2uiPayloadSupported(
+          payload,
+          a2uiSupportedComponents,
+        ) ||
+        results.any((result) => result.message == null)) {
+      final result = results.first;
+      addA2uiIssue(
+        result.issue ?? shared.A2uiIssueCode.unsupportedComponent,
+        wireSurfaceId:
+            result.message?.operation.surfaceId ?? result.wireSurfaceId,
+        diagnosticPayloadJson:
+            result.diagnosticPayloadJson ??
+            jsonEncode({'rawPayload': payloadJson}),
+      );
+      return;
+    }
+    if (A2uiChatContract.containsAgentAction(payload)) {
+      addA2uiIssue(
+        shared.A2uiIssueCode.unsupportedComponent,
+        diagnosticPayloadJson: payloadJson,
+      );
+      return;
+    }
+    for (final result in results) {
+      _addCanonicalA2uiMessage(result.message!);
+    }
+  }
+
+  void _addCanonicalA2uiMessage(
+    a2ui_protocol.A2uiProtocolMessage message,
+  ) {
+    final operation = message.operation;
+    final wireSurfaceId = operation.surfaceId;
+    final interactionMode = message.interactionMode;
+    if (operation.kind != shared.A2uiOperationKind.createSurface &&
+        (!_createdSurfaces.contains(wireSurfaceId) ||
+            _deletedSurfaces.contains(wireSurfaceId))) {
+      addA2uiIssue(
+        shared.A2uiIssueCode.malformedPayload,
+        wireSurfaceId: wireSurfaceId,
+        diagnosticPayloadJson: message.payloadJson,
+      );
+      return;
+    }
+    if (operation.kind != shared.A2uiOperationKind.createSurface &&
+        _surfaceModes[wireSurfaceId] != interactionMode) {
+      addA2uiIssue(
+        shared.A2uiIssueCode.invalidInteractionMode,
+        wireSurfaceId: wireSurfaceId,
+        diagnosticPayloadJson: message.payloadJson,
+      );
+      return;
+    }
+    final payloadJson = message.payloadJson;
+    final bytes = utf8.encode(payloadJson).length;
+    if (_a2uiBytes + bytes > maxA2uiTurnBytes) {
+      addA2uiIssue(
+        shared.A2uiIssueCode.oversizedPayload,
+        wireSurfaceId: wireSurfaceId,
+        diagnosticPayloadJson: message.payloadJson,
+      );
+      return;
+    }
+    if (operation.kind == shared.A2uiOperationKind.createSurface) {
+      if (_createdSurfaces.length >= maxA2uiTurnSurfaces ||
+          !_createdSurfaces.add(wireSurfaceId)) {
+        addA2uiIssue(
+          shared.A2uiIssueCode.malformedPayload,
+          wireSurfaceId: wireSurfaceId,
+          diagnosticPayloadJson: message.payloadJson,
+        );
+        return;
+      }
+      final mode = message.interactionMode;
+      _surfaceModes[wireSurfaceId] = mode;
+      _surfaceComponents[wireSurfaceId] = {};
+      if (mode == 'requiresUserAction' &&
+          operation.catalogId == a2uiChatFormCatalogId) {
+        _requiresUserAction = true;
+        _formSurfaces.add(wireSurfaceId);
+      }
+    }
+    if (operation.kind == shared.A2uiOperationKind.updateComponents) {
+      _a2uiUpdates++;
+      _a2uiComponents += operation.components.length;
+      if (_a2uiUpdates > maxA2uiTurnUpdates ||
+          _a2uiComponents > maxA2uiTurnComponents) {
+        addA2uiIssue(
+          shared.A2uiIssueCode.oversizedPayload,
+          wireSurfaceId: wireSurfaceId,
+          diagnosticPayloadJson: message.payloadJson,
+        );
+        return;
+      }
+      final components = _surfaceComponents[wireSurfaceId]!;
+      for (final component in operation.components) {
+        final id = component['id'];
+        if (id is String) components[id] = component;
+      }
+    }
+    if (operation.kind == shared.A2uiOperationKind.deleteSurface) {
+      _deletedSurfaces.add(wireSurfaceId);
+      _formSurfaces.remove(wireSurfaceId);
+      _surfaceModes.remove(wireSurfaceId);
+      _surfaceComponents.remove(wireSurfaceId);
+    }
+    _a2uiBytes += bytes;
+    _a2uiMessages.add(payloadJson);
+    final publisher = this.publisher;
+    if (publisher is! ConversationA2uiProgressPublisher) return;
+    final a2uiPublisher = publisher as ConversationA2uiProgressPublisher;
+    _pending = _pending.then((_) => a2uiPublisher.a2uiMessage(payloadJson));
+  }
+
+  void addA2uiIssue(
+    shared.A2uiIssueCode issue, {
+    String? wireSurfaceId,
+    String? diagnosticPayloadJson,
+  }) {
+    if (a2uiSupportedComponents.isEmpty) return;
+    final publisher = this.publisher;
+    if (diagnosticPayloadJson != null &&
+        publisher is ConversationA2uiProgressPublisher) {
+      final a2uiPublisher = publisher as ConversationA2uiProgressPublisher;
+      if (a2uiPublisher.includeA2uiDiagnostics) {
+        if (!_a2uiDiagnosticPayloads.contains(diagnosticPayloadJson)) {
+          _a2uiDiagnosticPayloads.add(diagnosticPayloadJson);
+        }
+      }
+    }
+    if (wireSurfaceId == null || wireSurfaceId.isEmpty) {
+      _a2uiMessageIssues.add(issue);
+      return;
+    }
+    _invalidSurfaces.add(wireSurfaceId);
+    _a2uiIssuesBySurface.putIfAbsent(wireSurfaceId, () => {}).add(issue);
+  }
+
   Future<void> close() => _pending.then((_) => publisher.flush());
+}
+
+Object? _tryDecode(String source) {
+  try {
+    return jsonDecode(source);
+  } on Object catch (_) {
+    return null;
+  }
 }
 
 abstract interface class ConversationAdmissionGate {

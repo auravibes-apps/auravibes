@@ -1,4 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/services.dart';
@@ -145,7 +146,10 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final isDisabled = widget.disabled || widget.onChanged == null;
+    final isDisabled =
+        widget.disabled ||
+        widget.onChanged == null ||
+        !AuraInteractionScope.of(context).allowsValueChanges;
     final isSelected = widget.value == widget.groupValue;
     final effectiveColor = _getActiveColor(context);
     final borderColor = _getBorderColor(context, isDisabled);
@@ -223,7 +227,11 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
   }
 
   void _select() {
-    if (widget.disabled || widget.onChanged == null) return;
+    if (widget.disabled ||
+        widget.onChanged == null ||
+        !AuraInteractionScope.of(context).allowsValueChanges) {
+      return;
+    }
 
     widget.onChanged?.call(widget.value);
   }

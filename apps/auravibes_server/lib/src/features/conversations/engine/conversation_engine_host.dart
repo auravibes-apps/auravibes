@@ -12,6 +12,7 @@ import '../../model_connections/usecases/model_connection_usecases.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
 import 'conversation_host_effects.dart';
+import 'a2ui_protocol.dart';
 import 'server_tool_executor.dart';
 import 'server_tool_runtime.dart';
 
@@ -22,6 +23,11 @@ class const ConversationEngineResult({
   required final int outputTokens,
   required final int totalTokens,
   final bool awaitingApproval = false,
+  final bool requiresUserAction = false,
+  final List<String> a2uiMessages = const [],
+  final List<String> a2uiDiagnosticPayloads = const [],
+  final Map<String, List<String>> a2uiIssuesBySurface = const {},
+  final List<String> a2uiMessageIssues = const [],
 });
 
 class const ConversationCompactionResult({
@@ -254,17 +260,6 @@ final class const ServerConversationEngineHost({
       throw const ConversationCancelledException();
     }
     final config = await _loadConfig(session, job, messages);
-    var requestMessages = await _requestMessages(session, job, messages);
-    requestMessages.insertAll(0, await _agentContextMessages(session, job));
-    final toolExchanges = <Map<String, dynamic>>[];
-    final codec = ChatCompletionsCodec(
-      errorLabel: config.providerId,
-      customize: (modelName, _) => (model: modelName, extraBody: const {}),
-    );
-    final response = ConversationResponseAccumulator(publisher: liveTurns);
-    final runtime =
-        toolRuntime ??
-        ServerToolRuntime(executor: const ServerToolExecutorService().call);
     final conversation = await Conversation.db.findById(
       session,
       job.conversationId,
@@ -272,6 +267,53 @@ final class const ServerConversationEngineHost({
     if (conversation == null) {
       throw const ConversationEngineConfigurationException('conversation');
     }
+    final a2uiComponents = cloudA2uiSupportedComponents(
+      job.payloadJson,
+      isChildConversation: conversation.parentConversationStableId != null,
+    );
+    final a2uiEnabled = a2uiComponents.isNotEmpty;
+    var requestMessages = await _requestMessages(
+      session,
+      job,
+      messages,
+      conversationStableId: conversation.stableId,
+      a2uiSupportedComponents: a2uiComponents,
+    );
+    requestMessages.insertAll(0, await _agentContextMessages(session, job));
+    final toolExchanges = <Map<String, dynamic>>[];
+    final codec = ChatCompletionsCodec(
+      errorLabel: config.providerId,
+      customize: (modelName, _) => (model: modelName, extraBody: const {}),
+    );
+    final response = ConversationResponseAccumulator(
+      publisher: liveTurns,
+      a2uiSupportedComponents: a2uiComponents,
+    );
+    final a2uiDecoder = A2uiTextDecoder();
+    final runtime =
+        toolRuntime ??
+        ServerToolRuntime(executor: const ServerToolExecutorService().call);
+    final assistantStableId = turn.assistantMessageId == null
+        ? null
+        : (await ConversationMessage.db.findById(
+            session,
+            turn.assistantMessageId!,
+          ))?.stableId;
+    final debugA2ui = session.serverpod.runMode == ServerpodRunMode.development;
+    void traceA2ui(String stage, Map<String, Object?> details) {
+      if (!debugA2ui) return;
+      session.log(
+        '[A2UI cloud] ${jsonEncode({
+          'stage': stage,
+          'conversation': conversation.stableId,
+          'message': assistantStableId,
+          'turn': turn.id,
+          ...details,
+        })}',
+      );
+    }
+
+    traceA2ui('start', {'enabled': a2uiEnabled, 'model': config.modelId});
     var tools = await runtime.loadTools(
       session,
       workspaceId: job.workspaceId,
@@ -359,6 +401,8 @@ final class const ServerConversationEngineHost({
         job,
         messages,
         toolExchanges,
+        conversationStableId: conversation.stableId,
+        a2uiSupportedComponents: a2uiComponents,
       );
       tools = await runtime.loadTools(
         session,
@@ -368,41 +412,121 @@ final class const ServerConversationEngineHost({
     }
     ModelResponse providerResponse;
     for (var iteration = 0; ; iteration++) {
+      final debugOutput = StringBuffer();
+      var outputCharacters = 0;
       if (iteration >= 20) {
         throw const ConversationEngineConfigurationException('tool_loop_limit');
       }
-      providerResponse = await admissionGate.run(
-        session,
-        job: job,
-        providerId: config.providerId,
-        body: (admissionLost) => codec.stream(
-          (body) =>
-              providerTransport?.call(body) ??
-              _transport(
-                config,
-                body,
-                session: session,
-                turnId: turn.id!,
-                leaseLost: _first(leaseLost, admissionLost),
-              ),
-          {
-            'model': config.modelId,
-            'messages': requestMessages,
-            if (tools.isNotEmpty)
-              'tools': tools.map(_providerTool).toList(growable: false),
-            'stream': true,
-            'stream_options': {'include_usage': true},
-          },
-          (chunk) {
-            response.addText(
-              chunk.content
-                  .where((part) => part.isText)
-                  .map((part) => part.text ?? '')
-                  .join(),
-            );
-          },
-        ),
+      providerResponse = await admissionGate
+          .run(
+            session,
+            job: job,
+            providerId: config.providerId,
+            body: (admissionLost) => codec.stream(
+              (body) =>
+                  providerTransport?.call(body) ??
+                  _transport(
+                    config,
+                    body,
+                    session: session,
+                    turnId: turn.id!,
+                    leaseLost: _first(leaseLost, admissionLost),
+                  ),
+              {
+                'model': config.modelId,
+                'messages': requestMessages,
+                if (tools.isNotEmpty)
+                  'tools': tools.map(_providerTool).toList(growable: false),
+                'stream': true,
+                'stream_options': {'include_usage': true},
+              },
+              (chunk) {
+                final text = chunk.content
+                    .where((part) => part.isText)
+                    .map((part) => part.text ?? '')
+                    .join();
+                outputCharacters += text.length;
+                if (debugA2ui && debugOutput.length < 65536) {
+                  final remaining = 65536 - debugOutput.length;
+                  debugOutput.write(
+                    text.length <= remaining
+                        ? text
+                        : text.substring(0, remaining),
+                  );
+                }
+                a2uiDecoder.add(
+                  text,
+                  onText: response.addText,
+                  onMessage: (message) {
+                    traceA2ui('decoded', {
+                      'iteration': iteration,
+                      'surface': message.operation.surfaceId,
+                      'operation': message.operation.kind.name,
+                      'mode': message.interactionMode,
+                    });
+                    if (!a2uiEnabled || assistantStableId == null) return;
+                    final payload =
+                        jsonDecode(message.payloadJson) as Map<String, dynamic>
+                          ..['assistantMessageId'] = assistantStableId;
+                    response.addA2uiMessage(jsonEncode(payload));
+                  },
+                  onInvalid: (result) {
+                    traceA2ui('parser_rejected', {
+                      'iteration': iteration,
+                      'charactersReceived': outputCharacters,
+                      'issue': result.issue?.name,
+                      'surface': result.wireSurfaceId,
+                    });
+                    if (!a2uiEnabled) return;
+                    response.addA2uiIssue(
+                      result.issue ?? A2uiIssueCode.malformedPayload,
+                      wireSurfaceId: result.wireSurfaceId,
+                      diagnosticPayloadJson: result.diagnosticPayloadJson,
+                    );
+                  },
+                );
+              },
+            ),
+          )
+          .onError<Object>((error, stackTrace) {
+            traceA2ui('generation_failed', {
+              'iteration': iteration,
+              'errorType': error.runtimeType.toString(),
+              'charactersReceived': outputCharacters,
+              'outputTruncated': outputCharacters > debugOutput.length,
+              'modelOutput': debugOutput.toString(),
+            });
+            Error.throwWithStackTrace(error, stackTrace);
+          });
+      a2uiDecoder.close(
+        onText: response.addText,
+        onInvalid: (result) {
+          traceA2ui('parser_rejected_at_completion', {
+            'iteration': iteration,
+            'charactersReceived': outputCharacters,
+            'issue': result.issue?.name,
+            'surface': result.wireSurfaceId,
+          });
+          if (!a2uiEnabled) return;
+          response.addA2uiIssue(
+            result.issue ?? A2uiIssueCode.malformedPayload,
+            wireSurfaceId: result.wireSurfaceId,
+            diagnosticPayloadJson: result.diagnosticPayloadJson,
+          );
+        },
       );
+      traceA2ui('iteration_complete', {
+        'iteration': iteration,
+        'finishReason': providerResponse.finishReason.value,
+        'charactersReceived': outputCharacters,
+        'acceptedPayloads': response.a2uiMessages.length,
+        'surfaceIssues': response.a2uiIssuesBySurface,
+        'messageIssues': response.a2uiMessageIssues,
+        'textCharacters': response.content.length,
+        'requiresUserAction': response.requiresUserAction,
+        'outputTruncated': outputCharacters > debugOutput.length,
+        'modelOutput': debugOutput.toString(),
+      });
       final requests = _toolRequests(providerResponse.raw);
       if (requests.isEmpty) break;
       final assistantToolMessage = _assistantToolMessage(providerResponse.raw);
@@ -425,13 +549,17 @@ final class const ServerConversationEngineHost({
       }
       if (paused) {
         await response.close();
-        return const ConversationEngineResult(
-          content: '',
+        return ConversationEngineResult(
+          content: response.content,
           finishReason: 'stop',
           inputTokens: 0,
           outputTokens: 0,
           totalTokens: 0,
           awaitingApproval: true,
+          a2uiMessages: response.a2uiMessages,
+          a2uiDiagnosticPayloads: response.a2uiDiagnosticPayloads,
+          a2uiIssuesBySurface: response.a2uiIssuesBySurface,
+          a2uiMessageIssues: response.a2uiMessageIssues,
         );
       }
       final calls = await ConversationToolCall.db.find(
@@ -457,6 +585,8 @@ final class const ServerConversationEngineHost({
         job,
         messages,
         toolExchanges,
+        conversationStableId: conversation.stableId,
+        a2uiSupportedComponents: a2uiComponents,
       );
       tools = await runtime.loadTools(
         session,
@@ -465,6 +595,12 @@ final class const ServerConversationEngineHost({
       );
     }
     await response.close();
+    traceA2ui('published', {
+      'acceptedPayloads': response.a2uiMessages.length,
+      'surfaceIssues': response.a2uiIssuesBySurface,
+      'messageIssues': response.a2uiMessageIssues,
+      'textCharacters': response.content.length,
+    });
     if (await cancellationProbe.isCancelled(session, turn.id!)) {
       throw const ConversationCancelledException();
     }
@@ -475,19 +611,24 @@ final class const ServerConversationEngineHost({
       inputTokens: usage?.inputTokens?.toInt() ?? 0,
       outputTokens: usage?.outputTokens?.toInt() ?? 0,
       totalTokens: usage?.totalTokens?.toInt() ?? 0,
+      a2uiMessages: response.a2uiMessages,
+      a2uiDiagnosticPayloads: response.a2uiDiagnosticPayloads,
+      a2uiIssuesBySurface: response.a2uiIssuesBySurface,
+      a2uiMessageIssues: response.a2uiMessageIssues,
+      requiresUserAction: response.requiresUserAction,
     );
   }
 
   Future<List<Map<String, dynamic>>> _requestMessages(
     Session session,
     ConversationJob job,
-    List<ConversationMessage> messages,
-  ) async {
+    List<ConversationMessage> messages, {
+    required String conversationStableId,
+    required Set<String> a2uiSupportedComponents,
+  }) async {
     final result = <Map<String, dynamic>>[];
     for (final message in messages.where(
-      (message) =>
-          message.status != 'queued' &&
-          (message.role != 'assistant' || message.content.isNotEmpty),
+      (message) => message.status != 'queued',
     )) {
       final metadata = message.metadataJson == null
           ? const <String, dynamic>{}
@@ -495,6 +636,25 @@ final class const ServerConversationEngineHost({
       final attachmentIds =
           (metadata['attachmentIds'] as List?)?.whereType<int>().toList() ??
           const <int>[];
+      final action = A2uiChatContract.decodeActionMetadata(
+        metadata,
+        conversationId: conversationStableId,
+      );
+      var content = A2uiChatContract.appendAnswersToPrompt(
+        message.content,
+        action,
+      );
+      if (message.role == 'assistant') {
+        final filteredMetadata = cloudA2uiMetadataForClient(
+          message.metadataJson,
+          a2uiSupportedComponents,
+        );
+        content = appendA2uiSurfacesToPrompt(
+          content,
+          filteredMetadata == null ? null : _jsonObject(filteredMetadata),
+        );
+        if (content.isEmpty) continue;
+      }
       final attachments = await attachmentReader.read(
         session,
         workspaceId: job.workspaceId,
@@ -503,9 +663,9 @@ final class const ServerConversationEngineHost({
       result.add({
         'role': message.role,
         'content': attachments.isEmpty
-            ? message.content
+            ? content
             : [
-                {'type': 'text', 'text': message.content},
+                {'type': 'text', 'text': content},
                 for (final attachment in attachments)
                   {
                     'type': 'image_url',
@@ -524,9 +684,17 @@ final class const ServerConversationEngineHost({
     Session session,
     ConversationJob job,
     List<ConversationMessage> messages,
-    List<Map<String, dynamic>> toolExchanges,
-  ) async {
-    final baseMessages = await _requestMessages(session, job, messages);
+    List<Map<String, dynamic>> toolExchanges, {
+    required String conversationStableId,
+    required Set<String> a2uiSupportedComponents,
+  }) async {
+    final baseMessages = await _requestMessages(
+      session,
+      job,
+      messages,
+      conversationStableId: conversationStableId,
+      a2uiSupportedComponents: a2uiSupportedComponents,
+    );
     baseMessages.insertAll(0, await _agentContextMessages(session, job));
     return cloudRequestMessagesWithToolExchanges(
       baseMessages: baseMessages,
@@ -563,21 +731,34 @@ final class const ServerConversationEngineHost({
       job,
       conversation: conversation,
     );
-    return buildCloudSkillContextMessages(
-      agentContent: agentContext.content,
-      conversationSkills: await _skillsForIds(
-        session,
-        job.workspaceId,
-        conversationSkillIds,
-        isChildConversation: conversation.parentConversationStableId != null,
+    final messages = [
+      ...buildCloudSkillContextMessages(
+        agentContent: agentContext.content,
+        conversationSkills: await _skillsForIds(
+          session,
+          job.workspaceId,
+          conversationSkillIds,
+          isChildConversation: conversation.parentConversationStableId != null,
+        ),
+        agentSkills: await _skillsForIds(
+          session,
+          job.workspaceId,
+          agentContext.skillIds,
+          isChildConversation: conversation.parentConversationStableId != null,
+        ),
       ),
-      agentSkills: await _skillsForIds(
-        session,
-        job.workspaceId,
-        agentContext.skillIds,
-        isChildConversation: conversation.parentConversationStableId != null,
-      ),
+    ];
+    final a2uiComponents = cloudA2uiSupportedComponents(
+      job.payloadJson,
+      isChildConversation: conversation.parentConversationStableId != null,
     );
+    if (a2uiComponents.isNotEmpty) {
+      messages.insert(0, {
+        'role': 'system',
+        'content': A2uiChatContract.systemPromptForComponents(a2uiComponents),
+      });
+    }
+    return messages;
   }
 
   Future<({String? content, Set<String> skillIds})> _agentContext(

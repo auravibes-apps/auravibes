@@ -10,6 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 abstract class ListConversationMessagesRequest
@@ -18,12 +20,14 @@ abstract class ListConversationMessagesRequest
     required this.workspaceId,
     required this.conversationId,
     required this.limit,
+    this.a2uiSupportedComponents,
   });
 
   factory ListConversationMessagesRequest({
     required int workspaceId,
     required String conversationId,
     required int limit,
+    List<String>? a2uiSupportedComponents,
   }) = _ListConversationMessagesRequestImpl;
 
   factory ListConversationMessagesRequest.fromJson(
@@ -33,6 +37,12 @@ abstract class ListConversationMessagesRequest
       workspaceId: jsonSerialization['workspaceId'] as int,
       conversationId: jsonSerialization['conversationId'] as String,
       limit: jsonSerialization['limit'] as int,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _isctvzjc.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -42,6 +52,8 @@ abstract class ListConversationMessagesRequest
 
   int limit;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [ListConversationMessagesRequest]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -49,6 +61,7 @@ abstract class ListConversationMessagesRequest
     int? workspaceId,
     String? conversationId,
     int? limit,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -57,6 +70,8 @@ abstract class ListConversationMessagesRequest
       'workspaceId': workspaceId,
       'conversationId': conversationId,
       'limit': limit,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -67,6 +82,8 @@ abstract class ListConversationMessagesRequest
       'workspaceId': workspaceId,
       'conversationId': conversationId,
       'limit': limit,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -76,16 +93,20 @@ abstract class ListConversationMessagesRequest
   }
 }
 
+class _Undefined {}
+
 class _ListConversationMessagesRequestImpl
     extends ListConversationMessagesRequest {
   _ListConversationMessagesRequestImpl({
     required int workspaceId,
     required String conversationId,
     required int limit,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          conversationId: conversationId,
          limit: limit,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [ListConversationMessagesRequest]
@@ -96,11 +117,15 @@ class _ListConversationMessagesRequestImpl
     int? workspaceId,
     String? conversationId,
     int? limit,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return ListConversationMessagesRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       conversationId: conversationId ?? this.conversationId,
       limit: limit ?? this.limit,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

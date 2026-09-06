@@ -1,4 +1,6 @@
+// ignore_for_file: type=lint, type=warning
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
@@ -140,6 +142,8 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final isEnabled =
+        widget.isEnabled && AuraInteractionScope.of(context).allowsValueChanges;
     final hasError = widget.error != null;
     final state = hasError ? AuraFieldState.error : AuraFieldState.normal;
     final value = widget.value;
@@ -164,7 +168,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     }
 
     return PortalTarget(
-      visible: _isDropdownOpen,
+      visible: _isDropdownOpen && isEnabled,
       anchor: const Aligned(
         follower: Alignment.topCenter,
         target: Alignment.bottomCenter,
@@ -216,15 +220,16 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
             error: widget.error,
             isRequired: widget.isRequired,
             state: state,
-            isEnabled: widget.isEnabled,
+            isEnabled: isEnabled,
             isFocused: _isDropdownOpen || _isTriggerFocused,
-            onTap: _toggleDropdown,
+            onTap: isEnabled ? _toggleDropdown : null,
             onFocusChange: _handleTriggerFocusChange,
             semanticLabel: widget.semanticLabel,
           ),
           groupId: this,
         ),
         focusNode: _requiredFocusNode,
+        canRequestFocus: isEnabled,
         onFocusChange: _handleTriggerFocusChange,
         onKeyEvent: _handleTriggerKeyEvent,
         descendantsAreFocusable: false,
@@ -249,6 +254,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   }
 
   void _toggleDropdown() {
+    if (!AuraInteractionScope.of(context).allowsValueChanges) return;
     if (_isDropdownOpen) {
       _closeDropdown();
 
@@ -259,7 +265,9 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   }
 
   void _openDropdown() {
-    if (!widget.isEnabled || _isDropdownOpen) {
+    if (!widget.isEnabled ||
+        !AuraInteractionScope.of(context).allowsValueChanges ||
+        _isDropdownOpen) {
       return;
     }
 

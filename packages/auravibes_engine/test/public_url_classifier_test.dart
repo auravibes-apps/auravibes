@@ -40,6 +40,19 @@ void main() {
     }
   });
 
+  test('rejects private IP literals', () {
+    for (final url in [
+      'https://127.0.0.1/image.png',
+      'https://10.0.0.1/image.png',
+      'https://[::1]/image.png',
+    ]) {
+      expect(
+        () => requirePublicUriSyntax(url, requireHttps: true),
+        throwsFormatException,
+      );
+    }
+  });
+
   test('classifies locked private and documentation IPv4 ranges', () {
     for (final address in [
       [10, 0, 0, 1],

@@ -2,9 +2,124 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  for (final variant in AuraChoicePickerVariant.values) {
+    testWidgets('chips preserve $variant selection and keyboard activation', (
+      tester,
+    ) async {
+      var values = <String>['first'];
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) => _buildApp(
+            AuraChoicePicker<String>(
+              options: const [
+                AuraChoiceOption(value: 'first', label: Text('First')),
+                AuraChoiceOption(value: 'second', label: Text('Second')),
+              ],
+              value: values,
+              onChanged: (next) => setState(() => values = next),
+              variant: variant,
+              presentation: AuraChoicePickerPresentation.chips,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Second'));
+      final _ = await tester.pumpAndSettle();
+      expect(
+        values,
+        variant == AuraChoicePickerVariant.multipleSelection
+            ? ['first', 'second']
+            : ['second'],
+      );
+      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      final _ = await tester.pumpAndSettle();
+      expect(
+        values,
+        variant == AuraChoicePickerVariant.multipleSelection
+            ? ['second']
+            : ['first'],
+      );
+    });
+  }
+
+  testWidgets('chips enforce limits, disabled options and inherited policy', (
+    tester,
+  ) async {
+    for (final policy in [
+      const AuraInteractionPolicy.interactive(),
+      const AuraInteractionPolicy.readOnly(),
+      const AuraInteractionPolicy.disabled(),
+    ]) {
+      List<String>? changed;
+      await tester.pumpWidget(
+        _buildApp(
+          AuraInteractionScope(
+            policy: policy,
+            child: AuraChoicePicker<String>(
+              options: const [
+                AuraChoiceOption(value: 'first', label: Text('First')),
+                AuraChoiceOption(value: 'second', label: Text('Second')),
+                AuraChoiceOption(
+                  value: 'third',
+                  label: Text('Third'),
+                  disabled: true,
+                ),
+              ],
+              value: const ['first'],
+              onChanged: (next) => changed = next,
+              variant: AuraChoicePickerVariant.multipleSelection,
+              presentation: AuraChoicePickerPresentation.chips,
+              maxAllowedSelections: 1,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Second'));
+      await tester.tap(find.text('Third'));
+      expect(changed, isNull);
+      await tester.tap(find.text('First'));
+      final _ = await tester.pumpAndSettle();
+      expect(changed, policy.allowsValueChanges ? isEmpty : isNull);
+    }
+  });
+
+  testWidgets('chips expose checked semantics and full tap targets', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      _buildApp(
+        const AuraChoicePicker<String>(
+          options: [
+            AuraChoiceOption(
+              value: 'first',
+              label: Text('First'),
+              semanticLabel: 'First choice',
+            ),
+          ],
+          value: ['first'],
+          onChanged: _noopChanged,
+          presentation: AuraChoicePickerPresentation.chips,
+        ),
+      ),
+    );
+    final option = find.bySemanticsLabel('First choice').first;
+    expect(
+      tester.getSemantics(option).flagsCollection.isChecked,
+      ui.CheckedState.isTrue,
+    );
+    expect(
+      tester.getSize(find.byType(AuraPressable)).height,
+      greaterThanOrEqualTo(48),
+    );
+    semantics.dispose();
+  });
+
   group('AuraChoicePicker', () {
     testWidgets('renders labeled options and changes one selection', (
       tester,

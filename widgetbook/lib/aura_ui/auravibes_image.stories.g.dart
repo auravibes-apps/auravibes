@@ -46,6 +46,8 @@ class AuraImageStory extends Story<AuraImage, AuraImageArgs> {
                semanticLabel: args.semanticLabel,
                imageProvider: args.imageProvider,
                errorSemanticLabel: args.errorSemanticLabel,
+               loadingChild: args.loadingChild,
+               errorChild: args.errorChild,
              ),
        );
 }
@@ -58,6 +60,8 @@ class AuraImageArgs extends StoryArgs<AuraImage> {
     Arg<String?>? semanticLabel,
     Arg<ImageProvider<Object>?>? imageProvider,
     Arg<String?>? errorSemanticLabel,
+    Arg<Widget?>? loadingChild,
+    Arg<Widget?>? errorChild,
   }) : this.urlArg = $initArg('url', url, StringArg(''))!,
        this.keyArg = $initArg('key', key, null),
        this.fitArg = $initArg(
@@ -75,7 +79,9 @@ class AuraImageArgs extends StoryArgs<AuraImage> {
          'errorSemanticLabel',
          errorSemanticLabel,
          NullableStringArg('Image failed to load'),
-       )!;
+       )!,
+       this.loadingChildArg = $initArg('loadingChild', loadingChild, null),
+       this.errorChildArg = $initArg('errorChild', errorChild, null);
 
   AuraImageArgs.fixed({
     String url = '',
@@ -84,6 +90,8 @@ class AuraImageArgs extends StoryArgs<AuraImage> {
     String? semanticLabel = null,
     ImageProvider<Object>? imageProvider,
     String? errorSemanticLabel = 'Image failed to load',
+    Widget? loadingChild,
+    Widget? errorChild,
   }) : this.urlArg = $initArg('url', Arg.fixed(url), null)!,
        this.keyArg = $initArg('key', key == null ? null : Arg.fixed(key), null),
        this.fitArg = $initArg('fit', Arg.fixed(fit), null)!,
@@ -101,6 +109,16 @@ class AuraImageArgs extends StoryArgs<AuraImage> {
          'errorSemanticLabel',
          errorSemanticLabel == null ? null : Arg.fixed(errorSemanticLabel),
          null,
+       ),
+       this.loadingChildArg = $initArg(
+         'loadingChild',
+         loadingChild == null ? null : Arg.fixed(loadingChild),
+         null,
+       ),
+       this.errorChildArg = $initArg(
+         'errorChild',
+         errorChild == null ? null : Arg.fixed(errorChild),
+         null,
        );
 
   final Arg<String> urlArg;
@@ -115,6 +133,10 @@ class AuraImageArgs extends StoryArgs<AuraImage> {
 
   final Arg<String?>? errorSemanticLabelArg;
 
+  final Arg<Widget?>? loadingChildArg;
+
+  final Arg<Widget?>? errorChildArg;
+
   String get url => urlArg.value;
 
   Key? get key => keyArg?.value;
@@ -127,6 +149,10 @@ class AuraImageArgs extends StoryArgs<AuraImage> {
 
   String? get errorSemanticLabel => errorSemanticLabelArg?.value;
 
+  Widget? get loadingChild => loadingChildArg?.value;
+
+  Widget? get errorChild => errorChildArg?.value;
+
   @override
   List<Arg?> get list => [
     urlArg,
@@ -135,5 +161,7 @@ class AuraImageArgs extends StoryArgs<AuraImage> {
     semanticLabelArg,
     imageProviderArg,
     errorSemanticLabelArg,
+    loadingChildArg,
+    errorChildArg,
   ];
 }

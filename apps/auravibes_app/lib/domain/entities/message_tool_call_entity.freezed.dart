@@ -878,7 +878,7 @@ as int,
 /// @nodoc
 mixin _$MessageMetadataEntity {
 
- List<MessageToolCallEntity> get toolCalls; int? get promptTokens; int? get completionTokens; int? get totalTokens; String? get thinking; Map<String, Object?> get modelMetadata; int get metadataVersion; bool get isCompactionSummary; CompactionKind? get compactionKind; String? get compactedFromMessageId; String? get compactedThroughMessageId; List<String> get compactedMessageIds; DateTime? get compactionCreatedAt;
+ List<MessageToolCallEntity> get toolCalls; int? get promptTokens; int? get completionTokens; int? get totalTokens; String? get thinking; Map<String, Object?> get modelMetadata; List<String> get a2uiMessages; Map<String, List<String>> get a2uiIssuesBySurface; List<String> get a2uiMessageIssues; int get metadataVersion; bool get isCompactionSummary; CompactionKind? get compactionKind; String? get compactedFromMessageId; String? get compactedThroughMessageId; List<String> get compactedMessageIds; DateTime? get compactionCreatedAt;
 /// Create a copy of MessageMetadataEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -892,20 +892,20 @@ $MessageMetadataEntityCopyWith<MessageMetadataEntity> get copyWith => _$MessageM
 @override
 bool operator ==(Object other) {
   final _this = this as MessageMetadataEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageMetadataEntity&&const DeepCollectionEquality().equals(other.toolCalls, _this.toolCalls)&&(identical(other.promptTokens, _this.promptTokens) || other.promptTokens == _this.promptTokens)&&(identical(other.completionTokens, _this.completionTokens) || other.completionTokens == _this.completionTokens)&&(identical(other.totalTokens, _this.totalTokens) || other.totalTokens == _this.totalTokens)&&(identical(other.thinking, _this.thinking) || other.thinking == _this.thinking)&&const DeepCollectionEquality().equals(other.modelMetadata, _this.modelMetadata)&&(identical(other.metadataVersion, _this.metadataVersion) || other.metadataVersion == _this.metadataVersion)&&(identical(other.isCompactionSummary, _this.isCompactionSummary) || other.isCompactionSummary == _this.isCompactionSummary)&&(identical(other.compactionKind, _this.compactionKind) || other.compactionKind == _this.compactionKind)&&(identical(other.compactedFromMessageId, _this.compactedFromMessageId) || other.compactedFromMessageId == _this.compactedFromMessageId)&&(identical(other.compactedThroughMessageId, _this.compactedThroughMessageId) || other.compactedThroughMessageId == _this.compactedThroughMessageId)&&const DeepCollectionEquality().equals(other.compactedMessageIds, _this.compactedMessageIds)&&(identical(other.compactionCreatedAt, _this.compactionCreatedAt) || other.compactionCreatedAt == _this.compactionCreatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageMetadataEntity&&const DeepCollectionEquality().equals(other.toolCalls, _this.toolCalls)&&(identical(other.promptTokens, _this.promptTokens) || other.promptTokens == _this.promptTokens)&&(identical(other.completionTokens, _this.completionTokens) || other.completionTokens == _this.completionTokens)&&(identical(other.totalTokens, _this.totalTokens) || other.totalTokens == _this.totalTokens)&&(identical(other.thinking, _this.thinking) || other.thinking == _this.thinking)&&const DeepCollectionEquality().equals(other.modelMetadata, _this.modelMetadata)&&const DeepCollectionEquality().equals(other.a2uiMessages, _this.a2uiMessages)&&const DeepCollectionEquality().equals(other.a2uiIssuesBySurface, _this.a2uiIssuesBySurface)&&const DeepCollectionEquality().equals(other.a2uiMessageIssues, _this.a2uiMessageIssues)&&(identical(other.metadataVersion, _this.metadataVersion) || other.metadataVersion == _this.metadataVersion)&&(identical(other.isCompactionSummary, _this.isCompactionSummary) || other.isCompactionSummary == _this.isCompactionSummary)&&(identical(other.compactionKind, _this.compactionKind) || other.compactionKind == _this.compactionKind)&&(identical(other.compactedFromMessageId, _this.compactedFromMessageId) || other.compactedFromMessageId == _this.compactedFromMessageId)&&(identical(other.compactedThroughMessageId, _this.compactedThroughMessageId) || other.compactedThroughMessageId == _this.compactedThroughMessageId)&&const DeepCollectionEquality().equals(other.compactedMessageIds, _this.compactedMessageIds)&&(identical(other.compactionCreatedAt, _this.compactionCreatedAt) || other.compactionCreatedAt == _this.compactionCreatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as MessageMetadataEntity;
-  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.toolCalls),_this.promptTokens,_this.completionTokens,_this.totalTokens,_this.thinking,const DeepCollectionEquality().hash(_this.modelMetadata),_this.metadataVersion,_this.isCompactionSummary,_this.compactionKind,_this.compactedFromMessageId,_this.compactedThroughMessageId,const DeepCollectionEquality().hash(_this.compactedMessageIds),_this.compactionCreatedAt);
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.toolCalls),_this.promptTokens,_this.completionTokens,_this.totalTokens,_this.thinking,const DeepCollectionEquality().hash(_this.modelMetadata),const DeepCollectionEquality().hash(_this.a2uiMessages),const DeepCollectionEquality().hash(_this.a2uiIssuesBySurface),const DeepCollectionEquality().hash(_this.a2uiMessageIssues),_this.metadataVersion,_this.isCompactionSummary,_this.compactionKind,_this.compactedFromMessageId,_this.compactedThroughMessageId,const DeepCollectionEquality().hash(_this.compactedMessageIds),_this.compactionCreatedAt);
 }
 
 @override
 String toString() {
   final _this = this as MessageMetadataEntity;
-  return 'MessageMetadataEntity(toolCalls: ${_this.toolCalls}, promptTokens: ${_this.promptTokens}, completionTokens: ${_this.completionTokens}, totalTokens: ${_this.totalTokens}, thinking: ${_this.thinking}, modelMetadata: ${_this.modelMetadata}, metadataVersion: ${_this.metadataVersion}, isCompactionSummary: ${_this.isCompactionSummary}, compactionKind: ${_this.compactionKind}, compactedFromMessageId: ${_this.compactedFromMessageId}, compactedThroughMessageId: ${_this.compactedThroughMessageId}, compactedMessageIds: ${_this.compactedMessageIds}, compactionCreatedAt: ${_this.compactionCreatedAt})';
+  return 'MessageMetadataEntity(toolCalls: ${_this.toolCalls}, promptTokens: ${_this.promptTokens}, completionTokens: ${_this.completionTokens}, totalTokens: ${_this.totalTokens}, thinking: ${_this.thinking}, modelMetadata: ${_this.modelMetadata}, a2uiMessages: ${_this.a2uiMessages}, a2uiIssuesBySurface: ${_this.a2uiIssuesBySurface}, a2uiMessageIssues: ${_this.a2uiMessageIssues}, metadataVersion: ${_this.metadataVersion}, isCompactionSummary: ${_this.isCompactionSummary}, compactionKind: ${_this.compactionKind}, compactedFromMessageId: ${_this.compactedFromMessageId}, compactedThroughMessageId: ${_this.compactedThroughMessageId}, compactedMessageIds: ${_this.compactedMessageIds}, compactionCreatedAt: ${_this.compactionCreatedAt})';
 }
 
 
@@ -916,7 +916,7 @@ abstract mixin class $MessageMetadataEntityCopyWith<$Res>  {
   factory $MessageMetadataEntityCopyWith(MessageMetadataEntity value, $Res Function(MessageMetadataEntity) _then) = _$MessageMetadataEntityCopyWithImpl;
 @useResult
 $Res call({
- List<MessageToolCallEntity> toolCalls, int? promptTokens, int? completionTokens, int? totalTokens, String? thinking, Map<String, Object?> modelMetadata, int metadataVersion, bool isCompactionSummary, CompactionKind? compactionKind, String? compactedFromMessageId, String? compactedThroughMessageId, List<String> compactedMessageIds, DateTime? compactionCreatedAt
+ List<MessageToolCallEntity> toolCalls, int? promptTokens, int? completionTokens, int? totalTokens, String? thinking, Map<String, Object?> modelMetadata, List<String> a2uiMessages, Map<String, List<String>> a2uiIssuesBySurface, List<String> a2uiMessageIssues, int metadataVersion, bool isCompactionSummary, CompactionKind? compactionKind, String? compactedFromMessageId, String? compactedThroughMessageId, List<String> compactedMessageIds, DateTime? compactionCreatedAt
 });
 
 
@@ -933,7 +933,7 @@ class _$MessageMetadataEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageMetadataEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? toolCalls = null,Object? promptTokens = freezed,Object? completionTokens = freezed,Object? totalTokens = freezed,Object? thinking = freezed,Object? modelMetadata = null,Object? metadataVersion = null,Object? isCompactionSummary = null,Object? compactionKind = freezed,Object? compactedFromMessageId = freezed,Object? compactedThroughMessageId = freezed,Object? compactedMessageIds = null,Object? compactionCreatedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? toolCalls = null,Object? promptTokens = freezed,Object? completionTokens = freezed,Object? totalTokens = freezed,Object? thinking = freezed,Object? modelMetadata = null,Object? a2uiMessages = null,Object? a2uiIssuesBySurface = null,Object? a2uiMessageIssues = null,Object? metadataVersion = null,Object? isCompactionSummary = null,Object? compactionKind = freezed,Object? compactedFromMessageId = freezed,Object? compactedThroughMessageId = freezed,Object? compactedMessageIds = null,Object? compactionCreatedAt = freezed,}) {
   return _then(MessageMetadataEntity(
 toolCalls: null == toolCalls ? _self.toolCalls : toolCalls // ignore: cast_nullable_to_non_nullable
 as List<MessageToolCallEntity>,promptTokens: freezed == promptTokens ? _self.promptTokens : promptTokens // ignore: cast_nullable_to_non_nullable
@@ -941,7 +941,10 @@ as int?,completionTokens: freezed == completionTokens ? _self.completionTokens :
 as int?,totalTokens: freezed == totalTokens ? _self.totalTokens : totalTokens // ignore: cast_nullable_to_non_nullable
 as int?,thinking: freezed == thinking ? _self.thinking : thinking // ignore: cast_nullable_to_non_nullable
 as String?,modelMetadata: null == modelMetadata ? _self.modelMetadata : modelMetadata // ignore: cast_nullable_to_non_nullable
-as Map<String, Object?>,metadataVersion: null == metadataVersion ? _self.metadataVersion : metadataVersion // ignore: cast_nullable_to_non_nullable
+as Map<String, Object?>,a2uiMessages: null == a2uiMessages ? _self.a2uiMessages : a2uiMessages // ignore: cast_nullable_to_non_nullable
+as List<String>,a2uiIssuesBySurface: null == a2uiIssuesBySurface ? _self.a2uiIssuesBySurface : a2uiIssuesBySurface // ignore: cast_nullable_to_non_nullable
+as Map<String, List<String>>,a2uiMessageIssues: null == a2uiMessageIssues ? _self.a2uiMessageIssues : a2uiMessageIssues // ignore: cast_nullable_to_non_nullable
+as List<String>,metadataVersion: null == metadataVersion ? _self.metadataVersion : metadataVersion // ignore: cast_nullable_to_non_nullable
 as int,isCompactionSummary: null == isCompactionSummary ? _self.isCompactionSummary : isCompactionSummary // ignore: cast_nullable_to_non_nullable
 as bool,compactionKind: freezed == compactionKind ? _self.compactionKind : compactionKind // ignore: cast_nullable_to_non_nullable
 as CompactionKind?,compactedFromMessageId: freezed == compactedFromMessageId ? _self.compactedFromMessageId : compactedFromMessageId // ignore: cast_nullable_to_non_nullable
@@ -1033,10 +1036,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens,  String? thinking,  Map<String, Object?> modelMetadata,  int metadataVersion,  bool isCompactionSummary,  CompactionKind? compactionKind,  String? compactedFromMessageId,  String? compactedThroughMessageId,  List<String> compactedMessageIds,  DateTime? compactionCreatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens,  String? thinking,  Map<String, Object?> modelMetadata,  List<String> a2uiMessages,  Map<String, List<String>> a2uiIssuesBySurface,  List<String> a2uiMessageIssues,  int metadataVersion,  bool isCompactionSummary,  CompactionKind? compactionKind,  String? compactedFromMessageId,  String? compactedThroughMessageId,  List<String> compactedMessageIds,  DateTime? compactionCreatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageMetadataEntity() when $default != null:
-return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens,_that.thinking,_that.modelMetadata,_that.metadataVersion,_that.isCompactionSummary,_that.compactionKind,_that.compactedFromMessageId,_that.compactedThroughMessageId,_that.compactedMessageIds,_that.compactionCreatedAt);case _:
+return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens,_that.thinking,_that.modelMetadata,_that.a2uiMessages,_that.a2uiIssuesBySurface,_that.a2uiMessageIssues,_that.metadataVersion,_that.isCompactionSummary,_that.compactionKind,_that.compactedFromMessageId,_that.compactedThroughMessageId,_that.compactedMessageIds,_that.compactionCreatedAt);case _:
   return orElse();
 
 }
@@ -1054,10 +1057,10 @@ return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens,  String? thinking,  Map<String, Object?> modelMetadata,  int metadataVersion,  bool isCompactionSummary,  CompactionKind? compactionKind,  String? compactedFromMessageId,  String? compactedThroughMessageId,  List<String> compactedMessageIds,  DateTime? compactionCreatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens,  String? thinking,  Map<String, Object?> modelMetadata,  List<String> a2uiMessages,  Map<String, List<String>> a2uiIssuesBySurface,  List<String> a2uiMessageIssues,  int metadataVersion,  bool isCompactionSummary,  CompactionKind? compactionKind,  String? compactedFromMessageId,  String? compactedThroughMessageId,  List<String> compactedMessageIds,  DateTime? compactionCreatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _MessageMetadataEntity():
-return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens,_that.thinking,_that.modelMetadata,_that.metadataVersion,_that.isCompactionSummary,_that.compactionKind,_that.compactedFromMessageId,_that.compactedThroughMessageId,_that.compactedMessageIds,_that.compactionCreatedAt);case _:
+return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens,_that.thinking,_that.modelMetadata,_that.a2uiMessages,_that.a2uiIssuesBySurface,_that.a2uiMessageIssues,_that.metadataVersion,_that.isCompactionSummary,_that.compactionKind,_that.compactedFromMessageId,_that.compactedThroughMessageId,_that.compactedMessageIds,_that.compactionCreatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1074,10 +1077,10 @@ return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens,  String? thinking,  Map<String, Object?> modelMetadata,  int metadataVersion,  bool isCompactionSummary,  CompactionKind? compactionKind,  String? compactedFromMessageId,  String? compactedThroughMessageId,  List<String> compactedMessageIds,  DateTime? compactionCreatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens,  String? thinking,  Map<String, Object?> modelMetadata,  List<String> a2uiMessages,  Map<String, List<String>> a2uiIssuesBySurface,  List<String> a2uiMessageIssues,  int metadataVersion,  bool isCompactionSummary,  CompactionKind? compactionKind,  String? compactedFromMessageId,  String? compactedThroughMessageId,  List<String> compactedMessageIds,  DateTime? compactionCreatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageMetadataEntity() when $default != null:
-return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens,_that.thinking,_that.modelMetadata,_that.metadataVersion,_that.isCompactionSummary,_that.compactionKind,_that.compactedFromMessageId,_that.compactedThroughMessageId,_that.compactedMessageIds,_that.compactionCreatedAt);case _:
+return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens,_that.thinking,_that.modelMetadata,_that.a2uiMessages,_that.a2uiIssuesBySurface,_that.a2uiMessageIssues,_that.metadataVersion,_that.isCompactionSummary,_that.compactionKind,_that.compactedFromMessageId,_that.compactedThroughMessageId,_that.compactedMessageIds,_that.compactionCreatedAt);case _:
   return null;
 
 }
@@ -1089,7 +1092,7 @@ return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.
 @JsonSerializable()
 
 class _MessageMetadataEntity extends MessageMetadataEntity {
-  const _MessageMetadataEntity({ List<MessageToolCallEntity> toolCalls = const <MessageToolCallEntity>[], this.promptTokens, this.completionTokens, this.totalTokens, this.thinking,  Map<String, Object?> modelMetadata = const <String, Object?>{}, this.metadataVersion = 1, this.isCompactionSummary = false, this.compactionKind, this.compactedFromMessageId, this.compactedThroughMessageId,  List<String> compactedMessageIds = const <String>[], this.compactionCreatedAt}): _toolCalls = toolCalls,_modelMetadata = modelMetadata,_compactedMessageIds = compactedMessageIds,super._();
+  const _MessageMetadataEntity({ List<MessageToolCallEntity> toolCalls = const <MessageToolCallEntity>[], this.promptTokens, this.completionTokens, this.totalTokens, this.thinking,  Map<String, Object?> modelMetadata = const <String, Object?>{},  List<String> a2uiMessages = const <String>[],  Map<String, List<String>> a2uiIssuesBySurface = const <String, List<String>>{},  List<String> a2uiMessageIssues = const <String>[], this.metadataVersion = 1, this.isCompactionSummary = false, this.compactionKind, this.compactedFromMessageId, this.compactedThroughMessageId,  List<String> compactedMessageIds = const <String>[], this.compactionCreatedAt}): _toolCalls = toolCalls,_modelMetadata = modelMetadata,_a2uiMessages = a2uiMessages,_a2uiIssuesBySurface = a2uiIssuesBySurface,_a2uiMessageIssues = a2uiMessageIssues,_compactedMessageIds = compactedMessageIds,super._();
   factory _MessageMetadataEntity.fromJson(Map<String, dynamic> json) => _$MessageMetadataEntityFromJson(json);
 
  final  List<MessageToolCallEntity> _toolCalls;
@@ -1108,6 +1111,27 @@ class _MessageMetadataEntity extends MessageMetadataEntity {
   if (_modelMetadata is EqualUnmodifiableMapView) return _modelMetadata;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_modelMetadata);
+}
+
+ final  List<String> _a2uiMessages;
+@override@JsonKey() List<String> get a2uiMessages {
+  if (_a2uiMessages is EqualUnmodifiableListView) return _a2uiMessages;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_a2uiMessages);
+}
+
+ final  Map<String, List<String>> _a2uiIssuesBySurface;
+@override@JsonKey() Map<String, List<String>> get a2uiIssuesBySurface {
+  if (_a2uiIssuesBySurface is EqualUnmodifiableMapView) return _a2uiIssuesBySurface;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_a2uiIssuesBySurface);
+}
+
+ final  List<String> _a2uiMessageIssues;
+@override@JsonKey() List<String> get a2uiMessageIssues {
+  if (_a2uiMessageIssues is EqualUnmodifiableListView) return _a2uiMessageIssues;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_a2uiMessageIssues);
 }
 
 @override@JsonKey() final  int metadataVersion;
@@ -1137,18 +1161,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageMetadataEntity&&const DeepCollectionEquality().equals(other.toolCalls, _toolCalls)&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.completionTokens, completionTokens) || other.completionTokens == completionTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens)&&(identical(other.thinking, thinking) || other.thinking == thinking)&&const DeepCollectionEquality().equals(other.modelMetadata, _modelMetadata)&&(identical(other.metadataVersion, metadataVersion) || other.metadataVersion == metadataVersion)&&(identical(other.isCompactionSummary, isCompactionSummary) || other.isCompactionSummary == isCompactionSummary)&&(identical(other.compactionKind, compactionKind) || other.compactionKind == compactionKind)&&(identical(other.compactedFromMessageId, compactedFromMessageId) || other.compactedFromMessageId == compactedFromMessageId)&&(identical(other.compactedThroughMessageId, compactedThroughMessageId) || other.compactedThroughMessageId == compactedThroughMessageId)&&const DeepCollectionEquality().equals(other.compactedMessageIds, _compactedMessageIds)&&(identical(other.compactionCreatedAt, compactionCreatedAt) || other.compactionCreatedAt == compactionCreatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageMetadataEntity&&const DeepCollectionEquality().equals(other.toolCalls, _toolCalls)&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.completionTokens, completionTokens) || other.completionTokens == completionTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens)&&(identical(other.thinking, thinking) || other.thinking == thinking)&&const DeepCollectionEquality().equals(other.modelMetadata, _modelMetadata)&&const DeepCollectionEquality().equals(other.a2uiMessages, _a2uiMessages)&&const DeepCollectionEquality().equals(other.a2uiIssuesBySurface, _a2uiIssuesBySurface)&&const DeepCollectionEquality().equals(other.a2uiMessageIssues, _a2uiMessageIssues)&&(identical(other.metadataVersion, metadataVersion) || other.metadataVersion == metadataVersion)&&(identical(other.isCompactionSummary, isCompactionSummary) || other.isCompactionSummary == isCompactionSummary)&&(identical(other.compactionKind, compactionKind) || other.compactionKind == compactionKind)&&(identical(other.compactedFromMessageId, compactedFromMessageId) || other.compactedFromMessageId == compactedFromMessageId)&&(identical(other.compactedThroughMessageId, compactedThroughMessageId) || other.compactedThroughMessageId == compactedThroughMessageId)&&const DeepCollectionEquality().equals(other.compactedMessageIds, _compactedMessageIds)&&(identical(other.compactionCreatedAt, compactionCreatedAt) || other.compactionCreatedAt == compactionCreatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_toolCalls),promptTokens,completionTokens,totalTokens,thinking,const DeepCollectionEquality().hash(_modelMetadata),metadataVersion,isCompactionSummary,compactionKind,compactedFromMessageId,compactedThroughMessageId,const DeepCollectionEquality().hash(_compactedMessageIds),compactionCreatedAt);
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_toolCalls),promptTokens,completionTokens,totalTokens,thinking,const DeepCollectionEquality().hash(_modelMetadata),const DeepCollectionEquality().hash(_a2uiMessages),const DeepCollectionEquality().hash(_a2uiIssuesBySurface),const DeepCollectionEquality().hash(_a2uiMessageIssues),metadataVersion,isCompactionSummary,compactionKind,compactedFromMessageId,compactedThroughMessageId,const DeepCollectionEquality().hash(_compactedMessageIds),compactionCreatedAt);
 }
 
 @override
 String toString() {
-    return 'MessageMetadataEntity(toolCalls: $toolCalls, promptTokens: $promptTokens, completionTokens: $completionTokens, totalTokens: $totalTokens, thinking: $thinking, modelMetadata: $modelMetadata, metadataVersion: $metadataVersion, isCompactionSummary: $isCompactionSummary, compactionKind: $compactionKind, compactedFromMessageId: $compactedFromMessageId, compactedThroughMessageId: $compactedThroughMessageId, compactedMessageIds: $compactedMessageIds, compactionCreatedAt: $compactionCreatedAt)';
+    return 'MessageMetadataEntity(toolCalls: $toolCalls, promptTokens: $promptTokens, completionTokens: $completionTokens, totalTokens: $totalTokens, thinking: $thinking, modelMetadata: $modelMetadata, a2uiMessages: $a2uiMessages, a2uiIssuesBySurface: $a2uiIssuesBySurface, a2uiMessageIssues: $a2uiMessageIssues, metadataVersion: $metadataVersion, isCompactionSummary: $isCompactionSummary, compactionKind: $compactionKind, compactedFromMessageId: $compactedFromMessageId, compactedThroughMessageId: $compactedThroughMessageId, compactedMessageIds: $compactedMessageIds, compactionCreatedAt: $compactionCreatedAt)';
 }
 
 
@@ -1159,7 +1183,7 @@ abstract mixin class _$MessageMetadataEntityCopyWith<$Res> implements $MessageMe
   factory _$MessageMetadataEntityCopyWith(_MessageMetadataEntity value, $Res Function(_MessageMetadataEntity) _then) = __$MessageMetadataEntityCopyWithImpl;
 @override @useResult
 $Res call({
- List<MessageToolCallEntity> toolCalls, int? promptTokens, int? completionTokens, int? totalTokens, String? thinking, Map<String, Object?> modelMetadata, int metadataVersion, bool isCompactionSummary, CompactionKind? compactionKind, String? compactedFromMessageId, String? compactedThroughMessageId, List<String> compactedMessageIds, DateTime? compactionCreatedAt
+ List<MessageToolCallEntity> toolCalls, int? promptTokens, int? completionTokens, int? totalTokens, String? thinking, Map<String, Object?> modelMetadata, List<String> a2uiMessages, Map<String, List<String>> a2uiIssuesBySurface, List<String> a2uiMessageIssues, int metadataVersion, bool isCompactionSummary, CompactionKind? compactionKind, String? compactedFromMessageId, String? compactedThroughMessageId, List<String> compactedMessageIds, DateTime? compactionCreatedAt
 });
 
 
@@ -1176,7 +1200,7 @@ class __$MessageMetadataEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageMetadataEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? toolCalls = null,Object? promptTokens = freezed,Object? completionTokens = freezed,Object? totalTokens = freezed,Object? thinking = freezed,Object? modelMetadata = null,Object? metadataVersion = null,Object? isCompactionSummary = null,Object? compactionKind = freezed,Object? compactedFromMessageId = freezed,Object? compactedThroughMessageId = freezed,Object? compactedMessageIds = null,Object? compactionCreatedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? toolCalls = null,Object? promptTokens = freezed,Object? completionTokens = freezed,Object? totalTokens = freezed,Object? thinking = freezed,Object? modelMetadata = null,Object? a2uiMessages = null,Object? a2uiIssuesBySurface = null,Object? a2uiMessageIssues = null,Object? metadataVersion = null,Object? isCompactionSummary = null,Object? compactionKind = freezed,Object? compactedFromMessageId = freezed,Object? compactedThroughMessageId = freezed,Object? compactedMessageIds = null,Object? compactionCreatedAt = freezed,}) {
   return _then(_MessageMetadataEntity(
 toolCalls: null == toolCalls ? _self._toolCalls : toolCalls // ignore: cast_nullable_to_non_nullable
 as List<MessageToolCallEntity>,promptTokens: freezed == promptTokens ? _self.promptTokens : promptTokens // ignore: cast_nullable_to_non_nullable
@@ -1184,7 +1208,10 @@ as int?,completionTokens: freezed == completionTokens ? _self.completionTokens :
 as int?,totalTokens: freezed == totalTokens ? _self.totalTokens : totalTokens // ignore: cast_nullable_to_non_nullable
 as int?,thinking: freezed == thinking ? _self.thinking : thinking // ignore: cast_nullable_to_non_nullable
 as String?,modelMetadata: null == modelMetadata ? _self._modelMetadata : modelMetadata // ignore: cast_nullable_to_non_nullable
-as Map<String, Object?>,metadataVersion: null == metadataVersion ? _self.metadataVersion : metadataVersion // ignore: cast_nullable_to_non_nullable
+as Map<String, Object?>,a2uiMessages: null == a2uiMessages ? _self._a2uiMessages : a2uiMessages // ignore: cast_nullable_to_non_nullable
+as List<String>,a2uiIssuesBySurface: null == a2uiIssuesBySurface ? _self._a2uiIssuesBySurface : a2uiIssuesBySurface // ignore: cast_nullable_to_non_nullable
+as Map<String, List<String>>,a2uiMessageIssues: null == a2uiMessageIssues ? _self._a2uiMessageIssues : a2uiMessageIssues // ignore: cast_nullable_to_non_nullable
+as List<String>,metadataVersion: null == metadataVersion ? _self.metadataVersion : metadataVersion // ignore: cast_nullable_to_non_nullable
 as int,isCompactionSummary: null == isCompactionSummary ? _self.isCompactionSummary : isCompactionSummary // ignore: cast_nullable_to_non_nullable
 as bool,compactionKind: freezed == compactionKind ? _self.compactionKind : compactionKind // ignore: cast_nullable_to_non_nullable
 as CompactionKind?,compactedFromMessageId: freezed == compactedFromMessageId ? _self.compactedFromMessageId : compactedFromMessageId // ignore: cast_nullable_to_non_nullable

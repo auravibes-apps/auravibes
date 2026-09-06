@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
@@ -91,7 +92,7 @@ class AuraDateTimeInput extends StatelessWidget {
   static const _pickerDayFontSize = 14.0;
 
   /// Creates a date and/or time input.
-  const new({
+  new({
     super.key,
     this.value,
     this.enableDate = true,
@@ -103,9 +104,15 @@ class AuraDateTimeInput extends StatelessWidget {
     this.dateFormatter,
     this.timeFormatter,
     this.now,
+    this.minimum,
+    this.maximum,
   }) : assert(
          enableDate || enableTime,
          'At least one of enableDate or enableTime must be true',
+       ),
+       assert(
+         minimum == null || maximum == null || !minimum.isAfter(maximum),
+         'minimum must not be after maximum',
        );
 
   /// The selected date and time, or null when no value is selected.
@@ -138,10 +145,20 @@ class AuraDateTimeInput extends StatelessWidget {
   /// Supplies the current time for deterministic initial picker values.
   final DateTime Function()? now;
 
+  /// Inclusive earliest value accepted when the picker is confirmed.
+  final DateTime? minimum;
+
+  /// Inclusive latest value accepted when the picker is confirmed.
+  final DateTime? maximum;
+
   @override
   Widget build(BuildContext context) => _AuraDateTimeInputHost(input: this);
 
-  Widget _buildField(BuildContext _, VoidCallback onTap) {
+  Widget _buildField(
+    BuildContext _,
+    VoidCallback? onTap, {
+    required bool isEnabled,
+  }) {
     final displayValue = _displayValue();
 
     return Semantics(
@@ -161,11 +178,11 @@ class AuraDateTimeInput extends StatelessWidget {
             ],
           ),
         ),
-        isEnabled: enabled,
-        onTap: enabled ? onTap : null,
+        isEnabled: isEnabled,
+        onTap: isEnabled ? onTap : null,
       ),
       excludeSemantics: true,
-      enabled: enabled,
+      enabled: isEnabled,
       button: true,
       label: semanticLabel ?? displayValue,
       value: displayValue,
@@ -212,7 +229,12 @@ class AuraDateTimeInput extends StatelessWidget {
     BuildContext context,
     ValueListenable<_PickerEnvironment> environment,
   ) async {
-    final initialValue = _normalise(value ?? (now?.call() ?? DateTime.now()));
+    if (!enabled || !AuraInteractionScope.of(context).allowsValueChanges) {
+      return;
+    }
+    final initialValue = _constrain(
+      _normalise(value ?? (now?.call() ?? DateTime.now())),
+    );
     final navigator = Navigator.of(context);
     final capturedThemes = InheritedTheme.capture(
       from: context,
@@ -236,7 +258,8 @@ class AuraDateTimeInput extends StatelessWidget {
                   },
                   onCancel: () => Navigator.of(context).pop(),
                   onDone: () =>
-                      Navigator.of(context).pop(_normalise(draftValue)),
+                      Navigator.of(context)
+                          .pop(_constrain(_normalise(draftValue))),
                 );
               },
             );
@@ -381,6 +404,15 @@ class AuraDateTimeInput extends StatelessWidget {
       namesRoute: true,
       label: _pickerTitle(),
     );
+  }
+
+  DateTime _constrain(DateTime value) {
+    final lower = minimum;
+    if (lower != null && value.isBefore(lower)) return lower;
+    final upper = maximum;
+    if (upper != null && value.isAfter(upper)) return upper;
+
+    return value;
   }
 
   Widget _buildDatePicker({
@@ -735,8 +767,14 @@ class _AuraDateTimeInputHostState extends State<_AuraDateTimeInputHost> {
       _PickerEnvironment.from(context),
     );
     final input = widget.input;
+    final isEnabled =
+        input.enabled && AuraInteractionScope.of(context).allowsValueChanges;
 
-    return input._buildField(context, () => input._pick(context, environment));
+    return input._buildField(
+      context,
+      isEnabled ? () => input._pick(context, environment) : null,
+      isEnabled: isEnabled,
+    );
   }
 }
 

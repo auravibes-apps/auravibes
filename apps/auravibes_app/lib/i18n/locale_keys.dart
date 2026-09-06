@@ -354,6 +354,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.voice_record_label';
   static const chats_screens_chat_conversation_image_attachment_label =
       'chats_screens.chat_conversation.image_attachment_label';
+  static const chats_screens_chat_conversation_a2ui_image_loading =
+      'chats_screens.chat_conversation.a2ui_image_loading';
+  static const chats_screens_chat_conversation_a2ui_image_error =
+      'chats_screens.chat_conversation.a2ui_image_error';
   static const chats_screens_chat_conversation_attachment_unsupported =
       'chats_screens.chat_conversation.attachment_unsupported';
   static const chats_screens_chat_conversation_switch_model_unsupported_title =
@@ -372,6 +376,20 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.send_error';
   static const chats_screens_chat_conversation_continue_agent =
       'chats_screens.chat_conversation.continue_agent';
+  static const chats_screens_chat_conversation_submit_answers =
+      'chats_screens.chat_conversation.submit_answers';
+  static const chats_screens_chat_conversation_form_submitted =
+      'chats_screens.chat_conversation.form_submitted';
+  static const chats_screens_chat_conversation_remove_tag =
+      'chats_screens.chat_conversation.remove_tag';
+  static const chats_screens_chat_conversation_a2ui_unavailable =
+      'chats_screens.chat_conversation.a2ui_unavailable';
+  static const chats_screens_chat_conversation_copy_a2ui_diagnostic =
+      'chats_screens.chat_conversation.copy_a2ui_diagnostic';
+  static const chats_screens_chat_conversation_a2ui_diagnostic_copied =
+      'chats_screens.chat_conversation.a2ui_diagnostic_copied';
+  static const chats_screens_chat_conversation_a2ui_form_invalid =
+      'chats_screens.chat_conversation.a2ui_form_invalid';
   static const chats_screens_chat_conversation_continue_error =
       'chats_screens.chat_conversation.continue_error';
   static const chats_screens_chat_conversation_rate_limit_retry =

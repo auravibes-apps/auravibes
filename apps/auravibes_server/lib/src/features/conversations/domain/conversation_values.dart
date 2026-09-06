@@ -2,6 +2,7 @@ abstract final class ConversationStatuses {
   static const queued = 'queued';
   static const running = 'running';
   static const awaitingApproval = 'awaitingApproval';
+  static const awaitingUserAction = 'awaitingUserAction';
   static const cancelRequested = 'cancelRequested';
   static const cancelled = 'cancelled';
   static const completed = 'completed';

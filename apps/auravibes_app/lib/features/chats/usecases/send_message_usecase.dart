@@ -98,6 +98,7 @@ class SendMessageUsecase {
         messageType: .text,
         isUser: true,
         status: .sending,
+        metadata: draft.metadataJson,
         attachments: draft.attachments,
       ),
     );
@@ -213,6 +214,7 @@ sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
               attachmentIds: uploadedObjects
                   .map((object) => '${object.objectId}')
                   .toList(growable: false),
+              metadataJson: draft.metadataJson,
             );
             _logger.info(
               'Cloud message queued: conversationId=$conversationId, '
@@ -229,7 +231,8 @@ sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
             Error.throwWithStackTrace(error, stackTrace);
           }
         })();
-        if (snapshot.conversation.executionState == 'idle') {
+        if (snapshot.conversation.executionState == 'idle' ||
+            snapshot.conversation.executionState == 'awaitingUserAction') {
           _logger.info(
             'Cloud execution start requested: '
             'conversationId=$conversationId, '

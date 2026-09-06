@@ -47,6 +47,27 @@ void main() {
     );
   });
 
+  testWidgets('labeled slider shows label, value, and bounds', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        AuraLabeledSlider(
+          value: 6,
+          onChanged: (value) => expect(value, isA<double>()),
+          min: _minValue,
+          max: _maxValue,
+          label: 'Amount',
+        ),
+      ),
+    );
+
+    expect(find.byType(AuraSlider), findsOneWidget);
+    expect(find.text('Amount'), findsOneWidget);
+    expect(find.text('6.00'), findsOneWidget);
+    expect(find.text('2.00'), findsOneWidget);
+    expect(find.text('10.00'), findsOneWidget);
+    expect(tester.getSemantics(find.byType(AuraSlider)).value, '6.0');
+  });
+
   testWidgets('forwards values from pointer changes', (tester) async {
     double? changedValue;
     await tester.pumpWidget(
@@ -190,7 +211,7 @@ void main() {
     expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
     await tester.pump();
     expect(await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight), isTrue);
-    expect(changedValue, closeTo(6.4, 0.000001));
+    expect(changedValue, 7);
 
     for (var index = 0; index < 20; index++) {
       expect(await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight), isTrue);
@@ -238,6 +259,59 @@ void main() {
   test('rejects inverted bounds', () {
     expect(
       () => AuraSlider(value: 0, onChanged: null, min: 1, max: 0),
+      throwsA(isA<AssertionError>()),
+    );
+  });
+
+  testWidgets('applies step and precision to values', (tester) async {
+    double? changedValue;
+    await tester.pumpWidget(
+      _app(
+        AuraLabeledSlider(
+          value: 0.34,
+          onChanged: (value) => changedValue = value,
+          step: 0.25,
+          label: 'Ratio',
+        ),
+      ),
+    );
+
+    expect(find.text('0.25'), findsOneWidget);
+    expect(find.text('0.00'), findsOneWidget);
+    expect(find.text('1.00'), findsOneWidget);
+
+    expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+    expect(await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight), isTrue);
+    expect(changedValue, 0.5);
+  });
+
+  testWidgets('keeps max reachable when step does not divide range', (
+    tester,
+  ) async {
+    double? changedValue;
+    await tester.pumpWidget(
+      _app(
+        AuraSlider(
+          value: 9,
+          onChanged: (value) => changedValue = value,
+          max: 10,
+          step: 3,
+        ),
+      ),
+    );
+
+    expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+    expect(await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight), isTrue);
+    expect(changedValue, 10);
+  });
+
+  test('rejects non-positive step and negative precision', () {
+    expect(
+      () => AuraSlider(value: 0, onChanged: null, step: 0),
+      throwsA(isA<AssertionError>()),
+    );
+    expect(
+      () => AuraSlider(value: 0, onChanged: null, precision: -1),
       throwsA(isA<AssertionError>()),
     );
   });

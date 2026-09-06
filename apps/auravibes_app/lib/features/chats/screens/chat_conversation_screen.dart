@@ -27,7 +27,6 @@ import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart'
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
@@ -212,6 +211,9 @@ class const _LoadedChatConversation({
                       'awaitingApproval'
             : busyState?.isBusy ?? false) ||
         rateLimitRetryAt != null;
+    final isGenerating = isCloud
+        ? cloudConversation?.conversation.executionState == 'running'
+        : busyState?.isStreaming == true;
     Dispose? resetStopRequested() {
       stopRequested.value = false;
 
@@ -242,11 +244,9 @@ class const _LoadedChatConversation({
               workspaceId: workspaceId,
               conversationId: conversation.id,
               pendingToolCalls: pendingCalls,
+              showThinking: isGenerating && !hidesStoppedRun,
             ),
           ),
-          if ((isCloud && isInputBusy || busyState?.isStreaming == true) &&
-              !hidesStoppedRun)
-            const ChatThinkingIndicator(),
           if (rateLimitRetryAt != null && !hidesStoppedRun)
             _RateLimitRetryIndicator(retryAt: rateLimitRetryAt),
           if (queuedDrafts.isNotEmpty)
@@ -857,6 +857,7 @@ class const _ChatList({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
+  final bool showThinking = false,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -891,6 +892,7 @@ class const _ChatList({
       messages: messageIds,
       messageEntitiesById: messageEntitiesById,
       pendingToolCalls: pendingToolCalls,
+      showThinking: showThinking,
     );
   }
 }

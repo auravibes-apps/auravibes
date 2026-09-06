@@ -1,6 +1,8 @@
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -117,6 +119,23 @@ void main() {
         find.byType(AuraPressable),
       );
       expect(pressable.decoration, isNotNull);
+    });
+
+    testWidgets('blends a semantic tint into the card surface', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AuraCard(child: Text('Tinted Card'), tint: AuraTint.success),
+          ),
+        ),
+      );
+
+      final pressable = tester.widget<AuraPressable>(
+        find.byType(AuraPressable),
+      );
+      final decoration = pressable.decoration;
+      if (decoration is! BoxDecoration) fail('Expected a card decoration.');
+      expect(decoration.color, isNot(AuraTheme.light.colors.surface));
     });
 
     testWidgets('applies custom padding', (tester) async {

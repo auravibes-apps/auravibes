@@ -259,6 +259,7 @@ class const ConversationWorker({
     session.log(
       'Conversation execution provider result: job=${job.id}, '
       'awaitingApproval=${result.awaitingApproval}, '
+      'requiresUserAction=${result.requiresUserAction}, '
       'finishReason=${result.finishReason}, '
       'outputTokens=${result.outputTokens}.',
     );
@@ -266,7 +267,37 @@ class const ConversationWorker({
     if (result.awaitingApproval) {
       await beforePauseForApproval?.call();
       if (isActive != null && !isActive()) return;
-      await _pauseForApproval(session, job, phaseTurn, leaseToken);
+      await _pauseForApproval(
+        session,
+        job,
+        phaseTurn,
+        leaseToken,
+        content: result.content,
+        a2uiMessages: result.a2uiMessages,
+        a2uiDiagnosticPayloads: result.a2uiDiagnosticPayloads,
+        a2uiIssuesBySurface: result.a2uiIssuesBySurface,
+        a2uiMessageIssues: result.a2uiMessageIssues,
+      );
+      await SyncWakeups.publishConversation(
+        session,
+        workspaceId: job.workspaceId,
+        conversationId: (await Conversation.db.findById(
+          session,
+          job.conversationId,
+        ))!.stableId,
+      );
+      return;
+    }
+    if (result.requiresUserAction) {
+      await _commitResult(
+        session,
+        job,
+        phaseTurn,
+        leaseToken,
+        result,
+        status: ConversationStatuses.awaitingUserAction,
+      );
+      await SyncWakeups.publishWorkspace(session, job.workspaceId);
       await SyncWakeups.publishConversation(
         session,
         workspaceId: job.workspaceId,
@@ -377,16 +408,17 @@ class const ConversationWorker({
             updatedAt: DateTime.now().toUtc(),
           ),
         );
-    final priorAwaitingApprovalAssistants = await ConversationMessage.db.find(
+    final priorWaitingAssistants = await ConversationMessage.db.find(
       session,
       where: (table) =>
           table.workspaceId.equals(job.workspaceId) &
           table.conversationId.equals(job.conversationId) &
           table.turnId.equals(turn.id) &
           table.role.equals('assistant') &
-          table.status.equals(ConversationStatuses.awaitingApproval),
+          (table.status.equals(ConversationStatuses.awaitingApproval) |
+              table.status.equals(ConversationStatuses.awaitingUserAction)),
     );
-    for (final priorAssistant in priorAwaitingApprovalAssistants) {
+    for (final priorAssistant in priorWaitingAssistants) {
       if (priorAssistant.id == message.id) continue;
       await ConversationMessage.db.updateRow(
         session,
@@ -450,8 +482,13 @@ class const ConversationWorker({
     Session session,
     ConversationJob job,
     ConversationTurn turn,
-    String leaseToken,
-  ) => session.db.transaction((transaction) async {
+    String leaseToken, {
+    String? content,
+    List<String> a2uiMessages = const [],
+    List<String> a2uiDiagnosticPayloads = const [],
+    Map<String, List<String>> a2uiIssuesBySurface = const {},
+    List<String> a2uiMessageIssues = const [],
+  }) => session.db.transaction((transaction) async {
     final now = DateTime.now().toUtc();
     final lockedTurn = await ConversationTurn.db.findFirstRow(
       session,
@@ -541,11 +578,35 @@ class const ConversationWorker({
         assistant.role != 'assistant') {
       throw const ConversationEngineConfigurationException('assistant_message');
     }
+    final metadata = _metadataObject(assistant.metadataJson);
+    final modelMetadata = metadata['modelMetadata'];
     await ConversationMessage.db.updateRow(
       session,
       assistant.copyWith(
-        content: '',
+        content: content ?? '',
         status: ConversationStatuses.awaitingApproval,
+        metadataJson:
+            a2uiMessages.isEmpty &&
+                a2uiDiagnosticPayloads.isEmpty &&
+                a2uiIssuesBySurface.isEmpty &&
+                a2uiMessageIssues.isEmpty
+            ? assistant.metadataJson
+            : jsonEncode({
+                ...metadata,
+                if (a2uiMessages.isNotEmpty) 'a2uiMessages': a2uiMessages,
+                if (a2uiIssuesBySurface.isNotEmpty)
+                  'a2uiIssuesBySurface': a2uiIssuesBySurface,
+                if (a2uiMessageIssues.isNotEmpty)
+                  'a2uiMessageIssues': a2uiMessageIssues,
+                if (a2uiDiagnosticPayloads.isNotEmpty)
+                  'modelMetadata': {
+                    if (modelMetadata is Map)
+                      ...modelMetadata.map(
+                        (key, value) => MapEntry(key.toString(), value),
+                      ),
+                    'a2uiDiagnosticPayloads': a2uiDiagnosticPayloads,
+                  },
+              }),
         revision: assistant.revision + 1,
         updatedAt: now,
       ),
@@ -578,8 +639,9 @@ class const ConversationWorker({
     ConversationJob job,
     ConversationTurn turn,
     String leaseToken,
-    ConversationEngineResult result,
-  ) => session.db.transaction((transaction) async {
+    ConversationEngineResult result, {
+    String status = ConversationStatuses.completed,
+  }) => session.db.transaction((transaction) async {
     final now = DateTime.now().toUtc();
     final lockedTurn = await ConversationTurn.db.findFirstRow(
       session,
@@ -611,12 +673,32 @@ class const ConversationWorker({
     if (assistant == null) {
       throw const ConversationEngineConfigurationException('assistant_message');
     }
+    final metadata = _metadataObject(assistant.metadataJson);
+    final modelMetadata = metadata['modelMetadata'];
     await ConversationMessage.db.updateRow(
       session,
       assistant.copyWith(
         content: result.content,
-        status: 'sent',
-        metadataJson: jsonEncode({'finishReason': result.finishReason}),
+        status: status == ConversationStatuses.completed ? 'sent' : status,
+        metadataJson: jsonEncode({
+          ...metadata,
+          'finishReason': result.finishReason,
+          if (result.requiresUserAction) 'a2uiRequiresUserAction': true,
+          if (result.a2uiMessages.isNotEmpty)
+            'a2uiMessages': result.a2uiMessages,
+          if (result.a2uiIssuesBySurface.isNotEmpty)
+            'a2uiIssuesBySurface': result.a2uiIssuesBySurface,
+          if (result.a2uiMessageIssues.isNotEmpty)
+            'a2uiMessageIssues': result.a2uiMessageIssues,
+          if (result.a2uiDiagnosticPayloads.isNotEmpty)
+            'modelMetadata': {
+              if (modelMetadata is Map)
+                ...modelMetadata.map(
+                  (key, value) => MapEntry(key.toString(), value),
+                ),
+              'a2uiDiagnosticPayloads': result.a2uiDiagnosticPayloads,
+            },
+        }),
         revision: assistant.revision + 1,
         updatedAt: now,
       ),
@@ -638,8 +720,8 @@ class const ConversationWorker({
     await ConversationTurn.db.updateRow(
       session,
       lockedTurn.copyWith(
-        status: ConversationStatuses.completed,
-        terminalAt: now,
+        status: status,
+        terminalAt: status == ConversationStatuses.completed ? now : null,
         revision: lockedTurn.revision + 1,
         updatedAt: now,
       ),
@@ -649,9 +731,11 @@ class const ConversationWorker({
     await _recordExecutionTransition(
       session,
       job: job,
-      status: ConversationStatuses.completed,
-      kind: ConversationEventType.executionCompleted,
-      terminal: true,
+      status: status,
+      kind: status == ConversationStatuses.completed
+          ? ConversationEventType.executionCompleted
+          : ConversationEventType.executionStateChanged,
+      terminal: status == ConversationStatuses.completed,
       transaction: transaction,
       now: now,
     );
@@ -1159,6 +1243,16 @@ Map<String, dynamic> _jsonMap(String? source) {
     throw const ConversationEngineConfigurationException('job_payload');
   }
   return value;
+}
+
+Map<String, dynamic> _metadataObject(String? source) {
+  if (source == null) return <String, dynamic>{};
+  try {
+    final value = jsonDecode(source);
+    return value is Map<String, dynamic> ? value : <String, dynamic>{};
+  } on Object catch (_) {
+    return <String, dynamic>{};
+  }
 }
 
 Future<void> runConversationWorker(

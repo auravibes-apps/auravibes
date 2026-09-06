@@ -343,6 +343,37 @@ void main() {
         Tristate.isTrue,
       );
     });
+
+    testWidgets('updates the indicator when ticker mode is disabled', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          const TickerMode(
+            enabled: false,
+            child: AuraTabs<void>(items: _items),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Second'));
+      await tester.pump();
+
+      expect(
+        _indicatorColor(
+          tester,
+          find.byKey(const ValueKey('aura-tabs-indicator-0')),
+        ).a,
+        0,
+      );
+      expect(
+        _indicatorColor(
+          tester,
+          find.byKey(const ValueKey('aura-tabs-indicator-1')),
+        ),
+        AuraTheme.light.colors.primary,
+      );
+    });
   });
 }
 

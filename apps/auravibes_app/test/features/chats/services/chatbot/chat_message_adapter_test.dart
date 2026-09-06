@@ -1,0 +1,157 @@
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/genkit.dart';
+
+void main() {
+  group('BuildPromptChatMessages', () {
+    const adapter = BuildPromptChatMessages();
+
+    test('converts user message', () async {
+      final messages = [
+        MessageEntity(
+          id: 'u1',
+          conversationId: 'c1',
+          content: 'Hello',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        ),
+      ];
+
+      final result = await adapter(messages);
+
+      expect(result, hasLength(1));
+      expect(result.single.role.name, 'user');
+    });
+
+    test('converts assistant message without tool calls', () async {
+      final messages = [
+        MessageEntity(
+          id: 'a1',
+          conversationId: 'c1',
+          content: 'Hi there',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        ),
+      ];
+
+      final result = await adapter(messages);
+
+      expect(result, hasLength(1));
+      expect(result.single.role.name, 'model');
+    });
+
+    test('converts assistant message with resolved tool calls', () async {
+      final messages = [
+        MessageEntity(
+          id: 'a1',
+          conversationId: 'c1',
+          content: '',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tc1',
+                name: 'calculator',
+                argumentsRaw: '{"expr":"2+2"}',
+                responseRaw: '4',
+                resultStatus: ToolCallResultStatus.success,
+              ),
+            ],
+          ),
+        ),
+      ];
+
+      final result = await adapter(messages);
+
+      expect(result, hasLength(2));
+
+      final modelMsg = result.firstOrNull;
+      expect(modelMsg?.role.name, 'model');
+      expect(modelMsg?.toolCalls, hasLength(1));
+      expect(modelMsg?.toolCalls.single.callId, 'tc1');
+      expect(modelMsg?.toolCalls.single.toolName, 'calculator');
+
+      final resultMsg = result[1];
+      expect(resultMsg.role.name, 'tool');
+      expect(resultMsg.parts.whereType<ToolResponsePart>(), hasLength(1));
+      expect(
+        resultMsg.parts.whereType<ToolResponsePart>().single.toolResponse.ref,
+        'tc1',
+      );
+    });
+
+    test('skips unresolved tool call results', () async {
+      final messages = [
+        MessageEntity(
+          id: 'a1',
+          conversationId: 'c1',
+          content: '',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tc1',
+                name: 'calculator',
+                argumentsRaw: '{"expr":"2+2"}',
+              ),
+            ],
+          ),
+        ),
+      ];
+
+      final result = await adapter(messages);
+
+      expect(result, hasLength(1));
+      expect(result.single.toolCalls, hasLength(1));
+      expect(result.single.parts.whereType<ToolResponsePart>(), isEmpty);
+    });
+
+    test('converts multiple messages in order', () async {
+      final messages = [
+        MessageEntity(
+          id: 'u1',
+          conversationId: 'c1',
+          content: 'Hi',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        ),
+        MessageEntity(
+          id: 'a1',
+          conversationId: 'c1',
+          content: 'Hello!',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        ),
+      ];
+
+      final result = await adapter(messages);
+
+      expect(result, hasLength(2));
+      expect(result.firstOrNull?.role.name, 'user');
+      expect(result[1].role.name, 'model');
+    });
+  });
+}

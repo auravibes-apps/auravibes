@@ -226,6 +226,35 @@ void main() {
       expect(find.bySemanticsLabel('Dismiss modal'), findsOneWidget);
       expect(find.bySemanticsLabel('Modal dialog'), findsOneWidget);
     });
+
+    testWidgets('renders a titled modal with an app-owned close control', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const _AuraModalTestApp(
+          child: AuraModal(
+            entryPointChild: Text('Open modal'),
+            contentChild: Text('Modal content'),
+            barrierLabel: 'Dismiss modal',
+            title: Text('Details'),
+            closeLabel: 'Close details',
+            size: AuraModalSize.large,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open modal'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Details'), findsOneWidget);
+      expect(
+        tester.widget<AuraButton>(find.byType(AuraButton)).semanticLabel,
+        'Close details',
+      );
+      await tester.tap(find.text('Close details'));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Modal content'), findsNothing);
+    });
   });
 }
 

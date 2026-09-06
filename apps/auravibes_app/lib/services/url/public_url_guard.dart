@@ -11,7 +11,7 @@ abstract final class PublicUrlGuard {
     return uri;
   }
 
-  static Future<void> ensureHost(String host) async {
+  static Future<InternetAddress> requirePublicAddress(String host) async {
     if (isBlockedHostLabel(host)) {
       throw const FormatException(publicUrlError);
     }
@@ -22,13 +22,20 @@ abstract final class PublicUrlGuard {
         throw const FormatException(publicUrlError);
       }
 
-      return;
+      return literalAddress;
     }
 
     final addresses = await InternetAddress.lookup(host);
-    if (addresses.isEmpty || addresses.any(_isPrivateAddress)) {
+    final address = addresses.firstOrNull;
+    if (address == null || addresses.any(_isPrivateAddress)) {
       throw const FormatException(publicUrlError);
     }
+
+    return address;
+  }
+
+  static Future<void> ensureHost(String host) async {
+    final _ = await requirePublicAddress(host);
   }
 
   static bool _isPrivateAddress(InternetAddress address) {

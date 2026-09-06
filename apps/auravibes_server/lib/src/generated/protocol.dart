@@ -5256,6 +5256,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
+    if (t == _is.getType<List<String>?>()) {
+      return (data != null
+              ? (data as List).map((e) => deserialize<String>(e)).toList()
+              : null)
+          as T;
+    }
     if (t == List<_ic5ojtne.ConversationToolCallView>) {
       return (data as List)
               .map((e) => deserialize<_ic5ojtne.ConversationToolCallView>(e))

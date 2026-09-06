@@ -10,6 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 abstract class StopConversationRequest
@@ -19,6 +21,7 @@ abstract class StopConversationRequest
     required this.requestId,
     required this.conversationId,
     required this.expectedProjectionRevision,
+    this.a2uiSupportedComponents,
   });
 
   factory StopConversationRequest({
@@ -26,6 +29,7 @@ abstract class StopConversationRequest
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
+    List<String>? a2uiSupportedComponents,
   }) = _StopConversationRequestImpl;
 
   factory StopConversationRequest.fromJson(
@@ -37,6 +41,12 @@ abstract class StopConversationRequest
       conversationId: jsonSerialization['conversationId'] as String,
       expectedProjectionRevision:
           jsonSerialization['expectedProjectionRevision'] as int,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _isctvzjc.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -48,6 +58,8 @@ abstract class StopConversationRequest
 
   int expectedProjectionRevision;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [StopConversationRequest]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -56,6 +68,7 @@ abstract class StopConversationRequest
     String? requestId,
     String? conversationId,
     int? expectedProjectionRevision,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -65,6 +78,8 @@ abstract class StopConversationRequest
       'requestId': requestId,
       'conversationId': conversationId,
       'expectedProjectionRevision': expectedProjectionRevision,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -76,6 +91,8 @@ abstract class StopConversationRequest
       'requestId': requestId,
       'conversationId': conversationId,
       'expectedProjectionRevision': expectedProjectionRevision,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -85,17 +102,21 @@ abstract class StopConversationRequest
   }
 }
 
+class _Undefined {}
+
 class _StopConversationRequestImpl extends StopConversationRequest {
   _StopConversationRequestImpl({
     required int workspaceId,
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
          conversationId: conversationId,
          expectedProjectionRevision: expectedProjectionRevision,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [StopConversationRequest]
@@ -107,6 +128,7 @@ class _StopConversationRequestImpl extends StopConversationRequest {
     String? requestId,
     String? conversationId,
     int? expectedProjectionRevision,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return StopConversationRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -114,6 +136,9 @@ class _StopConversationRequestImpl extends StopConversationRequest {
       conversationId: conversationId ?? this.conversationId,
       expectedProjectionRevision:
           expectedProjectionRevision ?? this.expectedProjectionRevision,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

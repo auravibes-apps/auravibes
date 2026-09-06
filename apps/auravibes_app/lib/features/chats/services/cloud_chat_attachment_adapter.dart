@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
+import 'package:auravibes_app/features/chats/services/chatbot/chat_attachment_bytes.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_chat_attachment_usecase.dart';
-import 'package:auravibes_app/services/chatbot_service/chat_attachment_bytes.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:dio/dio.dart';
 

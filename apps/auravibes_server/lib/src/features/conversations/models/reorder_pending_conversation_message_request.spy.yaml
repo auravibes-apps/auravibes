@@ -6,3 +6,4 @@ fields:
   expectedProjectionRevision: int
   messageId: String
   beforeMessageId: String?
+  a2uiSupportedComponents: List<String>?

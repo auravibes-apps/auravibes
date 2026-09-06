@@ -27,7 +27,8 @@ enum ConversationEventType implements _is.SerializableModel {
   toolCallCreated,
   toolApprovalRequested,
   toolDecisionRecorded,
-  toolResolved;
+  toolResolved,
+  a2uiMessage;
 
   static ConversationEventType fromJson(String name) {
     switch (name) {
@@ -61,6 +62,8 @@ enum ConversationEventType implements _is.SerializableModel {
         return ConversationEventType.toolDecisionRecorded;
       case 'toolResolved':
         return ConversationEventType.toolResolved;
+      case 'a2uiMessage':
+        return ConversationEventType.a2uiMessage;
       default:
         throw ArgumentError(
           'Value "$name" cannot be converted to "ConversationEventType"',

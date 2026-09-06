@@ -10,6 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
 import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ContinueConversationRequest
@@ -19,6 +20,7 @@ abstract class ContinueConversationRequest
     required this.requestId,
     required this.conversationId,
     required this.expectedProjectionRevision,
+    this.a2uiSupportedComponents,
   });
 
   factory ContinueConversationRequest({
@@ -26,6 +28,7 @@ abstract class ContinueConversationRequest
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
+    List<String>? a2uiSupportedComponents,
   }) = _ContinueConversationRequestImpl;
 
   factory ContinueConversationRequest.fromJson(
@@ -37,6 +40,12 @@ abstract class ContinueConversationRequest
       conversationId: jsonSerialization['conversationId'] as String,
       expectedProjectionRevision:
           jsonSerialization['expectedProjectionRevision'] as int,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _if5qez1k.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -48,6 +57,8 @@ abstract class ContinueConversationRequest
 
   int expectedProjectionRevision;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [ContinueConversationRequest]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
@@ -56,6 +67,7 @@ abstract class ContinueConversationRequest
     String? requestId,
     String? conversationId,
     int? expectedProjectionRevision,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -65,6 +77,8 @@ abstract class ContinueConversationRequest
       'requestId': requestId,
       'conversationId': conversationId,
       'expectedProjectionRevision': expectedProjectionRevision,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -76,6 +90,8 @@ abstract class ContinueConversationRequest
       'requestId': requestId,
       'conversationId': conversationId,
       'expectedProjectionRevision': expectedProjectionRevision,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -85,17 +101,21 @@ abstract class ContinueConversationRequest
   }
 }
 
+class _Undefined {}
+
 class _ContinueConversationRequestImpl extends ContinueConversationRequest {
   _ContinueConversationRequestImpl({
     required int workspaceId,
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
          conversationId: conversationId,
          expectedProjectionRevision: expectedProjectionRevision,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [ContinueConversationRequest]
@@ -107,6 +127,7 @@ class _ContinueConversationRequestImpl extends ContinueConversationRequest {
     String? requestId,
     String? conversationId,
     int? expectedProjectionRevision,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return ContinueConversationRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -114,6 +135,9 @@ class _ContinueConversationRequestImpl extends ContinueConversationRequest {
       conversationId: conversationId ?? this.conversationId,
       expectedProjectionRevision:
           expectedProjectionRevision ?? this.expectedProjectionRevision,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

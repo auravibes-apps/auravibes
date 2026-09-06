@@ -1,6 +1,8 @@
+// ignore_for_file: type=lint, type=warning
 import 'dart:async';
 
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/widgets.dart';
 
@@ -15,9 +17,11 @@ class AuraPressable extends StatefulWidget {
     this.onPressed,
     this.onLongPress,
     this.onFocusChange,
+    this.interaction = AuraPressableInteraction.action,
     this.clipBehavior = Clip.hardEdge,
     this.padding,
     this.semanticLabel,
+    this.isButtonSemantics = false,
   });
 
   /// Child.
@@ -41,6 +45,9 @@ class AuraPressable extends StatefulWidget {
   /// Called when keyboard focus changes.
   final ValueChanged<bool>? onFocusChange;
 
+  /// Defines whether the pressable is a command or local navigation control.
+  final AuraPressableInteraction interaction;
+
   /// ClipBehavior.
   final Clip? clipBehavior;
 
@@ -49,6 +56,9 @@ class AuraPressable extends StatefulWidget {
 
   /// A semantic label announced by assistive technologies.
   final String? semanticLabel;
+
+  /// Preserves button semantics when the owning control is disabled.
+  final bool isButtonSemantics;
 
   @override
   AuraPressableState createState() => AuraPressableState();
@@ -75,7 +85,14 @@ class AuraPressableState extends State<AuraPressable> {
     final auraTheme = context.auraTheme;
     final auraColors = context.auraColors;
     final stateLayerColor = widget.color;
-    final canChangeColor = (widget.onPressed != null);
+    final policy = AuraInteractionScope.of(context);
+    final isAllowed = switch (widget.interaction) {
+      AuraPressableInteraction.action => policy.allowsActions,
+      AuraPressableInteraction.localNavigation => policy.allowsNavigation,
+    };
+    final onPressed = isAllowed ? widget.onPressed : null;
+    final onLongPress = isAllowed ? widget.onLongPress : null;
+    final canChangeColor = onPressed != null;
     final pressed = _pressDown && canChangeColor;
     final highlighted = (_hovering || _focused) && canChangeColor;
 
@@ -85,13 +102,26 @@ class AuraPressableState extends State<AuraPressable> {
     } else if (highlighted) {
       alpha = _hoverAlpha;
     }
-    if (widget.onPressed == null) {
-      return Container(
+    if (onPressed == null) {
+      final content = Container(
         decoration: widget.decoration,
         child: widget.child,
         clipBehavior: widget.decoration == null
             ? Clip.none
             : widget.clipBehavior ?? Clip.none,
+      );
+
+      if (!widget.isButtonSemantics &&
+          policy.mode == AuraInteractionMode.interactive &&
+          widget.semanticLabel == null) {
+        return content;
+      }
+
+      return Semantics(
+        label: widget.semanticLabel,
+        button: widget.isButtonSemantics || widget.semanticLabel != null,
+        enabled: false,
+        child: content,
       );
     }
 
@@ -100,7 +130,7 @@ class AuraPressableState extends State<AuraPressable> {
         actions: {
           ActivateIntent: CallbackAction<ActivateIntent>(
             onInvoke: (_) {
-              widget.onPressed?.call();
+              onPressed.call();
 
               return null;
             },
@@ -140,9 +170,9 @@ class AuraPressableState extends State<AuraPressable> {
               _timer?.cancel();
               _timer = Timer(auraTheme.animation.normal, _onExitPressed);
             },
-            onTap: widget.onPressed,
+            onTap: onPressed,
             onTapCancel: _onExitPressed,
-            onLongPress: widget.onLongPress,
+            onLongPress: onLongPress,
             behavior: HitTestBehavior.translucent,
             excludeFromSemantics: true,
           ),
@@ -150,8 +180,8 @@ class AuraPressableState extends State<AuraPressable> {
       ),
       enabled: true,
       button: true,
-      label: widget.semanticLabel ?? 'Button',
-      onTap: widget.onPressed,
+      label: widget.semanticLabel,
+      onTap: onPressed,
     );
   }
 
@@ -166,6 +196,15 @@ class AuraPressableState extends State<AuraPressable> {
   void _onFocusChange(bool value) {
     widget.onFocusChange?.call(value);
   }
+}
+
+/// Interaction category used by [AuraPressable].
+enum AuraPressableInteraction {
+  /// A command that changes state or triggers an external action.
+  action,
+
+  /// Local navigation that can remain usable in read-only mode.
+  localNavigation,
 }
 
 class const _AuraPressableFocusRingPainter({

@@ -1,15 +1,21 @@
+// ignore_for_file: type=lint, type=warning
 // Required: widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -27,13 +33,17 @@ Widget buildSubject({
   Map<String, MessageEntity>? messageEntitiesById,
   String conversationId = 'conv-1',
   List<PendingToolCall> pendingToolCalls = const [],
+  bool showThinking = false,
+  ConversationEntity? conversation,
 }) {
   return _ChatMessagesTestSubject(
     conversationId: conversationId,
     messages: messages,
     overrides: overrides,
     pendingToolCalls: pendingToolCalls,
+    showThinking: showThinking,
     messageEntitiesById: messageEntitiesById,
+    conversation: conversation,
   );
 }
 
@@ -111,10 +121,11 @@ void main() {
       expect(find.text('Hello AI'), findsOneWidget);
     });
 
-    testWidgets('uses provided message entities without provider lookup', (
+    testWidgets('prefers reactive message updates over initial snapshot', (
       tester,
     ) async {
       final message = _createMessage(content: 'Provided message');
+      final updatedMessage = message.copyWith(content: 'Updated message');
 
       await pumpAndInit(
         tester,
@@ -122,7 +133,7 @@ void main() {
           messages: ['msg-1'],
           overrides: [
             messageConversationByIdProvider.overrideWith(
-              (ref, id) => throw StateError('should not read message provider'),
+              (ref, id) => updatedMessage,
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
@@ -136,7 +147,8 @@ void main() {
         ),
       );
 
-      expect(find.text('Provided message'), findsOneWidget);
+      expect(find.text('Provided message'), findsNothing);
+      expect(find.text('Updated message'), findsOneWidget);
     });
 
     testWidgets('renders AI message content', (tester) async {
@@ -162,13 +174,14 @@ void main() {
       expect(find.text('Hello user'), findsOneWidget);
     });
 
-    testWidgets('renders typing indicator for queued assistant message', (
+    testWidgets('renders one thinking indicator while generation is active', (
       tester,
     ) async {
       await pumpAndInit(
         tester,
         buildSubject(
           messages: ['msg-1'],
+          showThinking: true,
           overrides: [
             messageConversationByIdProvider.overrideWith(
               (ref, id) => _createMessage(
@@ -188,6 +201,7 @@ void main() {
         ),
       );
 
+      expect(find.byType(ChatThinkingIndicator), findsOneWidget);
       expect(find.byType(AuraTypingIndicator), findsOneWidget);
       expect(find.text('Thinking...'), findsOneWidget);
     });
@@ -221,6 +235,160 @@ void main() {
       expect(find.text('Reasoning summary'), findsOneWidget);
       expect(find.text('Reasoned before answering'), findsOneWidget);
       expect(find.text('Final answer'), findsOneWidget);
+    });
+
+    testWidgets('does not show unfinished status for an A2UI message', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => _createMessage(
+                content: 'Form result',
+                isUser: false,
+                status: MessageStatus.unfinished,
+                metadata: const MessageMetadataEntity(
+                  a2uiMessages: ['replayed-payload'],
+                ),
+              ),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.byType(AuraMessageStatus), findsNothing);
+    });
+
+    testWidgets('replays A2UI metadata after build', (tester) async {
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          a2uiMessages: [
+            '{"protocolVersion":"v1","interactionMode":"passive",'
+                '"message":{"version":"v0.9","createSurface":{'
+                '"surfaceId":"main","catalogId":'
+                '"urn:auravibes:a2ui:chat:v1"}}}',
+          ],
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows persisted A2UI issue when assistant text is empty', (
+      tester,
+    ) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          a2uiIssuesBySurface: {
+            'broken-surface': ['malformedPayload'],
+          },
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(runtime.hasSurfaceIssue(message.id), isTrue);
+      expect(find.byType(ChatA2uiSurfaceHost), findsOneWidget);
+      expect(find.text('This UI could not be loaded.'), findsOneWidget);
+    });
+
+    testWidgets('does not close a live A2UI turn before metadata persists', (
+      tester,
+    ) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1', enabled: true)
+        ..bindMessage('assistant-1');
+      addTearDown(runtime.dispose);
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: const [],
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: true,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(runtime.currentMessageId, 'assistant-1');
     });
 
     testWidgets('handles null message gracefully', (tester) async {
@@ -800,12 +968,14 @@ class const _ChatMessagesTestSubject({
   required final List<Object> overrides,
   required final List<PendingToolCall> pendingToolCalls,
   final Map<String, MessageEntity>? messageEntitiesById,
+  final bool showThinking = false,
+  final ConversationEntity? conversation,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final conversationRepository = _MockConversationRepository();
     when(() => conversationRepository.watchConversationById(conversationId))
-        .thenAnswer((_) => Stream.value(null));
+        .thenAnswer((_) => Stream.value(conversation));
     when(() => conversationRepository.watchChildConversations(conversationId))
         .thenAnswer((_) => Stream.value(const []));
 
@@ -836,6 +1006,7 @@ class const _ChatMessagesTestSubject({
                     messages: messages,
                     messageEntitiesById: messageEntitiesById,
                     pendingToolCalls: pendingToolCalls,
+                    showThinking: showThinking,
                   ),
                 ),
               ),

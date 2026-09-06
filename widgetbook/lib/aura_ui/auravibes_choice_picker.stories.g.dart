@@ -48,6 +48,7 @@ class ChoicePickerDemoStory
                key: args.key,
                variant: args.variant,
                tint: args.tint,
+               presentation: args.presentation,
              ),
        );
 }
@@ -57,6 +58,7 @@ class ChoicePickerDemoArgs extends StoryArgs<ChoicePickerDemo> {
     Arg<Key?>? key,
     Arg<AuraChoicePickerVariant>? variant,
     Arg<AuraTint?>? tint,
+    Arg<AuraChoicePickerPresentation>? presentation,
   }) : this.keyArg = $initArg('key', key, null),
        this.variantArg = $initArg(
          'variant',
@@ -70,19 +72,34 @@ class ChoicePickerDemoArgs extends StoryArgs<ChoicePickerDemo> {
          'tint',
          tint,
          NullableEnumArg<AuraTint>(null, values: AuraTint.values),
+       )!,
+       this.presentationArg = $initArg(
+         'presentation',
+         presentation,
+         EnumArg<AuraChoicePickerPresentation>(
+           AuraChoicePickerPresentation.list,
+           values: AuraChoicePickerPresentation.values,
+         ),
        )!;
 
   ChoicePickerDemoArgs.fixed({
     Key? key,
     AuraChoicePickerVariant variant = AuraChoicePickerVariant.mutuallyExclusive,
     AuraTint? tint = null,
+    AuraChoicePickerPresentation presentation =
+        AuraChoicePickerPresentation.list,
   }) : this.keyArg = $initArg('key', key == null ? null : Arg.fixed(key), null),
        this.variantArg = $initArg('variant', Arg.fixed(variant), null)!,
        this.tintArg = $initArg(
          'tint',
          tint == null ? null : Arg.fixed(tint),
          null,
-       );
+       ),
+       this.presentationArg = $initArg(
+         'presentation',
+         Arg.fixed(presentation),
+         null,
+       )!;
 
   final Arg<Key?>? keyArg;
 
@@ -90,12 +107,16 @@ class ChoicePickerDemoArgs extends StoryArgs<ChoicePickerDemo> {
 
   final Arg<AuraTint?>? tintArg;
 
+  final Arg<AuraChoicePickerPresentation> presentationArg;
+
   Key? get key => keyArg?.value;
 
   AuraChoicePickerVariant get variant => variantArg.value;
 
   AuraTint? get tint => tintArg?.value;
 
+  AuraChoicePickerPresentation get presentation => presentationArg.value;
+
   @override
-  List<Arg?> get list => [keyArg, variantArg, tintArg];
+  List<Arg?> get list => [keyArg, variantArg, tintArg, presentationArg];
 }
