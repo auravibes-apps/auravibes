@@ -52,6 +52,13 @@
       "additionalBranchPrefix": ""
     },
     {
+      "description": "Update Genkit core and provider packages together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["genkit", "genkit_*"],
+      "groupName": "Genkit",
+      "additionalBranchPrefix": ""
+    },
+    {
       "description": "Automerge minor and patch updates",
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
