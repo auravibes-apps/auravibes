@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class DeleteMcpServerRequest implements _i1.SerializableModel {
+abstract class DeleteMcpServerRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   DeleteMcpServerRequest._({
     required this.workspaceId,
     required this.mcpServerId,
@@ -38,7 +39,7 @@ abstract class DeleteMcpServerRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [DeleteMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   DeleteMcpServerRequest copyWith({
     int? workspaceId,
     String? mcpServerId,
@@ -53,8 +54,17 @@ abstract class DeleteMcpServerRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'DeleteMcpServerRequest',
+      'workspaceId': workspaceId,
+      'mcpServerId': mcpServerId,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -69,7 +79,7 @@ class _DeleteMcpServerRequestImpl extends DeleteMcpServerRequest {
 
   /// Returns a shallow copy of this [DeleteMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   DeleteMcpServerRequest copyWith({
     int? workspaceId,

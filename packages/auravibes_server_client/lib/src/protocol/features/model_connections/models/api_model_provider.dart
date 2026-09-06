@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ApiModelProvider implements _i1.SerializableModel {
+abstract class ApiModelProvider
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ApiModelProvider._({
     this.id,
     required this.providerId,
@@ -43,10 +44,10 @@ abstract class ApiModelProvider implements _i1.SerializableModel {
       type: jsonSerialization['type'] as String?,
       url: jsonSerialization['url'] as String?,
       documentationUrl: jsonSerialization['documentationUrl'] as String?,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -73,7 +74,7 @@ abstract class ApiModelProvider implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ApiModelProvider]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ApiModelProvider copyWith({
     int? id,
     String? providerId,
@@ -100,8 +101,23 @@ abstract class ApiModelProvider implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ApiModelProvider',
+      if (id != null) 'id': id,
+      'providerId': providerId,
+      'name': name,
+      if (type != null) 'type': type,
+      if (url != null) 'url': url,
+      if (documentationUrl != null) 'documentationUrl': documentationUrl,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -130,7 +146,7 @@ class _ApiModelProviderImpl extends ApiModelProvider {
 
   /// Returns a shallow copy of this [ApiModelProvider]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ApiModelProvider copyWith({
     Object? id = _Undefined,

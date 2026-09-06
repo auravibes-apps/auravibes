@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class WorkspaceMutationReceipt implements _i1.SerializableModel {
+abstract class WorkspaceMutationReceipt
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceMutationReceipt._({
     this.id,
     this.workspaceId,
@@ -49,7 +50,7 @@ abstract class WorkspaceMutationReceipt implements _i1.SerializableModel {
       requestId: jsonSerialization['requestId'] as String,
       requestHash: jsonSerialization['requestHash'] as String,
       responseJson: jsonSerialization['responseJson'] as String,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -78,7 +79,7 @@ abstract class WorkspaceMutationReceipt implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceMutationReceipt]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceMutationReceipt copyWith({
     int? id,
     int? workspaceId,
@@ -107,8 +108,24 @@ abstract class WorkspaceMutationReceipt implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceMutationReceipt',
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspaceId': workspaceId,
+      'scopeKey': scopeKey,
+      'actorUserId': actorUserId,
+      'endpoint': endpoint,
+      'requestId': requestId,
+      'requestHash': requestHash,
+      'responseJson': responseJson,
+      'createdAt': createdAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -139,7 +156,7 @@ class _WorkspaceMutationReceiptImpl extends WorkspaceMutationReceipt {
 
   /// Returns a shallow copy of this [WorkspaceMutationReceipt]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceMutationReceipt copyWith({
     Object? id = _Undefined,

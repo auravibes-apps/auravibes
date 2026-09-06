@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ApiModelProvider
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   ApiModelProvider._({
     this.id,
     required this.providerId,
@@ -44,10 +44,10 @@ abstract class ApiModelProvider
       type: jsonSerialization['type'] as String?,
       url: jsonSerialization['url'] as String?,
       documentationUrl: jsonSerialization['documentationUrl'] as String?,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -75,11 +75,11 @@ abstract class ApiModelProvider
   DateTime updatedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [ApiModelProvider]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ApiModelProvider copyWith({
     int? id,
     String? providerId,
@@ -125,13 +125,11 @@ abstract class ApiModelProvider
   }
 
   static ApiModelProviderIncludeList includeList({
-    _i1.WhereExpressionBuilder<ApiModelProviderTable>? where,
+    _is.WhereExpressionBuilder<ApiModelProviderTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ApiModelProviderTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ApiModelProviderTable>? orderByList,
+    _is.OrderByBuilder<ApiModelProviderTable>? orderBy,
+    _is.OrderByListBuilder<ApiModelProviderTable>? orderByList,
     ApiModelProviderInclude? include,
   }) {
     return ApiModelProviderIncludeList._(
@@ -139,8 +137,6 @@ abstract class ApiModelProvider
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(ApiModelProvider.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(ApiModelProvider.t),
       include: include,
     );
@@ -148,7 +144,7 @@ abstract class ApiModelProvider
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -177,7 +173,7 @@ class _ApiModelProviderImpl extends ApiModelProvider {
 
   /// Returns a shallow copy of this [ApiModelProvider]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ApiModelProvider copyWith({
     Object? id = _Undefined,
@@ -205,77 +201,77 @@ class _ApiModelProviderImpl extends ApiModelProvider {
 }
 
 class ApiModelProviderUpdateTable
-    extends _i1.UpdateTable<ApiModelProviderTable> {
+    extends _is.UpdateTable<ApiModelProviderTable> {
   ApiModelProviderUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> providerId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> providerId(String value) => _is.ColumnValue(
     table.providerId,
     value,
   );
 
-  _i1.ColumnValue<String, String> name(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> name(String value) => _is.ColumnValue(
     table.name,
     value,
   );
 
-  _i1.ColumnValue<String, String> type(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> type(String? value) => _is.ColumnValue(
     table.type,
     value,
   );
 
-  _i1.ColumnValue<String, String> url(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> url(String? value) => _is.ColumnValue(
     table.url,
     value,
   );
 
-  _i1.ColumnValue<String, String> documentationUrl(String? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<String, String> documentationUrl(String? value) =>
+      _is.ColumnValue(
         table.documentationUrl,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _is.ColumnValue(
         table.updatedAt,
         value,
       );
 }
 
-class ApiModelProviderTable extends _i1.Table<int?> {
+class ApiModelProviderTable extends _is.Table<int?> {
   ApiModelProviderTable({super.tableRelation})
     : super(tableName: 'api_model_provider') {
     updateTable = ApiModelProviderUpdateTable(this);
-    providerId = _i1.ColumnString(
+    providerId = _is.ColumnString(
       'providerId',
       this,
     );
-    name = _i1.ColumnString(
+    name = _is.ColumnString(
       'name',
       this,
     );
-    type = _i1.ColumnString(
+    type = _is.ColumnString(
       'type',
       this,
     );
-    url = _i1.ColumnString(
+    url = _is.ColumnString(
       'url',
       this,
     );
-    documentationUrl = _i1.ColumnString(
+    documentationUrl = _is.ColumnString(
       'documentationUrl',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    updatedAt = _i1.ColumnDateTime(
+    updatedAt = _is.ColumnDateTime(
       'updatedAt',
       this,
     );
@@ -283,22 +279,22 @@ class ApiModelProviderTable extends _i1.Table<int?> {
 
   late final ApiModelProviderUpdateTable updateTable;
 
-  late final _i1.ColumnString providerId;
+  late final _is.ColumnString providerId;
 
-  late final _i1.ColumnString name;
+  late final _is.ColumnString name;
 
-  late final _i1.ColumnString type;
+  late final _is.ColumnString type;
 
-  late final _i1.ColumnString url;
+  late final _is.ColumnString url;
 
-  late final _i1.ColumnString documentationUrl;
+  late final _is.ColumnString documentationUrl;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime updatedAt;
+  late final _is.ColumnDateTime updatedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     providerId,
     name,
@@ -310,24 +306,22 @@ class ApiModelProviderTable extends _i1.Table<int?> {
   ];
 }
 
-class ApiModelProviderInclude extends _i1.IncludeObject {
+class ApiModelProviderInclude extends _is.IncludeObject {
   ApiModelProviderInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => ApiModelProvider.t;
+  _is.Table<int?> get table => ApiModelProvider.t;
 }
 
-class ApiModelProviderIncludeList extends _i1.IncludeList {
+class ApiModelProviderIncludeList extends _is.IncludeList {
   ApiModelProviderIncludeList._({
-    _i1.WhereExpressionBuilder<ApiModelProviderTable>? where,
+    _is.WhereExpressionBuilder<ApiModelProviderTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -335,10 +329,10 @@ class ApiModelProviderIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => ApiModelProvider.t;
+  _is.Table<int?> get table => ApiModelProvider.t;
 }
 
 class ApiModelProviderRepository {
@@ -367,24 +361,20 @@ class ApiModelProviderRepository {
   /// );
   /// ```
   Future<List<ApiModelProvider>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ApiModelProviderTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ApiModelProviderTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ApiModelProviderTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ApiModelProviderTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ApiModelProviderTable>? orderBy,
+    _is.OrderByListBuilder<ApiModelProviderTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<ApiModelProvider>(
       where: where?.call(ApiModelProvider.t),
       orderBy: orderBy?.call(ApiModelProvider.t),
       orderByList: orderByList?.call(ApiModelProvider.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -411,23 +401,19 @@ class ApiModelProviderRepository {
   /// );
   /// ```
   Future<ApiModelProvider?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ApiModelProviderTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ApiModelProviderTable>? where,
     int? offset,
-    _i1.OrderByBuilder<ApiModelProviderTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ApiModelProviderTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ApiModelProviderTable>? orderBy,
+    _is.OrderByListBuilder<ApiModelProviderTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<ApiModelProvider>(
       where: where?.call(ApiModelProvider.t),
       orderBy: orderBy?.call(ApiModelProvider.t),
       orderByList: orderByList?.call(ApiModelProvider.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -437,11 +423,11 @@ class ApiModelProviderRepository {
 
   /// Finds a single [ApiModelProvider] by its [id] or null if no such row exists.
   Future<ApiModelProvider?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<ApiModelProvider>(
       id,
@@ -466,9 +452,9 @@ class ApiModelProviderRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ApiModelProvider>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ApiModelProvider> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -484,9 +470,9 @@ class ApiModelProviderRepository {
   ///
   /// The returned [ApiModelProvider] will have its `id` field set.
   Future<ApiModelProvider> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ApiModelProvider row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<ApiModelProvider>(
       row,
@@ -515,12 +501,12 @@ class ApiModelProviderRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ApiModelProvider>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ApiModelProvider> rows, {
-    required _i1.ColumnSelections<ApiModelProviderTable> conflictColumns,
-    _i1.ColumnSelections<ApiModelProviderTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ApiModelProviderTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ApiModelProviderTable> conflictColumns,
+    _is.ColumnSelections<ApiModelProviderTable>? updateColumns,
+    _is.WhereExpressionBuilder<ApiModelProviderTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<ApiModelProvider>(
@@ -547,12 +533,12 @@ class ApiModelProviderRepository {
   ///
   /// The returned [ApiModelProvider] will have its `id` field set.
   Future<ApiModelProvider?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ApiModelProvider row, {
-    required _i1.ColumnSelections<ApiModelProviderTable> conflictColumns,
-    _i1.ColumnSelections<ApiModelProviderTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ApiModelProviderTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ApiModelProviderTable> conflictColumns,
+    _is.ColumnSelections<ApiModelProviderTable>? updateColumns,
+    _is.WhereExpressionBuilder<ApiModelProviderTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<ApiModelProvider>(
       row,
@@ -573,10 +559,10 @@ class ApiModelProviderRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ApiModelProvider>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ApiModelProvider> rows, {
-    _i1.ColumnSelections<ApiModelProviderTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ApiModelProviderTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<ApiModelProvider>(
@@ -591,10 +577,10 @@ class ApiModelProviderRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<ApiModelProvider> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ApiModelProvider row, {
-    _i1.ColumnSelections<ApiModelProviderTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ApiModelProviderTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<ApiModelProvider>(
       row,
@@ -606,11 +592,11 @@ class ApiModelProviderRepository {
   /// Updates a single [ApiModelProvider] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<ApiModelProvider?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<ApiModelProviderUpdateTable>
+    required _is.ColumnValueListBuilder<ApiModelProviderUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<ApiModelProvider>(
       id,
@@ -626,17 +612,15 @@ class ApiModelProviderRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ApiModelProvider>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<ApiModelProviderUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<ApiModelProviderUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<ApiModelProviderTable> where,
+    required _is.WhereExpressionBuilder<ApiModelProviderTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ApiModelProviderTable>? orderBy,
-    _i1.OrderByListBuilder<ApiModelProviderTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ApiModelProviderTable>? orderBy,
+    _is.OrderByListBuilder<ApiModelProviderTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<ApiModelProvider>(
@@ -646,8 +630,6 @@ class ApiModelProviderRepository {
       offset: offset,
       orderBy: orderBy?.call(ApiModelProvider.t),
       orderByList: orderByList?.call(ApiModelProvider.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -665,21 +647,17 @@ class ApiModelProviderRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ApiModelProvider>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ApiModelProvider> rows, {
-    _i1.OrderByBuilder<ApiModelProviderTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ApiModelProviderTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ApiModelProviderTable>? orderBy,
+    _is.OrderByListBuilder<ApiModelProviderTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<ApiModelProvider>(
       rows,
       orderBy: orderBy?.call(ApiModelProvider.t),
       orderByList: orderByList?.call(ApiModelProvider.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -687,9 +665,9 @@ class ApiModelProviderRepository {
 
   /// Deletes a single [ApiModelProvider].
   Future<ApiModelProvider> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ApiModelProvider row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<ApiModelProvider>(
       row,
@@ -706,21 +684,17 @@ class ApiModelProviderRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ApiModelProvider>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ApiModelProviderTable> where,
-    _i1.OrderByBuilder<ApiModelProviderTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ApiModelProviderTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ApiModelProviderTable> where,
+    _is.OrderByBuilder<ApiModelProviderTable>? orderBy,
+    _is.OrderByListBuilder<ApiModelProviderTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<ApiModelProvider>(
       where: where(ApiModelProvider.t),
       orderBy: orderBy?.call(ApiModelProvider.t),
       orderByList: orderByList?.call(ApiModelProvider.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -729,10 +703,10 @@ class ApiModelProviderRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ApiModelProviderTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ApiModelProviderTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<ApiModelProvider>(
       where: where?.call(ApiModelProvider.t),
@@ -743,11 +717,11 @@ class ApiModelProviderRepository {
 
   /// Acquires row-level locks on [ApiModelProvider] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ApiModelProviderTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ApiModelProviderTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<ApiModelProvider>(
       where: where(ApiModelProvider.t),

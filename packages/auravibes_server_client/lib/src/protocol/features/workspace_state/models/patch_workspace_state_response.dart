@@ -10,21 +10,22 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 import '../../../features/workspace_state/models/workspace_resource.dart'
-    as _i2;
+    as _i4gad2ja;
 
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
-
-abstract class PatchWorkspaceStateResponse implements _i1.SerializableModel {
+abstract class PatchWorkspaceStateResponse
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   PatchWorkspaceStateResponse._({
     required this.resources,
     required this.sequence,
   });
 
   factory PatchWorkspaceStateResponse({
-    required List<_i2.WorkspaceResource> resources,
+    required List<_i4gad2ja.WorkspaceResource> resources,
     required int sequence,
   }) = _PatchWorkspaceStateResponseImpl;
 
@@ -32,22 +33,23 @@ abstract class PatchWorkspaceStateResponse implements _i1.SerializableModel {
     Map<String, dynamic> jsonSerialization,
   ) {
     return PatchWorkspaceStateResponse(
-      resources: _i3.Protocol().deserialize<List<_i2.WorkspaceResource>>(
-        jsonSerialization['resources'],
-      ),
+      resources: _isctvzjc.Protocol()
+          .deserialize<List<_i4gad2ja.WorkspaceResource>>(
+            jsonSerialization['resources'],
+          ),
       sequence: jsonSerialization['sequence'] as int,
     );
   }
 
-  List<_i2.WorkspaceResource> resources;
+  List<_i4gad2ja.WorkspaceResource> resources;
 
   int sequence;
 
   /// Returns a shallow copy of this [PatchWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   PatchWorkspaceStateResponse copyWith({
-    List<_i2.WorkspaceResource>? resources,
+    List<_i4gad2ja.WorkspaceResource>? resources,
     int? sequence,
   });
   @override
@@ -60,14 +62,23 @@ abstract class PatchWorkspaceStateResponse implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'PatchWorkspaceStateResponse',
+      'resources': resources.toJson(valueToJson: (v) => v.toJsonForProtocol()),
+      'sequence': sequence,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
 class _PatchWorkspaceStateResponseImpl extends PatchWorkspaceStateResponse {
   _PatchWorkspaceStateResponseImpl({
-    required List<_i2.WorkspaceResource> resources,
+    required List<_i4gad2ja.WorkspaceResource> resources,
     required int sequence,
   }) : super._(
          resources: resources,
@@ -76,10 +87,10 @@ class _PatchWorkspaceStateResponseImpl extends PatchWorkspaceStateResponse {
 
   /// Returns a shallow copy of this [PatchWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   PatchWorkspaceStateResponse copyWith({
-    List<_i2.WorkspaceResource>? resources,
+    List<_i4gad2ja.WorkspaceResource>? resources,
     int? sequence,
   }) {
     return PatchWorkspaceStateResponse(

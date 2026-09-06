@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class Conversation
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   Conversation._({
     this.id,
     required this.workspaceId,
@@ -60,7 +60,7 @@ abstract class Conversation
       workspaceId: jsonSerialization['workspaceId'] as int,
       stableId: jsonSerialization['stableId'] as String,
       title: jsonSerialization['title'] as String?,
-      isPinned: _i1.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+      isPinned: _is.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       parentConversationStableId:
@@ -70,15 +70,15 @@ abstract class Conversation
       eventSequence: jsonSerialization['eventSequence'] as int?,
       executionState: jsonSerialization['executionState'] as String?,
       activeExecutionId: jsonSerialization['activeExecutionId'] as int?,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -120,11 +120,11 @@ abstract class Conversation
   DateTime? deletedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [Conversation]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   Conversation copyWith({
     int? id,
     int? workspaceId,
@@ -196,13 +196,11 @@ abstract class Conversation
   }
 
   static ConversationIncludeList includeList({
-    _i1.WhereExpressionBuilder<ConversationTable>? where,
+    _is.WhereExpressionBuilder<ConversationTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ConversationTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTable>? orderByList,
+    _is.OrderByBuilder<ConversationTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTable>? orderByList,
     ConversationInclude? include,
   }) {
     return ConversationIncludeList._(
@@ -210,8 +208,6 @@ abstract class Conversation
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(Conversation.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(Conversation.t),
       include: include,
     );
@@ -219,7 +215,7 @@ abstract class Conversation
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -264,7 +260,7 @@ class _ConversationImpl extends Conversation {
 
   /// Returns a shallow copy of this [Conversation]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   Conversation copyWith({
     Object? id = _Undefined,
@@ -309,153 +305,153 @@ class _ConversationImpl extends Conversation {
   }
 }
 
-class ConversationUpdateTable extends _i1.UpdateTable<ConversationTable> {
+class ConversationUpdateTable extends _is.UpdateTable<ConversationTable> {
   ConversationUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<String, String> stableId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> stableId(String value) => _is.ColumnValue(
     table.stableId,
     value,
   );
 
-  _i1.ColumnValue<String, String> title(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> title(String? value) => _is.ColumnValue(
     table.title,
     value,
   );
 
-  _i1.ColumnValue<bool, bool> isPinned(bool value) => _i1.ColumnValue(
+  _is.ColumnValue<bool, bool> isPinned(bool value) => _is.ColumnValue(
     table.isPinned,
     value,
   );
 
-  _i1.ColumnValue<String, String> modelId(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> modelId(String? value) => _is.ColumnValue(
     table.modelId,
     value,
   );
 
-  _i1.ColumnValue<String, String> agentId(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> agentId(String? value) => _is.ColumnValue(
     table.agentId,
     value,
   );
 
-  _i1.ColumnValue<String, String> parentConversationStableId(String? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<String, String> parentConversationStableId(String? value) =>
+      _is.ColumnValue(
         table.parentConversationStableId,
         value,
       );
 
-  _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> revision(int value) => _is.ColumnValue(
     table.revision,
     value,
   );
 
-  _i1.ColumnValue<int, int> projectionRevision(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> projectionRevision(int value) => _is.ColumnValue(
     table.projectionRevision,
     value,
   );
 
-  _i1.ColumnValue<int, int> eventSequence(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> eventSequence(int value) => _is.ColumnValue(
     table.eventSequence,
     value,
   );
 
-  _i1.ColumnValue<String, String> executionState(String value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<String, String> executionState(String value) =>
+      _is.ColumnValue(
         table.executionState,
         value,
       );
 
-  _i1.ColumnValue<int, int> activeExecutionId(int? value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> activeExecutionId(int? value) => _is.ColumnValue(
     table.activeExecutionId,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _is.ColumnValue(
         table.updatedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.deletedAt,
         value,
       );
 }
 
-class ConversationTable extends _i1.Table<int?> {
+class ConversationTable extends _is.Table<int?> {
   ConversationTable({super.tableRelation}) : super(tableName: 'conversation') {
     updateTable = ConversationUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    stableId = _i1.ColumnString(
+    stableId = _is.ColumnString(
       'stableId',
       this,
     );
-    title = _i1.ColumnString(
+    title = _is.ColumnString(
       'title',
       this,
     );
-    isPinned = _i1.ColumnBool(
+    isPinned = _is.ColumnBool(
       'isPinned',
       this,
     );
-    modelId = _i1.ColumnString(
+    modelId = _is.ColumnString(
       'modelId',
       this,
     );
-    agentId = _i1.ColumnString(
+    agentId = _is.ColumnString(
       'agentId',
       this,
     );
-    parentConversationStableId = _i1.ColumnString(
+    parentConversationStableId = _is.ColumnString(
       'parentConversationStableId',
       this,
     );
-    revision = _i1.ColumnInt(
+    revision = _is.ColumnInt(
       'revision',
       this,
     );
-    projectionRevision = _i1.ColumnInt(
+    projectionRevision = _is.ColumnInt(
       'projectionRevision',
       this,
       hasDefault: true,
     );
-    eventSequence = _i1.ColumnInt(
+    eventSequence = _is.ColumnInt(
       'eventSequence',
       this,
       hasDefault: true,
     );
-    executionState = _i1.ColumnString(
+    executionState = _is.ColumnString(
       'executionState',
       this,
       hasDefault: true,
     );
-    activeExecutionId = _i1.ColumnInt(
+    activeExecutionId = _is.ColumnInt(
       'activeExecutionId',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    updatedAt = _i1.ColumnDateTime(
+    updatedAt = _is.ColumnDateTime(
       'updatedAt',
       this,
     );
-    deletedAt = _i1.ColumnDateTime(
+    deletedAt = _is.ColumnDateTime(
       'deletedAt',
       this,
     );
@@ -463,38 +459,38 @@ class ConversationTable extends _i1.Table<int?> {
 
   late final ConversationUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnString stableId;
+  late final _is.ColumnString stableId;
 
-  late final _i1.ColumnString title;
+  late final _is.ColumnString title;
 
-  late final _i1.ColumnBool isPinned;
+  late final _is.ColumnBool isPinned;
 
-  late final _i1.ColumnString modelId;
+  late final _is.ColumnString modelId;
 
-  late final _i1.ColumnString agentId;
+  late final _is.ColumnString agentId;
 
-  late final _i1.ColumnString parentConversationStableId;
+  late final _is.ColumnString parentConversationStableId;
 
-  late final _i1.ColumnInt revision;
+  late final _is.ColumnInt revision;
 
-  late final _i1.ColumnInt projectionRevision;
+  late final _is.ColumnInt projectionRevision;
 
-  late final _i1.ColumnInt eventSequence;
+  late final _is.ColumnInt eventSequence;
 
-  late final _i1.ColumnString executionState;
+  late final _is.ColumnString executionState;
 
-  late final _i1.ColumnInt activeExecutionId;
+  late final _is.ColumnInt activeExecutionId;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime updatedAt;
+  late final _is.ColumnDateTime updatedAt;
 
-  late final _i1.ColumnDateTime deletedAt;
+  late final _is.ColumnDateTime deletedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     stableId,
@@ -514,24 +510,22 @@ class ConversationTable extends _i1.Table<int?> {
   ];
 }
 
-class ConversationInclude extends _i1.IncludeObject {
+class ConversationInclude extends _is.IncludeObject {
   ConversationInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => Conversation.t;
+  _is.Table<int?> get table => Conversation.t;
 }
 
-class ConversationIncludeList extends _i1.IncludeList {
+class ConversationIncludeList extends _is.IncludeList {
   ConversationIncludeList._({
-    _i1.WhereExpressionBuilder<ConversationTable>? where,
+    _is.WhereExpressionBuilder<ConversationTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -539,10 +533,10 @@ class ConversationIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => Conversation.t;
+  _is.Table<int?> get table => Conversation.t;
 }
 
 class ConversationRepository {
@@ -571,24 +565,20 @@ class ConversationRepository {
   /// );
   /// ```
   Future<List<Conversation>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ConversationTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ConversationTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ConversationTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ConversationTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Conversation>(
       where: where?.call(Conversation.t),
       orderBy: orderBy?.call(Conversation.t),
       orderByList: orderByList?.call(Conversation.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -615,23 +605,19 @@ class ConversationRepository {
   /// );
   /// ```
   Future<Conversation?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ConversationTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ConversationTable>? where,
     int? offset,
-    _i1.OrderByBuilder<ConversationTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ConversationTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Conversation>(
       where: where?.call(Conversation.t),
       orderBy: orderBy?.call(Conversation.t),
       orderByList: orderByList?.call(Conversation.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -641,11 +627,11 @@ class ConversationRepository {
 
   /// Finds a single [Conversation] by its [id] or null if no such row exists.
   Future<Conversation?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Conversation>(
       id,
@@ -670,9 +656,9 @@ class ConversationRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<Conversation>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Conversation> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -688,9 +674,9 @@ class ConversationRepository {
   ///
   /// The returned [Conversation] will have its `id` field set.
   Future<Conversation> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Conversation row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<Conversation>(
       row,
@@ -719,12 +705,12 @@ class ConversationRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<Conversation>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Conversation> rows, {
-    required _i1.ColumnSelections<ConversationTable> conflictColumns,
-    _i1.ColumnSelections<ConversationTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ConversationTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ConversationTable> conflictColumns,
+    _is.ColumnSelections<ConversationTable>? updateColumns,
+    _is.WhereExpressionBuilder<ConversationTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<Conversation>(
@@ -751,12 +737,12 @@ class ConversationRepository {
   ///
   /// The returned [Conversation] will have its `id` field set.
   Future<Conversation?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Conversation row, {
-    required _i1.ColumnSelections<ConversationTable> conflictColumns,
-    _i1.ColumnSelections<ConversationTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ConversationTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ConversationTable> conflictColumns,
+    _is.ColumnSelections<ConversationTable>? updateColumns,
+    _is.WhereExpressionBuilder<ConversationTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<Conversation>(
       row,
@@ -777,10 +763,10 @@ class ConversationRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<Conversation>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Conversation> rows, {
-    _i1.ColumnSelections<ConversationTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ConversationTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<Conversation>(
@@ -795,10 +781,10 @@ class ConversationRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Conversation> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Conversation row, {
-    _i1.ColumnSelections<ConversationTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ConversationTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<Conversation>(
       row,
@@ -810,10 +796,10 @@ class ConversationRepository {
   /// Updates a single [Conversation] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Conversation?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<ConversationUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<ConversationUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<Conversation>(
       id,
@@ -829,16 +815,14 @@ class ConversationRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<Conversation>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<ConversationUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<ConversationTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<ConversationUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<ConversationTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ConversationTable>? orderBy,
-    _i1.OrderByListBuilder<ConversationTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ConversationTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<Conversation>(
@@ -848,8 +832,6 @@ class ConversationRepository {
       offset: offset,
       orderBy: orderBy?.call(Conversation.t),
       orderByList: orderByList?.call(Conversation.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -867,21 +849,17 @@ class ConversationRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<Conversation>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Conversation> rows, {
-    _i1.OrderByBuilder<ConversationTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ConversationTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<Conversation>(
       rows,
       orderBy: orderBy?.call(Conversation.t),
       orderByList: orderByList?.call(Conversation.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -889,9 +867,9 @@ class ConversationRepository {
 
   /// Deletes a single [Conversation].
   Future<Conversation> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Conversation row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<Conversation>(
       row,
@@ -908,21 +886,17 @@ class ConversationRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<Conversation>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ConversationTable> where,
-    _i1.OrderByBuilder<ConversationTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ConversationTable> where,
+    _is.OrderByBuilder<ConversationTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<Conversation>(
       where: where(Conversation.t),
       orderBy: orderBy?.call(Conversation.t),
       orderByList: orderByList?.call(Conversation.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -931,10 +905,10 @@ class ConversationRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ConversationTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ConversationTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<Conversation>(
       where: where?.call(Conversation.t),
@@ -945,11 +919,11 @@ class ConversationRepository {
 
   /// Acquires row-level locks on [Conversation] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ConversationTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ConversationTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<Conversation>(
       where: where(Conversation.t),

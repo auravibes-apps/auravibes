@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class WorkspaceEvent
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   WorkspaceEvent._({
     this.id,
     required this.eventId,
@@ -53,12 +53,12 @@ abstract class WorkspaceEvent
       resourceKind: jsonSerialization['resourceKind'] as String,
       resourceId: jsonSerialization['resourceId'] as String?,
       payloadJson: jsonSerialization['payloadJson'] as String?,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
       publishedAt: jsonSerialization['publishedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _is.DateTimeJsonExtension.fromJson(
               jsonSerialization['publishedAt'],
             ),
     );
@@ -92,11 +92,11 @@ abstract class WorkspaceEvent
   DateTime? publishedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [WorkspaceEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkspaceEvent copyWith({
     int? id,
     String? eventId,
@@ -151,13 +151,11 @@ abstract class WorkspaceEvent
   }
 
   static WorkspaceEventIncludeList includeList({
-    _i1.WhereExpressionBuilder<WorkspaceEventTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceEventTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceEventTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceEventTable>? orderByList,
+    _is.OrderByBuilder<WorkspaceEventTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceEventTable>? orderByList,
     WorkspaceEventInclude? include,
   }) {
     return WorkspaceEventIncludeList._(
@@ -165,8 +163,6 @@ abstract class WorkspaceEvent
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(WorkspaceEvent.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(WorkspaceEvent.t),
       include: include,
     );
@@ -174,7 +170,7 @@ abstract class WorkspaceEvent
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -209,7 +205,7 @@ class _WorkspaceEventImpl extends WorkspaceEvent {
 
   /// Returns a shallow copy of this [WorkspaceEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkspaceEvent copyWith({
     Object? id = _Undefined,
@@ -240,103 +236,103 @@ class _WorkspaceEventImpl extends WorkspaceEvent {
   }
 }
 
-class WorkspaceEventUpdateTable extends _i1.UpdateTable<WorkspaceEventTable> {
+class WorkspaceEventUpdateTable extends _is.UpdateTable<WorkspaceEventTable> {
   WorkspaceEventUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> eventId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> eventId(String value) => _is.ColumnValue(
     table.eventId,
     value,
   );
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<int, int> sequence(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> sequence(int value) => _is.ColumnValue(
     table.sequence,
     value,
   );
 
-  _i1.ColumnValue<String, String> actorUserId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> actorUserId(String value) => _is.ColumnValue(
     table.actorUserId,
     value,
   );
 
-  _i1.ColumnValue<String, String> kind(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> kind(String value) => _is.ColumnValue(
     table.kind,
     value,
   );
 
-  _i1.ColumnValue<String, String> resourceKind(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> resourceKind(String value) => _is.ColumnValue(
     table.resourceKind,
     value,
   );
 
-  _i1.ColumnValue<String, String> resourceId(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> resourceId(String? value) => _is.ColumnValue(
     table.resourceId,
     value,
   );
 
-  _i1.ColumnValue<String, String> payloadJson(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> payloadJson(String? value) => _is.ColumnValue(
     table.payloadJson,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> publishedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> publishedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.publishedAt,
         value,
       );
 }
 
-class WorkspaceEventTable extends _i1.Table<int?> {
+class WorkspaceEventTable extends _is.Table<int?> {
   WorkspaceEventTable({super.tableRelation})
     : super(tableName: 'workspace_event') {
     updateTable = WorkspaceEventUpdateTable(this);
-    eventId = _i1.ColumnString(
+    eventId = _is.ColumnString(
       'eventId',
       this,
     );
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    sequence = _i1.ColumnInt(
+    sequence = _is.ColumnInt(
       'sequence',
       this,
     );
-    actorUserId = _i1.ColumnString(
+    actorUserId = _is.ColumnString(
       'actorUserId',
       this,
     );
-    kind = _i1.ColumnString(
+    kind = _is.ColumnString(
       'kind',
       this,
     );
-    resourceKind = _i1.ColumnString(
+    resourceKind = _is.ColumnString(
       'resourceKind',
       this,
     );
-    resourceId = _i1.ColumnString(
+    resourceId = _is.ColumnString(
       'resourceId',
       this,
     );
-    payloadJson = _i1.ColumnString(
+    payloadJson = _is.ColumnString(
       'payloadJson',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    publishedAt = _i1.ColumnDateTime(
+    publishedAt = _is.ColumnDateTime(
       'publishedAt',
       this,
     );
@@ -344,28 +340,28 @@ class WorkspaceEventTable extends _i1.Table<int?> {
 
   late final WorkspaceEventUpdateTable updateTable;
 
-  late final _i1.ColumnString eventId;
+  late final _is.ColumnString eventId;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnInt sequence;
+  late final _is.ColumnInt sequence;
 
-  late final _i1.ColumnString actorUserId;
+  late final _is.ColumnString actorUserId;
 
-  late final _i1.ColumnString kind;
+  late final _is.ColumnString kind;
 
-  late final _i1.ColumnString resourceKind;
+  late final _is.ColumnString resourceKind;
 
-  late final _i1.ColumnString resourceId;
+  late final _is.ColumnString resourceId;
 
-  late final _i1.ColumnString payloadJson;
+  late final _is.ColumnString payloadJson;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime publishedAt;
+  late final _is.ColumnDateTime publishedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     eventId,
     workspaceId,
@@ -380,24 +376,22 @@ class WorkspaceEventTable extends _i1.Table<int?> {
   ];
 }
 
-class WorkspaceEventInclude extends _i1.IncludeObject {
+class WorkspaceEventInclude extends _is.IncludeObject {
   WorkspaceEventInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceEvent.t;
+  _is.Table<int?> get table => WorkspaceEvent.t;
 }
 
-class WorkspaceEventIncludeList extends _i1.IncludeList {
+class WorkspaceEventIncludeList extends _is.IncludeList {
   WorkspaceEventIncludeList._({
-    _i1.WhereExpressionBuilder<WorkspaceEventTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceEventTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -405,10 +399,10 @@ class WorkspaceEventIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceEvent.t;
+  _is.Table<int?> get table => WorkspaceEvent.t;
 }
 
 class WorkspaceEventRepository {
@@ -437,24 +431,20 @@ class WorkspaceEventRepository {
   /// );
   /// ```
   Future<List<WorkspaceEvent>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceEventTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceEventTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceEventTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceEventTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceEventTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceEventTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<WorkspaceEvent>(
       where: where?.call(WorkspaceEvent.t),
       orderBy: orderBy?.call(WorkspaceEvent.t),
       orderByList: orderByList?.call(WorkspaceEvent.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -481,23 +471,19 @@ class WorkspaceEventRepository {
   /// );
   /// ```
   Future<WorkspaceEvent?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceEventTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceEventTable>? where,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceEventTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceEventTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceEventTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceEventTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<WorkspaceEvent>(
       where: where?.call(WorkspaceEvent.t),
       orderBy: orderBy?.call(WorkspaceEvent.t),
       orderByList: orderByList?.call(WorkspaceEvent.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -507,11 +493,11 @@ class WorkspaceEventRepository {
 
   /// Finds a single [WorkspaceEvent] by its [id] or null if no such row exists.
   Future<WorkspaceEvent?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<WorkspaceEvent>(
       id,
@@ -536,9 +522,9 @@ class WorkspaceEventRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceEvent>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceEvent> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -554,9 +540,9 @@ class WorkspaceEventRepository {
   ///
   /// The returned [WorkspaceEvent] will have its `id` field set.
   Future<WorkspaceEvent> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceEvent row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<WorkspaceEvent>(
       row,
@@ -585,12 +571,12 @@ class WorkspaceEventRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceEvent>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceEvent> rows, {
-    required _i1.ColumnSelections<WorkspaceEventTable> conflictColumns,
-    _i1.ColumnSelections<WorkspaceEventTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceEventTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkspaceEventTable> conflictColumns,
+    _is.ColumnSelections<WorkspaceEventTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceEventTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<WorkspaceEvent>(
@@ -617,12 +603,12 @@ class WorkspaceEventRepository {
   ///
   /// The returned [WorkspaceEvent] will have its `id` field set.
   Future<WorkspaceEvent?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceEvent row, {
-    required _i1.ColumnSelections<WorkspaceEventTable> conflictColumns,
-    _i1.ColumnSelections<WorkspaceEventTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceEventTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkspaceEventTable> conflictColumns,
+    _is.ColumnSelections<WorkspaceEventTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceEventTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<WorkspaceEvent>(
       row,
@@ -643,10 +629,10 @@ class WorkspaceEventRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceEvent>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceEvent> rows, {
-    _i1.ColumnSelections<WorkspaceEventTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceEventTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<WorkspaceEvent>(
@@ -661,10 +647,10 @@ class WorkspaceEventRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<WorkspaceEvent> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceEvent row, {
-    _i1.ColumnSelections<WorkspaceEventTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceEventTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<WorkspaceEvent>(
       row,
@@ -676,10 +662,10 @@ class WorkspaceEventRepository {
   /// Updates a single [WorkspaceEvent] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<WorkspaceEvent?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<WorkspaceEventUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<WorkspaceEventUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<WorkspaceEvent>(
       id,
@@ -695,16 +681,14 @@ class WorkspaceEventRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceEvent>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<WorkspaceEventUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<WorkspaceEventTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<WorkspaceEventUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<WorkspaceEventTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceEventTable>? orderBy,
-    _i1.OrderByListBuilder<WorkspaceEventTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceEventTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceEventTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<WorkspaceEvent>(
@@ -714,8 +698,6 @@ class WorkspaceEventRepository {
       offset: offset,
       orderBy: orderBy?.call(WorkspaceEvent.t),
       orderByList: orderByList?.call(WorkspaceEvent.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -733,21 +715,17 @@ class WorkspaceEventRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceEvent>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceEvent> rows, {
-    _i1.OrderByBuilder<WorkspaceEventTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceEventTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceEventTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceEventTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<WorkspaceEvent>(
       rows,
       orderBy: orderBy?.call(WorkspaceEvent.t),
       orderByList: orderByList?.call(WorkspaceEvent.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -755,9 +733,9 @@ class WorkspaceEventRepository {
 
   /// Deletes a single [WorkspaceEvent].
   Future<WorkspaceEvent> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceEvent row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<WorkspaceEvent>(
       row,
@@ -774,21 +752,17 @@ class WorkspaceEventRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceEvent>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceEventTable> where,
-    _i1.OrderByBuilder<WorkspaceEventTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceEventTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceEventTable> where,
+    _is.OrderByBuilder<WorkspaceEventTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceEventTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<WorkspaceEvent>(
       where: where(WorkspaceEvent.t),
       orderBy: orderBy?.call(WorkspaceEvent.t),
       orderByList: orderByList?.call(WorkspaceEvent.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -797,10 +771,10 @@ class WorkspaceEventRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceEventTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceEventTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<WorkspaceEvent>(
       where: where?.call(WorkspaceEvent.t),
@@ -811,11 +785,11 @@ class WorkspaceEventRepository {
 
   /// Acquires row-level locks on [WorkspaceEvent] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceEventTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceEventTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<WorkspaceEvent>(
       where: where(WorkspaceEvent.t),

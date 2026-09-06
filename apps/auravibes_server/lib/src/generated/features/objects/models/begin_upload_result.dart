@@ -10,11 +10,11 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i2;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class BeginUploadResult
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   BeginUploadResult._({
     required this.objectId,
     required this.revision,
@@ -36,10 +36,10 @@ abstract class BeginUploadResult
       objectId: jsonSerialization['objectId'] as int,
       revision: jsonSerialization['revision'] as int,
       uploadUrl: jsonSerialization['uploadUrl'] as String,
-      headers: _i2.Protocol().deserialize<Map<String, String>>(
+      headers: _if5qez1k.Protocol().deserialize<Map<String, String>>(
         jsonSerialization['headers'],
       ),
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
     );
@@ -57,7 +57,7 @@ abstract class BeginUploadResult
 
   /// Returns a shallow copy of this [BeginUploadResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   BeginUploadResult copyWith({
     int? objectId,
     int? revision,
@@ -91,7 +91,7 @@ abstract class BeginUploadResult
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -112,7 +112,7 @@ class _BeginUploadResultImpl extends BeginUploadResult {
 
   /// Returns a shallow copy of this [BeginUploadResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   BeginUploadResult copyWith({
     int? objectId,

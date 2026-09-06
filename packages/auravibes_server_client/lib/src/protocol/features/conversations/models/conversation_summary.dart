@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ConversationSummary implements _i1.SerializableModel {
+abstract class ConversationSummary
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ConversationSummary._({
     required this.id,
     required this.title,
@@ -41,16 +42,16 @@ abstract class ConversationSummary implements _i1.SerializableModel {
     return ConversationSummary(
       id: jsonSerialization['id'] as String,
       title: jsonSerialization['title'] as String,
-      isPinned: _i1.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+      isPinned: _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -76,7 +77,7 @@ abstract class ConversationSummary implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ConversationSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ConversationSummary copyWith({
     String? id,
     String? title,
@@ -106,8 +107,25 @@ abstract class ConversationSummary implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ConversationSummary',
+      'id': id,
+      'title': title,
+      'isPinned': isPinned,
+      if (modelId != null) 'modelId': modelId,
+      if (agentId != null) 'agentId': agentId,
+      if (parentConversationId != null)
+        'parentConversationId': parentConversationId,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -138,7 +156,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
 
   /// Returns a shallow copy of this [ConversationSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ConversationSummary copyWith({
     String? id,

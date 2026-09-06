@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class DiscoveredMcpTool
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   DiscoveredMcpTool._({
     required this.name,
     this.description,
@@ -42,7 +42,7 @@ abstract class DiscoveredMcpTool
 
   /// Returns a shallow copy of this [DiscoveredMcpTool]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   DiscoveredMcpTool copyWith({
     String? name,
     String? description,
@@ -70,7 +70,7 @@ abstract class DiscoveredMcpTool
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -89,7 +89,7 @@ class _DiscoveredMcpToolImpl extends DiscoveredMcpTool {
 
   /// Returns a shallow copy of this [DiscoveredMcpTool]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   DiscoveredMcpTool copyWith({
     String? name,

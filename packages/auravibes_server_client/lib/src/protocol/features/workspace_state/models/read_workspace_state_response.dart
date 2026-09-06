@@ -10,15 +10,16 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 import '../../../features/workspace_state/models/workspace_resource_page.dart'
-    as _i2;
-import '../../../features/workspaces/models/workspace_event.dart' as _i3;
+    as _ig5amtqi;
+import '../../../features/workspaces/models/workspace_event.dart' as _i2zlrl9f;
 
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
-
-abstract class ReadWorkspaceStateResponse implements _i1.SerializableModel {
+abstract class ReadWorkspaceStateResponse
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ReadWorkspaceStateResponse._({
     required this.pages,
     required this.currentSequence,
@@ -28,9 +29,9 @@ abstract class ReadWorkspaceStateResponse implements _i1.SerializableModel {
   });
 
   factory ReadWorkspaceStateResponse({
-    required List<_i2.WorkspaceResourcePage> pages,
+    required List<_ig5amtqi.WorkspaceResourcePage> pages,
     required int currentSequence,
-    required List<_i3.WorkspaceEvent> events,
+    required List<_i2zlrl9f.WorkspaceEvent> events,
     int? earliestRetainedSequence,
     required bool requiresSnapshot,
   }) = _ReadWorkspaceStateResponseImpl;
@@ -39,26 +40,27 @@ abstract class ReadWorkspaceStateResponse implements _i1.SerializableModel {
     Map<String, dynamic> jsonSerialization,
   ) {
     return ReadWorkspaceStateResponse(
-      pages: _i4.Protocol().deserialize<List<_i2.WorkspaceResourcePage>>(
-        jsonSerialization['pages'],
-      ),
+      pages: _isctvzjc.Protocol()
+          .deserialize<List<_ig5amtqi.WorkspaceResourcePage>>(
+            jsonSerialization['pages'],
+          ),
       currentSequence: jsonSerialization['currentSequence'] as int,
-      events: _i4.Protocol().deserialize<List<_i3.WorkspaceEvent>>(
+      events: _isctvzjc.Protocol().deserialize<List<_i2zlrl9f.WorkspaceEvent>>(
         jsonSerialization['events'],
       ),
       earliestRetainedSequence:
           jsonSerialization['earliestRetainedSequence'] as int?,
-      requiresSnapshot: _i1.BoolJsonExtension.fromJson(
+      requiresSnapshot: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['requiresSnapshot'],
       ),
     );
   }
 
-  List<_i2.WorkspaceResourcePage> pages;
+  List<_ig5amtqi.WorkspaceResourcePage> pages;
 
   int currentSequence;
 
-  List<_i3.WorkspaceEvent> events;
+  List<_i2zlrl9f.WorkspaceEvent> events;
 
   int? earliestRetainedSequence;
 
@@ -66,11 +68,11 @@ abstract class ReadWorkspaceStateResponse implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ReadWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ReadWorkspaceStateResponse copyWith({
-    List<_i2.WorkspaceResourcePage>? pages,
+    List<_ig5amtqi.WorkspaceResourcePage>? pages,
     int? currentSequence,
-    List<_i3.WorkspaceEvent>? events,
+    List<_i2zlrl9f.WorkspaceEvent>? events,
     int? earliestRetainedSequence,
     bool? requiresSnapshot,
   });
@@ -88,8 +90,21 @@ abstract class ReadWorkspaceStateResponse implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ReadWorkspaceStateResponse',
+      'pages': pages.toJson(valueToJson: (v) => v.toJsonForProtocol()),
+      'currentSequence': currentSequence,
+      'events': events.toJson(valueToJson: (v) => v.toJsonForProtocol()),
+      if (earliestRetainedSequence != null)
+        'earliestRetainedSequence': earliestRetainedSequence,
+      'requiresSnapshot': requiresSnapshot,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -97,9 +112,9 @@ class _Undefined {}
 
 class _ReadWorkspaceStateResponseImpl extends ReadWorkspaceStateResponse {
   _ReadWorkspaceStateResponseImpl({
-    required List<_i2.WorkspaceResourcePage> pages,
+    required List<_ig5amtqi.WorkspaceResourcePage> pages,
     required int currentSequence,
-    required List<_i3.WorkspaceEvent> events,
+    required List<_i2zlrl9f.WorkspaceEvent> events,
     int? earliestRetainedSequence,
     required bool requiresSnapshot,
   }) : super._(
@@ -112,12 +127,12 @@ class _ReadWorkspaceStateResponseImpl extends ReadWorkspaceStateResponse {
 
   /// Returns a shallow copy of this [ReadWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ReadWorkspaceStateResponse copyWith({
-    List<_i2.WorkspaceResourcePage>? pages,
+    List<_ig5amtqi.WorkspaceResourcePage>? pages,
     int? currentSequence,
-    List<_i3.WorkspaceEvent>? events,
+    List<_i2zlrl9f.WorkspaceEvent>? events,
     Object? earliestRetainedSequence = _Undefined,
     bool? requiresSnapshot,
   }) {

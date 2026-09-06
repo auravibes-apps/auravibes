@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class PutWorkspaceSecretResponse implements _i1.SerializableModel {
+abstract class PutWorkspaceSecretResponse
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   PutWorkspaceSecretResponse._({
     required this.configured,
     this.displaySuffix,
@@ -31,7 +32,7 @@ abstract class PutWorkspaceSecretResponse implements _i1.SerializableModel {
     Map<String, dynamic> jsonSerialization,
   ) {
     return PutWorkspaceSecretResponse(
-      configured: _i1.BoolJsonExtension.fromJson(
+      configured: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['configured'],
       ),
       displaySuffix: jsonSerialization['displaySuffix'] as String?,
@@ -50,7 +51,7 @@ abstract class PutWorkspaceSecretResponse implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [PutWorkspaceSecretResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   PutWorkspaceSecretResponse copyWith({
     bool? configured,
     String? displaySuffix,
@@ -69,8 +70,19 @@ abstract class PutWorkspaceSecretResponse implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'PutWorkspaceSecretResponse',
+      'configured': configured,
+      if (displaySuffix != null) 'displaySuffix': displaySuffix,
+      'revision': revision,
+      'sequence': sequence,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -91,7 +103,7 @@ class _PutWorkspaceSecretResponseImpl extends PutWorkspaceSecretResponse {
 
   /// Returns a shallow copy of this [PutWorkspaceSecretResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   PutWorkspaceSecretResponse copyWith({
     bool? configured,

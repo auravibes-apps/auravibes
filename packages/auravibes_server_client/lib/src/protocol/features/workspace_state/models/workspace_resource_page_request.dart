@@ -10,12 +10,13 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 import '../../../features/workspace_state/models/workspace_resource_kind.dart'
-    as _i2;
+    as _iz7spkcy;
 
-abstract class WorkspaceResourcePageRequest implements _i1.SerializableModel {
+abstract class WorkspaceResourcePageRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceResourcePageRequest._({
     required this.resourceKind,
     this.afterResourceId,
@@ -23,7 +24,7 @@ abstract class WorkspaceResourcePageRequest implements _i1.SerializableModel {
   });
 
   factory WorkspaceResourcePageRequest({
-    required _i2.WorkspaceResourceKind resourceKind,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
     String? afterResourceId,
     required int limit,
   }) = _WorkspaceResourcePageRequestImpl;
@@ -32,7 +33,7 @@ abstract class WorkspaceResourcePageRequest implements _i1.SerializableModel {
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceResourcePageRequest(
-      resourceKind: _i2.WorkspaceResourceKind.fromJson(
+      resourceKind: _iz7spkcy.WorkspaceResourceKind.fromJson(
         (jsonSerialization['resourceKind'] as String),
       ),
       afterResourceId: jsonSerialization['afterResourceId'] as String?,
@@ -40,7 +41,7 @@ abstract class WorkspaceResourcePageRequest implements _i1.SerializableModel {
     );
   }
 
-  _i2.WorkspaceResourceKind resourceKind;
+  _iz7spkcy.WorkspaceResourceKind resourceKind;
 
   String? afterResourceId;
 
@@ -48,9 +49,9 @@ abstract class WorkspaceResourcePageRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceResourcePageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceResourcePageRequest copyWith({
-    _i2.WorkspaceResourceKind? resourceKind,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
     String? afterResourceId,
     int? limit,
   });
@@ -65,8 +66,18 @@ abstract class WorkspaceResourcePageRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceResourcePageRequest',
+      'resourceKind': resourceKind.toJson(),
+      if (afterResourceId != null) 'afterResourceId': afterResourceId,
+      'limit': limit,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -74,7 +85,7 @@ class _Undefined {}
 
 class _WorkspaceResourcePageRequestImpl extends WorkspaceResourcePageRequest {
   _WorkspaceResourcePageRequestImpl({
-    required _i2.WorkspaceResourceKind resourceKind,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
     String? afterResourceId,
     required int limit,
   }) : super._(
@@ -85,10 +96,10 @@ class _WorkspaceResourcePageRequestImpl extends WorkspaceResourcePageRequest {
 
   /// Returns a shallow copy of this [WorkspaceResourcePageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceResourcePageRequest copyWith({
-    _i2.WorkspaceResourceKind? resourceKind,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
     Object? afterResourceId = _Undefined,
     int? limit,
   }) {

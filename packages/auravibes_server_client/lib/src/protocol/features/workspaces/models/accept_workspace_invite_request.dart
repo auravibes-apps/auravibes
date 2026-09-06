@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class AcceptWorkspaceInviteRequest implements _i1.SerializableModel {
+abstract class AcceptWorkspaceInviteRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   AcceptWorkspaceInviteRequest._({
     required this.inviteId,
     required this.requestId,
@@ -44,7 +45,7 @@ abstract class AcceptWorkspaceInviteRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [AcceptWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   AcceptWorkspaceInviteRequest copyWith({
     int? inviteId,
     String? requestId,
@@ -61,8 +62,18 @@ abstract class AcceptWorkspaceInviteRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'AcceptWorkspaceInviteRequest',
+      'inviteId': inviteId,
+      'requestId': requestId,
+      'expectedInviteRevision': expectedInviteRevision,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -79,7 +90,7 @@ class _AcceptWorkspaceInviteRequestImpl extends AcceptWorkspaceInviteRequest {
 
   /// Returns a shallow copy of this [AcceptWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   AcceptWorkspaceInviteRequest copyWith({
     int? inviteId,

@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ModelSyncResult implements _i1.SerializableModel {
+abstract class ModelSyncResult
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ModelSyncResult._({
     required this.providerId,
     required this.modelIds,
@@ -27,7 +29,7 @@ abstract class ModelSyncResult implements _i1.SerializableModel {
   factory ModelSyncResult.fromJson(Map<String, dynamic> jsonSerialization) {
     return ModelSyncResult(
       providerId: jsonSerialization['providerId'] as String,
-      modelIds: _i2.Protocol().deserialize<List<String>>(
+      modelIds: _isctvzjc.Protocol().deserialize<List<String>>(
         jsonSerialization['modelIds'],
       ),
     );
@@ -39,7 +41,7 @@ abstract class ModelSyncResult implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ModelSyncResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ModelSyncResult copyWith({
     String? providerId,
     List<String>? modelIds,
@@ -54,8 +56,17 @@ abstract class ModelSyncResult implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ModelSyncResult',
+      'providerId': providerId,
+      'modelIds': modelIds.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -70,7 +81,7 @@ class _ModelSyncResultImpl extends ModelSyncResult {
 
   /// Returns a shallow copy of this [ModelSyncResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ModelSyncResult copyWith({
     String? providerId,

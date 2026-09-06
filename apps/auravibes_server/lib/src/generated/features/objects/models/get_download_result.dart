@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class GetDownloadResult
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   GetDownloadResult._({
     required this.downloadUrl,
     required this.expiresAt,
@@ -27,7 +27,7 @@ abstract class GetDownloadResult
   factory GetDownloadResult.fromJson(Map<String, dynamic> jsonSerialization) {
     return GetDownloadResult(
       downloadUrl: jsonSerialization['downloadUrl'] as String,
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
     );
@@ -39,7 +39,7 @@ abstract class GetDownloadResult
 
   /// Returns a shallow copy of this [GetDownloadResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   GetDownloadResult copyWith({
     String? downloadUrl,
     DateTime? expiresAt,
@@ -64,7 +64,7 @@ abstract class GetDownloadResult
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -79,7 +79,7 @@ class _GetDownloadResultImpl extends GetDownloadResult {
 
   /// Returns a shallow copy of this [GetDownloadResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   GetDownloadResult copyWith({
     String? downloadUrl,

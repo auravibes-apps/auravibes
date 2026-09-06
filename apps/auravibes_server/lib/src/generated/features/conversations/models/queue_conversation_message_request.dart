@@ -10,11 +10,11 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i2;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class QueueConversationMessageRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   QueueConversationMessageRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -46,7 +46,7 @@ abstract class QueueConversationMessageRequest
           jsonSerialization['expectedProjectionRevision'] as int,
       clientMessageId: jsonSerialization['clientMessageId'] as String,
       content: jsonSerialization['content'] as String,
-      attachmentIds: _i2.Protocol().deserialize<List<String>>(
+      attachmentIds: _if5qez1k.Protocol().deserialize<List<String>>(
         jsonSerialization['attachmentIds'],
       ),
     );
@@ -68,7 +68,7 @@ abstract class QueueConversationMessageRequest
 
   /// Returns a shallow copy of this [QueueConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   QueueConversationMessageRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -108,7 +108,7 @@ abstract class QueueConversationMessageRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -134,7 +134,7 @@ class _QueueConversationMessageRequestImpl
 
   /// Returns a shallow copy of this [QueueConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   QueueConversationMessageRequest copyWith({
     int? workspaceId,
