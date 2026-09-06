@@ -22,5 +22,5 @@ Future<AgentResolvedToolName?> resolveEffectiveToolApprovalTarget({
     return null;
   }
 
-  return await resolveSkillTarget(command);
+  return resolveSkillTarget(command);
 }
