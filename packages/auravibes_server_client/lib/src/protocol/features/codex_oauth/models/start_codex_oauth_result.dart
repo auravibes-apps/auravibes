@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class StartCodexOAuthResult implements _i1.SerializableModel {
+abstract class StartCodexOAuthResult
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   StartCodexOAuthResult._({
     required this.transactionId,
     required this.authorizationUrl,
@@ -31,7 +32,7 @@ abstract class StartCodexOAuthResult implements _i1.SerializableModel {
     return StartCodexOAuthResult(
       transactionId: jsonSerialization['transactionId'] as String,
       authorizationUrl: jsonSerialization['authorizationUrl'] as String,
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
     );
@@ -45,7 +46,7 @@ abstract class StartCodexOAuthResult implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [StartCodexOAuthResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   StartCodexOAuthResult copyWith({
     String? transactionId,
     String? authorizationUrl,
@@ -62,8 +63,18 @@ abstract class StartCodexOAuthResult implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'StartCodexOAuthResult',
+      'transactionId': transactionId,
+      'authorizationUrl': authorizationUrl,
+      'expiresAt': expiresAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -80,7 +91,7 @@ class _StartCodexOAuthResultImpl extends StartCodexOAuthResult {
 
   /// Returns a shallow copy of this [StartCodexOAuthResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   StartCodexOAuthResult copyWith({
     String? transactionId,

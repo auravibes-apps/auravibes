@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ConversationSummary
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ConversationSummary._({
     required this.id,
     required this.title,
@@ -42,16 +42,16 @@ abstract class ConversationSummary
     return ConversationSummary(
       id: jsonSerialization['id'] as String,
       title: jsonSerialization['title'] as String,
-      isPinned: _i1.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+      isPinned: _is.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -77,7 +77,7 @@ abstract class ConversationSummary
 
   /// Returns a shallow copy of this [ConversationSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationSummary copyWith({
     String? id,
     String? title,
@@ -125,7 +125,7 @@ abstract class ConversationSummary
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -156,7 +156,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
 
   /// Returns a shallow copy of this [ConversationSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationSummary copyWith({
     String? id,

@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class GetCloudWorkspaceDetailRequest implements _i1.SerializableModel {
+abstract class GetCloudWorkspaceDetailRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   GetCloudWorkspaceDetailRequest._({required this.workspaceId});
 
   factory GetCloudWorkspaceDetailRequest({required int workspaceId}) =
@@ -30,7 +31,7 @@ abstract class GetCloudWorkspaceDetailRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [GetCloudWorkspaceDetailRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   GetCloudWorkspaceDetailRequest copyWith({int? workspaceId});
   @override
   Map<String, dynamic> toJson() {
@@ -41,8 +42,16 @@ abstract class GetCloudWorkspaceDetailRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'GetCloudWorkspaceDetailRequest',
+      'workspaceId': workspaceId,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -53,7 +62,7 @@ class _GetCloudWorkspaceDetailRequestImpl
 
   /// Returns a shallow copy of this [GetCloudWorkspaceDetailRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   GetCloudWorkspaceDetailRequest copyWith({int? workspaceId}) {
     return GetCloudWorkspaceDetailRequest(

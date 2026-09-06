@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class WorkspaceModelSelectionView
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   WorkspaceModelSelectionView._({
     required this.id,
     required this.connectionId,
@@ -52,7 +52,7 @@ abstract class WorkspaceModelSelectionView
       connectionId: jsonSerialization['connectionId'] as String,
       connectionName: jsonSerialization['connectionName'] as String,
       connectionUrl: jsonSerialization['connectionUrl'] as String?,
-      connectionHasSecret: _i1.BoolJsonExtension.fromJson(
+      connectionHasSecret: _is.BoolJsonExtension.fromJson(
         jsonSerialization['connectionHasSecret'],
       ),
       connectionKeySuffix: jsonSerialization['connectionKeySuffix'] as String?,
@@ -60,10 +60,10 @@ abstract class WorkspaceModelSelectionView
       modelId: jsonSerialization['modelId'] as String,
       modelName: jsonSerialization['modelName'] as String,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -95,7 +95,7 @@ abstract class WorkspaceModelSelectionView
 
   /// Returns a shallow copy of this [WorkspaceModelSelectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkspaceModelSelectionView copyWith({
     String? id,
     String? connectionId,
@@ -152,7 +152,7 @@ abstract class WorkspaceModelSelectionView
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -189,7 +189,7 @@ class _WorkspaceModelSelectionViewImpl extends WorkspaceModelSelectionView {
 
   /// Returns a shallow copy of this [WorkspaceModelSelectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkspaceModelSelectionView copyWith({
     String? id,

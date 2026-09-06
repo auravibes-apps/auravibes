@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class RecurringWorkerSchedule
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   RecurringWorkerSchedule._({
     this.id,
     required this.workerKey,
@@ -40,17 +40,17 @@ abstract class RecurringWorkerSchedule
     return RecurringWorkerSchedule(
       id: jsonSerialization['id'] as int?,
       workerKey: jsonSerialization['workerKey'] as String,
-      nextRunAt: _i1.DateTimeJsonExtension.fromJson(
+      nextRunAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['nextRunAt'],
       ),
       runToken: jsonSerialization['runToken'] as String?,
       leaderFencingToken: jsonSerialization['leaderFencingToken'] as int?,
       runLeaseExpiresAt: jsonSerialization['runLeaseExpiresAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _is.DateTimeJsonExtension.fromJson(
               jsonSerialization['runLeaseExpiresAt'],
             ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -76,11 +76,11 @@ abstract class RecurringWorkerSchedule
   DateTime updatedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [RecurringWorkerSchedule]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   RecurringWorkerSchedule copyWith({
     int? id,
     String? workerKey,
@@ -125,13 +125,11 @@ abstract class RecurringWorkerSchedule
   }
 
   static RecurringWorkerScheduleIncludeList includeList({
-    _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
+    _is.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
+    _is.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
+    _is.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
     RecurringWorkerScheduleInclude? include,
   }) {
     return RecurringWorkerScheduleIncludeList._(
@@ -139,8 +137,6 @@ abstract class RecurringWorkerSchedule
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(RecurringWorkerSchedule.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(RecurringWorkerSchedule.t),
       include: include,
     );
@@ -148,7 +144,7 @@ abstract class RecurringWorkerSchedule
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -175,7 +171,7 @@ class _RecurringWorkerScheduleImpl extends RecurringWorkerSchedule {
 
   /// Returns a shallow copy of this [RecurringWorkerSchedule]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   RecurringWorkerSchedule copyWith({
     Object? id = _Undefined,
@@ -203,68 +199,68 @@ class _RecurringWorkerScheduleImpl extends RecurringWorkerSchedule {
 }
 
 class RecurringWorkerScheduleUpdateTable
-    extends _i1.UpdateTable<RecurringWorkerScheduleTable> {
+    extends _is.UpdateTable<RecurringWorkerScheduleTable> {
   RecurringWorkerScheduleUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> workerKey(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> workerKey(String value) => _is.ColumnValue(
     table.workerKey,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> nextRunAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> nextRunAt(DateTime value) =>
+      _is.ColumnValue(
         table.nextRunAt,
         value,
       );
 
-  _i1.ColumnValue<String, String> runToken(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> runToken(String? value) => _is.ColumnValue(
     table.runToken,
     value,
   );
 
-  _i1.ColumnValue<int, int> leaderFencingToken(int? value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> leaderFencingToken(int? value) => _is.ColumnValue(
     table.leaderFencingToken,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> runLeaseExpiresAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> runLeaseExpiresAt(DateTime? value) =>
+      _is.ColumnValue(
         table.runLeaseExpiresAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _is.ColumnValue(
         table.updatedAt,
         value,
       );
 }
 
-class RecurringWorkerScheduleTable extends _i1.Table<int?> {
+class RecurringWorkerScheduleTable extends _is.Table<int?> {
   RecurringWorkerScheduleTable({super.tableRelation})
     : super(tableName: 'recurring_worker_schedule') {
     updateTable = RecurringWorkerScheduleUpdateTable(this);
-    workerKey = _i1.ColumnString(
+    workerKey = _is.ColumnString(
       'workerKey',
       this,
     );
-    nextRunAt = _i1.ColumnDateTime(
+    nextRunAt = _is.ColumnDateTime(
       'nextRunAt',
       this,
     );
-    runToken = _i1.ColumnString(
+    runToken = _is.ColumnString(
       'runToken',
       this,
     );
-    leaderFencingToken = _i1.ColumnInt(
+    leaderFencingToken = _is.ColumnInt(
       'leaderFencingToken',
       this,
     );
-    runLeaseExpiresAt = _i1.ColumnDateTime(
+    runLeaseExpiresAt = _is.ColumnDateTime(
       'runLeaseExpiresAt',
       this,
     );
-    updatedAt = _i1.ColumnDateTime(
+    updatedAt = _is.ColumnDateTime(
       'updatedAt',
       this,
     );
@@ -272,20 +268,20 @@ class RecurringWorkerScheduleTable extends _i1.Table<int?> {
 
   late final RecurringWorkerScheduleUpdateTable updateTable;
 
-  late final _i1.ColumnString workerKey;
+  late final _is.ColumnString workerKey;
 
-  late final _i1.ColumnDateTime nextRunAt;
+  late final _is.ColumnDateTime nextRunAt;
 
-  late final _i1.ColumnString runToken;
+  late final _is.ColumnString runToken;
 
-  late final _i1.ColumnInt leaderFencingToken;
+  late final _is.ColumnInt leaderFencingToken;
 
-  late final _i1.ColumnDateTime runLeaseExpiresAt;
+  late final _is.ColumnDateTime runLeaseExpiresAt;
 
-  late final _i1.ColumnDateTime updatedAt;
+  late final _is.ColumnDateTime updatedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workerKey,
     nextRunAt,
@@ -296,24 +292,22 @@ class RecurringWorkerScheduleTable extends _i1.Table<int?> {
   ];
 }
 
-class RecurringWorkerScheduleInclude extends _i1.IncludeObject {
+class RecurringWorkerScheduleInclude extends _is.IncludeObject {
   RecurringWorkerScheduleInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => RecurringWorkerSchedule.t;
+  _is.Table<int?> get table => RecurringWorkerSchedule.t;
 }
 
-class RecurringWorkerScheduleIncludeList extends _i1.IncludeList {
+class RecurringWorkerScheduleIncludeList extends _is.IncludeList {
   RecurringWorkerScheduleIncludeList._({
-    _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
+    _is.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -321,10 +315,10 @@ class RecurringWorkerScheduleIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => RecurringWorkerSchedule.t;
+  _is.Table<int?> get table => RecurringWorkerSchedule.t;
 }
 
 class RecurringWorkerScheduleRepository {
@@ -353,24 +347,20 @@ class RecurringWorkerScheduleRepository {
   /// );
   /// ```
   Future<List<RecurringWorkerSchedule>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
+    _is.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<RecurringWorkerSchedule>(
       where: where?.call(RecurringWorkerSchedule.t),
       orderBy: orderBy?.call(RecurringWorkerSchedule.t),
       orderByList: orderByList?.call(RecurringWorkerSchedule.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -397,23 +387,19 @@ class RecurringWorkerScheduleRepository {
   /// );
   /// ```
   Future<RecurringWorkerSchedule?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
     int? offset,
-    _i1.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
+    _is.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<RecurringWorkerSchedule>(
       where: where?.call(RecurringWorkerSchedule.t),
       orderBy: orderBy?.call(RecurringWorkerSchedule.t),
       orderByList: orderByList?.call(RecurringWorkerSchedule.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -423,11 +409,11 @@ class RecurringWorkerScheduleRepository {
 
   /// Finds a single [RecurringWorkerSchedule] by its [id] or null if no such row exists.
   Future<RecurringWorkerSchedule?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<RecurringWorkerSchedule>(
       id,
@@ -452,9 +438,9 @@ class RecurringWorkerScheduleRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<RecurringWorkerSchedule>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<RecurringWorkerSchedule> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -470,9 +456,9 @@ class RecurringWorkerScheduleRepository {
   ///
   /// The returned [RecurringWorkerSchedule] will have its `id` field set.
   Future<RecurringWorkerSchedule> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     RecurringWorkerSchedule row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<RecurringWorkerSchedule>(
       row,
@@ -501,12 +487,12 @@ class RecurringWorkerScheduleRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<RecurringWorkerSchedule>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<RecurringWorkerSchedule> rows, {
-    required _i1.ColumnSelections<RecurringWorkerScheduleTable> conflictColumns,
-    _i1.ColumnSelections<RecurringWorkerScheduleTable>? updateColumns,
-    _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<RecurringWorkerScheduleTable> conflictColumns,
+    _is.ColumnSelections<RecurringWorkerScheduleTable>? updateColumns,
+    _is.WhereExpressionBuilder<RecurringWorkerScheduleTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<RecurringWorkerSchedule>(
@@ -533,12 +519,12 @@ class RecurringWorkerScheduleRepository {
   ///
   /// The returned [RecurringWorkerSchedule] will have its `id` field set.
   Future<RecurringWorkerSchedule?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     RecurringWorkerSchedule row, {
-    required _i1.ColumnSelections<RecurringWorkerScheduleTable> conflictColumns,
-    _i1.ColumnSelections<RecurringWorkerScheduleTable>? updateColumns,
-    _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<RecurringWorkerScheduleTable> conflictColumns,
+    _is.ColumnSelections<RecurringWorkerScheduleTable>? updateColumns,
+    _is.WhereExpressionBuilder<RecurringWorkerScheduleTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<RecurringWorkerSchedule>(
       row,
@@ -559,10 +545,10 @@ class RecurringWorkerScheduleRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<RecurringWorkerSchedule>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<RecurringWorkerSchedule> rows, {
-    _i1.ColumnSelections<RecurringWorkerScheduleTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<RecurringWorkerScheduleTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<RecurringWorkerSchedule>(
@@ -577,10 +563,10 @@ class RecurringWorkerScheduleRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<RecurringWorkerSchedule> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     RecurringWorkerSchedule row, {
-    _i1.ColumnSelections<RecurringWorkerScheduleTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<RecurringWorkerScheduleTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<RecurringWorkerSchedule>(
       row,
@@ -592,11 +578,11 @@ class RecurringWorkerScheduleRepository {
   /// Updates a single [RecurringWorkerSchedule] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<RecurringWorkerSchedule?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<RecurringWorkerScheduleUpdateTable>
+    required _is.ColumnValueListBuilder<RecurringWorkerScheduleUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<RecurringWorkerSchedule>(
       id,
@@ -612,17 +598,15 @@ class RecurringWorkerScheduleRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<RecurringWorkerSchedule>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<RecurringWorkerScheduleUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<RecurringWorkerScheduleUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable> where,
+    required _is.WhereExpressionBuilder<RecurringWorkerScheduleTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
-    _i1.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
+    _is.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<RecurringWorkerSchedule>(
@@ -632,8 +616,6 @@ class RecurringWorkerScheduleRepository {
       offset: offset,
       orderBy: orderBy?.call(RecurringWorkerSchedule.t),
       orderByList: orderByList?.call(RecurringWorkerSchedule.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -651,21 +633,17 @@ class RecurringWorkerScheduleRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<RecurringWorkerSchedule>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<RecurringWorkerSchedule> rows, {
-    _i1.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
+    _is.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<RecurringWorkerSchedule>(
       rows,
       orderBy: orderBy?.call(RecurringWorkerSchedule.t),
       orderByList: orderByList?.call(RecurringWorkerSchedule.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -673,9 +651,9 @@ class RecurringWorkerScheduleRepository {
 
   /// Deletes a single [RecurringWorkerSchedule].
   Future<RecurringWorkerSchedule> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     RecurringWorkerSchedule row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<RecurringWorkerSchedule>(
       row,
@@ -692,21 +670,17 @@ class RecurringWorkerScheduleRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<RecurringWorkerSchedule>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable> where,
-    _i1.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<RecurringWorkerScheduleTable> where,
+    _is.OrderByBuilder<RecurringWorkerScheduleTable>? orderBy,
+    _is.OrderByListBuilder<RecurringWorkerScheduleTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<RecurringWorkerSchedule>(
       where: where(RecurringWorkerSchedule.t),
       orderBy: orderBy?.call(RecurringWorkerSchedule.t),
       orderByList: orderByList?.call(RecurringWorkerSchedule.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -715,10 +689,10 @@ class RecurringWorkerScheduleRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<RecurringWorkerScheduleTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<RecurringWorkerSchedule>(
       where: where?.call(RecurringWorkerSchedule.t),
@@ -729,11 +703,11 @@ class RecurringWorkerScheduleRepository {
 
   /// Acquires row-level locks on [RecurringWorkerSchedule] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<RecurringWorkerScheduleTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<RecurringWorkerScheduleTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<RecurringWorkerSchedule>(
       where: where(RecurringWorkerSchedule.t),

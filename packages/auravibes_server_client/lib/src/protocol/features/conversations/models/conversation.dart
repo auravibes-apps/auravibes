@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class Conversation implements _i1.SerializableModel {
+abstract class Conversation
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   Conversation._({
     this.id,
     required this.workspaceId,
@@ -59,7 +60,7 @@ abstract class Conversation implements _i1.SerializableModel {
       workspaceId: jsonSerialization['workspaceId'] as int,
       stableId: jsonSerialization['stableId'] as String,
       title: jsonSerialization['title'] as String?,
-      isPinned: _i1.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+      isPinned: _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       parentConversationStableId:
@@ -69,15 +70,15 @@ abstract class Conversation implements _i1.SerializableModel {
       eventSequence: jsonSerialization['eventSequence'] as int?,
       executionState: jsonSerialization['executionState'] as String?,
       activeExecutionId: jsonSerialization['activeExecutionId'] as int?,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -118,7 +119,7 @@ abstract class Conversation implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [Conversation]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   Conversation copyWith({
     int? id,
     int? workspaceId,
@@ -162,8 +163,32 @@ abstract class Conversation implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'Conversation',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'stableId': stableId,
+      if (title != null) 'title': title,
+      'isPinned': isPinned,
+      if (modelId != null) 'modelId': modelId,
+      if (agentId != null) 'agentId': agentId,
+      if (parentConversationStableId != null)
+        'parentConversationStableId': parentConversationStableId,
+      'revision': revision,
+      'projectionRevision': projectionRevision,
+      'eventSequence': eventSequence,
+      'executionState': executionState,
+      if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+      if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -208,7 +233,7 @@ class _ConversationImpl extends Conversation {
 
   /// Returns a shallow copy of this [Conversation]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   Conversation copyWith({
     Object? id = _Undefined,

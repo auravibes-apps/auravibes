@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ProviderAdmissionReservation implements _i1.SerializableModel {
+abstract class ProviderAdmissionReservation
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ProviderAdmissionReservation._({
     this.id,
     required this.jobId,
@@ -44,13 +45,13 @@ abstract class ProviderAdmissionReservation implements _i1.SerializableModel {
       workspaceId: jsonSerialization['workspaceId'] as int,
       providerId: jsonSerialization['providerId'] as String,
       leaseToken: jsonSerialization['leaseToken'] as String,
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -77,7 +78,7 @@ abstract class ProviderAdmissionReservation implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ProviderAdmissionReservation]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ProviderAdmissionReservation copyWith({
     int? id,
     int? jobId,
@@ -104,8 +105,23 @@ abstract class ProviderAdmissionReservation implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ProviderAdmissionReservation',
+      if (id != null) 'id': id,
+      'jobId': jobId,
+      'workspaceId': workspaceId,
+      'providerId': providerId,
+      'leaseToken': leaseToken,
+      'expiresAt': expiresAt.toJson(),
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -134,7 +150,7 @@ class _ProviderAdmissionReservationImpl extends ProviderAdmissionReservation {
 
   /// Returns a shallow copy of this [ProviderAdmissionReservation]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ProviderAdmissionReservation copyWith({
     Object? id = _Undefined,

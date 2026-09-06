@@ -10,11 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 abstract class QueueConversationMessageRequest
-    implements _i1.SerializableModel {
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   QueueConversationMessageRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -46,7 +47,7 @@ abstract class QueueConversationMessageRequest
           jsonSerialization['expectedProjectionRevision'] as int,
       clientMessageId: jsonSerialization['clientMessageId'] as String,
       content: jsonSerialization['content'] as String,
-      attachmentIds: _i2.Protocol().deserialize<List<String>>(
+      attachmentIds: _isctvzjc.Protocol().deserialize<List<String>>(
         jsonSerialization['attachmentIds'],
       ),
     );
@@ -68,7 +69,7 @@ abstract class QueueConversationMessageRequest
 
   /// Returns a shallow copy of this [QueueConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   QueueConversationMessageRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -93,8 +94,22 @@ abstract class QueueConversationMessageRequest
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'QueueConversationMessageRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'conversationId': conversationId,
+      'expectedProjectionRevision': expectedProjectionRevision,
+      'clientMessageId': clientMessageId,
+      'content': content,
+      'attachmentIds': attachmentIds.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -120,7 +135,7 @@ class _QueueConversationMessageRequestImpl
 
   /// Returns a shallow copy of this [QueueConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   QueueConversationMessageRequest copyWith({
     int? workspaceId,

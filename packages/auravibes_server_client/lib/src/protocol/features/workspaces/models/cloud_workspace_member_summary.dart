@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
+abstract class CloudWorkspaceMemberSummary
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CloudWorkspaceMemberSummary._({
     required this.userId,
     this.email,
@@ -37,7 +38,7 @@ abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
       email: jsonSerialization['email'] as String?,
       role: jsonSerialization['role'] as String,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -55,7 +56,7 @@ abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [CloudWorkspaceMemberSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CloudWorkspaceMemberSummary copyWith({
     String? userId,
     String? email,
@@ -76,8 +77,20 @@ abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CloudWorkspaceMemberSummary',
+      'userId': userId,
+      if (email != null) 'email': email,
+      'role': role,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -100,7 +113,7 @@ class _CloudWorkspaceMemberSummaryImpl extends CloudWorkspaceMemberSummary {
 
   /// Returns a shallow copy of this [CloudWorkspaceMemberSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CloudWorkspaceMemberSummary copyWith({
     String? userId,

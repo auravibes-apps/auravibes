@@ -10,17 +10,17 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'dart:typed_data' as _idt;
+
+import 'package:serverpod/serverpod.dart' as _is;
 
 import '../../../features/workspace_state/models/workspace_secret_kind.dart'
-    as _i2;
+    as _iffvdh0v;
 import '../../../features/workspace_state/models/workspace_secret_scope.dart'
-    as _i3;
-
-import 'dart:typed_data' as _i4;
+    as _iews8xwg;
 
 abstract class WorkspaceSecret
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   WorkspaceSecret._({
     this.id,
     required this.workspaceId,
@@ -43,13 +43,13 @@ abstract class WorkspaceSecret
   factory WorkspaceSecret({
     int? id,
     required int workspaceId,
-    required _i2.WorkspaceSecretKind secretKind,
-    required _i3.WorkspaceSecretScope scope,
+    required _iffvdh0v.WorkspaceSecretKind secretKind,
+    required _iews8xwg.WorkspaceSecretScope scope,
     required String ownerUserId,
     required String resourceId,
-    required _i4.ByteData ciphertext,
-    required _i4.ByteData nonce,
-    required _i4.ByteData authenticationTag,
+    required _idt.ByteData ciphertext,
+    required _idt.ByteData nonce,
+    required _idt.ByteData authenticationTag,
     required String algorithm,
     required int keyVersion,
     String? displaySuffix,
@@ -63,34 +63,34 @@ abstract class WorkspaceSecret
     return WorkspaceSecret(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
-      secretKind: _i2.WorkspaceSecretKind.fromJson(
+      secretKind: _iffvdh0v.WorkspaceSecretKind.fromJson(
         (jsonSerialization['secretKind'] as String),
       ),
-      scope: _i3.WorkspaceSecretScope.fromJson(
+      scope: _iews8xwg.WorkspaceSecretScope.fromJson(
         (jsonSerialization['scope'] as String),
       ),
       ownerUserId: jsonSerialization['ownerUserId'] as String,
       resourceId: jsonSerialization['resourceId'] as String,
-      ciphertext: _i1.ByteDataJsonExtension.fromJson(
+      ciphertext: _is.ByteDataJsonExtension.fromJson(
         jsonSerialization['ciphertext'],
       ),
-      nonce: _i1.ByteDataJsonExtension.fromJson(jsonSerialization['nonce']),
-      authenticationTag: _i1.ByteDataJsonExtension.fromJson(
+      nonce: _is.ByteDataJsonExtension.fromJson(jsonSerialization['nonce']),
+      authenticationTag: _is.ByteDataJsonExtension.fromJson(
         jsonSerialization['authenticationTag'],
       ),
       algorithm: jsonSerialization['algorithm'] as String,
       keyVersion: jsonSerialization['keyVersion'] as int,
       displaySuffix: jsonSerialization['displaySuffix'] as String?,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -103,19 +103,19 @@ abstract class WorkspaceSecret
 
   int workspaceId;
 
-  _i2.WorkspaceSecretKind secretKind;
+  _iffvdh0v.WorkspaceSecretKind secretKind;
 
-  _i3.WorkspaceSecretScope scope;
+  _iews8xwg.WorkspaceSecretScope scope;
 
   String ownerUserId;
 
   String resourceId;
 
-  _i4.ByteData ciphertext;
+  _idt.ByteData ciphertext;
 
-  _i4.ByteData nonce;
+  _idt.ByteData nonce;
 
-  _i4.ByteData authenticationTag;
+  _idt.ByteData authenticationTag;
 
   String algorithm;
 
@@ -132,21 +132,21 @@ abstract class WorkspaceSecret
   DateTime? deletedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [WorkspaceSecret]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkspaceSecret copyWith({
     int? id,
     int? workspaceId,
-    _i2.WorkspaceSecretKind? secretKind,
-    _i3.WorkspaceSecretScope? scope,
+    _iffvdh0v.WorkspaceSecretKind? secretKind,
+    _iews8xwg.WorkspaceSecretScope? scope,
     String? ownerUserId,
     String? resourceId,
-    _i4.ByteData? ciphertext,
-    _i4.ByteData? nonce,
-    _i4.ByteData? authenticationTag,
+    _idt.ByteData? ciphertext,
+    _idt.ByteData? nonce,
+    _idt.ByteData? authenticationTag,
     String? algorithm,
     int? keyVersion,
     String? displaySuffix,
@@ -206,13 +206,11 @@ abstract class WorkspaceSecret
   }
 
   static WorkspaceSecretIncludeList includeList({
-    _i1.WhereExpressionBuilder<WorkspaceSecretTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceSecretTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceSecretTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
+    _is.OrderByBuilder<WorkspaceSecretTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
     WorkspaceSecretInclude? include,
   }) {
     return WorkspaceSecretIncludeList._(
@@ -220,8 +218,6 @@ abstract class WorkspaceSecret
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(WorkspaceSecret.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(WorkspaceSecret.t),
       include: include,
     );
@@ -229,7 +225,7 @@ abstract class WorkspaceSecret
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -239,13 +235,13 @@ class _WorkspaceSecretImpl extends WorkspaceSecret {
   _WorkspaceSecretImpl({
     int? id,
     required int workspaceId,
-    required _i2.WorkspaceSecretKind secretKind,
-    required _i3.WorkspaceSecretScope scope,
+    required _iffvdh0v.WorkspaceSecretKind secretKind,
+    required _iews8xwg.WorkspaceSecretScope scope,
     required String ownerUserId,
     required String resourceId,
-    required _i4.ByteData ciphertext,
-    required _i4.ByteData nonce,
-    required _i4.ByteData authenticationTag,
+    required _idt.ByteData ciphertext,
+    required _idt.ByteData nonce,
+    required _idt.ByteData authenticationTag,
     required String algorithm,
     required int keyVersion,
     String? displaySuffix,
@@ -274,18 +270,18 @@ class _WorkspaceSecretImpl extends WorkspaceSecret {
 
   /// Returns a shallow copy of this [WorkspaceSecret]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkspaceSecret copyWith({
     Object? id = _Undefined,
     int? workspaceId,
-    _i2.WorkspaceSecretKind? secretKind,
-    _i3.WorkspaceSecretScope? scope,
+    _iffvdh0v.WorkspaceSecretKind? secretKind,
+    _iews8xwg.WorkspaceSecretScope? scope,
     String? ownerUserId,
     String? resourceId,
-    _i4.ByteData? ciphertext,
-    _i4.ByteData? nonce,
-    _i4.ByteData? authenticationTag,
+    _idt.ByteData? ciphertext,
+    _idt.ByteData? nonce,
+    _idt.ByteData? authenticationTag,
     String? algorithm,
     int? keyVersion,
     Object? displaySuffix = _Undefined,
@@ -317,160 +313,162 @@ class _WorkspaceSecretImpl extends WorkspaceSecret {
   }
 }
 
-class WorkspaceSecretUpdateTable extends _i1.UpdateTable<WorkspaceSecretTable> {
+class WorkspaceSecretUpdateTable extends _is.UpdateTable<WorkspaceSecretTable> {
   WorkspaceSecretUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<_i2.WorkspaceSecretKind, _i2.WorkspaceSecretKind> secretKind(
-    _i2.WorkspaceSecretKind value,
-  ) => _i1.ColumnValue(
+  _is.ColumnValue<_iffvdh0v.WorkspaceSecretKind, _iffvdh0v.WorkspaceSecretKind>
+  secretKind(_iffvdh0v.WorkspaceSecretKind value) => _is.ColumnValue(
     table.secretKind,
     value,
   );
 
-  _i1.ColumnValue<_i3.WorkspaceSecretScope, _i3.WorkspaceSecretScope> scope(
-    _i3.WorkspaceSecretScope value,
-  ) => _i1.ColumnValue(
+  _is.ColumnValue<
+    _iews8xwg.WorkspaceSecretScope,
+    _iews8xwg.WorkspaceSecretScope
+  >
+  scope(_iews8xwg.WorkspaceSecretScope value) => _is.ColumnValue(
     table.scope,
     value,
   );
 
-  _i1.ColumnValue<String, String> ownerUserId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> ownerUserId(String value) => _is.ColumnValue(
     table.ownerUserId,
     value,
   );
 
-  _i1.ColumnValue<String, String> resourceId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> resourceId(String value) => _is.ColumnValue(
     table.resourceId,
     value,
   );
 
-  _i1.ColumnValue<_i4.ByteData, _i4.ByteData> ciphertext(_i4.ByteData value) =>
-      _i1.ColumnValue(
-        table.ciphertext,
-        value,
-      );
+  _is.ColumnValue<_idt.ByteData, _idt.ByteData> ciphertext(
+    _idt.ByteData value,
+  ) => _is.ColumnValue(
+    table.ciphertext,
+    value,
+  );
 
-  _i1.ColumnValue<_i4.ByteData, _i4.ByteData> nonce(_i4.ByteData value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<_idt.ByteData, _idt.ByteData> nonce(_idt.ByteData value) =>
+      _is.ColumnValue(
         table.nonce,
         value,
       );
 
-  _i1.ColumnValue<_i4.ByteData, _i4.ByteData> authenticationTag(
-    _i4.ByteData value,
-  ) => _i1.ColumnValue(
+  _is.ColumnValue<_idt.ByteData, _idt.ByteData> authenticationTag(
+    _idt.ByteData value,
+  ) => _is.ColumnValue(
     table.authenticationTag,
     value,
   );
 
-  _i1.ColumnValue<String, String> algorithm(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> algorithm(String value) => _is.ColumnValue(
     table.algorithm,
     value,
   );
 
-  _i1.ColumnValue<int, int> keyVersion(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> keyVersion(int value) => _is.ColumnValue(
     table.keyVersion,
     value,
   );
 
-  _i1.ColumnValue<String, String> displaySuffix(String? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<String, String> displaySuffix(String? value) =>
+      _is.ColumnValue(
         table.displaySuffix,
         value,
       );
 
-  _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> revision(int value) => _is.ColumnValue(
     table.revision,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _is.ColumnValue(
         table.updatedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.deletedAt,
         value,
       );
 }
 
-class WorkspaceSecretTable extends _i1.Table<int?> {
+class WorkspaceSecretTable extends _is.Table<int?> {
   WorkspaceSecretTable({super.tableRelation})
     : super(tableName: 'workspace_secret') {
     updateTable = WorkspaceSecretUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    secretKind = _i1.ColumnEnum(
+    secretKind = _is.ColumnEnum(
       'secretKind',
       this,
-      _i1.EnumSerialization.byName,
+      _is.EnumSerialization.byName,
     );
-    scope = _i1.ColumnEnum(
+    scope = _is.ColumnEnum(
       'scope',
       this,
-      _i1.EnumSerialization.byName,
+      _is.EnumSerialization.byName,
     );
-    ownerUserId = _i1.ColumnString(
+    ownerUserId = _is.ColumnString(
       'ownerUserId',
       this,
     );
-    resourceId = _i1.ColumnString(
+    resourceId = _is.ColumnString(
       'resourceId',
       this,
     );
-    ciphertext = _i1.ColumnByteData(
+    ciphertext = _is.ColumnByteData(
       'ciphertext',
       this,
     );
-    nonce = _i1.ColumnByteData(
+    nonce = _is.ColumnByteData(
       'nonce',
       this,
     );
-    authenticationTag = _i1.ColumnByteData(
+    authenticationTag = _is.ColumnByteData(
       'authenticationTag',
       this,
     );
-    algorithm = _i1.ColumnString(
+    algorithm = _is.ColumnString(
       'algorithm',
       this,
     );
-    keyVersion = _i1.ColumnInt(
+    keyVersion = _is.ColumnInt(
       'keyVersion',
       this,
     );
-    displaySuffix = _i1.ColumnString(
+    displaySuffix = _is.ColumnString(
       'displaySuffix',
       this,
     );
-    revision = _i1.ColumnInt(
+    revision = _is.ColumnInt(
       'revision',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    updatedAt = _i1.ColumnDateTime(
+    updatedAt = _is.ColumnDateTime(
       'updatedAt',
       this,
     );
-    deletedAt = _i1.ColumnDateTime(
+    deletedAt = _is.ColumnDateTime(
       'deletedAt',
       this,
     );
@@ -478,38 +476,38 @@ class WorkspaceSecretTable extends _i1.Table<int?> {
 
   late final WorkspaceSecretUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnEnum<_i2.WorkspaceSecretKind> secretKind;
+  late final _is.ColumnEnum<_iffvdh0v.WorkspaceSecretKind> secretKind;
 
-  late final _i1.ColumnEnum<_i3.WorkspaceSecretScope> scope;
+  late final _is.ColumnEnum<_iews8xwg.WorkspaceSecretScope> scope;
 
-  late final _i1.ColumnString ownerUserId;
+  late final _is.ColumnString ownerUserId;
 
-  late final _i1.ColumnString resourceId;
+  late final _is.ColumnString resourceId;
 
-  late final _i1.ColumnByteData ciphertext;
+  late final _is.ColumnByteData ciphertext;
 
-  late final _i1.ColumnByteData nonce;
+  late final _is.ColumnByteData nonce;
 
-  late final _i1.ColumnByteData authenticationTag;
+  late final _is.ColumnByteData authenticationTag;
 
-  late final _i1.ColumnString algorithm;
+  late final _is.ColumnString algorithm;
 
-  late final _i1.ColumnInt keyVersion;
+  late final _is.ColumnInt keyVersion;
 
-  late final _i1.ColumnString displaySuffix;
+  late final _is.ColumnString displaySuffix;
 
-  late final _i1.ColumnInt revision;
+  late final _is.ColumnInt revision;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime updatedAt;
+  late final _is.ColumnDateTime updatedAt;
 
-  late final _i1.ColumnDateTime deletedAt;
+  late final _is.ColumnDateTime deletedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     secretKind,
@@ -529,24 +527,22 @@ class WorkspaceSecretTable extends _i1.Table<int?> {
   ];
 }
 
-class WorkspaceSecretInclude extends _i1.IncludeObject {
+class WorkspaceSecretInclude extends _is.IncludeObject {
   WorkspaceSecretInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceSecret.t;
+  _is.Table<int?> get table => WorkspaceSecret.t;
 }
 
-class WorkspaceSecretIncludeList extends _i1.IncludeList {
+class WorkspaceSecretIncludeList extends _is.IncludeList {
   WorkspaceSecretIncludeList._({
-    _i1.WhereExpressionBuilder<WorkspaceSecretTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceSecretTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -554,10 +550,10 @@ class WorkspaceSecretIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceSecret.t;
+  _is.Table<int?> get table => WorkspaceSecret.t;
 }
 
 class WorkspaceSecretRepository {
@@ -586,24 +582,20 @@ class WorkspaceSecretRepository {
   /// );
   /// ```
   Future<List<WorkspaceSecret>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceSecretTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceSecretTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceSecretTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceSecretTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<WorkspaceSecret>(
       where: where?.call(WorkspaceSecret.t),
       orderBy: orderBy?.call(WorkspaceSecret.t),
       orderByList: orderByList?.call(WorkspaceSecret.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -630,23 +622,19 @@ class WorkspaceSecretRepository {
   /// );
   /// ```
   Future<WorkspaceSecret?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceSecretTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceSecretTable>? where,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceSecretTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceSecretTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<WorkspaceSecret>(
       where: where?.call(WorkspaceSecret.t),
       orderBy: orderBy?.call(WorkspaceSecret.t),
       orderByList: orderByList?.call(WorkspaceSecret.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -656,11 +644,11 @@ class WorkspaceSecretRepository {
 
   /// Finds a single [WorkspaceSecret] by its [id] or null if no such row exists.
   Future<WorkspaceSecret?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<WorkspaceSecret>(
       id,
@@ -685,9 +673,9 @@ class WorkspaceSecretRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceSecret>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceSecret> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -703,9 +691,9 @@ class WorkspaceSecretRepository {
   ///
   /// The returned [WorkspaceSecret] will have its `id` field set.
   Future<WorkspaceSecret> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceSecret row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<WorkspaceSecret>(
       row,
@@ -734,12 +722,12 @@ class WorkspaceSecretRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceSecret>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceSecret> rows, {
-    required _i1.ColumnSelections<WorkspaceSecretTable> conflictColumns,
-    _i1.ColumnSelections<WorkspaceSecretTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceSecretTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkspaceSecretTable> conflictColumns,
+    _is.ColumnSelections<WorkspaceSecretTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceSecretTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<WorkspaceSecret>(
@@ -766,12 +754,12 @@ class WorkspaceSecretRepository {
   ///
   /// The returned [WorkspaceSecret] will have its `id` field set.
   Future<WorkspaceSecret?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceSecret row, {
-    required _i1.ColumnSelections<WorkspaceSecretTable> conflictColumns,
-    _i1.ColumnSelections<WorkspaceSecretTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceSecretTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkspaceSecretTable> conflictColumns,
+    _is.ColumnSelections<WorkspaceSecretTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceSecretTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<WorkspaceSecret>(
       row,
@@ -792,10 +780,10 @@ class WorkspaceSecretRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceSecret>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceSecret> rows, {
-    _i1.ColumnSelections<WorkspaceSecretTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceSecretTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<WorkspaceSecret>(
@@ -810,10 +798,10 @@ class WorkspaceSecretRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<WorkspaceSecret> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceSecret row, {
-    _i1.ColumnSelections<WorkspaceSecretTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceSecretTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<WorkspaceSecret>(
       row,
@@ -825,11 +813,11 @@ class WorkspaceSecretRepository {
   /// Updates a single [WorkspaceSecret] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<WorkspaceSecret?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<WorkspaceSecretUpdateTable>
+    required _is.ColumnValueListBuilder<WorkspaceSecretUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<WorkspaceSecret>(
       id,
@@ -845,17 +833,15 @@ class WorkspaceSecretRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceSecret>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<WorkspaceSecretUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<WorkspaceSecretUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<WorkspaceSecretTable> where,
+    required _is.WhereExpressionBuilder<WorkspaceSecretTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceSecretTable>? orderBy,
-    _i1.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceSecretTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<WorkspaceSecret>(
@@ -865,8 +851,6 @@ class WorkspaceSecretRepository {
       offset: offset,
       orderBy: orderBy?.call(WorkspaceSecret.t),
       orderByList: orderByList?.call(WorkspaceSecret.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -884,21 +868,17 @@ class WorkspaceSecretRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceSecret>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceSecret> rows, {
-    _i1.OrderByBuilder<WorkspaceSecretTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceSecretTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<WorkspaceSecret>(
       rows,
       orderBy: orderBy?.call(WorkspaceSecret.t),
       orderByList: orderByList?.call(WorkspaceSecret.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -906,9 +886,9 @@ class WorkspaceSecretRepository {
 
   /// Deletes a single [WorkspaceSecret].
   Future<WorkspaceSecret> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceSecret row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<WorkspaceSecret>(
       row,
@@ -925,21 +905,17 @@ class WorkspaceSecretRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceSecret>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceSecretTable> where,
-    _i1.OrderByBuilder<WorkspaceSecretTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceSecretTable> where,
+    _is.OrderByBuilder<WorkspaceSecretTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceSecretTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<WorkspaceSecret>(
       where: where(WorkspaceSecret.t),
       orderBy: orderBy?.call(WorkspaceSecret.t),
       orderByList: orderByList?.call(WorkspaceSecret.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -948,10 +924,10 @@ class WorkspaceSecretRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceSecretTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceSecretTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<WorkspaceSecret>(
       where: where?.call(WorkspaceSecret.t),
@@ -962,11 +938,11 @@ class WorkspaceSecretRepository {
 
   /// Acquires row-level locks on [WorkspaceSecret] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceSecretTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceSecretTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<WorkspaceSecret>(
       where: where(WorkspaceSecret.t),

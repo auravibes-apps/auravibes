@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class WorkspaceInvite implements _i1.SerializableModel {
+abstract class WorkspaceInvite
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceInvite._({
     this.id,
     required this.workspaceId,
@@ -59,24 +60,28 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
       invitedByUserId: jsonSerialization['invitedByUserId'] as String,
       acceptedByUserId: jsonSerialization['acceptedByUserId'] as String?,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       expiresAt: jsonSerialization['expiresAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['expiresAt']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['expiresAt']),
       acceptedAt: jsonSerialization['acceptedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['acceptedAt']),
+          : _isc.DateTimeJsonExtension.fromJson(
+              jsonSerialization['acceptedAt'],
+            ),
       declinedAt: jsonSerialization['declinedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['declinedAt']),
+          : _isc.DateTimeJsonExtension.fromJson(
+              jsonSerialization['declinedAt'],
+            ),
       revokedAt: jsonSerialization['revokedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['revokedAt']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['revokedAt']),
       pendingKey: jsonSerialization['pendingKey'] as String?,
     );
   }
@@ -116,7 +121,7 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceInvite]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceInvite copyWith({
     int? id,
     int? workspaceId,
@@ -157,8 +162,30 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceInvite',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'email': email,
+      'normalizedEmail': normalizedEmail,
+      'role': role,
+      'invitedByUserId': invitedByUserId,
+      if (acceptedByUserId != null) 'acceptedByUserId': acceptedByUserId,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+      if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
+      if (acceptedAt != null) 'acceptedAt': acceptedAt?.toJson(),
+      if (declinedAt != null) 'declinedAt': declinedAt?.toJson(),
+      if (revokedAt != null) 'revokedAt': revokedAt?.toJson(),
+      if (pendingKey != null) 'pendingKey': pendingKey,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -201,7 +228,7 @@ class _WorkspaceInviteImpl extends WorkspaceInvite {
 
   /// Returns a shallow copy of this [WorkspaceInvite]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceInvite copyWith({
     Object? id = _Undefined,

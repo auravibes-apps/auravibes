@@ -10,373 +10,375 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-
-import '../auth/email_idp_endpoint.dart' as _i2;
-import '../auth/jwt_refresh_endpoint.dart' as _i3;
-import '../features/accounts/account_endpoint.dart' as _i4;
-import '../features/codex_oauth/codex_oauth_endpoint.dart' as _i5;
-import '../features/conversations/conversation_endpoint.dart' as _i6;
-import '../features/mcp_servers/mcp_server_endpoint.dart' as _i7;
-import '../features/model_connections/model_connection_endpoint.dart' as _i8;
-import '../features/objects/object_endpoint.dart' as _i9;
-import '../features/sync/stream/workspace_stream_endpoint.dart' as _i10;
-import '../features/workspace_state/workspace_secret_endpoint.dart' as _i11;
-import '../features/workspace_state/workspace_state_endpoint.dart' as _i12;
-import '../features/workspaces/cloud_workspace_endpoint.dart' as _i13;
-
-import 'package:auravibes_server/src/generated/features/codex_oauth/models/start_codex_oauth_request.dart'
-    as _i14;
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/complete_codex_oauth_request.dart'
-    as _i15;
-import 'package:auravibes_server/src/generated/features/conversations/models/create_conversation_request.dart'
-    as _i16;
-import 'package:auravibes_server/src/generated/features/conversations/models/list_conversations_request.dart'
-    as _i17;
-import 'package:auravibes_server/src/generated/features/conversations/models/get_conversation_request.dart'
-    as _i18;
-import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_messages_request.dart'
-    as _i19;
-import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_request.dart'
-    as _i20;
-import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_request.dart'
-    as _i21;
-import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
-    as _i22;
-import 'package:auravibes_server/src/generated/features/conversations/models/continue_turn_request.dart'
-    as _i23;
-import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
-    as _i24;
-import 'package:auravibes_server/src/generated/features/conversations/models/queue_conversation_message_request.dart'
-    as _i25;
-import 'package:auravibes_server/src/generated/features/conversations/models/continue_conversation_request.dart'
-    as _i26;
-import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
-    as _i27;
-import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
-    as _i28;
-import 'package:auravibes_server/src/generated/features/conversations/models/reorder_pending_conversation_message_request.dart'
-    as _i29;
-import 'package:auravibes_server/src/generated/features/conversations/models/remove_pending_conversation_message_request.dart'
-    as _i30;
-import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_settings_request.dart'
-    as _i31;
-import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
-    as _i32;
+    as _ir0ud11r;
+import 'package:auravibes_server/src/generated/features/codex_oauth/models/start_codex_oauth_request.dart'
+    as _ivuexb4h;
 import 'package:auravibes_server/src/generated/features/conversations/models/cancel_turn_request.dart'
-    as _i33;
+    as _i4j5a2zc;
 import 'package:auravibes_server/src/generated/features/conversations/models/compact_conversation_request.dart'
-    as _i34;
+    as _i955umfq;
+import 'package:auravibes_server/src/generated/features/conversations/models/continue_conversation_request.dart'
+    as _ihn1s8rq;
+import 'package:auravibes_server/src/generated/features/conversations/models/continue_turn_request.dart'
+    as _io8jb8cg;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_subscribe_request.dart'
-    as _i35;
+    as _iwkyl6n9;
+import 'package:auravibes_server/src/generated/features/conversations/models/create_conversation_request.dart'
+    as _ish3zj9o;
+import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_request.dart'
+    as _il5llor3;
+import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
+    as _igstxg4l;
+import 'package:auravibes_server/src/generated/features/conversations/models/get_conversation_request.dart'
+    as _itkmf3xs;
+import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
+    as _iaqawmcu;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_messages_request.dart'
+    as _i5dqxctc;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_conversations_request.dart'
+    as _i0m5o1i2;
+import 'package:auravibes_server/src/generated/features/conversations/models/queue_conversation_message_request.dart'
+    as _i605rjdx;
+import 'package:auravibes_server/src/generated/features/conversations/models/remove_pending_conversation_message_request.dart'
+    as _irlsykk6;
+import 'package:auravibes_server/src/generated/features/conversations/models/reorder_pending_conversation_message_request.dart'
+    as _ilmuzuyl;
+import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
+    as _ijasfsbp;
+import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
+    as _ii20rgdx;
+import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
+    as _ii7vetdc;
+import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_request.dart'
+    as _i8uhzhf3;
+import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_settings_request.dart'
+    as _iwnddrxr;
 import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_request.dart'
-    as _i36;
+    as _ij06ag3u;
 import 'package:auravibes_server/src/generated/features/mcp_servers/models/delete_mcp_server_request.dart'
-    as _i37;
+    as _ilfhgnq3;
 import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_request.dart'
-    as _i38;
+    as _imtqkt48;
 import 'package:auravibes_server/src/generated/features/model_connections/models/create_model_connection_request.dart'
-    as _i39;
-import 'package:auravibes_server/src/generated/features/model_connections/models/list_model_connections_request.dart'
-    as _i40;
-import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
-    as _i41;
+    as _iq4yqonh;
 import 'package:auravibes_server/src/generated/features/model_connections/models/delete_model_connection_request.dart'
-    as _i42;
+    as _ikucadiy;
+import 'package:auravibes_server/src/generated/features/model_connections/models/list_model_connections_request.dart'
+    as _ii4wbihw;
 import 'package:auravibes_server/src/generated/features/model_connections/models/list_workspace_model_selections_request.dart'
-    as _i43;
+    as _infwdxn7;
 import 'package:auravibes_server/src/generated/features/model_connections/models/test_and_sync_model_connection_request.dart'
-    as _i44;
+    as _iskhxh94;
+import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
+    as _i2yb5fxk;
 import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
-    as _i45;
+    as _i873rzap;
 import 'package:auravibes_server/src/generated/features/objects/models/complete_upload_request.dart'
-    as _i46;
-import 'package:auravibes_server/src/generated/features/objects/models/get_download_request.dart'
-    as _i47;
+    as _ifp2nyf8;
 import 'package:auravibes_server/src/generated/features/objects/models/delete_object_request.dart'
-    as _i48;
+    as _ikvc6p78;
+import 'package:auravibes_server/src/generated/features/objects/models/get_download_request.dart'
+    as _itlqxnii;
 import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
-    as _i49;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_request.dart'
-    as _i50;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
-    as _i51;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_request.dart'
-    as _i52;
+    as _i87sg8g4;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
-    as _i53;
-import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
-    as _i54;
-import 'package:auravibes_server/src/generated/features/workspaces/models/list_workspace_members_request.dart'
-    as _i55;
-import 'package:auravibes_server/src/generated/features/workspaces/models/list_cloud_workspace_invites_request.dart'
-    as _i56;
-import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
-    as _i57;
-import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
-    as _i58;
-import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
-    as _i59;
-import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
-    as _i60;
+    as _ii40hsqd;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_request.dart'
+    as _iti8d4cu;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_request.dart'
+    as _ixodmwhe;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
+    as _i2v5creq;
 import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
-    as _i61;
+    as _i3cjuwla;
+import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
+    as _i65qcwf4;
 import 'package:auravibes_server/src/generated/features/workspaces/models/decline_workspace_invite_request.dart'
-    as _i62;
-import 'package:auravibes_server/src/generated/features/workspaces/models/rename_cloud_workspace_request.dart'
-    as _i63;
-import 'package:auravibes_server/src/generated/features/workspaces/models/leave_cloud_workspace_request.dart'
-    as _i64;
-import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
-    as _i65;
-import 'package:auravibes_server/src/generated/features/workspaces/models/update_workspace_member_role_request.dart'
-    as _i66;
-import 'package:auravibes_server/src/generated/features/workspaces/models/remove_workspace_member_request.dart'
-    as _i67;
+    as _inamn2d7;
 import 'package:auravibes_server/src/generated/features/workspaces/models/delete_cloud_workspace_request.dart'
-    as _i68;
+    as _imv0e49a;
+import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
+    as _ifw8zf1l;
+import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
+    as _iv16131v;
+import 'package:auravibes_server/src/generated/features/workspaces/models/leave_cloud_workspace_request.dart'
+    as _is93p8g5;
+import 'package:auravibes_server/src/generated/features/workspaces/models/list_cloud_workspace_invites_request.dart'
+    as _imorkccq;
+import 'package:auravibes_server/src/generated/features/workspaces/models/list_workspace_members_request.dart'
+    as _iebkjj2l;
+import 'package:auravibes_server/src/generated/features/workspaces/models/remove_workspace_member_request.dart'
+    as _i6zx39if;
+import 'package:auravibes_server/src/generated/features/workspaces/models/rename_cloud_workspace_request.dart'
+    as _i03e4t22;
+import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
+    as _iidbk7at;
+import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
+    as _immu2eqq;
+import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+    as _iz1a25vz;
+import 'package:auravibes_server/src/generated/features/workspaces/models/update_workspace_member_role_request.dart'
+    as _iekbk1on;
+import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
-    as _i69;
+    as _iacs;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
-    as _i70;
+    as _iais;
 
-class Endpoints extends _i1.EndpointDispatch {
+import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
+import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
+import '../features/accounts/account_endpoint.dart' as _iytsp81w;
+import '../features/codex_oauth/codex_oauth_endpoint.dart' as _igisrqgh;
+import '../features/conversations/conversation_endpoint.dart' as _ie3ymqip;
+import '../features/mcp_servers/mcp_server_endpoint.dart' as _im1tu8co;
+import '../features/model_connections/model_connection_endpoint.dart'
+    as _irncar1s;
+import '../features/objects/object_endpoint.dart' as _ia0f4jqg;
+import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
+import '../features/workspace_state/workspace_secret_endpoint.dart'
+    as _i2j4mlvu;
+import '../features/workspace_state/workspace_state_endpoint.dart' as _iv99006q;
+import '../features/workspaces/cloud_workspace_endpoint.dart' as _ij5poshv;
+
+class Endpoints extends _is.EndpointDispatch {
   @override
-  void initializeEndpoints(_i1.Server server) {
-    var endpoints = <String, _i1.Endpoint>{
-      'emailIdp': _i2.EmailIdpEndpoint()
+  void initializeEndpoints(_is.Server server) {
+    var endpoints = <String, _is.Endpoint>{
+      'emailIdp': _iuc1hd5t.EmailIdpEndpoint()
         ..initialize(
           server,
           'emailIdp',
           null,
         ),
-      'jwtRefresh': _i3.JwtRefreshEndpoint()
+      'jwtRefresh': _inwq3ztq.JwtRefreshEndpoint()
         ..initialize(
           server,
           'jwtRefresh',
           null,
         ),
-      'account': _i4.AccountEndpoint()
+      'account': _iytsp81w.AccountEndpoint()
         ..initialize(
           server,
           'account',
           null,
         ),
-      'codexOAuth': _i5.CodexOAuthEndpoint()
+      'codexOAuth': _igisrqgh.CodexOAuthEndpoint()
         ..initialize(
           server,
           'codexOAuth',
           null,
         ),
-      'conversation': _i6.ConversationEndpoint()
+      'conversation': _ie3ymqip.ConversationEndpoint()
         ..initialize(
           server,
           'conversation',
           null,
         ),
-      'mcpServer': _i7.McpServerEndpoint()
+      'mcpServer': _im1tu8co.McpServerEndpoint()
         ..initialize(
           server,
           'mcpServer',
           null,
         ),
-      'modelConnection': _i8.ModelConnectionEndpoint()
+      'modelConnection': _irncar1s.ModelConnectionEndpoint()
         ..initialize(
           server,
           'modelConnection',
           null,
         ),
-      'object': _i9.ObjectEndpoint()
+      'object': _ia0f4jqg.ObjectEndpoint()
         ..initialize(
           server,
           'object',
           null,
         ),
-      'workspaceStream': _i10.WorkspaceStreamEndpoint()
+      'workspaceStream': _ifbwcqx4.WorkspaceStreamEndpoint()
         ..initialize(
           server,
           'workspaceStream',
           null,
         ),
-      'workspaceSecret': _i11.WorkspaceSecretEndpoint()
+      'workspaceSecret': _i2j4mlvu.WorkspaceSecretEndpoint()
         ..initialize(
           server,
           'workspaceSecret',
           null,
         ),
-      'workspaceState': _i12.WorkspaceStateEndpoint()
+      'workspaceState': _iv99006q.WorkspaceStateEndpoint()
         ..initialize(
           server,
           'workspaceState',
           null,
         ),
-      'cloudWorkspace': _i13.CloudWorkspaceEndpoint()
+      'cloudWorkspace': _ij5poshv.CloudWorkspaceEndpoint()
         ..initialize(
           server,
           'cloudWorkspace',
           null,
         ),
     };
-    connectors['emailIdp'] = _i1.EndpointConnector(
+    connectors['emailIdp'] = _is.EndpointConnector(
       name: 'emailIdp',
       endpoint: endpoints['emailIdp']!,
       methodConnectors: {
-        'login': _i1.MethodConnector(
+        'login': _is.MethodConnector(
           name: 'login',
           params: {
-            'email': _i1.ParameterDescription(
+            'email': _is.ParameterDescription(
               name: 'email',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
-            'password': _i1.ParameterDescription(
+            'password': _is.ParameterDescription(
               name: 'password',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['emailIdp'] as _i2.EmailIdpEndpoint).login(
-                session,
-                email: params['email'],
-                password: params['password'],
-              ),
+              ) async =>
+                  (endpoints['emailIdp'] as _iuc1hd5t.EmailIdpEndpoint).login(
+                    session,
+                    email: params['email'],
+                    password: params['password'],
+                  ),
         ),
-        'startRegistration': _i1.MethodConnector(
+        'startRegistration': _is.MethodConnector(
           name: 'startRegistration',
           params: {
-            'email': _i1.ParameterDescription(
+            'email': _is.ParameterDescription(
               name: 'email',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['emailIdp'] as _i2.EmailIdpEndpoint)
+              ) async => (endpoints['emailIdp'] as _iuc1hd5t.EmailIdpEndpoint)
                   .startRegistration(
                     session,
                     email: params['email'],
                   ),
         ),
-        'verifyRegistrationCode': _i1.MethodConnector(
+        'verifyRegistrationCode': _is.MethodConnector(
           name: 'verifyRegistrationCode',
           params: {
-            'accountRequestId': _i1.ParameterDescription(
+            'accountRequestId': _is.ParameterDescription(
               name: 'accountRequestId',
-              type: _i1.getType<_i1.UuidValue>(),
+              type: _is.getType<_is.UuidValue>(),
               nullable: false,
             ),
-            'verificationCode': _i1.ParameterDescription(
+            'verificationCode': _is.ParameterDescription(
               name: 'verificationCode',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['emailIdp'] as _i2.EmailIdpEndpoint)
+              ) async => (endpoints['emailIdp'] as _iuc1hd5t.EmailIdpEndpoint)
                   .verifyRegistrationCode(
                     session,
                     accountRequestId: params['accountRequestId'],
                     verificationCode: params['verificationCode'],
                   ),
         ),
-        'finishRegistration': _i1.MethodConnector(
+        'finishRegistration': _is.MethodConnector(
           name: 'finishRegistration',
           params: {
-            'registrationToken': _i1.ParameterDescription(
+            'registrationToken': _is.ParameterDescription(
               name: 'registrationToken',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
-            'password': _i1.ParameterDescription(
+            'password': _is.ParameterDescription(
               name: 'password',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['emailIdp'] as _i2.EmailIdpEndpoint)
+              ) async => (endpoints['emailIdp'] as _iuc1hd5t.EmailIdpEndpoint)
                   .finishRegistration(
                     session,
                     registrationToken: params['registrationToken'],
                     password: params['password'],
                   ),
         ),
-        'startPasswordReset': _i1.MethodConnector(
+        'startPasswordReset': _is.MethodConnector(
           name: 'startPasswordReset',
           params: {
-            'email': _i1.ParameterDescription(
+            'email': _is.ParameterDescription(
               name: 'email',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['emailIdp'] as _i2.EmailIdpEndpoint)
+              ) async => (endpoints['emailIdp'] as _iuc1hd5t.EmailIdpEndpoint)
                   .startPasswordReset(
                     session,
                     email: params['email'],
                   ),
         ),
-        'verifyPasswordResetCode': _i1.MethodConnector(
+        'verifyPasswordResetCode': _is.MethodConnector(
           name: 'verifyPasswordResetCode',
           params: {
-            'passwordResetRequestId': _i1.ParameterDescription(
+            'passwordResetRequestId': _is.ParameterDescription(
               name: 'passwordResetRequestId',
-              type: _i1.getType<_i1.UuidValue>(),
+              type: _is.getType<_is.UuidValue>(),
               nullable: false,
             ),
-            'verificationCode': _i1.ParameterDescription(
+            'verificationCode': _is.ParameterDescription(
               name: 'verificationCode',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['emailIdp'] as _i2.EmailIdpEndpoint)
+              ) async => (endpoints['emailIdp'] as _iuc1hd5t.EmailIdpEndpoint)
                   .verifyPasswordResetCode(
                     session,
                     passwordResetRequestId: params['passwordResetRequestId'],
                     verificationCode: params['verificationCode'],
                   ),
         ),
-        'finishPasswordReset': _i1.MethodConnector(
+        'finishPasswordReset': _is.MethodConnector(
           name: 'finishPasswordReset',
           params: {
-            'finishPasswordResetToken': _i1.ParameterDescription(
+            'finishPasswordResetToken': _is.ParameterDescription(
               name: 'finishPasswordResetToken',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
-            'newPassword': _i1.ParameterDescription(
+            'newPassword': _is.ParameterDescription(
               name: 'newPassword',
-              type: _i1.getType<String>(),
+              type: _is.getType<String>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['emailIdp'] as _i2.EmailIdpEndpoint)
+              ) async => (endpoints['emailIdp'] as _iuc1hd5t.EmailIdpEndpoint)
                   .finishPasswordReset(
                     session,
                     finishPasswordResetToken:
@@ -384,524 +386,552 @@ class Endpoints extends _i1.EndpointDispatch {
                     newPassword: params['newPassword'],
                   ),
         ),
-        'hasAccount': _i1.MethodConnector(
+        'hasAccount': _is.MethodConnector(
           name: 'hasAccount',
           params: {},
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['emailIdp'] as _i2.EmailIdpEndpoint)
+              ) async => (endpoints['emailIdp'] as _iuc1hd5t.EmailIdpEndpoint)
                   .hasAccount(session),
         ),
       },
     );
-    connectors['jwtRefresh'] = _i1.EndpointConnector(
+    connectors['jwtRefresh'] = _is.EndpointConnector(
       name: 'jwtRefresh',
       endpoint: endpoints['jwtRefresh']!,
       methodConnectors: {
-        'refreshAccessToken': _i1.MethodConnector(
+        'refreshAccessToken': _is.MethodConnector(
           name: 'refreshAccessToken',
           params: {
-            'refreshToken': _i1.ParameterDescription(
+            'refreshToken': _is.ParameterDescription(
               name: 'refreshToken',
-              type: _i1.getType<String>(),
-              nullable: false,
+              type: _is.getType<String?>(),
+              nullable: true,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['jwtRefresh'] as _i3.JwtRefreshEndpoint)
-                  .refreshAccessToken(
-                    session,
-                    refreshToken: params['refreshToken'],
-                  ),
+              ) async =>
+                  (endpoints['jwtRefresh'] as _inwq3ztq.JwtRefreshEndpoint)
+                      .refreshAccessToken(
+                        session,
+                        refreshToken: params['refreshToken'],
+                      ),
         ),
       },
     );
-    connectors['account'] = _i1.EndpointConnector(
+    connectors['account'] = _is.EndpointConnector(
       name: 'account',
       endpoint: endpoints['account']!,
       methodConnectors: {
-        'currentUser': _i1.MethodConnector(
+        'currentUser': _is.MethodConnector(
           name: 'currentUser',
           params: {},
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['account'] as _i4.AccountEndpoint)
+              ) async => (endpoints['account'] as _iytsp81w.AccountEndpoint)
                   .currentUser(session),
         ),
       },
     );
-    connectors['codexOAuth'] = _i1.EndpointConnector(
+    connectors['codexOAuth'] = _is.EndpointConnector(
       name: 'codexOAuth',
       endpoint: endpoints['codexOAuth']!,
       methodConnectors: {
-        'start': _i1.MethodConnector(
+        'start': _is.MethodConnector(
           name: 'start',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i14.StartCodexOAuthRequest>(),
+              type: _is.getType<_ivuexb4h.StartCodexOAuthRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['codexOAuth'] as _i5.CodexOAuthEndpoint).start(
-                    session,
-                    params['request'],
-                  ),
+                  (endpoints['codexOAuth'] as _igisrqgh.CodexOAuthEndpoint)
+                      .start(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'complete': _i1.MethodConnector(
+        'complete': _is.MethodConnector(
           name: 'complete',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i15.CompleteCodexOAuthRequest>(),
+              type: _is.getType<_ir0ud11r.CompleteCodexOAuthRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['codexOAuth'] as _i5.CodexOAuthEndpoint).complete(
-                    session,
-                    params['request'],
-                  ),
+                  (endpoints['codexOAuth'] as _igisrqgh.CodexOAuthEndpoint)
+                      .complete(
+                        session,
+                        params['request'],
+                      ),
         ),
       },
     );
-    connectors['conversation'] = _i1.EndpointConnector(
+    connectors['conversation'] = _is.EndpointConnector(
       name: 'conversation',
       endpoint: endpoints['conversation']!,
       methodConnectors: {
-        'create': _i1.MethodConnector(
+        'create': _is.MethodConnector(
           name: 'create',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i16.CreateConversationRequest>(),
+              type: _is.getType<_ish3zj9o.CreateConversationRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .create(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .create(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'list': _i1.MethodConnector(
+        'list': _is.MethodConnector(
           name: 'list',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i17.ListConversationsRequest>(),
+              type: _is.getType<_i0m5o1i2.ListConversationsRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['conversation'] as _i6.ConversationEndpoint).list(
-                    session,
-                    params['request'],
-                  ),
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .list(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'listPage': _i1.MethodConnector(
+        'listPage': _is.MethodConnector(
           name: 'listPage',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i17.ListConversationsRequest>(),
+              type: _is.getType<_i0m5o1i2.ListConversationsRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .listPage(
-                    session,
-                    params['request'],
-                  ),
-        ),
-        'get': _i1.MethodConnector(
-          name: 'get',
-          params: {
-            'request': _i1.ParameterDescription(
-              name: 'request',
-              type: _i1.getType<_i18.GetConversationRequest>(),
-              nullable: false,
-            ),
-          },
-          call:
-              (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['conversation'] as _i6.ConversationEndpoint).get(
-                    session,
-                    params['request'],
-                  ),
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .listPage(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'listMessages': _i1.MethodConnector(
+        'get': _is.MethodConnector(
+          name: 'get',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_itkmf3xs.GetConversationRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .get(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'listMessages': _is.MethodConnector(
           name: 'listMessages',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i19.ListConversationMessagesRequest>(),
+              type: _is.getType<_i5dqxctc.ListConversationMessagesRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .listMessages(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .listMessages(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'update': _i1.MethodConnector(
+        'update': _is.MethodConnector(
           name: 'update',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i20.UpdateConversationRequest>(),
+              type: _is.getType<_i8uhzhf3.UpdateConversationRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .update(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .update(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'delete': _i1.MethodConnector(
+        'delete': _is.MethodConnector(
           name: 'delete',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i21.DeleteConversationRequest>(),
+              type: _is.getType<_il5llor3.DeleteConversationRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .delete(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .delete(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'startTurn': _i1.MethodConnector(
+        'startTurn': _is.MethodConnector(
           name: 'startTurn',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i22.StartTurnRequest>(),
+              type: _is.getType<_ijasfsbp.StartTurnRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .startTurn(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .startTurn(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'continueTurn': _i1.MethodConnector(
+        'continueTurn': _is.MethodConnector(
           name: 'continueTurn',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i23.ContinueTurnRequest>(),
+              type: _is.getType<_io8jb8cg.ContinueTurnRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .continueTurn(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .continueTurn(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'getTurn': _i1.MethodConnector(
+        'getTurn': _is.MethodConnector(
           name: 'getTurn',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i24.GetTurnRequest>(),
+              type: _is.getType<_iaqawmcu.GetTurnRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .getTurn(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .getTurn(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'getConversationSnapshot': _i1.MethodConnector(
+        'getConversationSnapshot': _is.MethodConnector(
           name: 'getConversationSnapshot',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i18.GetConversationRequest>(),
+              type: _is.getType<_itkmf3xs.GetConversationRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .getConversationSnapshot(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .getConversationSnapshot(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'queueConversationMessage': _i1.MethodConnector(
+        'queueConversationMessage': _is.MethodConnector(
           name: 'queueConversationMessage',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i25.QueueConversationMessageRequest>(),
+              type: _is.getType<_i605rjdx.QueueConversationMessageRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .queueConversationMessage(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .queueConversationMessage(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'continueConversation': _i1.MethodConnector(
+        'continueConversation': _is.MethodConnector(
           name: 'continueConversation',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i26.ContinueConversationRequest>(),
+              type: _is.getType<_ihn1s8rq.ContinueConversationRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .continueConversation(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .continueConversation(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'stopConversation': _i1.MethodConnector(
+        'stopConversation': _is.MethodConnector(
           name: 'stopConversation',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i27.StopConversationRequest>(),
+              type: _is.getType<_ii20rgdx.StopConversationRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .stopConversation(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .stopConversation(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'editPendingConversationMessage': _i1.MethodConnector(
+        'editPendingConversationMessage': _is.MethodConnector(
           name: 'editPendingConversationMessage',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i28.EditPendingConversationMessageRequest>(),
+              type: _is
+                  .getType<_igstxg4l.EditPendingConversationMessageRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .editPendingConversationMessage(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .editPendingConversationMessage(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'reorderPendingConversationMessage': _i1.MethodConnector(
+        'reorderPendingConversationMessage': _is.MethodConnector(
           name: 'reorderPendingConversationMessage',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1
-                  .getType<_i29.ReorderPendingConversationMessageRequest>(),
+              type: _is
+                  .getType<
+                    _ilmuzuyl.ReorderPendingConversationMessageRequest
+                  >(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .reorderPendingConversationMessage(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .reorderPendingConversationMessage(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'removePendingConversationMessage': _i1.MethodConnector(
+        'removePendingConversationMessage': _is.MethodConnector(
           name: 'removePendingConversationMessage',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i30.RemovePendingConversationMessageRequest>(),
+              type: _is
+                  .getType<_irlsykk6.RemovePendingConversationMessageRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .removePendingConversationMessage(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .removePendingConversationMessage(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'updateConversationSettings': _i1.MethodConnector(
+        'updateConversationSettings': _is.MethodConnector(
           name: 'updateConversationSettings',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i31.UpdateConversationSettingsRequest>(),
+              type: _is.getType<_iwnddrxr.UpdateConversationSettingsRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .updateConversationSettings(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .updateConversationSettings(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'submitToolDecision': _i1.MethodConnector(
+        'submitToolDecision': _is.MethodConnector(
           name: 'submitToolDecision',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i32.SubmitToolDecisionRequest>(),
+              type: _is.getType<_ii7vetdc.SubmitToolDecisionRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .submitToolDecision(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .submitToolDecision(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'cancelTurn': _i1.MethodConnector(
+        'cancelTurn': _is.MethodConnector(
           name: 'cancelTurn',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i33.CancelTurnRequest>(),
+              type: _is.getType<_i4j5a2zc.CancelTurnRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .cancelTurn(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .cancelTurn(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'compact': _i1.MethodConnector(
+        'compact': _is.MethodConnector(
           name: 'compact',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i34.CompactConversationRequest>(),
+              type: _is.getType<_i955umfq.CompactConversationRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .compact(
-                    session,
-                    params['request'],
-                  ),
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .compact(
+                        session,
+                        params['request'],
+                      ),
         ),
-        'subscribeConversation': _i1.MethodStreamConnector(
+        'subscribeConversation': _is.MethodStreamConnector(
           name: 'subscribeConversation',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i35.ConversationSubscribeRequest>(),
+              type: _is.getType<_iwkyl6n9.ConversationSubscribeRequest>(),
               nullable: false,
             ),
           },
           streamParams: {},
-          returnType: _i1.MethodStreamReturnType.streamType,
+          returnType: _is.MethodStreamReturnType.streamType,
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
                 Map<String, Stream> streamParams,
-              ) => (endpoints['conversation'] as _i6.ConversationEndpoint)
+              ) => (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
                   .subscribeConversation(
                     session,
                     params['request'],
@@ -909,62 +939,62 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    connectors['mcpServer'] = _i1.EndpointConnector(
+    connectors['mcpServer'] = _is.EndpointConnector(
       name: 'mcpServer',
       endpoint: endpoints['mcpServer']!,
       methodConnectors: {
-        'create': _i1.MethodConnector(
+        'create': _is.MethodConnector(
           name: 'create',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i36.CreateMcpServerRequest>(),
+              type: _is.getType<_ij06ag3u.CreateMcpServerRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['mcpServer'] as _i7.McpServerEndpoint).create(
+              ) async => (endpoints['mcpServer'] as _im1tu8co.McpServerEndpoint)
+                  .create(
                     session,
                     params['request'],
                   ),
         ),
-        'delete': _i1.MethodConnector(
+        'delete': _is.MethodConnector(
           name: 'delete',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i37.DeleteMcpServerRequest>(),
+              type: _is.getType<_ilfhgnq3.DeleteMcpServerRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['mcpServer'] as _i7.McpServerEndpoint).delete(
+              ) async => (endpoints['mcpServer'] as _im1tu8co.McpServerEndpoint)
+                  .delete(
                     session,
                     params['request'],
                   ),
         ),
-        'discoverAndCheck': _i1.MethodConnector(
+        'discoverAndCheck': _is.MethodConnector(
           name: 'discoverAndCheck',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i38.DiscoverMcpServerRequest>(),
+              type: _is.getType<_imtqkt48.DiscoverMcpServerRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['mcpServer'] as _i7.McpServerEndpoint)
+              ) async => (endpoints['mcpServer'] as _im1tu8co.McpServerEndpoint)
                   .discoverAndCheck(
                     session,
                     params['request'],
@@ -972,156 +1002,165 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    connectors['modelConnection'] = _i1.EndpointConnector(
+    connectors['modelConnection'] = _is.EndpointConnector(
       name: 'modelConnection',
       endpoint: endpoints['modelConnection']!,
       methodConnectors: {
-        'listCatalogProviders': _i1.MethodConnector(
+        'listCatalogProviders': _is.MethodConnector(
           name: 'listCatalogProviders',
           params: {},
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['modelConnection'] as _i8.ModelConnectionEndpoint)
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
                       .listCatalogProviders(session),
         ),
-        'listCatalogModels': _i1.MethodConnector(
+        'listCatalogModels': _is.MethodConnector(
           name: 'listCatalogModels',
           params: {
-            'providerId': _i1.ParameterDescription(
+            'providerId': _is.ParameterDescription(
               name: 'providerId',
-              type: _i1.getType<String?>(),
+              type: _is.getType<String?>(),
               nullable: true,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['modelConnection'] as _i8.ModelConnectionEndpoint)
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
                       .listCatalogModels(
                         session,
                         providerId: params['providerId'],
                       ),
         ),
-        'create': _i1.MethodConnector(
+        'create': _is.MethodConnector(
           name: 'create',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i39.CreateModelConnectionRequest>(),
+              type: _is.getType<_iq4yqonh.CreateModelConnectionRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['modelConnection'] as _i8.ModelConnectionEndpoint)
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
                       .create(
                         session,
                         params['request'],
                       ),
         ),
-        'list': _i1.MethodConnector(
+        'list': _is.MethodConnector(
           name: 'list',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i40.ListModelConnectionsRequest>(),
+              type: _is.getType<_ii4wbihw.ListModelConnectionsRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['modelConnection'] as _i8.ModelConnectionEndpoint)
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
                       .list(
                         session,
                         params['request'],
                       ),
         ),
-        'update': _i1.MethodConnector(
+        'update': _is.MethodConnector(
           name: 'update',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i41.UpdateModelConnectionRequest>(),
+              type: _is.getType<_i2yb5fxk.UpdateModelConnectionRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['modelConnection'] as _i8.ModelConnectionEndpoint)
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
                       .update(
                         session,
                         params['request'],
                       ),
         ),
-        'delete': _i1.MethodConnector(
+        'delete': _is.MethodConnector(
           name: 'delete',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i42.DeleteModelConnectionRequest>(),
+              type: _is.getType<_ikucadiy.DeleteModelConnectionRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['modelConnection'] as _i8.ModelConnectionEndpoint)
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
                       .delete(
                         session,
                         params['request'],
                       ),
         ),
-        'listSelections': _i1.MethodConnector(
+        'listSelections': _is.MethodConnector(
           name: 'listSelections',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i43.ListWorkspaceModelSelectionsRequest>(),
+              type: _is
+                  .getType<_infwdxn7.ListWorkspaceModelSelectionsRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['modelConnection'] as _i8.ModelConnectionEndpoint)
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
                       .listSelections(
                         session,
                         params['request'],
                       ),
         ),
-        'testAndSync': _i1.MethodConnector(
+        'testAndSync': _is.MethodConnector(
           name: 'testAndSync',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i44.TestAndSyncModelConnectionRequest>(),
+              type: _is.getType<_iskhxh94.TestAndSyncModelConnectionRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['modelConnection'] as _i8.ModelConnectionEndpoint)
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
                       .testAndSync(
                         session,
                         params['request'],
@@ -1129,109 +1168,111 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    connectors['object'] = _i1.EndpointConnector(
+    connectors['object'] = _is.EndpointConnector(
       name: 'object',
       endpoint: endpoints['object']!,
       methodConnectors: {
-        'beginUpload': _i1.MethodConnector(
+        'beginUpload': _is.MethodConnector(
           name: 'beginUpload',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i45.BeginUploadRequest>(),
+              type: _is.getType<_i873rzap.BeginUploadRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['object'] as _i9.ObjectEndpoint).beginUpload(
+                  (endpoints['object'] as _ia0f4jqg.ObjectEndpoint).beginUpload(
                     session,
                     params['request'],
                   ),
         ),
-        'completeUpload': _i1.MethodConnector(
+        'completeUpload': _is.MethodConnector(
           name: 'completeUpload',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i46.CompleteUploadRequest>(),
+              type: _is.getType<_ifp2nyf8.CompleteUploadRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['object'] as _i9.ObjectEndpoint).completeUpload(
+              ) async => (endpoints['object'] as _ia0f4jqg.ObjectEndpoint)
+                  .completeUpload(
                     session,
                     params['request'],
                   ),
         ),
-        'getDownload': _i1.MethodConnector(
+        'getDownload': _is.MethodConnector(
           name: 'getDownload',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i47.GetDownloadRequest>(),
+              type: _is.getType<_itlqxnii.GetDownloadRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['object'] as _i9.ObjectEndpoint).getDownload(
+                  (endpoints['object'] as _ia0f4jqg.ObjectEndpoint).getDownload(
                     session,
                     params['request'],
                   ),
         ),
-        'delete': _i1.MethodConnector(
+        'delete': _is.MethodConnector(
           name: 'delete',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i48.DeleteObjectRequest>(),
+              type: _is.getType<_ikvc6p78.DeleteObjectRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['object'] as _i9.ObjectEndpoint).delete(
-                session,
-                params['request'],
-              ),
+              ) async =>
+                  (endpoints['object'] as _ia0f4jqg.ObjectEndpoint).delete(
+                    session,
+                    params['request'],
+                  ),
         ),
       },
     );
-    connectors['workspaceStream'] = _i1.EndpointConnector(
+    connectors['workspaceStream'] = _is.EndpointConnector(
       name: 'workspaceStream',
       endpoint: endpoints['workspaceStream']!,
       methodConnectors: {
-        'subscribe': _i1.MethodStreamConnector(
+        'subscribe': _is.MethodStreamConnector(
           name: 'subscribe',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i49.WorkspaceSubscribeRequest>(),
+              type: _is.getType<_i87sg8g4.WorkspaceSubscribeRequest>(),
               nullable: false,
             ),
           },
           streamParams: {},
-          returnType: _i1.MethodStreamReturnType.streamType,
+          returnType: _is.MethodStreamReturnType.streamType,
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
                 Map<String, Stream> streamParams,
               ) =>
-                  (endpoints['workspaceStream'] as _i10.WorkspaceStreamEndpoint)
+                  (endpoints['workspaceStream']
+                          as _ifbwcqx4.WorkspaceStreamEndpoint)
                       .subscribe(
                         session,
                         params['request'],
@@ -1239,25 +1280,26 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    connectors['workspaceSecret'] = _i1.EndpointConnector(
+    connectors['workspaceSecret'] = _is.EndpointConnector(
       name: 'workspaceSecret',
       endpoint: endpoints['workspaceSecret']!,
       methodConnectors: {
-        'put': _i1.MethodConnector(
+        'put': _is.MethodConnector(
           name: 'put',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i50.PutWorkspaceSecretRequest>(),
+              type: _is.getType<_ixodmwhe.PutWorkspaceSecretRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['workspaceSecret'] as _i11.WorkspaceSecretEndpoint)
+                  (endpoints['workspaceSecret']
+                          as _i2j4mlvu.WorkspaceSecretEndpoint)
                       .put(
                         session,
                         params['request'],
@@ -1265,65 +1307,68 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    connectors['workspaceState'] = _i1.EndpointConnector(
+    connectors['workspaceState'] = _is.EndpointConnector(
       name: 'workspaceState',
       endpoint: endpoints['workspaceState']!,
       methodConnectors: {
-        'read': _i1.MethodConnector(
+        'read': _is.MethodConnector(
           name: 'read',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i51.ReadWorkspaceStateRequest>(),
+              type: _is.getType<_i2v5creq.ReadWorkspaceStateRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['workspaceState'] as _i12.WorkspaceStateEndpoint)
+                  (endpoints['workspaceState']
+                          as _iv99006q.WorkspaceStateEndpoint)
                       .read(
                         session,
                         params['request'],
                       ),
         ),
-        'patch': _i1.MethodConnector(
+        'patch': _is.MethodConnector(
           name: 'patch',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i52.PatchWorkspaceStateRequest>(),
+              type: _is.getType<_iti8d4cu.PatchWorkspaceStateRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['workspaceState'] as _i12.WorkspaceStateEndpoint)
+                  (endpoints['workspaceState']
+                          as _iv99006q.WorkspaceStateEndpoint)
                       .patch(
                         session,
                         params['request'],
                       ),
         ),
-        'mutateCredential': _i1.MethodConnector(
+        'mutateCredential': _is.MethodConnector(
           name: 'mutateCredential',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i53.MutateWorkspaceCredentialRequest>(),
+              type: _is.getType<_ii40hsqd.MutateWorkspaceCredentialRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['workspaceState'] as _i12.WorkspaceStateEndpoint)
+                  (endpoints['workspaceState']
+                          as _iv99006q.WorkspaceStateEndpoint)
                       .mutateCredential(
                         session,
                         params['request'],
@@ -1331,327 +1376,345 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    connectors['cloudWorkspace'] = _i1.EndpointConnector(
+    connectors['cloudWorkspace'] = _is.EndpointConnector(
       name: 'cloudWorkspace',
       endpoint: endpoints['cloudWorkspace']!,
       methodConnectors: {
-        'listAuthorizedWorkspaces': _i1.MethodConnector(
+        'listAuthorizedWorkspaces': _is.MethodConnector(
           name: 'listAuthorizedWorkspaces',
           params: {},
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .listAuthorizedWorkspaces(session),
         ),
-        'listPendingInvites': _i1.MethodConnector(
+        'listPendingInvites': _is.MethodConnector(
           name: 'listPendingInvites',
           params: {},
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .listPendingInvites(session),
         ),
-        'getWorkspaceDetail': _i1.MethodConnector(
+        'getWorkspaceDetail': _is.MethodConnector(
           name: 'getWorkspaceDetail',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i54.GetCloudWorkspaceDetailRequest>(),
+              type: _is.getType<_ifw8zf1l.GetCloudWorkspaceDetailRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .getWorkspaceDetail(
                         session,
                         params['request'],
                       ),
         ),
-        'listMembers': _i1.MethodConnector(
+        'listMembers': _is.MethodConnector(
           name: 'listMembers',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i55.ListWorkspaceMembersRequest>(),
+              type: _is.getType<_iebkjj2l.ListWorkspaceMembersRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .listMembers(
                         session,
                         params['request'],
                       ),
         ),
-        'listWorkspaceInvites': _i1.MethodConnector(
+        'listWorkspaceInvites': _is.MethodConnector(
           name: 'listWorkspaceInvites',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i56.ListCloudWorkspaceInvitesRequest>(),
+              type: _is.getType<_imorkccq.ListCloudWorkspaceInvitesRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .listWorkspaceInvites(
                         session,
                         params['request'],
                       ),
         ),
-        'createWorkspace': _i1.MethodConnector(
+        'createWorkspace': _is.MethodConnector(
           name: 'createWorkspace',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i57.CreateCloudWorkspaceRequest>(),
+              type: _is.getType<_i65qcwf4.CreateCloudWorkspaceRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .createWorkspace(
                         session,
                         params['request'],
                       ),
         ),
-        'inviteMember': _i1.MethodConnector(
+        'inviteMember': _is.MethodConnector(
           name: 'inviteMember',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i58.InviteWorkspaceMemberRequest>(),
+              type: _is.getType<_iv16131v.InviteWorkspaceMemberRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .inviteMember(
                         session,
                         params['request'],
                       ),
         ),
-        'renewInvite': _i1.MethodConnector(
+        'renewInvite': _is.MethodConnector(
           name: 'renewInvite',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i59.RenewWorkspaceInviteRequest>(),
+              type: _is.getType<_iidbk7at.RenewWorkspaceInviteRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .renewInvite(
                         session,
                         params['request'],
                       ),
         ),
-        'revokeInvite': _i1.MethodConnector(
+        'revokeInvite': _is.MethodConnector(
           name: 'revokeInvite',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i60.RevokeWorkspaceInviteRequest>(),
+              type: _is.getType<_immu2eqq.RevokeWorkspaceInviteRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .revokeInvite(
                         session,
                         params['request'],
                       ),
         ),
-        'acceptInvite': _i1.MethodConnector(
+        'acceptInvite': _is.MethodConnector(
           name: 'acceptInvite',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i61.AcceptWorkspaceInviteRequest>(),
+              type: _is.getType<_i3cjuwla.AcceptWorkspaceInviteRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .acceptInvite(
                         session,
                         params['request'],
                       ),
         ),
-        'declineInvite': _i1.MethodConnector(
+        'declineInvite': _is.MethodConnector(
           name: 'declineInvite',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i62.DeclineWorkspaceInviteRequest>(),
+              type: _is.getType<_inamn2d7.DeclineWorkspaceInviteRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .declineInvite(
                         session,
                         params['request'],
                       ),
         ),
-        'renameWorkspace': _i1.MethodConnector(
+        'renameWorkspace': _is.MethodConnector(
           name: 'renameWorkspace',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i63.RenameCloudWorkspaceRequest>(),
+              type: _is.getType<_i03e4t22.RenameCloudWorkspaceRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .renameWorkspace(
                         session,
                         params['request'],
                       ),
         ),
-        'leaveWorkspace': _i1.MethodConnector(
+        'leaveWorkspace': _is.MethodConnector(
           name: 'leaveWorkspace',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i64.LeaveCloudWorkspaceRequest>(),
+              type: _is.getType<_is93p8g5.LeaveCloudWorkspaceRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .leaveWorkspace(
                         session,
                         params['request'],
                       ),
         ),
-        'transferOwnership': _i1.MethodConnector(
+        'transferOwnership': _is.MethodConnector(
           name: 'transferOwnership',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i65.TransferCloudWorkspaceOwnershipRequest>(),
+              type: _is
+                  .getType<_iz1a25vz.TransferCloudWorkspaceOwnershipRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .transferOwnership(
                         session,
                         params['request'],
                       ),
         ),
-        'updateMemberRole': _i1.MethodConnector(
+        'updateMemberRole': _is.MethodConnector(
           name: 'updateMemberRole',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i66.UpdateWorkspaceMemberRoleRequest>(),
+              type: _is.getType<_iekbk1on.UpdateWorkspaceMemberRoleRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .updateMemberRole(
                         session,
                         params['request'],
                       ),
         ),
-        'removeMember': _i1.MethodConnector(
+        'removeMember': _is.MethodConnector(
           name: 'removeMember',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i67.RemoveWorkspaceMemberRequest>(),
+              type: _is.getType<_i6zx39if.RemoveWorkspaceMemberRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .removeMember(
                         session,
                         params['request'],
                       ),
         ),
-        'deleteWorkspace': _i1.MethodConnector(
+        'deleteWorkspace': _is.MethodConnector(
           name: 'deleteWorkspace',
           params: {
-            'request': _i1.ParameterDescription(
+            'request': _is.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i68.DeleteCloudWorkspaceRequest>(),
+              type: _is.getType<_imv0e49a.DeleteCloudWorkspaceRequest>(),
               nullable: false,
             ),
           },
           call:
               (
-                _i1.Session session,
+                _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['cloudWorkspace'] as _i13.CloudWorkspaceEndpoint)
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
                       .deleteWorkspace(
                         session,
                         params['request'],
@@ -1659,9 +1722,9 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    modules['serverpod_auth_core'] = _i69.Endpoints()
+    modules['serverpod_auth_core'] = _iacs.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_idp'] = _i70.Endpoints()
+    modules['serverpod_auth_idp'] = _iais.Endpoints()
       ..initializeEndpoints(server);
   }
 }

@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ConversationTurn implements _i1.SerializableModel {
+abstract class ConversationTurn
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ConversationTurn._({
     this.id,
     required this.workspaceId,
@@ -65,16 +66,18 @@ abstract class ConversationTurn implements _i1.SerializableModel {
       cancellationRequestedAt:
           jsonSerialization['cancellationRequestedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _isc.DateTimeJsonExtension.fromJson(
               jsonSerialization['cancellationRequestedAt'],
             ),
       terminalAt: jsonSerialization['terminalAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['terminalAt']),
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+          : _isc.DateTimeJsonExtension.fromJson(
+              jsonSerialization['terminalAt'],
+            ),
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -115,7 +118,7 @@ abstract class ConversationTurn implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ConversationTurn]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ConversationTurn copyWith({
     int? id,
     int? workspaceId,
@@ -157,8 +160,31 @@ abstract class ConversationTurn implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ConversationTurn',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'conversationId': conversationId,
+      'requestId': requestId,
+      'requestHash': requestHash,
+      'initiatorUserId': initiatorUserId,
+      if (userMessageId != null) 'userMessageId': userMessageId,
+      if (assistantMessageId != null) 'assistantMessageId': assistantMessageId,
+      'status': status,
+      'revision': revision,
+      'acceptedSequence': acceptedSequence,
+      if (cancellationRequestedAt != null)
+        'cancellationRequestedAt': cancellationRequestedAt?.toJson(),
+      if (terminalAt != null) 'terminalAt': terminalAt?.toJson(),
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -201,7 +227,7 @@ class _ConversationTurnImpl extends ConversationTurn {
 
   /// Returns a shallow copy of this [ConversationTurn]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ConversationTurn copyWith({
     Object? id = _Undefined,

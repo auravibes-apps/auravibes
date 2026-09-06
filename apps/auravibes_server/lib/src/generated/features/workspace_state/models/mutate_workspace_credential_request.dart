@@ -10,19 +10,18 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 import '../../../features/workspace_state/models/workspace_patch_operation.dart'
-    as _i2;
+    as _iou6lkaa;
 import '../../../features/workspace_state/models/workspace_secret_kind.dart'
-    as _i3;
+    as _iffvdh0v;
 import '../../../features/workspace_state/models/workspace_secret_scope.dart'
-    as _i4;
-
-import 'package:auravibes_server/src/generated/protocol.dart' as _i5;
+    as _iews8xwg;
 
 abstract class MutateWorkspaceCredentialRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   MutateWorkspaceCredentialRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -37,9 +36,9 @@ abstract class MutateWorkspaceCredentialRequest
   factory MutateWorkspaceCredentialRequest({
     required int workspaceId,
     required String requestId,
-    required _i2.WorkspacePatchOperation resourceOperation,
-    required _i3.WorkspaceSecretKind secretKind,
-    required _i4.WorkspaceSecretScope scope,
+    required _iou6lkaa.WorkspacePatchOperation resourceOperation,
+    required _iffvdh0v.WorkspaceSecretKind secretKind,
+    required _iews8xwg.WorkspaceSecretScope scope,
     String? secret,
     required bool clearSecret,
     int? expectedSecretRevision,
@@ -51,18 +50,18 @@ abstract class MutateWorkspaceCredentialRequest
     return MutateWorkspaceCredentialRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
-      resourceOperation: _i5.Protocol()
-          .deserialize<_i2.WorkspacePatchOperation>(
+      resourceOperation: _if5qez1k.Protocol()
+          .deserialize<_iou6lkaa.WorkspacePatchOperation>(
             jsonSerialization['resourceOperation'],
           ),
-      secretKind: _i3.WorkspaceSecretKind.fromJson(
+      secretKind: _iffvdh0v.WorkspaceSecretKind.fromJson(
         (jsonSerialization['secretKind'] as String),
       ),
-      scope: _i4.WorkspaceSecretScope.fromJson(
+      scope: _iews8xwg.WorkspaceSecretScope.fromJson(
         (jsonSerialization['scope'] as String),
       ),
       secret: jsonSerialization['secret'] as String?,
-      clearSecret: _i1.BoolJsonExtension.fromJson(
+      clearSecret: _is.BoolJsonExtension.fromJson(
         jsonSerialization['clearSecret'],
       ),
       expectedSecretRevision:
@@ -74,11 +73,11 @@ abstract class MutateWorkspaceCredentialRequest
 
   String requestId;
 
-  _i2.WorkspacePatchOperation resourceOperation;
+  _iou6lkaa.WorkspacePatchOperation resourceOperation;
 
-  _i3.WorkspaceSecretKind secretKind;
+  _iffvdh0v.WorkspaceSecretKind secretKind;
 
-  _i4.WorkspaceSecretScope scope;
+  _iews8xwg.WorkspaceSecretScope scope;
 
   String? secret;
 
@@ -88,13 +87,13 @@ abstract class MutateWorkspaceCredentialRequest
 
   /// Returns a shallow copy of this [MutateWorkspaceCredentialRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   MutateWorkspaceCredentialRequest copyWith({
     int? workspaceId,
     String? requestId,
-    _i2.WorkspacePatchOperation? resourceOperation,
-    _i3.WorkspaceSecretKind? secretKind,
-    _i4.WorkspaceSecretScope? scope,
+    _iou6lkaa.WorkspacePatchOperation? resourceOperation,
+    _iffvdh0v.WorkspaceSecretKind? secretKind,
+    _iews8xwg.WorkspaceSecretScope? scope,
     String? secret,
     bool? clearSecret,
     int? expectedSecretRevision,
@@ -133,7 +132,7 @@ abstract class MutateWorkspaceCredentialRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -144,9 +143,9 @@ class _MutateWorkspaceCredentialRequestImpl
   _MutateWorkspaceCredentialRequestImpl({
     required int workspaceId,
     required String requestId,
-    required _i2.WorkspacePatchOperation resourceOperation,
-    required _i3.WorkspaceSecretKind secretKind,
-    required _i4.WorkspaceSecretScope scope,
+    required _iou6lkaa.WorkspacePatchOperation resourceOperation,
+    required _iffvdh0v.WorkspaceSecretKind secretKind,
+    required _iews8xwg.WorkspaceSecretScope scope,
     String? secret,
     required bool clearSecret,
     int? expectedSecretRevision,
@@ -163,14 +162,14 @@ class _MutateWorkspaceCredentialRequestImpl
 
   /// Returns a shallow copy of this [MutateWorkspaceCredentialRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   MutateWorkspaceCredentialRequest copyWith({
     int? workspaceId,
     String? requestId,
-    _i2.WorkspacePatchOperation? resourceOperation,
-    _i3.WorkspaceSecretKind? secretKind,
-    _i4.WorkspaceSecretScope? scope,
+    _iou6lkaa.WorkspacePatchOperation? resourceOperation,
+    _iffvdh0v.WorkspaceSecretKind? secretKind,
+    _iews8xwg.WorkspaceSecretScope? scope,
     Object? secret = _Undefined,
     bool? clearSecret,
     Object? expectedSecretRevision = _Undefined,

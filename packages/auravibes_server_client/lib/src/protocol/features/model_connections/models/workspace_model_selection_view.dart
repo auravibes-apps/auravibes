@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class WorkspaceModelSelectionView implements _i1.SerializableModel {
+abstract class WorkspaceModelSelectionView
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceModelSelectionView._({
     required this.id,
     required this.connectionId,
@@ -51,7 +52,7 @@ abstract class WorkspaceModelSelectionView implements _i1.SerializableModel {
       connectionId: jsonSerialization['connectionId'] as String,
       connectionName: jsonSerialization['connectionName'] as String,
       connectionUrl: jsonSerialization['connectionUrl'] as String?,
-      connectionHasSecret: _i1.BoolJsonExtension.fromJson(
+      connectionHasSecret: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['connectionHasSecret'],
       ),
       connectionKeySuffix: jsonSerialization['connectionKeySuffix'] as String?,
@@ -59,10 +60,10 @@ abstract class WorkspaceModelSelectionView implements _i1.SerializableModel {
       modelId: jsonSerialization['modelId'] as String,
       modelName: jsonSerialization['modelName'] as String,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -94,7 +95,7 @@ abstract class WorkspaceModelSelectionView implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceModelSelectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceModelSelectionView copyWith({
     String? id,
     String? connectionId,
@@ -130,8 +131,28 @@ abstract class WorkspaceModelSelectionView implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceModelSelectionView',
+      'id': id,
+      'connectionId': connectionId,
+      'connectionName': connectionName,
+      if (connectionUrl != null) 'connectionUrl': connectionUrl,
+      'connectionHasSecret': connectionHasSecret,
+      if (connectionKeySuffix != null)
+        'connectionKeySuffix': connectionKeySuffix,
+      'providerId': providerId,
+      'modelId': modelId,
+      'modelName': modelName,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -168,7 +189,7 @@ class _WorkspaceModelSelectionViewImpl extends WorkspaceModelSelectionView {
 
   /// Returns a shallow copy of this [WorkspaceModelSelectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceModelSelectionView copyWith({
     String? id,

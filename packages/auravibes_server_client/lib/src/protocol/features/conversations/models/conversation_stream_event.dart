@@ -10,12 +10,13 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 import '../../../features/conversations/models/conversation_event_type.dart'
-    as _i2;
+    as _iccy8d0z;
 
-abstract class ConversationStreamEvent implements _i1.SerializableModel {
+abstract class ConversationStreamEvent
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ConversationStreamEvent._({
     required this.workspaceId,
     required this.conversationId,
@@ -31,7 +32,7 @@ abstract class ConversationStreamEvent implements _i1.SerializableModel {
     required int workspaceId,
     required String conversationId,
     required int sequence,
-    required _i2.ConversationEventType kind,
+    required _iccy8d0z.ConversationEventType kind,
     required String actorUserId,
     required String payloadJson,
     String? transientTextDelta,
@@ -45,13 +46,13 @@ abstract class ConversationStreamEvent implements _i1.SerializableModel {
       workspaceId: jsonSerialization['workspaceId'] as int,
       conversationId: jsonSerialization['conversationId'] as String,
       sequence: jsonSerialization['sequence'] as int,
-      kind: _i2.ConversationEventType.fromJson(
+      kind: _iccy8d0z.ConversationEventType.fromJson(
         (jsonSerialization['kind'] as String),
       ),
       actorUserId: jsonSerialization['actorUserId'] as String,
       payloadJson: jsonSerialization['payloadJson'] as String,
       transientTextDelta: jsonSerialization['transientTextDelta'] as String?,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -63,7 +64,7 @@ abstract class ConversationStreamEvent implements _i1.SerializableModel {
 
   int sequence;
 
-  _i2.ConversationEventType kind;
+  _iccy8d0z.ConversationEventType kind;
 
   String actorUserId;
 
@@ -75,12 +76,12 @@ abstract class ConversationStreamEvent implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ConversationStreamEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ConversationStreamEvent copyWith({
     int? workspaceId,
     String? conversationId,
     int? sequence,
-    _i2.ConversationEventType? kind,
+    _iccy8d0z.ConversationEventType? kind,
     String? actorUserId,
     String? payloadJson,
     String? transientTextDelta,
@@ -102,8 +103,23 @@ abstract class ConversationStreamEvent implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ConversationStreamEvent',
+      'workspaceId': workspaceId,
+      'conversationId': conversationId,
+      'sequence': sequence,
+      'kind': kind.toJson(),
+      'actorUserId': actorUserId,
+      'payloadJson': payloadJson,
+      if (transientTextDelta != null) 'transientTextDelta': transientTextDelta,
+      'createdAt': createdAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -114,7 +130,7 @@ class _ConversationStreamEventImpl extends ConversationStreamEvent {
     required int workspaceId,
     required String conversationId,
     required int sequence,
-    required _i2.ConversationEventType kind,
+    required _iccy8d0z.ConversationEventType kind,
     required String actorUserId,
     required String payloadJson,
     String? transientTextDelta,
@@ -132,13 +148,13 @@ class _ConversationStreamEventImpl extends ConversationStreamEvent {
 
   /// Returns a shallow copy of this [ConversationStreamEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ConversationStreamEvent copyWith({
     int? workspaceId,
     String? conversationId,
     int? sequence,
-    _i2.ConversationEventType? kind,
+    _iccy8d0z.ConversationEventType? kind,
     String? actorUserId,
     String? payloadJson,
     Object? transientTextDelta = _Undefined,

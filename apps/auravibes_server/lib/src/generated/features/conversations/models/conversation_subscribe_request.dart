@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ConversationSubscribeRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ConversationSubscribeRequest._({
     required this.workspaceId,
     required this.conversationId,
@@ -44,7 +44,7 @@ abstract class ConversationSubscribeRequest
 
   /// Returns a shallow copy of this [ConversationSubscribeRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationSubscribeRequest copyWith({
     int? workspaceId,
     String? conversationId,
@@ -72,7 +72,7 @@ abstract class ConversationSubscribeRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -89,7 +89,7 @@ class _ConversationSubscribeRequestImpl extends ConversationSubscribeRequest {
 
   /// Returns a shallow copy of this [ConversationSubscribeRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationSubscribeRequest copyWith({
     int? workspaceId,

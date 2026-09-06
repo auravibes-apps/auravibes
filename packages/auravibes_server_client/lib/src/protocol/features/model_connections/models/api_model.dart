@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ApiModel implements _i1.SerializableModel {
+abstract class ApiModel
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ApiModel._({
     this.id,
     required this.providerId,
@@ -66,35 +68,35 @@ abstract class ApiModel implements _i1.SerializableModel {
       name: jsonSerialization['name'] as String,
       limitContext: jsonSerialization['limitContext'] as int,
       limitOutput: jsonSerialization['limitOutput'] as int,
-      modalitiesInput: _i2.Protocol().deserialize<List<String>>(
+      modalitiesInput: _isctvzjc.Protocol().deserialize<List<String>>(
         jsonSerialization['modalitiesInput'],
       ),
-      modalitiesOutput: _i2.Protocol().deserialize<List<String>>(
+      modalitiesOutput: _isctvzjc.Protocol().deserialize<List<String>>(
         jsonSerialization['modalitiesOutput'],
       ),
       family: jsonSerialization['family'] as String?,
       costInput: (jsonSerialization['costInput'] as num).toDouble(),
       costCacheRead: (jsonSerialization['costCacheRead'] as num).toDouble(),
       costOutput: (jsonSerialization['costOutput'] as num).toDouble(),
-      openWeights: _i1.BoolJsonExtension.fromJson(
+      openWeights: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['openWeights'],
       ),
-      supportsReasoning: _i1.BoolJsonExtension.fromJson(
+      supportsReasoning: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['supportsReasoning'],
       ),
-      isCanonical: _i1.BoolJsonExtension.fromJson(
+      isCanonical: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['isCanonical'],
       ),
-      supportsPriorityMode: _i1.BoolJsonExtension.fromJson(
+      supportsPriorityMode: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['supportsPriorityMode'],
       ),
-      supportsToolCalls: _i1.BoolJsonExtension.fromJson(
+      supportsToolCalls: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['supportsToolCalls'],
       ),
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -143,7 +145,7 @@ abstract class ApiModel implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ApiModel]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ApiModel copyWith({
     int? id,
     String? providerId,
@@ -192,8 +194,34 @@ abstract class ApiModel implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ApiModel',
+      if (id != null) 'id': id,
+      'providerId': providerId,
+      'modelId': modelId,
+      'name': name,
+      'limitContext': limitContext,
+      'limitOutput': limitOutput,
+      'modalitiesInput': modalitiesInput.toJson(),
+      'modalitiesOutput': modalitiesOutput.toJson(),
+      if (family != null) 'family': family,
+      'costInput': costInput,
+      'costCacheRead': costCacheRead,
+      'costOutput': costOutput,
+      'openWeights': openWeights,
+      'supportsReasoning': supportsReasoning,
+      'isCanonical': isCanonical,
+      'supportsPriorityMode': supportsPriorityMode,
+      'supportsToolCalls': supportsToolCalls,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -244,7 +272,7 @@ class _ApiModelImpl extends ApiModel {
 
   /// Returns a shallow copy of this [ApiModel]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ApiModel copyWith({
     Object? id = _Undefined,

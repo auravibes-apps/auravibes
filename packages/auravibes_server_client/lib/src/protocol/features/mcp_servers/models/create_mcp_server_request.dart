@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class CreateMcpServerRequest implements _i1.SerializableModel {
+abstract class CreateMcpServerRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CreateMcpServerRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -44,7 +45,7 @@ abstract class CreateMcpServerRequest implements _i1.SerializableModel {
       name: jsonSerialization['name'] as String,
       url: jsonSerialization['url'] as String,
       transport: jsonSerialization['transport'] as String,
-      useHttp2: _i1.BoolJsonExtension.fromJson(jsonSerialization['useHttp2']),
+      useHttp2: _isc.BoolJsonExtension.fromJson(jsonSerialization['useHttp2']),
       description: jsonSerialization['description'] as String?,
       bearerToken: jsonSerialization['bearerToken'] as String?,
     );
@@ -68,7 +69,7 @@ abstract class CreateMcpServerRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [CreateMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CreateMcpServerRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -95,8 +96,23 @@ abstract class CreateMcpServerRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CreateMcpServerRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'name': name,
+      'url': url,
+      'transport': transport,
+      'useHttp2': useHttp2,
+      if (description != null) 'description': description,
+      if (bearerToken != null) 'bearerToken': bearerToken,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -125,7 +141,7 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
 
   /// Returns a shallow copy of this [CreateMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CreateMcpServerRequest copyWith({
     int? workspaceId,

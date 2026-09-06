@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class DiscoverMcpServerRequest implements _i1.SerializableModel {
+abstract class DiscoverMcpServerRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   DiscoverMcpServerRequest._({
     required this.workspaceId,
     required this.mcpServerId,
@@ -38,7 +39,7 @@ abstract class DiscoverMcpServerRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [DiscoverMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   DiscoverMcpServerRequest copyWith({
     int? workspaceId,
     String? mcpServerId,
@@ -53,8 +54,17 @@ abstract class DiscoverMcpServerRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'DiscoverMcpServerRequest',
+      'workspaceId': workspaceId,
+      'mcpServerId': mcpServerId,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -69,7 +79,7 @@ class _DiscoverMcpServerRequestImpl extends DiscoverMcpServerRequest {
 
   /// Returns a shallow copy of this [DiscoverMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   DiscoverMcpServerRequest copyWith({
     int? workspaceId,

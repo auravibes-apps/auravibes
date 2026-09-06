@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ConversationToolCall implements _i1.SerializableModel {
+abstract class ConversationToolCall
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ConversationToolCall._({
     this.id,
     required this.workspaceId,
@@ -71,13 +72,15 @@ abstract class ConversationToolCall implements _i1.SerializableModel {
       decisionByUserId: jsonSerialization['decisionByUserId'] as String?,
       decisionAt: jsonSerialization['decisionAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['decisionAt']),
+          : _isc.DateTimeJsonExtension.fromJson(
+              jsonSerialization['decisionAt'],
+            ),
       resultJson: jsonSerialization['resultJson'] as String?,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -122,7 +125,7 @@ abstract class ConversationToolCall implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ConversationToolCall]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ConversationToolCall copyWith({
     int? id,
     int? workspaceId,
@@ -167,8 +170,32 @@ abstract class ConversationToolCall implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ConversationToolCall',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'conversationId': conversationId,
+      'turnId': turnId,
+      'messageId': messageId,
+      'stableId': stableId,
+      'name': name,
+      'argumentsJson': argumentsJson,
+      'argumentsDigest': argumentsDigest,
+      'status': status,
+      if (decision != null) 'decision': decision,
+      if (decisionByUserId != null) 'decisionByUserId': decisionByUserId,
+      if (decisionAt != null) 'decisionAt': decisionAt?.toJson(),
+      if (resultJson != null) 'resultJson': resultJson,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -215,7 +242,7 @@ class _ConversationToolCallImpl extends ConversationToolCall {
 
   /// Returns a shallow copy of this [ConversationToolCall]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ConversationToolCall copyWith({
     Object? id = _Undefined,

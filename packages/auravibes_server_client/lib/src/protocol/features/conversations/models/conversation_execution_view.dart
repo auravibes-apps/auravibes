@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ConversationExecutionView implements _i1.SerializableModel {
+abstract class ConversationExecutionView
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ConversationExecutionView._({
     required this.id,
     required this.status,
@@ -45,20 +47,22 @@ abstract class ConversationExecutionView implements _i1.SerializableModel {
       id: jsonSerialization['id'] as String,
       status: jsonSerialization['status'] as String,
       attempt: jsonSerialization['attempt'] as int,
-      claimedMessageIds: _i2.Protocol().deserialize<List<String>>(
+      claimedMessageIds: _isctvzjc.Protocol().deserialize<List<String>>(
         jsonSerialization['claimedMessageIds'],
       ),
       assistantMessageId: jsonSerialization['assistantMessageId'] as String?,
       createdByUserId: jsonSerialization['createdByUserId'] as String,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       terminalAt: jsonSerialization['terminalAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['terminalAt']),
+          : _isc.DateTimeJsonExtension.fromJson(
+              jsonSerialization['terminalAt'],
+            ),
     );
   }
 
@@ -82,7 +86,7 @@ abstract class ConversationExecutionView implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ConversationExecutionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ConversationExecutionView copyWith({
     String? id,
     String? status,
@@ -111,8 +115,24 @@ abstract class ConversationExecutionView implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ConversationExecutionView',
+      'id': id,
+      'status': status,
+      'attempt': attempt,
+      'claimedMessageIds': claimedMessageIds.toJson(),
+      if (assistantMessageId != null) 'assistantMessageId': assistantMessageId,
+      'createdByUserId': createdByUserId,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+      if (terminalAt != null) 'terminalAt': terminalAt?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -143,7 +163,7 @@ class _ConversationExecutionViewImpl extends ConversationExecutionView {
 
   /// Returns a shallow copy of this [ConversationExecutionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ConversationExecutionView copyWith({
     String? id,

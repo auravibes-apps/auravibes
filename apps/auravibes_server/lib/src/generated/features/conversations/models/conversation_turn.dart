@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ConversationTurn
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   ConversationTurn._({
     this.id,
     required this.workspaceId,
@@ -66,16 +66,16 @@ abstract class ConversationTurn
       cancellationRequestedAt:
           jsonSerialization['cancellationRequestedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _is.DateTimeJsonExtension.fromJson(
               jsonSerialization['cancellationRequestedAt'],
             ),
       terminalAt: jsonSerialization['terminalAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['terminalAt']),
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['terminalAt']),
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -117,11 +117,11 @@ abstract class ConversationTurn
   DateTime updatedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [ConversationTurn]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationTurn copyWith({
     int? id,
     int? workspaceId,
@@ -190,13 +190,11 @@ abstract class ConversationTurn
   }
 
   static ConversationTurnIncludeList includeList({
-    _i1.WhereExpressionBuilder<ConversationTurnTable>? where,
+    _is.WhereExpressionBuilder<ConversationTurnTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ConversationTurnTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTurnTable>? orderByList,
+    _is.OrderByBuilder<ConversationTurnTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTurnTable>? orderByList,
     ConversationTurnInclude? include,
   }) {
     return ConversationTurnIncludeList._(
@@ -204,8 +202,6 @@ abstract class ConversationTurn
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(ConversationTurn.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(ConversationTurn.t),
       include: include,
     );
@@ -213,7 +209,7 @@ abstract class ConversationTurn
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -256,7 +252,7 @@ class _ConversationTurnImpl extends ConversationTurn {
 
   /// Returns a shallow copy of this [ConversationTurn]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationTurn copyWith({
     Object? id = _Undefined,
@@ -300,143 +296,143 @@ class _ConversationTurnImpl extends ConversationTurn {
 }
 
 class ConversationTurnUpdateTable
-    extends _i1.UpdateTable<ConversationTurnTable> {
+    extends _is.UpdateTable<ConversationTurnTable> {
   ConversationTurnUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<int, int> conversationId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> conversationId(int value) => _is.ColumnValue(
     table.conversationId,
     value,
   );
 
-  _i1.ColumnValue<String, String> requestId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> requestId(String value) => _is.ColumnValue(
     table.requestId,
     value,
   );
 
-  _i1.ColumnValue<String, String> requestHash(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> requestHash(String value) => _is.ColumnValue(
     table.requestHash,
     value,
   );
 
-  _i1.ColumnValue<String, String> initiatorUserId(String value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<String, String> initiatorUserId(String value) =>
+      _is.ColumnValue(
         table.initiatorUserId,
         value,
       );
 
-  _i1.ColumnValue<int, int> userMessageId(int? value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> userMessageId(int? value) => _is.ColumnValue(
     table.userMessageId,
     value,
   );
 
-  _i1.ColumnValue<int, int> assistantMessageId(int? value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> assistantMessageId(int? value) => _is.ColumnValue(
     table.assistantMessageId,
     value,
   );
 
-  _i1.ColumnValue<String, String> status(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> status(String value) => _is.ColumnValue(
     table.status,
     value,
   );
 
-  _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> revision(int value) => _is.ColumnValue(
     table.revision,
     value,
   );
 
-  _i1.ColumnValue<int, int> acceptedSequence(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> acceptedSequence(int value) => _is.ColumnValue(
     table.acceptedSequence,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> cancellationRequestedAt(
+  _is.ColumnValue<DateTime, DateTime> cancellationRequestedAt(
     DateTime? value,
-  ) => _i1.ColumnValue(
+  ) => _is.ColumnValue(
     table.cancellationRequestedAt,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> terminalAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> terminalAt(DateTime? value) =>
+      _is.ColumnValue(
         table.terminalAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _is.ColumnValue(
         table.updatedAt,
         value,
       );
 }
 
-class ConversationTurnTable extends _i1.Table<int?> {
+class ConversationTurnTable extends _is.Table<int?> {
   ConversationTurnTable({super.tableRelation})
     : super(tableName: 'conversation_turn') {
     updateTable = ConversationTurnUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    conversationId = _i1.ColumnInt(
+    conversationId = _is.ColumnInt(
       'conversationId',
       this,
     );
-    requestId = _i1.ColumnString(
+    requestId = _is.ColumnString(
       'requestId',
       this,
     );
-    requestHash = _i1.ColumnString(
+    requestHash = _is.ColumnString(
       'requestHash',
       this,
     );
-    initiatorUserId = _i1.ColumnString(
+    initiatorUserId = _is.ColumnString(
       'initiatorUserId',
       this,
     );
-    userMessageId = _i1.ColumnInt(
+    userMessageId = _is.ColumnInt(
       'userMessageId',
       this,
     );
-    assistantMessageId = _i1.ColumnInt(
+    assistantMessageId = _is.ColumnInt(
       'assistantMessageId',
       this,
     );
-    status = _i1.ColumnString(
+    status = _is.ColumnString(
       'status',
       this,
     );
-    revision = _i1.ColumnInt(
+    revision = _is.ColumnInt(
       'revision',
       this,
     );
-    acceptedSequence = _i1.ColumnInt(
+    acceptedSequence = _is.ColumnInt(
       'acceptedSequence',
       this,
     );
-    cancellationRequestedAt = _i1.ColumnDateTime(
+    cancellationRequestedAt = _is.ColumnDateTime(
       'cancellationRequestedAt',
       this,
     );
-    terminalAt = _i1.ColumnDateTime(
+    terminalAt = _is.ColumnDateTime(
       'terminalAt',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    updatedAt = _i1.ColumnDateTime(
+    updatedAt = _is.ColumnDateTime(
       'updatedAt',
       this,
     );
@@ -444,36 +440,36 @@ class ConversationTurnTable extends _i1.Table<int?> {
 
   late final ConversationTurnUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnInt conversationId;
+  late final _is.ColumnInt conversationId;
 
-  late final _i1.ColumnString requestId;
+  late final _is.ColumnString requestId;
 
-  late final _i1.ColumnString requestHash;
+  late final _is.ColumnString requestHash;
 
-  late final _i1.ColumnString initiatorUserId;
+  late final _is.ColumnString initiatorUserId;
 
-  late final _i1.ColumnInt userMessageId;
+  late final _is.ColumnInt userMessageId;
 
-  late final _i1.ColumnInt assistantMessageId;
+  late final _is.ColumnInt assistantMessageId;
 
-  late final _i1.ColumnString status;
+  late final _is.ColumnString status;
 
-  late final _i1.ColumnInt revision;
+  late final _is.ColumnInt revision;
 
-  late final _i1.ColumnInt acceptedSequence;
+  late final _is.ColumnInt acceptedSequence;
 
-  late final _i1.ColumnDateTime cancellationRequestedAt;
+  late final _is.ColumnDateTime cancellationRequestedAt;
 
-  late final _i1.ColumnDateTime terminalAt;
+  late final _is.ColumnDateTime terminalAt;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime updatedAt;
+  late final _is.ColumnDateTime updatedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     conversationId,
@@ -492,24 +488,22 @@ class ConversationTurnTable extends _i1.Table<int?> {
   ];
 }
 
-class ConversationTurnInclude extends _i1.IncludeObject {
+class ConversationTurnInclude extends _is.IncludeObject {
   ConversationTurnInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => ConversationTurn.t;
+  _is.Table<int?> get table => ConversationTurn.t;
 }
 
-class ConversationTurnIncludeList extends _i1.IncludeList {
+class ConversationTurnIncludeList extends _is.IncludeList {
   ConversationTurnIncludeList._({
-    _i1.WhereExpressionBuilder<ConversationTurnTable>? where,
+    _is.WhereExpressionBuilder<ConversationTurnTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -517,10 +511,10 @@ class ConversationTurnIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => ConversationTurn.t;
+  _is.Table<int?> get table => ConversationTurn.t;
 }
 
 class ConversationTurnRepository {
@@ -549,24 +543,20 @@ class ConversationTurnRepository {
   /// );
   /// ```
   Future<List<ConversationTurn>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ConversationTurnTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ConversationTurnTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ConversationTurnTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTurnTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ConversationTurnTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTurnTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<ConversationTurn>(
       where: where?.call(ConversationTurn.t),
       orderBy: orderBy?.call(ConversationTurn.t),
       orderByList: orderByList?.call(ConversationTurn.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -593,23 +583,19 @@ class ConversationTurnRepository {
   /// );
   /// ```
   Future<ConversationTurn?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ConversationTurnTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ConversationTurnTable>? where,
     int? offset,
-    _i1.OrderByBuilder<ConversationTurnTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTurnTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ConversationTurnTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTurnTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<ConversationTurn>(
       where: where?.call(ConversationTurn.t),
       orderBy: orderBy?.call(ConversationTurn.t),
       orderByList: orderByList?.call(ConversationTurn.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -619,11 +605,11 @@ class ConversationTurnRepository {
 
   /// Finds a single [ConversationTurn] by its [id] or null if no such row exists.
   Future<ConversationTurn?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<ConversationTurn>(
       id,
@@ -648,9 +634,9 @@ class ConversationTurnRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationTurn>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ConversationTurn> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -666,9 +652,9 @@ class ConversationTurnRepository {
   ///
   /// The returned [ConversationTurn] will have its `id` field set.
   Future<ConversationTurn> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ConversationTurn row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<ConversationTurn>(
       row,
@@ -697,12 +683,12 @@ class ConversationTurnRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationTurn>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ConversationTurn> rows, {
-    required _i1.ColumnSelections<ConversationTurnTable> conflictColumns,
-    _i1.ColumnSelections<ConversationTurnTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ConversationTurnTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ConversationTurnTable> conflictColumns,
+    _is.ColumnSelections<ConversationTurnTable>? updateColumns,
+    _is.WhereExpressionBuilder<ConversationTurnTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<ConversationTurn>(
@@ -729,12 +715,12 @@ class ConversationTurnRepository {
   ///
   /// The returned [ConversationTurn] will have its `id` field set.
   Future<ConversationTurn?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ConversationTurn row, {
-    required _i1.ColumnSelections<ConversationTurnTable> conflictColumns,
-    _i1.ColumnSelections<ConversationTurnTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ConversationTurnTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ConversationTurnTable> conflictColumns,
+    _is.ColumnSelections<ConversationTurnTable>? updateColumns,
+    _is.WhereExpressionBuilder<ConversationTurnTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<ConversationTurn>(
       row,
@@ -755,10 +741,10 @@ class ConversationTurnRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationTurn>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ConversationTurn> rows, {
-    _i1.ColumnSelections<ConversationTurnTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ConversationTurnTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<ConversationTurn>(
@@ -773,10 +759,10 @@ class ConversationTurnRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<ConversationTurn> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ConversationTurn row, {
-    _i1.ColumnSelections<ConversationTurnTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ConversationTurnTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<ConversationTurn>(
       row,
@@ -788,11 +774,11 @@ class ConversationTurnRepository {
   /// Updates a single [ConversationTurn] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<ConversationTurn?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<ConversationTurnUpdateTable>
+    required _is.ColumnValueListBuilder<ConversationTurnUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<ConversationTurn>(
       id,
@@ -808,17 +794,15 @@ class ConversationTurnRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationTurn>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<ConversationTurnUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<ConversationTurnUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<ConversationTurnTable> where,
+    required _is.WhereExpressionBuilder<ConversationTurnTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ConversationTurnTable>? orderBy,
-    _i1.OrderByListBuilder<ConversationTurnTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ConversationTurnTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTurnTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<ConversationTurn>(
@@ -828,8 +812,6 @@ class ConversationTurnRepository {
       offset: offset,
       orderBy: orderBy?.call(ConversationTurn.t),
       orderByList: orderByList?.call(ConversationTurn.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -847,21 +829,17 @@ class ConversationTurnRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationTurn>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ConversationTurn> rows, {
-    _i1.OrderByBuilder<ConversationTurnTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTurnTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ConversationTurnTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTurnTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<ConversationTurn>(
       rows,
       orderBy: orderBy?.call(ConversationTurn.t),
       orderByList: orderByList?.call(ConversationTurn.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -869,9 +847,9 @@ class ConversationTurnRepository {
 
   /// Deletes a single [ConversationTurn].
   Future<ConversationTurn> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ConversationTurn row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<ConversationTurn>(
       row,
@@ -888,21 +866,17 @@ class ConversationTurnRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationTurn>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ConversationTurnTable> where,
-    _i1.OrderByBuilder<ConversationTurnTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationTurnTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ConversationTurnTable> where,
+    _is.OrderByBuilder<ConversationTurnTable>? orderBy,
+    _is.OrderByListBuilder<ConversationTurnTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<ConversationTurn>(
       where: where(ConversationTurn.t),
       orderBy: orderBy?.call(ConversationTurn.t),
       orderByList: orderByList?.call(ConversationTurn.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -911,10 +885,10 @@ class ConversationTurnRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ConversationTurnTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ConversationTurnTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<ConversationTurn>(
       where: where?.call(ConversationTurn.t),
@@ -925,11 +899,11 @@ class ConversationTurnRepository {
 
   /// Acquires row-level locks on [ConversationTurn] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ConversationTurnTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ConversationTurnTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<ConversationTurn>(
       where: where(ConversationTurn.t),
