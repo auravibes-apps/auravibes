@@ -1,3 +1,4 @@
+/// App adapters for the engine sub-agent storage contracts.
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
