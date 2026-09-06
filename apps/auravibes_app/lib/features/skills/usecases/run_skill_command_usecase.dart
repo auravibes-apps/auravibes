@@ -37,8 +37,7 @@ class const RunSkillCommandUsecase({
     required String workspaceId,
     required String commandName,
     required Map<String, dynamic> arguments,
-  }) async {
-    return await switch (commandName) {
+  }) => switch (commandName) {
       listSkillsToolName => _listSkills(conversationId, workspaceId),
       loadSkillToolName => _load(conversationId, workspaceId, arguments),
       unloadSkillToolName => _unload(conversationId, workspaceId, arguments),
@@ -50,7 +49,6 @@ class const RunSkillCommandUsecase({
       callSkillToolName => _callTool(conversationId, workspaceId, arguments),
       _ => throw FormatException('Unknown skill command: $commandName'),
     };
-  }
 
   Future<Map<String, Object?>> _listSkills(
     String conversationId,
