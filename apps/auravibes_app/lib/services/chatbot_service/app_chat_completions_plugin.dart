@@ -40,9 +40,9 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
 
   @override
   Action<dynamic, dynamic, dynamic, dynamic>? resolve(
-    String actionType,
+    ActionType actionType,
     String name,
-  ) => actionType == 'model' ? _createModel(name, null) : null;
+  ) => actionType == ActionType.model ? _createModel(name, null) : null;
 
   Model<dynamic> _createModel(String modelName, ModelInfo? info) {
     return Model<dynamic>(
