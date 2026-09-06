@@ -62,5 +62,5 @@ cloudWorkspaceDetailProvider =
         cloudWorkspaceUseCasesProvider(key.accountId).future,
       );
 
-      return await useCases?.loadDetail(key.workspaceId);
+      return useCases?.loadDetail(key.workspaceId);
     });

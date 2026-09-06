@@ -55,7 +55,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     _repository = repository;
     _workspaceId = workspaceId;
 
-    return await repository.getWorkspaceTools(workspaceId);
+    return repository.getWorkspaceTools(workspaceId);
   }
 
   /// Add a new built-in tool to the workspace.
