@@ -69,7 +69,7 @@ void main() {
   testWidgets('variants preserve mapping without numeric filtering', (
     tester,
   ) async {
-    for (final variant in [null, 'longText', 'number', 'obscured']) {
+    for (final variant in [null, 'multiline', 'number', 'password']) {
       String? edited;
       await tester.pumpWidget(
         app(
@@ -81,8 +81,8 @@ void main() {
         ),
       );
       final input = tester.widget<AuraInput>(find.byType(AuraInput));
-      expect(input.maxLines, variant == 'longText' ? 4 : 1);
-      expect(input.obscureText, variant == 'obscured');
+      expect(input.maxLines, variant == 'multiline' ? 4 : 1);
+      expect(input.obscureText, variant == 'password');
       expect(
         input.keyboardType,
         variant == 'number' ? TextInputType.number : null,

@@ -25,12 +25,12 @@ class AuraBadge extends StatelessWidget {
     Key? key,
     AuraBadgeVariant variant = AuraBadgeVariant.primary,
     AuraBadgeSize size = AuraBadgeSize.medium,
-    String? semanticLabel,
+    String semanticLabel = '',
   }) : this(
          key: key,
          variant: variant,
          size: size,
-         semanticLabel: semanticLabel,
+         semanticLabel: semanticLabel.isEmpty ? null : semanticLabel,
          child: _AuraBadgeText(
            child: child,
            style: size == AuraBadgeSize.small

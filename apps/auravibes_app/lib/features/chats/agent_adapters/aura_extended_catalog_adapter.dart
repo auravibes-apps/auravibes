@@ -214,7 +214,7 @@ String _path(Object? value, String fallback) =>
     ? value['path']! as String
     : fallback;
 
-void _updateData(CatalogItemContext context, String path, Object? value) {
+void _updateData(CatalogItemContext context, String path, Object value) {
   ChatA2uiFormScope.markTouched(context.buildContext, path);
   context.dataContext.update(DataPath(path), value);
 }

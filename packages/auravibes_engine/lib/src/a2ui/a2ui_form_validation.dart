@@ -206,7 +206,7 @@ bool _inDateTimeRange(String value, Object? min, Object? max) {
       (upper == null || !current.isAfter(upper));
 }
 
-void _setValueAtPath(Map<String, Object?> values, String path, Object? value) {
+void _setValueAtPath(Map<String, Object?> values, String path, double value) {
   final segments = path.substring(1).split('/');
   if (segments.isEmpty || segments.any((segment) => segment.isEmpty)) return;
   var current = values;

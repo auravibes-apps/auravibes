@@ -10,8 +10,8 @@ class ChatCatalogTextField extends StatefulWidget {
     this.value,
     this.label,
     this.variant,
-    this.placeholder,
-    this.helperText,
+    this.placeholder = '',
+    this.helperText = '',
     this.errorText,
     this.required = false,
     this.maxLength,
@@ -26,14 +26,15 @@ class ChatCatalogTextField extends StatefulWidget {
   /// Optional visible and accessible label.
   final String? label;
 
-  /// Supports longText, number, and obscured; number changes the keyboard only.
+  /// Supports multiline, number, and password.
+  /// Number changes the keyboard only.
   final String? variant;
 
   /// Hint shown in the empty field.
-  final String? placeholder;
+  final String placeholder;
 
   /// Supporting copy shown below the field.
-  final String? helperText;
+  final String helperText;
 
   /// App-validated or model-provided error copy.
   final String? errorText;
@@ -84,9 +85,9 @@ class _ChatCatalogTextFieldState extends State<ChatCatalogTextField> {
 
     return AuraInput(
       controller: _controller,
-      placeholder: placeholder == null ? null : Text(placeholder),
+      placeholder: placeholder.isEmpty ? null : Text(placeholder),
       label: label == null ? null : AuraText(child: Text(label)),
-      hint: helperText == null ? null : Text(helperText),
+      hint: helperText.isEmpty ? null : Text(helperText),
       error: errorText == null ? null : Text(errorText),
       isRequired: widget.required,
       keyboardType: switch (widget.variant) {
