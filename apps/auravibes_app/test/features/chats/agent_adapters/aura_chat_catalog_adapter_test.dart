@@ -783,4 +783,257 @@ void main() {
     await tester.pump();
     expect(find.text('Alerts content'), findsOneWidget);
   });
+
+  testWidgets('renders the extended catalog components', (tester) async {
+    final payloads = [
+      engine.A2uiChatContract.encodeEnvelope({
+        'version': 'v0.9',
+        'createSurface': {
+          'surfaceId': 'extended',
+          'catalogId': auraChatFormCatalogId,
+        },
+      }, interactionMode: 'requiresUserAction'),
+      engine.A2uiChatContract.encodeEnvelope({
+        'version': 'v0.9',
+        'updateDataModel': {
+          'surfaceId': 'extended',
+          'path': '/',
+          'value': {'rating': 3, 'tags': <String>[]},
+        },
+      }, interactionMode: 'requiresUserAction'),
+      engine.A2uiChatContract.encodeEnvelope({
+        'version': 'v0.9',
+        'updateComponents': {
+          'surfaceId': 'extended',
+          'components': [
+            {
+              'id': 'root',
+              'component': 'Column',
+              'children': [
+                'form',
+                'alert',
+                'stat',
+                'link',
+                'tooltip',
+                'accordion',
+                'stepper',
+                'timeline',
+                'skeleton',
+                'grid',
+                'wrap',
+                'flex-row',
+                'rating',
+                'tags',
+                'code',
+                'key-value',
+                'section',
+              ],
+            },
+            {'id': 'form', 'component': 'Form', 'child': 'fieldset'},
+            {
+              'id': 'fieldset',
+              'component': 'Fieldset',
+              'legend': 'Details',
+              'description': 'Form description',
+              'child': 'form-content',
+            },
+            {'id': 'form-content', 'component': 'Text', 'text': 'Form content'},
+            {
+              'id': 'alert',
+              'component': 'Alert',
+              'title': 'Heads up',
+              'description': 'Alert description',
+              'icon': 'info',
+              'tone': 'info',
+            },
+            {
+              'id': 'stat',
+              'component': 'Stat',
+              'value': '42',
+              'label': 'Open items',
+              'delta': '+3',
+              'icon': 'trendingUp',
+              'tone': 'success',
+            },
+            {
+              'id': 'link',
+              'component': 'Link',
+              'label': 'Read more',
+              'semanticLabel': 'Read details',
+              'href': 'https://example.com',
+            },
+            {
+              'id': 'tooltip',
+              'component': 'Tooltip',
+              'message': 'More information',
+              'child': 'tooltip-content',
+            },
+            {
+              'id': 'tooltip-content',
+              'component': 'Text',
+              'text': 'Tooltip content',
+            },
+            {
+              'id': 'accordion',
+              'component': 'Accordion',
+              'expanded': [0],
+              'items': [
+                {'title': 'Details', 'content': 'accordion-content'},
+              ],
+            },
+            {
+              'id': 'accordion-content',
+              'component': 'Text',
+              'text': 'Accordion content',
+            },
+            {
+              'id': 'stepper',
+              'component': 'Stepper',
+              'steps': [
+                {
+                  'title': 'Started',
+                  'description': 'The work began.',
+                  'state': 'complete',
+                },
+                {'title': 'Review', 'state': 'current'},
+                {'title': 'Blocked', 'state': 'error'},
+                {'title': 'Queued', 'state': 'pending'},
+              ],
+            },
+            {
+              'id': 'timeline',
+              'component': 'Timeline',
+              'entries': [
+                {
+                  'title': 'Created',
+                  'description': 'Created description',
+                  'time': 'Today',
+                  'tone': 'primary',
+                },
+                {'title': 'Updated', 'tone': 'success'},
+              ],
+            },
+            {
+              'id': 'skeleton',
+              'component': 'Skeleton',
+              'width': 24,
+              'height': 24,
+              'shape': 'circle',
+              'label': 'Loading',
+            },
+            {
+              'id': 'grid',
+              'component': 'Grid',
+              'minimumItemWidth': 120,
+              'gap': 'lg',
+              'children': ['grid-content'],
+            },
+            {'id': 'grid-content', 'component': 'Text', 'text': 'Grid content'},
+            {
+              'id': 'wrap',
+              'component': 'Wrap',
+              'gap': 'xs',
+              'children': ['wrap-content'],
+            },
+            {'id': 'wrap-content', 'component': 'Text', 'text': 'Wrap content'},
+            {
+              'id': 'flex-row',
+              'component': 'Row',
+              'children': ['flex-item', 'spacer', 'flex-content'],
+            },
+            {
+              'id': 'flex-item',
+              'component': 'FlexItem',
+              'flex': 2,
+              'fit': 'tight',
+              'child': 'flex-item-content',
+            },
+            {
+              'id': 'flex-item-content',
+              'component': 'Text',
+              'text': 'Flexible content',
+            },
+            {'id': 'spacer', 'component': 'Spacer', 'size': 12, 'flex': 2},
+            {
+              'id': 'flex-content',
+              'component': 'Text',
+              'text': 'Trailing content',
+            },
+            {
+              'id': 'rating',
+              'component': 'Rating',
+              'value': {'path': '/rating'},
+              'max': 5,
+              'label': 'Rating',
+            },
+            {
+              'id': 'tags',
+              'component': 'TagInput',
+              'value': {'path': '/tags'},
+              'label': 'Tags',
+              'maxSelections': 3,
+            },
+            {
+              'id': 'code',
+              'component': 'CodeBlock',
+              'code': 'print("Hello")',
+              'language': 'dart',
+              'label': 'Example code',
+            },
+            {
+              'id': 'key-value',
+              'component': 'KeyValue',
+              'entries': [
+                {'label': 'Status', 'value': 'Ready'},
+              ],
+            },
+            {
+              'id': 'section',
+              'component': 'Section',
+              'title': 'Summary',
+              'description': 'Section description',
+              'child': 'section-content',
+            },
+            {
+              'id': 'section-content',
+              'component': 'Text',
+              'text': 'Section content',
+            },
+          ],
+        },
+      }, interactionMode: 'requiresUserAction'),
+    ];
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+        child: MaterialApp(
+          theme: ThemeData(extensions: [AuraTheme.light]),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: SizedBox(
+                width: 800,
+                child: ChatA2uiSurfaceHost.historical(
+                  messageId: 'extended-message',
+                  payloads: payloads,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Form content'), findsOneWidget);
+    expect(find.text('Accordion content'), findsOneWidget);
+    expect(find.text('Flexible content'), findsOneWidget);
+    expect(find.text('Section content'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
