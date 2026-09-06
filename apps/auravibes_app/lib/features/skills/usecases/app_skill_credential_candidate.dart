@@ -1,5 +1,3 @@
-export '../models/app_skill_credential_candidate.dart';
-
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
@@ -10,6 +8,8 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
+
+export '../models/app_skill_credential_candidate.dart';
 
 typedef CloudServiceConnectionsReader =
     Future<List<CloudServiceConnection>?> Function(String workspaceId);
