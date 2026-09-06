@@ -7,9 +7,8 @@ abstract final class CodexInputModalities {
       return model.modalitiesInput;
     }
 
-    return [
-      for (final modality in model.modalitiesInput)
-        if (modality == 'text') modality,
-    ];
+    return model.modalitiesInput
+        .where((modality) => modality == 'text')
+        .toList();
   }
 }
