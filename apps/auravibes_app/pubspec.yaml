@@ -32,7 +32,7 @@ dependencies:
   flutter_driver:
     sdk: flutter
   flutter_hooks: ^0.21.3+1
-  flutter_secure_storage: ^10.3.1
+  flutter_secure_storage: ^11.0.0
   flutter_svg: ^2.3.0
   flutter_web_auth_2: ^6.0.0-alpha.7
   freezed_annotation: ^3.1.0
