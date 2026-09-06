@@ -7,6 +7,21 @@ import 'package:genkit/genkit.dart';
 import 'package:http/http.dart' as http;
 
 void main() {
+  test('resolves only model actions', () {
+    final plugin = AppChatCompletionsPlugin(
+      name: 'resolve-test',
+      baseUrl: 'https://example.test',
+      apiKey: 'key',
+      codec: ChatCompletionsCodec(
+        errorLabel: 'ResolveTest',
+        customize: (modelName, config) =>
+            (model: modelName, extraBody: const <String, dynamic>{}),
+      ),
+    );
+
+    expect(plugin.resolve(ActionType.model, 'm'), isA<Model<dynamic>>());
+    expect(plugin.resolve(ActionType.tool, 'm'), isNull);
+  });
   for (final testCase in [
     (
       base: 'https://example.test/v1',
