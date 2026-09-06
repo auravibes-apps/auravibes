@@ -11,6 +11,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
 abstract class RemovePendingConversationMessageRequest
     implements _i1.SerializableModel {
@@ -20,6 +21,7 @@ abstract class RemovePendingConversationMessageRequest
     required this.conversationId,
     required this.expectedProjectionRevision,
     required this.messageId,
+    this.a2uiSupportedComponents,
   });
 
   factory RemovePendingConversationMessageRequest({
@@ -28,6 +30,7 @@ abstract class RemovePendingConversationMessageRequest
     required String conversationId,
     required int expectedProjectionRevision,
     required String messageId,
+    List<String>? a2uiSupportedComponents,
   }) = _RemovePendingConversationMessageRequestImpl;
 
   factory RemovePendingConversationMessageRequest.fromJson(
@@ -40,6 +43,12 @@ abstract class RemovePendingConversationMessageRequest
       expectedProjectionRevision:
           jsonSerialization['expectedProjectionRevision'] as int,
       messageId: jsonSerialization['messageId'] as String,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -53,6 +62,8 @@ abstract class RemovePendingConversationMessageRequest
 
   String messageId;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [RemovePendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -62,6 +73,7 @@ abstract class RemovePendingConversationMessageRequest
     String? conversationId,
     int? expectedProjectionRevision,
     String? messageId,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -72,6 +84,8 @@ abstract class RemovePendingConversationMessageRequest
       'conversationId': conversationId,
       'expectedProjectionRevision': expectedProjectionRevision,
       'messageId': messageId,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -81,6 +95,8 @@ abstract class RemovePendingConversationMessageRequest
   }
 }
 
+class _Undefined {}
+
 class _RemovePendingConversationMessageRequestImpl
     extends RemovePendingConversationMessageRequest {
   _RemovePendingConversationMessageRequestImpl({
@@ -89,12 +105,14 @@ class _RemovePendingConversationMessageRequestImpl
     required String conversationId,
     required int expectedProjectionRevision,
     required String messageId,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
          conversationId: conversationId,
          expectedProjectionRevision: expectedProjectionRevision,
          messageId: messageId,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [RemovePendingConversationMessageRequest]
@@ -107,6 +125,7 @@ class _RemovePendingConversationMessageRequestImpl
     String? conversationId,
     int? expectedProjectionRevision,
     String? messageId,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return RemovePendingConversationMessageRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -115,6 +134,9 @@ class _RemovePendingConversationMessageRequestImpl
       expectedProjectionRevision:
           expectedProjectionRevision ?? this.expectedProjectionRevision,
       messageId: messageId ?? this.messageId,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

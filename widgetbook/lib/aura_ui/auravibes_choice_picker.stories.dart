@@ -26,6 +26,10 @@ final $ChoicePicker = _Story(
       },
     ),
     tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
+    presentation: EnumArg(
+      AuraChoicePickerPresentation.list,
+      values: AuraChoicePickerPresentation.values,
+    ),
   ),
   scenarios: [
     _Scenario(
@@ -53,6 +57,8 @@ class const ChoicePickerDemo({
   super.key,
   required final AuraChoicePickerVariant variant,
   required final AuraTint? tint,
+  final AuraChoicePickerPresentation presentation =
+      AuraChoicePickerPresentation.list,
 }) extends StatefulWidget {
   @override
   State<ChoicePickerDemo> createState() => _ChoicePickerDemoState();
@@ -90,6 +96,7 @@ class _ChoicePickerDemoState extends State<ChoicePickerDemo> {
             : _value,
         onChanged: (value) => setState(() => _value = value),
         variant: widget.variant,
+        presentation: widget.presentation,
         maxAllowedSelections: maxAllowedSelections,
         label: const Text('Preferred contact method'),
         tint: widget.tint,

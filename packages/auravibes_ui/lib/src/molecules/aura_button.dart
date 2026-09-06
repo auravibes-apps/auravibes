@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -55,13 +56,18 @@ class AuraButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final effectiveDisabled =
+        disabled || !AuraInteractionScope.of(context).allowsActions;
     final content = isLoading
         ? AuraLoadingCircle(
             tint: tint ?? AuraTint.primary,
             size: 20,
             itemBuilder: (context, _) => DecoratedBox(
               decoration: BoxDecoration(
-                color: _getLoadingColor(auraColors),
+                color: _getLoadingColor(
+                  auraColors,
+                  disabled: effectiveDisabled,
+                ),
                 shape: BoxShape.circle,
               ),
             ),
@@ -70,6 +76,7 @@ class AuraButton extends StatelessWidget {
             style: _getTextStyle(
               auraColors,
               typography: context.auraTheme.typography,
+              disabled: effectiveDisabled,
             ),
             child: child,
           );
@@ -85,22 +92,23 @@ class AuraButton extends StatelessWidget {
           ),
           padding: _getPadding(),
         ),
-        color: _getForegroundColor(auraColors),
+        color: _getForegroundColor(auraColors, disabled: effectiveDisabled),
         decoration: BoxDecoration(
-          color: _getBackgroundColor(auraColors),
-          border: _getBorder(auraColors),
+          color: _getBackgroundColor(auraColors, disabled: effectiveDisabled),
+          border: _getBorder(auraColors, disabled: effectiveDisabled),
           borderRadius: BorderRadius.all(
             Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
           ),
-          boxShadow: _getBoxShadow(),
+          boxShadow: _getBoxShadow(disabled: effectiveDisabled),
         ),
-        onPressed: (disabled || isLoading) ? null : onPressed,
+        onPressed: (effectiveDisabled || isLoading) ? null : onPressed,
         semanticLabel: semanticLabel,
+        isButtonSemantics: true,
       ),
     );
   }
 
-  Color _getBackgroundColor(AuraColorScheme colors) {
+  Color _getBackgroundColor(AuraColorScheme colors, {required bool disabled}) {
     if (disabled) {
       if (variant == AuraButtonVariant.text) {
         // Text buttons should keep a transparent background even when disabled.
@@ -120,7 +128,7 @@ class AuraButton extends StatelessWidget {
     };
   }
 
-  Color _getForegroundColor(AuraColorScheme colors) {
+  Color _getForegroundColor(AuraColorScheme colors, {required bool disabled}) {
     if (disabled) return colors.onSurfaceVariant;
     final primaryColor = colors.colorFor(tint ?? AuraTint.primary);
 
@@ -134,7 +142,8 @@ class AuraButton extends StatelessWidget {
     };
   }
 
-  Color _getLoadingColor(AuraColorScheme colors) => _getForegroundColor(colors);
+  Color _getLoadingColor(AuraColorScheme colors, {required bool disabled}) =>
+      _getForegroundColor(colors, disabled: disabled);
 
   AuraEdgeInsetsGeometry _getPadding() {
     // Text variant uses minimal/inline padding for dialogs and inline actions.
@@ -161,7 +170,7 @@ class AuraButton extends StatelessWidget {
     };
   }
 
-  Border? _getBorder(AuraColorScheme colors) {
+  Border? _getBorder(AuraColorScheme colors, {required bool disabled}) {
     if (variant == AuraButtonVariant.outlined) {
       return Border.all(
         color: disabled
@@ -173,7 +182,7 @@ class AuraButton extends StatelessWidget {
     return null;
   }
 
-  List<BoxShadow> _getBoxShadow() {
+  List<BoxShadow> _getBoxShadow({required bool disabled}) {
     if (disabled) return [];
     if (variant == AuraButtonVariant.elevated) {
       return [DesignShadows.sm];
@@ -185,6 +194,7 @@ class AuraButton extends StatelessWidget {
   TextStyle _getTextStyle(
     AuraColorScheme colors, {
     required AuraTypographyScale typography,
+    required bool disabled,
   }) {
     final fontSize = switch (size) {
       AuraButtonSize.small => typography.fontSizeSm,
@@ -199,7 +209,7 @@ class AuraButton extends StatelessWidget {
     };
 
     return TextStyle(
-      color: _getForegroundColor(colors),
+      color: _getForegroundColor(colors, disabled: disabled),
       fontSize: fontSize,
       fontWeight: fontWeight,
       height: typography.lineHeightBase,

@@ -1,3 +1,4 @@
+// ignore_for_file: type=warning
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 
@@ -9,12 +10,14 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
+import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
-import 'package:auravibes_app/providers/chatbot_service_provider.dart';
-import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
-import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:auravibes_app/utils/encode.dart';
@@ -39,7 +42,11 @@ class ContinueAgentService({
   required final ConversationStreamingRuntime conversationStreamingRuntime,
   required final AgentCancellationRuntime agentCancellationRuntime,
   required final MonitoringService monitoringService,
+  final ChatA2uiRuntime Function(String conversationId)?
+  a2uiRuntimeForConversation,
+  final Future<bool> Function(String conversationId)? isTopLevelConversation,
 }) implements AgentStreamProvider<ChatResult<ChatMessage>> {
+  final Map<String, ChatA2uiRuntime> _a2uiRuntimesByMessageId = {};
   @override
   void removeConversationStreaming(String conversationId) {
     conversationStreamingRuntime.remove(conversationId);
@@ -73,25 +80,26 @@ class ContinueAgentService({
     required String conversationId,
     AgentIterationContext? context,
   }) async {
-    _logger.info('debug:start conversation=$conversationId');
-
     final preparedInput = await _prepareInput(conversationId);
-    final selectedModel = preparedInput.model.workspaceModelSelection;
-    _logger.info(
-      'debug:model loaded '
-      'modelId=${selectedModel.modelId} '
-      'provider=${preparedInput.model.modelsProvider.type} '
-      'supportsReasoning=${selectedModel.supportsReasoning} '
-      'supportsToolCalls=${selectedModel.supportsToolCalls}',
+
+    final candidateA2uiRuntime = a2uiRuntimeForConversation?.call(
+      conversationId,
     );
+    final a2uiRuntime =
+        candidateA2uiRuntime != null &&
+            (await isTopLevelConversation?.call(conversationId) ?? true)
+        ? candidateA2uiRuntime
+        : null;
+    a2uiRuntime?.enable();
+    a2uiRuntime?.beginGeneration();
 
     return await _continueWithValidatedInput(
       conversationId: conversationId,
       context: context,
       foundModel: preparedInput.model,
-      messagesCount: preparedInput.messagesCount,
       chatHistory: preparedInput.chatHistory,
       enabledTools: preparedInput.enabledTools,
+      a2uiRuntime: a2uiRuntime,
     );
   }
 
@@ -224,14 +232,27 @@ class ContinueAgentService({
   ) async {
     if (messageId == null) return;
 
+    final runtime = _a2uiRuntimesByMessageId[messageId];
+    runtime?.commitMessage(messageId);
+    final a2uiMessages = runtime?.messagesFor(messageId);
+    final stoppedMetadata = _markPendingToolsStopped(result?.entityMetadata);
     final _ = await messageRepository.patchMessage(
       messageId,
       MessagePatch(
         content: result?.entityText.isEmpty ?? true ? null : result?.entityText,
-        metadata: _markPendingToolsStopped(result?.entityMetadata),
+        metadata: _withA2uiState(
+          stoppedMetadata,
+          runtime,
+          messageId,
+          a2uiMessages,
+        ),
         status: MessageStatus.sent,
       ),
     );
+    if (!_requiresA2uiAction(stoppedMetadata)) {
+      runtime?.closeMessage(messageId);
+    }
+    final _ = _a2uiRuntimesByMessageId.remove(messageId);
   }
 
   Future<void> _markAssistantErrored(String messageId) async {
@@ -246,6 +267,8 @@ class ContinueAgentService({
         error: cleanupError,
         stackTrace: cleanupStackTrace,
       );
+    } finally {
+      final _ = _a2uiRuntimesByMessageId.remove(messageId);
     }
   }
 
@@ -276,12 +299,11 @@ class ContinueAgentService({
         metadata: metadataJson,
       ),
     );
-    _logger.info(
-      'debug:first assistant message conversation=$conversationId '
-      'message=${firstMessage.id} '
-      'hasThinking=${currentResult.entityThinking != null} '
-      'hasModelMetadata=${currentResult.entityModelMetadata.isNotEmpty}',
-    );
+    final a2uiRuntime = a2uiRuntimeForConversation?.call(conversationId);
+    if (a2uiRuntime != null && a2uiRuntime.enabled) {
+      a2uiRuntime.bindMessage(firstMessage.id);
+      _a2uiRuntimesByMessageId[firstMessage.id] = a2uiRuntime;
+    }
 
     return firstMessage.id;
   }
@@ -335,22 +357,16 @@ class ContinueAgentService({
     required String conversationId,
     required AgentIterationContext? context,
     required WorkspaceModelSelectionWithConnectionEntity foundModel,
-    required int messagesCount,
     required List<ChatMessage> chatHistory,
     required List<ToolSpec> enabledTools,
+    ChatA2uiRuntime? a2uiRuntime,
   }) {
-    _logger
-      ..info(
-        'debug:prompt ready conversation=$conversationId '
-        'messages=$messagesCount chatHistory=${chatHistory.length} '
-        'tools=${enabledTools.length}',
-      )
-      ..info('debug:send stream start conversation=$conversationId');
     final responseStream = chatbotService.sendMessage(
       foundModel,
       chatHistory,
       tools: enabledTools,
       sessionId: conversationId,
+      a2uiRuntime: a2uiRuntime,
     );
 
     return AgentStreamRunner<ChatResult<ChatMessage>>(
@@ -392,11 +408,68 @@ class ContinueAgentService({
     String messageId,
     ChatResult<ChatMessage> result,
   ) async {
+    final runtime = _a2uiRuntimesByMessageId[messageId];
+    runtime?.commitMessage(messageId);
+    final a2uiMessages = runtime?.messagesFor(messageId);
+    final metadata = _withA2uiState(
+      result.entityMetadata,
+      runtime,
+      messageId,
+      a2uiMessages,
+    );
     final _ = await messageRepository.patchMessage(
       messageId,
-      .new(metadata: result.entityMetadata, status: .sent),
+      .new(
+        metadata: metadata,
+        status: _requiresA2uiAction(metadata) ? .unfinished : .sent,
+      ),
+    );
+    if (!_requiresA2uiAction(metadata)) {
+      runtime?.closeMessage(messageId);
+    }
+    final _ = _a2uiRuntimesByMessageId.remove(messageId);
+  }
+
+  MessageMetadataEntity? _withA2uiState(
+    MessageMetadataEntity? metadata,
+    ChatA2uiRuntime? runtime,
+    String messageId,
+    List<String>? a2uiMessages,
+  ) {
+    final issuesBySurface =
+        runtime?.a2uiIssuesBySurfaceFor(messageId) ??
+        const <String, List<String>>{};
+    final messageIssues =
+        runtime?.a2uiMessageIssuesFor(messageId) ?? const <String>[];
+    final currentMessages = a2uiMessages;
+    if ((a2uiMessages == null || a2uiMessages.isEmpty) &&
+        issuesBySurface.isEmpty &&
+        messageIssues.isEmpty) {
+      return metadata;
+    }
+    final mergedIssuesBySurface = <String, List<String>>{
+      ...?metadata?.a2uiIssuesBySurface,
+      for (final entry in issuesBySurface.entries)
+        entry.key: {
+          ...(metadata?.a2uiIssuesBySurface[entry.key] ?? const <String>[]),
+          ...entry.value,
+        }.toList(),
+    };
+
+    return (metadata ?? const MessageMetadataEntity()).copyWith(
+      a2uiMessages: currentMessages != null && currentMessages.isNotEmpty
+          ? currentMessages
+          : metadata?.a2uiMessages ?? const <String>[],
+      a2uiIssuesBySurface: mergedIssuesBySurface,
+      a2uiMessageIssues: {
+        ...?metadata?.a2uiMessageIssues,
+        ...messageIssues,
+      }.toList(),
     );
   }
+
+  bool _requiresA2uiAction(MessageMetadataEntity? metadata) =>
+      metadata?.modelMetadata['a2uiRequiresUserAction'] == true;
 }
 
 ContinueAgentService _continueAgentService(Ref ref) {
@@ -410,6 +483,15 @@ ContinueAgentService _continueAgentService(Ref ref) {
     ),
     agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
     monitoringService: ref.watch(monitoringServiceProvider),
+    a2uiRuntimeForConversation: (conversationId) =>
+        ref.read(chatA2uiRuntimeProvider(conversationId)),
+    isTopLevelConversation: (conversationId) async {
+      final conversation = await ref
+          .read(conversationRepositoryProvider)
+          .getConversationById(conversationId);
+
+      return conversation != null && conversation.parentConversationId == null;
+    },
   );
 }
 

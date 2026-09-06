@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -134,6 +135,36 @@ void main() {
   });
 
   group('MessageMetadataEntity', () {
+    test('recognizes direct A2UI action metadata', () {
+      final metadata = MessageMetadataEntity.fromJsonString(
+        jsonEncode({
+          'protocolVersion': a2uiChatProtocolVersion,
+          'conversationId': 'conversation-1',
+          'turnId': 'assistant-1',
+          'surfaceId': 'assistant-1:main',
+          'wireSurfaceId': 'main',
+          'componentId': a2uiChatFormSubmitComponentId,
+          'actionName': a2uiChatFormSubmitActionName,
+          'context': <String, Object?>{},
+          'messageText': 'Form answers submitted',
+          'answers': {'name': 'Ada'},
+        }),
+      );
+
+      expect(metadata?.modelMetadata[a2uiChatActionMetadataKey], {
+        'protocolVersion': a2uiChatProtocolVersion,
+        'conversationId': 'conversation-1',
+        'turnId': 'assistant-1',
+        'surfaceId': 'assistant-1:main',
+        'wireSurfaceId': 'main',
+        'componentId': a2uiChatFormSubmitComponentId,
+        'actionName': a2uiChatFormSubmitActionName,
+        'context': <String, Object?>{},
+        'messageText': 'Form answers submitted',
+        'answers': {'name': 'Ada'},
+      });
+    });
+
     test('serializes exact full metadata JSON', () {
       final metadata = MessageMetadataEntity(
         toolCalls: const [
@@ -174,6 +205,9 @@ void main() {
         'totalTokens': 15,
         'thinking': 'reasoning',
         'modelMetadata': {'provider': 'openai'},
+        'a2uiMessages': <Object?>[],
+        'a2uiIssuesBySurface': <String, Object?>{},
+        'a2uiMessageIssues': <Object?>[],
         'metadataVersion': 2,
         'isCompactionSummary': true,
         'compactionKind': 'manual',

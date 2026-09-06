@@ -19,6 +19,15 @@ abstract final class StreamingMessageMetadata {
       totalTokens: streaming.totalTokens ?? current?.totalTokens,
       thinking: streaming.thinking ?? current?.thinking,
       modelMetadata: {...?current?.modelMetadata, ...streaming.modelMetadata},
+      a2uiMessages: streaming.a2uiMessages.isEmpty
+          ? current?.a2uiMessages ?? const <String>[]
+          : streaming.a2uiMessages,
+      a2uiIssuesBySurface: streaming.a2uiIssuesBySurface.isEmpty
+          ? current?.a2uiIssuesBySurface ?? const <String, List<String>>{}
+          : streaming.a2uiIssuesBySurface,
+      a2uiMessageIssues: streaming.a2uiMessageIssues.isEmpty
+          ? current?.a2uiMessageIssues ?? const <String>[]
+          : streaming.a2uiMessageIssues,
     );
   }
 }

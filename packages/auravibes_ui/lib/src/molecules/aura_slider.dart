@@ -1,3 +1,7 @@
+import 'dart:math' as math;
+
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
+import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
 import 'package:flutter/services.dart';
@@ -7,11 +11,158 @@ const _controlHeight = 48.0;
 const _trackHeight = 4.0;
 const _thumbRadius = 10.0;
 const double _thumbDiameter = _thumbRadius * 2;
-const _semanticStepCount = 20.0;
 
 class const _AuraSliderIncreaseIntent() extends Intent;
 
 class const _AuraSliderDecreaseIntent() extends Intent;
+
+/// A labeled point on an [AuraLabeledSlider] range.
+class AuraSliderMark {
+  /// Creates a mark at an in-range value.
+  const new({required this.value, this.label});
+
+  /// Mark position in the slider's units.
+  final double value;
+
+  /// Optional visible caller-localized label.
+  final String? label;
+}
+
+/// A slider with a visible label, current value, and range bounds.
+class AuraLabeledSlider extends StatelessWidget {
+  /// Creates a labeled slider while keeping [AuraSlider] available alone.
+  const new({
+    required this.value,
+    required this.onChanged,
+    super.key,
+    this.min = 0,
+    this.max = 1,
+    this.step = 1,
+    this.precision = 2,
+    this.enabled = true,
+    this.label,
+    this.semanticLabel,
+    this.tint = AuraTint.primary,
+    this.valueFormatter,
+    this.marks = const [],
+  }) : assert(min <= max, 'min must be less than or equal to max'),
+       assert(step > 0, 'step must be greater than zero'),
+       assert(precision >= 0, 'precision must not be negative'),
+       assert(precision <= 20, 'precision must not exceed 20');
+
+  /// Current controlled value.
+  final double value;
+
+  /// Inclusive lower bound.
+  final double min;
+
+  /// Inclusive upper bound.
+  final double max;
+
+  /// Selectable increment, anchored at [min].
+  final double step;
+
+  /// Number of decimal places used for rounding and display.
+  final int precision;
+
+  /// Called with the next value after user interaction.
+  final ValueChanged<double>? onChanged;
+
+  /// Whether the slider accepts user interaction.
+  final bool enabled;
+
+  /// Visible field label.
+  final String? label;
+
+  /// Accessible label announced for the slider.
+  final String? semanticLabel;
+
+  /// Aura tint used for the active track and thumb.
+  final AuraTint tint;
+
+  /// Optional display formatter for current and boundary values.
+  final String Function(double value)? valueFormatter;
+
+  /// Optional static labels placed at meaningful positions in the range.
+  final List<AuraSliderMark> marks;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveValue = _normalizeValue(value, min, max, step, precision);
+    final format =
+        valueFormatter ?? (value) => _formatSliderValue(value, precision);
+    final spacing = context.auraTheme.spacing;
+    if (marks.any((mark) => mark.value < min || mark.value > max)) {
+      throw ArgumentError('Slider marks must be inside the configured range.');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            if (label case final label?)
+              Expanded(
+                child: AuraText(
+                  child: Text(label),
+                  style: AuraTextStyle.bodySmall,
+                ),
+              )
+            else
+              const Spacer(),
+            AuraText(
+              child: Text(format(effectiveValue)),
+              style: AuraTextStyle.bodySmall,
+            ),
+          ],
+        ),
+        SizedBox(height: spacing.xs),
+        AuraSlider(
+          value: effectiveValue,
+          onChanged: onChanged,
+          min: min,
+          max: max,
+          step: step,
+          precision: precision,
+          enabled: enabled,
+          semanticLabel: semanticLabel ?? label,
+          tint: tint,
+        ),
+        if (marks.isNotEmpty) ...[
+          SizedBox(height: spacing.xs),
+          SizedBox(
+            height: 20,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                for (final mark in marks)
+                  Align(
+                    alignment: Alignment(
+                      min == max
+                          ? 0
+                          : ((mark.value - min) / (max - min)) * 2 - 1,
+                      0,
+                    ),
+                    child: AuraText(
+                      child: Text(mark.label ?? format(mark.value)),
+                      style: AuraTextStyle.caption,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            AuraText(child: Text(format(min)), style: AuraTextStyle.caption),
+            AuraText(child: Text(format(max)), style: AuraTextStyle.caption),
+          ],
+        ),
+      ],
+    );
+  }
+}
 
 /// A controlled, themed slider for selecting a numeric value.
 class AuraSlider extends StatefulWidget {
@@ -22,10 +173,15 @@ class AuraSlider extends StatefulWidget {
     super.key,
     this.min = 0,
     this.max = 1,
+    this.step = 1,
+    this.precision = 2,
     this.enabled = true,
     this.semanticLabel,
     this.tint = AuraTint.primary,
-  }) : assert(min <= max, 'min must be less than or equal to max');
+  }) : assert(min <= max, 'min must be less than or equal to max'),
+       assert(step > 0, 'step must be greater than zero'),
+       assert(precision >= 0, 'precision must not be negative'),
+       assert(precision <= 20, 'precision must not exceed 20');
 
   /// Current controlled value.
   final double value;
@@ -35,6 +191,12 @@ class AuraSlider extends StatefulWidget {
 
   /// Inclusive upper bound for [value].
   final double max;
+
+  /// Selectable increment, anchored at [min].
+  final double step;
+
+  /// Number of decimal places used to round controlled and emitted values.
+  final int precision;
 
   /// Called with the next value after user interaction.
   final ValueChanged<double>? onChanged;
@@ -59,25 +221,45 @@ class _AuraSliderState extends State<AuraSlider> {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final onChanged = widget.onChanged;
-    final isEnabled = widget.enabled && onChanged != null;
-    final effectiveValue = _clampValue(widget.value, widget.min, widget.max);
-    final semanticStep = (widget.max - widget.min) / _semanticStepCount;
-    final increasedValue = _clampValue(
-      effectiveValue + semanticStep,
+    final isEnabled =
+        widget.enabled &&
+        AuraInteractionScope.of(context).allowsValueChanges &&
+        onChanged != null;
+    final effectiveValue = _normalizeValue(
+      widget.value,
       widget.min,
       widget.max,
+      widget.step,
+      widget.precision,
     );
-    final decreasedValue = _clampValue(
-      effectiveValue - semanticStep,
+    final increasedValue = _normalizeValue(
+      effectiveValue + widget.step,
       widget.min,
       widget.max,
+      widget.step,
+      widget.precision,
+    );
+    final decreasedValue = _normalizeValue(
+      effectiveValue - widget.step,
+      widget.min,
+      widget.max,
+      widget.step,
+      widget.precision,
     );
 
     void changeValue(double nextValue) {
-      if (!widget.enabled || onChanged == null) {
+      if (!isEnabled) {
         return;
       }
-      onChanged(_clampValue(nextValue, widget.min, widget.max));
+      onChanged(
+        _normalizeValue(
+          nextValue,
+          widget.min,
+          widget.max,
+          widget.step,
+          widget.precision,
+        ),
+      );
     }
 
     void increase() => changeValue(increasedValue);
@@ -188,6 +370,27 @@ class _AuraSliderState extends State<AuraSlider> {
 
 double _clampValue(double value, double min, double max) =>
     value.clamp(min, max);
+
+String _formatSliderValue(double value, int precision) =>
+    value.toStringAsFixed(precision);
+
+double _normalizeValue(
+  double value,
+  double min,
+  double max,
+  double step,
+  int precision,
+) {
+  final clamped = _clampValue(value, min, max);
+  if (clamped == min || clamped == max) return clamped;
+  final stepped = min + ((clamped - min) / step).round() * step;
+  final scale = math.pow(10, precision).toDouble();
+  final rounded = (stepped * scale).round() / scale;
+
+  return double.parse(
+    _clampValue(rounded, min, max).toStringAsFixed(precision),
+  );
+}
 
 double _thumbPosition(double value, double width, double min, double max) {
   final trackStart = width < _thumbDiameter ? width / 2 : _thumbRadius;

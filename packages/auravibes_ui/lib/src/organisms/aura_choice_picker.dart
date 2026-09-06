@@ -1,3 +1,5 @@
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
+import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/molecules/aura_checkbox.dart';
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
@@ -39,6 +41,15 @@ enum AuraChoicePickerVariant {
   multipleSelection,
 }
 
+/// Visual layout, independent of single or multiple selection behavior.
+enum AuraChoicePickerPresentation {
+  /// Vertically arranged radio or checkbox options.
+  list,
+
+  /// Wrapping, keyboard-accessible choice chips.
+  chips,
+}
+
 /// A controlled list of labeled choices supporting single or multiple values.
 ///
 /// The widget does not keep selection state. Callers must update [value] in
@@ -54,6 +65,7 @@ class AuraChoicePicker<T> extends StatelessWidget {
     required this.onChanged,
     super.key,
     this.variant = AuraChoicePickerVariant.mutuallyExclusive,
+    this.presentation = AuraChoicePickerPresentation.list,
     this.maxAllowedSelections,
     this.label,
     this.semanticLabel,
@@ -72,6 +84,9 @@ class AuraChoicePicker<T> extends StatelessWidget {
   /// Whether one or multiple values may be selected.
   final AuraChoicePickerVariant variant;
 
+  /// Whether choices appear as a list or wrapping chips.
+  final AuraChoicePickerPresentation presentation;
+
   /// The largest number of selected values allowed in multiple-selection
   /// mode.
   final int? maxAllowedSelections;
@@ -88,30 +103,42 @@ class AuraChoicePicker<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (options.isEmpty) return const SizedBox.shrink();
+    final effectiveOnChanged =
+        AuraInteractionScope.of(context).allowsValueChanges ? onChanged : null;
 
-    final choices = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (int i = 0; i < options.length; i++) ...[
-          _AuraChoicePickerOption<T>(
-            option: options[i],
-            selectedValues: value,
-            variant: variant,
-            maxAllowedSelections: maxAllowedSelections,
-            onChanged: onChanged,
-            tint: tint,
-          ),
-          if (i < options.length - 1) const AuraSizedBox(height: .sm),
-        ],
+    final optionWidgets = [
+      for (int i = 0; i < options.length; i++) ...[
+        _AuraChoicePickerOption<T>(
+          option: options[i],
+          selectedValues: value,
+          variant: variant,
+          presentation: presentation,
+          maxAllowedSelections: maxAllowedSelections,
+          onChanged: effectiveOnChanged,
+          tint: tint,
+        ),
+        if (presentation == AuraChoicePickerPresentation.list &&
+            i < options.length - 1)
+          const AuraSizedBox(height: .sm),
       ],
-    );
+    ];
+    final Widget choices = presentation == AuraChoicePickerPresentation.chips
+        ? Wrap(
+            spacing: context.auraTheme.spacing.sm,
+            runSpacing: context.auraTheme.spacing.sm,
+            children: optionWidgets,
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: optionWidgets,
+          );
 
     final label = this.label;
     final semanticLabel = this.semanticLabel;
     final visibleLabel = label != null && semanticLabel != null
         ? ExcludeSemantics(child: label)
         : label;
-    Widget result = visibleLabel == null
+    var result = visibleLabel == null
         ? choices
         : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,6 +172,7 @@ class const _AuraChoicePickerOption<T>({
   required final AuraChoiceOption<T> option,
   required final List<T> selectedValues,
   required final AuraChoicePickerVariant variant,
+  required final AuraChoicePickerPresentation presentation,
   required final int? maxAllowedSelections,
   required final ValueChanged<List<T>>? onChanged,
   required final AuraTint? tint,
@@ -173,6 +201,56 @@ class const _AuraChoicePickerOption<T>({
 
   @override
   Widget build(BuildContext context) {
+    if (presentation == AuraChoicePickerPresentation.chips) {
+      final theme = context.auraTheme;
+      final colors = context.auraColors;
+      final accent = colors.colorFor(tint ?? AuraTint.primary);
+
+      return MergeSemantics(
+        child: Semantics(
+          child: AuraPressable(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: _choicePickerTapTarget,
+                minHeight: _choicePickerTapTarget,
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: theme.spacing.sm,
+                  horizontal: theme.spacing.md,
+                ),
+                child: Center(
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: ExcludeSemantics(
+                    excluding: option.semanticLabel != null,
+                    child: Opacity(
+                      opacity: _isInteractive ? 1 : 0.6,
+                      child: option.label,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            color: accent,
+            decoration: BoxDecoration(
+              color: _isSelected ? accent.withValues(alpha: 0.12) : null,
+              border: Border.all(color: _isSelected ? accent : colors.outline),
+              borderRadius: BorderRadius.circular(
+                theme.fromBorderRadius(.full),
+              ),
+            ),
+            onPressed: _isInteractive ? _handleChange : null,
+            semanticLabel: option.semanticLabel,
+            isButtonSemantics: true,
+          ),
+          enabled: _isInteractive,
+          checked: _isSelected,
+          inMutuallyExclusiveGroup:
+              variant == AuraChoicePickerVariant.mutuallyExclusive,
+        ),
+      );
+    }
     final label = option.semanticLabel == null
         ? option.label
         : ExcludeSemantics(child: option.label);

@@ -9,3 +9,4 @@ fields:
   decision: String
   stopAll: bool, default=false
   editedArgumentsJson: String?
+  a2uiSupportedComponents: List<String>?

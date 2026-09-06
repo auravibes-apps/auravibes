@@ -1,4 +1,4 @@
-// ignore_for_file: always_put_required_named_parameters_first
+// ignore_for_file: always_put_required_named_parameters_first, lines_longer_than_80_chars
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 

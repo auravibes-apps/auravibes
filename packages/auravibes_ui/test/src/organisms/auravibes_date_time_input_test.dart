@@ -242,7 +242,7 @@ void main() {
       final semantics = tester.ensureSemantics();
 
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           home: Scaffold(
             body: AuraDateTimeInput(semanticLabel: 'Start date and time'),
           ),

@@ -113,6 +113,10 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
     int? totalTokens,
     String? thinking,
     @Default(<String, Object?>{}) Map<String, Object?> modelMetadata,
+    @Default(<String>[]) List<String> a2uiMessages,
+    @Default(<String, List<String>>{})
+    Map<String, List<String>> a2uiIssuesBySurface,
+    @Default(<String>[]) List<String> a2uiMessageIssues,
     @Default(1) int metadataVersion,
     @Default(false) bool isCompactionSummary,
     CompactionKind? compactionKind,
@@ -132,6 +136,18 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
     if (metadata == null) return null;
     try {
       final json = jsonDecode(metadata) as Map<String, dynamic>;
+      final conversationId = json['conversationId'];
+      if (conversationId is String) {
+        final action = A2uiChatContract.decodeActionMetadata(
+          json,
+          conversationId: conversationId,
+        );
+        if (action != null) {
+          return MessageMetadataEntity(
+            modelMetadata: {a2uiChatActionMetadataKey: action.toJson()},
+          );
+        }
+      }
 
       return MessageMetadataEntity.fromJson(json);
     } on Exception catch (_) {

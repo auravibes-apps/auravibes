@@ -7,14 +7,26 @@ import '../../model_connections/domain/virtual_workspace_model_selection.dart';
 import '../../objects/object_reference_service.dart';
 import '../domain/conversation_values.dart';
 
+Map<String, dynamic> _safeMetadata(String? source) {
+  if (source == null) return <String, dynamic>{};
+  try {
+    final value = jsonDecode(source);
+    return value is Map<String, dynamic> ? value : <String, dynamic>{};
+  } on Object catch (_) {
+    return <String, dynamic>{};
+  }
+}
+
 String conversationTurnJobPayload(
   String actorUserId, {
   String? executionId,
   int? parentTurnId,
+  List<String>? a2uiSupportedComponents,
 }) => jsonEncode({
   'actorUserId': actorUserId,
   'executionId': ?executionId,
   'parentTurnId': ?parentTurnId,
+  'a2uiSupportedComponents': ?a2uiSupportedComponents,
 });
 
 String conversationExecutionIdForJob(
@@ -349,7 +361,10 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         requestId: request.requestId,
         kind: ConversationJobKinds.turn,
         status: ConversationJobStatuses.queued,
-        payloadJson: conversationTurnJobPayload(actorUserId),
+        payloadJson: conversationTurnJobPayload(
+          actorUserId,
+          a2uiSupportedComponents: request.a2uiSupportedComponents,
+        ),
         attempt: 0,
         maxAttempts: 3,
         availableAt: now,
@@ -432,7 +447,10 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         requestId: request.requestId,
         kind: ConversationJobKinds.turn,
         status: ConversationJobStatuses.queued,
-        payloadJson: conversationTurnJobPayload(actorUserId),
+        payloadJson: conversationTurnJobPayload(
+          actorUserId,
+          a2uiSupportedComponents: request.a2uiSupportedComponents,
+        ),
         attempt: 0,
         maxAttempts: 3,
         availableAt: now,
@@ -458,6 +476,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     required String clientMessageId,
     required String content,
     required List<int> attachmentIds,
+    String? metadataJson,
     required DateTime now,
     required Transaction transaction,
   }) async {
@@ -487,7 +506,10 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         kind: 'text',
         status: ConversationStatuses.queued,
         content: content,
-        metadataJson: jsonEncode({'attachmentIds': attachmentIds}),
+        metadataJson: jsonEncode({
+          ..._safeMetadata(metadataJson),
+          'attachmentIds': attachmentIds,
+        }),
         pendingOrder: pendingOrder,
         pendingAt: now,
         revision: 1,

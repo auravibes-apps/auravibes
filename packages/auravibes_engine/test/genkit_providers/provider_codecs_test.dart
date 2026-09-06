@@ -1,3 +1,4 @@
+// ignore_for_file: type=lint, type=warning
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -138,6 +139,61 @@ void main() {
     expect(tool.ref, 'call-1');
     expect(tool.name, 'search');
     expect(tool.input, {'query': 'dart'});
+  });
+
+  test('Codex streams text present only in the completed response', () async {
+    const codec = OpenAICodexCodec();
+    final chunks = <ModelResponseChunk>[];
+    final response = await codec.stream(
+      (_) async => ProviderTransportResponse(
+        statusCode: 200,
+        body: Stream.fromIterable([
+          utf8.encode(
+            'data: {"type":"response.output_text.delta",'
+            '"delta":"create"}\n',
+          ),
+          utf8.encode(
+            'data: {"type":"response.completed","response":{'
+            '"status":"completed","output_text":"create update"}}\n',
+          ),
+        ]),
+      ),
+      const {},
+      chunks.add,
+    );
+
+    expect(chunks.map((chunk) => chunk.text), ['create', ' update']);
+    expect(response.message?.text, 'create update');
+  });
+
+  test('Codex recovers authoritative text from done events', () async {
+    const codec = OpenAICodexCodec();
+    final chunks = <ModelResponseChunk>[];
+    final response = await codec.stream(
+      (_) async => ProviderTransportResponse(
+        statusCode: 200,
+        body: Stream.fromIterable([
+          utf8.encode(
+            'data: {"type":"response.output_text.delta",'
+            '"delta":"create"}\n',
+          ),
+          utf8.encode(
+            'data: {"type":"response.output_text.done",'
+            '"text":"create update"}\n',
+          ),
+          utf8.encode(
+            'data: {"type":"response.incomplete","response":{'
+            '"status":"incomplete"}}\n',
+          ),
+        ]),
+      ),
+      const {},
+      chunks.add,
+    );
+
+    expect(chunks.map((chunk) => chunk.text), ['create', ' update']);
+    expect(response.message?.text, 'create update');
+    expect(response.finishReason, FinishReason.length);
   });
 
   test('Codex surfaces streamed failures', () async {

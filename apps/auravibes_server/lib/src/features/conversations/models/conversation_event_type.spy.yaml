@@ -16,3 +16,4 @@ values:
   - toolApprovalRequested
   - toolDecisionRecorded
   - toolResolved
+  - a2uiMessage

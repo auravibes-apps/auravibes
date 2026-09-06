@@ -11,6 +11,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
 abstract class UpdateConversationSettingsRequest
     implements _i1.SerializableModel {
@@ -21,6 +22,7 @@ abstract class UpdateConversationSettingsRequest
     required this.expectedProjectionRevision,
     this.modelId,
     this.agentId,
+    this.a2uiSupportedComponents,
   });
 
   factory UpdateConversationSettingsRequest({
@@ -30,6 +32,7 @@ abstract class UpdateConversationSettingsRequest
     required int expectedProjectionRevision,
     String? modelId,
     String? agentId,
+    List<String>? a2uiSupportedComponents,
   }) = _UpdateConversationSettingsRequestImpl;
 
   factory UpdateConversationSettingsRequest.fromJson(
@@ -43,6 +46,12 @@ abstract class UpdateConversationSettingsRequest
           jsonSerialization['expectedProjectionRevision'] as int,
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -58,6 +67,8 @@ abstract class UpdateConversationSettingsRequest
 
   String? agentId;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [UpdateConversationSettingsRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -68,6 +79,7 @@ abstract class UpdateConversationSettingsRequest
     int? expectedProjectionRevision,
     String? modelId,
     String? agentId,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -79,6 +91,8 @@ abstract class UpdateConversationSettingsRequest
       'expectedProjectionRevision': expectedProjectionRevision,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -99,6 +113,7 @@ class _UpdateConversationSettingsRequestImpl
     required int expectedProjectionRevision,
     String? modelId,
     String? agentId,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -106,6 +121,7 @@ class _UpdateConversationSettingsRequestImpl
          expectedProjectionRevision: expectedProjectionRevision,
          modelId: modelId,
          agentId: agentId,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [UpdateConversationSettingsRequest]
@@ -119,6 +135,7 @@ class _UpdateConversationSettingsRequestImpl
     int? expectedProjectionRevision,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return UpdateConversationSettingsRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -128,6 +145,9 @@ class _UpdateConversationSettingsRequestImpl
           expectedProjectionRevision ?? this.expectedProjectionRevision,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

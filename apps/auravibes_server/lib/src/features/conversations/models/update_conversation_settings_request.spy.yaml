@@ -6,3 +6,4 @@ fields:
   expectedProjectionRevision: int
   modelId: String?
   agentId: String?
+  a2uiSupportedComponents: List<String>?

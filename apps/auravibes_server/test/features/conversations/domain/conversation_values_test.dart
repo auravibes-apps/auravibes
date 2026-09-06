@@ -5,6 +5,12 @@ void main() {
   test('only completed, cancelled, and failed turns are terminal', () {
     expect(ConversationStatuses.isTerminal(ConversationStatuses.queued), false);
     expect(
+      ConversationStatuses.isTerminal(
+        ConversationStatuses.awaitingUserAction,
+      ),
+      false,
+    );
+    expect(
       ConversationStatuses.isTerminal(ConversationStatuses.cancelRequested),
       false,
     );

@@ -22,8 +22,8 @@ Future<void> main() async {
   await widgetbookTests;
 
   test('registers the complete Aura catalog', () {
-    expect(components, hasLength(47));
-    expect(components.expand((component) => component.stories), hasLength(53));
+    expect(components, hasLength(54));
+    expect(components.expand((component) => component.stories), hasLength(60));
   });
 
   test('documents every Aura component', () {

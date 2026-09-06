@@ -13,25 +13,26 @@ import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'conversation_selection_provider.dart';
 
-part 'message_id_list.g.dart';
 part 'cloud_message_tools.dart';
-part 'streaming_message_metadata.dart';
+part 'message_id_list.g.dart';
 part 'pending_tool_call.dart';
+part 'streaming_message_metadata.dart';
 
 final _logger = Logger('message_id_list');
 
@@ -93,10 +94,29 @@ Stream<List<MessageEntity>> _cloudMessages(
   return controller.stream;
 }
 
+@visibleForTesting
+List<MessageEntity> readCloudConversationMessagesForTesting(
+  CloudConversationState state,
+) => _readCloudConversationMessages(state);
+
 List<MessageEntity> _readCloudConversationMessages(
   CloudConversationState state,
 ) {
-  final messages = state.messages.map(_readCloudMessage).toList();
+  final activeAssistantId = state.activeExecution?.assistantMessageId;
+  final isExecutionRunning = state.activeExecution?.status == 'running';
+  final messages = state.messages
+      .map(
+        (message) => _readCloudMessage(
+          message,
+          a2uiMessages: activeAssistantId == message.id && isExecutionRunning
+              ? null
+              : state.a2uiMessagesByAssistantMessageId[message.id],
+          a2uiIssuesBySurface: state.a2uiIssuesByAssistantMessageId[message.id],
+          a2uiMessageIssues:
+              state.a2uiMessageIssuesByAssistantMessageId[message.id],
+        ),
+      )
+      .toList();
   final assistantMessageId = state.activeExecution?.assistantMessageId;
   if (assistantMessageId == null || state.activeAssistantContent.isEmpty) {
     return messages;
@@ -107,61 +127,73 @@ List<MessageEntity> _readCloudConversationMessages(
   if (index < 0) return messages;
 
   messages[index] = messages[index].copyWith(
-    content: '${messages[index].content}${state.activeAssistantContent}',
+    content: state.activeAssistantRenderedContent,
   );
 
   return messages;
 }
 
-MessageEntity _readCloudMessage(ConversationMessageView message) =>
-    MessageEntity(
-      id: message.id,
-      conversationId: message.conversationId,
-      content: message.content,
-      messageType: MessageType.fromString(message.kind),
-      isUser: message.role == 'user',
-      status: switch (message.status) {
-        'queued' || 'running' || 'awaitingApproval' => MessageStatus.unfinished,
-        'completed' => MessageStatus.sent,
-        'failed' || 'cancelled' => MessageStatus.error,
-        final status => MessageStatus.fromString(status),
-      },
-      createdAt: message.createdAt,
-      updatedAt: message.updatedAt,
-      metadata:
-          MessageMetadataEntity.fromJsonString(message.metadataJson)?.copyWith(
-            toolCalls: message.toolCalls
-                .map(
-                  (call) => MessageToolCallEntity(
-                    id: call.id,
-                    name: call.name,
-                    argumentsRaw: call.argumentsJson,
-                    argumentsDigest: call.argumentsDigest,
-                    turnId: message.turnId,
-                    turnRevision: message.turnRevision,
-                    responseRaw: call.resultJson,
-                    resultStatus: CloudMessageTools.resultStatus(call.status),
-                  ),
-                )
-                .toList(),
-          ) ??
-          MessageMetadataEntity(
-            toolCalls: message.toolCalls
-                .map(
-                  (call) => MessageToolCallEntity(
-                    id: call.id,
-                    name: call.name,
-                    argumentsRaw: call.argumentsJson,
-                    argumentsDigest: call.argumentsDigest,
-                    turnId: message.turnId,
-                    turnRevision: message.turnRevision,
-                    responseRaw: call.resultJson,
-                    resultStatus: CloudMessageTools.resultStatus(call.status),
-                  ),
-                )
-                .toList(),
-          ),
-    );
+MessageEntity _readCloudMessage(
+  ConversationMessageView message, {
+  List<String>? a2uiMessages,
+  Map<String, List<String>>? a2uiIssuesBySurface,
+  List<String>? a2uiMessageIssues,
+}) {
+  final metadata =
+      MessageMetadataEntity.fromJsonString(message.metadataJson) ??
+      const MessageMetadataEntity();
+  final mergedA2uiMessages = {
+    ...metadata.a2uiMessages,
+    ...?a2uiMessages,
+  }.toList();
+  final mergedA2uiIssuesBySurface = <String, List<String>>{
+    ...metadata.a2uiIssuesBySurface,
+    ...?a2uiIssuesBySurface,
+  };
+  final mergedA2uiMessageIssues = {
+    ...metadata.a2uiMessageIssues,
+    ...?a2uiMessageIssues,
+  }.toList();
+  final toolCalls = message.toolCalls
+      .map(
+        (call) => MessageToolCallEntity(
+          id: call.id,
+          name: call.name,
+          argumentsRaw: call.argumentsJson,
+          argumentsDigest: call.argumentsDigest,
+          turnId: message.turnId,
+          turnRevision: message.turnRevision,
+          responseRaw: call.resultJson,
+          resultStatus: CloudMessageTools.resultStatus(call.status),
+        ),
+      )
+      .toList();
+
+  return MessageEntity(
+    id: message.id,
+    conversationId: message.conversationId,
+    content: message.content,
+    messageType: MessageType.fromString(message.kind),
+    isUser: message.role == 'user',
+    status: switch (message.status) {
+      'queued' ||
+      'running' ||
+      'awaitingApproval' ||
+      'awaitingUserAction' => MessageStatus.unfinished,
+      'completed' => MessageStatus.sent,
+      'failed' || 'cancelled' => MessageStatus.error,
+      final status => MessageStatus.fromString(status),
+    },
+    createdAt: message.createdAt,
+    updatedAt: message.updatedAt,
+    metadata: metadata.copyWith(
+      a2uiMessages: mergedA2uiMessages,
+      a2uiIssuesBySurface: mergedA2uiIssuesBySurface,
+      a2uiMessageIssues: mergedA2uiMessageIssues,
+      toolCalls: toolCalls,
+    ),
+  );
+}
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)

@@ -21,6 +21,7 @@ class AuraCard extends StatelessWidget {
     this.onTap,
     this.semanticLabel,
     this.style = AuraCardStyle.elevated,
+    this.tint,
   });
 
   /// The widget to display inside the card.
@@ -37,6 +38,9 @@ class AuraCard extends StatelessWidget {
 
   /// Style of card.
   final AuraCardStyle style;
+
+  /// Optional semantic accent blended with the card surface.
+  final AuraTint? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +85,16 @@ class AuraCard extends StatelessWidget {
       ];
     }
 
-    final Widget cardContent = AuraPadding(child: child, padding: padding);
+    final Widget cardContent = AuraPadding(
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: auraColors.foregroundOnSurface),
+        child: IconTheme(
+          data: IconThemeData(color: auraColors.foregroundOnSurface),
+          child: child,
+        ),
+      ),
+      padding: padding,
+    );
     final cardRadius = context.auraTheme.fromBorderRadius(.xl);
 
     // Glass style implementation based on best practices. See
@@ -137,7 +150,13 @@ class AuraCard extends StatelessWidget {
   }
 
   Color _getDefaultBackgroundColor(AuraColorScheme colors) {
-    return colors.surface;
+    final tint = this.tint;
+    if (tint == null) return colors.surface;
+
+    return Color.alphaBlend(
+      colors.colorFor(tint).withValues(alpha: 0.08),
+      colors.surface,
+    );
   }
 }
 

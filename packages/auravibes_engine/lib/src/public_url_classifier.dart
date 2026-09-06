@@ -20,8 +20,27 @@ String _urlError(bool requireHttps) =>
 
 bool isBlockedHostLabel(String host) {
   final normalizedHost = host.toLowerCase();
+  final literalAddress = _literalAddressBytes(normalizedHost);
 
-  return normalizedHost == 'localhost' || normalizedHost.endsWith('.localhost');
+  return normalizedHost == 'localhost' ||
+      normalizedHost.endsWith('.localhost') ||
+      (literalAddress != null &&
+          isPrivateIpAddress(literalAddress.$1, isIpv6: literalAddress.$2));
+}
+
+(List<int>, bool)? _literalAddressBytes(String host) {
+  if (host.contains(':')) {
+    try {
+      return (Uri.parseIPv6Address(host), true);
+    } on FormatException catch (_) {
+      return null;
+    }
+  }
+  final parts = host.split('.');
+  if (parts.length != 4) return null;
+  final bytes = parts.map(int.tryParse).toList();
+  if (bytes.any((byte) => byte == null || byte < 0 || byte > 255)) return null;
+  return (bytes.cast<int>(), false);
 }
 
 bool isPrivateIpAddress(List<int> bytes, {required bool isIpv6}) {

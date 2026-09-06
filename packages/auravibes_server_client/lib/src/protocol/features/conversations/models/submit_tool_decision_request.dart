@@ -11,6 +11,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
 abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
   SubmitToolDecisionRequest._({
@@ -23,6 +24,7 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
     required this.decision,
     bool? stopAll,
     this.editedArgumentsJson,
+    this.a2uiSupportedComponents,
   }) : stopAll = stopAll ?? false;
 
   factory SubmitToolDecisionRequest({
@@ -35,6 +37,7 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
     required String decision,
     bool? stopAll,
     String? editedArgumentsJson,
+    List<String>? a2uiSupportedComponents,
   }) = _SubmitToolDecisionRequestImpl;
 
   factory SubmitToolDecisionRequest.fromJson(
@@ -52,6 +55,12 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
           ? null
           : _i1.BoolJsonExtension.fromJson(jsonSerialization['stopAll']),
       editedArgumentsJson: jsonSerialization['editedArgumentsJson'] as String?,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -73,6 +82,8 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
 
   String? editedArgumentsJson;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [SubmitToolDecisionRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -86,6 +97,7 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
     String? decision,
     bool? stopAll,
     String? editedArgumentsJson,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -101,6 +113,8 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
       'stopAll': stopAll,
       if (editedArgumentsJson != null)
         'editedArgumentsJson': editedArgumentsJson,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -123,6 +137,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
     required String decision,
     bool? stopAll,
     String? editedArgumentsJson,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -133,6 +148,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
          decision: decision,
          stopAll: stopAll,
          editedArgumentsJson: editedArgumentsJson,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [SubmitToolDecisionRequest]
@@ -149,6 +165,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
     String? decision,
     bool? stopAll,
     Object? editedArgumentsJson = _Undefined,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return SubmitToolDecisionRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -162,6 +179,9 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
       editedArgumentsJson: editedArgumentsJson is String?
           ? editedArgumentsJson
           : this.editedArgumentsJson,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

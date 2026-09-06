@@ -21,6 +21,7 @@ abstract class ConversationStreamEvent
     required this.workspaceId,
     required this.conversationId,
     required this.sequence,
+    this.eventId,
     required this.kind,
     required this.actorUserId,
     required this.payloadJson,
@@ -32,6 +33,7 @@ abstract class ConversationStreamEvent
     required int workspaceId,
     required String conversationId,
     required int sequence,
+    String? eventId,
     required _i2.ConversationEventType kind,
     required String actorUserId,
     required String payloadJson,
@@ -46,6 +48,7 @@ abstract class ConversationStreamEvent
       workspaceId: jsonSerialization['workspaceId'] as int,
       conversationId: jsonSerialization['conversationId'] as String,
       sequence: jsonSerialization['sequence'] as int,
+      eventId: jsonSerialization['eventId'] as String?,
       kind: _i2.ConversationEventType.fromJson(
         (jsonSerialization['kind'] as String),
       ),
@@ -64,6 +67,8 @@ abstract class ConversationStreamEvent
 
   int sequence;
 
+  String? eventId;
+
   _i2.ConversationEventType kind;
 
   String actorUserId;
@@ -81,6 +86,7 @@ abstract class ConversationStreamEvent
     int? workspaceId,
     String? conversationId,
     int? sequence,
+    String? eventId,
     _i2.ConversationEventType? kind,
     String? actorUserId,
     String? payloadJson,
@@ -94,6 +100,7 @@ abstract class ConversationStreamEvent
       'workspaceId': workspaceId,
       'conversationId': conversationId,
       'sequence': sequence,
+      if (eventId != null) 'eventId': eventId,
       'kind': kind.toJson(),
       'actorUserId': actorUserId,
       'payloadJson': payloadJson,
@@ -109,6 +116,7 @@ abstract class ConversationStreamEvent
       'workspaceId': workspaceId,
       'conversationId': conversationId,
       'sequence': sequence,
+      if (eventId != null) 'eventId': eventId,
       'kind': kind.toJson(),
       'actorUserId': actorUserId,
       'payloadJson': payloadJson,
@@ -130,6 +138,7 @@ class _ConversationStreamEventImpl extends ConversationStreamEvent {
     required int workspaceId,
     required String conversationId,
     required int sequence,
+    String? eventId,
     required _i2.ConversationEventType kind,
     required String actorUserId,
     required String payloadJson,
@@ -139,6 +148,7 @@ class _ConversationStreamEventImpl extends ConversationStreamEvent {
          workspaceId: workspaceId,
          conversationId: conversationId,
          sequence: sequence,
+         eventId: eventId,
          kind: kind,
          actorUserId: actorUserId,
          payloadJson: payloadJson,
@@ -154,6 +164,7 @@ class _ConversationStreamEventImpl extends ConversationStreamEvent {
     int? workspaceId,
     String? conversationId,
     int? sequence,
+    Object? eventId = _Undefined,
     _i2.ConversationEventType? kind,
     String? actorUserId,
     String? payloadJson,
@@ -164,6 +175,7 @@ class _ConversationStreamEventImpl extends ConversationStreamEvent {
       workspaceId: workspaceId ?? this.workspaceId,
       conversationId: conversationId ?? this.conversationId,
       sequence: sequence ?? this.sequence,
+      eventId: eventId is String? ? eventId : this.eventId,
       kind: kind ?? this.kind,
       actorUserId: actorUserId ?? this.actorUserId,
       payloadJson: payloadJson ?? this.payloadJson,
