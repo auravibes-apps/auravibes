@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class AccountSummary
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   AccountSummary._({
     required this.userId,
     required this.email,
@@ -37,7 +37,7 @@ abstract class AccountSummary
 
   /// Returns a shallow copy of this [AccountSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   AccountSummary copyWith({
     String? userId,
     String? email,
@@ -62,7 +62,7 @@ abstract class AccountSummary
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -77,7 +77,7 @@ class _AccountSummaryImpl extends AccountSummary {
 
   /// Returns a shallow copy of this [AccountSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   AccountSummary copyWith({
     String? userId,

@@ -3,6 +3,7 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
@@ -11,7 +12,6 @@ import 'package:auravibes_app/features/chats/usecases/should_compact_conversatio
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
-import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:riverpod/riverpod.dart';
 
 const _kDefaultMaxOutputTokens = 4096;

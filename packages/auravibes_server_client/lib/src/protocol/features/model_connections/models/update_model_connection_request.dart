@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class UpdateModelConnectionRequest implements _i1.SerializableModel {
+abstract class UpdateModelConnectionRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   UpdateModelConnectionRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -58,7 +59,7 @@ abstract class UpdateModelConnectionRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [UpdateModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   UpdateModelConnectionRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -81,8 +82,21 @@ abstract class UpdateModelConnectionRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'UpdateModelConnectionRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'connectionId': connectionId,
+      'expectedRevision': expectedRevision,
+      'name': name,
+      if (url != null) 'url': url,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -107,7 +121,7 @@ class _UpdateModelConnectionRequestImpl extends UpdateModelConnectionRequest {
 
   /// Returns a shallow copy of this [UpdateModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   UpdateModelConnectionRequest copyWith({
     int? workspaceId,

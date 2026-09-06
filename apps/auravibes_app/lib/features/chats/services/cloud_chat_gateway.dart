@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 class CloudChatGateway {
@@ -112,6 +113,7 @@ class CloudChatGateway {
         attachmentIds: attachmentIds,
         modelSelectionId: modelSelectionId,
         agentId: agentId,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -127,6 +129,7 @@ class CloudChatGateway {
         requestId: requestId,
         conversationId: conversationId,
         expectedConversationRevision: expectedConversationRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -134,7 +137,11 @@ class CloudChatGateway {
       CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.getTurn(
-          GetTurnRequest(workspaceId: _workspaceId, turnId: turnId),
+          GetTurnRequest(
+            workspaceId: _workspaceId,
+            turnId: turnId,
+            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+          ),
         ),
       );
 
@@ -146,6 +153,7 @@ class CloudChatGateway {
           GetConversationRequest(
             workspaceId: _workspaceId,
             conversationId: conversationId,
+            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
           ),
         ),
       );
@@ -159,6 +167,7 @@ class CloudChatGateway {
       workspaceId: _workspaceId,
       conversationId: conversationId,
       afterSequence: afterSequence,
+      a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
     );
 
     return _subscribeConversation?.call(request) ??
@@ -177,6 +186,7 @@ class CloudChatGateway {
         requestId: requestId,
         conversationId: conversationId,
         expectedProjectionRevision: expectedProjectionRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -188,6 +198,7 @@ class CloudChatGateway {
     required String clientMessageId,
     required String content,
     required List<String> attachmentIds,
+    String? metadataJson,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.queueConversationMessage(
@@ -199,6 +210,8 @@ class CloudChatGateway {
         clientMessageId: clientMessageId,
         content: content,
         attachmentIds: attachmentIds,
+        metadataJson: metadataJson,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -215,6 +228,7 @@ class CloudChatGateway {
         requestId: requestId,
         conversationId: conversationId,
         expectedProjectionRevision: expectedProjectionRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -241,6 +255,7 @@ class CloudChatGateway {
         decision: decision,
         stopAll: stopAll,
         editedArgumentsJson: editedArgumentsJson,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -308,6 +323,7 @@ class CloudChatGateway {
         workspaceId: _workspaceId,
         conversationId: conversationId,
         limit: 500,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );

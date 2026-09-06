@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class CreateMcpServerRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   CreateMcpServerRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -45,7 +45,7 @@ abstract class CreateMcpServerRequest
       name: jsonSerialization['name'] as String,
       url: jsonSerialization['url'] as String,
       transport: jsonSerialization['transport'] as String,
-      useHttp2: _i1.BoolJsonExtension.fromJson(jsonSerialization['useHttp2']),
+      useHttp2: _is.BoolJsonExtension.fromJson(jsonSerialization['useHttp2']),
       description: jsonSerialization['description'] as String?,
       bearerToken: jsonSerialization['bearerToken'] as String?,
     );
@@ -69,7 +69,7 @@ abstract class CreateMcpServerRequest
 
   /// Returns a shallow copy of this [CreateMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   CreateMcpServerRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -112,7 +112,7 @@ abstract class CreateMcpServerRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -141,7 +141,7 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
 
   /// Returns a shallow copy of this [CreateMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   CreateMcpServerRequest copyWith({
     int? workspaceId,

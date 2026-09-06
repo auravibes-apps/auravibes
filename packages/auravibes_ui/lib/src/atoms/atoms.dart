@@ -10,16 +10,23 @@ library;
 
 // Export all atomic components alphabetically.
 
+export 'aura_animated_content.dart';
+export 'aura_avatar.dart';
+export 'aura_code_block.dart';
 export 'aura_column.dart';
 export 'aura_edge_insets_geometry.dart';
+export 'aura_flex.dart';
 export 'aura_icon.dart';
 export 'aura_image.dart';
+export 'aura_interaction_scope.dart';
 export 'aura_linear_progress_indicator.dart';
+export 'aura_link.dart';
 export 'aura_list.dart';
 export 'aura_message_status.dart';
-export 'aura_pressable.dart' show AuraPressable;
+export 'aura_pressable.dart' show AuraPressable, AuraPressableInteraction;
 export 'aura_selectable_text.dart';
 export 'aura_sized_box.dart';
+export 'aura_skeleton.dart';
 export 'aura_spinner.dart'
     show AuraLoadingOverlay, AuraSpinner, AuraSpinnerSize;
 export 'aura_text.dart';

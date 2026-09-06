@@ -1040,8 +1040,7 @@ class ServerToolRuntime({
           table.workspaceId.equals(workspaceId) &
           table.resourceKind.equals(WorkspaceResourceKind.toolPermission) &
           table.deletedAt.equals(null),
-      orderBy: (table) => table.id,
-      orderDescending: true,
+      orderBy: (table) => table.id.desc(),
     );
     final permission = permissions
         .where((candidate) => _data(candidate)['toolId'] == toolId)
@@ -1063,8 +1062,7 @@ class ServerToolRuntime({
           table.workspaceId.equals(workspaceId) &
           table.resourceKind.equals(WorkspaceResourceKind.agentAssociation) &
           table.deletedAt.equals(null),
-      orderBy: (table) => table.id,
-      orderDescending: true,
+      orderBy: (table) => table.id.desc(),
     );
     final agentPermissionMode = associations
         .map(_data)

@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class LeaveCloudWorkspaceRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   LeaveCloudWorkspaceRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -45,7 +45,7 @@ abstract class LeaveCloudWorkspaceRequest
 
   /// Returns a shallow copy of this [LeaveCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   LeaveCloudWorkspaceRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -73,7 +73,7 @@ abstract class LeaveCloudWorkspaceRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -90,7 +90,7 @@ class _LeaveCloudWorkspaceRequestImpl extends LeaveCloudWorkspaceRequest {
 
   /// Returns a shallow copy of this [LeaveCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   LeaveCloudWorkspaceRequest copyWith({
     int? workspaceId,

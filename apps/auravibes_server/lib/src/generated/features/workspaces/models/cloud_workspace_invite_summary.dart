@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class CloudWorkspaceInviteSummary
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   CloudWorkspaceInviteSummary._({
     required this.id,
     required this.email,
@@ -43,10 +43,10 @@ abstract class CloudWorkspaceInviteSummary
       role: jsonSerialization['role'] as String,
       invitedByUserId: jsonSerialization['invitedByUserId'] as String,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
     );
@@ -68,7 +68,7 @@ abstract class CloudWorkspaceInviteSummary
 
   /// Returns a shallow copy of this [CloudWorkspaceInviteSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   CloudWorkspaceInviteSummary copyWith({
     int? id,
     String? email,
@@ -108,7 +108,7 @@ abstract class CloudWorkspaceInviteSummary
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -133,7 +133,7 @@ class _CloudWorkspaceInviteSummaryImpl extends CloudWorkspaceInviteSummary {
 
   /// Returns a shallow copy of this [CloudWorkspaceInviteSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   CloudWorkspaceInviteSummary copyWith({
     int? id,

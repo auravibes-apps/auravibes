@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class CloudWorkspaceInviteSummary implements _i1.SerializableModel {
+abstract class CloudWorkspaceInviteSummary
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CloudWorkspaceInviteSummary._({
     required this.id,
     required this.email,
@@ -42,10 +43,10 @@ abstract class CloudWorkspaceInviteSummary implements _i1.SerializableModel {
       role: jsonSerialization['role'] as String,
       invitedByUserId: jsonSerialization['invitedByUserId'] as String,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
     );
@@ -67,7 +68,7 @@ abstract class CloudWorkspaceInviteSummary implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [CloudWorkspaceInviteSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CloudWorkspaceInviteSummary copyWith({
     int? id,
     String? email,
@@ -92,8 +93,22 @@ abstract class CloudWorkspaceInviteSummary implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CloudWorkspaceInviteSummary',
+      'id': id,
+      'email': email,
+      'role': role,
+      'invitedByUserId': invitedByUserId,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'expiresAt': expiresAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -118,7 +133,7 @@ class _CloudWorkspaceInviteSummaryImpl extends CloudWorkspaceInviteSummary {
 
   /// Returns a shallow copy of this [CloudWorkspaceInviteSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CloudWorkspaceInviteSummary copyWith({
     int? id,

@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -70,8 +71,9 @@ class _AuraSwitchState extends State<AuraSwitch> {
     final auraTheme = context.auraTheme;
 
     final onChanged = widget.onChanged;
-    final isInteractive =
-        !widget.disabled && !widget.isLoading && onChanged != null;
+    final isDisabled =
+        widget.disabled || !AuraInteractionScope.of(context).allowsValueChanges;
+    final isInteractive = !isDisabled && !widget.isLoading && onChanged != null;
 
     final trackWidth = _getTrackWidth();
     final trackHeight = _getTrackHeight();
@@ -82,7 +84,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
         ? trackWidth - thumbSize - thumbPadding * 2
         : 0.0;
 
-    final trackColor = _getTrackColor(auraColors);
+    final trackColor = _getTrackColor(auraColors, disabled: isDisabled);
     final thumbColor = _getThumbColor(auraColors);
     final loadingTint = _getLoadingTint();
     final normalAnimation = auraTheme.animation.normal;
@@ -131,9 +133,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
                       child: AnimatedContainer(
                         decoration: BoxDecoration(
                           color: thumbColor,
-                          boxShadow: widget.disabled
-                              ? null
-                              : [DesignShadows.sm],
+                          boxShadow: isDisabled ? null : [DesignShadows.sm],
                           shape: BoxShape.circle,
                         ),
                         width: thumbSize,
@@ -194,8 +194,8 @@ class _AuraSwitchState extends State<AuraSwitch> {
 
   double _getThumbPadding() => AuraSwitch._thumbPadding;
 
-  Color _getTrackColor(AuraColorScheme colors) {
-    if (widget.disabled) {
+  Color _getTrackColor(AuraColorScheme colors, {required bool disabled}) {
+    if (disabled) {
       return colors.outlineVariant;
     }
 

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
+import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/gestures.dart';
@@ -18,6 +20,9 @@ class AuraModal extends StatefulWidget {
     super.key,
     this.barrierDismissible = true,
     this.semanticLabel = 'Open modal',
+    this.title,
+    this.closeLabel,
+    this.size = AuraModalSize.medium,
   });
 
   /// The child that opens the modal when tapped or keyboard-activated.
@@ -35,6 +40,15 @@ class AuraModal extends StatefulWidget {
   /// An optional accessibility label for the modal route.
   final String? semanticLabel;
 
+  /// Optional title shown above the modal content.
+  final Widget? title;
+
+  /// Caller-provided localized label for the app-owned close control.
+  final String? closeLabel;
+
+  /// Maximum horizontal size of the modal surface.
+  final AuraModalSize size;
+
   @override
   State<AuraModal> createState() => _AuraModalState();
 }
@@ -48,6 +62,17 @@ class _AuraModalState extends State<AuraModal> {
 
   @override
   Widget build(BuildContext context) {
+    final policy = AuraInteractionScope.of(context);
+    if (!policy.allowsNavigation) {
+      return Semantics(
+        child: IgnorePointer(child: widget.entryPointChild),
+        container: true,
+        enabled: false,
+        button: true,
+        label: widget.semanticLabel ?? 'Open modal',
+      );
+    }
+
     return Listener(
       onPointerDown: _onPointerDown,
       onPointerMove: _onPointerMove,
@@ -118,10 +143,13 @@ class _AuraModalState extends State<AuraModal> {
   }
 
   Future<void> _show(BuildContext context) async {
-    if (_isShowing) return;
+    if (_isShowing || !AuraInteractionScope.of(context).allowsNavigation) {
+      return;
+    }
 
     final navigator = Navigator.of(context, rootNavigator: true);
     final themes = InheritedTheme.capture(from: context, to: navigator.context);
+    final policy = AuraInteractionScope.of(context);
     _isShowing = true;
     try {
       await showGeneralDialog<void>(
@@ -130,6 +158,10 @@ class _AuraModalState extends State<AuraModal> {
           _AuraModalSurface(
             content: widget.contentChild,
             semanticLabel: widget.semanticLabel,
+            policy: policy,
+            title: widget.title,
+            closeLabel: widget.closeLabel,
+            size: widget.size,
           ),
         ),
         barrierDismissible: widget.barrierDismissible,
@@ -145,9 +177,11 @@ class _AuraModalState extends State<AuraModal> {
 class const _AuraModalSurface({
   required final Widget content,
   required final String? semanticLabel,
+  required final AuraInteractionPolicy policy,
+  required final Widget? title,
+  required final String? closeLabel,
+  required final AuraModalSize size,
 }) extends StatelessWidget {
-  static const _maxWidth = 400.0;
-
   @override
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
@@ -167,11 +201,36 @@ class const _AuraModalSurface({
               boxShadow: const [DesignShadows.lg],
             ),
             constraints: BoxConstraints(
-              maxWidth: _maxWidth,
+              maxWidth: size.maxWidth,
               maxHeight: maxHeight,
             ),
             margin: EdgeInsets.all(spacing),
-            child: content,
+            child: AuraInteractionScope(
+              policy: policy,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (title != null || closeLabel != null)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (title case final value?) Expanded(child: value),
+                        if (closeLabel case final label?)
+                          AuraButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: Text(label),
+                            variant: AuraButtonVariant.text,
+                            semanticLabel: label,
+                          ),
+                      ],
+                    ),
+                  if (title != null || closeLabel != null)
+                    SizedBox(height: spacing),
+                  Flexible(child: SingleChildScrollView(child: content)),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -181,4 +240,23 @@ class const _AuraModalSurface({
       label: semanticLabel,
     );
   }
+}
+
+/// Tokenized modal widths for compact and desktop layouts.
+enum AuraModalSize {
+  /// Compact dialogs such as confirmations.
+  small,
+
+  /// Standard dialog width.
+  medium,
+
+  /// Wide detail dialog.
+  large;
+
+  /// Maximum dialog width in logical pixels.
+  double get maxWidth => switch (this) {
+    AuraModalSize.small => 320,
+    AuraModalSize.medium => 400,
+    AuraModalSize.large => 720,
+  };
 }

@@ -8,6 +8,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraImage', () {
+    testWidgets('custom loading and error states retain their semantics', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: AuraImage(
+            url: 'https://example.com/failure.png',
+            semanticLabel: 'Landscape',
+            loadingChild: Text('Loading preview'),
+            errorChild: Text('Preview unavailable'),
+          ),
+        ),
+      );
+      expect(find.text('Loading preview'), findsOneWidget);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Preview unavailable'), findsOneWidget);
+      expect(find.bySemanticsLabel('Preview unavailable'), findsOneWidget);
+    });
+
     testWidgets('passes URL to Image.network', (tester) async {
       const url = 'https://example.com/image.png';
 

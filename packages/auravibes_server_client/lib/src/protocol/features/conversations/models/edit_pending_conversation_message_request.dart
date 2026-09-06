@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 abstract class EditPendingConversationMessageRequest
-    implements _i1.SerializableModel {
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   EditPendingConversationMessageRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -21,6 +23,7 @@ abstract class EditPendingConversationMessageRequest
     required this.expectedProjectionRevision,
     required this.messageId,
     required this.content,
+    this.a2uiSupportedComponents,
   });
 
   factory EditPendingConversationMessageRequest({
@@ -30,6 +33,7 @@ abstract class EditPendingConversationMessageRequest
     required int expectedProjectionRevision,
     required String messageId,
     required String content,
+    List<String>? a2uiSupportedComponents,
   }) = _EditPendingConversationMessageRequestImpl;
 
   factory EditPendingConversationMessageRequest.fromJson(
@@ -43,6 +47,12 @@ abstract class EditPendingConversationMessageRequest
           jsonSerialization['expectedProjectionRevision'] as int,
       messageId: jsonSerialization['messageId'] as String,
       content: jsonSerialization['content'] as String,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _isctvzjc.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -58,9 +68,11 @@ abstract class EditPendingConversationMessageRequest
 
   String content;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [EditPendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   EditPendingConversationMessageRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -68,6 +80,7 @@ abstract class EditPendingConversationMessageRequest
     int? expectedProjectionRevision,
     String? messageId,
     String? content,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -79,14 +92,33 @@ abstract class EditPendingConversationMessageRequest
       'expectedProjectionRevision': expectedProjectionRevision,
       'messageId': messageId,
       'content': content,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+    };
+  }
+
+  @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'EditPendingConversationMessageRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'conversationId': conversationId,
+      'expectedProjectionRevision': expectedProjectionRevision,
+      'messageId': messageId,
+      'content': content,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
+
+class _Undefined {}
 
 class _EditPendingConversationMessageRequestImpl
     extends EditPendingConversationMessageRequest {
@@ -97,6 +129,7 @@ class _EditPendingConversationMessageRequestImpl
     required int expectedProjectionRevision,
     required String messageId,
     required String content,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -104,11 +137,12 @@ class _EditPendingConversationMessageRequestImpl
          expectedProjectionRevision: expectedProjectionRevision,
          messageId: messageId,
          content: content,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [EditPendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   EditPendingConversationMessageRequest copyWith({
     int? workspaceId,
@@ -117,6 +151,7 @@ class _EditPendingConversationMessageRequestImpl
     int? expectedProjectionRevision,
     String? messageId,
     String? content,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return EditPendingConversationMessageRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -126,6 +161,9 @@ class _EditPendingConversationMessageRequestImpl
           expectedProjectionRevision ?? this.expectedProjectionRevision,
       messageId: messageId ?? this.messageId,
       content: content ?? this.content,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

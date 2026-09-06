@@ -61,6 +61,7 @@ class const AppAgentConversationDataProvider({
         messageType: MessageType.text,
         isUser: true,
         status: MessageStatus.sending,
+        metadata: draft.metadataJson,
         attachments: draft.attachments,
       ),
     );

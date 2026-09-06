@@ -10,11 +10,11 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i2;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class QueueConversationMessageRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   QueueConversationMessageRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -23,6 +23,8 @@ abstract class QueueConversationMessageRequest
     required this.clientMessageId,
     required this.content,
     required this.attachmentIds,
+    this.metadataJson,
+    this.a2uiSupportedComponents,
   });
 
   factory QueueConversationMessageRequest({
@@ -33,6 +35,8 @@ abstract class QueueConversationMessageRequest
     required String clientMessageId,
     required String content,
     required List<String> attachmentIds,
+    String? metadataJson,
+    List<String>? a2uiSupportedComponents,
   }) = _QueueConversationMessageRequestImpl;
 
   factory QueueConversationMessageRequest.fromJson(
@@ -46,9 +50,16 @@ abstract class QueueConversationMessageRequest
           jsonSerialization['expectedProjectionRevision'] as int,
       clientMessageId: jsonSerialization['clientMessageId'] as String,
       content: jsonSerialization['content'] as String,
-      attachmentIds: _i2.Protocol().deserialize<List<String>>(
+      attachmentIds: _if5qez1k.Protocol().deserialize<List<String>>(
         jsonSerialization['attachmentIds'],
       ),
+      metadataJson: jsonSerialization['metadataJson'] as String?,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _if5qez1k.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -66,9 +77,13 @@ abstract class QueueConversationMessageRequest
 
   List<String> attachmentIds;
 
+  String? metadataJson;
+
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [QueueConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   QueueConversationMessageRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -77,6 +92,8 @@ abstract class QueueConversationMessageRequest
     String? clientMessageId,
     String? content,
     List<String>? attachmentIds,
+    String? metadataJson,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -89,6 +106,9 @@ abstract class QueueConversationMessageRequest
       'clientMessageId': clientMessageId,
       'content': content,
       'attachmentIds': attachmentIds.toJson(),
+      if (metadataJson != null) 'metadataJson': metadataJson,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -103,14 +123,19 @@ abstract class QueueConversationMessageRequest
       'clientMessageId': clientMessageId,
       'content': content,
       'attachmentIds': attachmentIds.toJson(),
+      if (metadataJson != null) 'metadataJson': metadataJson,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
+
+class _Undefined {}
 
 class _QueueConversationMessageRequestImpl
     extends QueueConversationMessageRequest {
@@ -122,6 +147,8 @@ class _QueueConversationMessageRequestImpl
     required String clientMessageId,
     required String content,
     required List<String> attachmentIds,
+    String? metadataJson,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -130,11 +157,13 @@ class _QueueConversationMessageRequestImpl
          clientMessageId: clientMessageId,
          content: content,
          attachmentIds: attachmentIds,
+         metadataJson: metadataJson,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [QueueConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   QueueConversationMessageRequest copyWith({
     int? workspaceId,
@@ -144,6 +173,8 @@ class _QueueConversationMessageRequestImpl
     String? clientMessageId,
     String? content,
     List<String>? attachmentIds,
+    Object? metadataJson = _Undefined,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return QueueConversationMessageRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -155,6 +186,10 @@ class _QueueConversationMessageRequestImpl
       content: content ?? this.content,
       attachmentIds:
           attachmentIds ?? this.attachmentIds.map((e0) => e0).toList(),
+      metadataJson: metadataJson is String? ? metadataJson : this.metadataJson,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

@@ -10,16 +10,17 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-import '../../../features/workspaces/models/cloud_workspace_summary.dart'
-    as _i2;
 import '../../../features/workspaces/models/cloud_workspace_capabilities.dart'
-    as _i3;
+    as _iwu19n1x;
+import '../../../features/workspaces/models/cloud_workspace_summary.dart'
+    as _ispulebx;
 
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
-
-abstract class CloudWorkspaceDetail implements _i1.SerializableModel {
+abstract class CloudWorkspaceDetail
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CloudWorkspaceDetail._({
     required this.workspace,
     required this.ownerUserId,
@@ -28,43 +29,45 @@ abstract class CloudWorkspaceDetail implements _i1.SerializableModel {
   });
 
   factory CloudWorkspaceDetail({
-    required _i2.CloudWorkspaceSummary workspace,
+    required _ispulebx.CloudWorkspaceSummary workspace,
     required String ownerUserId,
     String? ownerEmail,
-    required _i3.CloudWorkspaceCapabilities capabilities,
+    required _iwu19n1x.CloudWorkspaceCapabilities capabilities,
   }) = _CloudWorkspaceDetailImpl;
 
   factory CloudWorkspaceDetail.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceDetail(
-      workspace: _i4.Protocol().deserialize<_i2.CloudWorkspaceSummary>(
-        jsonSerialization['workspace'],
-      ),
+      workspace: _isctvzjc.Protocol()
+          .deserialize<_ispulebx.CloudWorkspaceSummary>(
+            jsonSerialization['workspace'],
+          ),
       ownerUserId: jsonSerialization['ownerUserId'] as String,
       ownerEmail: jsonSerialization['ownerEmail'] as String?,
-      capabilities: _i4.Protocol().deserialize<_i3.CloudWorkspaceCapabilities>(
-        jsonSerialization['capabilities'],
-      ),
+      capabilities: _isctvzjc.Protocol()
+          .deserialize<_iwu19n1x.CloudWorkspaceCapabilities>(
+            jsonSerialization['capabilities'],
+          ),
     );
   }
 
-  _i2.CloudWorkspaceSummary workspace;
+  _ispulebx.CloudWorkspaceSummary workspace;
 
   String ownerUserId;
 
   String? ownerEmail;
 
-  _i3.CloudWorkspaceCapabilities capabilities;
+  _iwu19n1x.CloudWorkspaceCapabilities capabilities;
 
   /// Returns a shallow copy of this [CloudWorkspaceDetail]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CloudWorkspaceDetail copyWith({
-    _i2.CloudWorkspaceSummary? workspace,
+    _ispulebx.CloudWorkspaceSummary? workspace,
     String? ownerUserId,
     String? ownerEmail,
-    _i3.CloudWorkspaceCapabilities? capabilities,
+    _iwu19n1x.CloudWorkspaceCapabilities? capabilities,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -78,8 +81,19 @@ abstract class CloudWorkspaceDetail implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CloudWorkspaceDetail',
+      'workspace': workspace.toJsonForProtocol(),
+      'ownerUserId': ownerUserId,
+      if (ownerEmail != null) 'ownerEmail': ownerEmail,
+      'capabilities': capabilities.toJsonForProtocol(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -87,10 +101,10 @@ class _Undefined {}
 
 class _CloudWorkspaceDetailImpl extends CloudWorkspaceDetail {
   _CloudWorkspaceDetailImpl({
-    required _i2.CloudWorkspaceSummary workspace,
+    required _ispulebx.CloudWorkspaceSummary workspace,
     required String ownerUserId,
     String? ownerEmail,
-    required _i3.CloudWorkspaceCapabilities capabilities,
+    required _iwu19n1x.CloudWorkspaceCapabilities capabilities,
   }) : super._(
          workspace: workspace,
          ownerUserId: ownerUserId,
@@ -100,13 +114,13 @@ class _CloudWorkspaceDetailImpl extends CloudWorkspaceDetail {
 
   /// Returns a shallow copy of this [CloudWorkspaceDetail]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CloudWorkspaceDetail copyWith({
-    _i2.CloudWorkspaceSummary? workspace,
+    _ispulebx.CloudWorkspaceSummary? workspace,
     String? ownerUserId,
     Object? ownerEmail = _Undefined,
-    _i3.CloudWorkspaceCapabilities? capabilities,
+    _iwu19n1x.CloudWorkspaceCapabilities? capabilities,
   }) {
     return CloudWorkspaceDetail(
       workspace: workspace ?? this.workspace.copyWith(),

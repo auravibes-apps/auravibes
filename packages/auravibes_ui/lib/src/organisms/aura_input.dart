@@ -1,3 +1,5 @@
+// ignore_for_file: type=lint, type=warning
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -175,6 +177,14 @@ class _AuraInputState extends State<AuraInput> {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final policy = AuraInteractionScope.of(context);
+    final isEnabled =
+        widget.enabled && policy.mode == AuraInteractionMode.interactive;
+    final isReadOnly =
+        widget.readOnly || policy.mode == AuraInteractionMode.readOnly;
+    final onChanged = isEnabled ? widget.onChanged : null;
+    final onSubmitted = isEnabled ? widget.onSubmitted : null;
+    final onTap = isEnabled ? widget.onTap : null;
     final fieldState = _convertToFieldState(widget.state);
     final prefixIcon = widget.prefixIcon;
     final suffixIcon = widget.suffixIcon;
@@ -194,38 +204,42 @@ class _AuraInputState extends State<AuraInput> {
                   const AuraSizedBox(width: .sm),
                 ],
                 Expanded(
-                  child: TextFormField(
-                    controller: widget.controller,
-                    initialValue: widget.initialValue,
-                    focusNode: _requiredFocusNode,
-                    decoration: InputDecoration(
-                      hint: widget.placeholder,
-                      hintStyle: _getHintStyle(
+                  child: Focus(
+                    canRequestFocus: isEnabled,
+                    descendantsAreFocusable: isEnabled,
+                    child: TextFormField(
+                      controller: widget.controller,
+                      initialValue: widget.initialValue,
+                      focusNode: _requiredFocusNode,
+                      decoration: InputDecoration(
+                        hint: widget.placeholder,
+                        hintStyle: _getHintStyle(
+                          auraColors,
+                          typography: context.auraTheme.typography,
+                        ),
+                        isDense: false,
+                        contentPadding: EdgeInsets.zero,
+                        border: InputBorder.none,
+                      ),
+                      keyboardType: widget.keyboardType,
+                      textInputAction: widget.textInputAction,
+                      style: _getTextStyle(
                         auraColors,
                         typography: context.auraTheme.typography,
                       ),
-                      isDense: false,
-                      contentPadding: EdgeInsets.zero,
-                      border: InputBorder.none,
+                      autofocus: widget.autofocus && isEnabled,
+                      readOnly: isReadOnly,
+                      obscureText: widget.obscureText,
+                      maxLines: widget.maxLines,
+                      minLines: widget.minLines,
+                      maxLength: widget.maxLength,
+                      onChanged: onChanged,
+                      onTap: onTap,
+                      onTapOutside: isEnabled ? widget.onTapOutside : null,
+                      onFieldSubmitted: onSubmitted,
+                      inputFormatters: widget.inputFormatters,
+                      enabled: isEnabled,
                     ),
-                    keyboardType: widget.keyboardType,
-                    textInputAction: widget.textInputAction,
-                    style: _getTextStyle(
-                      auraColors,
-                      typography: context.auraTheme.typography,
-                    ),
-                    autofocus: widget.autofocus,
-                    readOnly: widget.readOnly,
-                    obscureText: widget.obscureText,
-                    maxLines: widget.maxLines,
-                    minLines: widget.minLines,
-                    maxLength: widget.maxLength,
-                    onChanged: widget.onChanged,
-                    onTap: widget.onTap,
-                    onTapOutside: widget.onTapOutside,
-                    onFieldSubmitted: widget.onSubmitted,
-                    inputFormatters: widget.inputFormatters,
-                    enabled: widget.enabled,
                   ),
                 ),
                 if (suffixIcon != null) ...[
@@ -243,8 +257,8 @@ class _AuraInputState extends State<AuraInput> {
       error: widget.error,
       isRequired: widget.isRequired,
       state: fieldState,
-      isEnabled: widget.enabled,
-      isReadOnly: widget.readOnly,
+      isEnabled: isEnabled,
+      isReadOnly: isReadOnly,
       isFocused: _isFocused,
       semanticLabel: widget.semanticLabel,
     );

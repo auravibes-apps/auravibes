@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ModelConnectionView implements _i1.SerializableModel {
+abstract class ModelConnectionView
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ModelConnectionView._({
     required this.id,
     required this.name,
@@ -43,13 +44,15 @@ abstract class ModelConnectionView implements _i1.SerializableModel {
       name: jsonSerialization['name'] as String,
       providerId: jsonSerialization['providerId'] as String,
       url: jsonSerialization['url'] as String?,
-      hasSecret: _i1.BoolJsonExtension.fromJson(jsonSerialization['hasSecret']),
+      hasSecret: _isc.BoolJsonExtension.fromJson(
+        jsonSerialization['hasSecret'],
+      ),
       keySuffix: jsonSerialization['keySuffix'] as String?,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -75,7 +78,7 @@ abstract class ModelConnectionView implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ModelConnectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ModelConnectionView copyWith({
     String? id,
     String? name,
@@ -104,8 +107,24 @@ abstract class ModelConnectionView implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ModelConnectionView',
+      'id': id,
+      'name': name,
+      'providerId': providerId,
+      if (url != null) 'url': url,
+      'hasSecret': hasSecret,
+      if (keySuffix != null) 'keySuffix': keySuffix,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -136,7 +155,7 @@ class _ModelConnectionViewImpl extends ModelConnectionView {
 
   /// Returns a shallow copy of this [ModelConnectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ModelConnectionView copyWith({
     String? id,

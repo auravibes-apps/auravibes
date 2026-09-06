@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 abstract class UpdateWorkspaceMemberRoleRequest
-    implements _i1.SerializableModel {
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   UpdateWorkspaceMemberRoleRequest._({
     required this.workspaceId,
     required this.userId,
@@ -55,7 +55,7 @@ abstract class UpdateWorkspaceMemberRoleRequest
 
   /// Returns a shallow copy of this [UpdateWorkspaceMemberRoleRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   UpdateWorkspaceMemberRoleRequest copyWith({
     int? workspaceId,
     String? userId,
@@ -76,8 +76,20 @@ abstract class UpdateWorkspaceMemberRoleRequest
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'UpdateWorkspaceMemberRoleRequest',
+      'workspaceId': workspaceId,
+      'userId': userId,
+      'role': role,
+      'requestId': requestId,
+      'expectedMemberRevision': expectedMemberRevision,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -99,7 +111,7 @@ class _UpdateWorkspaceMemberRoleRequestImpl
 
   /// Returns a shallow copy of this [UpdateWorkspaceMemberRoleRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   UpdateWorkspaceMemberRoleRequest copyWith({
     int? workspaceId,

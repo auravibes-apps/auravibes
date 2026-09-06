@@ -1,6 +1,8 @@
+// ignore_for_file: type=lint, type=warning
 import 'dart:ui' show SemanticsRole;
 
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
@@ -117,6 +119,9 @@ class _AuraTabsState<T> extends State<AuraTabs<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final onChanged = AuraInteractionScope.of(context).allowsNavigation
+        ? _select
+        : null;
     if (widget._mode == _AuraTabsMode.selector) {
       final options = widget.options;
       if (options.isEmpty) return const SizedBox.shrink();
@@ -125,7 +130,7 @@ class _AuraTabsState<T> extends State<AuraTabs<T>> {
         titles: [for (final option in options) option.title],
         semanticLabels: [for (final option in options) option.semanticLabel],
         selectedIndex: _selectedOptionIndex(options),
-        onChanged: _select,
+        onChanged: onChanged,
       );
     }
 
@@ -143,7 +148,7 @@ class _AuraTabsState<T> extends State<AuraTabs<T>> {
           titles: [for (final item in widget.items) item.title],
           semanticLabels: [for (final item in widget.items) item.semanticLabel],
           selectedIndex: selectedIndex,
-          onChanged: _select,
+          onChanged: onChanged,
         ),
         Flexible(
           child: Semantics(
@@ -227,7 +232,7 @@ class const _AuraTabBar({
   required final List<Widget> titles,
   required final List<String?> semanticLabels,
   required final int selectedIndex,
-  required final ValueChanged<int> onChanged,
+  final ValueChanged<int>? onChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -280,13 +285,14 @@ class const _AuraTabBar({
                   ),
                 ),
                 color: auraColors.primary,
+                interaction: AuraPressableInteraction.localNavigation,
                 decoration: BoxDecoration(
                   color: isSelected
                       ? auraColors.primary.withValues(alpha: 0.08)
                       : DesignColors.transparent,
                   borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
                 ),
-                onPressed: () => onChanged(index),
+                onPressed: onChanged == null ? null : () => onChanged!(index),
                 semanticLabel:
                     semanticLabels[index] ?? _textSemanticLabel(title) ?? 'Tab',
               ),
@@ -301,7 +307,9 @@ class const _AuraTabBar({
                         ? auraColors.primary
                         : DesignColors.transparent,
                     height: DesignBorderWidth.medium,
-                    duration: context.auraTheme.animation.normal,
+                    duration: TickerMode.valuesOf(context).enabled
+                        ? context.auraTheme.animation.normal
+                        : Duration.zero,
                   ),
                 ),
               ),
@@ -313,7 +321,8 @@ class const _AuraTabBar({
       excludeSemantics: true,
       selected: isSelected,
       label: semanticLabels[index] ?? _textSemanticLabel(title),
-      onTap: () => onChanged(index),
+      enabled: onChanged != null,
+      onTap: onChanged == null ? null : () => onChanged!(index),
       role: SemanticsRole.tab,
     );
   }

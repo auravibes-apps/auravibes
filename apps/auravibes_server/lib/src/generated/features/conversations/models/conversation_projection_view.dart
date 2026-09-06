@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ConversationProjectionView
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ConversationProjectionView._({
     required this.id,
     required this.workspaceId,
@@ -50,7 +50,7 @@ abstract class ConversationProjectionView
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       activeExecutionId: jsonSerialization['activeExecutionId'] as String?,
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -76,7 +76,7 @@ abstract class ConversationProjectionView
 
   /// Returns a shallow copy of this [ConversationProjectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationProjectionView copyWith({
     String? id,
     int? workspaceId,
@@ -122,7 +122,7 @@ abstract class ConversationProjectionView
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -153,7 +153,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
 
   /// Returns a shallow copy of this [ConversationProjectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationProjectionView copyWith({
     String? id,

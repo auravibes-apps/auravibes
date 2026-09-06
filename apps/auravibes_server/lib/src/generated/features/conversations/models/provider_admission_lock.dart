@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ProviderAdmissionLock
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   ProviderAdmissionLock._({
     this.id,
     required this.key,
@@ -43,11 +43,11 @@ abstract class ProviderAdmissionLock
   String key;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [ProviderAdmissionLock]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ProviderAdmissionLock copyWith({
     int? id,
     String? key,
@@ -75,13 +75,11 @@ abstract class ProviderAdmissionLock
   }
 
   static ProviderAdmissionLockIncludeList includeList({
-    _i1.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
+    _is.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
+    _is.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
+    _is.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
     ProviderAdmissionLockInclude? include,
   }) {
     return ProviderAdmissionLockIncludeList._(
@@ -89,8 +87,6 @@ abstract class ProviderAdmissionLock
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(ProviderAdmissionLock.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(ProviderAdmissionLock.t),
       include: include,
     );
@@ -98,7 +94,7 @@ abstract class ProviderAdmissionLock
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -115,7 +111,7 @@ class _ProviderAdmissionLockImpl extends ProviderAdmissionLock {
 
   /// Returns a shallow copy of this [ProviderAdmissionLock]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ProviderAdmissionLock copyWith({
     Object? id = _Undefined,
@@ -129,20 +125,20 @@ class _ProviderAdmissionLockImpl extends ProviderAdmissionLock {
 }
 
 class ProviderAdmissionLockUpdateTable
-    extends _i1.UpdateTable<ProviderAdmissionLockTable> {
+    extends _is.UpdateTable<ProviderAdmissionLockTable> {
   ProviderAdmissionLockUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> key(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> key(String value) => _is.ColumnValue(
     table.key,
     value,
   );
 }
 
-class ProviderAdmissionLockTable extends _i1.Table<int?> {
+class ProviderAdmissionLockTable extends _is.Table<int?> {
   ProviderAdmissionLockTable({super.tableRelation})
     : super(tableName: 'provider_admission_lock') {
     updateTable = ProviderAdmissionLockUpdateTable(this);
-    key = _i1.ColumnString(
+    key = _is.ColumnString(
       'key',
       this,
     );
@@ -150,33 +146,31 @@ class ProviderAdmissionLockTable extends _i1.Table<int?> {
 
   late final ProviderAdmissionLockUpdateTable updateTable;
 
-  late final _i1.ColumnString key;
+  late final _is.ColumnString key;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     key,
   ];
 }
 
-class ProviderAdmissionLockInclude extends _i1.IncludeObject {
+class ProviderAdmissionLockInclude extends _is.IncludeObject {
   ProviderAdmissionLockInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => ProviderAdmissionLock.t;
+  _is.Table<int?> get table => ProviderAdmissionLock.t;
 }
 
-class ProviderAdmissionLockIncludeList extends _i1.IncludeList {
+class ProviderAdmissionLockIncludeList extends _is.IncludeList {
   ProviderAdmissionLockIncludeList._({
-    _i1.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
+    _is.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -184,10 +178,10 @@ class ProviderAdmissionLockIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => ProviderAdmissionLock.t;
+  _is.Table<int?> get table => ProviderAdmissionLock.t;
 }
 
 class ProviderAdmissionLockRepository {
@@ -216,24 +210,20 @@ class ProviderAdmissionLockRepository {
   /// );
   /// ```
   Future<List<ProviderAdmissionLock>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
+    _is.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<ProviderAdmissionLock>(
       where: where?.call(ProviderAdmissionLock.t),
       orderBy: orderBy?.call(ProviderAdmissionLock.t),
       orderByList: orderByList?.call(ProviderAdmissionLock.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -260,23 +250,19 @@ class ProviderAdmissionLockRepository {
   /// );
   /// ```
   Future<ProviderAdmissionLock?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
     int? offset,
-    _i1.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
+    _is.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<ProviderAdmissionLock>(
       where: where?.call(ProviderAdmissionLock.t),
       orderBy: orderBy?.call(ProviderAdmissionLock.t),
       orderByList: orderByList?.call(ProviderAdmissionLock.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -286,11 +272,11 @@ class ProviderAdmissionLockRepository {
 
   /// Finds a single [ProviderAdmissionLock] by its [id] or null if no such row exists.
   Future<ProviderAdmissionLock?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<ProviderAdmissionLock>(
       id,
@@ -315,9 +301,9 @@ class ProviderAdmissionLockRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ProviderAdmissionLock>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ProviderAdmissionLock> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -333,9 +319,9 @@ class ProviderAdmissionLockRepository {
   ///
   /// The returned [ProviderAdmissionLock] will have its `id` field set.
   Future<ProviderAdmissionLock> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ProviderAdmissionLock row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<ProviderAdmissionLock>(
       row,
@@ -364,12 +350,12 @@ class ProviderAdmissionLockRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ProviderAdmissionLock>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ProviderAdmissionLock> rows, {
-    required _i1.ColumnSelections<ProviderAdmissionLockTable> conflictColumns,
-    _i1.ColumnSelections<ProviderAdmissionLockTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ProviderAdmissionLockTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ProviderAdmissionLockTable> conflictColumns,
+    _is.ColumnSelections<ProviderAdmissionLockTable>? updateColumns,
+    _is.WhereExpressionBuilder<ProviderAdmissionLockTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<ProviderAdmissionLock>(
@@ -396,12 +382,12 @@ class ProviderAdmissionLockRepository {
   ///
   /// The returned [ProviderAdmissionLock] will have its `id` field set.
   Future<ProviderAdmissionLock?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ProviderAdmissionLock row, {
-    required _i1.ColumnSelections<ProviderAdmissionLockTable> conflictColumns,
-    _i1.ColumnSelections<ProviderAdmissionLockTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ProviderAdmissionLockTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ProviderAdmissionLockTable> conflictColumns,
+    _is.ColumnSelections<ProviderAdmissionLockTable>? updateColumns,
+    _is.WhereExpressionBuilder<ProviderAdmissionLockTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<ProviderAdmissionLock>(
       row,
@@ -422,10 +408,10 @@ class ProviderAdmissionLockRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ProviderAdmissionLock>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ProviderAdmissionLock> rows, {
-    _i1.ColumnSelections<ProviderAdmissionLockTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ProviderAdmissionLockTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<ProviderAdmissionLock>(
@@ -440,10 +426,10 @@ class ProviderAdmissionLockRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<ProviderAdmissionLock> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ProviderAdmissionLock row, {
-    _i1.ColumnSelections<ProviderAdmissionLockTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ProviderAdmissionLockTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<ProviderAdmissionLock>(
       row,
@@ -455,11 +441,11 @@ class ProviderAdmissionLockRepository {
   /// Updates a single [ProviderAdmissionLock] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<ProviderAdmissionLock?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<ProviderAdmissionLockUpdateTable>
+    required _is.ColumnValueListBuilder<ProviderAdmissionLockUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<ProviderAdmissionLock>(
       id,
@@ -475,17 +461,15 @@ class ProviderAdmissionLockRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ProviderAdmissionLock>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<ProviderAdmissionLockUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<ProviderAdmissionLockUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<ProviderAdmissionLockTable> where,
+    required _is.WhereExpressionBuilder<ProviderAdmissionLockTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
-    _i1.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
+    _is.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<ProviderAdmissionLock>(
@@ -495,8 +479,6 @@ class ProviderAdmissionLockRepository {
       offset: offset,
       orderBy: orderBy?.call(ProviderAdmissionLock.t),
       orderByList: orderByList?.call(ProviderAdmissionLock.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -514,21 +496,17 @@ class ProviderAdmissionLockRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ProviderAdmissionLock>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ProviderAdmissionLock> rows, {
-    _i1.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
+    _is.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<ProviderAdmissionLock>(
       rows,
       orderBy: orderBy?.call(ProviderAdmissionLock.t),
       orderByList: orderByList?.call(ProviderAdmissionLock.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -536,9 +514,9 @@ class ProviderAdmissionLockRepository {
 
   /// Deletes a single [ProviderAdmissionLock].
   Future<ProviderAdmissionLock> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ProviderAdmissionLock row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<ProviderAdmissionLock>(
       row,
@@ -555,21 +533,17 @@ class ProviderAdmissionLockRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ProviderAdmissionLock>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ProviderAdmissionLockTable> where,
-    _i1.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ProviderAdmissionLockTable> where,
+    _is.OrderByBuilder<ProviderAdmissionLockTable>? orderBy,
+    _is.OrderByListBuilder<ProviderAdmissionLockTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<ProviderAdmissionLock>(
       where: where(ProviderAdmissionLock.t),
       orderBy: orderBy?.call(ProviderAdmissionLock.t),
       orderByList: orderByList?.call(ProviderAdmissionLock.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -578,10 +552,10 @@ class ProviderAdmissionLockRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ProviderAdmissionLockTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<ProviderAdmissionLock>(
       where: where?.call(ProviderAdmissionLock.t),
@@ -592,11 +566,11 @@ class ProviderAdmissionLockRepository {
 
   /// Acquires row-level locks on [ProviderAdmissionLock] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ProviderAdmissionLockTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ProviderAdmissionLockTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<ProviderAdmissionLock>(
       where: where(ProviderAdmissionLock.t),

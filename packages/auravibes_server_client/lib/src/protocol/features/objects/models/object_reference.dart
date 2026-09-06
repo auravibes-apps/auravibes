@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ObjectReference implements _i1.SerializableModel {
+abstract class ObjectReference
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ObjectReference._({
     this.id,
     required this.workspaceId,
@@ -37,12 +38,12 @@ abstract class ObjectReference implements _i1.SerializableModel {
       workspaceId: jsonSerialization['workspaceId'] as int,
       objectId: jsonSerialization['objectId'] as int,
       messageId: jsonSerialization['messageId'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -63,7 +64,7 @@ abstract class ObjectReference implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ObjectReference]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ObjectReference copyWith({
     int? id,
     int? workspaceId,
@@ -86,8 +87,21 @@ abstract class ObjectReference implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ObjectReference',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'objectId': objectId,
+      'messageId': messageId,
+      'createdAt': createdAt.toJson(),
+      if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -112,7 +126,7 @@ class _ObjectReferenceImpl extends ObjectReference {
 
   /// Returns a shallow copy of this [ObjectReference]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ObjectReference copyWith({
     Object? id = _Undefined,

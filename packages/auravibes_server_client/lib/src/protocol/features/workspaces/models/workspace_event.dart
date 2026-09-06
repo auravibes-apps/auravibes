@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class WorkspaceEvent implements _i1.SerializableModel {
+abstract class WorkspaceEvent
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceEvent._({
     this.id,
     required this.eventId,
@@ -52,12 +53,12 @@ abstract class WorkspaceEvent implements _i1.SerializableModel {
       resourceKind: jsonSerialization['resourceKind'] as String,
       resourceId: jsonSerialization['resourceId'] as String?,
       payloadJson: jsonSerialization['payloadJson'] as String?,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
       publishedAt: jsonSerialization['publishedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _isc.DateTimeJsonExtension.fromJson(
               jsonSerialization['publishedAt'],
             ),
     );
@@ -90,7 +91,7 @@ abstract class WorkspaceEvent implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceEvent copyWith({
     int? id,
     String? eventId,
@@ -123,8 +124,26 @@ abstract class WorkspaceEvent implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceEvent',
+      if (id != null) 'id': id,
+      'eventId': eventId,
+      'workspaceId': workspaceId,
+      'sequence': sequence,
+      'actorUserId': actorUserId,
+      'kind': kind,
+      'resourceKind': resourceKind,
+      if (resourceId != null) 'resourceId': resourceId,
+      if (payloadJson != null) 'payloadJson': payloadJson,
+      'createdAt': createdAt.toJson(),
+      if (publishedAt != null) 'publishedAt': publishedAt?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -159,7 +178,7 @@ class _WorkspaceEventImpl extends WorkspaceEvent {
 
   /// Returns a shallow copy of this [WorkspaceEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceEvent copyWith({
     Object? id = _Undefined,

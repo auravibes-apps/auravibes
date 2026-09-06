@@ -110,7 +110,7 @@ jobs:
 
       - name: Install matching Serverpod CLI
         run: |
-          version="$(ruby -ryaml -e 'puts YAML.load_file("apps/auravibes_server/pubspec.yaml").fetch("dependencies").fetch("serverpod")')"
+          version="$(ruby -ryaml -e 'puts YAML.load_file("pubspec.lock").fetch("packages").fetch("serverpod").fetch("version")')"
           dart pub global activate serverpod_cli "$version"
 
       - name: Generate Serverpod code

@@ -10,11 +10,11 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i2;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class StartTurnRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   StartTurnRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -25,6 +25,7 @@ abstract class StartTurnRequest
     required this.attachmentIds,
     this.modelSelectionId,
     this.agentId,
+    this.a2uiSupportedComponents,
   });
 
   factory StartTurnRequest({
@@ -37,6 +38,7 @@ abstract class StartTurnRequest
     required List<String> attachmentIds,
     String? modelSelectionId,
     String? agentId,
+    List<String>? a2uiSupportedComponents,
   }) = _StartTurnRequestImpl;
 
   factory StartTurnRequest.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -48,11 +50,17 @@ abstract class StartTurnRequest
           jsonSerialization['expectedConversationRevision'] as int,
       clientMessageId: jsonSerialization['clientMessageId'] as String,
       content: jsonSerialization['content'] as String,
-      attachmentIds: _i2.Protocol().deserialize<List<String>>(
+      attachmentIds: _if5qez1k.Protocol().deserialize<List<String>>(
         jsonSerialization['attachmentIds'],
       ),
       modelSelectionId: jsonSerialization['modelSelectionId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _if5qez1k.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -74,9 +82,11 @@ abstract class StartTurnRequest
 
   String? agentId;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [StartTurnRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   StartTurnRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -87,6 +97,7 @@ abstract class StartTurnRequest
     List<String>? attachmentIds,
     String? modelSelectionId,
     String? agentId,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -101,6 +112,8 @@ abstract class StartTurnRequest
       'attachmentIds': attachmentIds.toJson(),
       if (modelSelectionId != null) 'modelSelectionId': modelSelectionId,
       if (agentId != null) 'agentId': agentId,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -117,12 +130,14 @@ abstract class StartTurnRequest
       'attachmentIds': attachmentIds.toJson(),
       if (modelSelectionId != null) 'modelSelectionId': modelSelectionId,
       if (agentId != null) 'agentId': agentId,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -139,6 +154,7 @@ class _StartTurnRequestImpl extends StartTurnRequest {
     required List<String> attachmentIds,
     String? modelSelectionId,
     String? agentId,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -149,11 +165,12 @@ class _StartTurnRequestImpl extends StartTurnRequest {
          attachmentIds: attachmentIds,
          modelSelectionId: modelSelectionId,
          agentId: agentId,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [StartTurnRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   StartTurnRequest copyWith({
     int? workspaceId,
@@ -165,6 +182,7 @@ class _StartTurnRequestImpl extends StartTurnRequest {
     List<String>? attachmentIds,
     Object? modelSelectionId = _Undefined,
     Object? agentId = _Undefined,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return StartTurnRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -180,6 +198,9 @@ class _StartTurnRequestImpl extends StartTurnRequest {
           ? modelSelectionId
           : this.modelSelectionId,
       agentId: agentId is String? ? agentId : this.agentId,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

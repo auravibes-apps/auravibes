@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ConversationUsage
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   ConversationUsage._({
     this.id,
     required this.workspaceId,
@@ -45,7 +45,7 @@ abstract class ConversationUsage
       inputTokens: jsonSerialization['inputTokens'] as int,
       outputTokens: jsonSerialization['outputTokens'] as int,
       totalTokens: jsonSerialization['totalTokens'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -73,11 +73,11 @@ abstract class ConversationUsage
   DateTime createdAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [ConversationUsage]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationUsage copyWith({
     int? id,
     int? workspaceId,
@@ -123,13 +123,11 @@ abstract class ConversationUsage
   }
 
   static ConversationUsageIncludeList includeList({
-    _i1.WhereExpressionBuilder<ConversationUsageTable>? where,
+    _is.WhereExpressionBuilder<ConversationUsageTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ConversationUsageTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationUsageTable>? orderByList,
+    _is.OrderByBuilder<ConversationUsageTable>? orderBy,
+    _is.OrderByListBuilder<ConversationUsageTable>? orderByList,
     ConversationUsageInclude? include,
   }) {
     return ConversationUsageIncludeList._(
@@ -137,8 +135,6 @@ abstract class ConversationUsage
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(ConversationUsage.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(ConversationUsage.t),
       include: include,
     );
@@ -146,7 +142,7 @@ abstract class ConversationUsage
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -175,7 +171,7 @@ class _ConversationUsageImpl extends ConversationUsage {
 
   /// Returns a shallow copy of this [ConversationUsage]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationUsage copyWith({
     Object? id = _Undefined,
@@ -201,75 +197,75 @@ class _ConversationUsageImpl extends ConversationUsage {
 }
 
 class ConversationUsageUpdateTable
-    extends _i1.UpdateTable<ConversationUsageTable> {
+    extends _is.UpdateTable<ConversationUsageTable> {
   ConversationUsageUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<int, int> conversationId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> conversationId(int value) => _is.ColumnValue(
     table.conversationId,
     value,
   );
 
-  _i1.ColumnValue<int, int> turnId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> turnId(int value) => _is.ColumnValue(
     table.turnId,
     value,
   );
 
-  _i1.ColumnValue<int, int> inputTokens(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> inputTokens(int value) => _is.ColumnValue(
     table.inputTokens,
     value,
   );
 
-  _i1.ColumnValue<int, int> outputTokens(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> outputTokens(int value) => _is.ColumnValue(
     table.outputTokens,
     value,
   );
 
-  _i1.ColumnValue<int, int> totalTokens(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> totalTokens(int value) => _is.ColumnValue(
     table.totalTokens,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 }
 
-class ConversationUsageTable extends _i1.Table<int?> {
+class ConversationUsageTable extends _is.Table<int?> {
   ConversationUsageTable({super.tableRelation})
     : super(tableName: 'conversation_usage') {
     updateTable = ConversationUsageUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    conversationId = _i1.ColumnInt(
+    conversationId = _is.ColumnInt(
       'conversationId',
       this,
     );
-    turnId = _i1.ColumnInt(
+    turnId = _is.ColumnInt(
       'turnId',
       this,
     );
-    inputTokens = _i1.ColumnInt(
+    inputTokens = _is.ColumnInt(
       'inputTokens',
       this,
     );
-    outputTokens = _i1.ColumnInt(
+    outputTokens = _is.ColumnInt(
       'outputTokens',
       this,
     );
-    totalTokens = _i1.ColumnInt(
+    totalTokens = _is.ColumnInt(
       'totalTokens',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
@@ -277,22 +273,22 @@ class ConversationUsageTable extends _i1.Table<int?> {
 
   late final ConversationUsageUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnInt conversationId;
+  late final _is.ColumnInt conversationId;
 
-  late final _i1.ColumnInt turnId;
+  late final _is.ColumnInt turnId;
 
-  late final _i1.ColumnInt inputTokens;
+  late final _is.ColumnInt inputTokens;
 
-  late final _i1.ColumnInt outputTokens;
+  late final _is.ColumnInt outputTokens;
 
-  late final _i1.ColumnInt totalTokens;
+  late final _is.ColumnInt totalTokens;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     conversationId,
@@ -304,24 +300,22 @@ class ConversationUsageTable extends _i1.Table<int?> {
   ];
 }
 
-class ConversationUsageInclude extends _i1.IncludeObject {
+class ConversationUsageInclude extends _is.IncludeObject {
   ConversationUsageInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => ConversationUsage.t;
+  _is.Table<int?> get table => ConversationUsage.t;
 }
 
-class ConversationUsageIncludeList extends _i1.IncludeList {
+class ConversationUsageIncludeList extends _is.IncludeList {
   ConversationUsageIncludeList._({
-    _i1.WhereExpressionBuilder<ConversationUsageTable>? where,
+    _is.WhereExpressionBuilder<ConversationUsageTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -329,10 +323,10 @@ class ConversationUsageIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => ConversationUsage.t;
+  _is.Table<int?> get table => ConversationUsage.t;
 }
 
 class ConversationUsageRepository {
@@ -361,24 +355,20 @@ class ConversationUsageRepository {
   /// );
   /// ```
   Future<List<ConversationUsage>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ConversationUsageTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ConversationUsageTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ConversationUsageTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationUsageTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ConversationUsageTable>? orderBy,
+    _is.OrderByListBuilder<ConversationUsageTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<ConversationUsage>(
       where: where?.call(ConversationUsage.t),
       orderBy: orderBy?.call(ConversationUsage.t),
       orderByList: orderByList?.call(ConversationUsage.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -405,23 +395,19 @@ class ConversationUsageRepository {
   /// );
   /// ```
   Future<ConversationUsage?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ConversationUsageTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ConversationUsageTable>? where,
     int? offset,
-    _i1.OrderByBuilder<ConversationUsageTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationUsageTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ConversationUsageTable>? orderBy,
+    _is.OrderByListBuilder<ConversationUsageTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<ConversationUsage>(
       where: where?.call(ConversationUsage.t),
       orderBy: orderBy?.call(ConversationUsage.t),
       orderByList: orderByList?.call(ConversationUsage.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -431,11 +417,11 @@ class ConversationUsageRepository {
 
   /// Finds a single [ConversationUsage] by its [id] or null if no such row exists.
   Future<ConversationUsage?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<ConversationUsage>(
       id,
@@ -460,9 +446,9 @@ class ConversationUsageRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationUsage>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ConversationUsage> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -478,9 +464,9 @@ class ConversationUsageRepository {
   ///
   /// The returned [ConversationUsage] will have its `id` field set.
   Future<ConversationUsage> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ConversationUsage row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<ConversationUsage>(
       row,
@@ -509,12 +495,12 @@ class ConversationUsageRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationUsage>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ConversationUsage> rows, {
-    required _i1.ColumnSelections<ConversationUsageTable> conflictColumns,
-    _i1.ColumnSelections<ConversationUsageTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ConversationUsageTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ConversationUsageTable> conflictColumns,
+    _is.ColumnSelections<ConversationUsageTable>? updateColumns,
+    _is.WhereExpressionBuilder<ConversationUsageTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<ConversationUsage>(
@@ -541,12 +527,12 @@ class ConversationUsageRepository {
   ///
   /// The returned [ConversationUsage] will have its `id` field set.
   Future<ConversationUsage?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ConversationUsage row, {
-    required _i1.ColumnSelections<ConversationUsageTable> conflictColumns,
-    _i1.ColumnSelections<ConversationUsageTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ConversationUsageTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ConversationUsageTable> conflictColumns,
+    _is.ColumnSelections<ConversationUsageTable>? updateColumns,
+    _is.WhereExpressionBuilder<ConversationUsageTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<ConversationUsage>(
       row,
@@ -567,10 +553,10 @@ class ConversationUsageRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationUsage>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ConversationUsage> rows, {
-    _i1.ColumnSelections<ConversationUsageTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ConversationUsageTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<ConversationUsage>(
@@ -585,10 +571,10 @@ class ConversationUsageRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<ConversationUsage> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ConversationUsage row, {
-    _i1.ColumnSelections<ConversationUsageTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ConversationUsageTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<ConversationUsage>(
       row,
@@ -600,11 +586,11 @@ class ConversationUsageRepository {
   /// Updates a single [ConversationUsage] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<ConversationUsage?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<ConversationUsageUpdateTable>
+    required _is.ColumnValueListBuilder<ConversationUsageUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<ConversationUsage>(
       id,
@@ -620,17 +606,15 @@ class ConversationUsageRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationUsage>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<ConversationUsageUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<ConversationUsageUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<ConversationUsageTable> where,
+    required _is.WhereExpressionBuilder<ConversationUsageTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ConversationUsageTable>? orderBy,
-    _i1.OrderByListBuilder<ConversationUsageTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ConversationUsageTable>? orderBy,
+    _is.OrderByListBuilder<ConversationUsageTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<ConversationUsage>(
@@ -640,8 +624,6 @@ class ConversationUsageRepository {
       offset: offset,
       orderBy: orderBy?.call(ConversationUsage.t),
       orderByList: orderByList?.call(ConversationUsage.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -659,21 +641,17 @@ class ConversationUsageRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationUsage>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ConversationUsage> rows, {
-    _i1.OrderByBuilder<ConversationUsageTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationUsageTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ConversationUsageTable>? orderBy,
+    _is.OrderByListBuilder<ConversationUsageTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<ConversationUsage>(
       rows,
       orderBy: orderBy?.call(ConversationUsage.t),
       orderByList: orderByList?.call(ConversationUsage.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -681,9 +659,9 @@ class ConversationUsageRepository {
 
   /// Deletes a single [ConversationUsage].
   Future<ConversationUsage> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ConversationUsage row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<ConversationUsage>(
       row,
@@ -700,21 +678,17 @@ class ConversationUsageRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ConversationUsage>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ConversationUsageTable> where,
-    _i1.OrderByBuilder<ConversationUsageTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ConversationUsageTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ConversationUsageTable> where,
+    _is.OrderByBuilder<ConversationUsageTable>? orderBy,
+    _is.OrderByListBuilder<ConversationUsageTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<ConversationUsage>(
       where: where(ConversationUsage.t),
       orderBy: orderBy?.call(ConversationUsage.t),
       orderByList: orderByList?.call(ConversationUsage.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -723,10 +697,10 @@ class ConversationUsageRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ConversationUsageTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ConversationUsageTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<ConversationUsage>(
       where: where?.call(ConversationUsage.t),
@@ -737,11 +711,11 @@ class ConversationUsageRepository {
 
   /// Acquires row-level locks on [ConversationUsage] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ConversationUsageTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ConversationUsageTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<ConversationUsage>(
       where: where(ConversationUsage.t),

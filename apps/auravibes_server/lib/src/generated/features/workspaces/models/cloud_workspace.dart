@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class CloudWorkspace
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   CloudWorkspace._({
     this.id,
     required this.name,
@@ -43,15 +43,15 @@ abstract class CloudWorkspace
       ownerUserId: jsonSerialization['ownerUserId'] as String,
       revision: jsonSerialization['revision'] as int,
       sequence: jsonSerialization['sequence'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -77,11 +77,11 @@ abstract class CloudWorkspace
   DateTime? deletedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [CloudWorkspace]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   CloudWorkspace copyWith({
     int? id,
     String? name,
@@ -127,13 +127,11 @@ abstract class CloudWorkspace
   }
 
   static CloudWorkspaceIncludeList includeList({
-    _i1.WhereExpressionBuilder<CloudWorkspaceTable>? where,
+    _is.WhereExpressionBuilder<CloudWorkspaceTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<CloudWorkspaceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
+    _is.OrderByBuilder<CloudWorkspaceTable>? orderBy,
+    _is.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
     CloudWorkspaceInclude? include,
   }) {
     return CloudWorkspaceIncludeList._(
@@ -141,8 +139,6 @@ abstract class CloudWorkspace
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(CloudWorkspace.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(CloudWorkspace.t),
       include: include,
     );
@@ -150,7 +146,7 @@ abstract class CloudWorkspace
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -179,7 +175,7 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
 
   /// Returns a shallow copy of this [CloudWorkspace]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   CloudWorkspace copyWith({
     Object? id = _Undefined,
@@ -204,77 +200,77 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
   }
 }
 
-class CloudWorkspaceUpdateTable extends _i1.UpdateTable<CloudWorkspaceTable> {
+class CloudWorkspaceUpdateTable extends _is.UpdateTable<CloudWorkspaceTable> {
   CloudWorkspaceUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> name(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> name(String value) => _is.ColumnValue(
     table.name,
     value,
   );
 
-  _i1.ColumnValue<String, String> ownerUserId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> ownerUserId(String value) => _is.ColumnValue(
     table.ownerUserId,
     value,
   );
 
-  _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> revision(int value) => _is.ColumnValue(
     table.revision,
     value,
   );
 
-  _i1.ColumnValue<int, int> sequence(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> sequence(int value) => _is.ColumnValue(
     table.sequence,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _is.ColumnValue(
         table.updatedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.deletedAt,
         value,
       );
 }
 
-class CloudWorkspaceTable extends _i1.Table<int?> {
+class CloudWorkspaceTable extends _is.Table<int?> {
   CloudWorkspaceTable({super.tableRelation})
     : super(tableName: 'cloud_workspace') {
     updateTable = CloudWorkspaceUpdateTable(this);
-    name = _i1.ColumnString(
+    name = _is.ColumnString(
       'name',
       this,
     );
-    ownerUserId = _i1.ColumnString(
+    ownerUserId = _is.ColumnString(
       'ownerUserId',
       this,
     );
-    revision = _i1.ColumnInt(
+    revision = _is.ColumnInt(
       'revision',
       this,
     );
-    sequence = _i1.ColumnInt(
+    sequence = _is.ColumnInt(
       'sequence',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    updatedAt = _i1.ColumnDateTime(
+    updatedAt = _is.ColumnDateTime(
       'updatedAt',
       this,
     );
-    deletedAt = _i1.ColumnDateTime(
+    deletedAt = _is.ColumnDateTime(
       'deletedAt',
       this,
     );
@@ -282,22 +278,22 @@ class CloudWorkspaceTable extends _i1.Table<int?> {
 
   late final CloudWorkspaceUpdateTable updateTable;
 
-  late final _i1.ColumnString name;
+  late final _is.ColumnString name;
 
-  late final _i1.ColumnString ownerUserId;
+  late final _is.ColumnString ownerUserId;
 
-  late final _i1.ColumnInt revision;
+  late final _is.ColumnInt revision;
 
-  late final _i1.ColumnInt sequence;
+  late final _is.ColumnInt sequence;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime updatedAt;
+  late final _is.ColumnDateTime updatedAt;
 
-  late final _i1.ColumnDateTime deletedAt;
+  late final _is.ColumnDateTime deletedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     name,
     ownerUserId,
@@ -309,24 +305,22 @@ class CloudWorkspaceTable extends _i1.Table<int?> {
   ];
 }
 
-class CloudWorkspaceInclude extends _i1.IncludeObject {
+class CloudWorkspaceInclude extends _is.IncludeObject {
   CloudWorkspaceInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => CloudWorkspace.t;
+  _is.Table<int?> get table => CloudWorkspace.t;
 }
 
-class CloudWorkspaceIncludeList extends _i1.IncludeList {
+class CloudWorkspaceIncludeList extends _is.IncludeList {
   CloudWorkspaceIncludeList._({
-    _i1.WhereExpressionBuilder<CloudWorkspaceTable>? where,
+    _is.WhereExpressionBuilder<CloudWorkspaceTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -334,10 +328,10 @@ class CloudWorkspaceIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => CloudWorkspace.t;
+  _is.Table<int?> get table => CloudWorkspace.t;
 }
 
 class CloudWorkspaceRepository {
@@ -366,24 +360,20 @@ class CloudWorkspaceRepository {
   /// );
   /// ```
   Future<List<CloudWorkspace>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<CloudWorkspaceTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<CloudWorkspaceTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<CloudWorkspaceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<CloudWorkspaceTable>? orderBy,
+    _is.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<CloudWorkspace>(
       where: where?.call(CloudWorkspace.t),
       orderBy: orderBy?.call(CloudWorkspace.t),
       orderByList: orderByList?.call(CloudWorkspace.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -410,23 +400,19 @@ class CloudWorkspaceRepository {
   /// );
   /// ```
   Future<CloudWorkspace?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<CloudWorkspaceTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<CloudWorkspaceTable>? where,
     int? offset,
-    _i1.OrderByBuilder<CloudWorkspaceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<CloudWorkspaceTable>? orderBy,
+    _is.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<CloudWorkspace>(
       where: where?.call(CloudWorkspace.t),
       orderBy: orderBy?.call(CloudWorkspace.t),
       orderByList: orderByList?.call(CloudWorkspace.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -436,11 +422,11 @@ class CloudWorkspaceRepository {
 
   /// Finds a single [CloudWorkspace] by its [id] or null if no such row exists.
   Future<CloudWorkspace?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<CloudWorkspace>(
       id,
@@ -465,9 +451,9 @@ class CloudWorkspaceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CloudWorkspace>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<CloudWorkspace> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -483,9 +469,9 @@ class CloudWorkspaceRepository {
   ///
   /// The returned [CloudWorkspace] will have its `id` field set.
   Future<CloudWorkspace> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     CloudWorkspace row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<CloudWorkspace>(
       row,
@@ -514,12 +500,12 @@ class CloudWorkspaceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CloudWorkspace>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<CloudWorkspace> rows, {
-    required _i1.ColumnSelections<CloudWorkspaceTable> conflictColumns,
-    _i1.ColumnSelections<CloudWorkspaceTable>? updateColumns,
-    _i1.WhereExpressionBuilder<CloudWorkspaceTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<CloudWorkspaceTable> conflictColumns,
+    _is.ColumnSelections<CloudWorkspaceTable>? updateColumns,
+    _is.WhereExpressionBuilder<CloudWorkspaceTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<CloudWorkspace>(
@@ -546,12 +532,12 @@ class CloudWorkspaceRepository {
   ///
   /// The returned [CloudWorkspace] will have its `id` field set.
   Future<CloudWorkspace?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     CloudWorkspace row, {
-    required _i1.ColumnSelections<CloudWorkspaceTable> conflictColumns,
-    _i1.ColumnSelections<CloudWorkspaceTable>? updateColumns,
-    _i1.WhereExpressionBuilder<CloudWorkspaceTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<CloudWorkspaceTable> conflictColumns,
+    _is.ColumnSelections<CloudWorkspaceTable>? updateColumns,
+    _is.WhereExpressionBuilder<CloudWorkspaceTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<CloudWorkspace>(
       row,
@@ -572,10 +558,10 @@ class CloudWorkspaceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CloudWorkspace>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<CloudWorkspace> rows, {
-    _i1.ColumnSelections<CloudWorkspaceTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<CloudWorkspaceTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<CloudWorkspace>(
@@ -590,10 +576,10 @@ class CloudWorkspaceRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<CloudWorkspace> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     CloudWorkspace row, {
-    _i1.ColumnSelections<CloudWorkspaceTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<CloudWorkspaceTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<CloudWorkspace>(
       row,
@@ -605,10 +591,10 @@ class CloudWorkspaceRepository {
   /// Updates a single [CloudWorkspace] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<CloudWorkspace?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<CloudWorkspaceUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<CloudWorkspaceUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<CloudWorkspace>(
       id,
@@ -624,16 +610,14 @@ class CloudWorkspaceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CloudWorkspace>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<CloudWorkspaceUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<CloudWorkspaceTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<CloudWorkspaceUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<CloudWorkspaceTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<CloudWorkspaceTable>? orderBy,
-    _i1.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<CloudWorkspaceTable>? orderBy,
+    _is.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<CloudWorkspace>(
@@ -643,8 +627,6 @@ class CloudWorkspaceRepository {
       offset: offset,
       orderBy: orderBy?.call(CloudWorkspace.t),
       orderByList: orderByList?.call(CloudWorkspace.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -662,21 +644,17 @@ class CloudWorkspaceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CloudWorkspace>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<CloudWorkspace> rows, {
-    _i1.OrderByBuilder<CloudWorkspaceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<CloudWorkspaceTable>? orderBy,
+    _is.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<CloudWorkspace>(
       rows,
       orderBy: orderBy?.call(CloudWorkspace.t),
       orderByList: orderByList?.call(CloudWorkspace.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -684,9 +662,9 @@ class CloudWorkspaceRepository {
 
   /// Deletes a single [CloudWorkspace].
   Future<CloudWorkspace> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     CloudWorkspace row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<CloudWorkspace>(
       row,
@@ -703,21 +681,17 @@ class CloudWorkspaceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CloudWorkspace>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<CloudWorkspaceTable> where,
-    _i1.OrderByBuilder<CloudWorkspaceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<CloudWorkspaceTable> where,
+    _is.OrderByBuilder<CloudWorkspaceTable>? orderBy,
+    _is.OrderByListBuilder<CloudWorkspaceTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<CloudWorkspace>(
       where: where(CloudWorkspace.t),
       orderBy: orderBy?.call(CloudWorkspace.t),
       orderByList: orderByList?.call(CloudWorkspace.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -726,10 +700,10 @@ class CloudWorkspaceRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<CloudWorkspaceTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<CloudWorkspaceTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<CloudWorkspace>(
       where: where?.call(CloudWorkspace.t),
@@ -740,11 +714,11 @@ class CloudWorkspaceRepository {
 
   /// Acquires row-level locks on [CloudWorkspace] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<CloudWorkspaceTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<CloudWorkspaceTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<CloudWorkspace>(
       where: where(CloudWorkspace.t),

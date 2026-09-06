@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ProviderAdmission implements _i1.SerializableModel {
+abstract class ProviderAdmission
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ProviderAdmission._({
     this.id,
     required this.jobId,
@@ -38,7 +39,7 @@ abstract class ProviderAdmission implements _i1.SerializableModel {
       workspaceId: jsonSerialization['workspaceId'] as int,
       providerId: jsonSerialization['providerId'] as String,
       leaseToken: jsonSerialization['leaseToken'] as String,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -61,7 +62,7 @@ abstract class ProviderAdmission implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ProviderAdmission]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ProviderAdmission copyWith({
     int? id,
     int? jobId,
@@ -84,8 +85,21 @@ abstract class ProviderAdmission implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ProviderAdmission',
+      if (id != null) 'id': id,
+      'jobId': jobId,
+      'workspaceId': workspaceId,
+      'providerId': providerId,
+      'leaseToken': leaseToken,
+      'createdAt': createdAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -110,7 +124,7 @@ class _ProviderAdmissionImpl extends ProviderAdmission {
 
   /// Returns a shallow copy of this [ProviderAdmission]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ProviderAdmission copyWith({
     Object? id = _Undefined,

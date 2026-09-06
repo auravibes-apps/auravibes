@@ -318,14 +318,16 @@ class _CodexStreamAccumulator {
       _throwFailedEvent(event);
     }
     if (type == 'response.completed') {
-      _complete(event);
-
-      return const [];
+      return _finish(event, FinishReason.stop);
+    }
+    if (type == 'response.incomplete') {
+      return _finish(event, FinishReason.length);
+    }
+    if (type == 'response.output_text.done') {
+      return _reconcileText(event['text']);
     }
     if (type == 'response.output_item.done') {
-      _addTool(event);
-
-      return const [];
+      return _addOutputItem(event);
     }
 
     return type == 'response.output_text.delta' ? _addText(event) : const [];
@@ -341,21 +343,45 @@ class _CodexStreamAccumulator {
     );
   }
 
-  void _complete(Map<String, dynamic> event) {
+  List<Part> _finish(Map<String, dynamic> event, FinishReason finishReason) {
     final response = event['response'] as Map<String, dynamic>?;
     _usage = _usageFromJson(response?['usage'] as Map<String, dynamic>?);
-    _finishReasonValue = FinishReason.stop;
+    _finishReasonValue = finishReason;
+    if (response == null) return const [];
+    return _reconcileText(_responseText(response));
   }
 
-  void _addTool(Map<String, dynamic> event) {
+  List<Part> _reconcileText(Object? value) {
+    if (value is! String || value.isEmpty) return const [];
+    final streamedText = _text.toString();
+    if (!value.startsWith(streamedText) ||
+        value.length == streamedText.length) {
+      return const [];
+    }
+    final suffix = value.substring(streamedText.length);
+    _text.write(suffix);
+
+    return [TextPart(text: suffix)];
+  }
+
+  List<Part> _addOutputItem(Map<String, dynamic> event) {
     final item = event['item'] as Map<String, dynamic>?;
-    if (item?['type'] != 'function_call') return;
+    if (item == null) return const [];
+    if (item['type'] == 'message') {
+      return _reconcileText(
+        _responseText({
+          'output': [item],
+        }),
+      );
+    }
+    if (item['type'] != 'function_call') return const [];
 
     _tools.addAll(
       _toolRequestsFromResponse({
         'output': [item],
       }),
     );
+    return const [];
   }
 
   List<Part> _addText(Map<String, dynamic> event) {

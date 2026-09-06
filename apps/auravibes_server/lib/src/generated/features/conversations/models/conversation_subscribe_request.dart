@@ -10,20 +10,23 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ConversationSubscribeRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ConversationSubscribeRequest._({
     required this.workspaceId,
     required this.conversationId,
     required this.afterSequence,
+    this.a2uiSupportedComponents,
   });
 
   factory ConversationSubscribeRequest({
     required int workspaceId,
     required String conversationId,
     required int afterSequence,
+    List<String>? a2uiSupportedComponents,
   }) = _ConversationSubscribeRequestImpl;
 
   factory ConversationSubscribeRequest.fromJson(
@@ -33,6 +36,12 @@ abstract class ConversationSubscribeRequest
       workspaceId: jsonSerialization['workspaceId'] as int,
       conversationId: jsonSerialization['conversationId'] as String,
       afterSequence: jsonSerialization['afterSequence'] as int,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _if5qez1k.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -42,13 +51,16 @@ abstract class ConversationSubscribeRequest
 
   int afterSequence;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [ConversationSubscribeRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationSubscribeRequest copyWith({
     int? workspaceId,
     String? conversationId,
     int? afterSequence,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -57,6 +69,8 @@ abstract class ConversationSubscribeRequest
       'workspaceId': workspaceId,
       'conversationId': conversationId,
       'afterSequence': afterSequence,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -67,39 +81,49 @@ abstract class ConversationSubscribeRequest
       'workspaceId': workspaceId,
       'conversationId': conversationId,
       'afterSequence': afterSequence,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
+
+class _Undefined {}
 
 class _ConversationSubscribeRequestImpl extends ConversationSubscribeRequest {
   _ConversationSubscribeRequestImpl({
     required int workspaceId,
     required String conversationId,
     required int afterSequence,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          conversationId: conversationId,
          afterSequence: afterSequence,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [ConversationSubscribeRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationSubscribeRequest copyWith({
     int? workspaceId,
     String? conversationId,
     int? afterSequence,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return ConversationSubscribeRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       conversationId: conversationId ?? this.conversationId,
       afterSequence: afterSequence ?? this.afterSequence,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

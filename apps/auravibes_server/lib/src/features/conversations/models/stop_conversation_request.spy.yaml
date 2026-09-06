@@ -4,3 +4,4 @@ fields:
   requestId: String
   conversationId: String
   expectedProjectionRevision: int
+  a2uiSupportedComponents: List<String>?

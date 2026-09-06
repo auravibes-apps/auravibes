@@ -2,6 +2,7 @@ import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dar
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_key.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -63,8 +64,9 @@ abstract final class CloudConversationStream {
             'transientDelta=${event.transientTextDelta != null}.',
           );
           final next = state.apply(event);
+          final isA2ui = event.kind == ConversationEventType.a2uiMessage;
           final needsSnapshot =
-              next == null || event.transientTextDelta == null;
+              next == null || (event.transientTextDelta == null && !isA2ui);
           if (needsSnapshot) {
             _logger.info(
               'Cloud conversation snapshot recovery: '
@@ -76,7 +78,7 @@ abstract final class CloudConversationStream {
           state = needsSnapshot
               ? CloudConversationState.fromSnapshot(
                   await chat.getConversationSnapshot(key.conversationId),
-                )
+                ).preserveTransientA2uiFrom(state)
               : next;
           retryCount = 0;
           yield state;
@@ -97,7 +99,7 @@ abstract final class CloudConversationStream {
       retryCount++;
       state = CloudConversationState.fromSnapshot(
         await chat.getConversationSnapshot(key.conversationId),
-      );
+      ).preserveTransientA2uiFrom(state);
       yield state;
       await wait(Duration(seconds: retryCount.clamp(1, 8)));
     }

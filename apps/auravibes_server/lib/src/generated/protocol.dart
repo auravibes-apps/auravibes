@@ -8,222 +8,252 @@
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
 // ignore_for_file: invalid_use_of_internal_member
+// ignore_for_file: dead_code, unnecessary_type_check
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:serverpod/protocol.dart' as _i2;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
-    as _i3;
-import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
-    as _i4;
-
-import 'features/accounts/models/account_summary.dart' as _i5;
-import 'features/codex_oauth/models/codex_oauth_transaction.dart' as _i6;
-import 'features/codex_oauth/models/complete_codex_oauth_request.dart' as _i7;
-import 'features/codex_oauth/models/complete_codex_oauth_result.dart' as _i8;
-import 'features/codex_oauth/models/start_codex_oauth_request.dart' as _i9;
-import 'features/codex_oauth/models/start_codex_oauth_result.dart' as _i10;
-import 'features/conversations/models/cancel_turn_request.dart' as _i11;
-import 'features/conversations/models/compact_conversation_request.dart'
-    as _i12;
-import 'features/conversations/models/continue_conversation_request.dart'
-    as _i13;
-import 'features/conversations/models/continue_turn_request.dart' as _i14;
-import 'features/conversations/models/conversation.dart' as _i15;
-import 'features/conversations/models/conversation_error_code.dart' as _i16;
-import 'features/conversations/models/conversation_event.dart' as _i17;
-import 'features/conversations/models/conversation_event_type.dart' as _i18;
-import 'features/conversations/models/conversation_exception.dart' as _i19;
-import 'features/conversations/models/conversation_execution.dart' as _i20;
-import 'features/conversations/models/conversation_execution_view.dart' as _i21;
-import 'features/conversations/models/conversation_job.dart' as _i22;
-import 'features/conversations/models/conversation_message.dart' as _i23;
-import 'features/conversations/models/conversation_message_view.dart' as _i24;
-import 'features/conversations/models/conversation_mutation_result.dart'
-    as _i25;
-import 'features/conversations/models/conversation_page.dart' as _i26;
-import 'features/conversations/models/conversation_projection_view.dart'
-    as _i27;
-import 'features/conversations/models/conversation_snapshot.dart' as _i28;
-import 'features/conversations/models/conversation_stream_event.dart' as _i29;
-import 'features/conversations/models/conversation_subscribe_request.dart'
-    as _i30;
-import 'features/conversations/models/conversation_summary.dart' as _i31;
-import 'features/conversations/models/conversation_tool_call.dart' as _i32;
-import 'features/conversations/models/conversation_tool_call_view.dart' as _i33;
-import 'features/conversations/models/conversation_turn.dart' as _i34;
-import 'features/conversations/models/conversation_turn_view.dart' as _i35;
-import 'features/conversations/models/conversation_usage.dart' as _i36;
-import 'features/conversations/models/create_conversation_request.dart' as _i37;
-import 'features/conversations/models/delete_conversation_request.dart' as _i38;
-import 'features/conversations/models/edit_pending_conversation_message_request.dart'
-    as _i39;
-import 'features/conversations/models/get_conversation_request.dart' as _i40;
-import 'features/conversations/models/get_turn_request.dart' as _i41;
-import 'features/conversations/models/list_conversation_messages_request.dart'
-    as _i42;
-import 'features/conversations/models/list_conversations_request.dart' as _i43;
-import 'features/conversations/models/provider_admission.dart' as _i44;
-import 'features/conversations/models/provider_admission_lock.dart' as _i45;
-import 'features/conversations/models/provider_admission_reservation.dart'
-    as _i46;
-import 'features/conversations/models/queue_conversation_message_request.dart'
-    as _i47;
-import 'features/conversations/models/remove_pending_conversation_message_request.dart'
-    as _i48;
-import 'features/conversations/models/reorder_pending_conversation_message_request.dart'
-    as _i49;
-import 'features/conversations/models/start_turn_request.dart' as _i50;
-import 'features/conversations/models/start_turn_result.dart' as _i51;
-import 'features/conversations/models/stop_conversation_request.dart' as _i52;
-import 'features/conversations/models/submit_tool_decision_request.dart'
-    as _i53;
-import 'features/conversations/models/turn_snapshot.dart' as _i54;
-import 'features/conversations/models/update_conversation_request.dart' as _i55;
-import 'features/conversations/models/update_conversation_settings_request.dart'
-    as _i56;
-import 'features/mcp_servers/models/create_mcp_server_request.dart' as _i57;
-import 'features/mcp_servers/models/create_mcp_server_result.dart' as _i58;
-import 'features/mcp_servers/models/delete_mcp_server_request.dart' as _i59;
-import 'features/mcp_servers/models/discover_mcp_server_request.dart' as _i60;
-import 'features/mcp_servers/models/discover_mcp_server_result.dart' as _i61;
-import 'features/mcp_servers/models/discovered_mcp_tool.dart' as _i62;
-import 'features/mcp_servers/models/mcp_server_health.dart' as _i63;
-import 'features/model_connections/models/api_model.dart' as _i64;
-import 'features/model_connections/models/api_model_provider.dart' as _i65;
-import 'features/model_connections/models/create_model_connection_request.dart'
-    as _i66;
-import 'features/model_connections/models/delete_model_connection_request.dart'
-    as _i67;
-import 'features/model_connections/models/list_model_connections_request.dart'
-    as _i68;
-import 'features/model_connections/models/list_workspace_model_selections_request.dart'
-    as _i69;
-import 'features/model_connections/models/model_connection_view.dart' as _i70;
-import 'features/model_connections/models/model_sync_result.dart' as _i71;
-import 'features/model_connections/models/test_and_sync_model_connection_request.dart'
-    as _i72;
-import 'features/model_connections/models/update_model_connection_request.dart'
-    as _i73;
-import 'features/model_connections/models/workspace_model_connection.dart'
-    as _i74;
-import 'features/model_connections/models/workspace_model_selection_view.dart'
-    as _i75;
-import 'features/objects/models/begin_upload_request.dart' as _i76;
-import 'features/objects/models/begin_upload_result.dart' as _i77;
-import 'features/objects/models/complete_upload_request.dart' as _i78;
-import 'features/objects/models/delete_object_request.dart' as _i79;
-import 'features/objects/models/get_download_request.dart' as _i80;
-import 'features/objects/models/get_download_result.dart' as _i81;
-import 'features/objects/models/object_deletion.dart' as _i82;
-import 'features/objects/models/object_error_code.dart' as _i83;
-import 'features/objects/models/object_exception.dart' as _i84;
-import 'features/objects/models/object_reference.dart' as _i85;
-import 'features/objects/models/object_result.dart' as _i86;
-import 'features/objects/models/object_upload.dart' as _i87;
-import 'features/objects/models/workspace_object.dart' as _i88;
-import 'features/sync/stream/models/workspace_stream_envelope.dart' as _i89;
-import 'features/sync/stream/models/workspace_stream_envelope_kind.dart'
-    as _i90;
-import 'features/sync/stream/models/workspace_subscribe_request.dart' as _i91;
-import 'features/workers/models/recurring_worker_schedule.dart' as _i92;
-import 'features/workers/models/worker_coordinator_lease.dart' as _i93;
-import 'features/workspace_state/models/mutate_workspace_credential_request.dart'
-    as _i94;
-import 'features/workspace_state/models/mutate_workspace_credential_response.dart'
-    as _i95;
-import 'features/workspace_state/models/patch_workspace_state_request.dart'
-    as _i96;
-import 'features/workspace_state/models/patch_workspace_state_response.dart'
-    as _i97;
-import 'features/workspace_state/models/put_workspace_secret_request.dart'
-    as _i98;
-import 'features/workspace_state/models/put_workspace_secret_response.dart'
-    as _i99;
-import 'features/workspace_state/models/read_workspace_state_request.dart'
-    as _i100;
-import 'features/workspace_state/models/read_workspace_state_response.dart'
-    as _i101;
-import 'features/workspace_state/models/workspace_patch_operation.dart'
-    as _i102;
-import 'features/workspace_state/models/workspace_patch_operation_kind.dart'
-    as _i103;
-import 'features/workspace_state/models/workspace_resource.dart' as _i104;
-import 'features/workspace_state/models/workspace_resource_kind.dart' as _i105;
-import 'features/workspace_state/models/workspace_resource_page.dart' as _i106;
-import 'features/workspace_state/models/workspace_resource_page_request.dart'
-    as _i107;
-import 'features/workspace_state/models/workspace_secret.dart' as _i108;
-import 'features/workspace_state/models/workspace_secret_kind.dart' as _i109;
-import 'features/workspace_state/models/workspace_secret_scope.dart' as _i110;
-import 'features/workspaces/models/accept_workspace_invite_request.dart'
-    as _i111;
-import 'features/workspaces/models/cloud_workspace.dart' as _i112;
-import 'features/workspaces/models/cloud_workspace_capabilities.dart' as _i113;
-import 'features/workspaces/models/cloud_workspace_detail.dart' as _i114;
-import 'features/workspaces/models/cloud_workspace_error_code.dart' as _i115;
-import 'features/workspaces/models/cloud_workspace_exception.dart' as _i116;
-import 'features/workspaces/models/cloud_workspace_invite_summary.dart'
-    as _i117;
-import 'features/workspaces/models/cloud_workspace_member_summary.dart'
-    as _i118;
-import 'features/workspaces/models/cloud_workspace_summary.dart' as _i119;
-import 'features/workspaces/models/create_cloud_workspace_request.dart'
-    as _i120;
-import 'features/workspaces/models/decline_workspace_invite_request.dart'
-    as _i121;
-import 'features/workspaces/models/delete_cloud_workspace_request.dart'
-    as _i122;
-import 'features/workspaces/models/get_cloud_workspace_detail_request.dart'
-    as _i123;
-import 'features/workspaces/models/invite_workspace_member_request.dart'
-    as _i124;
-import 'features/workspaces/models/leave_cloud_workspace_request.dart' as _i125;
-import 'features/workspaces/models/list_cloud_workspace_invites_request.dart'
-    as _i126;
-import 'features/workspaces/models/list_workspace_members_request.dart'
-    as _i127;
-import 'features/workspaces/models/pending_workspace_invite_summary.dart'
-    as _i128;
-import 'features/workspaces/models/remove_workspace_member_request.dart'
-    as _i129;
-import 'features/workspaces/models/rename_cloud_workspace_request.dart'
-    as _i130;
-import 'features/workspaces/models/renew_workspace_invite_request.dart'
-    as _i131;
-import 'features/workspaces/models/revoke_workspace_invite_request.dart'
-    as _i132;
-import 'features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
-    as _i133;
-import 'features/workspaces/models/update_workspace_member_role_request.dart'
-    as _i134;
-import 'features/workspaces/models/workspace_audit_record.dart' as _i135;
-import 'features/workspaces/models/workspace_event.dart' as _i136;
-import 'features/workspaces/models/workspace_invite.dart' as _i137;
-import 'features/workspaces/models/workspace_member.dart' as _i138;
-import 'features/workspaces/models/workspace_mutation_receipt.dart' as _i139;
-
-import 'package:auravibes_server/src/generated/features/conversations/models/conversation_summary.dart'
-    as _i140;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_view.dart'
-    as _i141;
-import 'package:auravibes_server/src/generated/features/model_connections/models/api_model_provider.dart'
-    as _i142;
+    as _icvgm34f;
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_summary.dart'
+    as _itibmfuz;
 import 'package:auravibes_server/src/generated/features/model_connections/models/api_model.dart'
-    as _i143;
+    as _il9jpql1;
+import 'package:auravibes_server/src/generated/features/model_connections/models/api_model_provider.dart'
+    as _ifmbbpx3;
 import 'package:auravibes_server/src/generated/features/model_connections/models/model_connection_view.dart'
-    as _i144;
+    as _imf0a6vt;
 import 'package:auravibes_server/src/generated/features/model_connections/models/workspace_model_selection_view.dart'
-    as _i145;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_summary.dart'
-    as _i146;
-import 'package:auravibes_server/src/generated/features/workspaces/models/pending_workspace_invite_summary.dart'
-    as _i147;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
-    as _i148;
+    as _ipmnqqs6;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
-    as _i149;
+    as _i78h3alq;
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
+    as _i7tlx5z8;
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_summary.dart'
+    as _iyxk4tde;
+import 'package:auravibes_server/src/generated/features/workspaces/models/pending_workspace_invite_summary.dart'
+    as _i0azczsv;
+import 'package:serverpod/protocol.dart' as _isp;
+import 'package:serverpod/serverpod.dart' as _is;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _iacs;
+import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+    as _iais;
 
+import 'features/accounts/models/account_summary.dart' as _i0kh9vnq;
+import 'features/codex_oauth/models/codex_oauth_transaction.dart' as _ify5ufwn;
+import 'features/codex_oauth/models/complete_codex_oauth_request.dart'
+    as _i2qdkbo8;
+import 'features/codex_oauth/models/complete_codex_oauth_result.dart'
+    as _ibhl6ekj;
+import 'features/codex_oauth/models/start_codex_oauth_request.dart'
+    as _iv7ukgnj;
+import 'features/codex_oauth/models/start_codex_oauth_result.dart' as _itptq7z5;
+import 'features/conversations/models/cancel_turn_request.dart' as _iarqshx6;
+import 'features/conversations/models/compact_conversation_request.dart'
+    as _isyd7s84;
+import 'features/conversations/models/continue_conversation_request.dart'
+    as _ialxa16r;
+import 'features/conversations/models/continue_turn_request.dart' as _iwrs6sde;
+import 'features/conversations/models/conversation.dart' as _iivijtsr;
+import 'features/conversations/models/conversation_error_code.dart'
+    as _iz6esn7o;
+import 'features/conversations/models/conversation_event.dart' as _i77s958n;
+import 'features/conversations/models/conversation_event_type.dart'
+    as _i5gn99j4;
+import 'features/conversations/models/conversation_exception.dart' as _i4box1gt;
+import 'features/conversations/models/conversation_execution.dart' as _iznwbo5b;
+import 'features/conversations/models/conversation_execution_view.dart'
+    as _ij9w9f8d;
+import 'features/conversations/models/conversation_job.dart' as _iq1eovrr;
+import 'features/conversations/models/conversation_message.dart' as _ibea51bx;
+import 'features/conversations/models/conversation_message_view.dart'
+    as _iutotoh6;
+import 'features/conversations/models/conversation_mutation_result.dart'
+    as _iz02ruas;
+import 'features/conversations/models/conversation_page.dart' as _icl1rfiv;
+import 'features/conversations/models/conversation_projection_view.dart'
+    as _icx9bns3;
+import 'features/conversations/models/conversation_snapshot.dart' as _i4omaws8;
+import 'features/conversations/models/conversation_stream_event.dart'
+    as _irrmkjcu;
+import 'features/conversations/models/conversation_subscribe_request.dart'
+    as _i6hxcode;
+import 'features/conversations/models/conversation_summary.dart' as _i7a0mfc5;
+import 'features/conversations/models/conversation_tool_call.dart' as _iflac717;
+import 'features/conversations/models/conversation_tool_call_view.dart'
+    as _ic5ojtne;
+import 'features/conversations/models/conversation_turn.dart' as _i7mmki1w;
+import 'features/conversations/models/conversation_turn_view.dart' as _ir5w321b;
+import 'features/conversations/models/conversation_usage.dart' as _iii6xlqw;
+import 'features/conversations/models/create_conversation_request.dart'
+    as _i4shnjby;
+import 'features/conversations/models/delete_conversation_request.dart'
+    as _iqsppx3t;
+import 'features/conversations/models/edit_pending_conversation_message_request.dart'
+    as _iybdpw96;
+import 'features/conversations/models/get_conversation_request.dart'
+    as _ixb0z1tn;
+import 'features/conversations/models/get_turn_request.dart' as _ilyvwvdb;
+import 'features/conversations/models/list_conversation_messages_request.dart'
+    as _it91nt4l;
+import 'features/conversations/models/list_conversations_request.dart'
+    as _itcpel99;
+import 'features/conversations/models/provider_admission.dart' as _i32k4voa;
+import 'features/conversations/models/provider_admission_lock.dart'
+    as _ih2np1vh;
+import 'features/conversations/models/provider_admission_reservation.dart'
+    as _i7moywui;
+import 'features/conversations/models/queue_conversation_message_request.dart'
+    as _ido51m94;
+import 'features/conversations/models/remove_pending_conversation_message_request.dart'
+    as _iy526sio;
+import 'features/conversations/models/reorder_pending_conversation_message_request.dart'
+    as _infbxzxr;
+import 'features/conversations/models/start_turn_request.dart' as _iocu6u94;
+import 'features/conversations/models/start_turn_result.dart' as _iw8le0j7;
+import 'features/conversations/models/stop_conversation_request.dart'
+    as _i4cgq7zt;
+import 'features/conversations/models/submit_tool_decision_request.dart'
+    as _inla43mu;
+import 'features/conversations/models/turn_snapshot.dart' as _ih4jnnah;
+import 'features/conversations/models/update_conversation_request.dart'
+    as _ihs4d7mz;
+import 'features/conversations/models/update_conversation_settings_request.dart'
+    as _i8unm495;
+import 'features/mcp_servers/models/create_mcp_server_request.dart'
+    as _i6hg2xtf;
+import 'features/mcp_servers/models/create_mcp_server_result.dart' as _ihyupc89;
+import 'features/mcp_servers/models/delete_mcp_server_request.dart'
+    as _iabui7vl;
+import 'features/mcp_servers/models/discover_mcp_server_request.dart'
+    as _ilmfigs5;
+import 'features/mcp_servers/models/discover_mcp_server_result.dart'
+    as _i5i328k3;
+import 'features/mcp_servers/models/discovered_mcp_tool.dart' as _igzjg3pi;
+import 'features/mcp_servers/models/mcp_server_health.dart' as _iw1ftww6;
+import 'features/model_connections/models/api_model.dart' as _i8ct1fsr;
+import 'features/model_connections/models/api_model_provider.dart' as _ioo5yu9z;
+import 'features/model_connections/models/create_model_connection_request.dart'
+    as _i4akrsd1;
+import 'features/model_connections/models/delete_model_connection_request.dart'
+    as _im8o8464;
+import 'features/model_connections/models/list_model_connections_request.dart'
+    as _iuwdkoab;
+import 'features/model_connections/models/list_workspace_model_selections_request.dart'
+    as _i926jgxf;
+import 'features/model_connections/models/model_connection_view.dart'
+    as _ikk9qcnz;
+import 'features/model_connections/models/model_sync_result.dart' as _il1l34li;
+import 'features/model_connections/models/test_and_sync_model_connection_request.dart'
+    as _ixyi2mo6;
+import 'features/model_connections/models/update_model_connection_request.dart'
+    as _iw5yf4pd;
+import 'features/model_connections/models/workspace_model_connection.dart'
+    as _ihf3aqrg;
+import 'features/model_connections/models/workspace_model_selection_view.dart'
+    as _i2zocl9o;
+import 'features/objects/models/begin_upload_request.dart' as _ii7xucwd;
+import 'features/objects/models/begin_upload_result.dart' as _iy4az4cb;
+import 'features/objects/models/complete_upload_request.dart' as _ip871ox8;
+import 'features/objects/models/delete_object_request.dart' as _iae520xs;
+import 'features/objects/models/get_download_request.dart' as _i99cztt4;
+import 'features/objects/models/get_download_result.dart' as _ip02joz1;
+import 'features/objects/models/object_deletion.dart' as _ii2nljpm;
+import 'features/objects/models/object_error_code.dart' as _ivy9wxc7;
+import 'features/objects/models/object_exception.dart' as _i4o8es85;
+import 'features/objects/models/object_reference.dart' as _ino5s3hv;
+import 'features/objects/models/object_result.dart' as _is4lmm7s;
+import 'features/objects/models/object_upload.dart' as _i6zmsyes;
+import 'features/objects/models/workspace_object.dart' as _i52p5grh;
+import 'features/sync/stream/models/workspace_stream_envelope.dart'
+    as _i0ekjn7l;
+import 'features/sync/stream/models/workspace_stream_envelope_kind.dart'
+    as _i4zgsr0a;
+import 'features/sync/stream/models/workspace_subscribe_request.dart'
+    as _ig40wm3p;
+import 'features/workers/models/recurring_worker_schedule.dart' as _ivj0myfi;
+import 'features/workers/models/worker_coordinator_lease.dart' as _ifhsy8zv;
+import 'features/workspace_state/models/mutate_workspace_credential_request.dart'
+    as _io0q4g8e;
+import 'features/workspace_state/models/mutate_workspace_credential_response.dart'
+    as _ipy8xct6;
+import 'features/workspace_state/models/patch_workspace_state_request.dart'
+    as _ipvegfbn;
+import 'features/workspace_state/models/patch_workspace_state_response.dart'
+    as _ig93yftz;
+import 'features/workspace_state/models/put_workspace_secret_request.dart'
+    as _ipxnqptw;
+import 'features/workspace_state/models/put_workspace_secret_response.dart'
+    as _iavc361v;
+import 'features/workspace_state/models/read_workspace_state_request.dart'
+    as _iz7boq8w;
+import 'features/workspace_state/models/read_workspace_state_response.dart'
+    as _iqk6zto1;
+import 'features/workspace_state/models/workspace_patch_operation.dart'
+    as _iolo6w4a;
+import 'features/workspace_state/models/workspace_patch_operation_kind.dart'
+    as _ihbarnlu;
+import 'features/workspace_state/models/workspace_resource.dart' as _iqzfyfs9;
+import 'features/workspace_state/models/workspace_resource_kind.dart'
+    as _i8d1xr9g;
+import 'features/workspace_state/models/workspace_resource_page.dart'
+    as _iilez6xa;
+import 'features/workspace_state/models/workspace_resource_page_request.dart'
+    as _i0vhsjed;
+import 'features/workspace_state/models/workspace_secret.dart' as _iyjw9v2c;
+import 'features/workspace_state/models/workspace_secret_kind.dart'
+    as _iq96p1l9;
+import 'features/workspace_state/models/workspace_secret_scope.dart'
+    as _ioqbiy3d;
+import 'features/workspaces/models/accept_workspace_invite_request.dart'
+    as _ib7b2bmq;
+import 'features/workspaces/models/cloud_workspace.dart' as _iyfjt29r;
+import 'features/workspaces/models/cloud_workspace_capabilities.dart'
+    as _i1uzipdf;
+import 'features/workspaces/models/cloud_workspace_detail.dart' as _ixqnubu3;
+import 'features/workspaces/models/cloud_workspace_error_code.dart'
+    as _ikaytupt;
+import 'features/workspaces/models/cloud_workspace_exception.dart' as _iq0v59d3;
+import 'features/workspaces/models/cloud_workspace_invite_summary.dart'
+    as _i4buxtw8;
+import 'features/workspaces/models/cloud_workspace_member_summary.dart'
+    as _i3c64tpx;
+import 'features/workspaces/models/cloud_workspace_summary.dart' as _iqlfhfv2;
+import 'features/workspaces/models/create_cloud_workspace_request.dart'
+    as _i2wx1hcz;
+import 'features/workspaces/models/decline_workspace_invite_request.dart'
+    as _izpvgmoh;
+import 'features/workspaces/models/delete_cloud_workspace_request.dart'
+    as _irqsg6pc;
+import 'features/workspaces/models/get_cloud_workspace_detail_request.dart'
+    as _i3slgemv;
+import 'features/workspaces/models/invite_workspace_member_request.dart'
+    as _iojw3n39;
+import 'features/workspaces/models/leave_cloud_workspace_request.dart'
+    as _i90hckxm;
+import 'features/workspaces/models/list_cloud_workspace_invites_request.dart'
+    as _ig64imxt;
+import 'features/workspaces/models/list_workspace_members_request.dart'
+    as _iop4tnuf;
+import 'features/workspaces/models/pending_workspace_invite_summary.dart'
+    as _imuwa8ax;
+import 'features/workspaces/models/remove_workspace_member_request.dart'
+    as _ioya5p5j;
+import 'features/workspaces/models/rename_cloud_workspace_request.dart'
+    as _ifsfc78n;
+import 'features/workspaces/models/renew_workspace_invite_request.dart'
+    as _ivko4e0f;
+import 'features/workspaces/models/revoke_workspace_invite_request.dart'
+    as _iwlbozzh;
+import 'features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+    as _i7ana9ux;
+import 'features/workspaces/models/update_workspace_member_role_request.dart'
+    as _i2qmz98c;
+import 'features/workspaces/models/workspace_audit_record.dart' as _ifp2sq2r;
+import 'features/workspaces/models/workspace_event.dart' as _ivvnnphu;
+import 'features/workspaces/models/workspace_invite.dart' as _ilpykuxc;
+import 'features/workspaces/models/workspace_member.dart' as _i56tb1yu;
+import 'features/workspaces/models/workspace_mutation_receipt.dart'
+    as _ia614g7d;
 export 'features/accounts/models/account_summary.dart';
 export 'features/codex_oauth/models/codex_oauth_transaction.dart';
 export 'features/codex_oauth/models/complete_codex_oauth_request.dart';
@@ -360,148 +390,148 @@ export 'features/workspaces/models/workspace_invite.dart';
 export 'features/workspaces/models/workspace_member.dart';
 export 'features/workspaces/models/workspace_mutation_receipt.dart';
 
-class Protocol extends _i1.DatabaseSerializationManager {
+class Protocol extends _is.DatabaseSerializationManager {
   Protocol._();
 
   factory Protocol() => _instance;
 
   static final Protocol _instance = Protocol._().._registerHostProtocols();
 
-  static final List<_i2.TableDefinition> targetTableDefinitions = [
-    _i2.TableDefinition(
+  static List<_isp.TableDefinition> get targetTableDefinitions => [
+    _isp.TableDefinition(
       name: 'api_model',
       dartName: 'ApiModel',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'providerId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'modelId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'name',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'limitContext',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'limitOutput',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'modalitiesInput',
-          columnType: _i2.ColumnType.json,
+          columnType: _isp.ColumnType.json,
           isNullable: false,
           dartType: 'List<String>',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'modalitiesOutput',
-          columnType: _i2.ColumnType.json,
+          columnType: _isp.ColumnType.json,
           isNullable: false,
           dartType: 'List<String>',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'family',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'costInput',
-          columnType: _i2.ColumnType.doublePrecision,
+          columnType: _isp.ColumnType.doublePrecision,
           isNullable: false,
           dartType: 'double',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'costCacheRead',
-          columnType: _i2.ColumnType.doublePrecision,
+          columnType: _isp.ColumnType.doublePrecision,
           isNullable: false,
           dartType: 'double',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'costOutput',
-          columnType: _i2.ColumnType.doublePrecision,
+          columnType: _isp.ColumnType.doublePrecision,
           isNullable: false,
           dartType: 'double',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'openWeights',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'supportsReasoning',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'isCanonical',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'supportsPriorityMode',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'supportsToolCalls',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'api_model_provider_model_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'providerId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'modelId',
             ),
           ],
@@ -512,70 +542,70 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'api_model_provider',
       dartName: 'ApiModelProvider',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'providerId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'name',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'type',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'url',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'documentationUrl',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'api_model_provider_id_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'providerId',
             ),
           ],
@@ -586,58 +616,58 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'cloud_workspace',
       dartName: 'CloudWorkspace',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'name',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'ownerUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'sequence',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'deletedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
@@ -646,100 +676,100 @@ class Protocol extends _i1.DatabaseSerializationManager {
       indexes: [],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'codex_oauth_transaction',
       dartName: 'CodexOAuthTransaction',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'transactionId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'connectionId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'userId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'stateHash',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'verifierCiphertext',
-          columnType: _i2.ColumnType.bytea,
+          columnType: _isp.ColumnType.bytea,
           isNullable: false,
           dartType: 'dart:typed_data:ByteData',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'verifierNonce',
-          columnType: _i2.ColumnType.bytea,
+          columnType: _isp.ColumnType.bytea,
           isNullable: false,
           dartType: 'dart:typed_data:ByteData',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'verifierAuthenticationTag',
-          columnType: _i2.ColumnType.bytea,
+          columnType: _isp.ColumnType.bytea,
           isNullable: false,
           dartType: 'dart:typed_data:ByteData',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'redirectUri',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'expiresAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'consumedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'codex_oauth_transaction_id_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'transactionId',
             ),
           ],
@@ -747,12 +777,12 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'codex_oauth_transaction_expiry_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'expiresAt',
             ),
           ],
@@ -763,136 +793,136 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'conversation',
       dartName: 'Conversation',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'stableId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'title',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'isPinned',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'modelId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'agentId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'parentConversationStableId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'projectionRevision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '1',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'eventSequence',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'executionState',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
           columnDefault: '\'idle\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'activeExecutionId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'deletedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_workspace_stable_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'stableId',
             ),
           ],
@@ -900,16 +930,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_workspace_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'updatedAt',
             ),
           ],
@@ -917,16 +947,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: false,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_workspace_id_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'id',
             ),
           ],
@@ -937,107 +967,107 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'conversation_event',
       dartName: 'ConversationEvent',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'conversationId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'sequence',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'eventId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'actorUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'kind',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'protocol:ConversationEventType',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'payloadJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_event_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_event_fk_1',
           columns: ['conversationId'],
           referenceTable: 'conversation',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_event_sequence_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'conversationId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'sequence',
             ),
           ],
@@ -1045,16 +1075,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_event_workspace_event_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'eventId',
             ),
           ],
@@ -1065,125 +1095,125 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'conversation_execution',
       dartName: 'ConversationExecution',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'conversationId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'stableId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'status',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'settingsJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'claimedMessageIdsJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'assistantMessageId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'attempt',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdByUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'terminalAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_execution_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_execution_fk_1',
           columns: ['conversationId'],
           referenceTable: 'conversation',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_execution_workspace_stable_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'stableId',
             ),
           ],
@@ -1191,16 +1221,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_execution_conversation_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'conversationId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'id',
             ),
           ],
@@ -1211,169 +1241,169 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'conversation_job',
       dartName: 'ConversationJob',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'conversationId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'turnId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'kind',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'status',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'payloadJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'attempt',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'maxAttempts',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'availableAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'leaseOwner',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'leaseToken',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'leaseExpiresAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'checkpointJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'lastErrorCode',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_job_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_job_fk_1',
           columns: ['conversationId'],
           referenceTable: 'conversation',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_job_fk_2',
           columns: ['turnId'],
           referenceTable: 'conversation_turn',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_job_request_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'requestId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'kind',
             ),
           ],
@@ -1381,20 +1411,20 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_job_claim_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'status',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'availableAt',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'leaseExpiresAt',
             ),
           ],
@@ -1402,16 +1432,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: false,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_job_turn_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'turnId',
             ),
           ],
@@ -1422,153 +1452,153 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'conversation_message',
       dartName: 'ConversationMessage',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'conversationId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'stableId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'turnId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'role',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'kind',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'status',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'content',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'metadataJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'pendingOrder',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'pendingAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'compactedThroughMessageId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_message_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_message_fk_1',
           columns: ['conversationId'],
           referenceTable: 'conversation',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_message_fk_2',
           columns: ['turnId'],
           referenceTable: 'conversation_turn',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_message_stable_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'stableId',
             ),
           ],
@@ -1576,20 +1606,20 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_message_order_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'conversationId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'id',
             ),
           ],
@@ -1597,16 +1627,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: false,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_message_turn_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'turnId',
             ),
           ],
@@ -1614,16 +1644,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: false,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_message_workspace_id_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'id',
             ),
           ],
@@ -1634,169 +1664,169 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'conversation_tool_call',
       dartName: 'ConversationToolCall',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'conversationId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'turnId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'messageId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'stableId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'name',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'argumentsJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'argumentsDigest',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'status',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'decision',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'decisionByUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'decisionAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'resultJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_tool_call_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_tool_call_fk_1',
           columns: ['conversationId'],
           referenceTable: 'conversation',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_tool_call_fk_2',
           columns: ['turnId'],
           referenceTable: 'conversation_turn',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_tool_call_fk_3',
           columns: ['messageId'],
           referenceTable: 'conversation_message',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_tool_call_stable_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'stableId',
             ),
           ],
@@ -1804,20 +1834,20 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_tool_call_turn_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'turnId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'id',
             ),
           ],
@@ -1828,157 +1858,157 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'conversation_turn',
       dartName: 'ConversationTurn',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'conversationId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestHash',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'initiatorUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'userMessageId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'assistantMessageId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'status',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'acceptedSequence',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'cancellationRequestedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'terminalAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_turn_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_turn_fk_1',
           columns: ['conversationId'],
           referenceTable: 'conversation',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_turn_fk_2',
           columns: ['userMessageId'],
           referenceTable: 'conversation_message',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_turn_fk_3',
           columns: ['assistantMessageId'],
           referenceTable: 'conversation_message',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_turn_request_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'requestId',
             ),
           ],
@@ -1986,20 +2016,20 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_turn_conversation_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'conversationId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'id',
             ),
           ],
@@ -2007,16 +2037,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: false,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_turn_workspace_id_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'id',
             ),
           ],
@@ -2027,105 +2057,105 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'conversation_usage',
       dartName: 'ConversationUsage',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'conversationId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'turnId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'inputTokens',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'outputTokens',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'totalTokens',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_usage_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_usage_fk_1',
           columns: ['conversationId'],
           referenceTable: 'conversation',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'conversation_usage_fk_2',
           columns: ['turnId'],
           referenceTable: 'conversation_turn',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'conversation_usage_turn_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'turnId',
             ),
           ],
@@ -2136,109 +2166,109 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'object_deletion',
       dartName: 'ObjectDeletion',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'objectId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'objectKey',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'expectedRevision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'completedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'attempts',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'availableAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'lastError',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'object_deletion_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'object_deletion_fk_1',
           columns: ['objectId'],
           referenceTable: 'workspace_object',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'object_deletion_object_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'objectId',
             ),
           ],
@@ -2246,16 +2276,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'object_deletion_request_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'requestId',
             ),
           ],
@@ -2263,16 +2293,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'object_deletion_pending_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'completedAt',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'requestedAt',
             ),
           ],
@@ -2283,97 +2313,97 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'object_reference',
       dartName: 'ObjectReference',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'objectId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'messageId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'deletedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'object_reference_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'object_reference_fk_1',
           columns: ['objectId'],
           referenceTable: 'workspace_object',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'object_reference_fk_2',
           columns: ['messageId'],
           referenceTable: 'conversation_message',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'object_reference_message_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'messageId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'objectId',
             ),
           ],
@@ -2381,20 +2411,20 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'object_reference_live_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'objectId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'deletedAt',
             ),
           ],
@@ -2405,105 +2435,105 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'object_upload',
       dartName: 'ObjectUpload',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'objectId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'actorUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestHash',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'expiresAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'completedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'object_upload_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'object_upload_fk_1',
           columns: ['objectId'],
           referenceTable: 'workspace_object',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'object_upload_request_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'actorUserId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'requestId',
             ),
           ],
@@ -2511,12 +2541,12 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'object_upload_object_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'objectId',
             ),
           ],
@@ -2524,16 +2554,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'object_upload_expiry_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'completedAt',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'expiresAt',
             ),
           ],
@@ -2544,83 +2574,83 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'provider_admission',
       dartName: 'ProviderAdmission',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'jobId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'providerId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'leaseToken',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'provider_admission_fk_0',
           columns: ['jobId'],
           referenceTable: 'conversation_job',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.cascade,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'provider_admission_fk_1',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.cascade,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'provider_admission_workspace_created_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'createdAt',
             ),
           ],
@@ -2631,34 +2661,34 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'provider_admission_lock',
       dartName: 'ProviderAdmissionLock',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'key',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'provider_admission_lock_key_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'key',
             ),
           ],
@@ -2669,91 +2699,91 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'provider_admission_reservation',
       dartName: 'ProviderAdmissionReservation',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'jobId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'providerId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'leaseToken',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'expiresAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'provider_admission_reservation_fk_0',
           columns: ['jobId'],
           referenceTable: 'conversation_job',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.cascade,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'provider_admission_reservation_fk_1',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.cascade,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'provider_admission_reservation_job_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'jobId',
             ),
           ],
@@ -2761,16 +2791,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'provider_admission_reservation_active_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'expiresAt',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
           ],
@@ -2781,64 +2811,64 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'recurring_worker_schedule',
       dartName: 'RecurringWorkerSchedule',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workerKey',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'nextRunAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'runToken',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'leaderFencingToken',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'runLeaseExpiresAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'recurring_worker_schedule_worker_key_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workerKey',
             ),
           ],
@@ -2846,16 +2876,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'recurring_worker_schedule_due_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'nextRunAt',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'runLeaseExpiresAt',
             ),
           ],
@@ -2866,52 +2896,52 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'worker_coordinator_lease',
       dartName: 'WorkerCoordinatorLease',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'key',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'ownerId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'fencingToken',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'expiresAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'worker_coordinator_lease_key_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'key',
             ),
           ],
@@ -2922,85 +2952,85 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'workspace_audit_record',
       dartName: 'WorkspaceAuditRecord',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'sequence',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'actorUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'operation',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'targetKind',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'targetId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'workspace_audit_record_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_audit_record_workspace_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'sequence',
             ),
           ],
@@ -3011,99 +3041,99 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'workspace_event',
       dartName: 'WorkspaceEvent',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'eventId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'sequence',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'actorUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'kind',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'resourceKind',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'resourceId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'payloadJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'publishedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'workspace_event_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_event_id_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'eventId',
             ),
           ],
@@ -3111,16 +3141,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_event_sequence_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'sequence',
             ),
           ],
@@ -3128,16 +3158,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_event_outbox_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'publishedAt',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'createdAt',
             ),
           ],
@@ -3148,123 +3178,123 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'workspace_invite',
       dartName: 'WorkspaceInvite',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'email',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'normalizedEmail',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'role',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'invitedByUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'acceptedByUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'expiresAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'acceptedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'declinedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revokedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'pendingKey',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'workspace_invite_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_invite_pending_key_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'pendingKey',
             ),
           ],
@@ -3272,24 +3302,24 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_invite_email_state_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'normalizedEmail',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'acceptedAt',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'declinedAt',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'revokedAt',
             ),
           ],
@@ -3300,85 +3330,85 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'workspace_member',
       dartName: 'WorkspaceMember',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'userId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'role',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'removedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'workspace_member_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_member_workspace_user_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'userId',
             ),
           ],
@@ -3386,16 +3416,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_member_user_removed_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'userId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'removedAt',
             ),
           ],
@@ -3406,109 +3436,109 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'workspace_model_connection',
       dartName: 'WorkspaceModelConnection',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'connectionId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'providerId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'name',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'url',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'keySuffix',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'hasSecret',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'deletedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'workspace_model_connection_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.cascade,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_model_connection_identity_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'connectionId',
             ),
           ],
@@ -3516,16 +3546,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_model_connection_active_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'deletedAt',
             ),
           ],
@@ -3536,99 +3566,99 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'workspace_mutation_receipt',
       dartName: 'WorkspaceMutationReceipt',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'scopeKey',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'actorUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'endpoint',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'requestHash',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'responseJson',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'workspace_mutation_receipt_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_mutation_receipt_request_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'actorUserId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'scopeKey',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'endpoint',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'requestId',
             ),
           ],
@@ -3636,16 +3666,16 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_mutation_receipt_workspace_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'createdAt',
             ),
           ],
@@ -3656,111 +3686,111 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'workspace_object',
       dartName: 'WorkspaceObject',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'objectKey',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'purpose',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'displayName',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'mimeType',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'sizeBytes',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'checksumSha256',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'status',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'deletedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'workspace_object_fk_0',
           columns: ['workspaceId'],
           referenceTable: 'cloud_workspace',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.noAction,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.noAction,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_object_key_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'objectKey',
             ),
           ],
@@ -3768,20 +3798,20 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_object_scope_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'status',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'deletedAt',
             ),
           ],
@@ -3792,84 +3822,84 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'workspace_resource',
       dartName: 'WorkspaceResource',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'resourceKind',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'protocol:WorkspaceResourceKind',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'resourceId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'data',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'deletedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_resource_identity_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'resourceKind',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'resourceId',
             ),
           ],
@@ -3877,24 +3907,24 @@ class Protocol extends _i1.DatabaseSerializationManager {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_resource_page_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'resourceKind',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'updatedAt',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'resourceId',
             ),
           ],
@@ -3905,134 +3935,134 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'workspace_secret',
       dartName: 'WorkspaceSecret',
       schema: 'public',
       module: 'auravibes',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'workspaceId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'secretKind',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'protocol:WorkspaceSecretKind',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'scope',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'protocol:WorkspaceSecretScope',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'ownerUserId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'resourceId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'ciphertext',
-          columnType: _i2.ColumnType.bytea,
+          columnType: _isp.ColumnType.bytea,
           isNullable: false,
           dartType: 'dart:typed_data:ByteData',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'nonce',
-          columnType: _i2.ColumnType.bytea,
+          columnType: _isp.ColumnType.bytea,
           isNullable: false,
           dartType: 'dart:typed_data:ByteData',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'authenticationTag',
-          columnType: _i2.ColumnType.bytea,
+          columnType: _isp.ColumnType.bytea,
           isNullable: false,
           dartType: 'dart:typed_data:ByteData',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'algorithm',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'keyVersion',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'displaySuffix',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'revision',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'createdAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'deletedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'workspace_secret_identity_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'workspaceId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'secretKind',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'scope',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'ownerUserId',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'resourceId',
             ),
           ],
@@ -4043,9 +4073,9 @@ class Protocol extends _i1.DatabaseSerializationManager {
       ],
       managed: true,
     ),
-    ..._i3.Protocol.targetTableDefinitions,
-    ..._i4.Protocol.targetTableDefinitions,
-    ..._i2.Protocol.targetTableDefinitions,
+    ..._iacs.Protocol.targetTableDefinitions,
+    ..._iais.Protocol.targetTableDefinitions,
+    ..._isp.Protocol.targetTableDefinitions,
   ];
 
   static String? getClassNameFromObjectJson(dynamic data) {
@@ -4068,1078 +4098,1191 @@ class Protocol extends _i1.DatabaseSerializationManager {
           'className': dataClassName,
           'data': data,
         });
-      } on FormatException catch (_) {
+      } on _is.DeserializationClassNameNotFoundException catch (_) {
         // If the className is not recognized (e.g., older client receiving
         // data with a new subtype), fall back to deserializing without the
         // className, using the expected type T.
       }
     }
 
-    if (t == _i5.AccountSummary) {
-      return _i5.AccountSummary.fromJson(data) as T;
+    if (t == _i0kh9vnq.AccountSummary) {
+      return _i0kh9vnq.AccountSummary.fromJson(data) as T;
     }
-    if (t == _i6.CodexOAuthTransaction) {
-      return _i6.CodexOAuthTransaction.fromJson(data) as T;
+    if (t == _ify5ufwn.CodexOAuthTransaction) {
+      return _ify5ufwn.CodexOAuthTransaction.fromJson(data) as T;
     }
-    if (t == _i7.CompleteCodexOAuthRequest) {
-      return _i7.CompleteCodexOAuthRequest.fromJson(data) as T;
+    if (t == _i2qdkbo8.CompleteCodexOAuthRequest) {
+      return _i2qdkbo8.CompleteCodexOAuthRequest.fromJson(data) as T;
     }
-    if (t == _i8.CompleteCodexOAuthResult) {
-      return _i8.CompleteCodexOAuthResult.fromJson(data) as T;
+    if (t == _ibhl6ekj.CompleteCodexOAuthResult) {
+      return _ibhl6ekj.CompleteCodexOAuthResult.fromJson(data) as T;
     }
-    if (t == _i9.StartCodexOAuthRequest) {
-      return _i9.StartCodexOAuthRequest.fromJson(data) as T;
+    if (t == _iv7ukgnj.StartCodexOAuthRequest) {
+      return _iv7ukgnj.StartCodexOAuthRequest.fromJson(data) as T;
     }
-    if (t == _i10.StartCodexOAuthResult) {
-      return _i10.StartCodexOAuthResult.fromJson(data) as T;
+    if (t == _itptq7z5.StartCodexOAuthResult) {
+      return _itptq7z5.StartCodexOAuthResult.fromJson(data) as T;
     }
-    if (t == _i11.CancelTurnRequest) {
-      return _i11.CancelTurnRequest.fromJson(data) as T;
+    if (t == _iarqshx6.CancelTurnRequest) {
+      return _iarqshx6.CancelTurnRequest.fromJson(data) as T;
     }
-    if (t == _i12.CompactConversationRequest) {
-      return _i12.CompactConversationRequest.fromJson(data) as T;
+    if (t == _isyd7s84.CompactConversationRequest) {
+      return _isyd7s84.CompactConversationRequest.fromJson(data) as T;
     }
-    if (t == _i13.ContinueConversationRequest) {
-      return _i13.ContinueConversationRequest.fromJson(data) as T;
+    if (t == _ialxa16r.ContinueConversationRequest) {
+      return _ialxa16r.ContinueConversationRequest.fromJson(data) as T;
     }
-    if (t == _i14.ContinueTurnRequest) {
-      return _i14.ContinueTurnRequest.fromJson(data) as T;
+    if (t == _iwrs6sde.ContinueTurnRequest) {
+      return _iwrs6sde.ContinueTurnRequest.fromJson(data) as T;
     }
-    if (t == _i15.Conversation) {
-      return _i15.Conversation.fromJson(data) as T;
+    if (t == _iivijtsr.Conversation) {
+      return _iivijtsr.Conversation.fromJson(data) as T;
     }
-    if (t == _i16.ConversationErrorCode) {
-      return _i16.ConversationErrorCode.fromJson(data) as T;
+    if (t == _iz6esn7o.ConversationErrorCode) {
+      return _iz6esn7o.ConversationErrorCode.fromJson(data) as T;
     }
-    if (t == _i17.ConversationEvent) {
-      return _i17.ConversationEvent.fromJson(data) as T;
+    if (t == _i77s958n.ConversationEvent) {
+      return _i77s958n.ConversationEvent.fromJson(data) as T;
     }
-    if (t == _i18.ConversationEventType) {
-      return _i18.ConversationEventType.fromJson(data) as T;
+    if (t == _i5gn99j4.ConversationEventType) {
+      return _i5gn99j4.ConversationEventType.fromJson(data) as T;
     }
-    if (t == _i19.ConversationException) {
-      return _i19.ConversationException.fromJson(data) as T;
+    if (t == _i4box1gt.ConversationException) {
+      return _i4box1gt.ConversationException.fromJson(data) as T;
     }
-    if (t == _i20.ConversationExecution) {
-      return _i20.ConversationExecution.fromJson(data) as T;
+    if (t == _iznwbo5b.ConversationExecution) {
+      return _iznwbo5b.ConversationExecution.fromJson(data) as T;
     }
-    if (t == _i21.ConversationExecutionView) {
-      return _i21.ConversationExecutionView.fromJson(data) as T;
+    if (t == _ij9w9f8d.ConversationExecutionView) {
+      return _ij9w9f8d.ConversationExecutionView.fromJson(data) as T;
     }
-    if (t == _i22.ConversationJob) {
-      return _i22.ConversationJob.fromJson(data) as T;
+    if (t == _iq1eovrr.ConversationJob) {
+      return _iq1eovrr.ConversationJob.fromJson(data) as T;
     }
-    if (t == _i23.ConversationMessage) {
-      return _i23.ConversationMessage.fromJson(data) as T;
+    if (t == _ibea51bx.ConversationMessage) {
+      return _ibea51bx.ConversationMessage.fromJson(data) as T;
     }
-    if (t == _i24.ConversationMessageView) {
-      return _i24.ConversationMessageView.fromJson(data) as T;
+    if (t == _iutotoh6.ConversationMessageView) {
+      return _iutotoh6.ConversationMessageView.fromJson(data) as T;
     }
-    if (t == _i25.ConversationMutationResult) {
-      return _i25.ConversationMutationResult.fromJson(data) as T;
+    if (t == _iz02ruas.ConversationMutationResult) {
+      return _iz02ruas.ConversationMutationResult.fromJson(data) as T;
     }
-    if (t == _i26.ConversationPage) {
-      return _i26.ConversationPage.fromJson(data) as T;
+    if (t == _icl1rfiv.ConversationPage) {
+      return _icl1rfiv.ConversationPage.fromJson(data) as T;
     }
-    if (t == _i27.ConversationProjectionView) {
-      return _i27.ConversationProjectionView.fromJson(data) as T;
+    if (t == _icx9bns3.ConversationProjectionView) {
+      return _icx9bns3.ConversationProjectionView.fromJson(data) as T;
     }
-    if (t == _i28.ConversationSnapshot) {
-      return _i28.ConversationSnapshot.fromJson(data) as T;
+    if (t == _i4omaws8.ConversationSnapshot) {
+      return _i4omaws8.ConversationSnapshot.fromJson(data) as T;
     }
-    if (t == _i29.ConversationStreamEvent) {
-      return _i29.ConversationStreamEvent.fromJson(data) as T;
+    if (t == _irrmkjcu.ConversationStreamEvent) {
+      return _irrmkjcu.ConversationStreamEvent.fromJson(data) as T;
     }
-    if (t == _i30.ConversationSubscribeRequest) {
-      return _i30.ConversationSubscribeRequest.fromJson(data) as T;
+    if (t == _i6hxcode.ConversationSubscribeRequest) {
+      return _i6hxcode.ConversationSubscribeRequest.fromJson(data) as T;
     }
-    if (t == _i31.ConversationSummary) {
-      return _i31.ConversationSummary.fromJson(data) as T;
+    if (t == _i7a0mfc5.ConversationSummary) {
+      return _i7a0mfc5.ConversationSummary.fromJson(data) as T;
     }
-    if (t == _i32.ConversationToolCall) {
-      return _i32.ConversationToolCall.fromJson(data) as T;
+    if (t == _iflac717.ConversationToolCall) {
+      return _iflac717.ConversationToolCall.fromJson(data) as T;
     }
-    if (t == _i33.ConversationToolCallView) {
-      return _i33.ConversationToolCallView.fromJson(data) as T;
+    if (t == _ic5ojtne.ConversationToolCallView) {
+      return _ic5ojtne.ConversationToolCallView.fromJson(data) as T;
     }
-    if (t == _i34.ConversationTurn) {
-      return _i34.ConversationTurn.fromJson(data) as T;
+    if (t == _i7mmki1w.ConversationTurn) {
+      return _i7mmki1w.ConversationTurn.fromJson(data) as T;
     }
-    if (t == _i35.ConversationTurnView) {
-      return _i35.ConversationTurnView.fromJson(data) as T;
+    if (t == _ir5w321b.ConversationTurnView) {
+      return _ir5w321b.ConversationTurnView.fromJson(data) as T;
     }
-    if (t == _i36.ConversationUsage) {
-      return _i36.ConversationUsage.fromJson(data) as T;
+    if (t == _iii6xlqw.ConversationUsage) {
+      return _iii6xlqw.ConversationUsage.fromJson(data) as T;
     }
-    if (t == _i37.CreateConversationRequest) {
-      return _i37.CreateConversationRequest.fromJson(data) as T;
+    if (t == _i4shnjby.CreateConversationRequest) {
+      return _i4shnjby.CreateConversationRequest.fromJson(data) as T;
     }
-    if (t == _i38.DeleteConversationRequest) {
-      return _i38.DeleteConversationRequest.fromJson(data) as T;
+    if (t == _iqsppx3t.DeleteConversationRequest) {
+      return _iqsppx3t.DeleteConversationRequest.fromJson(data) as T;
     }
-    if (t == _i39.EditPendingConversationMessageRequest) {
-      return _i39.EditPendingConversationMessageRequest.fromJson(data) as T;
-    }
-    if (t == _i40.GetConversationRequest) {
-      return _i40.GetConversationRequest.fromJson(data) as T;
-    }
-    if (t == _i41.GetTurnRequest) {
-      return _i41.GetTurnRequest.fromJson(data) as T;
-    }
-    if (t == _i42.ListConversationMessagesRequest) {
-      return _i42.ListConversationMessagesRequest.fromJson(data) as T;
-    }
-    if (t == _i43.ListConversationsRequest) {
-      return _i43.ListConversationsRequest.fromJson(data) as T;
-    }
-    if (t == _i44.ProviderAdmission) {
-      return _i44.ProviderAdmission.fromJson(data) as T;
-    }
-    if (t == _i45.ProviderAdmissionLock) {
-      return _i45.ProviderAdmissionLock.fromJson(data) as T;
-    }
-    if (t == _i46.ProviderAdmissionReservation) {
-      return _i46.ProviderAdmissionReservation.fromJson(data) as T;
-    }
-    if (t == _i47.QueueConversationMessageRequest) {
-      return _i47.QueueConversationMessageRequest.fromJson(data) as T;
-    }
-    if (t == _i48.RemovePendingConversationMessageRequest) {
-      return _i48.RemovePendingConversationMessageRequest.fromJson(data) as T;
-    }
-    if (t == _i49.ReorderPendingConversationMessageRequest) {
-      return _i49.ReorderPendingConversationMessageRequest.fromJson(data) as T;
-    }
-    if (t == _i50.StartTurnRequest) {
-      return _i50.StartTurnRequest.fromJson(data) as T;
-    }
-    if (t == _i51.StartTurnResult) {
-      return _i51.StartTurnResult.fromJson(data) as T;
-    }
-    if (t == _i52.StopConversationRequest) {
-      return _i52.StopConversationRequest.fromJson(data) as T;
-    }
-    if (t == _i53.SubmitToolDecisionRequest) {
-      return _i53.SubmitToolDecisionRequest.fromJson(data) as T;
-    }
-    if (t == _i54.TurnSnapshot) {
-      return _i54.TurnSnapshot.fromJson(data) as T;
-    }
-    if (t == _i55.UpdateConversationRequest) {
-      return _i55.UpdateConversationRequest.fromJson(data) as T;
-    }
-    if (t == _i56.UpdateConversationSettingsRequest) {
-      return _i56.UpdateConversationSettingsRequest.fromJson(data) as T;
-    }
-    if (t == _i57.CreateMcpServerRequest) {
-      return _i57.CreateMcpServerRequest.fromJson(data) as T;
-    }
-    if (t == _i58.CreateMcpServerResult) {
-      return _i58.CreateMcpServerResult.fromJson(data) as T;
-    }
-    if (t == _i59.DeleteMcpServerRequest) {
-      return _i59.DeleteMcpServerRequest.fromJson(data) as T;
-    }
-    if (t == _i60.DiscoverMcpServerRequest) {
-      return _i60.DiscoverMcpServerRequest.fromJson(data) as T;
-    }
-    if (t == _i61.DiscoverMcpServerResult) {
-      return _i61.DiscoverMcpServerResult.fromJson(data) as T;
-    }
-    if (t == _i62.DiscoveredMcpTool) {
-      return _i62.DiscoveredMcpTool.fromJson(data) as T;
-    }
-    if (t == _i63.McpServerHealth) {
-      return _i63.McpServerHealth.fromJson(data) as T;
-    }
-    if (t == _i64.ApiModel) {
-      return _i64.ApiModel.fromJson(data) as T;
-    }
-    if (t == _i65.ApiModelProvider) {
-      return _i65.ApiModelProvider.fromJson(data) as T;
-    }
-    if (t == _i66.CreateModelConnectionRequest) {
-      return _i66.CreateModelConnectionRequest.fromJson(data) as T;
-    }
-    if (t == _i67.DeleteModelConnectionRequest) {
-      return _i67.DeleteModelConnectionRequest.fromJson(data) as T;
-    }
-    if (t == _i68.ListModelConnectionsRequest) {
-      return _i68.ListModelConnectionsRequest.fromJson(data) as T;
-    }
-    if (t == _i69.ListWorkspaceModelSelectionsRequest) {
-      return _i69.ListWorkspaceModelSelectionsRequest.fromJson(data) as T;
-    }
-    if (t == _i70.ModelConnectionView) {
-      return _i70.ModelConnectionView.fromJson(data) as T;
-    }
-    if (t == _i71.ModelSyncResult) {
-      return _i71.ModelSyncResult.fromJson(data) as T;
-    }
-    if (t == _i72.TestAndSyncModelConnectionRequest) {
-      return _i72.TestAndSyncModelConnectionRequest.fromJson(data) as T;
-    }
-    if (t == _i73.UpdateModelConnectionRequest) {
-      return _i73.UpdateModelConnectionRequest.fromJson(data) as T;
-    }
-    if (t == _i74.WorkspaceModelConnection) {
-      return _i74.WorkspaceModelConnection.fromJson(data) as T;
-    }
-    if (t == _i75.WorkspaceModelSelectionView) {
-      return _i75.WorkspaceModelSelectionView.fromJson(data) as T;
-    }
-    if (t == _i76.BeginUploadRequest) {
-      return _i76.BeginUploadRequest.fromJson(data) as T;
-    }
-    if (t == _i77.BeginUploadResult) {
-      return _i77.BeginUploadResult.fromJson(data) as T;
-    }
-    if (t == _i78.CompleteUploadRequest) {
-      return _i78.CompleteUploadRequest.fromJson(data) as T;
-    }
-    if (t == _i79.DeleteObjectRequest) {
-      return _i79.DeleteObjectRequest.fromJson(data) as T;
-    }
-    if (t == _i80.GetDownloadRequest) {
-      return _i80.GetDownloadRequest.fromJson(data) as T;
-    }
-    if (t == _i81.GetDownloadResult) {
-      return _i81.GetDownloadResult.fromJson(data) as T;
-    }
-    if (t == _i82.ObjectDeletion) {
-      return _i82.ObjectDeletion.fromJson(data) as T;
-    }
-    if (t == _i83.ObjectErrorCode) {
-      return _i83.ObjectErrorCode.fromJson(data) as T;
-    }
-    if (t == _i84.ObjectException) {
-      return _i84.ObjectException.fromJson(data) as T;
-    }
-    if (t == _i85.ObjectReference) {
-      return _i85.ObjectReference.fromJson(data) as T;
-    }
-    if (t == _i86.ObjectResult) {
-      return _i86.ObjectResult.fromJson(data) as T;
-    }
-    if (t == _i87.ObjectUpload) {
-      return _i87.ObjectUpload.fromJson(data) as T;
-    }
-    if (t == _i88.WorkspaceObject) {
-      return _i88.WorkspaceObject.fromJson(data) as T;
-    }
-    if (t == _i89.WorkspaceStreamEnvelope) {
-      return _i89.WorkspaceStreamEnvelope.fromJson(data) as T;
-    }
-    if (t == _i90.WorkspaceStreamEnvelopeKind) {
-      return _i90.WorkspaceStreamEnvelopeKind.fromJson(data) as T;
-    }
-    if (t == _i91.WorkspaceSubscribeRequest) {
-      return _i91.WorkspaceSubscribeRequest.fromJson(data) as T;
-    }
-    if (t == _i92.RecurringWorkerSchedule) {
-      return _i92.RecurringWorkerSchedule.fromJson(data) as T;
-    }
-    if (t == _i93.WorkerCoordinatorLease) {
-      return _i93.WorkerCoordinatorLease.fromJson(data) as T;
-    }
-    if (t == _i94.MutateWorkspaceCredentialRequest) {
-      return _i94.MutateWorkspaceCredentialRequest.fromJson(data) as T;
-    }
-    if (t == _i95.MutateWorkspaceCredentialResponse) {
-      return _i95.MutateWorkspaceCredentialResponse.fromJson(data) as T;
-    }
-    if (t == _i96.PatchWorkspaceStateRequest) {
-      return _i96.PatchWorkspaceStateRequest.fromJson(data) as T;
-    }
-    if (t == _i97.PatchWorkspaceStateResponse) {
-      return _i97.PatchWorkspaceStateResponse.fromJson(data) as T;
-    }
-    if (t == _i98.PutWorkspaceSecretRequest) {
-      return _i98.PutWorkspaceSecretRequest.fromJson(data) as T;
-    }
-    if (t == _i99.PutWorkspaceSecretResponse) {
-      return _i99.PutWorkspaceSecretResponse.fromJson(data) as T;
-    }
-    if (t == _i100.ReadWorkspaceStateRequest) {
-      return _i100.ReadWorkspaceStateRequest.fromJson(data) as T;
-    }
-    if (t == _i101.ReadWorkspaceStateResponse) {
-      return _i101.ReadWorkspaceStateResponse.fromJson(data) as T;
-    }
-    if (t == _i102.WorkspacePatchOperation) {
-      return _i102.WorkspacePatchOperation.fromJson(data) as T;
-    }
-    if (t == _i103.WorkspacePatchOperationKind) {
-      return _i103.WorkspacePatchOperationKind.fromJson(data) as T;
-    }
-    if (t == _i104.WorkspaceResource) {
-      return _i104.WorkspaceResource.fromJson(data) as T;
-    }
-    if (t == _i105.WorkspaceResourceKind) {
-      return _i105.WorkspaceResourceKind.fromJson(data) as T;
-    }
-    if (t == _i106.WorkspaceResourcePage) {
-      return _i106.WorkspaceResourcePage.fromJson(data) as T;
-    }
-    if (t == _i107.WorkspaceResourcePageRequest) {
-      return _i107.WorkspaceResourcePageRequest.fromJson(data) as T;
-    }
-    if (t == _i108.WorkspaceSecret) {
-      return _i108.WorkspaceSecret.fromJson(data) as T;
-    }
-    if (t == _i109.WorkspaceSecretKind) {
-      return _i109.WorkspaceSecretKind.fromJson(data) as T;
-    }
-    if (t == _i110.WorkspaceSecretScope) {
-      return _i110.WorkspaceSecretScope.fromJson(data) as T;
-    }
-    if (t == _i111.AcceptWorkspaceInviteRequest) {
-      return _i111.AcceptWorkspaceInviteRequest.fromJson(data) as T;
-    }
-    if (t == _i112.CloudWorkspace) {
-      return _i112.CloudWorkspace.fromJson(data) as T;
-    }
-    if (t == _i113.CloudWorkspaceCapabilities) {
-      return _i113.CloudWorkspaceCapabilities.fromJson(data) as T;
-    }
-    if (t == _i114.CloudWorkspaceDetail) {
-      return _i114.CloudWorkspaceDetail.fromJson(data) as T;
-    }
-    if (t == _i115.CloudWorkspaceErrorCode) {
-      return _i115.CloudWorkspaceErrorCode.fromJson(data) as T;
-    }
-    if (t == _i116.CloudWorkspaceException) {
-      return _i116.CloudWorkspaceException.fromJson(data) as T;
-    }
-    if (t == _i117.CloudWorkspaceInviteSummary) {
-      return _i117.CloudWorkspaceInviteSummary.fromJson(data) as T;
-    }
-    if (t == _i118.CloudWorkspaceMemberSummary) {
-      return _i118.CloudWorkspaceMemberSummary.fromJson(data) as T;
-    }
-    if (t == _i119.CloudWorkspaceSummary) {
-      return _i119.CloudWorkspaceSummary.fromJson(data) as T;
-    }
-    if (t == _i120.CreateCloudWorkspaceRequest) {
-      return _i120.CreateCloudWorkspaceRequest.fromJson(data) as T;
-    }
-    if (t == _i121.DeclineWorkspaceInviteRequest) {
-      return _i121.DeclineWorkspaceInviteRequest.fromJson(data) as T;
-    }
-    if (t == _i122.DeleteCloudWorkspaceRequest) {
-      return _i122.DeleteCloudWorkspaceRequest.fromJson(data) as T;
-    }
-    if (t == _i123.GetCloudWorkspaceDetailRequest) {
-      return _i123.GetCloudWorkspaceDetailRequest.fromJson(data) as T;
-    }
-    if (t == _i124.InviteWorkspaceMemberRequest) {
-      return _i124.InviteWorkspaceMemberRequest.fromJson(data) as T;
-    }
-    if (t == _i125.LeaveCloudWorkspaceRequest) {
-      return _i125.LeaveCloudWorkspaceRequest.fromJson(data) as T;
-    }
-    if (t == _i126.ListCloudWorkspaceInvitesRequest) {
-      return _i126.ListCloudWorkspaceInvitesRequest.fromJson(data) as T;
-    }
-    if (t == _i127.ListWorkspaceMembersRequest) {
-      return _i127.ListWorkspaceMembersRequest.fromJson(data) as T;
-    }
-    if (t == _i128.PendingWorkspaceInviteSummary) {
-      return _i128.PendingWorkspaceInviteSummary.fromJson(data) as T;
-    }
-    if (t == _i129.RemoveWorkspaceMemberRequest) {
-      return _i129.RemoveWorkspaceMemberRequest.fromJson(data) as T;
-    }
-    if (t == _i130.RenameCloudWorkspaceRequest) {
-      return _i130.RenameCloudWorkspaceRequest.fromJson(data) as T;
-    }
-    if (t == _i131.RenewWorkspaceInviteRequest) {
-      return _i131.RenewWorkspaceInviteRequest.fromJson(data) as T;
-    }
-    if (t == _i132.RevokeWorkspaceInviteRequest) {
-      return _i132.RevokeWorkspaceInviteRequest.fromJson(data) as T;
-    }
-    if (t == _i133.TransferCloudWorkspaceOwnershipRequest) {
-      return _i133.TransferCloudWorkspaceOwnershipRequest.fromJson(data) as T;
-    }
-    if (t == _i134.UpdateWorkspaceMemberRoleRequest) {
-      return _i134.UpdateWorkspaceMemberRoleRequest.fromJson(data) as T;
-    }
-    if (t == _i135.WorkspaceAuditRecord) {
-      return _i135.WorkspaceAuditRecord.fromJson(data) as T;
-    }
-    if (t == _i136.WorkspaceEvent) {
-      return _i136.WorkspaceEvent.fromJson(data) as T;
-    }
-    if (t == _i137.WorkspaceInvite) {
-      return _i137.WorkspaceInvite.fromJson(data) as T;
-    }
-    if (t == _i138.WorkspaceMember) {
-      return _i138.WorkspaceMember.fromJson(data) as T;
-    }
-    if (t == _i139.WorkspaceMutationReceipt) {
-      return _i139.WorkspaceMutationReceipt.fromJson(data) as T;
-    }
-    if (t == _i1.getType<_i5.AccountSummary?>()) {
-      return (data != null ? _i5.AccountSummary.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i6.CodexOAuthTransaction?>()) {
-      return (data != null ? _i6.CodexOAuthTransaction.fromJson(data) : null)
+    if (t == _iybdpw96.EditPendingConversationMessageRequest) {
+      return _iybdpw96.EditPendingConversationMessageRequest.fromJson(data)
           as T;
     }
-    if (t == _i1.getType<_i7.CompleteCodexOAuthRequest?>()) {
+    if (t == _ixb0z1tn.GetConversationRequest) {
+      return _ixb0z1tn.GetConversationRequest.fromJson(data) as T;
+    }
+    if (t == _ilyvwvdb.GetTurnRequest) {
+      return _ilyvwvdb.GetTurnRequest.fromJson(data) as T;
+    }
+    if (t == _it91nt4l.ListConversationMessagesRequest) {
+      return _it91nt4l.ListConversationMessagesRequest.fromJson(data) as T;
+    }
+    if (t == _itcpel99.ListConversationsRequest) {
+      return _itcpel99.ListConversationsRequest.fromJson(data) as T;
+    }
+    if (t == _i32k4voa.ProviderAdmission) {
+      return _i32k4voa.ProviderAdmission.fromJson(data) as T;
+    }
+    if (t == _ih2np1vh.ProviderAdmissionLock) {
+      return _ih2np1vh.ProviderAdmissionLock.fromJson(data) as T;
+    }
+    if (t == _i7moywui.ProviderAdmissionReservation) {
+      return _i7moywui.ProviderAdmissionReservation.fromJson(data) as T;
+    }
+    if (t == _ido51m94.QueueConversationMessageRequest) {
+      return _ido51m94.QueueConversationMessageRequest.fromJson(data) as T;
+    }
+    if (t == _iy526sio.RemovePendingConversationMessageRequest) {
+      return _iy526sio.RemovePendingConversationMessageRequest.fromJson(data)
+          as T;
+    }
+    if (t == _infbxzxr.ReorderPendingConversationMessageRequest) {
+      return _infbxzxr.ReorderPendingConversationMessageRequest.fromJson(data)
+          as T;
+    }
+    if (t == _iocu6u94.StartTurnRequest) {
+      return _iocu6u94.StartTurnRequest.fromJson(data) as T;
+    }
+    if (t == _iw8le0j7.StartTurnResult) {
+      return _iw8le0j7.StartTurnResult.fromJson(data) as T;
+    }
+    if (t == _i4cgq7zt.StopConversationRequest) {
+      return _i4cgq7zt.StopConversationRequest.fromJson(data) as T;
+    }
+    if (t == _inla43mu.SubmitToolDecisionRequest) {
+      return _inla43mu.SubmitToolDecisionRequest.fromJson(data) as T;
+    }
+    if (t == _ih4jnnah.TurnSnapshot) {
+      return _ih4jnnah.TurnSnapshot.fromJson(data) as T;
+    }
+    if (t == _ihs4d7mz.UpdateConversationRequest) {
+      return _ihs4d7mz.UpdateConversationRequest.fromJson(data) as T;
+    }
+    if (t == _i8unm495.UpdateConversationSettingsRequest) {
+      return _i8unm495.UpdateConversationSettingsRequest.fromJson(data) as T;
+    }
+    if (t == _i6hg2xtf.CreateMcpServerRequest) {
+      return _i6hg2xtf.CreateMcpServerRequest.fromJson(data) as T;
+    }
+    if (t == _ihyupc89.CreateMcpServerResult) {
+      return _ihyupc89.CreateMcpServerResult.fromJson(data) as T;
+    }
+    if (t == _iabui7vl.DeleteMcpServerRequest) {
+      return _iabui7vl.DeleteMcpServerRequest.fromJson(data) as T;
+    }
+    if (t == _ilmfigs5.DiscoverMcpServerRequest) {
+      return _ilmfigs5.DiscoverMcpServerRequest.fromJson(data) as T;
+    }
+    if (t == _i5i328k3.DiscoverMcpServerResult) {
+      return _i5i328k3.DiscoverMcpServerResult.fromJson(data) as T;
+    }
+    if (t == _igzjg3pi.DiscoveredMcpTool) {
+      return _igzjg3pi.DiscoveredMcpTool.fromJson(data) as T;
+    }
+    if (t == _iw1ftww6.McpServerHealth) {
+      return _iw1ftww6.McpServerHealth.fromJson(data) as T;
+    }
+    if (t == _i8ct1fsr.ApiModel) {
+      return _i8ct1fsr.ApiModel.fromJson(data) as T;
+    }
+    if (t == _ioo5yu9z.ApiModelProvider) {
+      return _ioo5yu9z.ApiModelProvider.fromJson(data) as T;
+    }
+    if (t == _i4akrsd1.CreateModelConnectionRequest) {
+      return _i4akrsd1.CreateModelConnectionRequest.fromJson(data) as T;
+    }
+    if (t == _im8o8464.DeleteModelConnectionRequest) {
+      return _im8o8464.DeleteModelConnectionRequest.fromJson(data) as T;
+    }
+    if (t == _iuwdkoab.ListModelConnectionsRequest) {
+      return _iuwdkoab.ListModelConnectionsRequest.fromJson(data) as T;
+    }
+    if (t == _i926jgxf.ListWorkspaceModelSelectionsRequest) {
+      return _i926jgxf.ListWorkspaceModelSelectionsRequest.fromJson(data) as T;
+    }
+    if (t == _ikk9qcnz.ModelConnectionView) {
+      return _ikk9qcnz.ModelConnectionView.fromJson(data) as T;
+    }
+    if (t == _il1l34li.ModelSyncResult) {
+      return _il1l34li.ModelSyncResult.fromJson(data) as T;
+    }
+    if (t == _ixyi2mo6.TestAndSyncModelConnectionRequest) {
+      return _ixyi2mo6.TestAndSyncModelConnectionRequest.fromJson(data) as T;
+    }
+    if (t == _iw5yf4pd.UpdateModelConnectionRequest) {
+      return _iw5yf4pd.UpdateModelConnectionRequest.fromJson(data) as T;
+    }
+    if (t == _ihf3aqrg.WorkspaceModelConnection) {
+      return _ihf3aqrg.WorkspaceModelConnection.fromJson(data) as T;
+    }
+    if (t == _i2zocl9o.WorkspaceModelSelectionView) {
+      return _i2zocl9o.WorkspaceModelSelectionView.fromJson(data) as T;
+    }
+    if (t == _ii7xucwd.BeginUploadRequest) {
+      return _ii7xucwd.BeginUploadRequest.fromJson(data) as T;
+    }
+    if (t == _iy4az4cb.BeginUploadResult) {
+      return _iy4az4cb.BeginUploadResult.fromJson(data) as T;
+    }
+    if (t == _ip871ox8.CompleteUploadRequest) {
+      return _ip871ox8.CompleteUploadRequest.fromJson(data) as T;
+    }
+    if (t == _iae520xs.DeleteObjectRequest) {
+      return _iae520xs.DeleteObjectRequest.fromJson(data) as T;
+    }
+    if (t == _i99cztt4.GetDownloadRequest) {
+      return _i99cztt4.GetDownloadRequest.fromJson(data) as T;
+    }
+    if (t == _ip02joz1.GetDownloadResult) {
+      return _ip02joz1.GetDownloadResult.fromJson(data) as T;
+    }
+    if (t == _ii2nljpm.ObjectDeletion) {
+      return _ii2nljpm.ObjectDeletion.fromJson(data) as T;
+    }
+    if (t == _ivy9wxc7.ObjectErrorCode) {
+      return _ivy9wxc7.ObjectErrorCode.fromJson(data) as T;
+    }
+    if (t == _i4o8es85.ObjectException) {
+      return _i4o8es85.ObjectException.fromJson(data) as T;
+    }
+    if (t == _ino5s3hv.ObjectReference) {
+      return _ino5s3hv.ObjectReference.fromJson(data) as T;
+    }
+    if (t == _is4lmm7s.ObjectResult) {
+      return _is4lmm7s.ObjectResult.fromJson(data) as T;
+    }
+    if (t == _i6zmsyes.ObjectUpload) {
+      return _i6zmsyes.ObjectUpload.fromJson(data) as T;
+    }
+    if (t == _i52p5grh.WorkspaceObject) {
+      return _i52p5grh.WorkspaceObject.fromJson(data) as T;
+    }
+    if (t == _i0ekjn7l.WorkspaceStreamEnvelope) {
+      return _i0ekjn7l.WorkspaceStreamEnvelope.fromJson(data) as T;
+    }
+    if (t == _i4zgsr0a.WorkspaceStreamEnvelopeKind) {
+      return _i4zgsr0a.WorkspaceStreamEnvelopeKind.fromJson(data) as T;
+    }
+    if (t == _ig40wm3p.WorkspaceSubscribeRequest) {
+      return _ig40wm3p.WorkspaceSubscribeRequest.fromJson(data) as T;
+    }
+    if (t == _ivj0myfi.RecurringWorkerSchedule) {
+      return _ivj0myfi.RecurringWorkerSchedule.fromJson(data) as T;
+    }
+    if (t == _ifhsy8zv.WorkerCoordinatorLease) {
+      return _ifhsy8zv.WorkerCoordinatorLease.fromJson(data) as T;
+    }
+    if (t == _io0q4g8e.MutateWorkspaceCredentialRequest) {
+      return _io0q4g8e.MutateWorkspaceCredentialRequest.fromJson(data) as T;
+    }
+    if (t == _ipy8xct6.MutateWorkspaceCredentialResponse) {
+      return _ipy8xct6.MutateWorkspaceCredentialResponse.fromJson(data) as T;
+    }
+    if (t == _ipvegfbn.PatchWorkspaceStateRequest) {
+      return _ipvegfbn.PatchWorkspaceStateRequest.fromJson(data) as T;
+    }
+    if (t == _ig93yftz.PatchWorkspaceStateResponse) {
+      return _ig93yftz.PatchWorkspaceStateResponse.fromJson(data) as T;
+    }
+    if (t == _ipxnqptw.PutWorkspaceSecretRequest) {
+      return _ipxnqptw.PutWorkspaceSecretRequest.fromJson(data) as T;
+    }
+    if (t == _iavc361v.PutWorkspaceSecretResponse) {
+      return _iavc361v.PutWorkspaceSecretResponse.fromJson(data) as T;
+    }
+    if (t == _iz7boq8w.ReadWorkspaceStateRequest) {
+      return _iz7boq8w.ReadWorkspaceStateRequest.fromJson(data) as T;
+    }
+    if (t == _iqk6zto1.ReadWorkspaceStateResponse) {
+      return _iqk6zto1.ReadWorkspaceStateResponse.fromJson(data) as T;
+    }
+    if (t == _iolo6w4a.WorkspacePatchOperation) {
+      return _iolo6w4a.WorkspacePatchOperation.fromJson(data) as T;
+    }
+    if (t == _ihbarnlu.WorkspacePatchOperationKind) {
+      return _ihbarnlu.WorkspacePatchOperationKind.fromJson(data) as T;
+    }
+    if (t == _iqzfyfs9.WorkspaceResource) {
+      return _iqzfyfs9.WorkspaceResource.fromJson(data) as T;
+    }
+    if (t == _i8d1xr9g.WorkspaceResourceKind) {
+      return _i8d1xr9g.WorkspaceResourceKind.fromJson(data) as T;
+    }
+    if (t == _iilez6xa.WorkspaceResourcePage) {
+      return _iilez6xa.WorkspaceResourcePage.fromJson(data) as T;
+    }
+    if (t == _i0vhsjed.WorkspaceResourcePageRequest) {
+      return _i0vhsjed.WorkspaceResourcePageRequest.fromJson(data) as T;
+    }
+    if (t == _iyjw9v2c.WorkspaceSecret) {
+      return _iyjw9v2c.WorkspaceSecret.fromJson(data) as T;
+    }
+    if (t == _iq96p1l9.WorkspaceSecretKind) {
+      return _iq96p1l9.WorkspaceSecretKind.fromJson(data) as T;
+    }
+    if (t == _ioqbiy3d.WorkspaceSecretScope) {
+      return _ioqbiy3d.WorkspaceSecretScope.fromJson(data) as T;
+    }
+    if (t == _ib7b2bmq.AcceptWorkspaceInviteRequest) {
+      return _ib7b2bmq.AcceptWorkspaceInviteRequest.fromJson(data) as T;
+    }
+    if (t == _iyfjt29r.CloudWorkspace) {
+      return _iyfjt29r.CloudWorkspace.fromJson(data) as T;
+    }
+    if (t == _i1uzipdf.CloudWorkspaceCapabilities) {
+      return _i1uzipdf.CloudWorkspaceCapabilities.fromJson(data) as T;
+    }
+    if (t == _ixqnubu3.CloudWorkspaceDetail) {
+      return _ixqnubu3.CloudWorkspaceDetail.fromJson(data) as T;
+    }
+    if (t == _ikaytupt.CloudWorkspaceErrorCode) {
+      return _ikaytupt.CloudWorkspaceErrorCode.fromJson(data) as T;
+    }
+    if (t == _iq0v59d3.CloudWorkspaceException) {
+      return _iq0v59d3.CloudWorkspaceException.fromJson(data) as T;
+    }
+    if (t == _i4buxtw8.CloudWorkspaceInviteSummary) {
+      return _i4buxtw8.CloudWorkspaceInviteSummary.fromJson(data) as T;
+    }
+    if (t == _i3c64tpx.CloudWorkspaceMemberSummary) {
+      return _i3c64tpx.CloudWorkspaceMemberSummary.fromJson(data) as T;
+    }
+    if (t == _iqlfhfv2.CloudWorkspaceSummary) {
+      return _iqlfhfv2.CloudWorkspaceSummary.fromJson(data) as T;
+    }
+    if (t == _i2wx1hcz.CreateCloudWorkspaceRequest) {
+      return _i2wx1hcz.CreateCloudWorkspaceRequest.fromJson(data) as T;
+    }
+    if (t == _izpvgmoh.DeclineWorkspaceInviteRequest) {
+      return _izpvgmoh.DeclineWorkspaceInviteRequest.fromJson(data) as T;
+    }
+    if (t == _irqsg6pc.DeleteCloudWorkspaceRequest) {
+      return _irqsg6pc.DeleteCloudWorkspaceRequest.fromJson(data) as T;
+    }
+    if (t == _i3slgemv.GetCloudWorkspaceDetailRequest) {
+      return _i3slgemv.GetCloudWorkspaceDetailRequest.fromJson(data) as T;
+    }
+    if (t == _iojw3n39.InviteWorkspaceMemberRequest) {
+      return _iojw3n39.InviteWorkspaceMemberRequest.fromJson(data) as T;
+    }
+    if (t == _i90hckxm.LeaveCloudWorkspaceRequest) {
+      return _i90hckxm.LeaveCloudWorkspaceRequest.fromJson(data) as T;
+    }
+    if (t == _ig64imxt.ListCloudWorkspaceInvitesRequest) {
+      return _ig64imxt.ListCloudWorkspaceInvitesRequest.fromJson(data) as T;
+    }
+    if (t == _iop4tnuf.ListWorkspaceMembersRequest) {
+      return _iop4tnuf.ListWorkspaceMembersRequest.fromJson(data) as T;
+    }
+    if (t == _imuwa8ax.PendingWorkspaceInviteSummary) {
+      return _imuwa8ax.PendingWorkspaceInviteSummary.fromJson(data) as T;
+    }
+    if (t == _ioya5p5j.RemoveWorkspaceMemberRequest) {
+      return _ioya5p5j.RemoveWorkspaceMemberRequest.fromJson(data) as T;
+    }
+    if (t == _ifsfc78n.RenameCloudWorkspaceRequest) {
+      return _ifsfc78n.RenameCloudWorkspaceRequest.fromJson(data) as T;
+    }
+    if (t == _ivko4e0f.RenewWorkspaceInviteRequest) {
+      return _ivko4e0f.RenewWorkspaceInviteRequest.fromJson(data) as T;
+    }
+    if (t == _iwlbozzh.RevokeWorkspaceInviteRequest) {
+      return _iwlbozzh.RevokeWorkspaceInviteRequest.fromJson(data) as T;
+    }
+    if (t == _i7ana9ux.TransferCloudWorkspaceOwnershipRequest) {
+      return _i7ana9ux.TransferCloudWorkspaceOwnershipRequest.fromJson(data)
+          as T;
+    }
+    if (t == _i2qmz98c.UpdateWorkspaceMemberRoleRequest) {
+      return _i2qmz98c.UpdateWorkspaceMemberRoleRequest.fromJson(data) as T;
+    }
+    if (t == _ifp2sq2r.WorkspaceAuditRecord) {
+      return _ifp2sq2r.WorkspaceAuditRecord.fromJson(data) as T;
+    }
+    if (t == _ivvnnphu.WorkspaceEvent) {
+      return _ivvnnphu.WorkspaceEvent.fromJson(data) as T;
+    }
+    if (t == _ilpykuxc.WorkspaceInvite) {
+      return _ilpykuxc.WorkspaceInvite.fromJson(data) as T;
+    }
+    if (t == _i56tb1yu.WorkspaceMember) {
+      return _i56tb1yu.WorkspaceMember.fromJson(data) as T;
+    }
+    if (t == _ia614g7d.WorkspaceMutationReceipt) {
+      return _ia614g7d.WorkspaceMutationReceipt.fromJson(data) as T;
+    }
+    if (t == _is.getType<_i0kh9vnq.AccountSummary?>()) {
+      return (data != null ? _i0kh9vnq.AccountSummary.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ify5ufwn.CodexOAuthTransaction?>()) {
       return (data != null
-              ? _i7.CompleteCodexOAuthRequest.fromJson(data)
+              ? _ify5ufwn.CodexOAuthTransaction.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i8.CompleteCodexOAuthResult?>()) {
-      return (data != null ? _i8.CompleteCodexOAuthResult.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i9.StartCodexOAuthRequest?>()) {
-      return (data != null ? _i9.StartCodexOAuthRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i10.StartCodexOAuthResult?>()) {
-      return (data != null ? _i10.StartCodexOAuthResult.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i11.CancelTurnRequest?>()) {
-      return (data != null ? _i11.CancelTurnRequest.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i12.CompactConversationRequest?>()) {
+    if (t == _is.getType<_i2qdkbo8.CompleteCodexOAuthRequest?>()) {
       return (data != null
-              ? _i12.CompactConversationRequest.fromJson(data)
+              ? _i2qdkbo8.CompleteCodexOAuthRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i13.ContinueConversationRequest?>()) {
+    if (t == _is.getType<_ibhl6ekj.CompleteCodexOAuthResult?>()) {
       return (data != null
-              ? _i13.ContinueConversationRequest.fromJson(data)
+              ? _ibhl6ekj.CompleteCodexOAuthResult.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i14.ContinueTurnRequest?>()) {
-      return (data != null ? _i14.ContinueTurnRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i15.Conversation?>()) {
-      return (data != null ? _i15.Conversation.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i16.ConversationErrorCode?>()) {
-      return (data != null ? _i16.ConversationErrorCode.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i17.ConversationEvent?>()) {
-      return (data != null ? _i17.ConversationEvent.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i18.ConversationEventType?>()) {
-      return (data != null ? _i18.ConversationEventType.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i19.ConversationException?>()) {
-      return (data != null ? _i19.ConversationException.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i20.ConversationExecution?>()) {
-      return (data != null ? _i20.ConversationExecution.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i21.ConversationExecutionView?>()) {
+    if (t == _is.getType<_iv7ukgnj.StartCodexOAuthRequest?>()) {
       return (data != null
-              ? _i21.ConversationExecutionView.fromJson(data)
+              ? _iv7ukgnj.StartCodexOAuthRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i22.ConversationJob?>()) {
-      return (data != null ? _i22.ConversationJob.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i23.ConversationMessage?>()) {
-      return (data != null ? _i23.ConversationMessage.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i24.ConversationMessageView?>()) {
-      return (data != null ? _i24.ConversationMessageView.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i25.ConversationMutationResult?>()) {
+    if (t == _is.getType<_itptq7z5.StartCodexOAuthResult?>()) {
       return (data != null
-              ? _i25.ConversationMutationResult.fromJson(data)
+              ? _itptq7z5.StartCodexOAuthResult.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i26.ConversationPage?>()) {
-      return (data != null ? _i26.ConversationPage.fromJson(data) : null) as T;
+    if (t == _is.getType<_iarqshx6.CancelTurnRequest?>()) {
+      return (data != null ? _iarqshx6.CancelTurnRequest.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i27.ConversationProjectionView?>()) {
+    if (t == _is.getType<_isyd7s84.CompactConversationRequest?>()) {
       return (data != null
-              ? _i27.ConversationProjectionView.fromJson(data)
+              ? _isyd7s84.CompactConversationRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i28.ConversationSnapshot?>()) {
-      return (data != null ? _i28.ConversationSnapshot.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i29.ConversationStreamEvent?>()) {
-      return (data != null ? _i29.ConversationStreamEvent.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i30.ConversationSubscribeRequest?>()) {
+    if (t == _is.getType<_ialxa16r.ContinueConversationRequest?>()) {
       return (data != null
-              ? _i30.ConversationSubscribeRequest.fromJson(data)
+              ? _ialxa16r.ContinueConversationRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i31.ConversationSummary?>()) {
-      return (data != null ? _i31.ConversationSummary.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i32.ConversationToolCall?>()) {
-      return (data != null ? _i32.ConversationToolCall.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i33.ConversationToolCallView?>()) {
+    if (t == _is.getType<_iwrs6sde.ContinueTurnRequest?>()) {
       return (data != null
-              ? _i33.ConversationToolCallView.fromJson(data)
+              ? _iwrs6sde.ContinueTurnRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i34.ConversationTurn?>()) {
-      return (data != null ? _i34.ConversationTurn.fromJson(data) : null) as T;
+    if (t == _is.getType<_iivijtsr.Conversation?>()) {
+      return (data != null ? _iivijtsr.Conversation.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i35.ConversationTurnView?>()) {
-      return (data != null ? _i35.ConversationTurnView.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i36.ConversationUsage?>()) {
-      return (data != null ? _i36.ConversationUsage.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i37.CreateConversationRequest?>()) {
+    if (t == _is.getType<_iz6esn7o.ConversationErrorCode?>()) {
       return (data != null
-              ? _i37.CreateConversationRequest.fromJson(data)
+              ? _iz6esn7o.ConversationErrorCode.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i38.DeleteConversationRequest?>()) {
+    if (t == _is.getType<_i77s958n.ConversationEvent?>()) {
+      return (data != null ? _i77s958n.ConversationEvent.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i5gn99j4.ConversationEventType?>()) {
       return (data != null
-              ? _i38.DeleteConversationRequest.fromJson(data)
+              ? _i5gn99j4.ConversationEventType.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i39.EditPendingConversationMessageRequest?>()) {
+    if (t == _is.getType<_i4box1gt.ConversationException?>()) {
       return (data != null
-              ? _i39.EditPendingConversationMessageRequest.fromJson(data)
+              ? _i4box1gt.ConversationException.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i40.GetConversationRequest?>()) {
-      return (data != null ? _i40.GetConversationRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i41.GetTurnRequest?>()) {
-      return (data != null ? _i41.GetTurnRequest.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i42.ListConversationMessagesRequest?>()) {
+    if (t == _is.getType<_iznwbo5b.ConversationExecution?>()) {
       return (data != null
-              ? _i42.ListConversationMessagesRequest.fromJson(data)
+              ? _iznwbo5b.ConversationExecution.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i43.ListConversationsRequest?>()) {
+    if (t == _is.getType<_ij9w9f8d.ConversationExecutionView?>()) {
       return (data != null
-              ? _i43.ListConversationsRequest.fromJson(data)
+              ? _ij9w9f8d.ConversationExecutionView.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i44.ProviderAdmission?>()) {
-      return (data != null ? _i44.ProviderAdmission.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i45.ProviderAdmissionLock?>()) {
-      return (data != null ? _i45.ProviderAdmissionLock.fromJson(data) : null)
+    if (t == _is.getType<_iq1eovrr.ConversationJob?>()) {
+      return (data != null ? _iq1eovrr.ConversationJob.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i46.ProviderAdmissionReservation?>()) {
+    if (t == _is.getType<_ibea51bx.ConversationMessage?>()) {
       return (data != null
-              ? _i46.ProviderAdmissionReservation.fromJson(data)
+              ? _ibea51bx.ConversationMessage.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i47.QueueConversationMessageRequest?>()) {
+    if (t == _is.getType<_iutotoh6.ConversationMessageView?>()) {
       return (data != null
-              ? _i47.QueueConversationMessageRequest.fromJson(data)
+              ? _iutotoh6.ConversationMessageView.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i48.RemovePendingConversationMessageRequest?>()) {
+    if (t == _is.getType<_iz02ruas.ConversationMutationResult?>()) {
       return (data != null
-              ? _i48.RemovePendingConversationMessageRequest.fromJson(data)
+              ? _iz02ruas.ConversationMutationResult.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i49.ReorderPendingConversationMessageRequest?>()) {
+    if (t == _is.getType<_icl1rfiv.ConversationPage?>()) {
+      return (data != null ? _icl1rfiv.ConversationPage.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_icx9bns3.ConversationProjectionView?>()) {
       return (data != null
-              ? _i49.ReorderPendingConversationMessageRequest.fromJson(data)
+              ? _icx9bns3.ConversationProjectionView.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i50.StartTurnRequest?>()) {
-      return (data != null ? _i50.StartTurnRequest.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i51.StartTurnResult?>()) {
-      return (data != null ? _i51.StartTurnResult.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i52.StopConversationRequest?>()) {
-      return (data != null ? _i52.StopConversationRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i53.SubmitToolDecisionRequest?>()) {
+    if (t == _is.getType<_i4omaws8.ConversationSnapshot?>()) {
       return (data != null
-              ? _i53.SubmitToolDecisionRequest.fromJson(data)
+              ? _i4omaws8.ConversationSnapshot.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i54.TurnSnapshot?>()) {
-      return (data != null ? _i54.TurnSnapshot.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i55.UpdateConversationRequest?>()) {
+    if (t == _is.getType<_irrmkjcu.ConversationStreamEvent?>()) {
       return (data != null
-              ? _i55.UpdateConversationRequest.fromJson(data)
+              ? _irrmkjcu.ConversationStreamEvent.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i56.UpdateConversationSettingsRequest?>()) {
+    if (t == _is.getType<_i6hxcode.ConversationSubscribeRequest?>()) {
       return (data != null
-              ? _i56.UpdateConversationSettingsRequest.fromJson(data)
+              ? _i6hxcode.ConversationSubscribeRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i57.CreateMcpServerRequest?>()) {
-      return (data != null ? _i57.CreateMcpServerRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i58.CreateMcpServerResult?>()) {
-      return (data != null ? _i58.CreateMcpServerResult.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i59.DeleteMcpServerRequest?>()) {
-      return (data != null ? _i59.DeleteMcpServerRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i60.DiscoverMcpServerRequest?>()) {
+    if (t == _is.getType<_i7a0mfc5.ConversationSummary?>()) {
       return (data != null
-              ? _i60.DiscoverMcpServerRequest.fromJson(data)
+              ? _i7a0mfc5.ConversationSummary.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i61.DiscoverMcpServerResult?>()) {
-      return (data != null ? _i61.DiscoverMcpServerResult.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i62.DiscoveredMcpTool?>()) {
-      return (data != null ? _i62.DiscoveredMcpTool.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i63.McpServerHealth?>()) {
-      return (data != null ? _i63.McpServerHealth.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i64.ApiModel?>()) {
-      return (data != null ? _i64.ApiModel.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i65.ApiModelProvider?>()) {
-      return (data != null ? _i65.ApiModelProvider.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i66.CreateModelConnectionRequest?>()) {
+    if (t == _is.getType<_iflac717.ConversationToolCall?>()) {
       return (data != null
-              ? _i66.CreateModelConnectionRequest.fromJson(data)
+              ? _iflac717.ConversationToolCall.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i67.DeleteModelConnectionRequest?>()) {
+    if (t == _is.getType<_ic5ojtne.ConversationToolCallView?>()) {
       return (data != null
-              ? _i67.DeleteModelConnectionRequest.fromJson(data)
+              ? _ic5ojtne.ConversationToolCallView.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i68.ListModelConnectionsRequest?>()) {
+    if (t == _is.getType<_i7mmki1w.ConversationTurn?>()) {
+      return (data != null ? _i7mmki1w.ConversationTurn.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ir5w321b.ConversationTurnView?>()) {
       return (data != null
-              ? _i68.ListModelConnectionsRequest.fromJson(data)
+              ? _ir5w321b.ConversationTurnView.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i69.ListWorkspaceModelSelectionsRequest?>()) {
+    if (t == _is.getType<_iii6xlqw.ConversationUsage?>()) {
+      return (data != null ? _iii6xlqw.ConversationUsage.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i4shnjby.CreateConversationRequest?>()) {
       return (data != null
-              ? _i69.ListWorkspaceModelSelectionsRequest.fromJson(data)
+              ? _i4shnjby.CreateConversationRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i70.ModelConnectionView?>()) {
-      return (data != null ? _i70.ModelConnectionView.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i71.ModelSyncResult?>()) {
-      return (data != null ? _i71.ModelSyncResult.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i72.TestAndSyncModelConnectionRequest?>()) {
+    if (t == _is.getType<_iqsppx3t.DeleteConversationRequest?>()) {
       return (data != null
-              ? _i72.TestAndSyncModelConnectionRequest.fromJson(data)
+              ? _iqsppx3t.DeleteConversationRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i73.UpdateModelConnectionRequest?>()) {
+    if (t == _is.getType<_iybdpw96.EditPendingConversationMessageRequest?>()) {
       return (data != null
-              ? _i73.UpdateModelConnectionRequest.fromJson(data)
+              ? _iybdpw96.EditPendingConversationMessageRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i74.WorkspaceModelConnection?>()) {
+    if (t == _is.getType<_ixb0z1tn.GetConversationRequest?>()) {
       return (data != null
-              ? _i74.WorkspaceModelConnection.fromJson(data)
+              ? _ixb0z1tn.GetConversationRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i75.WorkspaceModelSelectionView?>()) {
+    if (t == _is.getType<_ilyvwvdb.GetTurnRequest?>()) {
+      return (data != null ? _ilyvwvdb.GetTurnRequest.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_it91nt4l.ListConversationMessagesRequest?>()) {
       return (data != null
-              ? _i75.WorkspaceModelSelectionView.fromJson(data)
+              ? _it91nt4l.ListConversationMessagesRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i76.BeginUploadRequest?>()) {
-      return (data != null ? _i76.BeginUploadRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i77.BeginUploadResult?>()) {
-      return (data != null ? _i77.BeginUploadResult.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i78.CompleteUploadRequest?>()) {
-      return (data != null ? _i78.CompleteUploadRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i79.DeleteObjectRequest?>()) {
-      return (data != null ? _i79.DeleteObjectRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i80.GetDownloadRequest?>()) {
-      return (data != null ? _i80.GetDownloadRequest.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i81.GetDownloadResult?>()) {
-      return (data != null ? _i81.GetDownloadResult.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i82.ObjectDeletion?>()) {
-      return (data != null ? _i82.ObjectDeletion.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i83.ObjectErrorCode?>()) {
-      return (data != null ? _i83.ObjectErrorCode.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i84.ObjectException?>()) {
-      return (data != null ? _i84.ObjectException.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i85.ObjectReference?>()) {
-      return (data != null ? _i85.ObjectReference.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i86.ObjectResult?>()) {
-      return (data != null ? _i86.ObjectResult.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i87.ObjectUpload?>()) {
-      return (data != null ? _i87.ObjectUpload.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i88.WorkspaceObject?>()) {
-      return (data != null ? _i88.WorkspaceObject.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i89.WorkspaceStreamEnvelope?>()) {
-      return (data != null ? _i89.WorkspaceStreamEnvelope.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i90.WorkspaceStreamEnvelopeKind?>()) {
+    if (t == _is.getType<_itcpel99.ListConversationsRequest?>()) {
       return (data != null
-              ? _i90.WorkspaceStreamEnvelopeKind.fromJson(data)
+              ? _itcpel99.ListConversationsRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i91.WorkspaceSubscribeRequest?>()) {
+    if (t == _is.getType<_i32k4voa.ProviderAdmission?>()) {
+      return (data != null ? _i32k4voa.ProviderAdmission.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ih2np1vh.ProviderAdmissionLock?>()) {
       return (data != null
-              ? _i91.WorkspaceSubscribeRequest.fromJson(data)
+              ? _ih2np1vh.ProviderAdmissionLock.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i92.RecurringWorkerSchedule?>()) {
-      return (data != null ? _i92.RecurringWorkerSchedule.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i93.WorkerCoordinatorLease?>()) {
-      return (data != null ? _i93.WorkerCoordinatorLease.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i94.MutateWorkspaceCredentialRequest?>()) {
+    if (t == _is.getType<_i7moywui.ProviderAdmissionReservation?>()) {
       return (data != null
-              ? _i94.MutateWorkspaceCredentialRequest.fromJson(data)
+              ? _i7moywui.ProviderAdmissionReservation.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i95.MutateWorkspaceCredentialResponse?>()) {
+    if (t == _is.getType<_ido51m94.QueueConversationMessageRequest?>()) {
       return (data != null
-              ? _i95.MutateWorkspaceCredentialResponse.fromJson(data)
+              ? _ido51m94.QueueConversationMessageRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i96.PatchWorkspaceStateRequest?>()) {
+    if (t ==
+        _is.getType<_iy526sio.RemovePendingConversationMessageRequest?>()) {
       return (data != null
-              ? _i96.PatchWorkspaceStateRequest.fromJson(data)
+              ? _iy526sio.RemovePendingConversationMessageRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i97.PatchWorkspaceStateResponse?>()) {
+    if (t ==
+        _is.getType<_infbxzxr.ReorderPendingConversationMessageRequest?>()) {
       return (data != null
-              ? _i97.PatchWorkspaceStateResponse.fromJson(data)
+              ? _infbxzxr.ReorderPendingConversationMessageRequest.fromJson(
+                  data,
+                )
               : null)
           as T;
     }
-    if (t == _i1.getType<_i98.PutWorkspaceSecretRequest?>()) {
+    if (t == _is.getType<_iocu6u94.StartTurnRequest?>()) {
+      return (data != null ? _iocu6u94.StartTurnRequest.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_iw8le0j7.StartTurnResult?>()) {
+      return (data != null ? _iw8le0j7.StartTurnResult.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i4cgq7zt.StopConversationRequest?>()) {
       return (data != null
-              ? _i98.PutWorkspaceSecretRequest.fromJson(data)
+              ? _i4cgq7zt.StopConversationRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i99.PutWorkspaceSecretResponse?>()) {
+    if (t == _is.getType<_inla43mu.SubmitToolDecisionRequest?>()) {
       return (data != null
-              ? _i99.PutWorkspaceSecretResponse.fromJson(data)
+              ? _inla43mu.SubmitToolDecisionRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i100.ReadWorkspaceStateRequest?>()) {
+    if (t == _is.getType<_ih4jnnah.TurnSnapshot?>()) {
+      return (data != null ? _ih4jnnah.TurnSnapshot.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_ihs4d7mz.UpdateConversationRequest?>()) {
       return (data != null
-              ? _i100.ReadWorkspaceStateRequest.fromJson(data)
+              ? _ihs4d7mz.UpdateConversationRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i101.ReadWorkspaceStateResponse?>()) {
+    if (t == _is.getType<_i8unm495.UpdateConversationSettingsRequest?>()) {
       return (data != null
-              ? _i101.ReadWorkspaceStateResponse.fromJson(data)
+              ? _i8unm495.UpdateConversationSettingsRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i102.WorkspacePatchOperation?>()) {
+    if (t == _is.getType<_i6hg2xtf.CreateMcpServerRequest?>()) {
       return (data != null
-              ? _i102.WorkspacePatchOperation.fromJson(data)
+              ? _i6hg2xtf.CreateMcpServerRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i103.WorkspacePatchOperationKind?>()) {
+    if (t == _is.getType<_ihyupc89.CreateMcpServerResult?>()) {
       return (data != null
-              ? _i103.WorkspacePatchOperationKind.fromJson(data)
+              ? _ihyupc89.CreateMcpServerResult.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i104.WorkspaceResource?>()) {
-      return (data != null ? _i104.WorkspaceResource.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i105.WorkspaceResourceKind?>()) {
-      return (data != null ? _i105.WorkspaceResourceKind.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i106.WorkspaceResourcePage?>()) {
-      return (data != null ? _i106.WorkspaceResourcePage.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i107.WorkspaceResourcePageRequest?>()) {
+    if (t == _is.getType<_iabui7vl.DeleteMcpServerRequest?>()) {
       return (data != null
-              ? _i107.WorkspaceResourcePageRequest.fromJson(data)
+              ? _iabui7vl.DeleteMcpServerRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i108.WorkspaceSecret?>()) {
-      return (data != null ? _i108.WorkspaceSecret.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i109.WorkspaceSecretKind?>()) {
-      return (data != null ? _i109.WorkspaceSecretKind.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i110.WorkspaceSecretScope?>()) {
-      return (data != null ? _i110.WorkspaceSecretScope.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i111.AcceptWorkspaceInviteRequest?>()) {
+    if (t == _is.getType<_ilmfigs5.DiscoverMcpServerRequest?>()) {
       return (data != null
-              ? _i111.AcceptWorkspaceInviteRequest.fromJson(data)
+              ? _ilmfigs5.DiscoverMcpServerRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i112.CloudWorkspace?>()) {
-      return (data != null ? _i112.CloudWorkspace.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i113.CloudWorkspaceCapabilities?>()) {
+    if (t == _is.getType<_i5i328k3.DiscoverMcpServerResult?>()) {
       return (data != null
-              ? _i113.CloudWorkspaceCapabilities.fromJson(data)
+              ? _i5i328k3.DiscoverMcpServerResult.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i114.CloudWorkspaceDetail?>()) {
-      return (data != null ? _i114.CloudWorkspaceDetail.fromJson(data) : null)
+    if (t == _is.getType<_igzjg3pi.DiscoveredMcpTool?>()) {
+      return (data != null ? _igzjg3pi.DiscoveredMcpTool.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i115.CloudWorkspaceErrorCode?>()) {
+    if (t == _is.getType<_iw1ftww6.McpServerHealth?>()) {
+      return (data != null ? _iw1ftww6.McpServerHealth.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i8ct1fsr.ApiModel?>()) {
+      return (data != null ? _i8ct1fsr.ApiModel.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_ioo5yu9z.ApiModelProvider?>()) {
+      return (data != null ? _ioo5yu9z.ApiModelProvider.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i4akrsd1.CreateModelConnectionRequest?>()) {
       return (data != null
-              ? _i115.CloudWorkspaceErrorCode.fromJson(data)
+              ? _i4akrsd1.CreateModelConnectionRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i116.CloudWorkspaceException?>()) {
+    if (t == _is.getType<_im8o8464.DeleteModelConnectionRequest?>()) {
       return (data != null
-              ? _i116.CloudWorkspaceException.fromJson(data)
+              ? _im8o8464.DeleteModelConnectionRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i117.CloudWorkspaceInviteSummary?>()) {
+    if (t == _is.getType<_iuwdkoab.ListModelConnectionsRequest?>()) {
       return (data != null
-              ? _i117.CloudWorkspaceInviteSummary.fromJson(data)
+              ? _iuwdkoab.ListModelConnectionsRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i118.CloudWorkspaceMemberSummary?>()) {
+    if (t == _is.getType<_i926jgxf.ListWorkspaceModelSelectionsRequest?>()) {
       return (data != null
-              ? _i118.CloudWorkspaceMemberSummary.fromJson(data)
+              ? _i926jgxf.ListWorkspaceModelSelectionsRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i119.CloudWorkspaceSummary?>()) {
-      return (data != null ? _i119.CloudWorkspaceSummary.fromJson(data) : null)
-          as T;
-    }
-    if (t == _i1.getType<_i120.CreateCloudWorkspaceRequest?>()) {
+    if (t == _is.getType<_ikk9qcnz.ModelConnectionView?>()) {
       return (data != null
-              ? _i120.CreateCloudWorkspaceRequest.fromJson(data)
+              ? _ikk9qcnz.ModelConnectionView.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i121.DeclineWorkspaceInviteRequest?>()) {
+    if (t == _is.getType<_il1l34li.ModelSyncResult?>()) {
+      return (data != null ? _il1l34li.ModelSyncResult.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ixyi2mo6.TestAndSyncModelConnectionRequest?>()) {
       return (data != null
-              ? _i121.DeclineWorkspaceInviteRequest.fromJson(data)
+              ? _ixyi2mo6.TestAndSyncModelConnectionRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i122.DeleteCloudWorkspaceRequest?>()) {
+    if (t == _is.getType<_iw5yf4pd.UpdateModelConnectionRequest?>()) {
       return (data != null
-              ? _i122.DeleteCloudWorkspaceRequest.fromJson(data)
+              ? _iw5yf4pd.UpdateModelConnectionRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i123.GetCloudWorkspaceDetailRequest?>()) {
+    if (t == _is.getType<_ihf3aqrg.WorkspaceModelConnection?>()) {
       return (data != null
-              ? _i123.GetCloudWorkspaceDetailRequest.fromJson(data)
+              ? _ihf3aqrg.WorkspaceModelConnection.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i124.InviteWorkspaceMemberRequest?>()) {
+    if (t == _is.getType<_i2zocl9o.WorkspaceModelSelectionView?>()) {
       return (data != null
-              ? _i124.InviteWorkspaceMemberRequest.fromJson(data)
+              ? _i2zocl9o.WorkspaceModelSelectionView.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i125.LeaveCloudWorkspaceRequest?>()) {
+    if (t == _is.getType<_ii7xucwd.BeginUploadRequest?>()) {
+      return (data != null ? _ii7xucwd.BeginUploadRequest.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_iy4az4cb.BeginUploadResult?>()) {
+      return (data != null ? _iy4az4cb.BeginUploadResult.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ip871ox8.CompleteUploadRequest?>()) {
       return (data != null
-              ? _i125.LeaveCloudWorkspaceRequest.fromJson(data)
+              ? _ip871ox8.CompleteUploadRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i126.ListCloudWorkspaceInvitesRequest?>()) {
+    if (t == _is.getType<_iae520xs.DeleteObjectRequest?>()) {
       return (data != null
-              ? _i126.ListCloudWorkspaceInvitesRequest.fromJson(data)
+              ? _iae520xs.DeleteObjectRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i127.ListWorkspaceMembersRequest?>()) {
+    if (t == _is.getType<_i99cztt4.GetDownloadRequest?>()) {
+      return (data != null ? _i99cztt4.GetDownloadRequest.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ip02joz1.GetDownloadResult?>()) {
+      return (data != null ? _ip02joz1.GetDownloadResult.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ii2nljpm.ObjectDeletion?>()) {
+      return (data != null ? _ii2nljpm.ObjectDeletion.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ivy9wxc7.ObjectErrorCode?>()) {
+      return (data != null ? _ivy9wxc7.ObjectErrorCode.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i4o8es85.ObjectException?>()) {
+      return (data != null ? _i4o8es85.ObjectException.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ino5s3hv.ObjectReference?>()) {
+      return (data != null ? _ino5s3hv.ObjectReference.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_is4lmm7s.ObjectResult?>()) {
+      return (data != null ? _is4lmm7s.ObjectResult.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_i6zmsyes.ObjectUpload?>()) {
+      return (data != null ? _i6zmsyes.ObjectUpload.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_i52p5grh.WorkspaceObject?>()) {
+      return (data != null ? _i52p5grh.WorkspaceObject.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i0ekjn7l.WorkspaceStreamEnvelope?>()) {
       return (data != null
-              ? _i127.ListWorkspaceMembersRequest.fromJson(data)
+              ? _i0ekjn7l.WorkspaceStreamEnvelope.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i128.PendingWorkspaceInviteSummary?>()) {
+    if (t == _is.getType<_i4zgsr0a.WorkspaceStreamEnvelopeKind?>()) {
       return (data != null
-              ? _i128.PendingWorkspaceInviteSummary.fromJson(data)
+              ? _i4zgsr0a.WorkspaceStreamEnvelopeKind.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i129.RemoveWorkspaceMemberRequest?>()) {
+    if (t == _is.getType<_ig40wm3p.WorkspaceSubscribeRequest?>()) {
       return (data != null
-              ? _i129.RemoveWorkspaceMemberRequest.fromJson(data)
+              ? _ig40wm3p.WorkspaceSubscribeRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i130.RenameCloudWorkspaceRequest?>()) {
+    if (t == _is.getType<_ivj0myfi.RecurringWorkerSchedule?>()) {
       return (data != null
-              ? _i130.RenameCloudWorkspaceRequest.fromJson(data)
+              ? _ivj0myfi.RecurringWorkerSchedule.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i131.RenewWorkspaceInviteRequest?>()) {
+    if (t == _is.getType<_ifhsy8zv.WorkerCoordinatorLease?>()) {
       return (data != null
-              ? _i131.RenewWorkspaceInviteRequest.fromJson(data)
+              ? _ifhsy8zv.WorkerCoordinatorLease.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i132.RevokeWorkspaceInviteRequest?>()) {
+    if (t == _is.getType<_io0q4g8e.MutateWorkspaceCredentialRequest?>()) {
       return (data != null
-              ? _i132.RevokeWorkspaceInviteRequest.fromJson(data)
+              ? _io0q4g8e.MutateWorkspaceCredentialRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i133.TransferCloudWorkspaceOwnershipRequest?>()) {
+    if (t == _is.getType<_ipy8xct6.MutateWorkspaceCredentialResponse?>()) {
       return (data != null
-              ? _i133.TransferCloudWorkspaceOwnershipRequest.fromJson(data)
+              ? _ipy8xct6.MutateWorkspaceCredentialResponse.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i134.UpdateWorkspaceMemberRoleRequest?>()) {
+    if (t == _is.getType<_ipvegfbn.PatchWorkspaceStateRequest?>()) {
       return (data != null
-              ? _i134.UpdateWorkspaceMemberRoleRequest.fromJson(data)
+              ? _ipvegfbn.PatchWorkspaceStateRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i135.WorkspaceAuditRecord?>()) {
-      return (data != null ? _i135.WorkspaceAuditRecord.fromJson(data) : null)
+    if (t == _is.getType<_ig93yftz.PatchWorkspaceStateResponse?>()) {
+      return (data != null
+              ? _ig93yftz.PatchWorkspaceStateResponse.fromJson(data)
+              : null)
           as T;
     }
-    if (t == _i1.getType<_i136.WorkspaceEvent?>()) {
-      return (data != null ? _i136.WorkspaceEvent.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i137.WorkspaceInvite?>()) {
-      return (data != null ? _i137.WorkspaceInvite.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i138.WorkspaceMember?>()) {
-      return (data != null ? _i138.WorkspaceMember.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i139.WorkspaceMutationReceipt?>()) {
+    if (t == _is.getType<_ipxnqptw.PutWorkspaceSecretRequest?>()) {
       return (data != null
-              ? _i139.WorkspaceMutationReceipt.fromJson(data)
+              ? _ipxnqptw.PutWorkspaceSecretRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iavc361v.PutWorkspaceSecretResponse?>()) {
+      return (data != null
+              ? _iavc361v.PutWorkspaceSecretResponse.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iz7boq8w.ReadWorkspaceStateRequest?>()) {
+      return (data != null
+              ? _iz7boq8w.ReadWorkspaceStateRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iqk6zto1.ReadWorkspaceStateResponse?>()) {
+      return (data != null
+              ? _iqk6zto1.ReadWorkspaceStateResponse.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iolo6w4a.WorkspacePatchOperation?>()) {
+      return (data != null
+              ? _iolo6w4a.WorkspacePatchOperation.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ihbarnlu.WorkspacePatchOperationKind?>()) {
+      return (data != null
+              ? _ihbarnlu.WorkspacePatchOperationKind.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iqzfyfs9.WorkspaceResource?>()) {
+      return (data != null ? _iqzfyfs9.WorkspaceResource.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i8d1xr9g.WorkspaceResourceKind?>()) {
+      return (data != null
+              ? _i8d1xr9g.WorkspaceResourceKind.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iilez6xa.WorkspaceResourcePage?>()) {
+      return (data != null
+              ? _iilez6xa.WorkspaceResourcePage.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i0vhsjed.WorkspaceResourcePageRequest?>()) {
+      return (data != null
+              ? _i0vhsjed.WorkspaceResourcePageRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iyjw9v2c.WorkspaceSecret?>()) {
+      return (data != null ? _iyjw9v2c.WorkspaceSecret.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_iq96p1l9.WorkspaceSecretKind?>()) {
+      return (data != null
+              ? _iq96p1l9.WorkspaceSecretKind.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ioqbiy3d.WorkspaceSecretScope?>()) {
+      return (data != null
+              ? _ioqbiy3d.WorkspaceSecretScope.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ib7b2bmq.AcceptWorkspaceInviteRequest?>()) {
+      return (data != null
+              ? _ib7b2bmq.AcceptWorkspaceInviteRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iyfjt29r.CloudWorkspace?>()) {
+      return (data != null ? _iyfjt29r.CloudWorkspace.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i1uzipdf.CloudWorkspaceCapabilities?>()) {
+      return (data != null
+              ? _i1uzipdf.CloudWorkspaceCapabilities.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ixqnubu3.CloudWorkspaceDetail?>()) {
+      return (data != null
+              ? _ixqnubu3.CloudWorkspaceDetail.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ikaytupt.CloudWorkspaceErrorCode?>()) {
+      return (data != null
+              ? _ikaytupt.CloudWorkspaceErrorCode.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iq0v59d3.CloudWorkspaceException?>()) {
+      return (data != null
+              ? _iq0v59d3.CloudWorkspaceException.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i4buxtw8.CloudWorkspaceInviteSummary?>()) {
+      return (data != null
+              ? _i4buxtw8.CloudWorkspaceInviteSummary.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i3c64tpx.CloudWorkspaceMemberSummary?>()) {
+      return (data != null
+              ? _i3c64tpx.CloudWorkspaceMemberSummary.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iqlfhfv2.CloudWorkspaceSummary?>()) {
+      return (data != null
+              ? _iqlfhfv2.CloudWorkspaceSummary.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i2wx1hcz.CreateCloudWorkspaceRequest?>()) {
+      return (data != null
+              ? _i2wx1hcz.CreateCloudWorkspaceRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_izpvgmoh.DeclineWorkspaceInviteRequest?>()) {
+      return (data != null
+              ? _izpvgmoh.DeclineWorkspaceInviteRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_irqsg6pc.DeleteCloudWorkspaceRequest?>()) {
+      return (data != null
+              ? _irqsg6pc.DeleteCloudWorkspaceRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i3slgemv.GetCloudWorkspaceDetailRequest?>()) {
+      return (data != null
+              ? _i3slgemv.GetCloudWorkspaceDetailRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iojw3n39.InviteWorkspaceMemberRequest?>()) {
+      return (data != null
+              ? _iojw3n39.InviteWorkspaceMemberRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i90hckxm.LeaveCloudWorkspaceRequest?>()) {
+      return (data != null
+              ? _i90hckxm.LeaveCloudWorkspaceRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ig64imxt.ListCloudWorkspaceInvitesRequest?>()) {
+      return (data != null
+              ? _ig64imxt.ListCloudWorkspaceInvitesRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iop4tnuf.ListWorkspaceMembersRequest?>()) {
+      return (data != null
+              ? _iop4tnuf.ListWorkspaceMembersRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_imuwa8ax.PendingWorkspaceInviteSummary?>()) {
+      return (data != null
+              ? _imuwa8ax.PendingWorkspaceInviteSummary.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ioya5p5j.RemoveWorkspaceMemberRequest?>()) {
+      return (data != null
+              ? _ioya5p5j.RemoveWorkspaceMemberRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ifsfc78n.RenameCloudWorkspaceRequest?>()) {
+      return (data != null
+              ? _ifsfc78n.RenameCloudWorkspaceRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ivko4e0f.RenewWorkspaceInviteRequest?>()) {
+      return (data != null
+              ? _ivko4e0f.RenewWorkspaceInviteRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iwlbozzh.RevokeWorkspaceInviteRequest?>()) {
+      return (data != null
+              ? _iwlbozzh.RevokeWorkspaceInviteRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i7ana9ux.TransferCloudWorkspaceOwnershipRequest?>()) {
+      return (data != null
+              ? _i7ana9ux.TransferCloudWorkspaceOwnershipRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i2qmz98c.UpdateWorkspaceMemberRoleRequest?>()) {
+      return (data != null
+              ? _i2qmz98c.UpdateWorkspaceMemberRoleRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ifp2sq2r.WorkspaceAuditRecord?>()) {
+      return (data != null
+              ? _ifp2sq2r.WorkspaceAuditRecord.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ivvnnphu.WorkspaceEvent?>()) {
+      return (data != null ? _ivvnnphu.WorkspaceEvent.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ilpykuxc.WorkspaceInvite?>()) {
+      return (data != null ? _ilpykuxc.WorkspaceInvite.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i56tb1yu.WorkspaceMember?>()) {
+      return (data != null ? _i56tb1yu.WorkspaceMember.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ia614g7d.WorkspaceMutationReceipt?>()) {
+      return (data != null
+              ? _ia614g7d.WorkspaceMutationReceipt.fromJson(data)
               : null)
           as T;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i33.ConversationToolCallView>) {
+    if (t == _is.getType<List<String>?>()) {
+      return (data != null
+              ? (data as List).map((e) => deserialize<String>(e)).toList()
+              : null)
+          as T;
+    }
+    if (t == List<_ic5ojtne.ConversationToolCallView>) {
       return (data as List)
-              .map((e) => deserialize<_i33.ConversationToolCallView>(e))
+              .map((e) => deserialize<_ic5ojtne.ConversationToolCallView>(e))
               .toList()
           as T;
     }
-    if (t == List<_i31.ConversationSummary>) {
+    if (t == List<_i7a0mfc5.ConversationSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i31.ConversationSummary>(e))
+              .map((e) => deserialize<_i7a0mfc5.ConversationSummary>(e))
               .toList()
           as T;
     }
-    if (t == List<_i24.ConversationMessageView>) {
+    if (t == List<_iutotoh6.ConversationMessageView>) {
       return (data as List)
-              .map((e) => deserialize<_i24.ConversationMessageView>(e))
+              .map((e) => deserialize<_iutotoh6.ConversationMessageView>(e))
               .toList()
           as T;
     }
-    if (t == List<_i62.DiscoveredMcpTool>) {
+    if (t == List<_igzjg3pi.DiscoveredMcpTool>) {
       return (data as List)
-              .map((e) => deserialize<_i62.DiscoveredMcpTool>(e))
+              .map((e) => deserialize<_igzjg3pi.DiscoveredMcpTool>(e))
               .toList()
           as T;
     }
@@ -5148,254 +5291,265 @@ class Protocol extends _i1.DatabaseSerializationManager {
         (k, v) => MapEntry(deserialize<String>(k), deserialize<String>(v)),
       ) as T;
     }
-    if (t == List<_i102.WorkspacePatchOperation>) {
+    if (t == List<_iolo6w4a.WorkspacePatchOperation>) {
       return (data as List)
-              .map((e) => deserialize<_i102.WorkspacePatchOperation>(e))
+              .map((e) => deserialize<_iolo6w4a.WorkspacePatchOperation>(e))
               .toList()
           as T;
     }
-    if (t == List<_i104.WorkspaceResource>) {
+    if (t == List<_iqzfyfs9.WorkspaceResource>) {
       return (data as List)
-              .map((e) => deserialize<_i104.WorkspaceResource>(e))
+              .map((e) => deserialize<_iqzfyfs9.WorkspaceResource>(e))
               .toList()
           as T;
     }
-    if (t == List<_i107.WorkspaceResourcePageRequest>) {
+    if (t == List<_i0vhsjed.WorkspaceResourcePageRequest>) {
       return (data as List)
-              .map((e) => deserialize<_i107.WorkspaceResourcePageRequest>(e))
+              .map(
+                (e) => deserialize<_i0vhsjed.WorkspaceResourcePageRequest>(e),
+              )
               .toList()
           as T;
     }
-    if (t == List<_i106.WorkspaceResourcePage>) {
+    if (t == List<_iilez6xa.WorkspaceResourcePage>) {
       return (data as List)
-              .map((e) => deserialize<_i106.WorkspaceResourcePage>(e))
+              .map((e) => deserialize<_iilez6xa.WorkspaceResourcePage>(e))
               .toList()
           as T;
     }
-    if (t == List<_i136.WorkspaceEvent>) {
+    if (t == List<_ivvnnphu.WorkspaceEvent>) {
       return (data as List)
-              .map((e) => deserialize<_i136.WorkspaceEvent>(e))
+              .map((e) => deserialize<_ivvnnphu.WorkspaceEvent>(e))
               .toList()
           as T;
     }
-    if (t == List<_i140.ConversationSummary>) {
+    if (t == List<_itibmfuz.ConversationSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i140.ConversationSummary>(e))
+              .map((e) => deserialize<_itibmfuz.ConversationSummary>(e))
               .toList()
           as T;
     }
-    if (t == List<_i141.ConversationMessageView>) {
+    if (t == List<_icvgm34f.ConversationMessageView>) {
       return (data as List)
-              .map((e) => deserialize<_i141.ConversationMessageView>(e))
+              .map((e) => deserialize<_icvgm34f.ConversationMessageView>(e))
               .toList()
           as T;
     }
-    if (t == List<_i142.ApiModelProvider>) {
+    if (t == List<_ifmbbpx3.ApiModelProvider>) {
       return (data as List)
-              .map((e) => deserialize<_i142.ApiModelProvider>(e))
+              .map((e) => deserialize<_ifmbbpx3.ApiModelProvider>(e))
               .toList()
           as T;
     }
-    if (t == List<_i143.ApiModel>) {
-      return (data as List).map((e) => deserialize<_i143.ApiModel>(e)).toList()
-          as T;
-    }
-    if (t == List<_i144.ModelConnectionView>) {
+    if (t == List<_il9jpql1.ApiModel>) {
       return (data as List)
-              .map((e) => deserialize<_i144.ModelConnectionView>(e))
+              .map((e) => deserialize<_il9jpql1.ApiModel>(e))
               .toList()
           as T;
     }
-    if (t == List<_i145.WorkspaceModelSelectionView>) {
+    if (t == List<_imf0a6vt.ModelConnectionView>) {
       return (data as List)
-              .map((e) => deserialize<_i145.WorkspaceModelSelectionView>(e))
+              .map((e) => deserialize<_imf0a6vt.ModelConnectionView>(e))
               .toList()
           as T;
     }
-    if (t == List<_i146.CloudWorkspaceSummary>) {
+    if (t == List<_ipmnqqs6.WorkspaceModelSelectionView>) {
       return (data as List)
-              .map((e) => deserialize<_i146.CloudWorkspaceSummary>(e))
+              .map((e) => deserialize<_ipmnqqs6.WorkspaceModelSelectionView>(e))
               .toList()
           as T;
     }
-    if (t == List<_i147.PendingWorkspaceInviteSummary>) {
+    if (t == List<_iyxk4tde.CloudWorkspaceSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i147.PendingWorkspaceInviteSummary>(e))
+              .map((e) => deserialize<_iyxk4tde.CloudWorkspaceSummary>(e))
               .toList()
           as T;
     }
-    if (t == List<_i148.CloudWorkspaceMemberSummary>) {
+    if (t == List<_i0azczsv.PendingWorkspaceInviteSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i148.CloudWorkspaceMemberSummary>(e))
+              .map(
+                (e) => deserialize<_i0azczsv.PendingWorkspaceInviteSummary>(e),
+              )
               .toList()
           as T;
     }
-    if (t == List<_i149.CloudWorkspaceInviteSummary>) {
+    if (t == List<_i7tlx5z8.CloudWorkspaceMemberSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i149.CloudWorkspaceInviteSummary>(e))
+              .map((e) => deserialize<_i7tlx5z8.CloudWorkspaceMemberSummary>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i78h3alq.CloudWorkspaceInviteSummary>) {
+      return (data as List)
+              .map((e) => deserialize<_i78h3alq.CloudWorkspaceInviteSummary>(e))
               .toList()
           as T;
     }
     try {
-      return _i3.Protocol().deserialize<T>(data, t);
-    } on _i1.DeserializationTypeNotFoundException catch (_) {}
+      return _iacs.Protocol().deserialize<T>(data, t);
+    } on _is.DeserializationTypeNotFoundException catch (_) {}
     try {
-      return _i4.Protocol().deserialize<T>(data, t);
-    } on _i1.DeserializationTypeNotFoundException catch (_) {}
+      return _iais.Protocol().deserialize<T>(data, t);
+    } on _is.DeserializationTypeNotFoundException catch (_) {}
     try {
-      return _i2.Protocol().deserialize<T>(data, t);
-    } on _i1.DeserializationTypeNotFoundException catch (_) {}
+      return _isp.Protocol().deserialize<T>(data, t);
+    } on _is.DeserializationTypeNotFoundException catch (_) {}
     return super.deserialize<T>(data, t);
   }
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
-      _i5.AccountSummary => 'AccountSummary',
-      _i6.CodexOAuthTransaction => 'CodexOAuthTransaction',
-      _i7.CompleteCodexOAuthRequest => 'CompleteCodexOAuthRequest',
-      _i8.CompleteCodexOAuthResult => 'CompleteCodexOAuthResult',
-      _i9.StartCodexOAuthRequest => 'StartCodexOAuthRequest',
-      _i10.StartCodexOAuthResult => 'StartCodexOAuthResult',
-      _i11.CancelTurnRequest => 'CancelTurnRequest',
-      _i12.CompactConversationRequest => 'CompactConversationRequest',
-      _i13.ContinueConversationRequest => 'ContinueConversationRequest',
-      _i14.ContinueTurnRequest => 'ContinueTurnRequest',
-      _i15.Conversation => 'Conversation',
-      _i16.ConversationErrorCode => 'ConversationErrorCode',
-      _i17.ConversationEvent => 'ConversationEvent',
-      _i18.ConversationEventType => 'ConversationEventType',
-      _i19.ConversationException => 'ConversationException',
-      _i20.ConversationExecution => 'ConversationExecution',
-      _i21.ConversationExecutionView => 'ConversationExecutionView',
-      _i22.ConversationJob => 'ConversationJob',
-      _i23.ConversationMessage => 'ConversationMessage',
-      _i24.ConversationMessageView => 'ConversationMessageView',
-      _i25.ConversationMutationResult => 'ConversationMutationResult',
-      _i26.ConversationPage => 'ConversationPage',
-      _i27.ConversationProjectionView => 'ConversationProjectionView',
-      _i28.ConversationSnapshot => 'ConversationSnapshot',
-      _i29.ConversationStreamEvent => 'ConversationStreamEvent',
-      _i30.ConversationSubscribeRequest => 'ConversationSubscribeRequest',
-      _i31.ConversationSummary => 'ConversationSummary',
-      _i32.ConversationToolCall => 'ConversationToolCall',
-      _i33.ConversationToolCallView => 'ConversationToolCallView',
-      _i34.ConversationTurn => 'ConversationTurn',
-      _i35.ConversationTurnView => 'ConversationTurnView',
-      _i36.ConversationUsage => 'ConversationUsage',
-      _i37.CreateConversationRequest => 'CreateConversationRequest',
-      _i38.DeleteConversationRequest => 'DeleteConversationRequest',
-      _i39.EditPendingConversationMessageRequest =>
+      _i0kh9vnq.AccountSummary => 'AccountSummary',
+      _ify5ufwn.CodexOAuthTransaction => 'CodexOAuthTransaction',
+      _i2qdkbo8.CompleteCodexOAuthRequest => 'CompleteCodexOAuthRequest',
+      _ibhl6ekj.CompleteCodexOAuthResult => 'CompleteCodexOAuthResult',
+      _iv7ukgnj.StartCodexOAuthRequest => 'StartCodexOAuthRequest',
+      _itptq7z5.StartCodexOAuthResult => 'StartCodexOAuthResult',
+      _iarqshx6.CancelTurnRequest => 'CancelTurnRequest',
+      _isyd7s84.CompactConversationRequest => 'CompactConversationRequest',
+      _ialxa16r.ContinueConversationRequest => 'ContinueConversationRequest',
+      _iwrs6sde.ContinueTurnRequest => 'ContinueTurnRequest',
+      _iivijtsr.Conversation => 'Conversation',
+      _iz6esn7o.ConversationErrorCode => 'ConversationErrorCode',
+      _i77s958n.ConversationEvent => 'ConversationEvent',
+      _i5gn99j4.ConversationEventType => 'ConversationEventType',
+      _i4box1gt.ConversationException => 'ConversationException',
+      _iznwbo5b.ConversationExecution => 'ConversationExecution',
+      _ij9w9f8d.ConversationExecutionView => 'ConversationExecutionView',
+      _iq1eovrr.ConversationJob => 'ConversationJob',
+      _ibea51bx.ConversationMessage => 'ConversationMessage',
+      _iutotoh6.ConversationMessageView => 'ConversationMessageView',
+      _iz02ruas.ConversationMutationResult => 'ConversationMutationResult',
+      _icl1rfiv.ConversationPage => 'ConversationPage',
+      _icx9bns3.ConversationProjectionView => 'ConversationProjectionView',
+      _i4omaws8.ConversationSnapshot => 'ConversationSnapshot',
+      _irrmkjcu.ConversationStreamEvent => 'ConversationStreamEvent',
+      _i6hxcode.ConversationSubscribeRequest => 'ConversationSubscribeRequest',
+      _i7a0mfc5.ConversationSummary => 'ConversationSummary',
+      _iflac717.ConversationToolCall => 'ConversationToolCall',
+      _ic5ojtne.ConversationToolCallView => 'ConversationToolCallView',
+      _i7mmki1w.ConversationTurn => 'ConversationTurn',
+      _ir5w321b.ConversationTurnView => 'ConversationTurnView',
+      _iii6xlqw.ConversationUsage => 'ConversationUsage',
+      _i4shnjby.CreateConversationRequest => 'CreateConversationRequest',
+      _iqsppx3t.DeleteConversationRequest => 'DeleteConversationRequest',
+      _iybdpw96.EditPendingConversationMessageRequest =>
         'EditPendingConversationMessageRequest',
-      _i40.GetConversationRequest => 'GetConversationRequest',
-      _i41.GetTurnRequest => 'GetTurnRequest',
-      _i42.ListConversationMessagesRequest => 'ListConversationMessagesRequest',
-      _i43.ListConversationsRequest => 'ListConversationsRequest',
-      _i44.ProviderAdmission => 'ProviderAdmission',
-      _i45.ProviderAdmissionLock => 'ProviderAdmissionLock',
-      _i46.ProviderAdmissionReservation => 'ProviderAdmissionReservation',
-      _i47.QueueConversationMessageRequest => 'QueueConversationMessageRequest',
-      _i48.RemovePendingConversationMessageRequest =>
+      _ixb0z1tn.GetConversationRequest => 'GetConversationRequest',
+      _ilyvwvdb.GetTurnRequest => 'GetTurnRequest',
+      _it91nt4l.ListConversationMessagesRequest =>
+        'ListConversationMessagesRequest',
+      _itcpel99.ListConversationsRequest => 'ListConversationsRequest',
+      _i32k4voa.ProviderAdmission => 'ProviderAdmission',
+      _ih2np1vh.ProviderAdmissionLock => 'ProviderAdmissionLock',
+      _i7moywui.ProviderAdmissionReservation => 'ProviderAdmissionReservation',
+      _ido51m94.QueueConversationMessageRequest =>
+        'QueueConversationMessageRequest',
+      _iy526sio.RemovePendingConversationMessageRequest =>
         'RemovePendingConversationMessageRequest',
-      _i49.ReorderPendingConversationMessageRequest =>
+      _infbxzxr.ReorderPendingConversationMessageRequest =>
         'ReorderPendingConversationMessageRequest',
-      _i50.StartTurnRequest => 'StartTurnRequest',
-      _i51.StartTurnResult => 'StartTurnResult',
-      _i52.StopConversationRequest => 'StopConversationRequest',
-      _i53.SubmitToolDecisionRequest => 'SubmitToolDecisionRequest',
-      _i54.TurnSnapshot => 'TurnSnapshot',
-      _i55.UpdateConversationRequest => 'UpdateConversationRequest',
-      _i56.UpdateConversationSettingsRequest =>
+      _iocu6u94.StartTurnRequest => 'StartTurnRequest',
+      _iw8le0j7.StartTurnResult => 'StartTurnResult',
+      _i4cgq7zt.StopConversationRequest => 'StopConversationRequest',
+      _inla43mu.SubmitToolDecisionRequest => 'SubmitToolDecisionRequest',
+      _ih4jnnah.TurnSnapshot => 'TurnSnapshot',
+      _ihs4d7mz.UpdateConversationRequest => 'UpdateConversationRequest',
+      _i8unm495.UpdateConversationSettingsRequest =>
         'UpdateConversationSettingsRequest',
-      _i57.CreateMcpServerRequest => 'CreateMcpServerRequest',
-      _i58.CreateMcpServerResult => 'CreateMcpServerResult',
-      _i59.DeleteMcpServerRequest => 'DeleteMcpServerRequest',
-      _i60.DiscoverMcpServerRequest => 'DiscoverMcpServerRequest',
-      _i61.DiscoverMcpServerResult => 'DiscoverMcpServerResult',
-      _i62.DiscoveredMcpTool => 'DiscoveredMcpTool',
-      _i63.McpServerHealth => 'McpServerHealth',
-      _i64.ApiModel => 'ApiModel',
-      _i65.ApiModelProvider => 'ApiModelProvider',
-      _i66.CreateModelConnectionRequest => 'CreateModelConnectionRequest',
-      _i67.DeleteModelConnectionRequest => 'DeleteModelConnectionRequest',
-      _i68.ListModelConnectionsRequest => 'ListModelConnectionsRequest',
-      _i69.ListWorkspaceModelSelectionsRequest =>
+      _i6hg2xtf.CreateMcpServerRequest => 'CreateMcpServerRequest',
+      _ihyupc89.CreateMcpServerResult => 'CreateMcpServerResult',
+      _iabui7vl.DeleteMcpServerRequest => 'DeleteMcpServerRequest',
+      _ilmfigs5.DiscoverMcpServerRequest => 'DiscoverMcpServerRequest',
+      _i5i328k3.DiscoverMcpServerResult => 'DiscoverMcpServerResult',
+      _igzjg3pi.DiscoveredMcpTool => 'DiscoveredMcpTool',
+      _iw1ftww6.McpServerHealth => 'McpServerHealth',
+      _i8ct1fsr.ApiModel => 'ApiModel',
+      _ioo5yu9z.ApiModelProvider => 'ApiModelProvider',
+      _i4akrsd1.CreateModelConnectionRequest => 'CreateModelConnectionRequest',
+      _im8o8464.DeleteModelConnectionRequest => 'DeleteModelConnectionRequest',
+      _iuwdkoab.ListModelConnectionsRequest => 'ListModelConnectionsRequest',
+      _i926jgxf.ListWorkspaceModelSelectionsRequest =>
         'ListWorkspaceModelSelectionsRequest',
-      _i70.ModelConnectionView => 'ModelConnectionView',
-      _i71.ModelSyncResult => 'ModelSyncResult',
-      _i72.TestAndSyncModelConnectionRequest =>
+      _ikk9qcnz.ModelConnectionView => 'ModelConnectionView',
+      _il1l34li.ModelSyncResult => 'ModelSyncResult',
+      _ixyi2mo6.TestAndSyncModelConnectionRequest =>
         'TestAndSyncModelConnectionRequest',
-      _i73.UpdateModelConnectionRequest => 'UpdateModelConnectionRequest',
-      _i74.WorkspaceModelConnection => 'WorkspaceModelConnection',
-      _i75.WorkspaceModelSelectionView => 'WorkspaceModelSelectionView',
-      _i76.BeginUploadRequest => 'BeginUploadRequest',
-      _i77.BeginUploadResult => 'BeginUploadResult',
-      _i78.CompleteUploadRequest => 'CompleteUploadRequest',
-      _i79.DeleteObjectRequest => 'DeleteObjectRequest',
-      _i80.GetDownloadRequest => 'GetDownloadRequest',
-      _i81.GetDownloadResult => 'GetDownloadResult',
-      _i82.ObjectDeletion => 'ObjectDeletion',
-      _i83.ObjectErrorCode => 'ObjectErrorCode',
-      _i84.ObjectException => 'ObjectException',
-      _i85.ObjectReference => 'ObjectReference',
-      _i86.ObjectResult => 'ObjectResult',
-      _i87.ObjectUpload => 'ObjectUpload',
-      _i88.WorkspaceObject => 'WorkspaceObject',
-      _i89.WorkspaceStreamEnvelope => 'WorkspaceStreamEnvelope',
-      _i90.WorkspaceStreamEnvelopeKind => 'WorkspaceStreamEnvelopeKind',
-      _i91.WorkspaceSubscribeRequest => 'WorkspaceSubscribeRequest',
-      _i92.RecurringWorkerSchedule => 'RecurringWorkerSchedule',
-      _i93.WorkerCoordinatorLease => 'WorkerCoordinatorLease',
-      _i94.MutateWorkspaceCredentialRequest =>
+      _iw5yf4pd.UpdateModelConnectionRequest => 'UpdateModelConnectionRequest',
+      _ihf3aqrg.WorkspaceModelConnection => 'WorkspaceModelConnection',
+      _i2zocl9o.WorkspaceModelSelectionView => 'WorkspaceModelSelectionView',
+      _ii7xucwd.BeginUploadRequest => 'BeginUploadRequest',
+      _iy4az4cb.BeginUploadResult => 'BeginUploadResult',
+      _ip871ox8.CompleteUploadRequest => 'CompleteUploadRequest',
+      _iae520xs.DeleteObjectRequest => 'DeleteObjectRequest',
+      _i99cztt4.GetDownloadRequest => 'GetDownloadRequest',
+      _ip02joz1.GetDownloadResult => 'GetDownloadResult',
+      _ii2nljpm.ObjectDeletion => 'ObjectDeletion',
+      _ivy9wxc7.ObjectErrorCode => 'ObjectErrorCode',
+      _i4o8es85.ObjectException => 'ObjectException',
+      _ino5s3hv.ObjectReference => 'ObjectReference',
+      _is4lmm7s.ObjectResult => 'ObjectResult',
+      _i6zmsyes.ObjectUpload => 'ObjectUpload',
+      _i52p5grh.WorkspaceObject => 'WorkspaceObject',
+      _i0ekjn7l.WorkspaceStreamEnvelope => 'WorkspaceStreamEnvelope',
+      _i4zgsr0a.WorkspaceStreamEnvelopeKind => 'WorkspaceStreamEnvelopeKind',
+      _ig40wm3p.WorkspaceSubscribeRequest => 'WorkspaceSubscribeRequest',
+      _ivj0myfi.RecurringWorkerSchedule => 'RecurringWorkerSchedule',
+      _ifhsy8zv.WorkerCoordinatorLease => 'WorkerCoordinatorLease',
+      _io0q4g8e.MutateWorkspaceCredentialRequest =>
         'MutateWorkspaceCredentialRequest',
-      _i95.MutateWorkspaceCredentialResponse =>
+      _ipy8xct6.MutateWorkspaceCredentialResponse =>
         'MutateWorkspaceCredentialResponse',
-      _i96.PatchWorkspaceStateRequest => 'PatchWorkspaceStateRequest',
-      _i97.PatchWorkspaceStateResponse => 'PatchWorkspaceStateResponse',
-      _i98.PutWorkspaceSecretRequest => 'PutWorkspaceSecretRequest',
-      _i99.PutWorkspaceSecretResponse => 'PutWorkspaceSecretResponse',
-      _i100.ReadWorkspaceStateRequest => 'ReadWorkspaceStateRequest',
-      _i101.ReadWorkspaceStateResponse => 'ReadWorkspaceStateResponse',
-      _i102.WorkspacePatchOperation => 'WorkspacePatchOperation',
-      _i103.WorkspacePatchOperationKind => 'WorkspacePatchOperationKind',
-      _i104.WorkspaceResource => 'WorkspaceResource',
-      _i105.WorkspaceResourceKind => 'WorkspaceResourceKind',
-      _i106.WorkspaceResourcePage => 'WorkspaceResourcePage',
-      _i107.WorkspaceResourcePageRequest => 'WorkspaceResourcePageRequest',
-      _i108.WorkspaceSecret => 'WorkspaceSecret',
-      _i109.WorkspaceSecretKind => 'WorkspaceSecretKind',
-      _i110.WorkspaceSecretScope => 'WorkspaceSecretScope',
-      _i111.AcceptWorkspaceInviteRequest => 'AcceptWorkspaceInviteRequest',
-      _i112.CloudWorkspace => 'CloudWorkspace',
-      _i113.CloudWorkspaceCapabilities => 'CloudWorkspaceCapabilities',
-      _i114.CloudWorkspaceDetail => 'CloudWorkspaceDetail',
-      _i115.CloudWorkspaceErrorCode => 'CloudWorkspaceErrorCode',
-      _i116.CloudWorkspaceException => 'CloudWorkspaceException',
-      _i117.CloudWorkspaceInviteSummary => 'CloudWorkspaceInviteSummary',
-      _i118.CloudWorkspaceMemberSummary => 'CloudWorkspaceMemberSummary',
-      _i119.CloudWorkspaceSummary => 'CloudWorkspaceSummary',
-      _i120.CreateCloudWorkspaceRequest => 'CreateCloudWorkspaceRequest',
-      _i121.DeclineWorkspaceInviteRequest => 'DeclineWorkspaceInviteRequest',
-      _i122.DeleteCloudWorkspaceRequest => 'DeleteCloudWorkspaceRequest',
-      _i123.GetCloudWorkspaceDetailRequest => 'GetCloudWorkspaceDetailRequest',
-      _i124.InviteWorkspaceMemberRequest => 'InviteWorkspaceMemberRequest',
-      _i125.LeaveCloudWorkspaceRequest => 'LeaveCloudWorkspaceRequest',
-      _i126.ListCloudWorkspaceInvitesRequest =>
+      _ipvegfbn.PatchWorkspaceStateRequest => 'PatchWorkspaceStateRequest',
+      _ig93yftz.PatchWorkspaceStateResponse => 'PatchWorkspaceStateResponse',
+      _ipxnqptw.PutWorkspaceSecretRequest => 'PutWorkspaceSecretRequest',
+      _iavc361v.PutWorkspaceSecretResponse => 'PutWorkspaceSecretResponse',
+      _iz7boq8w.ReadWorkspaceStateRequest => 'ReadWorkspaceStateRequest',
+      _iqk6zto1.ReadWorkspaceStateResponse => 'ReadWorkspaceStateResponse',
+      _iolo6w4a.WorkspacePatchOperation => 'WorkspacePatchOperation',
+      _ihbarnlu.WorkspacePatchOperationKind => 'WorkspacePatchOperationKind',
+      _iqzfyfs9.WorkspaceResource => 'WorkspaceResource',
+      _i8d1xr9g.WorkspaceResourceKind => 'WorkspaceResourceKind',
+      _iilez6xa.WorkspaceResourcePage => 'WorkspaceResourcePage',
+      _i0vhsjed.WorkspaceResourcePageRequest => 'WorkspaceResourcePageRequest',
+      _iyjw9v2c.WorkspaceSecret => 'WorkspaceSecret',
+      _iq96p1l9.WorkspaceSecretKind => 'WorkspaceSecretKind',
+      _ioqbiy3d.WorkspaceSecretScope => 'WorkspaceSecretScope',
+      _ib7b2bmq.AcceptWorkspaceInviteRequest => 'AcceptWorkspaceInviteRequest',
+      _iyfjt29r.CloudWorkspace => 'CloudWorkspace',
+      _i1uzipdf.CloudWorkspaceCapabilities => 'CloudWorkspaceCapabilities',
+      _ixqnubu3.CloudWorkspaceDetail => 'CloudWorkspaceDetail',
+      _ikaytupt.CloudWorkspaceErrorCode => 'CloudWorkspaceErrorCode',
+      _iq0v59d3.CloudWorkspaceException => 'CloudWorkspaceException',
+      _i4buxtw8.CloudWorkspaceInviteSummary => 'CloudWorkspaceInviteSummary',
+      _i3c64tpx.CloudWorkspaceMemberSummary => 'CloudWorkspaceMemberSummary',
+      _iqlfhfv2.CloudWorkspaceSummary => 'CloudWorkspaceSummary',
+      _i2wx1hcz.CreateCloudWorkspaceRequest => 'CreateCloudWorkspaceRequest',
+      _izpvgmoh.DeclineWorkspaceInviteRequest =>
+        'DeclineWorkspaceInviteRequest',
+      _irqsg6pc.DeleteCloudWorkspaceRequest => 'DeleteCloudWorkspaceRequest',
+      _i3slgemv.GetCloudWorkspaceDetailRequest =>
+        'GetCloudWorkspaceDetailRequest',
+      _iojw3n39.InviteWorkspaceMemberRequest => 'InviteWorkspaceMemberRequest',
+      _i90hckxm.LeaveCloudWorkspaceRequest => 'LeaveCloudWorkspaceRequest',
+      _ig64imxt.ListCloudWorkspaceInvitesRequest =>
         'ListCloudWorkspaceInvitesRequest',
-      _i127.ListWorkspaceMembersRequest => 'ListWorkspaceMembersRequest',
-      _i128.PendingWorkspaceInviteSummary => 'PendingWorkspaceInviteSummary',
-      _i129.RemoveWorkspaceMemberRequest => 'RemoveWorkspaceMemberRequest',
-      _i130.RenameCloudWorkspaceRequest => 'RenameCloudWorkspaceRequest',
-      _i131.RenewWorkspaceInviteRequest => 'RenewWorkspaceInviteRequest',
-      _i132.RevokeWorkspaceInviteRequest => 'RevokeWorkspaceInviteRequest',
-      _i133.TransferCloudWorkspaceOwnershipRequest =>
+      _iop4tnuf.ListWorkspaceMembersRequest => 'ListWorkspaceMembersRequest',
+      _imuwa8ax.PendingWorkspaceInviteSummary =>
+        'PendingWorkspaceInviteSummary',
+      _ioya5p5j.RemoveWorkspaceMemberRequest => 'RemoveWorkspaceMemberRequest',
+      _ifsfc78n.RenameCloudWorkspaceRequest => 'RenameCloudWorkspaceRequest',
+      _ivko4e0f.RenewWorkspaceInviteRequest => 'RenewWorkspaceInviteRequest',
+      _iwlbozzh.RevokeWorkspaceInviteRequest => 'RevokeWorkspaceInviteRequest',
+      _i7ana9ux.TransferCloudWorkspaceOwnershipRequest =>
         'TransferCloudWorkspaceOwnershipRequest',
-      _i134.UpdateWorkspaceMemberRoleRequest =>
+      _i2qmz98c.UpdateWorkspaceMemberRoleRequest =>
         'UpdateWorkspaceMemberRoleRequest',
-      _i135.WorkspaceAuditRecord => 'WorkspaceAuditRecord',
-      _i136.WorkspaceEvent => 'WorkspaceEvent',
-      _i137.WorkspaceInvite => 'WorkspaceInvite',
-      _i138.WorkspaceMember => 'WorkspaceMember',
-      _i139.WorkspaceMutationReceipt => 'WorkspaceMutationReceipt',
+      _ifp2sq2r.WorkspaceAuditRecord => 'WorkspaceAuditRecord',
+      _ivvnnphu.WorkspaceEvent => 'WorkspaceEvent',
+      _ilpykuxc.WorkspaceInvite => 'WorkspaceInvite',
+      _i56tb1yu.WorkspaceMember => 'WorkspaceMember',
+      _ia614g7d.WorkspaceMutationReceipt => 'WorkspaceMutationReceipt',
       _ => null,
     };
   }
@@ -5410,290 +5564,290 @@ class Protocol extends _i1.DatabaseSerializationManager {
     }
 
     switch (data) {
-      case _i5.AccountSummary():
+      case _i0kh9vnq.AccountSummary():
         return 'AccountSummary';
-      case _i6.CodexOAuthTransaction():
+      case _ify5ufwn.CodexOAuthTransaction():
         return 'CodexOAuthTransaction';
-      case _i7.CompleteCodexOAuthRequest():
+      case _i2qdkbo8.CompleteCodexOAuthRequest():
         return 'CompleteCodexOAuthRequest';
-      case _i8.CompleteCodexOAuthResult():
+      case _ibhl6ekj.CompleteCodexOAuthResult():
         return 'CompleteCodexOAuthResult';
-      case _i9.StartCodexOAuthRequest():
+      case _iv7ukgnj.StartCodexOAuthRequest():
         return 'StartCodexOAuthRequest';
-      case _i10.StartCodexOAuthResult():
+      case _itptq7z5.StartCodexOAuthResult():
         return 'StartCodexOAuthResult';
-      case _i11.CancelTurnRequest():
+      case _iarqshx6.CancelTurnRequest():
         return 'CancelTurnRequest';
-      case _i12.CompactConversationRequest():
+      case _isyd7s84.CompactConversationRequest():
         return 'CompactConversationRequest';
-      case _i13.ContinueConversationRequest():
+      case _ialxa16r.ContinueConversationRequest():
         return 'ContinueConversationRequest';
-      case _i14.ContinueTurnRequest():
+      case _iwrs6sde.ContinueTurnRequest():
         return 'ContinueTurnRequest';
-      case _i15.Conversation():
+      case _iivijtsr.Conversation():
         return 'Conversation';
-      case _i16.ConversationErrorCode():
+      case _iz6esn7o.ConversationErrorCode():
         return 'ConversationErrorCode';
-      case _i17.ConversationEvent():
+      case _i77s958n.ConversationEvent():
         return 'ConversationEvent';
-      case _i18.ConversationEventType():
+      case _i5gn99j4.ConversationEventType():
         return 'ConversationEventType';
-      case _i19.ConversationException():
+      case _i4box1gt.ConversationException():
         return 'ConversationException';
-      case _i20.ConversationExecution():
+      case _iznwbo5b.ConversationExecution():
         return 'ConversationExecution';
-      case _i21.ConversationExecutionView():
+      case _ij9w9f8d.ConversationExecutionView():
         return 'ConversationExecutionView';
-      case _i22.ConversationJob():
+      case _iq1eovrr.ConversationJob():
         return 'ConversationJob';
-      case _i23.ConversationMessage():
+      case _ibea51bx.ConversationMessage():
         return 'ConversationMessage';
-      case _i24.ConversationMessageView():
+      case _iutotoh6.ConversationMessageView():
         return 'ConversationMessageView';
-      case _i25.ConversationMutationResult():
+      case _iz02ruas.ConversationMutationResult():
         return 'ConversationMutationResult';
-      case _i26.ConversationPage():
+      case _icl1rfiv.ConversationPage():
         return 'ConversationPage';
-      case _i27.ConversationProjectionView():
+      case _icx9bns3.ConversationProjectionView():
         return 'ConversationProjectionView';
-      case _i28.ConversationSnapshot():
+      case _i4omaws8.ConversationSnapshot():
         return 'ConversationSnapshot';
-      case _i29.ConversationStreamEvent():
+      case _irrmkjcu.ConversationStreamEvent():
         return 'ConversationStreamEvent';
-      case _i30.ConversationSubscribeRequest():
+      case _i6hxcode.ConversationSubscribeRequest():
         return 'ConversationSubscribeRequest';
-      case _i31.ConversationSummary():
+      case _i7a0mfc5.ConversationSummary():
         return 'ConversationSummary';
-      case _i32.ConversationToolCall():
+      case _iflac717.ConversationToolCall():
         return 'ConversationToolCall';
-      case _i33.ConversationToolCallView():
+      case _ic5ojtne.ConversationToolCallView():
         return 'ConversationToolCallView';
-      case _i34.ConversationTurn():
+      case _i7mmki1w.ConversationTurn():
         return 'ConversationTurn';
-      case _i35.ConversationTurnView():
+      case _ir5w321b.ConversationTurnView():
         return 'ConversationTurnView';
-      case _i36.ConversationUsage():
+      case _iii6xlqw.ConversationUsage():
         return 'ConversationUsage';
-      case _i37.CreateConversationRequest():
+      case _i4shnjby.CreateConversationRequest():
         return 'CreateConversationRequest';
-      case _i38.DeleteConversationRequest():
+      case _iqsppx3t.DeleteConversationRequest():
         return 'DeleteConversationRequest';
-      case _i39.EditPendingConversationMessageRequest():
+      case _iybdpw96.EditPendingConversationMessageRequest():
         return 'EditPendingConversationMessageRequest';
-      case _i40.GetConversationRequest():
+      case _ixb0z1tn.GetConversationRequest():
         return 'GetConversationRequest';
-      case _i41.GetTurnRequest():
+      case _ilyvwvdb.GetTurnRequest():
         return 'GetTurnRequest';
-      case _i42.ListConversationMessagesRequest():
+      case _it91nt4l.ListConversationMessagesRequest():
         return 'ListConversationMessagesRequest';
-      case _i43.ListConversationsRequest():
+      case _itcpel99.ListConversationsRequest():
         return 'ListConversationsRequest';
-      case _i44.ProviderAdmission():
+      case _i32k4voa.ProviderAdmission():
         return 'ProviderAdmission';
-      case _i45.ProviderAdmissionLock():
+      case _ih2np1vh.ProviderAdmissionLock():
         return 'ProviderAdmissionLock';
-      case _i46.ProviderAdmissionReservation():
+      case _i7moywui.ProviderAdmissionReservation():
         return 'ProviderAdmissionReservation';
-      case _i47.QueueConversationMessageRequest():
+      case _ido51m94.QueueConversationMessageRequest():
         return 'QueueConversationMessageRequest';
-      case _i48.RemovePendingConversationMessageRequest():
+      case _iy526sio.RemovePendingConversationMessageRequest():
         return 'RemovePendingConversationMessageRequest';
-      case _i49.ReorderPendingConversationMessageRequest():
+      case _infbxzxr.ReorderPendingConversationMessageRequest():
         return 'ReorderPendingConversationMessageRequest';
-      case _i50.StartTurnRequest():
+      case _iocu6u94.StartTurnRequest():
         return 'StartTurnRequest';
-      case _i51.StartTurnResult():
+      case _iw8le0j7.StartTurnResult():
         return 'StartTurnResult';
-      case _i52.StopConversationRequest():
+      case _i4cgq7zt.StopConversationRequest():
         return 'StopConversationRequest';
-      case _i53.SubmitToolDecisionRequest():
+      case _inla43mu.SubmitToolDecisionRequest():
         return 'SubmitToolDecisionRequest';
-      case _i54.TurnSnapshot():
+      case _ih4jnnah.TurnSnapshot():
         return 'TurnSnapshot';
-      case _i55.UpdateConversationRequest():
+      case _ihs4d7mz.UpdateConversationRequest():
         return 'UpdateConversationRequest';
-      case _i56.UpdateConversationSettingsRequest():
+      case _i8unm495.UpdateConversationSettingsRequest():
         return 'UpdateConversationSettingsRequest';
-      case _i57.CreateMcpServerRequest():
+      case _i6hg2xtf.CreateMcpServerRequest():
         return 'CreateMcpServerRequest';
-      case _i58.CreateMcpServerResult():
+      case _ihyupc89.CreateMcpServerResult():
         return 'CreateMcpServerResult';
-      case _i59.DeleteMcpServerRequest():
+      case _iabui7vl.DeleteMcpServerRequest():
         return 'DeleteMcpServerRequest';
-      case _i60.DiscoverMcpServerRequest():
+      case _ilmfigs5.DiscoverMcpServerRequest():
         return 'DiscoverMcpServerRequest';
-      case _i61.DiscoverMcpServerResult():
+      case _i5i328k3.DiscoverMcpServerResult():
         return 'DiscoverMcpServerResult';
-      case _i62.DiscoveredMcpTool():
+      case _igzjg3pi.DiscoveredMcpTool():
         return 'DiscoveredMcpTool';
-      case _i63.McpServerHealth():
+      case _iw1ftww6.McpServerHealth():
         return 'McpServerHealth';
-      case _i64.ApiModel():
+      case _i8ct1fsr.ApiModel():
         return 'ApiModel';
-      case _i65.ApiModelProvider():
+      case _ioo5yu9z.ApiModelProvider():
         return 'ApiModelProvider';
-      case _i66.CreateModelConnectionRequest():
+      case _i4akrsd1.CreateModelConnectionRequest():
         return 'CreateModelConnectionRequest';
-      case _i67.DeleteModelConnectionRequest():
+      case _im8o8464.DeleteModelConnectionRequest():
         return 'DeleteModelConnectionRequest';
-      case _i68.ListModelConnectionsRequest():
+      case _iuwdkoab.ListModelConnectionsRequest():
         return 'ListModelConnectionsRequest';
-      case _i69.ListWorkspaceModelSelectionsRequest():
+      case _i926jgxf.ListWorkspaceModelSelectionsRequest():
         return 'ListWorkspaceModelSelectionsRequest';
-      case _i70.ModelConnectionView():
+      case _ikk9qcnz.ModelConnectionView():
         return 'ModelConnectionView';
-      case _i71.ModelSyncResult():
+      case _il1l34li.ModelSyncResult():
         return 'ModelSyncResult';
-      case _i72.TestAndSyncModelConnectionRequest():
+      case _ixyi2mo6.TestAndSyncModelConnectionRequest():
         return 'TestAndSyncModelConnectionRequest';
-      case _i73.UpdateModelConnectionRequest():
+      case _iw5yf4pd.UpdateModelConnectionRequest():
         return 'UpdateModelConnectionRequest';
-      case _i74.WorkspaceModelConnection():
+      case _ihf3aqrg.WorkspaceModelConnection():
         return 'WorkspaceModelConnection';
-      case _i75.WorkspaceModelSelectionView():
+      case _i2zocl9o.WorkspaceModelSelectionView():
         return 'WorkspaceModelSelectionView';
-      case _i76.BeginUploadRequest():
+      case _ii7xucwd.BeginUploadRequest():
         return 'BeginUploadRequest';
-      case _i77.BeginUploadResult():
+      case _iy4az4cb.BeginUploadResult():
         return 'BeginUploadResult';
-      case _i78.CompleteUploadRequest():
+      case _ip871ox8.CompleteUploadRequest():
         return 'CompleteUploadRequest';
-      case _i79.DeleteObjectRequest():
+      case _iae520xs.DeleteObjectRequest():
         return 'DeleteObjectRequest';
-      case _i80.GetDownloadRequest():
+      case _i99cztt4.GetDownloadRequest():
         return 'GetDownloadRequest';
-      case _i81.GetDownloadResult():
+      case _ip02joz1.GetDownloadResult():
         return 'GetDownloadResult';
-      case _i82.ObjectDeletion():
+      case _ii2nljpm.ObjectDeletion():
         return 'ObjectDeletion';
-      case _i83.ObjectErrorCode():
+      case _ivy9wxc7.ObjectErrorCode():
         return 'ObjectErrorCode';
-      case _i84.ObjectException():
+      case _i4o8es85.ObjectException():
         return 'ObjectException';
-      case _i85.ObjectReference():
+      case _ino5s3hv.ObjectReference():
         return 'ObjectReference';
-      case _i86.ObjectResult():
+      case _is4lmm7s.ObjectResult():
         return 'ObjectResult';
-      case _i87.ObjectUpload():
+      case _i6zmsyes.ObjectUpload():
         return 'ObjectUpload';
-      case _i88.WorkspaceObject():
+      case _i52p5grh.WorkspaceObject():
         return 'WorkspaceObject';
-      case _i89.WorkspaceStreamEnvelope():
+      case _i0ekjn7l.WorkspaceStreamEnvelope():
         return 'WorkspaceStreamEnvelope';
-      case _i90.WorkspaceStreamEnvelopeKind():
+      case _i4zgsr0a.WorkspaceStreamEnvelopeKind():
         return 'WorkspaceStreamEnvelopeKind';
-      case _i91.WorkspaceSubscribeRequest():
+      case _ig40wm3p.WorkspaceSubscribeRequest():
         return 'WorkspaceSubscribeRequest';
-      case _i92.RecurringWorkerSchedule():
+      case _ivj0myfi.RecurringWorkerSchedule():
         return 'RecurringWorkerSchedule';
-      case _i93.WorkerCoordinatorLease():
+      case _ifhsy8zv.WorkerCoordinatorLease():
         return 'WorkerCoordinatorLease';
-      case _i94.MutateWorkspaceCredentialRequest():
+      case _io0q4g8e.MutateWorkspaceCredentialRequest():
         return 'MutateWorkspaceCredentialRequest';
-      case _i95.MutateWorkspaceCredentialResponse():
+      case _ipy8xct6.MutateWorkspaceCredentialResponse():
         return 'MutateWorkspaceCredentialResponse';
-      case _i96.PatchWorkspaceStateRequest():
+      case _ipvegfbn.PatchWorkspaceStateRequest():
         return 'PatchWorkspaceStateRequest';
-      case _i97.PatchWorkspaceStateResponse():
+      case _ig93yftz.PatchWorkspaceStateResponse():
         return 'PatchWorkspaceStateResponse';
-      case _i98.PutWorkspaceSecretRequest():
+      case _ipxnqptw.PutWorkspaceSecretRequest():
         return 'PutWorkspaceSecretRequest';
-      case _i99.PutWorkspaceSecretResponse():
+      case _iavc361v.PutWorkspaceSecretResponse():
         return 'PutWorkspaceSecretResponse';
-      case _i100.ReadWorkspaceStateRequest():
+      case _iz7boq8w.ReadWorkspaceStateRequest():
         return 'ReadWorkspaceStateRequest';
-      case _i101.ReadWorkspaceStateResponse():
+      case _iqk6zto1.ReadWorkspaceStateResponse():
         return 'ReadWorkspaceStateResponse';
-      case _i102.WorkspacePatchOperation():
+      case _iolo6w4a.WorkspacePatchOperation():
         return 'WorkspacePatchOperation';
-      case _i103.WorkspacePatchOperationKind():
+      case _ihbarnlu.WorkspacePatchOperationKind():
         return 'WorkspacePatchOperationKind';
-      case _i104.WorkspaceResource():
+      case _iqzfyfs9.WorkspaceResource():
         return 'WorkspaceResource';
-      case _i105.WorkspaceResourceKind():
+      case _i8d1xr9g.WorkspaceResourceKind():
         return 'WorkspaceResourceKind';
-      case _i106.WorkspaceResourcePage():
+      case _iilez6xa.WorkspaceResourcePage():
         return 'WorkspaceResourcePage';
-      case _i107.WorkspaceResourcePageRequest():
+      case _i0vhsjed.WorkspaceResourcePageRequest():
         return 'WorkspaceResourcePageRequest';
-      case _i108.WorkspaceSecret():
+      case _iyjw9v2c.WorkspaceSecret():
         return 'WorkspaceSecret';
-      case _i109.WorkspaceSecretKind():
+      case _iq96p1l9.WorkspaceSecretKind():
         return 'WorkspaceSecretKind';
-      case _i110.WorkspaceSecretScope():
+      case _ioqbiy3d.WorkspaceSecretScope():
         return 'WorkspaceSecretScope';
-      case _i111.AcceptWorkspaceInviteRequest():
+      case _ib7b2bmq.AcceptWorkspaceInviteRequest():
         return 'AcceptWorkspaceInviteRequest';
-      case _i112.CloudWorkspace():
+      case _iyfjt29r.CloudWorkspace():
         return 'CloudWorkspace';
-      case _i113.CloudWorkspaceCapabilities():
+      case _i1uzipdf.CloudWorkspaceCapabilities():
         return 'CloudWorkspaceCapabilities';
-      case _i114.CloudWorkspaceDetail():
+      case _ixqnubu3.CloudWorkspaceDetail():
         return 'CloudWorkspaceDetail';
-      case _i115.CloudWorkspaceErrorCode():
+      case _ikaytupt.CloudWorkspaceErrorCode():
         return 'CloudWorkspaceErrorCode';
-      case _i116.CloudWorkspaceException():
+      case _iq0v59d3.CloudWorkspaceException():
         return 'CloudWorkspaceException';
-      case _i117.CloudWorkspaceInviteSummary():
+      case _i4buxtw8.CloudWorkspaceInviteSummary():
         return 'CloudWorkspaceInviteSummary';
-      case _i118.CloudWorkspaceMemberSummary():
+      case _i3c64tpx.CloudWorkspaceMemberSummary():
         return 'CloudWorkspaceMemberSummary';
-      case _i119.CloudWorkspaceSummary():
+      case _iqlfhfv2.CloudWorkspaceSummary():
         return 'CloudWorkspaceSummary';
-      case _i120.CreateCloudWorkspaceRequest():
+      case _i2wx1hcz.CreateCloudWorkspaceRequest():
         return 'CreateCloudWorkspaceRequest';
-      case _i121.DeclineWorkspaceInviteRequest():
+      case _izpvgmoh.DeclineWorkspaceInviteRequest():
         return 'DeclineWorkspaceInviteRequest';
-      case _i122.DeleteCloudWorkspaceRequest():
+      case _irqsg6pc.DeleteCloudWorkspaceRequest():
         return 'DeleteCloudWorkspaceRequest';
-      case _i123.GetCloudWorkspaceDetailRequest():
+      case _i3slgemv.GetCloudWorkspaceDetailRequest():
         return 'GetCloudWorkspaceDetailRequest';
-      case _i124.InviteWorkspaceMemberRequest():
+      case _iojw3n39.InviteWorkspaceMemberRequest():
         return 'InviteWorkspaceMemberRequest';
-      case _i125.LeaveCloudWorkspaceRequest():
+      case _i90hckxm.LeaveCloudWorkspaceRequest():
         return 'LeaveCloudWorkspaceRequest';
-      case _i126.ListCloudWorkspaceInvitesRequest():
+      case _ig64imxt.ListCloudWorkspaceInvitesRequest():
         return 'ListCloudWorkspaceInvitesRequest';
-      case _i127.ListWorkspaceMembersRequest():
+      case _iop4tnuf.ListWorkspaceMembersRequest():
         return 'ListWorkspaceMembersRequest';
-      case _i128.PendingWorkspaceInviteSummary():
+      case _imuwa8ax.PendingWorkspaceInviteSummary():
         return 'PendingWorkspaceInviteSummary';
-      case _i129.RemoveWorkspaceMemberRequest():
+      case _ioya5p5j.RemoveWorkspaceMemberRequest():
         return 'RemoveWorkspaceMemberRequest';
-      case _i130.RenameCloudWorkspaceRequest():
+      case _ifsfc78n.RenameCloudWorkspaceRequest():
         return 'RenameCloudWorkspaceRequest';
-      case _i131.RenewWorkspaceInviteRequest():
+      case _ivko4e0f.RenewWorkspaceInviteRequest():
         return 'RenewWorkspaceInviteRequest';
-      case _i132.RevokeWorkspaceInviteRequest():
+      case _iwlbozzh.RevokeWorkspaceInviteRequest():
         return 'RevokeWorkspaceInviteRequest';
-      case _i133.TransferCloudWorkspaceOwnershipRequest():
+      case _i7ana9ux.TransferCloudWorkspaceOwnershipRequest():
         return 'TransferCloudWorkspaceOwnershipRequest';
-      case _i134.UpdateWorkspaceMemberRoleRequest():
+      case _i2qmz98c.UpdateWorkspaceMemberRoleRequest():
         return 'UpdateWorkspaceMemberRoleRequest';
-      case _i135.WorkspaceAuditRecord():
+      case _ifp2sq2r.WorkspaceAuditRecord():
         return 'WorkspaceAuditRecord';
-      case _i136.WorkspaceEvent():
+      case _ivvnnphu.WorkspaceEvent():
         return 'WorkspaceEvent';
-      case _i137.WorkspaceInvite():
+      case _ilpykuxc.WorkspaceInvite():
         return 'WorkspaceInvite';
-      case _i138.WorkspaceMember():
+      case _i56tb1yu.WorkspaceMember():
         return 'WorkspaceMember';
-      case _i139.WorkspaceMutationReceipt():
+      case _ia614g7d.WorkspaceMutationReceipt():
         return 'WorkspaceMutationReceipt';
     }
-    className = _i3.Protocol().getClassNameForObject(data);
+    className = _iacs.Protocol().getClassNameForObject(data);
     if (className != null) {
       return className.contains('.')
           ? className
           : 'serverpod_auth_core.$className';
     }
-    className = _i4.Protocol().getClassNameForObject(data);
+    className = _iais.Protocol().getClassNameForObject(data);
     if (className != null) {
       return className.contains('.')
           ? className
           : 'serverpod_auth_idp.$className';
     }
-    className = _i2.Protocol().getClassNameForObject(data);
+    className = _isp.Protocol().getClassNameForObject(data);
     if (className != null) {
       return className.contains('.') ? className : 'serverpod.$className';
     }
@@ -5707,525 +5861,543 @@ class Protocol extends _i1.DatabaseSerializationManager {
       return super.deserializeByClassName(data);
     }
     if (dataClassName == 'AccountSummary') {
-      return deserialize<_i5.AccountSummary>(data['data']);
+      return deserialize<_i0kh9vnq.AccountSummary>(data['data']);
     }
     if (dataClassName == 'CodexOAuthTransaction') {
-      return deserialize<_i6.CodexOAuthTransaction>(data['data']);
+      return deserialize<_ify5ufwn.CodexOAuthTransaction>(data['data']);
     }
     if (dataClassName == 'CompleteCodexOAuthRequest') {
-      return deserialize<_i7.CompleteCodexOAuthRequest>(data['data']);
+      return deserialize<_i2qdkbo8.CompleteCodexOAuthRequest>(data['data']);
     }
     if (dataClassName == 'CompleteCodexOAuthResult') {
-      return deserialize<_i8.CompleteCodexOAuthResult>(data['data']);
+      return deserialize<_ibhl6ekj.CompleteCodexOAuthResult>(data['data']);
     }
     if (dataClassName == 'StartCodexOAuthRequest') {
-      return deserialize<_i9.StartCodexOAuthRequest>(data['data']);
+      return deserialize<_iv7ukgnj.StartCodexOAuthRequest>(data['data']);
     }
     if (dataClassName == 'StartCodexOAuthResult') {
-      return deserialize<_i10.StartCodexOAuthResult>(data['data']);
+      return deserialize<_itptq7z5.StartCodexOAuthResult>(data['data']);
     }
     if (dataClassName == 'CancelTurnRequest') {
-      return deserialize<_i11.CancelTurnRequest>(data['data']);
+      return deserialize<_iarqshx6.CancelTurnRequest>(data['data']);
     }
     if (dataClassName == 'CompactConversationRequest') {
-      return deserialize<_i12.CompactConversationRequest>(data['data']);
+      return deserialize<_isyd7s84.CompactConversationRequest>(data['data']);
     }
     if (dataClassName == 'ContinueConversationRequest') {
-      return deserialize<_i13.ContinueConversationRequest>(data['data']);
+      return deserialize<_ialxa16r.ContinueConversationRequest>(data['data']);
     }
     if (dataClassName == 'ContinueTurnRequest') {
-      return deserialize<_i14.ContinueTurnRequest>(data['data']);
+      return deserialize<_iwrs6sde.ContinueTurnRequest>(data['data']);
     }
     if (dataClassName == 'Conversation') {
-      return deserialize<_i15.Conversation>(data['data']);
+      return deserialize<_iivijtsr.Conversation>(data['data']);
     }
     if (dataClassName == 'ConversationErrorCode') {
-      return deserialize<_i16.ConversationErrorCode>(data['data']);
+      return deserialize<_iz6esn7o.ConversationErrorCode>(data['data']);
     }
     if (dataClassName == 'ConversationEvent') {
-      return deserialize<_i17.ConversationEvent>(data['data']);
+      return deserialize<_i77s958n.ConversationEvent>(data['data']);
     }
     if (dataClassName == 'ConversationEventType') {
-      return deserialize<_i18.ConversationEventType>(data['data']);
+      return deserialize<_i5gn99j4.ConversationEventType>(data['data']);
     }
     if (dataClassName == 'ConversationException') {
-      return deserialize<_i19.ConversationException>(data['data']);
+      return deserialize<_i4box1gt.ConversationException>(data['data']);
     }
     if (dataClassName == 'ConversationExecution') {
-      return deserialize<_i20.ConversationExecution>(data['data']);
+      return deserialize<_iznwbo5b.ConversationExecution>(data['data']);
     }
     if (dataClassName == 'ConversationExecutionView') {
-      return deserialize<_i21.ConversationExecutionView>(data['data']);
+      return deserialize<_ij9w9f8d.ConversationExecutionView>(data['data']);
     }
     if (dataClassName == 'ConversationJob') {
-      return deserialize<_i22.ConversationJob>(data['data']);
+      return deserialize<_iq1eovrr.ConversationJob>(data['data']);
     }
     if (dataClassName == 'ConversationMessage') {
-      return deserialize<_i23.ConversationMessage>(data['data']);
+      return deserialize<_ibea51bx.ConversationMessage>(data['data']);
     }
     if (dataClassName == 'ConversationMessageView') {
-      return deserialize<_i24.ConversationMessageView>(data['data']);
+      return deserialize<_iutotoh6.ConversationMessageView>(data['data']);
     }
     if (dataClassName == 'ConversationMutationResult') {
-      return deserialize<_i25.ConversationMutationResult>(data['data']);
+      return deserialize<_iz02ruas.ConversationMutationResult>(data['data']);
     }
     if (dataClassName == 'ConversationPage') {
-      return deserialize<_i26.ConversationPage>(data['data']);
+      return deserialize<_icl1rfiv.ConversationPage>(data['data']);
     }
     if (dataClassName == 'ConversationProjectionView') {
-      return deserialize<_i27.ConversationProjectionView>(data['data']);
+      return deserialize<_icx9bns3.ConversationProjectionView>(data['data']);
     }
     if (dataClassName == 'ConversationSnapshot') {
-      return deserialize<_i28.ConversationSnapshot>(data['data']);
+      return deserialize<_i4omaws8.ConversationSnapshot>(data['data']);
     }
     if (dataClassName == 'ConversationStreamEvent') {
-      return deserialize<_i29.ConversationStreamEvent>(data['data']);
+      return deserialize<_irrmkjcu.ConversationStreamEvent>(data['data']);
     }
     if (dataClassName == 'ConversationSubscribeRequest') {
-      return deserialize<_i30.ConversationSubscribeRequest>(data['data']);
+      return deserialize<_i6hxcode.ConversationSubscribeRequest>(data['data']);
     }
     if (dataClassName == 'ConversationSummary') {
-      return deserialize<_i31.ConversationSummary>(data['data']);
+      return deserialize<_i7a0mfc5.ConversationSummary>(data['data']);
     }
     if (dataClassName == 'ConversationToolCall') {
-      return deserialize<_i32.ConversationToolCall>(data['data']);
+      return deserialize<_iflac717.ConversationToolCall>(data['data']);
     }
     if (dataClassName == 'ConversationToolCallView') {
-      return deserialize<_i33.ConversationToolCallView>(data['data']);
+      return deserialize<_ic5ojtne.ConversationToolCallView>(data['data']);
     }
     if (dataClassName == 'ConversationTurn') {
-      return deserialize<_i34.ConversationTurn>(data['data']);
+      return deserialize<_i7mmki1w.ConversationTurn>(data['data']);
     }
     if (dataClassName == 'ConversationTurnView') {
-      return deserialize<_i35.ConversationTurnView>(data['data']);
+      return deserialize<_ir5w321b.ConversationTurnView>(data['data']);
     }
     if (dataClassName == 'ConversationUsage') {
-      return deserialize<_i36.ConversationUsage>(data['data']);
+      return deserialize<_iii6xlqw.ConversationUsage>(data['data']);
     }
     if (dataClassName == 'CreateConversationRequest') {
-      return deserialize<_i37.CreateConversationRequest>(data['data']);
+      return deserialize<_i4shnjby.CreateConversationRequest>(data['data']);
     }
     if (dataClassName == 'DeleteConversationRequest') {
-      return deserialize<_i38.DeleteConversationRequest>(data['data']);
+      return deserialize<_iqsppx3t.DeleteConversationRequest>(data['data']);
     }
     if (dataClassName == 'EditPendingConversationMessageRequest') {
-      return deserialize<_i39.EditPendingConversationMessageRequest>(
+      return deserialize<_iybdpw96.EditPendingConversationMessageRequest>(
         data['data'],
       );
     }
     if (dataClassName == 'GetConversationRequest') {
-      return deserialize<_i40.GetConversationRequest>(data['data']);
+      return deserialize<_ixb0z1tn.GetConversationRequest>(data['data']);
     }
     if (dataClassName == 'GetTurnRequest') {
-      return deserialize<_i41.GetTurnRequest>(data['data']);
+      return deserialize<_ilyvwvdb.GetTurnRequest>(data['data']);
     }
     if (dataClassName == 'ListConversationMessagesRequest') {
-      return deserialize<_i42.ListConversationMessagesRequest>(data['data']);
+      return deserialize<_it91nt4l.ListConversationMessagesRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'ListConversationsRequest') {
-      return deserialize<_i43.ListConversationsRequest>(data['data']);
+      return deserialize<_itcpel99.ListConversationsRequest>(data['data']);
     }
     if (dataClassName == 'ProviderAdmission') {
-      return deserialize<_i44.ProviderAdmission>(data['data']);
+      return deserialize<_i32k4voa.ProviderAdmission>(data['data']);
     }
     if (dataClassName == 'ProviderAdmissionLock') {
-      return deserialize<_i45.ProviderAdmissionLock>(data['data']);
+      return deserialize<_ih2np1vh.ProviderAdmissionLock>(data['data']);
     }
     if (dataClassName == 'ProviderAdmissionReservation') {
-      return deserialize<_i46.ProviderAdmissionReservation>(data['data']);
+      return deserialize<_i7moywui.ProviderAdmissionReservation>(data['data']);
     }
     if (dataClassName == 'QueueConversationMessageRequest') {
-      return deserialize<_i47.QueueConversationMessageRequest>(data['data']);
+      return deserialize<_ido51m94.QueueConversationMessageRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'RemovePendingConversationMessageRequest') {
-      return deserialize<_i48.RemovePendingConversationMessageRequest>(
+      return deserialize<_iy526sio.RemovePendingConversationMessageRequest>(
         data['data'],
       );
     }
     if (dataClassName == 'ReorderPendingConversationMessageRequest') {
-      return deserialize<_i49.ReorderPendingConversationMessageRequest>(
+      return deserialize<_infbxzxr.ReorderPendingConversationMessageRequest>(
         data['data'],
       );
     }
     if (dataClassName == 'StartTurnRequest') {
-      return deserialize<_i50.StartTurnRequest>(data['data']);
+      return deserialize<_iocu6u94.StartTurnRequest>(data['data']);
     }
     if (dataClassName == 'StartTurnResult') {
-      return deserialize<_i51.StartTurnResult>(data['data']);
+      return deserialize<_iw8le0j7.StartTurnResult>(data['data']);
     }
     if (dataClassName == 'StopConversationRequest') {
-      return deserialize<_i52.StopConversationRequest>(data['data']);
+      return deserialize<_i4cgq7zt.StopConversationRequest>(data['data']);
     }
     if (dataClassName == 'SubmitToolDecisionRequest') {
-      return deserialize<_i53.SubmitToolDecisionRequest>(data['data']);
+      return deserialize<_inla43mu.SubmitToolDecisionRequest>(data['data']);
     }
     if (dataClassName == 'TurnSnapshot') {
-      return deserialize<_i54.TurnSnapshot>(data['data']);
+      return deserialize<_ih4jnnah.TurnSnapshot>(data['data']);
     }
     if (dataClassName == 'UpdateConversationRequest') {
-      return deserialize<_i55.UpdateConversationRequest>(data['data']);
+      return deserialize<_ihs4d7mz.UpdateConversationRequest>(data['data']);
     }
     if (dataClassName == 'UpdateConversationSettingsRequest') {
-      return deserialize<_i56.UpdateConversationSettingsRequest>(data['data']);
+      return deserialize<_i8unm495.UpdateConversationSettingsRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'CreateMcpServerRequest') {
-      return deserialize<_i57.CreateMcpServerRequest>(data['data']);
+      return deserialize<_i6hg2xtf.CreateMcpServerRequest>(data['data']);
     }
     if (dataClassName == 'CreateMcpServerResult') {
-      return deserialize<_i58.CreateMcpServerResult>(data['data']);
+      return deserialize<_ihyupc89.CreateMcpServerResult>(data['data']);
     }
     if (dataClassName == 'DeleteMcpServerRequest') {
-      return deserialize<_i59.DeleteMcpServerRequest>(data['data']);
+      return deserialize<_iabui7vl.DeleteMcpServerRequest>(data['data']);
     }
     if (dataClassName == 'DiscoverMcpServerRequest') {
-      return deserialize<_i60.DiscoverMcpServerRequest>(data['data']);
+      return deserialize<_ilmfigs5.DiscoverMcpServerRequest>(data['data']);
     }
     if (dataClassName == 'DiscoverMcpServerResult') {
-      return deserialize<_i61.DiscoverMcpServerResult>(data['data']);
+      return deserialize<_i5i328k3.DiscoverMcpServerResult>(data['data']);
     }
     if (dataClassName == 'DiscoveredMcpTool') {
-      return deserialize<_i62.DiscoveredMcpTool>(data['data']);
+      return deserialize<_igzjg3pi.DiscoveredMcpTool>(data['data']);
     }
     if (dataClassName == 'McpServerHealth') {
-      return deserialize<_i63.McpServerHealth>(data['data']);
+      return deserialize<_iw1ftww6.McpServerHealth>(data['data']);
     }
     if (dataClassName == 'ApiModel') {
-      return deserialize<_i64.ApiModel>(data['data']);
+      return deserialize<_i8ct1fsr.ApiModel>(data['data']);
     }
     if (dataClassName == 'ApiModelProvider') {
-      return deserialize<_i65.ApiModelProvider>(data['data']);
+      return deserialize<_ioo5yu9z.ApiModelProvider>(data['data']);
     }
     if (dataClassName == 'CreateModelConnectionRequest') {
-      return deserialize<_i66.CreateModelConnectionRequest>(data['data']);
+      return deserialize<_i4akrsd1.CreateModelConnectionRequest>(data['data']);
     }
     if (dataClassName == 'DeleteModelConnectionRequest') {
-      return deserialize<_i67.DeleteModelConnectionRequest>(data['data']);
+      return deserialize<_im8o8464.DeleteModelConnectionRequest>(data['data']);
     }
     if (dataClassName == 'ListModelConnectionsRequest') {
-      return deserialize<_i68.ListModelConnectionsRequest>(data['data']);
+      return deserialize<_iuwdkoab.ListModelConnectionsRequest>(data['data']);
     }
     if (dataClassName == 'ListWorkspaceModelSelectionsRequest') {
-      return deserialize<_i69.ListWorkspaceModelSelectionsRequest>(
+      return deserialize<_i926jgxf.ListWorkspaceModelSelectionsRequest>(
         data['data'],
       );
     }
     if (dataClassName == 'ModelConnectionView') {
-      return deserialize<_i70.ModelConnectionView>(data['data']);
+      return deserialize<_ikk9qcnz.ModelConnectionView>(data['data']);
     }
     if (dataClassName == 'ModelSyncResult') {
-      return deserialize<_i71.ModelSyncResult>(data['data']);
+      return deserialize<_il1l34li.ModelSyncResult>(data['data']);
     }
     if (dataClassName == 'TestAndSyncModelConnectionRequest') {
-      return deserialize<_i72.TestAndSyncModelConnectionRequest>(data['data']);
+      return deserialize<_ixyi2mo6.TestAndSyncModelConnectionRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'UpdateModelConnectionRequest') {
-      return deserialize<_i73.UpdateModelConnectionRequest>(data['data']);
+      return deserialize<_iw5yf4pd.UpdateModelConnectionRequest>(data['data']);
     }
     if (dataClassName == 'WorkspaceModelConnection') {
-      return deserialize<_i74.WorkspaceModelConnection>(data['data']);
+      return deserialize<_ihf3aqrg.WorkspaceModelConnection>(data['data']);
     }
     if (dataClassName == 'WorkspaceModelSelectionView') {
-      return deserialize<_i75.WorkspaceModelSelectionView>(data['data']);
+      return deserialize<_i2zocl9o.WorkspaceModelSelectionView>(data['data']);
     }
     if (dataClassName == 'BeginUploadRequest') {
-      return deserialize<_i76.BeginUploadRequest>(data['data']);
+      return deserialize<_ii7xucwd.BeginUploadRequest>(data['data']);
     }
     if (dataClassName == 'BeginUploadResult') {
-      return deserialize<_i77.BeginUploadResult>(data['data']);
+      return deserialize<_iy4az4cb.BeginUploadResult>(data['data']);
     }
     if (dataClassName == 'CompleteUploadRequest') {
-      return deserialize<_i78.CompleteUploadRequest>(data['data']);
+      return deserialize<_ip871ox8.CompleteUploadRequest>(data['data']);
     }
     if (dataClassName == 'DeleteObjectRequest') {
-      return deserialize<_i79.DeleteObjectRequest>(data['data']);
+      return deserialize<_iae520xs.DeleteObjectRequest>(data['data']);
     }
     if (dataClassName == 'GetDownloadRequest') {
-      return deserialize<_i80.GetDownloadRequest>(data['data']);
+      return deserialize<_i99cztt4.GetDownloadRequest>(data['data']);
     }
     if (dataClassName == 'GetDownloadResult') {
-      return deserialize<_i81.GetDownloadResult>(data['data']);
+      return deserialize<_ip02joz1.GetDownloadResult>(data['data']);
     }
     if (dataClassName == 'ObjectDeletion') {
-      return deserialize<_i82.ObjectDeletion>(data['data']);
+      return deserialize<_ii2nljpm.ObjectDeletion>(data['data']);
     }
     if (dataClassName == 'ObjectErrorCode') {
-      return deserialize<_i83.ObjectErrorCode>(data['data']);
+      return deserialize<_ivy9wxc7.ObjectErrorCode>(data['data']);
     }
     if (dataClassName == 'ObjectException') {
-      return deserialize<_i84.ObjectException>(data['data']);
+      return deserialize<_i4o8es85.ObjectException>(data['data']);
     }
     if (dataClassName == 'ObjectReference') {
-      return deserialize<_i85.ObjectReference>(data['data']);
+      return deserialize<_ino5s3hv.ObjectReference>(data['data']);
     }
     if (dataClassName == 'ObjectResult') {
-      return deserialize<_i86.ObjectResult>(data['data']);
+      return deserialize<_is4lmm7s.ObjectResult>(data['data']);
     }
     if (dataClassName == 'ObjectUpload') {
-      return deserialize<_i87.ObjectUpload>(data['data']);
+      return deserialize<_i6zmsyes.ObjectUpload>(data['data']);
     }
     if (dataClassName == 'WorkspaceObject') {
-      return deserialize<_i88.WorkspaceObject>(data['data']);
+      return deserialize<_i52p5grh.WorkspaceObject>(data['data']);
     }
     if (dataClassName == 'WorkspaceStreamEnvelope') {
-      return deserialize<_i89.WorkspaceStreamEnvelope>(data['data']);
+      return deserialize<_i0ekjn7l.WorkspaceStreamEnvelope>(data['data']);
     }
     if (dataClassName == 'WorkspaceStreamEnvelopeKind') {
-      return deserialize<_i90.WorkspaceStreamEnvelopeKind>(data['data']);
+      return deserialize<_i4zgsr0a.WorkspaceStreamEnvelopeKind>(data['data']);
     }
     if (dataClassName == 'WorkspaceSubscribeRequest') {
-      return deserialize<_i91.WorkspaceSubscribeRequest>(data['data']);
+      return deserialize<_ig40wm3p.WorkspaceSubscribeRequest>(data['data']);
     }
     if (dataClassName == 'RecurringWorkerSchedule') {
-      return deserialize<_i92.RecurringWorkerSchedule>(data['data']);
+      return deserialize<_ivj0myfi.RecurringWorkerSchedule>(data['data']);
     }
     if (dataClassName == 'WorkerCoordinatorLease') {
-      return deserialize<_i93.WorkerCoordinatorLease>(data['data']);
+      return deserialize<_ifhsy8zv.WorkerCoordinatorLease>(data['data']);
     }
     if (dataClassName == 'MutateWorkspaceCredentialRequest') {
-      return deserialize<_i94.MutateWorkspaceCredentialRequest>(data['data']);
+      return deserialize<_io0q4g8e.MutateWorkspaceCredentialRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'MutateWorkspaceCredentialResponse') {
-      return deserialize<_i95.MutateWorkspaceCredentialResponse>(data['data']);
+      return deserialize<_ipy8xct6.MutateWorkspaceCredentialResponse>(
+        data['data'],
+      );
     }
     if (dataClassName == 'PatchWorkspaceStateRequest') {
-      return deserialize<_i96.PatchWorkspaceStateRequest>(data['data']);
+      return deserialize<_ipvegfbn.PatchWorkspaceStateRequest>(data['data']);
     }
     if (dataClassName == 'PatchWorkspaceStateResponse') {
-      return deserialize<_i97.PatchWorkspaceStateResponse>(data['data']);
+      return deserialize<_ig93yftz.PatchWorkspaceStateResponse>(data['data']);
     }
     if (dataClassName == 'PutWorkspaceSecretRequest') {
-      return deserialize<_i98.PutWorkspaceSecretRequest>(data['data']);
+      return deserialize<_ipxnqptw.PutWorkspaceSecretRequest>(data['data']);
     }
     if (dataClassName == 'PutWorkspaceSecretResponse') {
-      return deserialize<_i99.PutWorkspaceSecretResponse>(data['data']);
+      return deserialize<_iavc361v.PutWorkspaceSecretResponse>(data['data']);
     }
     if (dataClassName == 'ReadWorkspaceStateRequest') {
-      return deserialize<_i100.ReadWorkspaceStateRequest>(data['data']);
+      return deserialize<_iz7boq8w.ReadWorkspaceStateRequest>(data['data']);
     }
     if (dataClassName == 'ReadWorkspaceStateResponse') {
-      return deserialize<_i101.ReadWorkspaceStateResponse>(data['data']);
+      return deserialize<_iqk6zto1.ReadWorkspaceStateResponse>(data['data']);
     }
     if (dataClassName == 'WorkspacePatchOperation') {
-      return deserialize<_i102.WorkspacePatchOperation>(data['data']);
+      return deserialize<_iolo6w4a.WorkspacePatchOperation>(data['data']);
     }
     if (dataClassName == 'WorkspacePatchOperationKind') {
-      return deserialize<_i103.WorkspacePatchOperationKind>(data['data']);
+      return deserialize<_ihbarnlu.WorkspacePatchOperationKind>(data['data']);
     }
     if (dataClassName == 'WorkspaceResource') {
-      return deserialize<_i104.WorkspaceResource>(data['data']);
+      return deserialize<_iqzfyfs9.WorkspaceResource>(data['data']);
     }
     if (dataClassName == 'WorkspaceResourceKind') {
-      return deserialize<_i105.WorkspaceResourceKind>(data['data']);
+      return deserialize<_i8d1xr9g.WorkspaceResourceKind>(data['data']);
     }
     if (dataClassName == 'WorkspaceResourcePage') {
-      return deserialize<_i106.WorkspaceResourcePage>(data['data']);
+      return deserialize<_iilez6xa.WorkspaceResourcePage>(data['data']);
     }
     if (dataClassName == 'WorkspaceResourcePageRequest') {
-      return deserialize<_i107.WorkspaceResourcePageRequest>(data['data']);
+      return deserialize<_i0vhsjed.WorkspaceResourcePageRequest>(data['data']);
     }
     if (dataClassName == 'WorkspaceSecret') {
-      return deserialize<_i108.WorkspaceSecret>(data['data']);
+      return deserialize<_iyjw9v2c.WorkspaceSecret>(data['data']);
     }
     if (dataClassName == 'WorkspaceSecretKind') {
-      return deserialize<_i109.WorkspaceSecretKind>(data['data']);
+      return deserialize<_iq96p1l9.WorkspaceSecretKind>(data['data']);
     }
     if (dataClassName == 'WorkspaceSecretScope') {
-      return deserialize<_i110.WorkspaceSecretScope>(data['data']);
+      return deserialize<_ioqbiy3d.WorkspaceSecretScope>(data['data']);
     }
     if (dataClassName == 'AcceptWorkspaceInviteRequest') {
-      return deserialize<_i111.AcceptWorkspaceInviteRequest>(data['data']);
+      return deserialize<_ib7b2bmq.AcceptWorkspaceInviteRequest>(data['data']);
     }
     if (dataClassName == 'CloudWorkspace') {
-      return deserialize<_i112.CloudWorkspace>(data['data']);
+      return deserialize<_iyfjt29r.CloudWorkspace>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceCapabilities') {
-      return deserialize<_i113.CloudWorkspaceCapabilities>(data['data']);
+      return deserialize<_i1uzipdf.CloudWorkspaceCapabilities>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceDetail') {
-      return deserialize<_i114.CloudWorkspaceDetail>(data['data']);
+      return deserialize<_ixqnubu3.CloudWorkspaceDetail>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceErrorCode') {
-      return deserialize<_i115.CloudWorkspaceErrorCode>(data['data']);
+      return deserialize<_ikaytupt.CloudWorkspaceErrorCode>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceException') {
-      return deserialize<_i116.CloudWorkspaceException>(data['data']);
+      return deserialize<_iq0v59d3.CloudWorkspaceException>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceInviteSummary') {
-      return deserialize<_i117.CloudWorkspaceInviteSummary>(data['data']);
+      return deserialize<_i4buxtw8.CloudWorkspaceInviteSummary>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceMemberSummary') {
-      return deserialize<_i118.CloudWorkspaceMemberSummary>(data['data']);
+      return deserialize<_i3c64tpx.CloudWorkspaceMemberSummary>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceSummary') {
-      return deserialize<_i119.CloudWorkspaceSummary>(data['data']);
+      return deserialize<_iqlfhfv2.CloudWorkspaceSummary>(data['data']);
     }
     if (dataClassName == 'CreateCloudWorkspaceRequest') {
-      return deserialize<_i120.CreateCloudWorkspaceRequest>(data['data']);
+      return deserialize<_i2wx1hcz.CreateCloudWorkspaceRequest>(data['data']);
     }
     if (dataClassName == 'DeclineWorkspaceInviteRequest') {
-      return deserialize<_i121.DeclineWorkspaceInviteRequest>(data['data']);
+      return deserialize<_izpvgmoh.DeclineWorkspaceInviteRequest>(data['data']);
     }
     if (dataClassName == 'DeleteCloudWorkspaceRequest') {
-      return deserialize<_i122.DeleteCloudWorkspaceRequest>(data['data']);
+      return deserialize<_irqsg6pc.DeleteCloudWorkspaceRequest>(data['data']);
     }
     if (dataClassName == 'GetCloudWorkspaceDetailRequest') {
-      return deserialize<_i123.GetCloudWorkspaceDetailRequest>(data['data']);
+      return deserialize<_i3slgemv.GetCloudWorkspaceDetailRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'InviteWorkspaceMemberRequest') {
-      return deserialize<_i124.InviteWorkspaceMemberRequest>(data['data']);
+      return deserialize<_iojw3n39.InviteWorkspaceMemberRequest>(data['data']);
     }
     if (dataClassName == 'LeaveCloudWorkspaceRequest') {
-      return deserialize<_i125.LeaveCloudWorkspaceRequest>(data['data']);
+      return deserialize<_i90hckxm.LeaveCloudWorkspaceRequest>(data['data']);
     }
     if (dataClassName == 'ListCloudWorkspaceInvitesRequest') {
-      return deserialize<_i126.ListCloudWorkspaceInvitesRequest>(data['data']);
+      return deserialize<_ig64imxt.ListCloudWorkspaceInvitesRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'ListWorkspaceMembersRequest') {
-      return deserialize<_i127.ListWorkspaceMembersRequest>(data['data']);
+      return deserialize<_iop4tnuf.ListWorkspaceMembersRequest>(data['data']);
     }
     if (dataClassName == 'PendingWorkspaceInviteSummary') {
-      return deserialize<_i128.PendingWorkspaceInviteSummary>(data['data']);
+      return deserialize<_imuwa8ax.PendingWorkspaceInviteSummary>(data['data']);
     }
     if (dataClassName == 'RemoveWorkspaceMemberRequest') {
-      return deserialize<_i129.RemoveWorkspaceMemberRequest>(data['data']);
+      return deserialize<_ioya5p5j.RemoveWorkspaceMemberRequest>(data['data']);
     }
     if (dataClassName == 'RenameCloudWorkspaceRequest') {
-      return deserialize<_i130.RenameCloudWorkspaceRequest>(data['data']);
+      return deserialize<_ifsfc78n.RenameCloudWorkspaceRequest>(data['data']);
     }
     if (dataClassName == 'RenewWorkspaceInviteRequest') {
-      return deserialize<_i131.RenewWorkspaceInviteRequest>(data['data']);
+      return deserialize<_ivko4e0f.RenewWorkspaceInviteRequest>(data['data']);
     }
     if (dataClassName == 'RevokeWorkspaceInviteRequest') {
-      return deserialize<_i132.RevokeWorkspaceInviteRequest>(data['data']);
+      return deserialize<_iwlbozzh.RevokeWorkspaceInviteRequest>(data['data']);
     }
     if (dataClassName == 'TransferCloudWorkspaceOwnershipRequest') {
-      return deserialize<_i133.TransferCloudWorkspaceOwnershipRequest>(
+      return deserialize<_i7ana9ux.TransferCloudWorkspaceOwnershipRequest>(
         data['data'],
       );
     }
     if (dataClassName == 'UpdateWorkspaceMemberRoleRequest') {
-      return deserialize<_i134.UpdateWorkspaceMemberRoleRequest>(data['data']);
+      return deserialize<_i2qmz98c.UpdateWorkspaceMemberRoleRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'WorkspaceAuditRecord') {
-      return deserialize<_i135.WorkspaceAuditRecord>(data['data']);
+      return deserialize<_ifp2sq2r.WorkspaceAuditRecord>(data['data']);
     }
     if (dataClassName == 'WorkspaceEvent') {
-      return deserialize<_i136.WorkspaceEvent>(data['data']);
+      return deserialize<_ivvnnphu.WorkspaceEvent>(data['data']);
     }
     if (dataClassName == 'WorkspaceInvite') {
-      return deserialize<_i137.WorkspaceInvite>(data['data']);
+      return deserialize<_ilpykuxc.WorkspaceInvite>(data['data']);
     }
     if (dataClassName == 'WorkspaceMember') {
-      return deserialize<_i138.WorkspaceMember>(data['data']);
+      return deserialize<_i56tb1yu.WorkspaceMember>(data['data']);
     }
     if (dataClassName == 'WorkspaceMutationReceipt') {
-      return deserialize<_i139.WorkspaceMutationReceipt>(data['data']);
+      return deserialize<_ia614g7d.WorkspaceMutationReceipt>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth_core.')) {
       data['className'] = dataClassName.substring(20);
-      return _i3.Protocol().deserializeByClassName(data);
+      return _iacs.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);
-      return _i4.Protocol().deserializeByClassName(data);
+      return _iais.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
-      return _i2.Protocol().deserializeByClassName(data);
+      return _isp.Protocol().deserializeByClassName(data);
     }
     return super.deserializeByClassName(data);
   }
 
   void _registerHostProtocols() {
-    _i3.Protocol().registerHostProtocol('auravibes', this);
-    _i4.Protocol().registerHostProtocol('auravibes', this);
+    _iacs.Protocol().registerHostProtocol('auravibes', this);
+    _iais.Protocol().registerHostProtocol('auravibes', this);
   }
 
   @override
-  _i1.Table? getTableForType(Type t) {
+  _is.Table? getTableForType(Type t) {
     {
-      var table = _i3.Protocol().getTableForType(t);
+      var table = _iacs.Protocol().getTableForType(t);
       if (table != null) {
         return table;
       }
     }
     {
-      var table = _i4.Protocol().getTableForType(t);
+      var table = _iais.Protocol().getTableForType(t);
       if (table != null) {
         return table;
       }
     }
     {
-      var table = _i2.Protocol().getTableForType(t);
+      var table = _isp.Protocol().getTableForType(t);
       if (table != null) {
         return table;
       }
     }
     switch (t) {
-      case _i6.CodexOAuthTransaction:
-        return _i6.CodexOAuthTransaction.t;
-      case _i15.Conversation:
-        return _i15.Conversation.t;
-      case _i17.ConversationEvent:
-        return _i17.ConversationEvent.t;
-      case _i20.ConversationExecution:
-        return _i20.ConversationExecution.t;
-      case _i22.ConversationJob:
-        return _i22.ConversationJob.t;
-      case _i23.ConversationMessage:
-        return _i23.ConversationMessage.t;
-      case _i32.ConversationToolCall:
-        return _i32.ConversationToolCall.t;
-      case _i34.ConversationTurn:
-        return _i34.ConversationTurn.t;
-      case _i36.ConversationUsage:
-        return _i36.ConversationUsage.t;
-      case _i44.ProviderAdmission:
-        return _i44.ProviderAdmission.t;
-      case _i45.ProviderAdmissionLock:
-        return _i45.ProviderAdmissionLock.t;
-      case _i46.ProviderAdmissionReservation:
-        return _i46.ProviderAdmissionReservation.t;
-      case _i64.ApiModel:
-        return _i64.ApiModel.t;
-      case _i65.ApiModelProvider:
-        return _i65.ApiModelProvider.t;
-      case _i74.WorkspaceModelConnection:
-        return _i74.WorkspaceModelConnection.t;
-      case _i82.ObjectDeletion:
-        return _i82.ObjectDeletion.t;
-      case _i85.ObjectReference:
-        return _i85.ObjectReference.t;
-      case _i87.ObjectUpload:
-        return _i87.ObjectUpload.t;
-      case _i88.WorkspaceObject:
-        return _i88.WorkspaceObject.t;
-      case _i92.RecurringWorkerSchedule:
-        return _i92.RecurringWorkerSchedule.t;
-      case _i93.WorkerCoordinatorLease:
-        return _i93.WorkerCoordinatorLease.t;
-      case _i104.WorkspaceResource:
-        return _i104.WorkspaceResource.t;
-      case _i108.WorkspaceSecret:
-        return _i108.WorkspaceSecret.t;
-      case _i112.CloudWorkspace:
-        return _i112.CloudWorkspace.t;
-      case _i135.WorkspaceAuditRecord:
-        return _i135.WorkspaceAuditRecord.t;
-      case _i136.WorkspaceEvent:
-        return _i136.WorkspaceEvent.t;
-      case _i137.WorkspaceInvite:
-        return _i137.WorkspaceInvite.t;
-      case _i138.WorkspaceMember:
-        return _i138.WorkspaceMember.t;
-      case _i139.WorkspaceMutationReceipt:
-        return _i139.WorkspaceMutationReceipt.t;
+      case _ify5ufwn.CodexOAuthTransaction:
+        return _ify5ufwn.CodexOAuthTransaction.t;
+      case _iivijtsr.Conversation:
+        return _iivijtsr.Conversation.t;
+      case _i77s958n.ConversationEvent:
+        return _i77s958n.ConversationEvent.t;
+      case _iznwbo5b.ConversationExecution:
+        return _iznwbo5b.ConversationExecution.t;
+      case _iq1eovrr.ConversationJob:
+        return _iq1eovrr.ConversationJob.t;
+      case _ibea51bx.ConversationMessage:
+        return _ibea51bx.ConversationMessage.t;
+      case _iflac717.ConversationToolCall:
+        return _iflac717.ConversationToolCall.t;
+      case _i7mmki1w.ConversationTurn:
+        return _i7mmki1w.ConversationTurn.t;
+      case _iii6xlqw.ConversationUsage:
+        return _iii6xlqw.ConversationUsage.t;
+      case _i32k4voa.ProviderAdmission:
+        return _i32k4voa.ProviderAdmission.t;
+      case _ih2np1vh.ProviderAdmissionLock:
+        return _ih2np1vh.ProviderAdmissionLock.t;
+      case _i7moywui.ProviderAdmissionReservation:
+        return _i7moywui.ProviderAdmissionReservation.t;
+      case _i8ct1fsr.ApiModel:
+        return _i8ct1fsr.ApiModel.t;
+      case _ioo5yu9z.ApiModelProvider:
+        return _ioo5yu9z.ApiModelProvider.t;
+      case _ihf3aqrg.WorkspaceModelConnection:
+        return _ihf3aqrg.WorkspaceModelConnection.t;
+      case _ii2nljpm.ObjectDeletion:
+        return _ii2nljpm.ObjectDeletion.t;
+      case _ino5s3hv.ObjectReference:
+        return _ino5s3hv.ObjectReference.t;
+      case _i6zmsyes.ObjectUpload:
+        return _i6zmsyes.ObjectUpload.t;
+      case _i52p5grh.WorkspaceObject:
+        return _i52p5grh.WorkspaceObject.t;
+      case _ivj0myfi.RecurringWorkerSchedule:
+        return _ivj0myfi.RecurringWorkerSchedule.t;
+      case _ifhsy8zv.WorkerCoordinatorLease:
+        return _ifhsy8zv.WorkerCoordinatorLease.t;
+      case _iqzfyfs9.WorkspaceResource:
+        return _iqzfyfs9.WorkspaceResource.t;
+      case _iyjw9v2c.WorkspaceSecret:
+        return _iyjw9v2c.WorkspaceSecret.t;
+      case _iyfjt29r.CloudWorkspace:
+        return _iyfjt29r.CloudWorkspace.t;
+      case _ifp2sq2r.WorkspaceAuditRecord:
+        return _ifp2sq2r.WorkspaceAuditRecord.t;
+      case _ivvnnphu.WorkspaceEvent:
+        return _ivvnnphu.WorkspaceEvent.t;
+      case _ilpykuxc.WorkspaceInvite:
+        return _ilpykuxc.WorkspaceInvite.t;
+      case _i56tb1yu.WorkspaceMember:
+        return _i56tb1yu.WorkspaceMember.t;
+      case _ia614g7d.WorkspaceMutationReceipt:
+        return _ia614g7d.WorkspaceMutationReceipt.t;
     }
     return null;
   }
 
   @override
-  List<_i2.TableDefinition> getTargetTableDefinitions() =>
+  List<_isp.TableDefinition> getTargetTableDefinitions() =>
       targetTableDefinitions;
 
   @override
@@ -6241,10 +6413,10 @@ class Protocol extends _i1.DatabaseSerializationManager {
       return null;
     }
     try {
-      return _i3.Protocol().mapRecordToJson(record);
+      return _iacs.Protocol().mapRecordToJson(record);
     } catch (_) {}
     try {
-      return _i4.Protocol().mapRecordToJson(record);
+      return _iais.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
   }

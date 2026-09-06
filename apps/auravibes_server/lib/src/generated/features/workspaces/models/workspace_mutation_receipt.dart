@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class WorkspaceMutationReceipt
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   WorkspaceMutationReceipt._({
     this.id,
     this.workspaceId,
@@ -50,7 +50,7 @@ abstract class WorkspaceMutationReceipt
       requestId: jsonSerialization['requestId'] as String,
       requestHash: jsonSerialization['requestHash'] as String,
       responseJson: jsonSerialization['responseJson'] as String,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -80,11 +80,11 @@ abstract class WorkspaceMutationReceipt
   DateTime createdAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [WorkspaceMutationReceipt]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkspaceMutationReceipt copyWith({
     int? id,
     int? workspaceId,
@@ -133,13 +133,11 @@ abstract class WorkspaceMutationReceipt
   }
 
   static WorkspaceMutationReceiptIncludeList includeList({
-    _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
+    _is.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
     WorkspaceMutationReceiptInclude? include,
   }) {
     return WorkspaceMutationReceiptIncludeList._(
@@ -147,8 +145,6 @@ abstract class WorkspaceMutationReceipt
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(WorkspaceMutationReceipt.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(WorkspaceMutationReceipt.t),
       include: include,
     );
@@ -156,7 +152,7 @@ abstract class WorkspaceMutationReceipt
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -187,7 +183,7 @@ class _WorkspaceMutationReceiptImpl extends WorkspaceMutationReceipt {
 
   /// Returns a shallow copy of this [WorkspaceMutationReceipt]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkspaceMutationReceipt copyWith({
     Object? id = _Undefined,
@@ -215,84 +211,84 @@ class _WorkspaceMutationReceiptImpl extends WorkspaceMutationReceipt {
 }
 
 class WorkspaceMutationReceiptUpdateTable
-    extends _i1.UpdateTable<WorkspaceMutationReceiptTable> {
+    extends _is.UpdateTable<WorkspaceMutationReceiptTable> {
   WorkspaceMutationReceiptUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int? value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int? value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<String, String> scopeKey(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> scopeKey(String value) => _is.ColumnValue(
     table.scopeKey,
     value,
   );
 
-  _i1.ColumnValue<String, String> actorUserId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> actorUserId(String value) => _is.ColumnValue(
     table.actorUserId,
     value,
   );
 
-  _i1.ColumnValue<String, String> endpoint(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> endpoint(String value) => _is.ColumnValue(
     table.endpoint,
     value,
   );
 
-  _i1.ColumnValue<String, String> requestId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> requestId(String value) => _is.ColumnValue(
     table.requestId,
     value,
   );
 
-  _i1.ColumnValue<String, String> requestHash(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> requestHash(String value) => _is.ColumnValue(
     table.requestHash,
     value,
   );
 
-  _i1.ColumnValue<String, String> responseJson(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> responseJson(String value) => _is.ColumnValue(
     table.responseJson,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 }
 
-class WorkspaceMutationReceiptTable extends _i1.Table<int?> {
+class WorkspaceMutationReceiptTable extends _is.Table<int?> {
   WorkspaceMutationReceiptTable({super.tableRelation})
     : super(tableName: 'workspace_mutation_receipt') {
     updateTable = WorkspaceMutationReceiptUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    scopeKey = _i1.ColumnString(
+    scopeKey = _is.ColumnString(
       'scopeKey',
       this,
     );
-    actorUserId = _i1.ColumnString(
+    actorUserId = _is.ColumnString(
       'actorUserId',
       this,
     );
-    endpoint = _i1.ColumnString(
+    endpoint = _is.ColumnString(
       'endpoint',
       this,
     );
-    requestId = _i1.ColumnString(
+    requestId = _is.ColumnString(
       'requestId',
       this,
     );
-    requestHash = _i1.ColumnString(
+    requestHash = _is.ColumnString(
       'requestHash',
       this,
     );
-    responseJson = _i1.ColumnString(
+    responseJson = _is.ColumnString(
       'responseJson',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
@@ -300,24 +296,24 @@ class WorkspaceMutationReceiptTable extends _i1.Table<int?> {
 
   late final WorkspaceMutationReceiptUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnString scopeKey;
+  late final _is.ColumnString scopeKey;
 
-  late final _i1.ColumnString actorUserId;
+  late final _is.ColumnString actorUserId;
 
-  late final _i1.ColumnString endpoint;
+  late final _is.ColumnString endpoint;
 
-  late final _i1.ColumnString requestId;
+  late final _is.ColumnString requestId;
 
-  late final _i1.ColumnString requestHash;
+  late final _is.ColumnString requestHash;
 
-  late final _i1.ColumnString responseJson;
+  late final _is.ColumnString responseJson;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     scopeKey,
@@ -330,24 +326,22 @@ class WorkspaceMutationReceiptTable extends _i1.Table<int?> {
   ];
 }
 
-class WorkspaceMutationReceiptInclude extends _i1.IncludeObject {
+class WorkspaceMutationReceiptInclude extends _is.IncludeObject {
   WorkspaceMutationReceiptInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceMutationReceipt.t;
+  _is.Table<int?> get table => WorkspaceMutationReceipt.t;
 }
 
-class WorkspaceMutationReceiptIncludeList extends _i1.IncludeList {
+class WorkspaceMutationReceiptIncludeList extends _is.IncludeList {
   WorkspaceMutationReceiptIncludeList._({
-    _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -355,10 +349,10 @@ class WorkspaceMutationReceiptIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceMutationReceipt.t;
+  _is.Table<int?> get table => WorkspaceMutationReceipt.t;
 }
 
 class WorkspaceMutationReceiptRepository {
@@ -387,24 +381,20 @@ class WorkspaceMutationReceiptRepository {
   /// );
   /// ```
   Future<List<WorkspaceMutationReceipt>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<WorkspaceMutationReceipt>(
       where: where?.call(WorkspaceMutationReceipt.t),
       orderBy: orderBy?.call(WorkspaceMutationReceipt.t),
       orderByList: orderByList?.call(WorkspaceMutationReceipt.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -431,23 +421,19 @@ class WorkspaceMutationReceiptRepository {
   /// );
   /// ```
   Future<WorkspaceMutationReceipt?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<WorkspaceMutationReceipt>(
       where: where?.call(WorkspaceMutationReceipt.t),
       orderBy: orderBy?.call(WorkspaceMutationReceipt.t),
       orderByList: orderByList?.call(WorkspaceMutationReceipt.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -457,11 +443,11 @@ class WorkspaceMutationReceiptRepository {
 
   /// Finds a single [WorkspaceMutationReceipt] by its [id] or null if no such row exists.
   Future<WorkspaceMutationReceipt?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<WorkspaceMutationReceipt>(
       id,
@@ -486,9 +472,9 @@ class WorkspaceMutationReceiptRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceMutationReceipt>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceMutationReceipt> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -504,9 +490,9 @@ class WorkspaceMutationReceiptRepository {
   ///
   /// The returned [WorkspaceMutationReceipt] will have its `id` field set.
   Future<WorkspaceMutationReceipt> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceMutationReceipt row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<WorkspaceMutationReceipt>(
       row,
@@ -535,13 +521,13 @@ class WorkspaceMutationReceiptRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceMutationReceipt>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceMutationReceipt> rows, {
-    required _i1.ColumnSelections<WorkspaceMutationReceiptTable>
+    required _is.ColumnSelections<WorkspaceMutationReceiptTable>
     conflictColumns,
-    _i1.ColumnSelections<WorkspaceMutationReceiptTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? updateWhere,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceMutationReceiptTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<WorkspaceMutationReceipt>(
@@ -568,13 +554,13 @@ class WorkspaceMutationReceiptRepository {
   ///
   /// The returned [WorkspaceMutationReceipt] will have its `id` field set.
   Future<WorkspaceMutationReceipt?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceMutationReceipt row, {
-    required _i1.ColumnSelections<WorkspaceMutationReceiptTable>
+    required _is.ColumnSelections<WorkspaceMutationReceiptTable>
     conflictColumns,
-    _i1.ColumnSelections<WorkspaceMutationReceiptTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? updateWhere,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceMutationReceiptTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<WorkspaceMutationReceipt>(
       row,
@@ -595,10 +581,10 @@ class WorkspaceMutationReceiptRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceMutationReceipt>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceMutationReceipt> rows, {
-    _i1.ColumnSelections<WorkspaceMutationReceiptTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceMutationReceiptTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<WorkspaceMutationReceipt>(
@@ -613,10 +599,10 @@ class WorkspaceMutationReceiptRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<WorkspaceMutationReceipt> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceMutationReceipt row, {
-    _i1.ColumnSelections<WorkspaceMutationReceiptTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceMutationReceiptTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<WorkspaceMutationReceipt>(
       row,
@@ -628,11 +614,11 @@ class WorkspaceMutationReceiptRepository {
   /// Updates a single [WorkspaceMutationReceipt] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<WorkspaceMutationReceipt?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<WorkspaceMutationReceiptUpdateTable>
+    required _is.ColumnValueListBuilder<WorkspaceMutationReceiptUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<WorkspaceMutationReceipt>(
       id,
@@ -648,17 +634,15 @@ class WorkspaceMutationReceiptRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceMutationReceipt>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<WorkspaceMutationReceiptUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<WorkspaceMutationReceiptUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable> where,
+    required _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
-    _i1.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<WorkspaceMutationReceipt>(
@@ -668,8 +652,6 @@ class WorkspaceMutationReceiptRepository {
       offset: offset,
       orderBy: orderBy?.call(WorkspaceMutationReceipt.t),
       orderByList: orderByList?.call(WorkspaceMutationReceipt.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -687,21 +669,17 @@ class WorkspaceMutationReceiptRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceMutationReceipt>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceMutationReceipt> rows, {
-    _i1.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<WorkspaceMutationReceipt>(
       rows,
       orderBy: orderBy?.call(WorkspaceMutationReceipt.t),
       orderByList: orderByList?.call(WorkspaceMutationReceipt.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -709,9 +687,9 @@ class WorkspaceMutationReceiptRepository {
 
   /// Deletes a single [WorkspaceMutationReceipt].
   Future<WorkspaceMutationReceipt> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceMutationReceipt row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<WorkspaceMutationReceipt>(
       row,
@@ -728,21 +706,17 @@ class WorkspaceMutationReceiptRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceMutationReceipt>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable> where,
-    _i1.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable> where,
+    _is.OrderByBuilder<WorkspaceMutationReceiptTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceMutationReceiptTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<WorkspaceMutationReceipt>(
       where: where(WorkspaceMutationReceipt.t),
       orderBy: orderBy?.call(WorkspaceMutationReceipt.t),
       orderByList: orderByList?.call(WorkspaceMutationReceipt.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -751,10 +725,10 @@ class WorkspaceMutationReceiptRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<WorkspaceMutationReceipt>(
       where: where?.call(WorkspaceMutationReceipt.t),
@@ -765,11 +739,11 @@ class WorkspaceMutationReceiptRepository {
 
   /// Acquires row-level locks on [WorkspaceMutationReceipt] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceMutationReceiptTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceMutationReceiptTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<WorkspaceMutationReceipt>(
       where: where(WorkspaceMutationReceipt.t),

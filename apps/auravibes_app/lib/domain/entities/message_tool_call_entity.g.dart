@@ -49,6 +49,22 @@ _MessageMetadataEntity _$MessageMetadataEntityFromJson(
   modelMetadata:
       json['modelMetadata'] as Map<String, dynamic>? ??
       const <String, Object?>{},
+  a2uiMessages:
+      (json['a2uiMessages'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const <String>[],
+  a2uiIssuesBySurface:
+      (json['a2uiIssuesBySurface'] as Map<String, dynamic>?)?.map(
+        (k, e) =>
+            MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
+      ) ??
+      const <String, List<String>>{},
+  a2uiMessageIssues:
+      (json['a2uiMessageIssues'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const <String>[],
   metadataVersion: (json['metadataVersion'] as num?)?.toInt() ?? 1,
   isCompactionSummary: json['isCompactionSummary'] as bool? ?? false,
   compactionKind: $enumDecodeNullable(
@@ -76,6 +92,9 @@ Map<String, dynamic> _$MessageMetadataEntityToJson(
   'totalTokens': instance.totalTokens,
   'thinking': instance.thinking,
   'modelMetadata': instance.modelMetadata,
+  'a2uiMessages': instance.a2uiMessages,
+  'a2uiIssuesBySurface': instance.a2uiIssuesBySurface,
+  'a2uiMessageIssues': instance.a2uiMessageIssues,
   'metadataVersion': instance.metadataVersion,
   'isCompactionSummary': instance.isCompactionSummary,
   'compactionKind': _$CompactionKindEnumMap[instance.compactionKind],

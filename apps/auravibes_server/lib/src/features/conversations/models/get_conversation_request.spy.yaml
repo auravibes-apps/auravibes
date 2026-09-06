@@ -2,3 +2,4 @@ class: GetConversationRequest
 fields:
   workspaceId: int
   conversationId: String
+  a2uiSupportedComponents: List<String>?

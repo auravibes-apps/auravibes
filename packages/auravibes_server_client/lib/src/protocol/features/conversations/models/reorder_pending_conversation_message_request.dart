@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 abstract class ReorderPendingConversationMessageRequest
-    implements _i1.SerializableModel {
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ReorderPendingConversationMessageRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -21,6 +23,7 @@ abstract class ReorderPendingConversationMessageRequest
     required this.expectedProjectionRevision,
     required this.messageId,
     this.beforeMessageId,
+    this.a2uiSupportedComponents,
   });
 
   factory ReorderPendingConversationMessageRequest({
@@ -30,6 +33,7 @@ abstract class ReorderPendingConversationMessageRequest
     required int expectedProjectionRevision,
     required String messageId,
     String? beforeMessageId,
+    List<String>? a2uiSupportedComponents,
   }) = _ReorderPendingConversationMessageRequestImpl;
 
   factory ReorderPendingConversationMessageRequest.fromJson(
@@ -43,6 +47,12 @@ abstract class ReorderPendingConversationMessageRequest
           jsonSerialization['expectedProjectionRevision'] as int,
       messageId: jsonSerialization['messageId'] as String,
       beforeMessageId: jsonSerialization['beforeMessageId'] as String?,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _isctvzjc.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -58,9 +68,11 @@ abstract class ReorderPendingConversationMessageRequest
 
   String? beforeMessageId;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [ReorderPendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ReorderPendingConversationMessageRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -68,6 +80,7 @@ abstract class ReorderPendingConversationMessageRequest
     int? expectedProjectionRevision,
     String? messageId,
     String? beforeMessageId,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -79,12 +92,29 @@ abstract class ReorderPendingConversationMessageRequest
       'expectedProjectionRevision': expectedProjectionRevision,
       'messageId': messageId,
       if (beforeMessageId != null) 'beforeMessageId': beforeMessageId,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+    };
+  }
+
+  @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ReorderPendingConversationMessageRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'conversationId': conversationId,
+      'expectedProjectionRevision': expectedProjectionRevision,
+      'messageId': messageId,
+      if (beforeMessageId != null) 'beforeMessageId': beforeMessageId,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -99,6 +129,7 @@ class _ReorderPendingConversationMessageRequestImpl
     required int expectedProjectionRevision,
     required String messageId,
     String? beforeMessageId,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -106,11 +137,12 @@ class _ReorderPendingConversationMessageRequestImpl
          expectedProjectionRevision: expectedProjectionRevision,
          messageId: messageId,
          beforeMessageId: beforeMessageId,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [ReorderPendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ReorderPendingConversationMessageRequest copyWith({
     int? workspaceId,
@@ -119,6 +151,7 @@ class _ReorderPendingConversationMessageRequestImpl
     int? expectedProjectionRevision,
     String? messageId,
     Object? beforeMessageId = _Undefined,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return ReorderPendingConversationMessageRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -130,6 +163,9 @@ class _ReorderPendingConversationMessageRequestImpl
       beforeMessageId: beforeMessageId is String?
           ? beforeMessageId
           : this.beforeMessageId,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ObjectUpload
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   ObjectUpload._({
     this.id,
     required this.workspaceId,
@@ -46,15 +46,15 @@ abstract class ObjectUpload
       actorUserId: jsonSerialization['actorUserId'] as String,
       requestId: jsonSerialization['requestId'] as String,
       requestHash: jsonSerialization['requestHash'] as String,
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
       completedAt: jsonSerialization['completedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _is.DateTimeJsonExtension.fromJson(
               jsonSerialization['completedAt'],
             ),
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -84,11 +84,11 @@ abstract class ObjectUpload
   DateTime createdAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [ObjectUpload]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ObjectUpload copyWith({
     int? id,
     int? workspaceId,
@@ -137,13 +137,11 @@ abstract class ObjectUpload
   }
 
   static ObjectUploadIncludeList includeList({
-    _i1.WhereExpressionBuilder<ObjectUploadTable>? where,
+    _is.WhereExpressionBuilder<ObjectUploadTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ObjectUploadTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectUploadTable>? orderByList,
+    _is.OrderByBuilder<ObjectUploadTable>? orderBy,
+    _is.OrderByListBuilder<ObjectUploadTable>? orderByList,
     ObjectUploadInclude? include,
   }) {
     return ObjectUploadIncludeList._(
@@ -151,8 +149,6 @@ abstract class ObjectUpload
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(ObjectUpload.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(ObjectUpload.t),
       include: include,
     );
@@ -160,7 +156,7 @@ abstract class ObjectUpload
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -191,7 +187,7 @@ class _ObjectUploadImpl extends ObjectUpload {
 
   /// Returns a shallow copy of this [ObjectUpload]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ObjectUpload copyWith({
     Object? id = _Undefined,
@@ -218,85 +214,85 @@ class _ObjectUploadImpl extends ObjectUpload {
   }
 }
 
-class ObjectUploadUpdateTable extends _i1.UpdateTable<ObjectUploadTable> {
+class ObjectUploadUpdateTable extends _is.UpdateTable<ObjectUploadTable> {
   ObjectUploadUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<int, int> objectId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> objectId(int value) => _is.ColumnValue(
     table.objectId,
     value,
   );
 
-  _i1.ColumnValue<String, String> actorUserId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> actorUserId(String value) => _is.ColumnValue(
     table.actorUserId,
     value,
   );
 
-  _i1.ColumnValue<String, String> requestId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> requestId(String value) => _is.ColumnValue(
     table.requestId,
     value,
   );
 
-  _i1.ColumnValue<String, String> requestHash(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> requestHash(String value) => _is.ColumnValue(
     table.requestHash,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
+      _is.ColumnValue(
         table.expiresAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> completedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> completedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.completedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 }
 
-class ObjectUploadTable extends _i1.Table<int?> {
+class ObjectUploadTable extends _is.Table<int?> {
   ObjectUploadTable({super.tableRelation}) : super(tableName: 'object_upload') {
     updateTable = ObjectUploadUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    objectId = _i1.ColumnInt(
+    objectId = _is.ColumnInt(
       'objectId',
       this,
     );
-    actorUserId = _i1.ColumnString(
+    actorUserId = _is.ColumnString(
       'actorUserId',
       this,
     );
-    requestId = _i1.ColumnString(
+    requestId = _is.ColumnString(
       'requestId',
       this,
     );
-    requestHash = _i1.ColumnString(
+    requestHash = _is.ColumnString(
       'requestHash',
       this,
     );
-    expiresAt = _i1.ColumnDateTime(
+    expiresAt = _is.ColumnDateTime(
       'expiresAt',
       this,
     );
-    completedAt = _i1.ColumnDateTime(
+    completedAt = _is.ColumnDateTime(
       'completedAt',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
@@ -304,24 +300,24 @@ class ObjectUploadTable extends _i1.Table<int?> {
 
   late final ObjectUploadUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnInt objectId;
+  late final _is.ColumnInt objectId;
 
-  late final _i1.ColumnString actorUserId;
+  late final _is.ColumnString actorUserId;
 
-  late final _i1.ColumnString requestId;
+  late final _is.ColumnString requestId;
 
-  late final _i1.ColumnString requestHash;
+  late final _is.ColumnString requestHash;
 
-  late final _i1.ColumnDateTime expiresAt;
+  late final _is.ColumnDateTime expiresAt;
 
-  late final _i1.ColumnDateTime completedAt;
+  late final _is.ColumnDateTime completedAt;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     objectId,
@@ -334,24 +330,22 @@ class ObjectUploadTable extends _i1.Table<int?> {
   ];
 }
 
-class ObjectUploadInclude extends _i1.IncludeObject {
+class ObjectUploadInclude extends _is.IncludeObject {
   ObjectUploadInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => ObjectUpload.t;
+  _is.Table<int?> get table => ObjectUpload.t;
 }
 
-class ObjectUploadIncludeList extends _i1.IncludeList {
+class ObjectUploadIncludeList extends _is.IncludeList {
   ObjectUploadIncludeList._({
-    _i1.WhereExpressionBuilder<ObjectUploadTable>? where,
+    _is.WhereExpressionBuilder<ObjectUploadTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -359,10 +353,10 @@ class ObjectUploadIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => ObjectUpload.t;
+  _is.Table<int?> get table => ObjectUpload.t;
 }
 
 class ObjectUploadRepository {
@@ -391,24 +385,20 @@ class ObjectUploadRepository {
   /// );
   /// ```
   Future<List<ObjectUpload>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ObjectUploadTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ObjectUploadTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ObjectUploadTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectUploadTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ObjectUploadTable>? orderBy,
+    _is.OrderByListBuilder<ObjectUploadTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<ObjectUpload>(
       where: where?.call(ObjectUpload.t),
       orderBy: orderBy?.call(ObjectUpload.t),
       orderByList: orderByList?.call(ObjectUpload.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -435,23 +425,19 @@ class ObjectUploadRepository {
   /// );
   /// ```
   Future<ObjectUpload?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ObjectUploadTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ObjectUploadTable>? where,
     int? offset,
-    _i1.OrderByBuilder<ObjectUploadTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectUploadTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ObjectUploadTable>? orderBy,
+    _is.OrderByListBuilder<ObjectUploadTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<ObjectUpload>(
       where: where?.call(ObjectUpload.t),
       orderBy: orderBy?.call(ObjectUpload.t),
       orderByList: orderByList?.call(ObjectUpload.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -461,11 +447,11 @@ class ObjectUploadRepository {
 
   /// Finds a single [ObjectUpload] by its [id] or null if no such row exists.
   Future<ObjectUpload?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<ObjectUpload>(
       id,
@@ -490,9 +476,9 @@ class ObjectUploadRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectUpload>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectUpload> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -508,9 +494,9 @@ class ObjectUploadRepository {
   ///
   /// The returned [ObjectUpload] will have its `id` field set.
   Future<ObjectUpload> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectUpload row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<ObjectUpload>(
       row,
@@ -539,12 +525,12 @@ class ObjectUploadRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectUpload>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectUpload> rows, {
-    required _i1.ColumnSelections<ObjectUploadTable> conflictColumns,
-    _i1.ColumnSelections<ObjectUploadTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ObjectUploadTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ObjectUploadTable> conflictColumns,
+    _is.ColumnSelections<ObjectUploadTable>? updateColumns,
+    _is.WhereExpressionBuilder<ObjectUploadTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<ObjectUpload>(
@@ -571,12 +557,12 @@ class ObjectUploadRepository {
   ///
   /// The returned [ObjectUpload] will have its `id` field set.
   Future<ObjectUpload?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectUpload row, {
-    required _i1.ColumnSelections<ObjectUploadTable> conflictColumns,
-    _i1.ColumnSelections<ObjectUploadTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ObjectUploadTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ObjectUploadTable> conflictColumns,
+    _is.ColumnSelections<ObjectUploadTable>? updateColumns,
+    _is.WhereExpressionBuilder<ObjectUploadTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<ObjectUpload>(
       row,
@@ -597,10 +583,10 @@ class ObjectUploadRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectUpload>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectUpload> rows, {
-    _i1.ColumnSelections<ObjectUploadTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ObjectUploadTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<ObjectUpload>(
@@ -615,10 +601,10 @@ class ObjectUploadRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<ObjectUpload> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectUpload row, {
-    _i1.ColumnSelections<ObjectUploadTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ObjectUploadTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<ObjectUpload>(
       row,
@@ -630,10 +616,10 @@ class ObjectUploadRepository {
   /// Updates a single [ObjectUpload] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<ObjectUpload?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<ObjectUploadUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<ObjectUploadUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<ObjectUpload>(
       id,
@@ -649,16 +635,14 @@ class ObjectUploadRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectUpload>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<ObjectUploadUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<ObjectUploadTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<ObjectUploadUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<ObjectUploadTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ObjectUploadTable>? orderBy,
-    _i1.OrderByListBuilder<ObjectUploadTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ObjectUploadTable>? orderBy,
+    _is.OrderByListBuilder<ObjectUploadTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<ObjectUpload>(
@@ -668,8 +652,6 @@ class ObjectUploadRepository {
       offset: offset,
       orderBy: orderBy?.call(ObjectUpload.t),
       orderByList: orderByList?.call(ObjectUpload.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -687,21 +669,17 @@ class ObjectUploadRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectUpload>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectUpload> rows, {
-    _i1.OrderByBuilder<ObjectUploadTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectUploadTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ObjectUploadTable>? orderBy,
+    _is.OrderByListBuilder<ObjectUploadTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<ObjectUpload>(
       rows,
       orderBy: orderBy?.call(ObjectUpload.t),
       orderByList: orderByList?.call(ObjectUpload.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -709,9 +687,9 @@ class ObjectUploadRepository {
 
   /// Deletes a single [ObjectUpload].
   Future<ObjectUpload> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectUpload row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<ObjectUpload>(
       row,
@@ -728,21 +706,17 @@ class ObjectUploadRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectUpload>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ObjectUploadTable> where,
-    _i1.OrderByBuilder<ObjectUploadTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectUploadTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ObjectUploadTable> where,
+    _is.OrderByBuilder<ObjectUploadTable>? orderBy,
+    _is.OrderByListBuilder<ObjectUploadTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<ObjectUpload>(
       where: where(ObjectUpload.t),
       orderBy: orderBy?.call(ObjectUpload.t),
       orderByList: orderByList?.call(ObjectUpload.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -751,10 +725,10 @@ class ObjectUploadRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ObjectUploadTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ObjectUploadTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<ObjectUpload>(
       where: where?.call(ObjectUpload.t),
@@ -765,11 +739,11 @@ class ObjectUploadRepository {
 
   /// Acquires row-level locks on [ObjectUpload] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ObjectUploadTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ObjectUploadTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<ObjectUpload>(
       where: where(ObjectUpload.t),
