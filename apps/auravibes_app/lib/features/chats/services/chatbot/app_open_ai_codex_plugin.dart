@@ -25,9 +25,9 @@ class AppOpenAICodexPlugin({
 
   @override
   Action<dynamic, dynamic, dynamic, dynamic>? resolve(
-    String actionType,
+    ActionType actionType,
     String name,
-  ) => actionType == 'model' ? _createModel(name) : null;
+  ) => actionType == ActionType.model ? _createModel(name) : null;
 
   Model<dynamic> _createModel(String modelName) {
     return Model<dynamic>(
