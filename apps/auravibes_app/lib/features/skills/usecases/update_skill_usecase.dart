@@ -44,11 +44,11 @@ class const UpdateSkillUsecase(
     }
 
     final cloud = cloudStore;
-    if (cloud != null) return await cloud.updateSkill(skillId, skill);
+    if (cloud != null) return cloud.updateSkill(skillId, skill);
     final repository = _skillsRepository;
     if (repository == null) throw StateError('Skill store is unavailable');
 
-    return await repository.updateSkill(skillId, skill);
+    return repository.updateSkill(skillId, skill);
   }
 }
 

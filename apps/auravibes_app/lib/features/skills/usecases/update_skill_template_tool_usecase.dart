@@ -47,14 +47,14 @@ class const UpdateSkillTemplateToolUsecase(
 
     final cloud = cloudStore;
     if (cloud != null) {
-      return await cloud.updateTool(toolId, toolToUpdate);
+      return cloud.updateTool(toolId, toolToUpdate);
     }
     final repository = _skillTemplateToolsRepository;
     if (repository == null) {
       throw StateError('Skill template tool store is unavailable');
     }
 
-    return await repository.updateTool(toolId, toolToUpdate);
+    return repository.updateTool(toolId, toolToUpdate);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
