@@ -2,7 +2,7 @@
 # docker build -f auravibes_server_server/Dockerfile .
 
 # Build stage
-FROM dart:3.8.0 AS build
+FROM dart:3.13.3 AS build
 
 # Create a minimal workspace that preserves locked server dependency versions.
 WORKDIR /app
