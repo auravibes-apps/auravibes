@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class UpdateConversationRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   UpdateConversationRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -55,18 +55,18 @@ abstract class UpdateConversationRequest
       title: jsonSerialization['title'] as String?,
       isPinned: jsonSerialization['isPinned'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
-      clearModel: _i1.BoolJsonExtension.fromJson(
+      clearModel: _is.BoolJsonExtension.fromJson(
         jsonSerialization['clearModel'],
       ),
       agentId: jsonSerialization['agentId'] as String?,
-      clearAgent: _i1.BoolJsonExtension.fromJson(
+      clearAgent: _is.BoolJsonExtension.fromJson(
         jsonSerialization['clearAgent'],
       ),
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
-      clearParent: _i1.BoolJsonExtension.fromJson(
+      clearParent: _is.BoolJsonExtension.fromJson(
         jsonSerialization['clearParent'],
       ),
     );
@@ -98,7 +98,7 @@ abstract class UpdateConversationRequest
 
   /// Returns a shallow copy of this [UpdateConversationRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   UpdateConversationRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -155,7 +155,7 @@ abstract class UpdateConversationRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -192,7 +192,7 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
 
   /// Returns a shallow copy of this [UpdateConversationRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   UpdateConversationRequest copyWith({
     int? workspaceId,

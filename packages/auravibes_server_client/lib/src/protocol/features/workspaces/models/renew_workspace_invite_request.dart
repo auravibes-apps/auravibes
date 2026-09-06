@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class RenewWorkspaceInviteRequest implements _i1.SerializableModel {
+abstract class RenewWorkspaceInviteRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   RenewWorkspaceInviteRequest._({
     required this.workspaceId,
     required this.inviteId,
@@ -49,7 +50,7 @@ abstract class RenewWorkspaceInviteRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [RenewWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   RenewWorkspaceInviteRequest copyWith({
     int? workspaceId,
     int? inviteId,
@@ -68,8 +69,19 @@ abstract class RenewWorkspaceInviteRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'RenewWorkspaceInviteRequest',
+      'workspaceId': workspaceId,
+      'inviteId': inviteId,
+      'requestId': requestId,
+      'expectedInviteRevision': expectedInviteRevision,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -88,7 +100,7 @@ class _RenewWorkspaceInviteRequestImpl extends RenewWorkspaceInviteRequest {
 
   /// Returns a shallow copy of this [RenewWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   RenewWorkspaceInviteRequest copyWith({
     int? workspaceId,

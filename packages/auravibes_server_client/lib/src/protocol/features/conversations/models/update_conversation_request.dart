@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class UpdateConversationRequest implements _i1.SerializableModel {
+abstract class UpdateConversationRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   UpdateConversationRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -54,18 +55,18 @@ abstract class UpdateConversationRequest implements _i1.SerializableModel {
       title: jsonSerialization['title'] as String?,
       isPinned: jsonSerialization['isPinned'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
-      clearModel: _i1.BoolJsonExtension.fromJson(
+      clearModel: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['clearModel'],
       ),
       agentId: jsonSerialization['agentId'] as String?,
-      clearAgent: _i1.BoolJsonExtension.fromJson(
+      clearAgent: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['clearAgent'],
       ),
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
-      clearParent: _i1.BoolJsonExtension.fromJson(
+      clearParent: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['clearParent'],
       ),
     );
@@ -97,7 +98,7 @@ abstract class UpdateConversationRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [UpdateConversationRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   UpdateConversationRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -133,8 +134,28 @@ abstract class UpdateConversationRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'UpdateConversationRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'conversationId': conversationId,
+      'expectedRevision': expectedRevision,
+      if (title != null) 'title': title,
+      if (isPinned != null) 'isPinned': isPinned,
+      if (modelId != null) 'modelId': modelId,
+      'clearModel': clearModel,
+      if (agentId != null) 'agentId': agentId,
+      'clearAgent': clearAgent,
+      if (parentConversationId != null)
+        'parentConversationId': parentConversationId,
+      'clearParent': clearParent,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -171,7 +192,7 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
 
   /// Returns a shallow copy of this [UpdateConversationRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   UpdateConversationRequest copyWith({
     int? workspaceId,

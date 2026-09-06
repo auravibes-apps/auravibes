@@ -10,17 +10,16 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 import '../../../features/workspace_state/models/workspace_patch_operation_kind.dart'
-    as _i2;
+    as _isnc185w;
 import '../../../features/workspace_state/models/workspace_resource_kind.dart'
-    as _i3;
-
-import 'package:auravibes_server/src/generated/protocol.dart' as _i4;
+    as _iz7spkcy;
 
 abstract class WorkspacePatchOperation
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   WorkspacePatchOperation._({
     required this.operation,
     required this.resourceKind,
@@ -31,8 +30,8 @@ abstract class WorkspacePatchOperation
   });
 
   factory WorkspacePatchOperation({
-    required _i2.WorkspacePatchOperationKind operation,
-    required _i3.WorkspaceResourceKind resourceKind,
+    required _isnc185w.WorkspacePatchOperationKind operation,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
     required String resourceId,
     String? data,
     required List<String> fieldMask,
@@ -43,24 +42,24 @@ abstract class WorkspacePatchOperation
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspacePatchOperation(
-      operation: _i2.WorkspacePatchOperationKind.fromJson(
+      operation: _isnc185w.WorkspacePatchOperationKind.fromJson(
         (jsonSerialization['operation'] as String),
       ),
-      resourceKind: _i3.WorkspaceResourceKind.fromJson(
+      resourceKind: _iz7spkcy.WorkspaceResourceKind.fromJson(
         (jsonSerialization['resourceKind'] as String),
       ),
       resourceId: jsonSerialization['resourceId'] as String,
       data: jsonSerialization['data'] as String?,
-      fieldMask: _i4.Protocol().deserialize<List<String>>(
+      fieldMask: _if5qez1k.Protocol().deserialize<List<String>>(
         jsonSerialization['fieldMask'],
       ),
       expectedRevision: jsonSerialization['expectedRevision'] as int?,
     );
   }
 
-  _i2.WorkspacePatchOperationKind operation;
+  _isnc185w.WorkspacePatchOperationKind operation;
 
-  _i3.WorkspaceResourceKind resourceKind;
+  _iz7spkcy.WorkspaceResourceKind resourceKind;
 
   String resourceId;
 
@@ -72,10 +71,10 @@ abstract class WorkspacePatchOperation
 
   /// Returns a shallow copy of this [WorkspacePatchOperation]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkspacePatchOperation copyWith({
-    _i2.WorkspacePatchOperationKind? operation,
-    _i3.WorkspaceResourceKind? resourceKind,
+    _isnc185w.WorkspacePatchOperationKind? operation,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
     String? resourceId,
     String? data,
     List<String>? fieldMask,
@@ -109,7 +108,7 @@ abstract class WorkspacePatchOperation
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -117,8 +116,8 @@ class _Undefined {}
 
 class _WorkspacePatchOperationImpl extends WorkspacePatchOperation {
   _WorkspacePatchOperationImpl({
-    required _i2.WorkspacePatchOperationKind operation,
-    required _i3.WorkspaceResourceKind resourceKind,
+    required _isnc185w.WorkspacePatchOperationKind operation,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
     required String resourceId,
     String? data,
     required List<String> fieldMask,
@@ -134,11 +133,11 @@ class _WorkspacePatchOperationImpl extends WorkspacePatchOperation {
 
   /// Returns a shallow copy of this [WorkspacePatchOperation]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkspacePatchOperation copyWith({
-    _i2.WorkspacePatchOperationKind? operation,
-    _i3.WorkspaceResourceKind? resourceKind,
+    _isnc185w.WorkspacePatchOperationKind? operation,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
     String? resourceId,
     Object? data = _Undefined,
     List<String>? fieldMask,

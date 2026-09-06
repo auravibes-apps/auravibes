@@ -74,7 +74,11 @@ abstract final class SyncWakeups {
       return;
     }
     try {
-      await session.messages.postMessage(channel, message, global: true);
+      await session.messages.postMessage(
+        channel,
+        message,
+        scope: MessageScope.global,
+      );
       if (job != null) {
         session.log(
           'Published global conversation job wakeup: '

@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class WorkspaceInvite
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   WorkspaceInvite._({
     this.id,
     required this.workspaceId,
@@ -60,24 +60,24 @@ abstract class WorkspaceInvite
       invitedByUserId: jsonSerialization['invitedByUserId'] as String,
       acceptedByUserId: jsonSerialization['acceptedByUserId'] as String?,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       expiresAt: jsonSerialization['expiresAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['expiresAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['expiresAt']),
       acceptedAt: jsonSerialization['acceptedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['acceptedAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['acceptedAt']),
       declinedAt: jsonSerialization['declinedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['declinedAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['declinedAt']),
       revokedAt: jsonSerialization['revokedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['revokedAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['revokedAt']),
       pendingKey: jsonSerialization['pendingKey'] as String?,
     );
   }
@@ -118,11 +118,11 @@ abstract class WorkspaceInvite
   String? pendingKey;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [WorkspaceInvite]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkspaceInvite copyWith({
     int? id,
     int? workspaceId,
@@ -189,13 +189,11 @@ abstract class WorkspaceInvite
   }
 
   static WorkspaceInviteIncludeList includeList({
-    _i1.WhereExpressionBuilder<WorkspaceInviteTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceInviteTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceInviteTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
+    _is.OrderByBuilder<WorkspaceInviteTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
     WorkspaceInviteInclude? include,
   }) {
     return WorkspaceInviteIncludeList._(
@@ -203,8 +201,6 @@ abstract class WorkspaceInvite
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(WorkspaceInvite.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(WorkspaceInvite.t),
       include: include,
     );
@@ -212,7 +208,7 @@ abstract class WorkspaceInvite
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -255,7 +251,7 @@ class _WorkspaceInviteImpl extends WorkspaceInvite {
 
   /// Returns a shallow copy of this [WorkspaceInvite]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkspaceInvite copyWith({
     Object? id = _Undefined,
@@ -296,146 +292,146 @@ class _WorkspaceInviteImpl extends WorkspaceInvite {
   }
 }
 
-class WorkspaceInviteUpdateTable extends _i1.UpdateTable<WorkspaceInviteTable> {
+class WorkspaceInviteUpdateTable extends _is.UpdateTable<WorkspaceInviteTable> {
   WorkspaceInviteUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<String, String> email(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> email(String value) => _is.ColumnValue(
     table.email,
     value,
   );
 
-  _i1.ColumnValue<String, String> normalizedEmail(String value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<String, String> normalizedEmail(String value) =>
+      _is.ColumnValue(
         table.normalizedEmail,
         value,
       );
 
-  _i1.ColumnValue<String, String> role(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> role(String value) => _is.ColumnValue(
     table.role,
     value,
   );
 
-  _i1.ColumnValue<String, String> invitedByUserId(String value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<String, String> invitedByUserId(String value) =>
+      _is.ColumnValue(
         table.invitedByUserId,
         value,
       );
 
-  _i1.ColumnValue<String, String> acceptedByUserId(String? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<String, String> acceptedByUserId(String? value) =>
+      _is.ColumnValue(
         table.acceptedByUserId,
         value,
       );
 
-  _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> revision(int value) => _is.ColumnValue(
     table.revision,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _is.ColumnValue(
         table.updatedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> expiresAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> expiresAt(DateTime? value) =>
+      _is.ColumnValue(
         table.expiresAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> acceptedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> acceptedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.acceptedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> declinedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> declinedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.declinedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> revokedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> revokedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.revokedAt,
         value,
       );
 
-  _i1.ColumnValue<String, String> pendingKey(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> pendingKey(String? value) => _is.ColumnValue(
     table.pendingKey,
     value,
   );
 }
 
-class WorkspaceInviteTable extends _i1.Table<int?> {
+class WorkspaceInviteTable extends _is.Table<int?> {
   WorkspaceInviteTable({super.tableRelation})
     : super(tableName: 'workspace_invite') {
     updateTable = WorkspaceInviteUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    email = _i1.ColumnString(
+    email = _is.ColumnString(
       'email',
       this,
     );
-    normalizedEmail = _i1.ColumnString(
+    normalizedEmail = _is.ColumnString(
       'normalizedEmail',
       this,
     );
-    role = _i1.ColumnString(
+    role = _is.ColumnString(
       'role',
       this,
     );
-    invitedByUserId = _i1.ColumnString(
+    invitedByUserId = _is.ColumnString(
       'invitedByUserId',
       this,
     );
-    acceptedByUserId = _i1.ColumnString(
+    acceptedByUserId = _is.ColumnString(
       'acceptedByUserId',
       this,
     );
-    revision = _i1.ColumnInt(
+    revision = _is.ColumnInt(
       'revision',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    updatedAt = _i1.ColumnDateTime(
+    updatedAt = _is.ColumnDateTime(
       'updatedAt',
       this,
     );
-    expiresAt = _i1.ColumnDateTime(
+    expiresAt = _is.ColumnDateTime(
       'expiresAt',
       this,
     );
-    acceptedAt = _i1.ColumnDateTime(
+    acceptedAt = _is.ColumnDateTime(
       'acceptedAt',
       this,
     );
-    declinedAt = _i1.ColumnDateTime(
+    declinedAt = _is.ColumnDateTime(
       'declinedAt',
       this,
     );
-    revokedAt = _i1.ColumnDateTime(
+    revokedAt = _is.ColumnDateTime(
       'revokedAt',
       this,
     );
-    pendingKey = _i1.ColumnString(
+    pendingKey = _is.ColumnString(
       'pendingKey',
       this,
     );
@@ -443,36 +439,36 @@ class WorkspaceInviteTable extends _i1.Table<int?> {
 
   late final WorkspaceInviteUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnString email;
+  late final _is.ColumnString email;
 
-  late final _i1.ColumnString normalizedEmail;
+  late final _is.ColumnString normalizedEmail;
 
-  late final _i1.ColumnString role;
+  late final _is.ColumnString role;
 
-  late final _i1.ColumnString invitedByUserId;
+  late final _is.ColumnString invitedByUserId;
 
-  late final _i1.ColumnString acceptedByUserId;
+  late final _is.ColumnString acceptedByUserId;
 
-  late final _i1.ColumnInt revision;
+  late final _is.ColumnInt revision;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime updatedAt;
+  late final _is.ColumnDateTime updatedAt;
 
-  late final _i1.ColumnDateTime expiresAt;
+  late final _is.ColumnDateTime expiresAt;
 
-  late final _i1.ColumnDateTime acceptedAt;
+  late final _is.ColumnDateTime acceptedAt;
 
-  late final _i1.ColumnDateTime declinedAt;
+  late final _is.ColumnDateTime declinedAt;
 
-  late final _i1.ColumnDateTime revokedAt;
+  late final _is.ColumnDateTime revokedAt;
 
-  late final _i1.ColumnString pendingKey;
+  late final _is.ColumnString pendingKey;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     email,
@@ -491,24 +487,22 @@ class WorkspaceInviteTable extends _i1.Table<int?> {
   ];
 }
 
-class WorkspaceInviteInclude extends _i1.IncludeObject {
+class WorkspaceInviteInclude extends _is.IncludeObject {
   WorkspaceInviteInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceInvite.t;
+  _is.Table<int?> get table => WorkspaceInvite.t;
 }
 
-class WorkspaceInviteIncludeList extends _i1.IncludeList {
+class WorkspaceInviteIncludeList extends _is.IncludeList {
   WorkspaceInviteIncludeList._({
-    _i1.WhereExpressionBuilder<WorkspaceInviteTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceInviteTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -516,10 +510,10 @@ class WorkspaceInviteIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceInvite.t;
+  _is.Table<int?> get table => WorkspaceInvite.t;
 }
 
 class WorkspaceInviteRepository {
@@ -548,24 +542,20 @@ class WorkspaceInviteRepository {
   /// );
   /// ```
   Future<List<WorkspaceInvite>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceInviteTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceInviteTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceInviteTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceInviteTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<WorkspaceInvite>(
       where: where?.call(WorkspaceInvite.t),
       orderBy: orderBy?.call(WorkspaceInvite.t),
       orderByList: orderByList?.call(WorkspaceInvite.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -592,23 +582,19 @@ class WorkspaceInviteRepository {
   /// );
   /// ```
   Future<WorkspaceInvite?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceInviteTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceInviteTable>? where,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceInviteTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceInviteTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<WorkspaceInvite>(
       where: where?.call(WorkspaceInvite.t),
       orderBy: orderBy?.call(WorkspaceInvite.t),
       orderByList: orderByList?.call(WorkspaceInvite.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -618,11 +604,11 @@ class WorkspaceInviteRepository {
 
   /// Finds a single [WorkspaceInvite] by its [id] or null if no such row exists.
   Future<WorkspaceInvite?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<WorkspaceInvite>(
       id,
@@ -647,9 +633,9 @@ class WorkspaceInviteRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceInvite>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceInvite> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -665,9 +651,9 @@ class WorkspaceInviteRepository {
   ///
   /// The returned [WorkspaceInvite] will have its `id` field set.
   Future<WorkspaceInvite> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceInvite row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<WorkspaceInvite>(
       row,
@@ -696,12 +682,12 @@ class WorkspaceInviteRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceInvite>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceInvite> rows, {
-    required _i1.ColumnSelections<WorkspaceInviteTable> conflictColumns,
-    _i1.ColumnSelections<WorkspaceInviteTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceInviteTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkspaceInviteTable> conflictColumns,
+    _is.ColumnSelections<WorkspaceInviteTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceInviteTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<WorkspaceInvite>(
@@ -728,12 +714,12 @@ class WorkspaceInviteRepository {
   ///
   /// The returned [WorkspaceInvite] will have its `id` field set.
   Future<WorkspaceInvite?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceInvite row, {
-    required _i1.ColumnSelections<WorkspaceInviteTable> conflictColumns,
-    _i1.ColumnSelections<WorkspaceInviteTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceInviteTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkspaceInviteTable> conflictColumns,
+    _is.ColumnSelections<WorkspaceInviteTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceInviteTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<WorkspaceInvite>(
       row,
@@ -754,10 +740,10 @@ class WorkspaceInviteRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceInvite>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceInvite> rows, {
-    _i1.ColumnSelections<WorkspaceInviteTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceInviteTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<WorkspaceInvite>(
@@ -772,10 +758,10 @@ class WorkspaceInviteRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<WorkspaceInvite> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceInvite row, {
-    _i1.ColumnSelections<WorkspaceInviteTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceInviteTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<WorkspaceInvite>(
       row,
@@ -787,11 +773,11 @@ class WorkspaceInviteRepository {
   /// Updates a single [WorkspaceInvite] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<WorkspaceInvite?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<WorkspaceInviteUpdateTable>
+    required _is.ColumnValueListBuilder<WorkspaceInviteUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<WorkspaceInvite>(
       id,
@@ -807,17 +793,15 @@ class WorkspaceInviteRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceInvite>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<WorkspaceInviteUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<WorkspaceInviteUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<WorkspaceInviteTable> where,
+    required _is.WhereExpressionBuilder<WorkspaceInviteTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceInviteTable>? orderBy,
-    _i1.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceInviteTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<WorkspaceInvite>(
@@ -827,8 +811,6 @@ class WorkspaceInviteRepository {
       offset: offset,
       orderBy: orderBy?.call(WorkspaceInvite.t),
       orderByList: orderByList?.call(WorkspaceInvite.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -846,21 +828,17 @@ class WorkspaceInviteRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceInvite>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceInvite> rows, {
-    _i1.OrderByBuilder<WorkspaceInviteTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceInviteTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<WorkspaceInvite>(
       rows,
       orderBy: orderBy?.call(WorkspaceInvite.t),
       orderByList: orderByList?.call(WorkspaceInvite.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -868,9 +846,9 @@ class WorkspaceInviteRepository {
 
   /// Deletes a single [WorkspaceInvite].
   Future<WorkspaceInvite> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceInvite row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<WorkspaceInvite>(
       row,
@@ -887,21 +865,17 @@ class WorkspaceInviteRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceInvite>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceInviteTable> where,
-    _i1.OrderByBuilder<WorkspaceInviteTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceInviteTable> where,
+    _is.OrderByBuilder<WorkspaceInviteTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceInviteTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<WorkspaceInvite>(
       where: where(WorkspaceInvite.t),
       orderBy: orderBy?.call(WorkspaceInvite.t),
       orderByList: orderByList?.call(WorkspaceInvite.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -910,10 +884,10 @@ class WorkspaceInviteRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceInviteTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceInviteTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<WorkspaceInvite>(
       where: where?.call(WorkspaceInvite.t),
@@ -924,11 +898,11 @@ class WorkspaceInviteRepository {
 
   /// Acquires row-level locks on [WorkspaceInvite] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceInviteTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceInviteTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<WorkspaceInvite>(
       where: where(WorkspaceInvite.t),

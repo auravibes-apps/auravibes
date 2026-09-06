@@ -162,6 +162,8 @@ void main() {
         'context': <String, Object?>{},
         'messageText': 'Form answers submitted',
         'answers': {'name': 'Ada'},
+        'touchedPaths': <String>[],
+        'unansweredPaths': <String>[],
       });
     });
 

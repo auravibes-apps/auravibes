@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class WorkspaceModelConnection implements _i1.SerializableModel {
+abstract class WorkspaceModelConnection
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceModelConnection._({
     this.id,
     required this.workspaceId,
@@ -54,17 +55,19 @@ abstract class WorkspaceModelConnection implements _i1.SerializableModel {
       name: jsonSerialization['name'] as String,
       url: jsonSerialization['url'] as String?,
       keySuffix: jsonSerialization['keySuffix'] as String?,
-      hasSecret: _i1.BoolJsonExtension.fromJson(jsonSerialization['hasSecret']),
+      hasSecret: _isc.BoolJsonExtension.fromJson(
+        jsonSerialization['hasSecret'],
+      ),
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -97,7 +100,7 @@ abstract class WorkspaceModelConnection implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceModelConnection]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceModelConnection copyWith({
     int? id,
     int? workspaceId,
@@ -132,8 +135,27 @@ abstract class WorkspaceModelConnection implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceModelConnection',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'connectionId': connectionId,
+      'providerId': providerId,
+      'name': name,
+      if (url != null) 'url': url,
+      if (keySuffix != null) 'keySuffix': keySuffix,
+      'hasSecret': hasSecret,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+      if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -170,7 +192,7 @@ class _WorkspaceModelConnectionImpl extends WorkspaceModelConnection {
 
   /// Returns a shallow copy of this [WorkspaceModelConnection]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceModelConnection copyWith({
     Object? id = _Undefined,

@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class StartTurnRequest implements _i1.SerializableModel {
+abstract class StartTurnRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   StartTurnRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -49,7 +51,7 @@ abstract class StartTurnRequest implements _i1.SerializableModel {
           jsonSerialization['expectedConversationRevision'] as int,
       clientMessageId: jsonSerialization['clientMessageId'] as String,
       content: jsonSerialization['content'] as String,
-      attachmentIds: _i2.Protocol().deserialize<List<String>>(
+      attachmentIds: _isctvzjc.Protocol().deserialize<List<String>>(
         jsonSerialization['attachmentIds'],
       ),
       modelSelectionId: jsonSerialization['modelSelectionId'] as String?,
@@ -57,7 +59,7 @@ abstract class StartTurnRequest implements _i1.SerializableModel {
       a2uiSupportedComponents:
           jsonSerialization['a2uiSupportedComponents'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(
+          : _isctvzjc.Protocol().deserialize<List<String>>(
               jsonSerialization['a2uiSupportedComponents'],
             ),
     );
@@ -85,7 +87,7 @@ abstract class StartTurnRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [StartTurnRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   StartTurnRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -117,8 +119,26 @@ abstract class StartTurnRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'StartTurnRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'conversationId': conversationId,
+      'expectedConversationRevision': expectedConversationRevision,
+      'clientMessageId': clientMessageId,
+      'content': content,
+      'attachmentIds': attachmentIds.toJson(),
+      if (modelSelectionId != null) 'modelSelectionId': modelSelectionId,
+      if (agentId != null) 'agentId': agentId,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -151,7 +171,7 @@ class _StartTurnRequestImpl extends StartTurnRequest {
 
   /// Returns a shallow copy of this [StartTurnRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   StartTurnRequest copyWith({
     int? workspaceId,

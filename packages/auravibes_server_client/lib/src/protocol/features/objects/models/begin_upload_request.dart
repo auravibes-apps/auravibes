@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class BeginUploadRequest implements _i1.SerializableModel {
+abstract class BeginUploadRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   BeginUploadRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -61,7 +62,7 @@ abstract class BeginUploadRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [BeginUploadRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   BeginUploadRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -86,8 +87,22 @@ abstract class BeginUploadRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'BeginUploadRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'purpose': purpose,
+      'displayName': displayName,
+      'mimeType': mimeType,
+      'sizeBytes': sizeBytes,
+      'checksumSha256': checksumSha256,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -112,7 +127,7 @@ class _BeginUploadRequestImpl extends BeginUploadRequest {
 
   /// Returns a shallow copy of this [BeginUploadRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   BeginUploadRequest copyWith({
     int? workspaceId,

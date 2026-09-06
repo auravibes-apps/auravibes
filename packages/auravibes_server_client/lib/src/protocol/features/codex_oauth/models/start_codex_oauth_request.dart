@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class StartCodexOAuthRequest implements _i1.SerializableModel {
+abstract class StartCodexOAuthRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   StartCodexOAuthRequest._({
     required this.workspaceId,
     required this.connectionId,
@@ -38,7 +39,7 @@ abstract class StartCodexOAuthRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [StartCodexOAuthRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   StartCodexOAuthRequest copyWith({
     int? workspaceId,
     String? connectionId,
@@ -53,8 +54,17 @@ abstract class StartCodexOAuthRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'StartCodexOAuthRequest',
+      'workspaceId': workspaceId,
+      'connectionId': connectionId,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -69,7 +79,7 @@ class _StartCodexOAuthRequestImpl extends StartCodexOAuthRequest {
 
   /// Returns a shallow copy of this [StartCodexOAuthRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   StartCodexOAuthRequest copyWith({
     int? workspaceId,

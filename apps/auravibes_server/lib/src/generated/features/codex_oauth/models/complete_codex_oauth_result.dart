@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class CompleteCodexOAuthResult
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   CompleteCodexOAuthResult._({
     required this.workspaceId,
     required this.connectionId,
@@ -32,7 +32,7 @@ abstract class CompleteCodexOAuthResult
     return CompleteCodexOAuthResult(
       workspaceId: jsonSerialization['workspaceId'] as int,
       connectionId: jsonSerialization['connectionId'] as String,
-      configured: _i1.BoolJsonExtension.fromJson(
+      configured: _is.BoolJsonExtension.fromJson(
         jsonSerialization['configured'],
       ),
     );
@@ -46,7 +46,7 @@ abstract class CompleteCodexOAuthResult
 
   /// Returns a shallow copy of this [CompleteCodexOAuthResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   CompleteCodexOAuthResult copyWith({
     int? workspaceId,
     String? connectionId,
@@ -74,7 +74,7 @@ abstract class CompleteCodexOAuthResult
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -91,7 +91,7 @@ class _CompleteCodexOAuthResultImpl extends CompleteCodexOAuthResult {
 
   /// Returns a shallow copy of this [CompleteCodexOAuthResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   CompleteCodexOAuthResult copyWith({
     int? workspaceId,

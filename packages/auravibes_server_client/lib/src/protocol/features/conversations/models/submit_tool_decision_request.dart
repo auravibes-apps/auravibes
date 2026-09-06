@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
+abstract class SubmitToolDecisionRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   SubmitToolDecisionRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -53,12 +55,12 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
       decision: jsonSerialization['decision'] as String,
       stopAll: jsonSerialization['stopAll'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['stopAll']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['stopAll']),
       editedArgumentsJson: jsonSerialization['editedArgumentsJson'] as String?,
       a2uiSupportedComponents:
           jsonSerialization['a2uiSupportedComponents'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(
+          : _isctvzjc.Protocol().deserialize<List<String>>(
               jsonSerialization['a2uiSupportedComponents'],
             ),
     );
@@ -86,7 +88,7 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [SubmitToolDecisionRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   SubmitToolDecisionRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -119,8 +121,27 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'SubmitToolDecisionRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'turnId': turnId,
+      'toolCallId': toolCallId,
+      'argumentsDigest': argumentsDigest,
+      'expectedTurnRevision': expectedTurnRevision,
+      'decision': decision,
+      'stopAll': stopAll,
+      if (editedArgumentsJson != null)
+        'editedArgumentsJson': editedArgumentsJson,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -153,7 +174,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
 
   /// Returns a shallow copy of this [SubmitToolDecisionRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   SubmitToolDecisionRequest copyWith({
     int? workspaceId,

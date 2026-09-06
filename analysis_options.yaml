@@ -74,7 +74,7 @@ plugins:
       tag-name: true
 
   riverpod_lint:
-    version: 3.1.8
+    version: 3.1.9
     diagnostics:
       async_value_nullable_pattern: true
       avoid_build_context_in_providers: true

@@ -10,11 +10,11 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i2;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ModelSyncResult
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ModelSyncResult._({
     required this.providerId,
     required this.modelIds,
@@ -28,7 +28,7 @@ abstract class ModelSyncResult
   factory ModelSyncResult.fromJson(Map<String, dynamic> jsonSerialization) {
     return ModelSyncResult(
       providerId: jsonSerialization['providerId'] as String,
-      modelIds: _i2.Protocol().deserialize<List<String>>(
+      modelIds: _if5qez1k.Protocol().deserialize<List<String>>(
         jsonSerialization['modelIds'],
       ),
     );
@@ -40,7 +40,7 @@ abstract class ModelSyncResult
 
   /// Returns a shallow copy of this [ModelSyncResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ModelSyncResult copyWith({
     String? providerId,
     List<String>? modelIds,
@@ -65,7 +65,7 @@ abstract class ModelSyncResult
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -80,7 +80,7 @@ class _ModelSyncResultImpl extends ModelSyncResult {
 
   /// Returns a shallow copy of this [ModelSyncResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ModelSyncResult copyWith({
     String? providerId,

@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ObjectReference
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   ObjectReference._({
     this.id,
     required this.workspaceId,
@@ -38,12 +38,12 @@ abstract class ObjectReference
       workspaceId: jsonSerialization['workspaceId'] as int,
       objectId: jsonSerialization['objectId'] as int,
       messageId: jsonSerialization['messageId'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -65,11 +65,11 @@ abstract class ObjectReference
   DateTime? deletedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [ObjectReference]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ObjectReference copyWith({
     int? id,
     int? workspaceId,
@@ -109,13 +109,11 @@ abstract class ObjectReference
   }
 
   static ObjectReferenceIncludeList includeList({
-    _i1.WhereExpressionBuilder<ObjectReferenceTable>? where,
+    _is.WhereExpressionBuilder<ObjectReferenceTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ObjectReferenceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectReferenceTable>? orderByList,
+    _is.OrderByBuilder<ObjectReferenceTable>? orderBy,
+    _is.OrderByListBuilder<ObjectReferenceTable>? orderByList,
     ObjectReferenceInclude? include,
   }) {
     return ObjectReferenceIncludeList._(
@@ -123,8 +121,6 @@ abstract class ObjectReference
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(ObjectReference.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(ObjectReference.t),
       include: include,
     );
@@ -132,7 +128,7 @@ abstract class ObjectReference
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -157,7 +153,7 @@ class _ObjectReferenceImpl extends ObjectReference {
 
   /// Returns a shallow copy of this [ObjectReference]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ObjectReference copyWith({
     Object? id = _Undefined,
@@ -178,58 +174,58 @@ class _ObjectReferenceImpl extends ObjectReference {
   }
 }
 
-class ObjectReferenceUpdateTable extends _i1.UpdateTable<ObjectReferenceTable> {
+class ObjectReferenceUpdateTable extends _is.UpdateTable<ObjectReferenceTable> {
   ObjectReferenceUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<int, int> objectId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> objectId(int value) => _is.ColumnValue(
     table.objectId,
     value,
   );
 
-  _i1.ColumnValue<int, int> messageId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> messageId(int value) => _is.ColumnValue(
     table.messageId,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.deletedAt,
         value,
       );
 }
 
-class ObjectReferenceTable extends _i1.Table<int?> {
+class ObjectReferenceTable extends _is.Table<int?> {
   ObjectReferenceTable({super.tableRelation})
     : super(tableName: 'object_reference') {
     updateTable = ObjectReferenceUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    objectId = _i1.ColumnInt(
+    objectId = _is.ColumnInt(
       'objectId',
       this,
     );
-    messageId = _i1.ColumnInt(
+    messageId = _is.ColumnInt(
       'messageId',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    deletedAt = _i1.ColumnDateTime(
+    deletedAt = _is.ColumnDateTime(
       'deletedAt',
       this,
     );
@@ -237,18 +233,18 @@ class ObjectReferenceTable extends _i1.Table<int?> {
 
   late final ObjectReferenceUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnInt objectId;
+  late final _is.ColumnInt objectId;
 
-  late final _i1.ColumnInt messageId;
+  late final _is.ColumnInt messageId;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime deletedAt;
+  late final _is.ColumnDateTime deletedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     objectId,
@@ -258,24 +254,22 @@ class ObjectReferenceTable extends _i1.Table<int?> {
   ];
 }
 
-class ObjectReferenceInclude extends _i1.IncludeObject {
+class ObjectReferenceInclude extends _is.IncludeObject {
   ObjectReferenceInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => ObjectReference.t;
+  _is.Table<int?> get table => ObjectReference.t;
 }
 
-class ObjectReferenceIncludeList extends _i1.IncludeList {
+class ObjectReferenceIncludeList extends _is.IncludeList {
   ObjectReferenceIncludeList._({
-    _i1.WhereExpressionBuilder<ObjectReferenceTable>? where,
+    _is.WhereExpressionBuilder<ObjectReferenceTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -283,10 +277,10 @@ class ObjectReferenceIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => ObjectReference.t;
+  _is.Table<int?> get table => ObjectReference.t;
 }
 
 class ObjectReferenceRepository {
@@ -315,24 +309,20 @@ class ObjectReferenceRepository {
   /// );
   /// ```
   Future<List<ObjectReference>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ObjectReferenceTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ObjectReferenceTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ObjectReferenceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectReferenceTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ObjectReferenceTable>? orderBy,
+    _is.OrderByListBuilder<ObjectReferenceTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<ObjectReference>(
       where: where?.call(ObjectReference.t),
       orderBy: orderBy?.call(ObjectReference.t),
       orderByList: orderByList?.call(ObjectReference.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -359,23 +349,19 @@ class ObjectReferenceRepository {
   /// );
   /// ```
   Future<ObjectReference?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ObjectReferenceTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ObjectReferenceTable>? where,
     int? offset,
-    _i1.OrderByBuilder<ObjectReferenceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectReferenceTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ObjectReferenceTable>? orderBy,
+    _is.OrderByListBuilder<ObjectReferenceTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<ObjectReference>(
       where: where?.call(ObjectReference.t),
       orderBy: orderBy?.call(ObjectReference.t),
       orderByList: orderByList?.call(ObjectReference.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -385,11 +371,11 @@ class ObjectReferenceRepository {
 
   /// Finds a single [ObjectReference] by its [id] or null if no such row exists.
   Future<ObjectReference?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<ObjectReference>(
       id,
@@ -414,9 +400,9 @@ class ObjectReferenceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectReference>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectReference> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -432,9 +418,9 @@ class ObjectReferenceRepository {
   ///
   /// The returned [ObjectReference] will have its `id` field set.
   Future<ObjectReference> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectReference row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<ObjectReference>(
       row,
@@ -463,12 +449,12 @@ class ObjectReferenceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectReference>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectReference> rows, {
-    required _i1.ColumnSelections<ObjectReferenceTable> conflictColumns,
-    _i1.ColumnSelections<ObjectReferenceTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ObjectReferenceTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ObjectReferenceTable> conflictColumns,
+    _is.ColumnSelections<ObjectReferenceTable>? updateColumns,
+    _is.WhereExpressionBuilder<ObjectReferenceTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<ObjectReference>(
@@ -495,12 +481,12 @@ class ObjectReferenceRepository {
   ///
   /// The returned [ObjectReference] will have its `id` field set.
   Future<ObjectReference?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectReference row, {
-    required _i1.ColumnSelections<ObjectReferenceTable> conflictColumns,
-    _i1.ColumnSelections<ObjectReferenceTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ObjectReferenceTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ObjectReferenceTable> conflictColumns,
+    _is.ColumnSelections<ObjectReferenceTable>? updateColumns,
+    _is.WhereExpressionBuilder<ObjectReferenceTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<ObjectReference>(
       row,
@@ -521,10 +507,10 @@ class ObjectReferenceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectReference>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectReference> rows, {
-    _i1.ColumnSelections<ObjectReferenceTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ObjectReferenceTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<ObjectReference>(
@@ -539,10 +525,10 @@ class ObjectReferenceRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<ObjectReference> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectReference row, {
-    _i1.ColumnSelections<ObjectReferenceTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ObjectReferenceTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<ObjectReference>(
       row,
@@ -554,11 +540,11 @@ class ObjectReferenceRepository {
   /// Updates a single [ObjectReference] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<ObjectReference?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<ObjectReferenceUpdateTable>
+    required _is.ColumnValueListBuilder<ObjectReferenceUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<ObjectReference>(
       id,
@@ -574,17 +560,15 @@ class ObjectReferenceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectReference>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<ObjectReferenceUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<ObjectReferenceUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<ObjectReferenceTable> where,
+    required _is.WhereExpressionBuilder<ObjectReferenceTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ObjectReferenceTable>? orderBy,
-    _i1.OrderByListBuilder<ObjectReferenceTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ObjectReferenceTable>? orderBy,
+    _is.OrderByListBuilder<ObjectReferenceTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<ObjectReference>(
@@ -594,8 +578,6 @@ class ObjectReferenceRepository {
       offset: offset,
       orderBy: orderBy?.call(ObjectReference.t),
       orderByList: orderByList?.call(ObjectReference.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -613,21 +595,17 @@ class ObjectReferenceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectReference>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectReference> rows, {
-    _i1.OrderByBuilder<ObjectReferenceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectReferenceTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ObjectReferenceTable>? orderBy,
+    _is.OrderByListBuilder<ObjectReferenceTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<ObjectReference>(
       rows,
       orderBy: orderBy?.call(ObjectReference.t),
       orderByList: orderByList?.call(ObjectReference.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -635,9 +613,9 @@ class ObjectReferenceRepository {
 
   /// Deletes a single [ObjectReference].
   Future<ObjectReference> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectReference row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<ObjectReference>(
       row,
@@ -654,21 +632,17 @@ class ObjectReferenceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectReference>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ObjectReferenceTable> where,
-    _i1.OrderByBuilder<ObjectReferenceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectReferenceTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ObjectReferenceTable> where,
+    _is.OrderByBuilder<ObjectReferenceTable>? orderBy,
+    _is.OrderByListBuilder<ObjectReferenceTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<ObjectReference>(
       where: where(ObjectReference.t),
       orderBy: orderBy?.call(ObjectReference.t),
       orderByList: orderByList?.call(ObjectReference.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -677,10 +651,10 @@ class ObjectReferenceRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ObjectReferenceTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ObjectReferenceTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<ObjectReference>(
       where: where?.call(ObjectReference.t),
@@ -691,11 +665,11 @@ class ObjectReferenceRepository {
 
   /// Acquires row-level locks on [ObjectReference] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ObjectReferenceTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ObjectReferenceTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<ObjectReference>(
       where: where(ObjectReference.t),

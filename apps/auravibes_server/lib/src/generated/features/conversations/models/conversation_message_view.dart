@@ -10,15 +10,14 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 import '../../../features/conversations/models/conversation_tool_call_view.dart'
-    as _i2;
-
-import 'package:auravibes_server/src/generated/protocol.dart' as _i3;
+    as _irozunu0;
 
 abstract class ConversationMessageView
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ConversationMessageView._({
     required this.id,
     required this.conversationId,
@@ -45,7 +44,7 @@ abstract class ConversationMessageView
     required String status,
     required String content,
     String? metadataJson,
-    required List<_i2.ConversationToolCallView> toolCalls,
+    required List<_irozunu0.ConversationToolCallView> toolCalls,
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -64,14 +63,15 @@ abstract class ConversationMessageView
       status: jsonSerialization['status'] as String,
       content: jsonSerialization['content'] as String,
       metadataJson: jsonSerialization['metadataJson'] as String?,
-      toolCalls: _i3.Protocol().deserialize<List<_i2.ConversationToolCallView>>(
-        jsonSerialization['toolCalls'],
-      ),
+      toolCalls: _if5qez1k.Protocol()
+          .deserialize<List<_irozunu0.ConversationToolCallView>>(
+            jsonSerialization['toolCalls'],
+          ),
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -95,7 +95,7 @@ abstract class ConversationMessageView
 
   String? metadataJson;
 
-  List<_i2.ConversationToolCallView> toolCalls;
+  List<_irozunu0.ConversationToolCallView> toolCalls;
 
   int revision;
 
@@ -105,7 +105,7 @@ abstract class ConversationMessageView
 
   /// Returns a shallow copy of this [ConversationMessageView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationMessageView copyWith({
     String? id,
     String? conversationId,
@@ -116,7 +116,7 @@ abstract class ConversationMessageView
     String? status,
     String? content,
     String? metadataJson,
-    List<_i2.ConversationToolCallView>? toolCalls,
+    List<_irozunu0.ConversationToolCallView>? toolCalls,
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -163,7 +163,7 @@ abstract class ConversationMessageView
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -180,7 +180,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
     required String status,
     required String content,
     String? metadataJson,
-    required List<_i2.ConversationToolCallView> toolCalls,
+    required List<_irozunu0.ConversationToolCallView> toolCalls,
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -202,7 +202,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
 
   /// Returns a shallow copy of this [ConversationMessageView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationMessageView copyWith({
     String? id,
@@ -214,7 +214,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
     String? status,
     String? content,
     Object? metadataJson = _Undefined,
-    List<_i2.ConversationToolCallView>? toolCalls,
+    List<_irozunu0.ConversationToolCallView>? toolCalls,
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,

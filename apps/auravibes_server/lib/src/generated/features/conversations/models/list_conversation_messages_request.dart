@@ -10,11 +10,11 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i2;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ListConversationMessagesRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ListConversationMessagesRequest._({
     required this.workspaceId,
     required this.conversationId,
@@ -39,7 +39,7 @@ abstract class ListConversationMessagesRequest
       a2uiSupportedComponents:
           jsonSerialization['a2uiSupportedComponents'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(
+          : _if5qez1k.Protocol().deserialize<List<String>>(
               jsonSerialization['a2uiSupportedComponents'],
             ),
     );
@@ -55,7 +55,7 @@ abstract class ListConversationMessagesRequest
 
   /// Returns a shallow copy of this [ListConversationMessagesRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ListConversationMessagesRequest copyWith({
     int? workspaceId,
     String? conversationId,
@@ -88,7 +88,7 @@ abstract class ListConversationMessagesRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -110,7 +110,7 @@ class _ListConversationMessagesRequestImpl
 
   /// Returns a shallow copy of this [ListConversationMessagesRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ListConversationMessagesRequest copyWith({
     int? workspaceId,

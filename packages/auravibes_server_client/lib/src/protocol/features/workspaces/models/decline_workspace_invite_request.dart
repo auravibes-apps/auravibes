@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class DeclineWorkspaceInviteRequest implements _i1.SerializableModel {
+abstract class DeclineWorkspaceInviteRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   DeclineWorkspaceInviteRequest._({
     required this.inviteId,
     required this.requestId,
@@ -44,7 +45,7 @@ abstract class DeclineWorkspaceInviteRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [DeclineWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   DeclineWorkspaceInviteRequest copyWith({
     int? inviteId,
     String? requestId,
@@ -61,8 +62,18 @@ abstract class DeclineWorkspaceInviteRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'DeclineWorkspaceInviteRequest',
+      'inviteId': inviteId,
+      'requestId': requestId,
+      'expectedInviteRevision': expectedInviteRevision,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -79,7 +90,7 @@ class _DeclineWorkspaceInviteRequestImpl extends DeclineWorkspaceInviteRequest {
 
   /// Returns a shallow copy of this [DeclineWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   DeclineWorkspaceInviteRequest copyWith({
     int? inviteId,

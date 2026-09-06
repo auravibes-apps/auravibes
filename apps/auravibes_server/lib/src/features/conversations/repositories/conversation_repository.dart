@@ -594,8 +594,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     where: (table) =>
         table.workspaceId.equals(workspaceId) &
         table.conversationId.equals(conversationId),
-    orderBy: (table) => table.id,
-    orderDescending: true,
+    orderBy: (table) => table.id.desc(),
     limit: limit,
   );
 

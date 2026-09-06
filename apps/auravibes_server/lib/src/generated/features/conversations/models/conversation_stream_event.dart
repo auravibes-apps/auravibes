@@ -10,13 +10,13 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 import '../../../features/conversations/models/conversation_event_type.dart'
-    as _i2;
+    as _iccy8d0z;
 
 abstract class ConversationStreamEvent
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ConversationStreamEvent._({
     required this.workspaceId,
     required this.conversationId,
@@ -34,7 +34,7 @@ abstract class ConversationStreamEvent
     required String conversationId,
     required int sequence,
     String? eventId,
-    required _i2.ConversationEventType kind,
+    required _iccy8d0z.ConversationEventType kind,
     required String actorUserId,
     required String payloadJson,
     String? transientTextDelta,
@@ -49,13 +49,13 @@ abstract class ConversationStreamEvent
       conversationId: jsonSerialization['conversationId'] as String,
       sequence: jsonSerialization['sequence'] as int,
       eventId: jsonSerialization['eventId'] as String?,
-      kind: _i2.ConversationEventType.fromJson(
+      kind: _iccy8d0z.ConversationEventType.fromJson(
         (jsonSerialization['kind'] as String),
       ),
       actorUserId: jsonSerialization['actorUserId'] as String,
       payloadJson: jsonSerialization['payloadJson'] as String,
       transientTextDelta: jsonSerialization['transientTextDelta'] as String?,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -69,7 +69,7 @@ abstract class ConversationStreamEvent
 
   String? eventId;
 
-  _i2.ConversationEventType kind;
+  _iccy8d0z.ConversationEventType kind;
 
   String actorUserId;
 
@@ -81,13 +81,13 @@ abstract class ConversationStreamEvent
 
   /// Returns a shallow copy of this [ConversationStreamEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationStreamEvent copyWith({
     int? workspaceId,
     String? conversationId,
     int? sequence,
     String? eventId,
-    _i2.ConversationEventType? kind,
+    _iccy8d0z.ConversationEventType? kind,
     String? actorUserId,
     String? payloadJson,
     String? transientTextDelta,
@@ -127,7 +127,7 @@ abstract class ConversationStreamEvent
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -139,7 +139,7 @@ class _ConversationStreamEventImpl extends ConversationStreamEvent {
     required String conversationId,
     required int sequence,
     String? eventId,
-    required _i2.ConversationEventType kind,
+    required _iccy8d0z.ConversationEventType kind,
     required String actorUserId,
     required String payloadJson,
     String? transientTextDelta,
@@ -158,14 +158,14 @@ class _ConversationStreamEventImpl extends ConversationStreamEvent {
 
   /// Returns a shallow copy of this [ConversationStreamEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationStreamEvent copyWith({
     int? workspaceId,
     String? conversationId,
     int? sequence,
     Object? eventId = _Undefined,
-    _i2.ConversationEventType? kind,
+    _iccy8d0z.ConversationEventType? kind,
     String? actorUserId,
     String? payloadJson,
     Object? transientTextDelta = _Undefined,

@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class WorkspaceSubscribeRequest implements _i1.SerializableModel {
+abstract class WorkspaceSubscribeRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceSubscribeRequest._({
     required this.workspaceId,
     required this.afterSequence,
@@ -32,7 +34,7 @@ abstract class WorkspaceSubscribeRequest implements _i1.SerializableModel {
     return WorkspaceSubscribeRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       afterSequence: jsonSerialization['afterSequence'] as int,
-      activeTurnIds: _i2.Protocol().deserialize<List<String>>(
+      activeTurnIds: _isctvzjc.Protocol().deserialize<List<String>>(
         jsonSerialization['activeTurnIds'],
       ),
     );
@@ -46,7 +48,7 @@ abstract class WorkspaceSubscribeRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceSubscribeRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceSubscribeRequest copyWith({
     int? workspaceId,
     int? afterSequence,
@@ -63,8 +65,18 @@ abstract class WorkspaceSubscribeRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceSubscribeRequest',
+      'workspaceId': workspaceId,
+      'afterSequence': afterSequence,
+      'activeTurnIds': activeTurnIds.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -81,7 +93,7 @@ class _WorkspaceSubscribeRequestImpl extends WorkspaceSubscribeRequest {
 
   /// Returns a shallow copy of this [WorkspaceSubscribeRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceSubscribeRequest copyWith({
     int? workspaceId,

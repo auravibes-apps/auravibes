@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ContinueConversationRequest implements _i1.SerializableModel {
+abstract class ContinueConversationRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ContinueConversationRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -42,7 +44,7 @@ abstract class ContinueConversationRequest implements _i1.SerializableModel {
       a2uiSupportedComponents:
           jsonSerialization['a2uiSupportedComponents'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(
+          : _isctvzjc.Protocol().deserialize<List<String>>(
               jsonSerialization['a2uiSupportedComponents'],
             ),
     );
@@ -60,7 +62,7 @@ abstract class ContinueConversationRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ContinueConversationRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ContinueConversationRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -82,8 +84,21 @@ abstract class ContinueConversationRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ContinueConversationRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'conversationId': conversationId,
+      'expectedProjectionRevision': expectedProjectionRevision,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -106,7 +121,7 @@ class _ContinueConversationRequestImpl extends ContinueConversationRequest {
 
   /// Returns a shallow copy of this [ContinueConversationRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ContinueConversationRequest copyWith({
     int? workspaceId,

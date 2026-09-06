@@ -10,12 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'dart:typed_data' as _idt;
 
-import 'dart:typed_data' as _i2;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class CodexOAuthTransaction
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   CodexOAuthTransaction._({
     this.id,
     required this.transactionId,
@@ -39,9 +39,9 @@ abstract class CodexOAuthTransaction
     required String connectionId,
     required String userId,
     required String stateHash,
-    required _i2.ByteData verifierCiphertext,
-    required _i2.ByteData verifierNonce,
-    required _i2.ByteData verifierAuthenticationTag,
+    required _idt.ByteData verifierCiphertext,
+    required _idt.ByteData verifierNonce,
+    required _idt.ByteData verifierAuthenticationTag,
     required String redirectUri,
     required DateTime expiresAt,
     DateTime? consumedAt,
@@ -58,23 +58,23 @@ abstract class CodexOAuthTransaction
       connectionId: jsonSerialization['connectionId'] as String,
       userId: jsonSerialization['userId'] as String,
       stateHash: jsonSerialization['stateHash'] as String,
-      verifierCiphertext: _i1.ByteDataJsonExtension.fromJson(
+      verifierCiphertext: _is.ByteDataJsonExtension.fromJson(
         jsonSerialization['verifierCiphertext'],
       ),
-      verifierNonce: _i1.ByteDataJsonExtension.fromJson(
+      verifierNonce: _is.ByteDataJsonExtension.fromJson(
         jsonSerialization['verifierNonce'],
       ),
-      verifierAuthenticationTag: _i1.ByteDataJsonExtension.fromJson(
+      verifierAuthenticationTag: _is.ByteDataJsonExtension.fromJson(
         jsonSerialization['verifierAuthenticationTag'],
       ),
       redirectUri: jsonSerialization['redirectUri'] as String,
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
       consumedAt: jsonSerialization['consumedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['consumedAt']),
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['consumedAt']),
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -97,11 +97,11 @@ abstract class CodexOAuthTransaction
 
   String stateHash;
 
-  _i2.ByteData verifierCiphertext;
+  _idt.ByteData verifierCiphertext;
 
-  _i2.ByteData verifierNonce;
+  _idt.ByteData verifierNonce;
 
-  _i2.ByteData verifierAuthenticationTag;
+  _idt.ByteData verifierAuthenticationTag;
 
   String redirectUri;
 
@@ -112,11 +112,11 @@ abstract class CodexOAuthTransaction
   DateTime createdAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [CodexOAuthTransaction]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   CodexOAuthTransaction copyWith({
     int? id,
     String? transactionId,
@@ -124,9 +124,9 @@ abstract class CodexOAuthTransaction
     String? connectionId,
     String? userId,
     String? stateHash,
-    _i2.ByteData? verifierCiphertext,
-    _i2.ByteData? verifierNonce,
-    _i2.ByteData? verifierAuthenticationTag,
+    _idt.ByteData? verifierCiphertext,
+    _idt.ByteData? verifierNonce,
+    _idt.ByteData? verifierAuthenticationTag,
     String? redirectUri,
     DateTime? expiresAt,
     DateTime? consumedAt,
@@ -177,13 +177,11 @@ abstract class CodexOAuthTransaction
   }
 
   static CodexOAuthTransactionIncludeList includeList({
-    _i1.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
+    _is.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
+    _is.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
+    _is.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
     CodexOAuthTransactionInclude? include,
   }) {
     return CodexOAuthTransactionIncludeList._(
@@ -191,8 +189,6 @@ abstract class CodexOAuthTransaction
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(CodexOAuthTransaction.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(CodexOAuthTransaction.t),
       include: include,
     );
@@ -200,7 +196,7 @@ abstract class CodexOAuthTransaction
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -214,9 +210,9 @@ class _CodexOAuthTransactionImpl extends CodexOAuthTransaction {
     required String connectionId,
     required String userId,
     required String stateHash,
-    required _i2.ByteData verifierCiphertext,
-    required _i2.ByteData verifierNonce,
-    required _i2.ByteData verifierAuthenticationTag,
+    required _idt.ByteData verifierCiphertext,
+    required _idt.ByteData verifierNonce,
+    required _idt.ByteData verifierAuthenticationTag,
     required String redirectUri,
     required DateTime expiresAt,
     DateTime? consumedAt,
@@ -239,7 +235,7 @@ class _CodexOAuthTransactionImpl extends CodexOAuthTransaction {
 
   /// Returns a shallow copy of this [CodexOAuthTransaction]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   CodexOAuthTransaction copyWith({
     Object? id = _Undefined,
@@ -248,9 +244,9 @@ class _CodexOAuthTransactionImpl extends CodexOAuthTransaction {
     String? connectionId,
     String? userId,
     String? stateHash,
-    _i2.ByteData? verifierCiphertext,
-    _i2.ByteData? verifierNonce,
-    _i2.ByteData? verifierAuthenticationTag,
+    _idt.ByteData? verifierCiphertext,
+    _idt.ByteData? verifierNonce,
+    _idt.ByteData? verifierAuthenticationTag,
     String? redirectUri,
     DateTime? expiresAt,
     Object? consumedAt = _Undefined,
@@ -276,129 +272,129 @@ class _CodexOAuthTransactionImpl extends CodexOAuthTransaction {
 }
 
 class CodexOAuthTransactionUpdateTable
-    extends _i1.UpdateTable<CodexOAuthTransactionTable> {
+    extends _is.UpdateTable<CodexOAuthTransactionTable> {
   CodexOAuthTransactionUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> transactionId(String value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<String, String> transactionId(String value) =>
+      _is.ColumnValue(
         table.transactionId,
         value,
       );
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<String, String> connectionId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> connectionId(String value) => _is.ColumnValue(
     table.connectionId,
     value,
   );
 
-  _i1.ColumnValue<String, String> userId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> userId(String value) => _is.ColumnValue(
     table.userId,
     value,
   );
 
-  _i1.ColumnValue<String, String> stateHash(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> stateHash(String value) => _is.ColumnValue(
     table.stateHash,
     value,
   );
 
-  _i1.ColumnValue<_i2.ByteData, _i2.ByteData> verifierCiphertext(
-    _i2.ByteData value,
-  ) => _i1.ColumnValue(
+  _is.ColumnValue<_idt.ByteData, _idt.ByteData> verifierCiphertext(
+    _idt.ByteData value,
+  ) => _is.ColumnValue(
     table.verifierCiphertext,
     value,
   );
 
-  _i1.ColumnValue<_i2.ByteData, _i2.ByteData> verifierNonce(
-    _i2.ByteData value,
-  ) => _i1.ColumnValue(
+  _is.ColumnValue<_idt.ByteData, _idt.ByteData> verifierNonce(
+    _idt.ByteData value,
+  ) => _is.ColumnValue(
     table.verifierNonce,
     value,
   );
 
-  _i1.ColumnValue<_i2.ByteData, _i2.ByteData> verifierAuthenticationTag(
-    _i2.ByteData value,
-  ) => _i1.ColumnValue(
+  _is.ColumnValue<_idt.ByteData, _idt.ByteData> verifierAuthenticationTag(
+    _idt.ByteData value,
+  ) => _is.ColumnValue(
     table.verifierAuthenticationTag,
     value,
   );
 
-  _i1.ColumnValue<String, String> redirectUri(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> redirectUri(String value) => _is.ColumnValue(
     table.redirectUri,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
+      _is.ColumnValue(
         table.expiresAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> consumedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> consumedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.consumedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 }
 
-class CodexOAuthTransactionTable extends _i1.Table<int?> {
+class CodexOAuthTransactionTable extends _is.Table<int?> {
   CodexOAuthTransactionTable({super.tableRelation})
     : super(tableName: 'codex_oauth_transaction') {
     updateTable = CodexOAuthTransactionUpdateTable(this);
-    transactionId = _i1.ColumnString(
+    transactionId = _is.ColumnString(
       'transactionId',
       this,
     );
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    connectionId = _i1.ColumnString(
+    connectionId = _is.ColumnString(
       'connectionId',
       this,
     );
-    userId = _i1.ColumnString(
+    userId = _is.ColumnString(
       'userId',
       this,
     );
-    stateHash = _i1.ColumnString(
+    stateHash = _is.ColumnString(
       'stateHash',
       this,
     );
-    verifierCiphertext = _i1.ColumnByteData(
+    verifierCiphertext = _is.ColumnByteData(
       'verifierCiphertext',
       this,
     );
-    verifierNonce = _i1.ColumnByteData(
+    verifierNonce = _is.ColumnByteData(
       'verifierNonce',
       this,
     );
-    verifierAuthenticationTag = _i1.ColumnByteData(
+    verifierAuthenticationTag = _is.ColumnByteData(
       'verifierAuthenticationTag',
       this,
     );
-    redirectUri = _i1.ColumnString(
+    redirectUri = _is.ColumnString(
       'redirectUri',
       this,
     );
-    expiresAt = _i1.ColumnDateTime(
+    expiresAt = _is.ColumnDateTime(
       'expiresAt',
       this,
     );
-    consumedAt = _i1.ColumnDateTime(
+    consumedAt = _is.ColumnDateTime(
       'consumedAt',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
@@ -406,32 +402,32 @@ class CodexOAuthTransactionTable extends _i1.Table<int?> {
 
   late final CodexOAuthTransactionUpdateTable updateTable;
 
-  late final _i1.ColumnString transactionId;
+  late final _is.ColumnString transactionId;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnString connectionId;
+  late final _is.ColumnString connectionId;
 
-  late final _i1.ColumnString userId;
+  late final _is.ColumnString userId;
 
-  late final _i1.ColumnString stateHash;
+  late final _is.ColumnString stateHash;
 
-  late final _i1.ColumnByteData verifierCiphertext;
+  late final _is.ColumnByteData verifierCiphertext;
 
-  late final _i1.ColumnByteData verifierNonce;
+  late final _is.ColumnByteData verifierNonce;
 
-  late final _i1.ColumnByteData verifierAuthenticationTag;
+  late final _is.ColumnByteData verifierAuthenticationTag;
 
-  late final _i1.ColumnString redirectUri;
+  late final _is.ColumnString redirectUri;
 
-  late final _i1.ColumnDateTime expiresAt;
+  late final _is.ColumnDateTime expiresAt;
 
-  late final _i1.ColumnDateTime consumedAt;
+  late final _is.ColumnDateTime consumedAt;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     transactionId,
     workspaceId,
@@ -448,24 +444,22 @@ class CodexOAuthTransactionTable extends _i1.Table<int?> {
   ];
 }
 
-class CodexOAuthTransactionInclude extends _i1.IncludeObject {
+class CodexOAuthTransactionInclude extends _is.IncludeObject {
   CodexOAuthTransactionInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => CodexOAuthTransaction.t;
+  _is.Table<int?> get table => CodexOAuthTransaction.t;
 }
 
-class CodexOAuthTransactionIncludeList extends _i1.IncludeList {
+class CodexOAuthTransactionIncludeList extends _is.IncludeList {
   CodexOAuthTransactionIncludeList._({
-    _i1.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
+    _is.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -473,10 +467,10 @@ class CodexOAuthTransactionIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => CodexOAuthTransaction.t;
+  _is.Table<int?> get table => CodexOAuthTransaction.t;
 }
 
 class CodexOAuthTransactionRepository {
@@ -505,24 +499,20 @@ class CodexOAuthTransactionRepository {
   /// );
   /// ```
   Future<List<CodexOAuthTransaction>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
+    _is.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<CodexOAuthTransaction>(
       where: where?.call(CodexOAuthTransaction.t),
       orderBy: orderBy?.call(CodexOAuthTransaction.t),
       orderByList: orderByList?.call(CodexOAuthTransaction.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -549,23 +539,19 @@ class CodexOAuthTransactionRepository {
   /// );
   /// ```
   Future<CodexOAuthTransaction?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
     int? offset,
-    _i1.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
+    _is.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<CodexOAuthTransaction>(
       where: where?.call(CodexOAuthTransaction.t),
       orderBy: orderBy?.call(CodexOAuthTransaction.t),
       orderByList: orderByList?.call(CodexOAuthTransaction.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -575,11 +561,11 @@ class CodexOAuthTransactionRepository {
 
   /// Finds a single [CodexOAuthTransaction] by its [id] or null if no such row exists.
   Future<CodexOAuthTransaction?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<CodexOAuthTransaction>(
       id,
@@ -604,9 +590,9 @@ class CodexOAuthTransactionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CodexOAuthTransaction>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<CodexOAuthTransaction> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -622,9 +608,9 @@ class CodexOAuthTransactionRepository {
   ///
   /// The returned [CodexOAuthTransaction] will have its `id` field set.
   Future<CodexOAuthTransaction> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     CodexOAuthTransaction row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<CodexOAuthTransaction>(
       row,
@@ -653,12 +639,12 @@ class CodexOAuthTransactionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CodexOAuthTransaction>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<CodexOAuthTransaction> rows, {
-    required _i1.ColumnSelections<CodexOAuthTransactionTable> conflictColumns,
-    _i1.ColumnSelections<CodexOAuthTransactionTable>? updateColumns,
-    _i1.WhereExpressionBuilder<CodexOAuthTransactionTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<CodexOAuthTransactionTable> conflictColumns,
+    _is.ColumnSelections<CodexOAuthTransactionTable>? updateColumns,
+    _is.WhereExpressionBuilder<CodexOAuthTransactionTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<CodexOAuthTransaction>(
@@ -685,12 +671,12 @@ class CodexOAuthTransactionRepository {
   ///
   /// The returned [CodexOAuthTransaction] will have its `id` field set.
   Future<CodexOAuthTransaction?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     CodexOAuthTransaction row, {
-    required _i1.ColumnSelections<CodexOAuthTransactionTable> conflictColumns,
-    _i1.ColumnSelections<CodexOAuthTransactionTable>? updateColumns,
-    _i1.WhereExpressionBuilder<CodexOAuthTransactionTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<CodexOAuthTransactionTable> conflictColumns,
+    _is.ColumnSelections<CodexOAuthTransactionTable>? updateColumns,
+    _is.WhereExpressionBuilder<CodexOAuthTransactionTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<CodexOAuthTransaction>(
       row,
@@ -711,10 +697,10 @@ class CodexOAuthTransactionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CodexOAuthTransaction>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<CodexOAuthTransaction> rows, {
-    _i1.ColumnSelections<CodexOAuthTransactionTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<CodexOAuthTransactionTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<CodexOAuthTransaction>(
@@ -729,10 +715,10 @@ class CodexOAuthTransactionRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<CodexOAuthTransaction> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     CodexOAuthTransaction row, {
-    _i1.ColumnSelections<CodexOAuthTransactionTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<CodexOAuthTransactionTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<CodexOAuthTransaction>(
       row,
@@ -744,11 +730,11 @@ class CodexOAuthTransactionRepository {
   /// Updates a single [CodexOAuthTransaction] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<CodexOAuthTransaction?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<CodexOAuthTransactionUpdateTable>
+    required _is.ColumnValueListBuilder<CodexOAuthTransactionUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<CodexOAuthTransaction>(
       id,
@@ -764,17 +750,15 @@ class CodexOAuthTransactionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CodexOAuthTransaction>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<CodexOAuthTransactionUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<CodexOAuthTransactionUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<CodexOAuthTransactionTable> where,
+    required _is.WhereExpressionBuilder<CodexOAuthTransactionTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
-    _i1.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
+    _is.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<CodexOAuthTransaction>(
@@ -784,8 +768,6 @@ class CodexOAuthTransactionRepository {
       offset: offset,
       orderBy: orderBy?.call(CodexOAuthTransaction.t),
       orderByList: orderByList?.call(CodexOAuthTransaction.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -803,21 +785,17 @@ class CodexOAuthTransactionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CodexOAuthTransaction>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<CodexOAuthTransaction> rows, {
-    _i1.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
+    _is.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<CodexOAuthTransaction>(
       rows,
       orderBy: orderBy?.call(CodexOAuthTransaction.t),
       orderByList: orderByList?.call(CodexOAuthTransaction.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -825,9 +803,9 @@ class CodexOAuthTransactionRepository {
 
   /// Deletes a single [CodexOAuthTransaction].
   Future<CodexOAuthTransaction> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     CodexOAuthTransaction row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<CodexOAuthTransaction>(
       row,
@@ -844,21 +822,17 @@ class CodexOAuthTransactionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<CodexOAuthTransaction>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<CodexOAuthTransactionTable> where,
-    _i1.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<CodexOAuthTransactionTable> where,
+    _is.OrderByBuilder<CodexOAuthTransactionTable>? orderBy,
+    _is.OrderByListBuilder<CodexOAuthTransactionTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<CodexOAuthTransaction>(
       where: where(CodexOAuthTransaction.t),
       orderBy: orderBy?.call(CodexOAuthTransaction.t),
       orderByList: orderByList?.call(CodexOAuthTransaction.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -867,10 +841,10 @@ class CodexOAuthTransactionRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<CodexOAuthTransactionTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<CodexOAuthTransaction>(
       where: where?.call(CodexOAuthTransaction.t),
@@ -881,11 +855,11 @@ class CodexOAuthTransactionRepository {
 
   /// Acquires row-level locks on [CodexOAuthTransaction] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<CodexOAuthTransactionTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<CodexOAuthTransactionTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<CodexOAuthTransaction>(
       where: where(CodexOAuthTransaction.t),
