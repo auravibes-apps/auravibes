@@ -20,7 +20,7 @@ class const CheckSkillCredentialReadinessUsecase(
     }
     if (skill.isCredentialOptional) return true;
     final cloud = cloudStore;
-    if (cloud != null) return await cloud.credentialReady(skill);
+    if (cloud != null) return cloud.credentialReady(skill);
 
     final repository = _skillCredentialsRepository;
     if (repository == null) {
