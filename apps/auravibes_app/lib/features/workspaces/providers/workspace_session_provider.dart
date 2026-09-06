@@ -116,14 +116,11 @@ Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGatewayForWorkspace(
   final cloud = session.cloud;
   if (cloud == null) return null;
 
-  final client = await ref.watch(
-    serverpodClientForWorkspaceProvider((
-      serverUrl: cloud.serverUrl,
-      accountId: cloud.accountId,
-    )).future,
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
   );
 
-  return CloudWorkspaceStateGateway(client: client, workspace: cloud);
+  return gateway;
 }
 
 @riverpod
