@@ -146,10 +146,7 @@ void main() {
         final result = await usecase.call([entity]);
 
         expect(entity.content, content);
-        expect(
-          result.single.content,
-          contains('Form submission context:'),
-        );
+        expect(result.single.content, contains('Form submission context:'));
         expect(result.single.content, contains('{"name":"Ada","amount":42}'));
       },
     );
