@@ -307,7 +307,7 @@ class const _AuraTabBar({
                         ? auraColors.primary
                         : DesignColors.transparent,
                     height: DesignBorderWidth.medium,
-                    duration: TickerMode.of(context)
+                    duration: TickerMode.valuesOf(context).enabled
                         ? context.auraTheme.animation.normal
                         : Duration.zero,
                   ),

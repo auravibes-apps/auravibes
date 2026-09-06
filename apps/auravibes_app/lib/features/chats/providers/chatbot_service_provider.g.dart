@@ -7,6 +7,7 @@ part of 'chatbot_service_provider.dart';
 // **************************************************************************
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 /// Provider that creates a ChatbotService without tools.
 /// For title generation and similar tasks.
 
