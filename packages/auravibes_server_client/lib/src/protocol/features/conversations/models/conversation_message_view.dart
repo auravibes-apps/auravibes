@@ -10,14 +10,15 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 import '../../../features/conversations/models/conversation_tool_call_view.dart'
-    as _i2;
+    as _irozunu0;
 
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
-
-abstract class ConversationMessageView implements _i1.SerializableModel {
+abstract class ConversationMessageView
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ConversationMessageView._({
     required this.id,
     required this.conversationId,
@@ -44,7 +45,7 @@ abstract class ConversationMessageView implements _i1.SerializableModel {
     required String status,
     required String content,
     String? metadataJson,
-    required List<_i2.ConversationToolCallView> toolCalls,
+    required List<_irozunu0.ConversationToolCallView> toolCalls,
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -63,14 +64,15 @@ abstract class ConversationMessageView implements _i1.SerializableModel {
       status: jsonSerialization['status'] as String,
       content: jsonSerialization['content'] as String,
       metadataJson: jsonSerialization['metadataJson'] as String?,
-      toolCalls: _i3.Protocol().deserialize<List<_i2.ConversationToolCallView>>(
-        jsonSerialization['toolCalls'],
-      ),
+      toolCalls: _isctvzjc.Protocol()
+          .deserialize<List<_irozunu0.ConversationToolCallView>>(
+            jsonSerialization['toolCalls'],
+          ),
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -94,7 +96,7 @@ abstract class ConversationMessageView implements _i1.SerializableModel {
 
   String? metadataJson;
 
-  List<_i2.ConversationToolCallView> toolCalls;
+  List<_irozunu0.ConversationToolCallView> toolCalls;
 
   int revision;
 
@@ -104,7 +106,7 @@ abstract class ConversationMessageView implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ConversationMessageView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ConversationMessageView copyWith({
     String? id,
     String? conversationId,
@@ -115,7 +117,7 @@ abstract class ConversationMessageView implements _i1.SerializableModel {
     String? status,
     String? content,
     String? metadataJson,
-    List<_i2.ConversationToolCallView>? toolCalls,
+    List<_irozunu0.ConversationToolCallView>? toolCalls,
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -141,8 +143,28 @@ abstract class ConversationMessageView implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ConversationMessageView',
+      'id': id,
+      'conversationId': conversationId,
+      if (turnId != null) 'turnId': turnId,
+      if (turnRevision != null) 'turnRevision': turnRevision,
+      'role': role,
+      'kind': kind,
+      'status': status,
+      'content': content,
+      if (metadataJson != null) 'metadataJson': metadataJson,
+      'toolCalls': toolCalls.toJson(valueToJson: (v) => v.toJsonForProtocol()),
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -159,7 +181,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
     required String status,
     required String content,
     String? metadataJson,
-    required List<_i2.ConversationToolCallView> toolCalls,
+    required List<_irozunu0.ConversationToolCallView> toolCalls,
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -181,7 +203,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
 
   /// Returns a shallow copy of this [ConversationMessageView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ConversationMessageView copyWith({
     String? id,
@@ -193,7 +215,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
     String? status,
     String? content,
     Object? metadataJson = _Undefined,
-    List<_i2.ConversationToolCallView>? toolCalls,
+    List<_irozunu0.ConversationToolCallView>? toolCalls,
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,

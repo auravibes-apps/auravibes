@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class CloudWorkspaceCapabilities implements _i1.SerializableModel {
+abstract class CloudWorkspaceCapabilities
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CloudWorkspaceCapabilities._({
     required this.canViewMembers,
     required this.canInviteMembers,
@@ -41,27 +42,31 @@ abstract class CloudWorkspaceCapabilities implements _i1.SerializableModel {
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceCapabilities(
-      canViewMembers: _i1.BoolJsonExtension.fromJson(
+      canViewMembers: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['canViewMembers'],
       ),
-      canInviteMembers: _i1.BoolJsonExtension.fromJson(
+      canInviteMembers: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['canInviteMembers'],
       ),
-      canInviteAdmins: _i1.BoolJsonExtension.fromJson(
+      canInviteAdmins: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['canInviteAdmins'],
       ),
-      canManageMembers: _i1.BoolJsonExtension.fromJson(
+      canManageMembers: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['canManageMembers'],
       ),
-      canManageAdmins: _i1.BoolJsonExtension.fromJson(
+      canManageAdmins: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['canManageAdmins'],
       ),
-      canRename: _i1.BoolJsonExtension.fromJson(jsonSerialization['canRename']),
-      canTransferOwnership: _i1.BoolJsonExtension.fromJson(
+      canRename: _isc.BoolJsonExtension.fromJson(
+        jsonSerialization['canRename'],
+      ),
+      canTransferOwnership: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['canTransferOwnership'],
       ),
-      canLeave: _i1.BoolJsonExtension.fromJson(jsonSerialization['canLeave']),
-      canDelete: _i1.BoolJsonExtension.fromJson(jsonSerialization['canDelete']),
+      canLeave: _isc.BoolJsonExtension.fromJson(jsonSerialization['canLeave']),
+      canDelete: _isc.BoolJsonExtension.fromJson(
+        jsonSerialization['canDelete'],
+      ),
     );
   }
 
@@ -85,7 +90,7 @@ abstract class CloudWorkspaceCapabilities implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [CloudWorkspaceCapabilities]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CloudWorkspaceCapabilities copyWith({
     bool? canViewMembers,
     bool? canInviteMembers,
@@ -114,8 +119,24 @@ abstract class CloudWorkspaceCapabilities implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CloudWorkspaceCapabilities',
+      'canViewMembers': canViewMembers,
+      'canInviteMembers': canInviteMembers,
+      'canInviteAdmins': canInviteAdmins,
+      'canManageMembers': canManageMembers,
+      'canManageAdmins': canManageAdmins,
+      'canRename': canRename,
+      'canTransferOwnership': canTransferOwnership,
+      'canLeave': canLeave,
+      'canDelete': canDelete,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -144,7 +165,7 @@ class _CloudWorkspaceCapabilitiesImpl extends CloudWorkspaceCapabilities {
 
   /// Returns a shallow copy of this [CloudWorkspaceCapabilities]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CloudWorkspaceCapabilities copyWith({
     bool? canViewMembers,

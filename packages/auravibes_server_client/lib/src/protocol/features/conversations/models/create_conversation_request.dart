@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class CreateConversationRequest implements _i1.SerializableModel {
+abstract class CreateConversationRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CreateConversationRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -43,7 +44,7 @@ abstract class CreateConversationRequest implements _i1.SerializableModel {
       requestId: jsonSerialization['requestId'] as String,
       conversationId: jsonSerialization['conversationId'] as String,
       title: jsonSerialization['title'] as String,
-      isPinned: _i1.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+      isPinned: _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       parentConversationId:
@@ -69,7 +70,7 @@ abstract class CreateConversationRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [CreateConversationRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CreateConversationRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -97,8 +98,24 @@ abstract class CreateConversationRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CreateConversationRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'conversationId': conversationId,
+      'title': title,
+      'isPinned': isPinned,
+      if (modelId != null) 'modelId': modelId,
+      if (agentId != null) 'agentId': agentId,
+      if (parentConversationId != null)
+        'parentConversationId': parentConversationId,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -127,7 +144,7 @@ class _CreateConversationRequestImpl extends CreateConversationRequest {
 
   /// Returns a shallow copy of this [CreateConversationRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CreateConversationRequest copyWith({
     int? workspaceId,

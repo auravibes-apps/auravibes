@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ObjectDeletion
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   ObjectDeletion._({
     this.id,
     required this.workspaceId,
@@ -50,16 +50,16 @@ abstract class ObjectDeletion
       objectKey: jsonSerialization['objectKey'] as String,
       requestId: jsonSerialization['requestId'] as String,
       expectedRevision: jsonSerialization['expectedRevision'] as int,
-      requestedAt: _i1.DateTimeJsonExtension.fromJson(
+      requestedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['requestedAt'],
       ),
       completedAt: jsonSerialization['completedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _is.DateTimeJsonExtension.fromJson(
               jsonSerialization['completedAt'],
             ),
       attempts: jsonSerialization['attempts'] as int,
-      availableAt: _i1.DateTimeJsonExtension.fromJson(
+      availableAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['availableAt'],
       ),
       lastError: jsonSerialization['lastError'] as String?,
@@ -94,11 +94,11 @@ abstract class ObjectDeletion
   String? lastError;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [ObjectDeletion]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ObjectDeletion copyWith({
     int? id,
     int? workspaceId,
@@ -153,13 +153,11 @@ abstract class ObjectDeletion
   }
 
   static ObjectDeletionIncludeList includeList({
-    _i1.WhereExpressionBuilder<ObjectDeletionTable>? where,
+    _is.WhereExpressionBuilder<ObjectDeletionTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ObjectDeletionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectDeletionTable>? orderByList,
+    _is.OrderByBuilder<ObjectDeletionTable>? orderBy,
+    _is.OrderByListBuilder<ObjectDeletionTable>? orderByList,
     ObjectDeletionInclude? include,
   }) {
     return ObjectDeletionIncludeList._(
@@ -167,8 +165,6 @@ abstract class ObjectDeletion
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(ObjectDeletion.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(ObjectDeletion.t),
       include: include,
     );
@@ -176,7 +172,7 @@ abstract class ObjectDeletion
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -211,7 +207,7 @@ class _ObjectDeletionImpl extends ObjectDeletion {
 
   /// Returns a shallow copy of this [ObjectDeletion]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ObjectDeletion copyWith({
     Object? id = _Undefined,
@@ -242,104 +238,104 @@ class _ObjectDeletionImpl extends ObjectDeletion {
   }
 }
 
-class ObjectDeletionUpdateTable extends _i1.UpdateTable<ObjectDeletionTable> {
+class ObjectDeletionUpdateTable extends _is.UpdateTable<ObjectDeletionTable> {
   ObjectDeletionUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<int, int> objectId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> objectId(int value) => _is.ColumnValue(
     table.objectId,
     value,
   );
 
-  _i1.ColumnValue<String, String> objectKey(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> objectKey(String value) => _is.ColumnValue(
     table.objectKey,
     value,
   );
 
-  _i1.ColumnValue<String, String> requestId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> requestId(String value) => _is.ColumnValue(
     table.requestId,
     value,
   );
 
-  _i1.ColumnValue<int, int> expectedRevision(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> expectedRevision(int value) => _is.ColumnValue(
     table.expectedRevision,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> requestedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> requestedAt(DateTime value) =>
+      _is.ColumnValue(
         table.requestedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> completedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> completedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.completedAt,
         value,
       );
 
-  _i1.ColumnValue<int, int> attempts(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> attempts(int value) => _is.ColumnValue(
     table.attempts,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> availableAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> availableAt(DateTime value) =>
+      _is.ColumnValue(
         table.availableAt,
         value,
       );
 
-  _i1.ColumnValue<String, String> lastError(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> lastError(String? value) => _is.ColumnValue(
     table.lastError,
     value,
   );
 }
 
-class ObjectDeletionTable extends _i1.Table<int?> {
+class ObjectDeletionTable extends _is.Table<int?> {
   ObjectDeletionTable({super.tableRelation})
     : super(tableName: 'object_deletion') {
     updateTable = ObjectDeletionUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    objectId = _i1.ColumnInt(
+    objectId = _is.ColumnInt(
       'objectId',
       this,
     );
-    objectKey = _i1.ColumnString(
+    objectKey = _is.ColumnString(
       'objectKey',
       this,
     );
-    requestId = _i1.ColumnString(
+    requestId = _is.ColumnString(
       'requestId',
       this,
     );
-    expectedRevision = _i1.ColumnInt(
+    expectedRevision = _is.ColumnInt(
       'expectedRevision',
       this,
     );
-    requestedAt = _i1.ColumnDateTime(
+    requestedAt = _is.ColumnDateTime(
       'requestedAt',
       this,
     );
-    completedAt = _i1.ColumnDateTime(
+    completedAt = _is.ColumnDateTime(
       'completedAt',
       this,
     );
-    attempts = _i1.ColumnInt(
+    attempts = _is.ColumnInt(
       'attempts',
       this,
     );
-    availableAt = _i1.ColumnDateTime(
+    availableAt = _is.ColumnDateTime(
       'availableAt',
       this,
     );
-    lastError = _i1.ColumnString(
+    lastError = _is.ColumnString(
       'lastError',
       this,
     );
@@ -347,28 +343,28 @@ class ObjectDeletionTable extends _i1.Table<int?> {
 
   late final ObjectDeletionUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnInt objectId;
+  late final _is.ColumnInt objectId;
 
-  late final _i1.ColumnString objectKey;
+  late final _is.ColumnString objectKey;
 
-  late final _i1.ColumnString requestId;
+  late final _is.ColumnString requestId;
 
-  late final _i1.ColumnInt expectedRevision;
+  late final _is.ColumnInt expectedRevision;
 
-  late final _i1.ColumnDateTime requestedAt;
+  late final _is.ColumnDateTime requestedAt;
 
-  late final _i1.ColumnDateTime completedAt;
+  late final _is.ColumnDateTime completedAt;
 
-  late final _i1.ColumnInt attempts;
+  late final _is.ColumnInt attempts;
 
-  late final _i1.ColumnDateTime availableAt;
+  late final _is.ColumnDateTime availableAt;
 
-  late final _i1.ColumnString lastError;
+  late final _is.ColumnString lastError;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     objectId,
@@ -383,24 +379,22 @@ class ObjectDeletionTable extends _i1.Table<int?> {
   ];
 }
 
-class ObjectDeletionInclude extends _i1.IncludeObject {
+class ObjectDeletionInclude extends _is.IncludeObject {
   ObjectDeletionInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => ObjectDeletion.t;
+  _is.Table<int?> get table => ObjectDeletion.t;
 }
 
-class ObjectDeletionIncludeList extends _i1.IncludeList {
+class ObjectDeletionIncludeList extends _is.IncludeList {
   ObjectDeletionIncludeList._({
-    _i1.WhereExpressionBuilder<ObjectDeletionTable>? where,
+    _is.WhereExpressionBuilder<ObjectDeletionTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -408,10 +402,10 @@ class ObjectDeletionIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => ObjectDeletion.t;
+  _is.Table<int?> get table => ObjectDeletion.t;
 }
 
 class ObjectDeletionRepository {
@@ -440,24 +434,20 @@ class ObjectDeletionRepository {
   /// );
   /// ```
   Future<List<ObjectDeletion>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ObjectDeletionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ObjectDeletionTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ObjectDeletionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectDeletionTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ObjectDeletionTable>? orderBy,
+    _is.OrderByListBuilder<ObjectDeletionTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<ObjectDeletion>(
       where: where?.call(ObjectDeletion.t),
       orderBy: orderBy?.call(ObjectDeletion.t),
       orderByList: orderByList?.call(ObjectDeletion.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -484,23 +474,19 @@ class ObjectDeletionRepository {
   /// );
   /// ```
   Future<ObjectDeletion?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ObjectDeletionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ObjectDeletionTable>? where,
     int? offset,
-    _i1.OrderByBuilder<ObjectDeletionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectDeletionTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<ObjectDeletionTable>? orderBy,
+    _is.OrderByListBuilder<ObjectDeletionTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<ObjectDeletion>(
       where: where?.call(ObjectDeletion.t),
       orderBy: orderBy?.call(ObjectDeletion.t),
       orderByList: orderByList?.call(ObjectDeletion.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -510,11 +496,11 @@ class ObjectDeletionRepository {
 
   /// Finds a single [ObjectDeletion] by its [id] or null if no such row exists.
   Future<ObjectDeletion?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<ObjectDeletion>(
       id,
@@ -539,9 +525,9 @@ class ObjectDeletionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectDeletion>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectDeletion> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -557,9 +543,9 @@ class ObjectDeletionRepository {
   ///
   /// The returned [ObjectDeletion] will have its `id` field set.
   Future<ObjectDeletion> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectDeletion row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<ObjectDeletion>(
       row,
@@ -588,12 +574,12 @@ class ObjectDeletionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectDeletion>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectDeletion> rows, {
-    required _i1.ColumnSelections<ObjectDeletionTable> conflictColumns,
-    _i1.ColumnSelections<ObjectDeletionTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ObjectDeletionTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ObjectDeletionTable> conflictColumns,
+    _is.ColumnSelections<ObjectDeletionTable>? updateColumns,
+    _is.WhereExpressionBuilder<ObjectDeletionTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<ObjectDeletion>(
@@ -620,12 +606,12 @@ class ObjectDeletionRepository {
   ///
   /// The returned [ObjectDeletion] will have its `id` field set.
   Future<ObjectDeletion?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectDeletion row, {
-    required _i1.ColumnSelections<ObjectDeletionTable> conflictColumns,
-    _i1.ColumnSelections<ObjectDeletionTable>? updateColumns,
-    _i1.WhereExpressionBuilder<ObjectDeletionTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<ObjectDeletionTable> conflictColumns,
+    _is.ColumnSelections<ObjectDeletionTable>? updateColumns,
+    _is.WhereExpressionBuilder<ObjectDeletionTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<ObjectDeletion>(
       row,
@@ -646,10 +632,10 @@ class ObjectDeletionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectDeletion>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectDeletion> rows, {
-    _i1.ColumnSelections<ObjectDeletionTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ObjectDeletionTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<ObjectDeletion>(
@@ -664,10 +650,10 @@ class ObjectDeletionRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<ObjectDeletion> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectDeletion row, {
-    _i1.ColumnSelections<ObjectDeletionTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<ObjectDeletionTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<ObjectDeletion>(
       row,
@@ -679,10 +665,10 @@ class ObjectDeletionRepository {
   /// Updates a single [ObjectDeletion] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<ObjectDeletion?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<ObjectDeletionUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<ObjectDeletionUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<ObjectDeletion>(
       id,
@@ -698,16 +684,14 @@ class ObjectDeletionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectDeletion>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<ObjectDeletionUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<ObjectDeletionTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<ObjectDeletionUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<ObjectDeletionTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<ObjectDeletionTable>? orderBy,
-    _i1.OrderByListBuilder<ObjectDeletionTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ObjectDeletionTable>? orderBy,
+    _is.OrderByListBuilder<ObjectDeletionTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<ObjectDeletion>(
@@ -717,8 +701,6 @@ class ObjectDeletionRepository {
       offset: offset,
       orderBy: orderBy?.call(ObjectDeletion.t),
       orderByList: orderByList?.call(ObjectDeletion.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -736,21 +718,17 @@ class ObjectDeletionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectDeletion>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<ObjectDeletion> rows, {
-    _i1.OrderByBuilder<ObjectDeletionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectDeletionTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<ObjectDeletionTable>? orderBy,
+    _is.OrderByListBuilder<ObjectDeletionTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<ObjectDeletion>(
       rows,
       orderBy: orderBy?.call(ObjectDeletion.t),
       orderByList: orderByList?.call(ObjectDeletion.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -758,9 +736,9 @@ class ObjectDeletionRepository {
 
   /// Deletes a single [ObjectDeletion].
   Future<ObjectDeletion> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     ObjectDeletion row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<ObjectDeletion>(
       row,
@@ -777,21 +755,17 @@ class ObjectDeletionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<ObjectDeletion>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ObjectDeletionTable> where,
-    _i1.OrderByBuilder<ObjectDeletionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<ObjectDeletionTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ObjectDeletionTable> where,
+    _is.OrderByBuilder<ObjectDeletionTable>? orderBy,
+    _is.OrderByListBuilder<ObjectDeletionTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<ObjectDeletion>(
       where: where(ObjectDeletion.t),
       orderBy: orderBy?.call(ObjectDeletion.t),
       orderByList: orderByList?.call(ObjectDeletion.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -800,10 +774,10 @@ class ObjectDeletionRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<ObjectDeletionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<ObjectDeletionTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<ObjectDeletion>(
       where: where?.call(ObjectDeletion.t),
@@ -814,11 +788,11 @@ class ObjectDeletionRepository {
 
   /// Acquires row-level locks on [ObjectDeletion] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<ObjectDeletionTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<ObjectDeletionTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<ObjectDeletion>(
       where: where(ObjectDeletion.t),

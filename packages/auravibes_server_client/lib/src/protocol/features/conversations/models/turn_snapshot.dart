@@ -10,18 +10,19 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-import '../../../features/conversations/models/conversation_turn_view.dart'
-    as _i2;
 import '../../../features/conversations/models/conversation_message_view.dart'
-    as _i3;
+    as _iwfcarya;
 import '../../../features/conversations/models/conversation_tool_call_view.dart'
-    as _i4;
+    as _irozunu0;
+import '../../../features/conversations/models/conversation_turn_view.dart'
+    as _igb82ssp;
 
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i5;
-
-abstract class TurnSnapshot implements _i1.SerializableModel {
+abstract class TurnSnapshot
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   TurnSnapshot._({
     required this.turn,
     required this.messages,
@@ -30,42 +31,44 @@ abstract class TurnSnapshot implements _i1.SerializableModel {
   });
 
   factory TurnSnapshot({
-    required _i2.ConversationTurnView turn,
-    required List<_i3.ConversationMessageView> messages,
-    required List<_i4.ConversationToolCallView> toolCalls,
+    required _igb82ssp.ConversationTurnView turn,
+    required List<_iwfcarya.ConversationMessageView> messages,
+    required List<_irozunu0.ConversationToolCallView> toolCalls,
     required bool terminal,
   }) = _TurnSnapshotImpl;
 
   factory TurnSnapshot.fromJson(Map<String, dynamic> jsonSerialization) {
     return TurnSnapshot(
-      turn: _i5.Protocol().deserialize<_i2.ConversationTurnView>(
+      turn: _isctvzjc.Protocol().deserialize<_igb82ssp.ConversationTurnView>(
         jsonSerialization['turn'],
       ),
-      messages: _i5.Protocol().deserialize<List<_i3.ConversationMessageView>>(
-        jsonSerialization['messages'],
-      ),
-      toolCalls: _i5.Protocol().deserialize<List<_i4.ConversationToolCallView>>(
-        jsonSerialization['toolCalls'],
-      ),
-      terminal: _i1.BoolJsonExtension.fromJson(jsonSerialization['terminal']),
+      messages: _isctvzjc.Protocol()
+          .deserialize<List<_iwfcarya.ConversationMessageView>>(
+            jsonSerialization['messages'],
+          ),
+      toolCalls: _isctvzjc.Protocol()
+          .deserialize<List<_irozunu0.ConversationToolCallView>>(
+            jsonSerialization['toolCalls'],
+          ),
+      terminal: _isc.BoolJsonExtension.fromJson(jsonSerialization['terminal']),
     );
   }
 
-  _i2.ConversationTurnView turn;
+  _igb82ssp.ConversationTurnView turn;
 
-  List<_i3.ConversationMessageView> messages;
+  List<_iwfcarya.ConversationMessageView> messages;
 
-  List<_i4.ConversationToolCallView> toolCalls;
+  List<_irozunu0.ConversationToolCallView> toolCalls;
 
   bool terminal;
 
   /// Returns a shallow copy of this [TurnSnapshot]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   TurnSnapshot copyWith({
-    _i2.ConversationTurnView? turn,
-    List<_i3.ConversationMessageView>? messages,
-    List<_i4.ConversationToolCallView>? toolCalls,
+    _igb82ssp.ConversationTurnView? turn,
+    List<_iwfcarya.ConversationMessageView>? messages,
+    List<_irozunu0.ConversationToolCallView>? toolCalls,
     bool? terminal,
   });
   @override
@@ -80,16 +83,27 @@ abstract class TurnSnapshot implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'TurnSnapshot',
+      'turn': turn.toJsonForProtocol(),
+      'messages': messages.toJson(valueToJson: (v) => v.toJsonForProtocol()),
+      'toolCalls': toolCalls.toJson(valueToJson: (v) => v.toJsonForProtocol()),
+      'terminal': terminal,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
 class _TurnSnapshotImpl extends TurnSnapshot {
   _TurnSnapshotImpl({
-    required _i2.ConversationTurnView turn,
-    required List<_i3.ConversationMessageView> messages,
-    required List<_i4.ConversationToolCallView> toolCalls,
+    required _igb82ssp.ConversationTurnView turn,
+    required List<_iwfcarya.ConversationMessageView> messages,
+    required List<_irozunu0.ConversationToolCallView> toolCalls,
     required bool terminal,
   }) : super._(
          turn: turn,
@@ -100,12 +114,12 @@ class _TurnSnapshotImpl extends TurnSnapshot {
 
   /// Returns a shallow copy of this [TurnSnapshot]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   TurnSnapshot copyWith({
-    _i2.ConversationTurnView? turn,
-    List<_i3.ConversationMessageView>? messages,
-    List<_i4.ConversationToolCallView>? toolCalls,
+    _igb82ssp.ConversationTurnView? turn,
+    List<_iwfcarya.ConversationMessageView>? messages,
+    List<_irozunu0.ConversationToolCallView>? toolCalls,
     bool? terminal,
   }) {
     return TurnSnapshot(

@@ -10,37 +10,38 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 import '../../../features/conversations/models/conversation_error_code.dart'
-    as _i2;
+    as _ipst1272;
 
 abstract class ConversationException
     implements
-        _i1.SerializableException,
-        _i1.SerializableModel,
-        _i1.ProtocolSerialization {
+        _is.SerializableException,
+        _is.SerializableModel,
+        _is.ProtocolSerialization {
   ConversationException._({required this.code});
 
-  factory ConversationException({required _i2.ConversationErrorCode code}) =
-      _ConversationExceptionImpl;
+  factory ConversationException({
+    required _ipst1272.ConversationErrorCode code,
+  }) = _ConversationExceptionImpl;
 
   factory ConversationException.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationException(
-      code: _i2.ConversationErrorCode.fromJson(
+      code: _ipst1272.ConversationErrorCode.fromJson(
         (jsonSerialization['code'] as String),
       ),
     );
   }
 
-  _i2.ConversationErrorCode code;
+  _ipst1272.ConversationErrorCode code;
 
   /// Returns a shallow copy of this [ConversationException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  ConversationException copyWith({_i2.ConversationErrorCode? code});
+  @_is.useResult
+  ConversationException copyWith({_ipst1272.ConversationErrorCode? code});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -64,14 +65,14 @@ abstract class ConversationException
 }
 
 class _ConversationExceptionImpl extends ConversationException {
-  _ConversationExceptionImpl({required _i2.ConversationErrorCode code})
+  _ConversationExceptionImpl({required _ipst1272.ConversationErrorCode code})
     : super._(code: code);
 
   /// Returns a shallow copy of this [ConversationException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
-  ConversationException copyWith({_i2.ConversationErrorCode? code}) {
+  ConversationException copyWith({_ipst1272.ConversationErrorCode? code}) {
     return ConversationException(code: code ?? this.code);
   }
 }

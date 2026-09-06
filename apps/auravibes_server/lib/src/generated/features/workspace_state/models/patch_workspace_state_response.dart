@@ -10,22 +10,21 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 import '../../../features/workspace_state/models/workspace_resource.dart'
-    as _i2;
-
-import 'package:auravibes_server/src/generated/protocol.dart' as _i3;
+    as _i4gad2ja;
 
 abstract class PatchWorkspaceStateResponse
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   PatchWorkspaceStateResponse._({
     required this.resources,
     required this.sequence,
   });
 
   factory PatchWorkspaceStateResponse({
-    required List<_i2.WorkspaceResource> resources,
+    required List<_i4gad2ja.WorkspaceResource> resources,
     required int sequence,
   }) = _PatchWorkspaceStateResponseImpl;
 
@@ -33,22 +32,23 @@ abstract class PatchWorkspaceStateResponse
     Map<String, dynamic> jsonSerialization,
   ) {
     return PatchWorkspaceStateResponse(
-      resources: _i3.Protocol().deserialize<List<_i2.WorkspaceResource>>(
-        jsonSerialization['resources'],
-      ),
+      resources: _if5qez1k.Protocol()
+          .deserialize<List<_i4gad2ja.WorkspaceResource>>(
+            jsonSerialization['resources'],
+          ),
       sequence: jsonSerialization['sequence'] as int,
     );
   }
 
-  List<_i2.WorkspaceResource> resources;
+  List<_i4gad2ja.WorkspaceResource> resources;
 
   int sequence;
 
   /// Returns a shallow copy of this [PatchWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   PatchWorkspaceStateResponse copyWith({
-    List<_i2.WorkspaceResource>? resources,
+    List<_i4gad2ja.WorkspaceResource>? resources,
     int? sequence,
   });
   @override
@@ -71,13 +71,13 @@ abstract class PatchWorkspaceStateResponse
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
 class _PatchWorkspaceStateResponseImpl extends PatchWorkspaceStateResponse {
   _PatchWorkspaceStateResponseImpl({
-    required List<_i2.WorkspaceResource> resources,
+    required List<_i4gad2ja.WorkspaceResource> resources,
     required int sequence,
   }) : super._(
          resources: resources,
@@ -86,10 +86,10 @@ class _PatchWorkspaceStateResponseImpl extends PatchWorkspaceStateResponse {
 
   /// Returns a shallow copy of this [PatchWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   PatchWorkspaceStateResponse copyWith({
-    List<_i2.WorkspaceResource>? resources,
+    List<_i4gad2ja.WorkspaceResource>? resources,
     int? sequence,
   }) {
     return PatchWorkspaceStateResponse(

@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class TransferCloudWorkspaceOwnershipRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   TransferCloudWorkspaceOwnershipRequest._({
     required this.workspaceId,
     required this.newOwnerUserId,
@@ -50,7 +50,7 @@ abstract class TransferCloudWorkspaceOwnershipRequest
 
   /// Returns a shallow copy of this [TransferCloudWorkspaceOwnershipRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   TransferCloudWorkspaceOwnershipRequest copyWith({
     int? workspaceId,
     String? newOwnerUserId,
@@ -81,7 +81,7 @@ abstract class TransferCloudWorkspaceOwnershipRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -101,7 +101,7 @@ class _TransferCloudWorkspaceOwnershipRequestImpl
 
   /// Returns a shallow copy of this [TransferCloudWorkspaceOwnershipRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   TransferCloudWorkspaceOwnershipRequest copyWith({
     int? workspaceId,

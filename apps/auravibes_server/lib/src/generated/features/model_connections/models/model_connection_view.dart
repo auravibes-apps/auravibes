@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ModelConnectionView
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ModelConnectionView._({
     required this.id,
     required this.name,
@@ -44,13 +44,13 @@ abstract class ModelConnectionView
       name: jsonSerialization['name'] as String,
       providerId: jsonSerialization['providerId'] as String,
       url: jsonSerialization['url'] as String?,
-      hasSecret: _i1.BoolJsonExtension.fromJson(jsonSerialization['hasSecret']),
+      hasSecret: _is.BoolJsonExtension.fromJson(jsonSerialization['hasSecret']),
       keySuffix: jsonSerialization['keySuffix'] as String?,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -76,7 +76,7 @@ abstract class ModelConnectionView
 
   /// Returns a shallow copy of this [ModelConnectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ModelConnectionView copyWith({
     String? id,
     String? name,
@@ -122,7 +122,7 @@ abstract class ModelConnectionView
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -153,7 +153,7 @@ class _ModelConnectionViewImpl extends ModelConnectionView {
 
   /// Returns a shallow copy of this [ModelConnectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ModelConnectionView copyWith({
     String? id,

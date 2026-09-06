@@ -10,37 +10,38 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 import '../../../features/workspaces/models/cloud_workspace_error_code.dart'
-    as _i2;
+    as _ipvhvodq;
 
 abstract class CloudWorkspaceException
     implements
-        _i1.SerializableException,
-        _i1.SerializableModel,
-        _i1.ProtocolSerialization {
+        _is.SerializableException,
+        _is.SerializableModel,
+        _is.ProtocolSerialization {
   CloudWorkspaceException._({required this.code});
 
-  factory CloudWorkspaceException({required _i2.CloudWorkspaceErrorCode code}) =
-      _CloudWorkspaceExceptionImpl;
+  factory CloudWorkspaceException({
+    required _ipvhvodq.CloudWorkspaceErrorCode code,
+  }) = _CloudWorkspaceExceptionImpl;
 
   factory CloudWorkspaceException.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceException(
-      code: _i2.CloudWorkspaceErrorCode.fromJson(
+      code: _ipvhvodq.CloudWorkspaceErrorCode.fromJson(
         (jsonSerialization['code'] as String),
       ),
     );
   }
 
-  _i2.CloudWorkspaceErrorCode code;
+  _ipvhvodq.CloudWorkspaceErrorCode code;
 
   /// Returns a shallow copy of this [CloudWorkspaceException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  CloudWorkspaceException copyWith({_i2.CloudWorkspaceErrorCode? code});
+  @_is.useResult
+  CloudWorkspaceException copyWith({_ipvhvodq.CloudWorkspaceErrorCode? code});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -64,14 +65,15 @@ abstract class CloudWorkspaceException
 }
 
 class _CloudWorkspaceExceptionImpl extends CloudWorkspaceException {
-  _CloudWorkspaceExceptionImpl({required _i2.CloudWorkspaceErrorCode code})
-    : super._(code: code);
+  _CloudWorkspaceExceptionImpl({
+    required _ipvhvodq.CloudWorkspaceErrorCode code,
+  }) : super._(code: code);
 
   /// Returns a shallow copy of this [CloudWorkspaceException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
-  CloudWorkspaceException copyWith({_i2.CloudWorkspaceErrorCode? code}) {
+  CloudWorkspaceException copyWith({_ipvhvodq.CloudWorkspaceErrorCode? code}) {
     return CloudWorkspaceException(code: code ?? this.code);
   }
 }

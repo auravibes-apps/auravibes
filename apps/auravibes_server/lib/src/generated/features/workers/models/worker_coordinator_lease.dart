@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class WorkerCoordinatorLease
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   WorkerCoordinatorLease._({
     this.id,
     required this.key,
@@ -38,7 +38,7 @@ abstract class WorkerCoordinatorLease
       key: jsonSerialization['key'] as String,
       ownerId: jsonSerialization['ownerId'] as String,
       fencingToken: jsonSerialization['fencingToken'] as int,
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
     );
@@ -60,11 +60,11 @@ abstract class WorkerCoordinatorLease
   DateTime expiresAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [WorkerCoordinatorLease]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkerCoordinatorLease copyWith({
     int? id,
     String? key,
@@ -101,13 +101,11 @@ abstract class WorkerCoordinatorLease
   }
 
   static WorkerCoordinatorLeaseIncludeList includeList({
-    _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
+    _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
+    _is.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
+    _is.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
     WorkerCoordinatorLeaseInclude? include,
   }) {
     return WorkerCoordinatorLeaseIncludeList._(
@@ -115,8 +113,6 @@ abstract class WorkerCoordinatorLease
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(WorkerCoordinatorLease.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(WorkerCoordinatorLease.t),
       include: include,
     );
@@ -124,7 +120,7 @@ abstract class WorkerCoordinatorLease
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -147,7 +143,7 @@ class _WorkerCoordinatorLeaseImpl extends WorkerCoordinatorLease {
 
   /// Returns a shallow copy of this [WorkerCoordinatorLease]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkerCoordinatorLease copyWith({
     Object? id = _Undefined,
@@ -167,48 +163,48 @@ class _WorkerCoordinatorLeaseImpl extends WorkerCoordinatorLease {
 }
 
 class WorkerCoordinatorLeaseUpdateTable
-    extends _i1.UpdateTable<WorkerCoordinatorLeaseTable> {
+    extends _is.UpdateTable<WorkerCoordinatorLeaseTable> {
   WorkerCoordinatorLeaseUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> key(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> key(String value) => _is.ColumnValue(
     table.key,
     value,
   );
 
-  _i1.ColumnValue<String, String> ownerId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> ownerId(String value) => _is.ColumnValue(
     table.ownerId,
     value,
   );
 
-  _i1.ColumnValue<int, int> fencingToken(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> fencingToken(int value) => _is.ColumnValue(
     table.fencingToken,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
+      _is.ColumnValue(
         table.expiresAt,
         value,
       );
 }
 
-class WorkerCoordinatorLeaseTable extends _i1.Table<int?> {
+class WorkerCoordinatorLeaseTable extends _is.Table<int?> {
   WorkerCoordinatorLeaseTable({super.tableRelation})
     : super(tableName: 'worker_coordinator_lease') {
     updateTable = WorkerCoordinatorLeaseUpdateTable(this);
-    key = _i1.ColumnString(
+    key = _is.ColumnString(
       'key',
       this,
     );
-    ownerId = _i1.ColumnString(
+    ownerId = _is.ColumnString(
       'ownerId',
       this,
     );
-    fencingToken = _i1.ColumnInt(
+    fencingToken = _is.ColumnInt(
       'fencingToken',
       this,
     );
-    expiresAt = _i1.ColumnDateTime(
+    expiresAt = _is.ColumnDateTime(
       'expiresAt',
       this,
     );
@@ -216,16 +212,16 @@ class WorkerCoordinatorLeaseTable extends _i1.Table<int?> {
 
   late final WorkerCoordinatorLeaseUpdateTable updateTable;
 
-  late final _i1.ColumnString key;
+  late final _is.ColumnString key;
 
-  late final _i1.ColumnString ownerId;
+  late final _is.ColumnString ownerId;
 
-  late final _i1.ColumnInt fencingToken;
+  late final _is.ColumnInt fencingToken;
 
-  late final _i1.ColumnDateTime expiresAt;
+  late final _is.ColumnDateTime expiresAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     key,
     ownerId,
@@ -234,24 +230,22 @@ class WorkerCoordinatorLeaseTable extends _i1.Table<int?> {
   ];
 }
 
-class WorkerCoordinatorLeaseInclude extends _i1.IncludeObject {
+class WorkerCoordinatorLeaseInclude extends _is.IncludeObject {
   WorkerCoordinatorLeaseInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => WorkerCoordinatorLease.t;
+  _is.Table<int?> get table => WorkerCoordinatorLease.t;
 }
 
-class WorkerCoordinatorLeaseIncludeList extends _i1.IncludeList {
+class WorkerCoordinatorLeaseIncludeList extends _is.IncludeList {
   WorkerCoordinatorLeaseIncludeList._({
-    _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
+    _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -259,10 +253,10 @@ class WorkerCoordinatorLeaseIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => WorkerCoordinatorLease.t;
+  _is.Table<int?> get table => WorkerCoordinatorLease.t;
 }
 
 class WorkerCoordinatorLeaseRepository {
@@ -291,24 +285,20 @@ class WorkerCoordinatorLeaseRepository {
   /// );
   /// ```
   Future<List<WorkerCoordinatorLease>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
+    _is.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<WorkerCoordinatorLease>(
       where: where?.call(WorkerCoordinatorLease.t),
       orderBy: orderBy?.call(WorkerCoordinatorLease.t),
       orderByList: orderByList?.call(WorkerCoordinatorLease.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -335,23 +325,19 @@ class WorkerCoordinatorLeaseRepository {
   /// );
   /// ```
   Future<WorkerCoordinatorLease?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
     int? offset,
-    _i1.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
+    _is.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<WorkerCoordinatorLease>(
       where: where?.call(WorkerCoordinatorLease.t),
       orderBy: orderBy?.call(WorkerCoordinatorLease.t),
       orderByList: orderByList?.call(WorkerCoordinatorLease.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -361,11 +347,11 @@ class WorkerCoordinatorLeaseRepository {
 
   /// Finds a single [WorkerCoordinatorLease] by its [id] or null if no such row exists.
   Future<WorkerCoordinatorLease?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<WorkerCoordinatorLease>(
       id,
@@ -390,9 +376,9 @@ class WorkerCoordinatorLeaseRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkerCoordinatorLease>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkerCoordinatorLease> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -408,9 +394,9 @@ class WorkerCoordinatorLeaseRepository {
   ///
   /// The returned [WorkerCoordinatorLease] will have its `id` field set.
   Future<WorkerCoordinatorLease> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkerCoordinatorLease row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<WorkerCoordinatorLease>(
       row,
@@ -439,12 +425,12 @@ class WorkerCoordinatorLeaseRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkerCoordinatorLease>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkerCoordinatorLease> rows, {
-    required _i1.ColumnSelections<WorkerCoordinatorLeaseTable> conflictColumns,
-    _i1.ColumnSelections<WorkerCoordinatorLeaseTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkerCoordinatorLeaseTable> conflictColumns,
+    _is.ColumnSelections<WorkerCoordinatorLeaseTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<WorkerCoordinatorLease>(
@@ -471,12 +457,12 @@ class WorkerCoordinatorLeaseRepository {
   ///
   /// The returned [WorkerCoordinatorLease] will have its `id` field set.
   Future<WorkerCoordinatorLease?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkerCoordinatorLease row, {
-    required _i1.ColumnSelections<WorkerCoordinatorLeaseTable> conflictColumns,
-    _i1.ColumnSelections<WorkerCoordinatorLeaseTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkerCoordinatorLeaseTable> conflictColumns,
+    _is.ColumnSelections<WorkerCoordinatorLeaseTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<WorkerCoordinatorLease>(
       row,
@@ -497,10 +483,10 @@ class WorkerCoordinatorLeaseRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkerCoordinatorLease>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkerCoordinatorLease> rows, {
-    _i1.ColumnSelections<WorkerCoordinatorLeaseTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkerCoordinatorLeaseTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<WorkerCoordinatorLease>(
@@ -515,10 +501,10 @@ class WorkerCoordinatorLeaseRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<WorkerCoordinatorLease> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkerCoordinatorLease row, {
-    _i1.ColumnSelections<WorkerCoordinatorLeaseTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkerCoordinatorLeaseTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<WorkerCoordinatorLease>(
       row,
@@ -530,11 +516,11 @@ class WorkerCoordinatorLeaseRepository {
   /// Updates a single [WorkerCoordinatorLease] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<WorkerCoordinatorLease?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<WorkerCoordinatorLeaseUpdateTable>
+    required _is.ColumnValueListBuilder<WorkerCoordinatorLeaseUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<WorkerCoordinatorLease>(
       id,
@@ -550,17 +536,15 @@ class WorkerCoordinatorLeaseRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkerCoordinatorLease>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<WorkerCoordinatorLeaseUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<WorkerCoordinatorLeaseUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable> where,
+    required _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
-    _i1.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
+    _is.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<WorkerCoordinatorLease>(
@@ -570,8 +554,6 @@ class WorkerCoordinatorLeaseRepository {
       offset: offset,
       orderBy: orderBy?.call(WorkerCoordinatorLease.t),
       orderByList: orderByList?.call(WorkerCoordinatorLease.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -589,21 +571,17 @@ class WorkerCoordinatorLeaseRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkerCoordinatorLease>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkerCoordinatorLease> rows, {
-    _i1.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
+    _is.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<WorkerCoordinatorLease>(
       rows,
       orderBy: orderBy?.call(WorkerCoordinatorLease.t),
       orderByList: orderByList?.call(WorkerCoordinatorLease.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -611,9 +589,9 @@ class WorkerCoordinatorLeaseRepository {
 
   /// Deletes a single [WorkerCoordinatorLease].
   Future<WorkerCoordinatorLease> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkerCoordinatorLease row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<WorkerCoordinatorLease>(
       row,
@@ -630,21 +608,17 @@ class WorkerCoordinatorLeaseRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkerCoordinatorLease>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable> where,
-    _i1.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable> where,
+    _is.OrderByBuilder<WorkerCoordinatorLeaseTable>? orderBy,
+    _is.OrderByListBuilder<WorkerCoordinatorLeaseTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<WorkerCoordinatorLease>(
       where: where(WorkerCoordinatorLease.t),
       orderBy: orderBy?.call(WorkerCoordinatorLease.t),
       orderByList: orderByList?.call(WorkerCoordinatorLease.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -653,10 +627,10 @@ class WorkerCoordinatorLeaseRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<WorkerCoordinatorLease>(
       where: where?.call(WorkerCoordinatorLease.t),
@@ -667,11 +641,11 @@ class WorkerCoordinatorLeaseRepository {
 
   /// Acquires row-level locks on [WorkerCoordinatorLease] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkerCoordinatorLeaseTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkerCoordinatorLeaseTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<WorkerCoordinatorLease>(
       where: where(WorkerCoordinatorLease.t),
