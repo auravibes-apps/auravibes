@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
@@ -269,4 +270,32 @@ class CloudAgentRepository({
       visibility: CloudResourceMapper.visibility(data['visibility']),
     );
   }
+}
+
+CloudAgentRepository cloudAgentRepositoryFromStore({
+  required String workspaceId,
+  required CloudWorkspaceResourceStore store,
+}) => CloudAgentRepository(
+  patch: store.patch,
+  workspaceId: workspaceId,
+  read: () => _readCloudAgentResources(store),
+);
+
+Future<List<WorkspaceResource>> _readCloudAgentResources(
+  CloudWorkspaceResourceStore store,
+) async {
+  final response = await store.read(
+    pages: [
+      WorkspaceResourcePageRequest(
+        resourceKind: WorkspaceResourceKind.agent,
+        limit: 100,
+      ),
+      WorkspaceResourcePageRequest(
+        resourceKind: WorkspaceResourceKind.agentAssociation,
+        limit: 100,
+      ),
+    ],
+  );
+
+  return response.pages.expand((page) => page.resources).toList();
 }

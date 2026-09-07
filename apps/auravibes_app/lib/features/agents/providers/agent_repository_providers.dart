@@ -6,8 +6,8 @@ import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.da
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_repository.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_tools_repository.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/providers/provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -27,41 +27,13 @@ final ProviderFamily<AgentRepository, String> agentRepositoryProvider =
       if (session.cloud == null) {
         return ref.watch(agentsRepositoryProvider);
       }
-      final gateway = ref.watch(
-        cloudWorkspaceStateGatewayProvider(session).future,
+      final store = CloudWorkspaceResourceStore.deferred(
+        ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
       );
 
-      return CloudAgentRepository(
-        patch: ({required requestId, required operations}) async {
-          final cloud = await gateway;
-          if (cloud == null) {
-            throw StateError('Cloud workspace gateway unavailable');
-          }
-
-          return await cloud.patch(
-            requestId: requestId,
-            operations: operations,
-          );
-        },
+      return cloudAgentRepositoryFromStore(
         workspaceId: session.workspace.localWorkspaceId,
-        read: () async {
-          final cloud = await gateway;
-          if (cloud == null) return const [];
-          final response = await cloud.read(
-            pages: [
-              WorkspaceResourcePageRequest(
-                resourceKind: WorkspaceResourceKind.agent,
-                limit: 100,
-              ),
-              WorkspaceResourcePageRequest(
-                resourceKind: WorkspaceResourceKind.agentAssociation,
-                limit: 100,
-              ),
-            ],
-          );
-
-          return response.pages.expand((page) => page.resources).toList();
-        },
+        store: store,
       );
     });
 
@@ -71,36 +43,11 @@ AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
       .watch(workspaceSessionForRouteProvider(workspaceId))
       .requireValue;
   if (session.cloud != null) {
-    return CloudAgentToolsRepository(
-      patch: ({required requestId, required operations}) async {
-        final cloud = await ref.read(
-          cloudWorkspaceStateGatewayProvider(session).future,
-        );
-        if (cloud == null) {
-          throw StateError('Cloud workspace gateway unavailable');
-        }
-
-        return await cloud.patch(requestId: requestId, operations: operations);
-      },
-      read: () async {
-        final cloud = await ref.read(
-          cloudWorkspaceStateGatewayProvider(session).future,
-        );
-        if (cloud == null) return const [];
-        final response = await cloud.read(
-          pages: [
-            WorkspaceResourcePageRequest(
-              resourceKind: .agentAssociation,
-              limit: 100,
-            ),
-          ],
-        );
-
-        if (response.pages.isEmpty) return [];
-
-        return response.pages.single.resources;
-      },
+    final store = CloudWorkspaceResourceStore.deferred(
+      ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
     );
+
+    return cloudAgentToolsRepositoryFromStore(store: store);
   }
 
   return AgentToolsRepository(ref.watch(appDatabaseProvider));
