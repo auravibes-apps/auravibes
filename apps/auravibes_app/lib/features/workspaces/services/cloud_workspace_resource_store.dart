@@ -118,8 +118,12 @@ class CloudWorkspaceResourceStore {
     required List<WorkspacePatchOperation> operations,
   }) => _patch(requestId: requestId, operations: operations);
 
+  Stream<List<WorkspaceResource>> watchResources(
+    List<WorkspaceResourceKind> kinds,
+  ) => _watch(kinds);
+
   Stream<List<WorkspaceResource>> watch(WorkspaceResourceKind kind) =>
-      _watch([kind]);
+      watchResources([kind]);
 
   Future<void> create({
     required WorkspaceResourceKind kind,
