@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/agent_tools_repository.dart';
-import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_tool_override_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
