@@ -1,6 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 
 class const BuildMcpServerToCreateUseCase({
   required final OAuthAuthenticate _authenticator,

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_discovery_result.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
