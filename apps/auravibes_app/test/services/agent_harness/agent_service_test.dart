@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -15,7 +16,6 @@ import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_convers
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
