@@ -1,6 +1,6 @@
 // ignore_for_file: type=lint, type=warning
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
