@@ -280,8 +280,10 @@ jobs:
             -Dsonar.scanner.skipJreProvisioning=true
 
   server-compose:
-    name: server-compose / Redis smoke
+    name: server-compose / Docker smoke
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: ci-postgres-password
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -304,6 +306,69 @@ jobs:
           zero_sha=0000000000000000000000000000000000000000
           base=''
           head="$WORKFLOW_SHA"
+          relevant=true
+          launcher_scripts=false
+          range_known=false
+          reason='missing or unknown commit range'
+          dockerfiles=()
+
+          is_dockerfile_path() {
+            case "$1" in
+              Dockerfile*|*/Dockerfile*|*.Dockerfile|*/*.Dockerfile)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          is_docker_related_path() {
+            case "$1" in
+              .github/workflows/ci.yml|\
+              .dockerignore|*/.dockerignore|\
+              Dockerfile*|*/Dockerfile*|*.Dockerfile|*/*.Dockerfile|\
+              compose*.yml|compose*.yaml|*/compose*.yml|*/compose*.yaml|\
+              docker-compose*.yml|docker-compose*.yaml|*/docker-compose*.yml|*/docker-compose*.yaml|\
+              scripts/start_server.sh|scripts/stop_server.sh|scripts/serverpod_worktree_env.sh)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          add_dockerfile() {
+            local dockerfile="$1"
+            local existing
+            for existing in "${dockerfiles[@]}"; do
+              if [ "$existing" = "$dockerfile" ]; then
+                return 0
+              fi
+            done
+            dockerfiles+=("$dockerfile")
+          }
+
+          inspect_path() {
+            local path="$1"
+            if is_docker_related_path "$path"; then
+              relevant=true
+            fi
+            if is_dockerfile_path "$path"; then
+              add_dockerfile "$path"
+            fi
+            case "$path" in
+              .dockerignore|*/.dockerignore)
+                if [ -f apps/auravibes_server/Dockerfile ]; then
+                  add_dockerfile apps/auravibes_server/Dockerfile
+                fi
+                ;;
+              scripts/start_server.sh|scripts/stop_server.sh|scripts/serverpod_worktree_env.sh)
+                launcher_scripts=true
+                ;;
+            esac
+          }
 
           case "$EVENT_NAME" in
             pull_request)
@@ -315,21 +380,15 @@ jobs:
               ;;
           esac
 
-          relevant=true
-          reason='missing or unknown commit range'
           if [ -n "$head" ] && git cat-file -e "$head^{commit}" 2>/dev/null; then
             if [ -n "$base" ] && [ "$base" != "$zero_sha" ] \
               && git cat-file -e "$base^{commit}" 2>/dev/null; then
               relevant=false
               reason="diff $base..$head"
               if changed_paths="$(git diff --name-only --no-renames "$base" "$head")"; then
+                range_known=true
                 while IFS= read -r path; do
-                  case "$path" in
-                    apps/auravibes_server/docker-compose.yaml|.github/workflows/ci.yml)
-                      relevant=true
-                      break
-                      ;;
-                  esac
+                  inspect_path "$path"
                 done <<< "$changed_paths"
               else
                 relevant=true
@@ -340,31 +399,65 @@ jobs:
             fi
           fi
 
+          if [ "$range_known" = false ]; then
+            launcher_scripts=true
+            if [ -f apps/auravibes_server/Dockerfile ]; then
+              add_dockerfile apps/auravibes_server/Dockerfile
+            fi
+          fi
+
           {
             printf 'relevant=%s\n' "$relevant"
+            printf 'launcher_scripts=%s\n' "$launcher_scripts"
             printf 'reason=%s\n' "$reason"
+            printf 'dockerfiles<<DOCKERFILES\n'
+            if ((${#dockerfiles[@]} > 0)); then
+              printf '%s\n' "${dockerfiles[@]}"
+            fi
+            printf 'DOCKERFILES\n'
           } >> "$GITHUB_OUTPUT"
-          printf 'Relevant changes: %s (%s)\n' "$relevant" "$reason"
+          printf 'Relevant Docker changes: %s (%s)\n' "$relevant" "$reason"
+
+      - name: Validate changed Dockerfiles
+        if: ${{ steps.changes.outputs.dockerfiles != '' }}
+        shell: bash
+        env:
+          DOCKERFILES: ${{ steps.changes.outputs.dockerfiles }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r dockerfile; do
+            [ -n "$dockerfile" ] || continue
+            if [ ! -f "$dockerfile" ]; then
+              echo "Skipping removed Dockerfile: $dockerfile"
+              continue
+            fi
+            docker build --check --file "$dockerfile" .
+          done <<< "$DOCKERFILES"
+
+      - name: Validate Docker launcher scripts
+        if: ${{ steps.changes.outputs.launcher_scripts == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in scripts/start_server.sh scripts/stop_server.sh scripts/serverpod_worktree_env.sh; do
+            if [ -f "$script" ]; then
+              bash -n "$script"
+            fi
+          done
 
       - name: Validate Compose configuration
         if: ${{ steps.changes.outputs.relevant == 'true' }}
         working-directory: apps/auravibes_server
-        env:
-          POSTGRES_PASSWORD: ci-postgres-password
         run: docker compose config --quiet
 
       - name: Pull Redis images
         if: ${{ steps.changes.outputs.relevant == 'true' }}
         working-directory: apps/auravibes_server
-        env:
-          POSTGRES_PASSWORD: ci-postgres-password
         run: docker compose pull redis redis_test
 
       - name: Start Redis services
         if: ${{ steps.changes.outputs.relevant == 'true' }}
         working-directory: apps/auravibes_server
-        env:
-          POSTGRES_PASSWORD: ci-postgres-password
         run: docker compose up -d --remove-orphans redis redis_test
 
       - name: Smoke-test Redis commands
@@ -372,7 +465,6 @@ jobs:
         working-directory: apps/auravibes_server
         shell: bash
         env:
-          POSTGRES_PASSWORD: ci-postgres-password
           REDIS_PASSWORD: UWl-mNHNEUXv_xe0CWFzHBajGK1UV0B1
           REDIS_TEST_PASSWORD: GZZj4HpiGxQK0g_kBQ3qWQMstI9y-Kze
         run: |
@@ -405,8 +497,6 @@ jobs:
       - name: Stop Redis services
         if: ${{ always() && steps.changes.outputs.relevant == 'true' }}
         working-directory: apps/auravibes_server
-        env:
-          POSTGRES_PASSWORD: ci-postgres-password
         run: docker compose down -v --remove-orphans
 
   ci-success:
