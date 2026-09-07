@@ -15,7 +15,7 @@ metadata:
 
 This skill covers the complete workflow for adding, structuring, generating, and using translations in the AuraVibes Flutter app using `easy_localization`.
 
-**Package version**: `easy_localization: ^3.0.8` (published 9 months ago as of 2026-04-30)  
+**Package version**: `easy_localization: ^3.0.8`
 **Docs**: https://pub.dev/packages/easy_localization
 
 ## Tech Stack
@@ -291,7 +291,7 @@ print(
     namedArgs: {'currentDate': DateTime.now().toIso8601String()},
   ),
 );
-// Output: "INFO: the date today is 2026-04-30T10:00:00.000."
+// Output: "INFO: the date today is 2026-01-01T00:00:00.000."
 ```
 
 ### Formatting Linked Keys
