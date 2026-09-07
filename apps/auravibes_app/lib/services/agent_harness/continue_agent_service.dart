@@ -20,7 +20,7 @@ import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
-import 'package:auravibes_app/utils/encode.dart';
+import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';

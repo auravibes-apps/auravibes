@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
-import 'package:auravibes_app/utils/encode.dart';
+import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
