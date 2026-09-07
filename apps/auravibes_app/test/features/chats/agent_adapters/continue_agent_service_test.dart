@@ -10,11 +10,11 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
-import 'package:auravibes_app/services/agent_harness/continue_agent_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,7 +22,7 @@ import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../test_mocks.dart';
+import '../../../test_mocks.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);

@@ -22,6 +22,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -36,7 +37,6 @@ import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart
 import 'package:auravibes_app/services/agent_harness/agent_tool_decision_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
-import 'package:auravibes_app/services/agent_harness/continue_agent_service.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
