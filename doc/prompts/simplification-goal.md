@@ -1,7 +1,17 @@
 # AuraVibes simplification goal
 
-Paste the fenced prompt into Codex from the repository root. This starts work;
-reading this file alone does not authorize execution. No extra plugin required.
+Start a native Codex goal from the repository root with this short command:
+
+```text
+/goal Execute doc/prompts/simplification-goal.md as a multi-iteration implementation campaign. One change, commit, assessment, or report does not complete the goal. After every verified consolidation, select and begin the next actionable target. Keep the goal active until every completion gate in the contract is evidenced. Resume from existing progress; do not restart completed work.
+```
+
+Check `/goal` in that task to confirm the objective is active. Use `/goal resume`
+if it is paused; if it was marked complete prematurely, start the command above
+as a new goal using the existing progress. An attached file supplies instructions;
+it does not by itself establish an active native goal. No extra plugin required.
+The fenced text below is the execution contract; do not merely copy, summarize,
+or edit it when asked to execute it.
 
 ```text
 /goal Improve AuraVibes through repeated, verified simplifications and architecture improvements. Preserve business logic, supported features, externally supported contracts, and the Aura design system. Reduce maintained code and complexity; evolve architecture and UI components so later changes require fewer edits. Execute the loop below, committing each verified change, then continue automatically.
@@ -10,6 +20,14 @@ SUCCESS AND PRIORITIES
 
 Priority order: behavior and safety > architectural boundaries > readability > fewer maintained lines.
 Success requires evaluating at least N=5 distinct high-coupling business flows with dependency/call graphs and test-coverage evidence, completing eligible meaningful improvements and their equivalent occurrences, and producing the final architecture report below. A randomized sweep or a series of tiny commits alone cannot satisfy this goal. Report unresolved candidates separately; do not claim the codebase is perfect. Continue after each commit, not after asking for permission. Never invent work to keep the goal alive.
+
+CONTINUATION CONTRACT
+
+- One iteration is one coherent improvement through discovery, implementation, verification, commit, and reassessment. One iteration is a checkpoint, not the campaign's completion. N=5 is a minimum assessment count, not permission to stop implementing after five assessments or one fix.
+- Persist target IDs, states (unassessed / actionable / in progress / verified and committed / deferred / no benefit), evidence, completed iteration count, and the next concrete tool action in the ledger. A deferred target needs a specific unresolved fact, failing check, external dependency, or product decision; effort, file count, and task duration alone are not blockers.
+- After each commit, update the evidence and queue, choose the highest-benefit actionable target, and BEGIN its investigation immediately. A sentence promising a next step is not execution. If the queue is empty, inspect the remaining ranked areas and reassess affected flows before deciding opportunities are exhausted. Do not stop to ask whether to continue.
+- On every resumed turn, read the contract and ledger, reconcile Git state, and continue the saved action. If native goal status tools are available, verify the active objective and keep it active while work remains. Do not mark it complete because a turn ends, a report is written, or one target is finished. Follow host lifecycle rules for interruptions and genuinely blocked goals.
+- Before declaring campaign completion, explicitly check every completion gate below against evidence. Any unassessed required target, actionable target, running verification, or unfinished migration means CONTINUE. A blocker in one target means select another target; only lack of any safe independent progress can block the campaign. Do not manufacture commits or rerun unchanged searches just to inflate iteration counts.
 
 A useful change removes maintained production code, duplicate policy, unnecessary indirection, a bad pattern, or a concrete architectural violation. Architecture and UI improvements are eligible even without net line reduction when they demonstrably improve ownership, cohesion, reuse, or coupling. File moves count as architecture improvements only when they establish a clearer responsibility or dependency boundary; they do not count as code reduction. Formatting, renaming, and deleting tests do not count as code reduction.
 
@@ -116,7 +134,7 @@ E. COMMIT AND CONTINUE
 - Reapply the maintenance benefit gate to the staged result. Record the target flow and before/after structural evidence, or the named consolidation this prerequisite enables. Reject cosmetic-only progress; do not relabel terminal awaits or aliases as architecture improvements. For completed consolidations, update their graphs and coverage maps to show the actual result.
 - Commit with an accurate Conventional Commit title, normally refactor(scope): ..., or docs(skills): ... for guidance-only changes. Do not use git add ., bypass hooks, amend unrelated commits, or push. If hooks modify code, review and revalidate it before completing the commit.
 - Verify commit succeeded and capture its real hash. Check status again. Record production-source added/deleted/net lines separately from tests, generated files, and docs, using Git rename detection. Do not count moves as deleted code or promise a percentage target.
-- Emit a compact checkpoint: commit; pattern and actual benefit; occurrence counts and exceptions; checks/results; next area. Update the ledger, then immediately continue the same goal.
+- Emit a compact checkpoint: iteration number; commit; pattern and actual benefit; occurrence counts and exceptions; checks/results; remaining actionable/unassessed counts; next target and action. Update the ledger, then perform that action within the same turn when possible; otherwise preserve it for native goal continuation. This checkpoint is not the final architecture report or permission to end the campaign.
 
 SWEEP COMPLETION
 
