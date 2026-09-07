@@ -59,6 +59,13 @@
       "additionalBranchPrefix": ""
     },
     {
+      "description": "Group OpenAI Dart updates across workspace packages",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["openai_dart"],
+      "groupName": "OpenAI Dart",
+      "additionalBranchPrefix": ""
+    },
+    {
       "description": "Automerge minor and patch updates",
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
