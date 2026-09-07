@@ -3,8 +3,8 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/approve_tool_call_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/services/agent_harness/approve_tool_call_service.dart';
 import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -13,7 +13,7 @@ import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../test_mocks.dart';
+import '../../../test_mocks.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
