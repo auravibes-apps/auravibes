@@ -22,7 +22,6 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -45,7 +44,7 @@ import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext;
+    show AgentIterationContext, AgentLoopRunner;
 import 'package:auravibes_engine/auravibes_engine.dart'
     show ChatMessage, ChatResult;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -185,7 +184,7 @@ class MockResolveToolApprovalDecisionUsecase extends Mock
 
 class MockAgentToolResumeService extends Mock implements AgentToolResumeService;
 
-class MockAppAgentService extends Mock implements AppAgentService;
+class MockAgentLoopRunner extends Mock implements AgentLoopRunner;
 
 class MockAgentToolExecutionService extends Mock
     implements AgentToolExecutionService;

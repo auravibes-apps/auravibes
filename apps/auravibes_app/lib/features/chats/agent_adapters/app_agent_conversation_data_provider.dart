@@ -131,53 +131,6 @@ AgentConversationMessage _toAgentConversationMessage(MessageEntity message) {
   );
 }
 
-class AppAgentService extends AgentLoopRunner {
-  new({
-    required ContinueAgentService continueAgentService,
-    required AgentToolExecutionService toolExecutionService,
-    required MaybeAutoCompactConversationUsecase autoCompactConversationUsecase,
-    required ConversationRepository conversationRepository,
-    required MessageRepository messageRepository,
-    required ConversationSendQueueRuntime sendQueueRuntime,
-    required super.cancellationEffects,
-    required ConversationRateLimitRetryRuntime rateLimitRetryRuntime,
-    super.rateLimitRetryDelay,
-    super.now,
-    super.sleep,
-  }) : super(
-         data: AppAgentConversationDataProvider(
-           conversationRepository: conversationRepository,
-           messageRepository: messageRepository,
-           autoCompactConversationUsecase: autoCompactConversationUsecase,
-         ),
-         models: AppAgentModelProvider(continueAgentService),
-         tools: AppAgentLoopToolProvider(toolExecutionService),
-         sendQueueRuntime: sendQueueRuntime,
-         rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-           start: rateLimitRetryRuntime.start,
-           clear: rateLimitRetryRuntime.clear,
-         ),
-       );
-
-  new _({
-    required AppAgentConversationDataProvider data,
-    required AppAgentModelProvider models,
-    required ConversationRateLimitRetryRuntime retryRuntime,
-    required AppAgentLoopToolProvider tools,
-    required ConversationSendQueueRuntime sendQueueRuntime,
-    required super.cancellationEffects,
-  }) : super(
-         data: data,
-         models: models,
-         tools: tools,
-         sendQueueRuntime: sendQueueRuntime,
-         rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-           start: retryRuntime.start,
-           clear: retryRuntime.clear,
-         ),
-       );
-}
-
 class const AppAgentLoopToolProvider(
   final AgentToolExecutionService _toolExecutionService,
 ) implements AgentLoopToolProvider {
@@ -232,18 +185,23 @@ final appAgentLoopToolProvider = Provider<AppAgentLoopToolProvider>((ref) {
   return AppAgentLoopToolProvider(ref.watch(agentToolExecutionServiceProvider));
 });
 
-AppAgentService _buildAppAgentService(Ref ref) {
-  return AppAgentService._(
+AgentLoopRunner _buildAppAgentLoop(Ref ref) {
+  final retryRuntime = ref.watch(conversationRateLimitRetryRuntimeProvider);
+
+  return AgentLoopRunner(
     data: ref.watch(appAgentDataProvider),
     models: ref.watch(appAgentModelProvider),
-    retryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
     tools: ref.watch(appAgentLoopToolProvider),
     sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
     cancellationEffects: ref.watch(agentCancellationRuntimeProvider),
+    rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
+      start: retryRuntime.start,
+      clear: retryRuntime.clear,
+    ),
   );
 }
 
-final appAgentServiceProvider = Provider<AppAgentService>(
-  _buildAppAgentService,
+final appAgentLoopProvider = Provider<AgentLoopRunner>(
+  _buildAppAgentLoop,
   dependencies: [appAgentDataProvider, appAgentModelProvider],
 );

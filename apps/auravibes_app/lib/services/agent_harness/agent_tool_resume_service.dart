@@ -1,6 +1,6 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
-import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
@@ -11,7 +11,7 @@ class AgentToolResumeService({
   required MessageRepository messageRepository,
   required ConversationRepository conversationRepository,
   required AgentToolExecutionService toolExecutionService,
-  required AppAgentService agentService,
+  required agent.AgentLoopRunner agentLoop,
   ActiveSubAgentRuntime? activeSubAgents,
 }) extends agent.AgentToolResumeRunner {
   this
@@ -20,7 +20,7 @@ class AgentToolResumeService({
           messageRepository: messageRepository,
           conversationRepository: conversationRepository,
           toolExecutionService: toolExecutionService,
-          agentService: agentService,
+          agentLoop: agentLoop,
           activeSubAgents: activeSubAgents,
         ),
       );
@@ -30,7 +30,7 @@ class const AppAgentToolResumeProvider({
   required final MessageRepository messageRepository,
   required final ConversationRepository conversationRepository,
   required final AgentToolExecutionService toolExecutionService,
-  required final AppAgentService agentService,
+  required final agent.AgentLoopRunner agentLoop,
   required final ActiveSubAgentRuntime? activeSubAgents,
 }) implements agent.AgentToolResumeProvider {
   @override
@@ -78,7 +78,7 @@ class const AppAgentToolResumeProvider({
     required String conversationId,
     required agent.AgentIterationContext context,
   }) async {
-    final decision = await agentService.call(
+    final decision = await agentLoop(
       conversationId: conversationId,
       context: context,
     );
@@ -99,8 +99,8 @@ final agentToolResumeServiceProvider = Provider<AgentToolResumeService>(
     messageRepository: ref.watch(messageRepositoryProvider),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     toolExecutionService: ref.watch(agentToolExecutionServiceProvider),
-    agentService: ref.watch(appAgentServiceProvider),
+    agentLoop: ref.watch(appAgentLoopProvider),
     activeSubAgents: ref.watch(activeSubAgentRuntimeProvider.notifier),
   ),
-  dependencies: [appAgentServiceProvider],
+  dependencies: [appAgentLoopProvider],
 );

@@ -155,7 +155,7 @@ void main() {
 }
 
 class _SendMessageUsecaseFixture({
-  required final MockAppAgentService runAgentIterationUsecase,
+  required final MockAgentLoopRunner runAgentIterationUsecase,
   required final MockMessageRepository messageRepository,
   required final MockGetConversationBusyStateUsecase
   getConversationBusyStateUsecase,
@@ -163,7 +163,7 @@ class _SendMessageUsecaseFixture({
   required final SendMessageUsecase usecase,
 }) {
   factory create() {
-    final runAgentIterationUsecase = MockAppAgentService();
+    final runAgentIterationUsecase = MockAgentLoopRunner();
     final messageRepository = MockMessageRepository();
     final getConversationBusyStateUsecase =
         MockGetConversationBusyStateUsecase();

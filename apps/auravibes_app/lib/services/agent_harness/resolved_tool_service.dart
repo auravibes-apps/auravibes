@@ -6,7 +6,7 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
-import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
@@ -678,7 +678,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
       startRequest: activeSubAgents.start,
       continueAgentTurn: ({required conversationId, required context}) {
         return ref
-            .read(appAgentServiceProvider)
+            .read(appAgentLoopProvider)
             .call(conversationId: conversationId, context: context);
       },
       onChildStarted: ({required parentId, required childId}) {

@@ -16,12 +16,12 @@ void main() {
     var messageRepository = MockMessageRepository();
     var conversationRepository = MockConversationRepository();
     var toolExecutionService = MockAgentToolExecutionService();
-    var agentService = MockAppAgentService();
+    var agentLoop = MockAgentLoopRunner();
     var usecase = AgentToolResumeService(
       messageRepository: messageRepository,
       conversationRepository: conversationRepository,
       toolExecutionService: toolExecutionService,
-      agentService: agentService,
+      agentLoop: agentLoop,
     );
 
     const messageId = 'message-1';
@@ -52,13 +52,13 @@ void main() {
       messageRepository = MockMessageRepository();
       conversationRepository = MockConversationRepository();
       toolExecutionService = MockAgentToolExecutionService();
-      agentService = MockAppAgentService();
+      agentLoop = MockAgentLoopRunner();
 
       usecase = AgentToolResumeService(
         messageRepository: messageRepository,
         conversationRepository: conversationRepository,
         toolExecutionService: toolExecutionService,
-        agentService: agentService,
+        agentLoop: agentLoop,
       );
     });
 
@@ -120,7 +120,7 @@ void main() {
 
       expect(
         () => verifyNever(
-          () => agentService.call(
+          () => agentLoop.call(
             conversationId: any(named: 'conversationId'),
             context: any(named: 'context'),
           ),
@@ -129,7 +129,7 @@ void main() {
       );
     });
 
-    test('invokes AppAgentService on continueIteration', () async {
+    test('invokes the shared agent loop on continueIteration', () async {
       when(() => messageRepository.getMessageById(messageId))
           .thenAnswer((_) async => message);
       when(() => conversationRepository.getConversationById(conversationId))
@@ -141,7 +141,7 @@ void main() {
         ),
       ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
       when(
-        () => agentService.call(
+        () => agentLoop.call(
           conversationId: any(named: 'conversationId'),
           context: any(named: 'context'),
         ),
@@ -151,7 +151,7 @@ void main() {
 
       expect(
         () => verify(
-          () => agentService.call(
+          () => agentLoop.call(
             conversationId: conversationId,
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.toolResume,
