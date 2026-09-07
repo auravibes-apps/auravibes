@@ -8,7 +8,7 @@ import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
+import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_provider.dart';

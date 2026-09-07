@@ -7,7 +7,6 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/usecases/list_agent_tool_overrides_usecase.dart';
-import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_tool_overrides_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
 import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
