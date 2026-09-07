@@ -52,7 +52,7 @@ dependencies:
   math_expressions: ^3.1.0
   mcp_client: ^2.2.1
   mime: ^2.1.0
-  openai_dart: ^5.0.0
+  openai_dart: ^8.0.0
 
   # Other dependencies
   path: ^1.9.1
