@@ -17,7 +17,7 @@ val keystoreProperties =
 
 android {
     namespace = "me.auravibes.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
