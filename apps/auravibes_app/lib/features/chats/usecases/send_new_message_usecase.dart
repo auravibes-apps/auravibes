@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/services/cloud_conversation_creator.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
@@ -108,28 +109,10 @@ SendNewMessageUsecase _sendNewMessageUsecase(Ref ref, String workspaceId) {
     generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
     monitoringService: ref.watch(monitoringServiceProvider),
     cloudCreate: isCloud
-        ? (value) async {
-            final usecase = await ref.read(
-              cloudConversationUsecaseProvider(workspaceId).future,
-            );
-            if (usecase == null) {
-              throw StateError('Cloud workspace unavailable');
-            }
-            final created = await usecase.create(value);
-
-            return ConversationEntity(
-              id: created.id,
-              title: created.title,
-              workspaceId: value.workspaceId,
-              isPinned: created.isPinned,
-              createdAt: created.createdAt,
-              updatedAt: created.updatedAt,
-              revision: created.revision,
-              modelId: created.modelId,
-              agentId: created.agentId,
-              parentConversationId: created.parentConversationId,
-            );
-          }
+        ? CloudConversationCreator(
+            load: () =>
+                ref.read(cloudConversationUsecaseProvider(workspaceId).future),
+          ).call
         : null,
   );
 }
