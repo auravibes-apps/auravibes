@@ -125,6 +125,112 @@ jobs:
             git diff --exit-code
           fi
 
+  change:
+    name: change
+    runs-on: ubuntu-latest
+    outputs:
+      platforms: ${{ steps.platforms.outputs.platforms }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Determine changed platforms
+        id: platforms
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PATH: ${{ github.event_path }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          all_platforms='["android","ios","macos","linux","windows","web"]'
+          full_build=false
+          base_sha=''
+          head_sha="$GITHUB_SHA"
+
+          case "$EVENT_NAME" in
+            pull_request)
+              base_sha="$(jq -r '.pull_request.base.sha // empty' "$EVENT_PATH")"
+              head_sha="$(jq -r '.pull_request.head.sha // empty' "$EVENT_PATH")"
+              ;;
+            push)
+              base_sha="$(jq -r '.before // empty' "$EVENT_PATH")"
+              ;;
+            workflow_dispatch)
+              full_build=true
+              ;;
+            *)
+              full_build=true
+              ;;
+          esac
+
+          if [[ "$base_sha" == "" || "$base_sha" =~ ^0+$ ]]; then
+            full_build=true
+          elif ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            full_build=true
+          elif [[ "$EVENT_NAME" == "push" ]] && ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
+            full_build=true
+          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
+            if [[ -z "$head_sha" ]] || ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
+              head_sha=HEAD
+            fi
+          fi
+
+          if [[ "$full_build" == true ]]; then
+            printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed_files="$(git diff --name-only --diff-filter=ACDMRTUXB "$base_sha" "$head_sha")"
+          platforms=()
+
+          add_platform() {
+            local platform="$1"
+            for existing in "${platforms[@]}"; do
+              [[ "$existing" == "$platform" ]] && return
+            done
+            platforms+=("$platform")
+          }
+
+          while IFS= read -r path; do
+            case "$path" in
+              apps/auravibes_app/android/*) add_platform android ;;
+              apps/auravibes_app/ios/*) add_platform ios ;;
+              apps/auravibes_app/macos/*) add_platform macos ;;
+              apps/auravibes_app/linux/*) add_platform linux ;;
+              apps/auravibes_app/windows/*) add_platform windows ;;
+              apps/auravibes_app/web/*) add_platform web ;;
+              apps/auravibes_app/lib/*|apps/auravibes_app/assets/*|packages/*/lib/*|packages/*/assets/*) full_build=true ;;
+              apps/auravibes_app/pubspec.yaml|apps/auravibes_app/pubspec.lock|apps/auravibes_app/pubspec_overrides.yaml) full_build=true ;;
+              packages/*/pubspec.yaml|packages/*/pubspec.lock|packages/*/pubspec_overrides.yaml) full_build=true ;;
+              pubspec.yaml|pubspec.lock|pubspec_overrides.yaml|melos.yaml) full_build=true ;;
+              .fvmrc|.fvm/*|.vscode/settings.json) full_build=true ;;
+              .github/workflows/ci.yml|.github/workflows/build-matrix.yml|.github/actions/*) full_build=true ;;
+            esac
+            [[ "$full_build" == true ]] && break
+          done <<< "$changed_files"
+
+          if [[ "$full_build" == true ]]; then
+            printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
+          elif ((${#platforms[@]} == 0)); then
+            printf 'platforms=[]\n' >> "$GITHUB_OUTPUT"
+          else
+            printf '%s\n' "${platforms[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))' | sed 's/^/platforms=/' >> "$GITHUB_OUTPUT"
+          fi
+
+  platform-builds:
+    name: platform builds
+    needs: change
+    if: ${{ needs.change.outputs.platforms != '[]' }}
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      platforms: ${{ needs.change.outputs.platforms }}
+
+
   test-plan:
     name: test plan
     runs-on: ubuntu-latest
@@ -502,7 +608,7 @@ jobs:
   ci-success:
     name: ci success
     if: ${{ always() }}
-    needs: [format, analysis, code-health, integrity, test-plan, test, coverage, server-compose]
+    needs: [change, format, analysis, code-health, integrity, test-plan, test, coverage, platform-builds, server-compose]
     runs-on: ubuntu-latest
     steps:
       - name: Fail for failed required checks
