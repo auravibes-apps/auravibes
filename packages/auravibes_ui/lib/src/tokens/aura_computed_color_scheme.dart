@@ -1,4 +1,4 @@
-import 'package:auravibes_ui/src/colors/aura_computed_color.dart';
+import 'package:auravibes_ui/src/colors/aura_brightness.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
