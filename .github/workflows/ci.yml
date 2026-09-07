@@ -279,10 +279,140 @@ jobs:
             -Dsonar.dart.lcov.reportPaths=coverage/lcov.info
             -Dsonar.scanner.skipJreProvisioning=true
 
+  server-compose:
+    name: server-compose / Redis smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect relevant changes
+        id: changes
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          WORKFLOW_SHA: ${{ github.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          zero_sha=0000000000000000000000000000000000000000
+          base=''
+          head="$WORKFLOW_SHA"
+
+          case "$EVENT_NAME" in
+            pull_request)
+              base="$PR_BASE_SHA"
+              head="$PR_HEAD_SHA"
+              ;;
+            push)
+              base="$BEFORE_SHA"
+              ;;
+          esac
+
+          relevant=true
+          reason='missing or unknown commit range'
+          if [ -n "$head" ] && git cat-file -e "$head^{commit}" 2>/dev/null; then
+            if [ -n "$base" ] && [ "$base" != "$zero_sha" ] \
+              && git cat-file -e "$base^{commit}" 2>/dev/null; then
+              relevant=false
+              reason="diff $base..$head"
+              if changed_paths="$(git diff --name-only --no-renames "$base" "$head")"; then
+                while IFS= read -r path; do
+                  case "$path" in
+                    apps/auravibes_server/docker-compose.yaml|.github/workflows/ci.yml)
+                      relevant=true
+                      break
+                      ;;
+                  esac
+                done <<< "$changed_paths"
+              else
+                relevant=true
+                reason='unable to diff commit range'
+              fi
+            else
+              reason='missing or initial base SHA'
+            fi
+          fi
+
+          {
+            printf 'relevant=%s\n' "$relevant"
+            printf 'reason=%s\n' "$reason"
+          } >> "$GITHUB_OUTPUT"
+          printf 'Relevant changes: %s (%s)\n' "$relevant" "$reason"
+
+      - name: Validate Compose configuration
+        if: ${{ steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+        run: docker compose config --quiet
+
+      - name: Pull Redis images
+        if: ${{ steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+        run: docker compose pull redis redis_test
+
+      - name: Start Redis services
+        if: ${{ steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+        run: docker compose up -d --remove-orphans redis redis_test
+
+      - name: Smoke-test Redis commands
+        if: ${{ steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        shell: bash
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+          REDIS_PASSWORD: UWl-mNHNEUXv_xe0CWFzHBajGK1UV0B1
+          REDIS_TEST_PASSWORD: GZZj4HpiGxQK0g_kBQ3qWQMstI9y-Kze
+        run: |
+          set -euo pipefail
+
+          wait_for_redis() {
+            local service="$1"
+            local password="$2"
+            local response
+
+            for _ in {1..30}; do
+              if response="$(docker compose exec -T -e REDISCLI_AUTH="$password" "$service" redis-cli --raw ping 2>/dev/null | tr -d '\r')" \
+                && [ "$response" = 'PONG' ]; then
+                docker compose exec -T "$service" redis-cli -v
+                if [ "$(docker compose exec -T -e REDISCLI_AUTH="$password" "$service" redis-cli --raw set ci-smoke ok | tr -d '\r')" = 'OK' ] \
+                  && [ "$(docker compose exec -T -e REDISCLI_AUTH="$password" "$service" redis-cli --raw get ci-smoke | tr -d '\r')" = 'ok' ]; then
+                  return 0
+                fi
+              fi
+              sleep 1
+            done
+
+            docker compose logs "$service"
+            return 1
+          }
+
+          wait_for_redis redis "$REDIS_PASSWORD"
+          wait_for_redis redis_test "$REDIS_TEST_PASSWORD"
+
+      - name: Stop Redis services
+        if: ${{ always() && steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+        run: docker compose down -v --remove-orphans
+
   ci-success:
     name: ci success
     if: ${{ always() }}
-    needs: [format, analysis, code-health, integrity, test-plan, test, coverage]
+    needs: [format, analysis, code-health, integrity, test-plan, test, coverage, server-compose]
     runs-on: ubuntu-latest
     steps:
       - name: Fail for failed required checks
