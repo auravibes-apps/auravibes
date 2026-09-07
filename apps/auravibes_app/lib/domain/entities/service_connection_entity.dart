@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 
 import 'package:auravibes_app/domain/entities/service_connection_authentication_type.dart';
 
