@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
@@ -12,8 +13,11 @@ import 'package:uuid/v7.dart';
 class const CloudSkillSettingsAdapter(
   final CloudWorkspaceStateGateway _gateway,
 ) {
+  CloudWorkspaceResourceStore get _store =>
+      CloudWorkspaceResourceStore(_gateway);
+
   Stream<List<WorkspaceSkill>> watchSkills() {
-    return _gateway
+    return _store
         .watchResources(const [
           WorkspaceResourceKind.skill,
           WorkspaceResourceKind.skillSetting,
@@ -23,7 +27,7 @@ class const CloudSkillSettingsAdapter(
 
   Stream<({CompactionSettings settings, int? revision})>
   watchCompactionSettingsState() {
-    return _gateway
+    return _store
         .watchResources(const [WorkspaceResourceKind.compactionSetting])
         .map((resources) {
           final active = resources.where((item) => item.deletedAt == null);
@@ -46,7 +50,7 @@ class const CloudSkillSettingsAdapter(
     CompactionSettings settings, {
     int? expectedRevision,
   }) async {
-    final _ = await _gateway.patch(
+    final _ = await _store.patch(
       requestId: const UuidV7().generate(),
       operations: [
         WorkspacePatchOperation(
@@ -80,7 +84,7 @@ class const CloudSkillSettingsAdapter(
     final state = await watchCompactionSettingsState().first;
     final revision = state.revision;
     if (revision == null) return;
-    final _ = await _gateway.patch(
+    final _ = await _store.patch(
       requestId: const UuidV7().generate(),
       operations: [
         WorkspacePatchOperation(
@@ -110,7 +114,7 @@ class const CloudSkillSettingsAdapter(
     } else {
       operation = WorkspacePatchOperationKind.update;
     }
-    final _ = await _gateway.patch(
+    final _ = await _store.patch(
       requestId: const UuidV7().generate(),
       operations: [
         WorkspacePatchOperation(
@@ -137,13 +141,12 @@ class const CloudSkillSettingsAdapter(
     required String? secret,
     int? expectedRevision,
   }) async {
-    final _ = await _gateway.putSecret(
-      requestId: const UuidV7().generate(),
-      secretKind: .skillCredential,
+    final _ = await _store.putSecret(
+      kind: .skillCredential,
       scope: .workspace,
       resourceId: credentialId,
       secret: secret,
-      expectedRevision: expectedRevision,
+      revision: expectedRevision,
     );
   }
 

@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
+import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_attachment_bytes.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show ChatMessage, ChatMessageRole;

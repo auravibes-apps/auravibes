@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/services/url/public_url_guard.dart';

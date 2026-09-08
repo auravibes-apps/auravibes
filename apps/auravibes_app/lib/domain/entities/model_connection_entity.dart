@@ -1,5 +1,5 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 

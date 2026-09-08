@@ -3,6 +3,7 @@
 // Required: Provider unit tests read scoped providers directly.
 
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
@@ -18,6 +19,7 @@ import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_spe
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/widgets.dart';
@@ -135,6 +137,26 @@ class _FakeResolveToolApprovalDecisionUsecase(
           toolCallId: toolCallId,
           permissionResult: .notConfigured,
         );
+  }
+}
+
+class _ThrowingResolveToolApprovalDecisionUsecase()
+    extends ResolveToolApprovalDecisionUsecase {
+  this
+    : super(
+        conversationToolsRepository: _NoOpConversationToolsRepository(),
+        toolsGroupsRepository: _NoOpToolsGroupsRepository(),
+        workspaceToolsRepository: _NoOpWorkspaceToolsRepository(),
+      );
+
+  @override
+  Future<ToolApprovalDecision> call({
+    required String conversationId,
+    required String workspaceId,
+    required String toolCallId,
+    required ResolvedTool resolvedTool,
+  }) async {
+    throw const FormatException('access_token=decision-secret');
   }
 }
 
@@ -970,6 +992,82 @@ void main() {
       );
       expect(result.length, 1);
       expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
+    });
+
+    test('redacts approval resolution errors from logs', () async {
+      final previousDebugPrint = debugPrint;
+      final previousFlutterError = FlutterError.onError;
+      final previousPlatformError = PlatformDispatcher.instance.onError;
+      final logs = <String>[];
+      debugPrint = (message, {wrapWidth}) {
+        if (message != null) logs.add(message);
+      };
+      AppLogging.resetForTesting();
+      AppLogging.configure(enabled: true);
+
+      addTearDown(() {
+        debugPrint = previousDebugPrint;
+        FlutterError.onError = previousFlutterError;
+        PlatformDispatcher.instance.onError = previousPlatformError;
+        AppLogging.resetForTesting();
+      });
+
+      const rawArguments = '{"access_token":"argument-secret"}';
+      final messages = [
+        _assistantMessage(
+          id: 'msg-1',
+          conversationId: 'conv-1',
+          toolCalls: [
+            const MessageToolCallEntity(
+              id: 'tc-secret',
+              name: 'native_ws-tool-url_url',
+              argumentsRaw: rawArguments,
+            ),
+          ],
+        ),
+      ];
+
+      container = _pendingToolContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            'ws-1',
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
+          conversationByIdStreamProvider(
+            'ws-1',
+            conversationId: 'conv-1',
+          ).overrideWithValue(
+            AsyncValue<ConversationEntity?>.data(
+              ConversationEntity(
+                id: 'conv-1',
+                title: 'Test',
+                workspaceId: 'ws-1',
+                isPinned: false,
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
+              ),
+            ),
+          ),
+          resolveToolApprovalDecisionUsecaseProvider('ws-1')
+              .overrideWithValue(_ThrowingResolveToolApprovalDecisionUsecase()),
+        ],
+      );
+
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
+      await Future<void>.delayed(.zero);
+
+      final joinedLogs = logs.join('\n');
+      expect(result, hasLength(1));
+      expect(joinedLogs, contains('[WARNING] message_id_list:'));
+      expect(joinedLogs, isNot(contains('decision-secret')));
+      expect(joinedLogs, isNot(contains('argument-secret')));
     });
   });
 }

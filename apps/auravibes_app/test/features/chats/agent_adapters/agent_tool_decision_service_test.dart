@@ -1,0 +1,131 @@
+// Required: Existing test and UI helpers keep compact return flow.
+
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_decision_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AgentIterationDecision;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../../test_mocks.dart';
+
+void main() {
+  setUpAll(registerTestFallbackValues);
+
+  group('AgentToolDecisionService', () {
+    var messageRepository = MockMessageRepository();
+    var usecase = AgentToolDecisionService(
+      messageRepository: messageRepository,
+    );
+
+    setUp(() {
+      messageRepository = MockMessageRepository();
+      usecase = AgentToolDecisionService(messageRepository: messageRepository);
+    });
+
+    test(
+      'returns waitForToolApproval when any() tool call is pending',
+      () async {
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
+          (_) async => _message(
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'pending-tool',
+                  name: 'built_in_calc_calculator',
+                  argumentsRaw: '{}',
+                ),
+              ],
+            ),
+          ),
+        );
+
+        final result = await usecase.call(messageId: 'message-1');
+
+        expect(result, AgentIterationDecision.waitForToolApproval);
+      },
+    );
+
+    test(
+      'returns continueIteration when all tool calls are resolved',
+      () async {
+        when(() => messageRepository.getMessageById('message-2')).thenAnswer(
+          (_) async => _message(
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'resolved-tool',
+                  name: 'built_in_calc_calculator',
+                  argumentsRaw: '{}',
+                  resultStatus: .executionError,
+                ),
+              ],
+            ),
+          ),
+        );
+
+        final result = await usecase.call(messageId: 'message-2');
+
+        expect(result, AgentIterationDecision.continueIteration);
+      },
+    );
+
+    test('returns continueIteration when tool call is running', () async {
+      when(() => messageRepository.getMessageById('message-4')).thenAnswer(
+        (_) async => _message(
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'running-tool',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{}',
+                resultStatus: .running,
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final result = await usecase.call(messageId: 'message-4');
+
+      expect(result, AgentIterationDecision.continueIteration);
+    });
+
+    test('returns done when a tool status stops the agent loop', () async {
+      when(() => messageRepository.getMessageById('message-3')).thenAnswer(
+        (_) async => _message(
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'stopped-tool',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{}',
+                resultStatus: .stoppedByUser,
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final result = await usecase.call(messageId: 'message-3');
+
+      expect(result, AgentIterationDecision.done);
+    });
+  });
+}
+
+MessageEntity _message({MessageMetadataEntity? metadata}) {
+  final now = DateTime(2026);
+
+  return MessageEntity(
+    id: 'message-id',
+    conversationId: 'conversation-id',
+    content: 'content',
+    messageType: .text,
+    isUser: false,
+    status: .sent,
+    createdAt: now,
+    updatedAt: now,
+    metadata: metadata,
+  );
+}

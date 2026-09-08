@@ -7,7 +7,7 @@ import 'package:auravibes_app/features/models/providers/model_store_providers.da
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_operations_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'

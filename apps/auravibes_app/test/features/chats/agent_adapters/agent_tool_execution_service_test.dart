@@ -1,0 +1,1917 @@
+// Required: Existing test and UI helpers keep compact return flow.
+
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
+    hide ToolToCall;
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show
+        AgentIterationDecision,
+        AgentResolvedToolName,
+        AgentToolPermissionResult,
+        SkillCommandTarget,
+        callSkillToolName;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../../test_mocks.dart';
+
+void main() {
+  setUpAll(registerTestFallbackValues);
+
+  group('AgentToolExecutionService', () {
+    var loadLatestMessageToolCallsUsecase = MockAgentToolCallLoader();
+    var messageRepository = MockMessageRepository();
+    var resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+    var getAgentIterationDecisionUsecase = MockAgentToolDecisionService();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var toolMessage = _runAllowedToolsToolMessage();
+    String? calledMcpServerId;
+    String? calledMcpToolIdentifier;
+    Map<String, dynamic>? calledMcpArguments;
+    var usecase = AgentToolExecutionService(
+      loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+      messageRepository: messageRepository,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
+      runResolvedToolUsecase: .new(
+        agentCancellationRuntime: agentCancellationRuntime,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              calledMcpServerId = mcpServerId;
+              calledMcpToolIdentifier = toolIdentifier;
+              calledMcpArguments = arguments;
+
+              return 'mcp result';
+            },
+      ),
+      getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+      agentCancellationRuntime: agentCancellationRuntime,
+    );
+
+    setUp(() {
+      loadLatestMessageToolCallsUsecase = MockAgentToolCallLoader();
+      messageRepository = MockMessageRepository();
+      resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+      getAgentIterationDecisionUsecase = MockAgentToolDecisionService();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
+      calledMcpServerId = null;
+      calledMcpToolIdentifier = null;
+      calledMcpArguments = null;
+
+      toolMessage = _runAllowedToolsToolMessage();
+
+      usecase = AgentToolExecutionService(
+        loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+        messageRepository: messageRepository,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
+        runResolvedToolUsecase: .new(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+              }) async {
+                calledMcpServerId = mcpServerId;
+                calledMcpToolIdentifier = toolIdentifier;
+                calledMcpArguments = arguments;
+
+                return 'mcp result';
+              },
+        ),
+        getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
+      );
+    });
+
+    test('uses a workspace resolver without a legacy fallback', () async {
+      final workspaceResolver = MockResolveToolApprovalDecisionUsecase();
+      final provider = AppAllowedToolsDataProvider(
+        messageRepository: messageRepository,
+        loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+        resolveToolApprovalDecisionUsecaseForWorkspace: (_) =>
+            workspaceResolver,
+        resolvedToolService: .new(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller: ({
+            required mcpServerId,
+            required toolIdentifier,
+            required arguments,
+          }) async => 'unused',
+        ),
+        toolDecisionService: getAgentIterationDecisionUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
+      );
+      final tool = ResolvedTool.mcp(
+        tableId: 'tool-1',
+        toolIdentifier: 'sum',
+        mcpServerId: 'server-1',
+        mcpSlug: 'server-1',
+      );
+      when(
+        () => workspaceResolver(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-call-1',
+          permissionResult: .granted,
+        ),
+      );
+
+      final decision = await provider.resolveToolApprovalDecision(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        toolCallId: 'tool-call-1',
+        resolvedTool: tool,
+      );
+
+      expect(decision.permissionResult.name, 'granted');
+    });
+
+    group('effective approval targets', () {
+      AppAllowedToolsDataProvider providerWith(
+        ResolveSkillCommandTarget? resolveSkillTarget,
+      ) {
+        return AppAllowedToolsDataProvider(
+          messageRepository: messageRepository,
+          loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+          resolveSkillCommandTarget: resolveSkillTarget,
+          resolvedToolService: .new(
+            agentCancellationRuntime: agentCancellationRuntime,
+            mcpToolCaller: ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async => 'unused',
+          ),
+          toolDecisionService: getAgentIterationDecisionUsecase,
+          agentCancellationRuntime: agentCancellationRuntime,
+        );
+      }
+
+      test('throws when no approval resolver is configured', () async {
+        final provider = AppAllowedToolsDataProvider(
+          messageRepository: messageRepository,
+          loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+          resolvedToolService: .new(
+            agentCancellationRuntime: agentCancellationRuntime,
+            mcpToolCaller: ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async => 'unused',
+          ),
+          toolDecisionService: getAgentIterationDecisionUsecase,
+          agentCancellationRuntime: agentCancellationRuntime,
+        );
+
+        await expectLater(
+          provider.resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: .mcp(
+              tableId: 'tool-1',
+              toolIdentifier: 'sum',
+              mcpServerId: 'server-1',
+              mcpSlug: 'server-1',
+            ),
+          ),
+          throwsA(isA<StateError>()),
+        );
+      });
+
+      test('returns notConfigured for malformed skill arguments', () async {
+        final provider = providerWith(null);
+
+        final decision = await provider.resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: .skillCommand(commandName: callSkillToolName),
+          argumentsRaw: '{not-json',
+        );
+
+        expect(
+          decision.permissionResult,
+          AgentToolPermissionResult.notConfigured,
+        );
+      });
+
+      test(
+        'returns notConfigured when skill target resolver is absent',
+        () async {
+          final provider = providerWith(null);
+
+          final decision = await provider.resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: .skillCommand(commandName: callSkillToolName),
+            argumentsRaw:
+                '{"skill":"duckduckgo","tool":"search",'
+                '"args":{},"revision":"rev-1"}',
+          );
+
+          expect(
+            decision.permissionResult,
+            AgentToolPermissionResult.notConfigured,
+          );
+        },
+      );
+
+      test(
+        'passes exact resolved call_skill_tool target to approval',
+        () async {
+          final wrapper = ResolvedTool.skillCommand(
+            commandName: callSkillToolName,
+          );
+          SkillCommandTarget? resolvedCommand;
+          final provider = providerWith(({
+            required conversationId,
+            required workspaceId,
+            required command,
+          }) async {
+            resolvedCommand = command;
+
+            return AgentResolvedToolName.skillNative(
+              tableId: 'search',
+              skillSlug: 'duckduckgo',
+              toolIdentifier: 'search',
+            );
+          });
+          when(
+            () => resolveToolApprovalDecision(
+              conversationId: 'conversation-1',
+              workspaceId: 'workspace-1',
+              toolCallId: 'tool-call-1',
+              resolvedTool: any(named: 'resolvedTool'),
+            ),
+          ).thenAnswer(
+            (_) async => const ToolApprovalDecision(
+              toolCallId: 'tool-call-1',
+              permissionResult: .granted,
+            ),
+          );
+
+          final decision = await provider.resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: wrapper,
+            argumentsRaw:
+                '{"skill":"duckduckgo","tool":"search",'
+                '"args":{},"revision":"rev-1"}',
+          );
+
+          final approvalTool =
+              verify(
+                    () => resolveToolApprovalDecision(
+                      conversationId: 'conversation-1',
+                      workspaceId: 'workspace-1',
+                      toolCallId: 'tool-call-1',
+                      resolvedTool: captureAny(named: 'resolvedTool'),
+                    ),
+                  ).captured.single
+                  as ResolvedTool;
+          expect(approvalTool.fullName, 'skill__app__duckduckgo__search');
+          expect(resolvedCommand?.skill, 'duckduckgo');
+          expect(resolvedCommand?.tool, 'search');
+          expect(decision.permissionResult, AgentToolPermissionResult.granted);
+        },
+      );
+
+      test('returns notConfigured for malformed call_skill_tool', () async {
+        var resolvedTarget = false;
+        final provider = providerWith(({
+          required conversationId,
+          required workspaceId,
+          required command,
+        }) async {
+          resolvedTarget = true;
+
+          return AgentResolvedToolName.skillNative(
+            tableId: 'search',
+            skillSlug: 'duckduckgo',
+            toolIdentifier: 'search',
+          );
+        });
+
+        final decision = await provider.resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: .skillCommand(commandName: callSkillToolName),
+          argumentsRaw: '{"skill":"duckduckgo"}',
+        );
+
+        expect(
+          decision.permissionResult,
+          AgentToolPermissionResult.notConfigured,
+        );
+        expect(resolvedTarget, isFalse);
+        final _ = verifyNever(
+          () => resolveToolApprovalDecision(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
+            toolCallId: any(named: 'toolCallId'),
+            resolvedTool: any(named: 'resolvedTool'),
+          ),
+        );
+      });
+
+      test('returns notConfigured for unresolved call_skill_tool', () async {
+        final provider = providerWith(
+          ({
+            required conversationId,
+            required workspaceId,
+            required command,
+          }) async => null,
+        );
+
+        final decision = await provider.resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: .skillCommand(commandName: callSkillToolName),
+          argumentsRaw:
+              '{"skill":"duckduckgo","tool":"search",'
+              '"args":{},"revision":"rev-1"}',
+        );
+
+        expect(
+          decision.permissionResult,
+          AgentToolPermissionResult.notConfigured,
+        );
+        final _ = verifyNever(
+          () => resolveToolApprovalDecision(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
+            toolCallId: any(named: 'toolCallId'),
+            resolvedTool: any(named: 'resolvedTool'),
+          ),
+        );
+      });
+
+      test('passes direct tool to approval unchanged', () async {
+        final directTool = ResolvedTool.skillNative(
+          tableId: 'search',
+          skillSlug: 'duckduckgo',
+          toolIdentifier: 'search',
+        );
+        final provider = providerWith(null);
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: directTool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-call-1',
+            permissionResult: .granted,
+          ),
+        );
+
+        final decision = await provider.resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: directTool,
+        );
+
+        verify(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: directTool,
+          ),
+        ).called(1);
+        expect(decision.permissionResult, AgentToolPermissionResult.granted);
+      });
+    });
+
+    test('passes raw argument maps to MCP tools', () async {
+      final tool = ToolToCall(
+        tool: ResolvedTool.mcp(
+          tableId: 'server-1',
+          toolIdentifier: 'sum',
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+        ),
+        id: 'tool-1',
+        argumentsRaw: '{"a": 1, "b": 2}',
+      );
+
+      final mcpMessage = toolMessage.copyWith(
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'mcp_server-1_calc_sum',
+              argumentsRaw: '{"a": 1, "b": 2}',
+            ),
+          ],
+        ),
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [tool],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => mcpMessage);
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-1',
+          resolvedTool: tool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-1',
+          permissionResult: .granted,
+          permissionTableId: 'workspace-tool-1',
+        ),
+      );
+      when(() => messageRepository.patchMessage('message-1', any()))
+          .thenAnswer((_) async => mcpMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.continueIteration);
+      expect(calledMcpServerId, 'server-1');
+      expect(calledMcpToolIdentifier, 'sum');
+      expect(calledMcpArguments, {'a': 1, 'b': 2});
+    });
+
+    test('returns done when there are no tool calls to process', () async {
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => const LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: false,
+          toolsToRun: [],
+          notFoundToolCallIds: [],
+          previouslyFailedToolCallIds: [],
+        ),
+      );
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.done);
+      final _ = verifyNever(
+        () => resolveToolApprovalDecision(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
+          toolCallId: any(named: 'toolCallId'),
+          resolvedTool: any(named: 'resolvedTool'),
+        ),
+      );
+    });
+
+    test(
+      'returns waitForToolApproval when filtering leaves pending tools',
+      () async {
+        final tool = ToolToCall(
+          tool: ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: .calculator,
+          ),
+          id: 'tool-1',
+          argumentsRaw: '{"input": "1+1"}',
+        );
+
+        when(
+          () => loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [tool],
+            notFoundToolCallIds: const [],
+            previouslyFailedToolCallIds: const [],
+          ),
+        );
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-1',
+            resolvedTool: tool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-1',
+            permissionResult: .needsConfirmation,
+            permissionTableId: 'calculator',
+          ),
+        );
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        expect(result, AgentIterationDecision.waitForToolApproval);
+        final _ = verifyNever(
+          () => messageRepository.patchMessage(any(), any()),
+        );
+      },
+    );
+
+    test('persists, executes, and returns final decision', () async {
+      final tool = ToolToCall(
+        tool: ResolvedTool.builtIn(
+          tableId: 'calc',
+          toolIdentifier: 'calculator',
+          tooltype: .calculator,
+        ),
+        id: 'tool-1',
+        argumentsRaw: '{"input": "1+1"}',
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [tool],
+          notFoundToolCallIds: const ['missing-tool'],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => toolMessage);
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-1',
+          resolvedTool: tool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-1',
+          permissionResult: .granted,
+          permissionTableId: 'calculator',
+        ),
+      );
+      when(() => messageRepository.patchMessage('message-1', any()))
+          .thenAnswer((_) async => toolMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.continueIteration);
+      final updatedToolCalls = _capturedToolCalls(messageRepository);
+      expect(updatedToolCalls, isNotNull);
+      expect(
+        updatedToolCalls
+            ?.firstWhere((toolCall) => toolCall.id == 'tool-1')
+            .resultStatus,
+        ToolCallResultStatus.success,
+      );
+      expect(
+        updatedToolCalls
+            ?.firstWhere((toolCall) => toolCall.id == 'tool-1')
+            .responseRaw,
+        '2.0',
+      );
+      expect(
+        updatedToolCalls
+            ?.firstWhere((toolCall) => toolCall.id == 'missing-tool')
+            .resultStatus,
+        ToolCallResultStatus.toolNotFound,
+      );
+    });
+
+    test('executes multiple granted tools and collects all results', () async {
+      final tool1 = ToolToCall(
+        tool: ResolvedTool.builtIn(
+          tableId: 'calc',
+          toolIdentifier: 'calculator',
+          tooltype: .calculator,
+        ),
+        id: 'tool-1',
+        argumentsRaw: '{"input": "1+1"}',
+      );
+      final tool2 = ToolToCall(
+        tool: ResolvedTool.builtIn(
+          tableId: 'calc',
+          toolIdentifier: 'calculator',
+          tooltype: .calculator,
+        ),
+        id: 'tool-2',
+        argumentsRaw: '{"input": "2+2"}',
+      );
+
+      final multiToolMessage = MessageEntity(
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        content: 'assistant',
+        messageType: .text,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'built_in_calc_calculator',
+              argumentsRaw: '{"input": "1+1"}',
+            ),
+            MessageToolCallEntity(
+              id: 'tool-2',
+              name: 'built_in_calc_calculator',
+              argumentsRaw: '{"input": "2+2"}',
+            ),
+          ],
+        ),
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [tool1, tool2],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => multiToolMessage);
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-1',
+          resolvedTool: tool1.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-1',
+          permissionResult: .granted,
+          permissionTableId: 'calculator',
+        ),
+      );
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-2',
+          resolvedTool: tool2.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-2',
+          permissionResult: .granted,
+          permissionTableId: 'calculator',
+        ),
+      );
+      when(() => messageRepository.patchMessage('message-1', any()))
+          .thenAnswer((_) async => multiToolMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.continueIteration);
+      final updatedToolCalls = _capturedToolCalls(messageRepository);
+      expect(updatedToolCalls, isNotNull);
+      expect(
+        updatedToolCalls?.firstWhere((tc) => tc.id == 'tool-1').resultStatus,
+        ToolCallResultStatus.success,
+      );
+      expect(
+        updatedToolCalls?.firstWhere((tc) => tc.id == 'tool-2').resultStatus,
+        ToolCallResultStatus.success,
+      );
+    });
+
+    test(
+      'one tool failure does not block other tools from completing',
+      () async {
+        final goodTool = ToolToCall(
+          tool: ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: .calculator,
+          ),
+          id: 'tool-good',
+          argumentsRaw: '{"input": "1+1"}',
+        );
+        final badTool = ToolToCall(
+          tool: ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: .calculator,
+          ),
+          id: 'tool-bad',
+          argumentsRaw: '{}',
+        );
+
+        final mixedMessage = MessageEntity(
+          id: 'message-1',
+          conversationId: 'conversation-1',
+          content: 'assistant',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-good',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{"input": "1+1"}',
+              ),
+              MessageToolCallEntity(
+                id: 'tool-bad',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{}',
+              ),
+            ],
+          ),
+        );
+
+        when(
+          () => loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [goodTool, badTool],
+            notFoundToolCallIds: const [],
+            previouslyFailedToolCallIds: const [],
+          ),
+        );
+        when(() => messageRepository.getMessageById('message-1'))
+            .thenAnswer((_) async => mixedMessage);
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-good',
+            resolvedTool: goodTool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-good',
+            permissionResult: .granted,
+            permissionTableId: 'calculator',
+          ),
+        );
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-bad',
+            resolvedTool: badTool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-bad',
+            permissionResult: .granted,
+            permissionTableId: 'calculator',
+          ),
+        );
+        when(() => messageRepository.patchMessage('message-1', any()))
+            .thenAnswer((_) async => mixedMessage);
+        when(
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+        ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        expect(result, AgentIterationDecision.continueIteration);
+        final updatedToolCalls = _capturedToolCalls(messageRepository);
+        expect(updatedToolCalls, isNotNull);
+        expect(
+          updatedToolCalls
+              ?.firstWhere((tc) => tc.id == 'tool-good')
+              .resultStatus,
+          ToolCallResultStatus.success,
+        );
+        expect(
+          updatedToolCalls
+              ?.firstWhere((tc) => tc.id == 'tool-bad')
+              .resultStatus,
+          ToolCallResultStatus.executionError,
+        );
+      },
+    );
+
+    test('correctly partitions tools with mixed permissions', () async {
+      final grantedTool = ToolToCall(
+        tool: ResolvedTool.builtIn(
+          tableId: 'calc',
+          toolIdentifier: 'calculator',
+          tooltype: .calculator,
+        ),
+        id: 'tool-granted',
+        argumentsRaw: '{"input": "1+1"}',
+      );
+      final pendingTool = ToolToCall(
+        tool: ResolvedTool.builtIn(
+          tableId: 'other',
+          toolIdentifier: 'other_tool',
+          tooltype: .calculator,
+        ),
+        id: 'tool-pending',
+        argumentsRaw: '{"input": "test"}',
+      );
+      final disabledTool = ToolToCall(
+        tool: ResolvedTool.builtIn(
+          tableId: 'disabled',
+          toolIdentifier: 'disabled_tool',
+          tooltype: .calculator,
+        ),
+        id: 'tool-disabled',
+        argumentsRaw: '{"input": "test"}',
+      );
+
+      final mixedPermMessage = MessageEntity(
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        content: 'assistant',
+        messageType: .text,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-granted',
+              name: 'built_in_calc_calculator',
+              argumentsRaw: '{"input": "1+1"}',
+            ),
+            MessageToolCallEntity(
+              id: 'tool-pending',
+              name: 'other_tool',
+              argumentsRaw: '{"input": "test"}',
+            ),
+            MessageToolCallEntity(
+              id: 'tool-disabled',
+              name: 'disabled_tool',
+              argumentsRaw: '{"input": "test"}',
+            ),
+          ],
+        ),
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [grantedTool, pendingTool, disabledTool],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => mixedPermMessage);
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-granted',
+          resolvedTool: grantedTool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-granted',
+          permissionResult: .granted,
+          permissionTableId: 'calculator',
+        ),
+      );
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-pending',
+          resolvedTool: pendingTool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-pending',
+          permissionResult: .needsConfirmation,
+          permissionTableId: 'other_tool',
+        ),
+      );
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-disabled',
+          resolvedTool: disabledTool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-disabled',
+          permissionResult: .disabledByAgent,
+          permissionTableId: 'disabled_tool',
+        ),
+      );
+      when(() => messageRepository.patchMessage('message-1', any()))
+          .thenAnswer((_) async => mixedPermMessage);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.waitForToolApproval);
+      final updatedToolCalls = _capturedToolCalls(messageRepository);
+      expect(updatedToolCalls, isNotNull);
+      expect(
+        updatedToolCalls
+            ?.firstWhere((tc) => tc.id == 'tool-granted')
+            .resultStatus,
+        ToolCallResultStatus.success,
+      );
+      expect(
+        updatedToolCalls
+            ?.firstWhere((tc) => tc.id == 'tool-pending')
+            .resultStatus,
+        isNull,
+      );
+      expect(
+        updatedToolCalls
+            ?.firstWhere((tc) => tc.id == 'tool-disabled')
+            .resultStatus,
+        ToolCallResultStatus.disabledByAgent,
+      );
+    });
+
+    test(
+      'returns waitForToolApproval when all tools need confirmation',
+      () async {
+        final tool1 = ToolToCall(
+          tool: ResolvedTool.builtIn(
+            tableId: 'tool-a',
+            toolIdentifier: 'tool_a',
+            tooltype: .calculator,
+          ),
+          id: 'tool-1',
+          argumentsRaw: '{"input": "1+1"}',
+        );
+        final tool2 = ToolToCall(
+          tool: ResolvedTool.builtIn(
+            tableId: 'tool-b',
+            toolIdentifier: 'tool_b',
+            tooltype: .calculator,
+          ),
+          id: 'tool-2',
+          argumentsRaw: '{"input": "2+2"}',
+        );
+
+        when(
+          () => loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [tool1, tool2],
+            notFoundToolCallIds: const [],
+            previouslyFailedToolCallIds: const [],
+          ),
+        );
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-1',
+            resolvedTool: tool1.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-1',
+            permissionResult: .needsConfirmation,
+            permissionTableId: 'tool_a',
+          ),
+        );
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-2',
+            resolvedTool: tool2.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-2',
+            permissionResult: .needsConfirmation,
+            permissionTableId: 'tool_b',
+          ),
+        );
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        expect(result, AgentIterationDecision.waitForToolApproval);
+        final _ = verifyNever(
+          () => messageRepository.patchMessage(any(), any()),
+        );
+      },
+    );
+  });
+
+  group('AgentToolExecutionService native tools', () {
+    var loadLatestMessageToolCallsUsecase = MockAgentToolCallLoader();
+    var messageRepository = MockMessageRepository();
+    var resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+    var getAgentIterationDecisionUsecase = MockAgentToolDecisionService();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = AgentToolExecutionService(
+      loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+      messageRepository: messageRepository,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
+      runResolvedToolUsecase: .new(
+        agentCancellationRuntime: agentCancellationRuntime,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              return 'mcp result';
+            },
+      ),
+      getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+      agentCancellationRuntime: agentCancellationRuntime,
+    );
+
+    setUp(() {
+      loadLatestMessageToolCallsUsecase = MockAgentToolCallLoader();
+      messageRepository = MockMessageRepository();
+      resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+      getAgentIterationDecisionUsecase = MockAgentToolDecisionService();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
+
+      usecase = AgentToolExecutionService(
+        loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+        messageRepository: messageRepository,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
+        runResolvedToolUsecase: .new(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+              }) async {
+                return 'mcp result';
+              },
+        ),
+        getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
+      );
+    });
+
+    test(
+      'T003: native tool with alwaysAsk permission returns needsConfirmation '
+      '(not notConfigured)',
+      () async {
+        final nativeTool = ToolToCall(
+          tool: ResolvedTool.native(
+            tableId: 'ws-tool-url-id',
+            nativeToolType: .url,
+          ),
+          id: 'native-tool-1',
+          argumentsRaw: '{"input": "https://example.com"}',
+        );
+
+        when(
+          () => loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [nativeTool],
+            notFoundToolCallIds: const [],
+            previouslyFailedToolCallIds: const [],
+          ),
+        );
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'native-tool-1',
+            permissionResult: .needsConfirmation,
+            permissionTableId: 'url',
+          ),
+        );
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        expect(result, AgentIterationDecision.waitForToolApproval);
+        verify(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
+          ),
+        ).called(1);
+        final _ = verifyNever(
+          () => messageRepository.patchMessage(any(), any()),
+        );
+      },
+    );
+
+    test('T004: alwaysAllow native tool executes', () async {
+      final nativeTool = ToolToCall(
+        tool: ResolvedTool.native(
+          tableId: 'ws-tool-url-id',
+          nativeToolType: .url,
+        ),
+        id: 'native-tool-1',
+        argumentsRaw: '{"input": "https://example.com"}',
+      );
+
+      final nativeMessage = MessageEntity(
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        content: 'assistant',
+        messageType: .text,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'native-tool-1',
+              name: 'native_ws-tool-url-id_url',
+              argumentsRaw: '{"input": "https://example.com"}',
+            ),
+          ],
+        ),
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [nativeTool],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'native-tool-1',
+          resolvedTool: nativeTool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'native-tool-1',
+          permissionResult: .granted,
+          permissionTableId: 'url',
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => nativeMessage);
+      when(() => messageRepository.patchMessage('message-1', any()))
+          .thenAnswer((_) async => nativeMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.continueIteration);
+      final updatedToolCalls = _capturedToolCalls(messageRepository);
+      expect(updatedToolCalls, isNotNull);
+      expect(
+        updatedToolCalls
+            ?.firstWhere((tc) => tc.id == 'native-tool-1')
+            .resultStatus,
+        ToolCallResultStatus.success,
+      );
+    });
+
+    test('T010: persists notConfigured status', () async {
+      final nativeTool = ToolToCall(
+        tool: ResolvedTool.native(
+          tableId: 'ws-tool-url-id',
+          nativeToolType: .url,
+        ),
+        id: 'native-tool-1',
+        argumentsRaw: '{"input": "https://example.com"}',
+      );
+
+      final nativeMessage = MessageEntity(
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        content: 'assistant',
+        messageType: .text,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'native-tool-1',
+              name: 'native_ws-tool-url-id_url',
+              argumentsRaw: '{"input": "https://example.com"}',
+            ),
+          ],
+        ),
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [nativeTool],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'native-tool-1',
+          resolvedTool: nativeTool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'native-tool-1',
+          permissionResult: .notConfigured,
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => nativeMessage);
+      when(() => messageRepository.patchMessage('message-1', any()))
+          .thenAnswer((_) async => nativeMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.done);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.done);
+      final updatedToolCalls = _capturedToolCalls(messageRepository);
+      expect(updatedToolCalls, isNotNull);
+      expect(
+        updatedToolCalls
+            ?.firstWhere((tc) => tc.id == 'native-tool-1')
+            .resultStatus,
+        ToolCallResultStatus.notConfigured,
+      );
+    });
+
+    test('T014: notConfigured response includes tool details', () async {
+      final nativeTool = ToolToCall(
+        tool: ResolvedTool.native(
+          tableId: 'ws-tool-url-id',
+          nativeToolType: .url,
+        ),
+        id: 'native-tool-1',
+        argumentsRaw: '{"input": "https://example.com"}',
+      );
+
+      final nativeMessage = MessageEntity(
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        content: 'assistant',
+        messageType: .text,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'native-tool-1',
+              name: 'native_ws-tool-url-id_url',
+              argumentsRaw: '{"input": "https://example.com"}',
+            ),
+          ],
+        ),
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [nativeTool],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'native-tool-1',
+          resolvedTool: nativeTool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'native-tool-1',
+          permissionResult: .notConfigured,
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => nativeMessage);
+      when(() => messageRepository.patchMessage('message-1', any()))
+          .thenAnswer((_) async => nativeMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.done);
+
+      final _ = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      final update =
+          verify(
+                () => messageRepository.patchMessage('message-1', captureAny()),
+              ).captured.single
+              as MessagePatch;
+      final tc = update.metadata?.toolCalls.firstWhere(
+        (t) => t.id == 'native-tool-1',
+      );
+      expect(tc?.responseRaw, contains('url'));
+      expect(tc?.responseRaw, isNot(contains('null')));
+    });
+
+    test(
+      'T015: disabledInWorkspace error includes tool name in responseRaw',
+      () async {
+        final nativeTool = ToolToCall(
+          tool: ResolvedTool.native(
+            tableId: 'ws-tool-url-id',
+            nativeToolType: .url,
+          ),
+          id: 'native-tool-1',
+          argumentsRaw: '{"input": "https://example.com"}',
+        );
+
+        final nativeMessage = MessageEntity(
+          id: 'message-1',
+          conversationId: 'conversation-1',
+          content: 'assistant',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'native-tool-1',
+                name: 'native_ws-tool-url-id_url',
+                argumentsRaw: '{"input": "https://example.com"}',
+              ),
+            ],
+          ),
+        );
+
+        when(
+          () => loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [nativeTool],
+            notFoundToolCallIds: const [],
+            previouslyFailedToolCallIds: const [],
+          ),
+        );
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'native-tool-1',
+            permissionResult: .disabledInWorkspace,
+            permissionTableId: 'url',
+          ),
+        );
+        when(() => messageRepository.getMessageById('message-1'))
+            .thenAnswer((_) async => nativeMessage);
+        when(() => messageRepository.patchMessage('message-1', any()))
+            .thenAnswer((_) async => nativeMessage);
+        when(
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+        ).thenAnswer((_) async => AgentIterationDecision.done);
+
+        final _ = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        final update =
+            verify(
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
+                ).captured.single
+                as MessagePatch;
+        final tc = update.metadata?.toolCalls.firstWhere(
+          (t) => t.id == 'native-tool-1',
+        );
+        expect(tc?.responseRaw, contains('url'));
+      },
+    );
+  });
+
+  group('AgentToolExecutionService cancellation and error paths', () {
+    var loadLatestMessageToolCallsUsecase = MockAgentToolCallLoader();
+    var messageRepository = MockMessageRepository();
+    var resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+    var getAgentIterationDecisionUsecase = MockAgentToolDecisionService();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = AgentToolExecutionService(
+      loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+      messageRepository: messageRepository,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
+      runResolvedToolUsecase: .new(
+        agentCancellationRuntime: agentCancellationRuntime,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              return 'mcp result';
+            },
+      ),
+      getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+      agentCancellationRuntime: agentCancellationRuntime,
+    );
+
+    setUp(() {
+      loadLatestMessageToolCallsUsecase = MockAgentToolCallLoader();
+      messageRepository = MockMessageRepository();
+      resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+      getAgentIterationDecisionUsecase = MockAgentToolDecisionService();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
+
+      usecase = AgentToolExecutionService(
+        loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+        messageRepository: messageRepository,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
+        runResolvedToolUsecase: .new(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+              }) async {
+                return 'mcp result';
+              },
+        ),
+        getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
+      );
+    });
+
+    test('marks previously failed tool calls with executionError', () async {
+      final tool = ToolToCall(
+        tool: ResolvedTool.builtIn(
+          tableId: 'calc',
+          toolIdentifier: 'calculator',
+          tooltype: .calculator,
+        ),
+        id: 'tool-1',
+        argumentsRaw: '{"input": "1+1"}',
+      );
+
+      final failedMessage = MessageEntity(
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        content: 'assistant',
+        messageType: .text,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'built_in_calc_calculator',
+              argumentsRaw: '{"input": "1+1"}',
+            ),
+            MessageToolCallEntity(
+              id: 'failed-tool',
+              name: 'failed',
+              argumentsRaw: '{}',
+            ),
+          ],
+        ),
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [tool],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const ['failed-tool'],
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => failedMessage);
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-1',
+          resolvedTool: tool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-1',
+          permissionResult: .granted,
+          permissionTableId: 'calculator',
+        ),
+      );
+      when(() => messageRepository.patchMessage('message-1', any()))
+          .thenAnswer((_) async => failedMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.continueIteration);
+      final updatedToolCalls = _capturedToolCalls(messageRepository);
+      expect(
+        updatedToolCalls
+            ?.firstWhere((tc) => tc.id == 'failed-tool')
+            .resultStatus,
+        ToolCallResultStatus.executionError,
+      );
+      expect(
+        updatedToolCalls?.firstWhere((tc) => tc.id == 'tool-1').resultStatus,
+        ToolCallResultStatus.success,
+      );
+    });
+
+    test(
+      'returns done when cancellation is requested before processing',
+      () async {
+        final tool = ToolToCall(
+          tool: ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: .calculator,
+          ),
+          id: 'tool-1',
+          argumentsRaw: '{"input": "1+1"}',
+        );
+
+        final cancelMessage = MessageEntity(
+          id: 'message-1',
+          conversationId: 'conversation-1',
+          content: 'assistant',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-1',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{"input": "1+1"}',
+              ),
+            ],
+          ),
+        );
+
+        when(
+          () => loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [tool],
+            notFoundToolCallIds: const [],
+            previouslyFailedToolCallIds: const [],
+          ),
+        );
+        when(() => messageRepository.getMessageById('message-1'))
+            .thenAnswer((_) async => cancelMessage);
+        when(() => messageRepository.patchMessage('message-1', any()))
+            .thenAnswer((_) async => cancelMessage);
+
+        agentCancellationRuntime.requestStop('conversation-1');
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        expect(result, AgentIterationDecision.done);
+      },
+    );
+
+    test('handles disabledInConversation permission result', () async {
+      final tool = ToolToCall(
+        tool: ResolvedTool.builtIn(
+          tableId: 'calc',
+          toolIdentifier: 'calculator',
+          tooltype: .calculator,
+        ),
+        id: 'tool-1',
+        argumentsRaw: '{"input": "1+1"}',
+      );
+
+      final disabledMessage = MessageEntity(
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        content: 'assistant',
+        messageType: .text,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'built_in_calc_calculator',
+              argumentsRaw: '{"input": "1+1"}',
+            ),
+          ],
+        ),
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [tool],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => disabledMessage);
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-1',
+          resolvedTool: tool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-1',
+          permissionResult: .disabledInConversation,
+          permissionTableId: 'calculator',
+        ),
+      );
+      when(() => messageRepository.patchMessage('message-1', any()))
+          .thenAnswer((_) async => disabledMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.done);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.done);
+      final update =
+          verify(
+                () => messageRepository.patchMessage('message-1', captureAny()),
+              ).captured.single
+              as MessagePatch;
+      final tc = update.metadata?.toolCalls.first;
+      expect(tc?.resultStatus, ToolCallResultStatus.disabledInConversation);
+      expect(tc?.responseRaw, contains('calculator'));
+    });
+
+    test('skips tool when message not found for update', () async {
+      final tool = ToolToCall(
+        tool: ResolvedTool.builtIn(
+          tableId: 'calc',
+          toolIdentifier: 'calculator',
+          tooltype: .calculator,
+        ),
+        id: 'tool-1',
+        argumentsRaw: '{"input": "1+1"}',
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [tool],
+          notFoundToolCallIds: const ['missing-tool'],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => null);
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-1',
+          resolvedTool: tool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-1',
+          permissionResult: .granted,
+          permissionTableId: 'calculator',
+        ),
+      );
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.continueIteration);
+      final _ = verifyNever(() => messageRepository.patchMessage(any(), any()));
+    });
+  });
+}
+
+List<MessageToolCallEntity>? _capturedToolCalls(
+  MockMessageRepository messageRepository,
+) {
+  final patches = verify(
+    () => messageRepository.patchMessage('message-1', captureAny()),
+  ).captured.cast<MessagePatch>();
+  final byId = <String, MessageToolCallEntity>{};
+  for (final patch in patches) {
+    for (final toolCall
+        in patch.metadata?.toolCalls ?? const <MessageToolCallEntity>[]) {
+      final existing = byId[toolCall.id];
+      byId[toolCall.id] = toolCall.copyWith(
+        resultStatus: toolCall.resultStatus ?? existing?.resultStatus,
+        responseRaw: toolCall.responseRaw ?? existing?.responseRaw,
+      );
+    }
+  }
+
+  return byId.values.toList();
+}
+
+MessageEntity _runAllowedToolsToolMessage() {
+  return MessageEntity(
+    id: 'message-1',
+    conversationId: 'conversation-1',
+    content: 'assistant',
+    messageType: .text,
+    isUser: false,
+    status: .sent,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
+    metadata: const MessageMetadataEntity(
+      toolCalls: [
+        MessageToolCallEntity(
+          id: 'tool-1',
+          name: 'built_in_calc_calculator',
+          argumentsRaw: '{"input": "1+1"}',
+        ),
+        MessageToolCallEntity(
+          id: 'missing-tool',
+          name: 'missing',
+          argumentsRaw: '{}',
+        ),
+      ],
+    ),
+  );
+}

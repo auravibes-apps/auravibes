@@ -3,7 +3,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
-import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
+import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';

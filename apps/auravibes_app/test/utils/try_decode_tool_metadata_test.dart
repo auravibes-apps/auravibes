@@ -1,4 +1,4 @@
-import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
+import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

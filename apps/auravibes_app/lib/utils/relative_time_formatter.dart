@@ -11,10 +11,7 @@ abstract final class RelativeTimeFormatter {
   }) {
     final diff = (now ?? DateTime.now()).difference(timestamp);
 
-    if (diff.isNegative) {
-      return translate(LocaleKeys.home_screen_date_formatting_just_now);
-    }
-    if (diff.inMinutes < 1) {
+    if (diff.isNegative || diff.inMinutes < 1) {
       return translate(LocaleKeys.home_screen_date_formatting_just_now);
     }
     if (diff.inHours < 1) {

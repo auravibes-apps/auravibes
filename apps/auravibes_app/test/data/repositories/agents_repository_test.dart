@@ -5,13 +5,12 @@ import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_rep
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
-import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_tool_override_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/list_agent_tool_overrides_usecase.dart';
-import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/resolve_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_tool_overrides_usecase.dart';
@@ -214,8 +213,8 @@ void main() {
       ),
     );
 
-    final listed = await ListAgentsUsecase(fixture.agentsRepository)
-        .call(fixture.workspaceId)
+    final listed = await fixture.agentsRepository
+        .watchAgentsByWorkspace(fixture.workspaceId)
         .first;
     expect(listed.single.id, agent.id);
 

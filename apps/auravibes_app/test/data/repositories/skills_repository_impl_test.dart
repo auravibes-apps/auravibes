@@ -18,6 +18,8 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/agents/usecases/resolve_agent_skills_usecase.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/skills/usecases/app_skill_http_client_adapter.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
@@ -35,8 +37,6 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
-import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/url/url_service.dart';

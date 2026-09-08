@@ -4,7 +4,7 @@ import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
-import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';

@@ -4,7 +4,9 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -14,8 +16,6 @@ import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_convers
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
-import 'package:auravibes_app/services/agent_harness/continue_agent_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
@@ -28,7 +28,7 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('AppAgentService', () {
+  group('AgentLoopRunner composition', () {
     var fixture = _AgentServiceFixture();
 
     setUp(() {
@@ -322,18 +322,23 @@ void main() {
       final startTime = DateTime(2026);
       var currentTime = startTime;
       final delays = <Duration>[];
-      fixture.usecase = .new(
-        continueAgentService: fixture.continueAgentUsecase,
-        toolExecutionService: fixture.runAllowedToolsUsecase,
-        autoCompactConversationUsecase:
-            fixture.maybeAutoCompactConversationUsecase,
-        conversationRepository: fixture.conversationRepository,
-        messageRepository: fixture.messageRepository,
+      fixture.usecase = AgentLoopRunner(
+        data: AppAgentConversationDataProvider(
+          conversationRepository: fixture.conversationRepository,
+          messageRepository: fixture.messageRepository,
+          autoCompactConversationUsecase:
+              fixture.maybeAutoCompactConversationUsecase,
+        ),
+        models: AppAgentModelProvider(fixture.continueAgentUsecase),
+        tools: AppAgentLoopToolProvider(fixture.runAllowedToolsUsecase),
         sendQueueRuntime: fixture.container.read(
           conversationSendQueueRuntimeProvider,
         ),
         cancellationEffects: fixture.agentCancellationRuntime,
-        rateLimitRetryRuntime: fixture.rateLimitRetryRuntime,
+        rateLimitRetryRuntime: .new(
+          start: fixture.rateLimitRetryRuntime.start,
+          clear: fixture.rateLimitRetryRuntime.clear,
+        ),
         now: () => currentTime,
         sleep: (delay) {
           delays.add(delay);
@@ -1000,9 +1005,9 @@ void main() {
       addTearDown(database.close);
       addTearDown(container.dispose);
 
-      final usecase = container.read(appAgentServiceProvider);
+      final usecase = container.read(appAgentLoopProvider);
 
-      expect(usecase, isA<AppAgentService>());
+      expect(usecase, isA<AgentLoopRunner>());
     });
   });
 }
@@ -1017,7 +1022,7 @@ class _AgentServiceFixture._({
   required final ProviderContainer container,
   required final AgentCancellationRuntime agentCancellationRuntime,
   required final ConversationRateLimitRetryRuntime rateLimitRetryRuntime,
-  required var AppAgentService usecase,
+  required var AgentLoopRunner usecase,
 }) {
   factory() {
     final continueAgentUsecase = MockContinueAgentService();
@@ -1047,16 +1052,21 @@ class _AgentServiceFixture._({
       container: container,
       agentCancellationRuntime: agentCancellationRuntime,
       rateLimitRetryRuntime: rateLimitRetryRuntime,
-      usecase: .new(
-        continueAgentService: continueAgentUsecase,
-        toolExecutionService: runAllowedToolsUsecase,
-        autoCompactConversationUsecase: maybeAutoCompactConversationUsecase,
-        conversationRepository: conversationRepository,
-        messageRepository: messageRepository,
+      usecase: AgentLoopRunner(
+        data: AppAgentConversationDataProvider(
+          conversationRepository: conversationRepository,
+          messageRepository: messageRepository,
+          autoCompactConversationUsecase: maybeAutoCompactConversationUsecase,
+        ),
+        models: AppAgentModelProvider(continueAgentUsecase),
+        tools: AppAgentLoopToolProvider(runAllowedToolsUsecase),
         sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
         cancellationEffects: agentCancellationRuntime,
-        rateLimitRetryRuntime: rateLimitRetryRuntime,
-        rateLimitRetryDelay: Duration.zero,
+        rateLimitRetryRuntime: .new(
+          start: rateLimitRetryRuntime.start,
+          clear: rateLimitRetryRuntime.clear,
+        ),
+        rateLimitRetryDelay: .zero,
       ),
     );
   }

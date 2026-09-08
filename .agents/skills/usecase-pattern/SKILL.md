@@ -117,8 +117,6 @@ MyUseCase myUseCase(Ref ref) {
 }
 ```
 
-Reference: `apps/auravibes_app/lib/features/tools/usecases/approve_tool_call_usecase.dart`
-
 ## Quick Checklist
 
 - use case class has constructor-injected dependencies
@@ -145,11 +143,6 @@ Use case usage pattern in app modules:
 - read repositories from provider/container, then compose use cases explicitly
 - call small use cases in sequence to form one user flow
 - keep provider/controller state focused on UI/runtime tracking only
-
-Reference implementation:
-
-- composition root and flow orchestration: `apps/auravibes_app/lib/providers/tool_execution_controller.dart`
-- provider delegation entrypoints: `apps/auravibes_app/lib/providers/tool_calling_manager_provider.dart`
 
 ### Composition Root Pattern
 

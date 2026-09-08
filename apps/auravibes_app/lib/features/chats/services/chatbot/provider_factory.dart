@@ -1,6 +1,6 @@
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_completions_plugin.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/openai_codex_plugin.dart';

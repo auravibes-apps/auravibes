@@ -9,7 +9,7 @@ import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';

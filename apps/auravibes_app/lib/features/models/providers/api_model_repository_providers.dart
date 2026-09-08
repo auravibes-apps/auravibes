@@ -6,11 +6,11 @@ import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/models/services/model_sync_service.dart';
 import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
-import 'package:auravibes_app/services/model_sync_service.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

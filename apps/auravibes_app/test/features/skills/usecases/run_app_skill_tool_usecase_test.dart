@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
 import 'package:auravibes_app/features/skills/usecases/app_skill_http_client_adapter.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
@@ -133,7 +133,7 @@ void main() {
             'searxng': [_candidate('searxng')],
           },
           urlService: urlService,
-          requirePublicUri: PublicUrlGuard.requireHttpsUri,
+          requirePublicUri: PublicUrlGuard.resolveHttpsUri,
         );
 
         await expectLater(
@@ -533,7 +533,12 @@ RunAppSkillToolUsecase _usecase({
 }) {
   final effectiveUrlService = urlService ?? _MockUrlService();
   if (urlService == null) {
-    when(() => effectiveUrlService.execute(any())).thenAnswer(
+    when(
+      () => effectiveUrlService.execute(
+        any(),
+        resolvedAddresses: any(named: 'resolvedAddresses'),
+      ),
+    ).thenAnswer(
       (invocation) => CancelableOperation.fromFuture(
         (executeUrl ?? (_) async => _response(''))(
           invocation.positionalArguments.single as UrlRequest,
@@ -542,7 +547,8 @@ RunAppSkillToolUsecase _usecase({
     );
   }
 
-  Future<Uri> trustTestUrl(String url) => Future.value(Uri.parse(url));
+  Future<PublicUrlResolution> trustTestUrl(String url) async =>
+      (uri: Uri.parse(url), addresses: <String>[]);
   final httpClient = AppSkillHttpClientAdapter(
     effectiveUrlService,
     requirePublicUri: requirePublicUri ?? trustTestUrl,

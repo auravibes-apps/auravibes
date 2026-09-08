@@ -1,9 +1,10 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/agent_tools_repository.dart';
-import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_tool_override_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
@@ -108,4 +109,24 @@ class const CloudAgentToolsRepository({
 
   Map<String, dynamic> _data(WorkspaceResource resource) =>
       CloudResourceMapper.decode(resource);
+}
+
+CloudAgentToolsRepository cloudAgentToolsRepositoryFromStore({
+  required CloudWorkspaceResourceStore store,
+}) => CloudAgentToolsRepository(
+  patch: store.patch,
+  read: () => _readCloudAgentTools(store),
+);
+
+Future<List<WorkspaceResource>> _readCloudAgentTools(
+  CloudWorkspaceResourceStore store,
+) async {
+  final response = await store.read(
+    pages: [
+      WorkspaceResourcePageRequest(resourceKind: .agentAssociation, limit: 100),
+    ],
+  );
+  if (response.pages.isEmpty) return [];
+
+  return response.pages.single.resources;
 }

@@ -107,4 +107,4 @@ final class WorkspaceModelSelectionRepositoryProvider
 }
 
 String _$workspaceModelSelectionRepositoryHash() =>
-    r'0e998f680ea45ff30e08f09d07d00eada808ee04';
+    r'290f1c5122d9179109021a0f5c1690f0b54be5de';

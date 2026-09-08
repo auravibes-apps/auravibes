@@ -2,8 +2,8 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart';
-import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';

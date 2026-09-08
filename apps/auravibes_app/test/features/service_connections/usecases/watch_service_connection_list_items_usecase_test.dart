@@ -3,7 +3,7 @@ import 'package:auravibes_app/data/repositories/skill_credential_definitions_rep
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';

@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
+import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -5,7 +5,7 @@
 /// across the application.
 library;
 
-export 'package:auravibes_ui/src/colors/aura_computed_color.dart'
+export 'package:auravibes_ui/src/colors/aura_brightness.dart'
     show AuraBrightness, AuraComputedColor;
 
 export 'aura_computed_color_scheme.dart' show AuraComputedColorScheme;

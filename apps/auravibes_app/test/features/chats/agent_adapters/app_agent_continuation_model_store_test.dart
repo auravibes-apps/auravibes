@@ -2,10 +2,10 @@ import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

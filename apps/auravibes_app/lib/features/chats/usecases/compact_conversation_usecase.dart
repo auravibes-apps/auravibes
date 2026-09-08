@@ -14,7 +14,7 @@ import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
-import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';

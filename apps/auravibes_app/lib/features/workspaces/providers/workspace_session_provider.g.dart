@@ -393,7 +393,7 @@ final class CloudWorkspaceStateGatewayForWorkspaceProvider
 }
 
 String _$cloudWorkspaceStateGatewayForWorkspaceHash() =>
-    r'878f83707ec41159d90752514f0aaff1f82734f2';
+    r'33a5bc63fcf2b48e669cbfc7038d9915d35d527d';
 
 final class CloudWorkspaceStateGatewayForWorkspaceFamily extends $Family
     with

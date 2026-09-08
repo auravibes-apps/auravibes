@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -105,6 +106,31 @@ void main() {
     expect(second.cloud?.serverUrl, 'https://two.example');
     expect(second.cloud?.accountId, 'shared-account');
     expect(second.cloud?.cloudWorkspaceId, 22);
+  });
+
+  test('route gateway delegates through the resolved session', () async {
+    WorkspaceSession? capturedSession;
+    final container = ProviderContainer(
+      overrides: [
+        allWorkspacesProvider.overrideWith(
+          (ref) => Stream.value([_workspace(cloudWorkspaceId: '11')]),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((ref, session) async {
+          capturedSession = session;
+
+          return null;
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
+    final provider = cloudWorkspaceStateGatewayForWorkspaceProvider('local');
+    final subscription = container.listen(provider, (_, _) => 0);
+    addTearDown(subscription.close);
+
+    final gateway = await container.read(provider.future);
+
+    expect(gateway, isNull);
+    expect(capturedSession?.cloud?.cloudWorkspaceId, 11);
   });
 }
 

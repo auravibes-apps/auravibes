@@ -27,4 +27,17 @@ void main() {
       containsAll(['requiredValue', 'optionalValue']),
     );
   });
+
+  test('keeps optional template inputs out of required fields', () {
+    final schema = templateInputSchema([
+      {'name': 'requiredValue', 'type': 'string'},
+      {'name': 'optionalValue', 'type': 'string', 'isOptional': true},
+    ], requiresCredential: false);
+
+    expect(schema['required'], ['requiredValue']);
+    expect(
+      (schema['properties']! as Map<String, Object?>).keys,
+      containsAll(['requiredValue', 'optionalValue']),
+    );
+  });
 }

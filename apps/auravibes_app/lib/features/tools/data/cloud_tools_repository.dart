@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/tools/services/cloud_mcp_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
@@ -23,8 +24,10 @@ class CloudToolsRepository
         WorkspaceToolsRepositoryContract,
         ToolsGroupsRepositoryContract,
         McpServersRepositoryContract {
-  new(this._gatewayFuture)
-    : _readState = null,
+  new(Future<CloudWorkspaceStateGateway?> gateway)
+    : _gatewayFuture = gateway,
+      _resourceStore = CloudWorkspaceResourceStore.deferred(gateway),
+      _readState = null,
       _patchState = null,
       _create = null,
       _delete = null,
@@ -56,10 +59,12 @@ class CloudToolsRepository
     })
     this._discover,
   }) : _gatewayFuture = null,
+       _resourceStore = null,
        _readState = read,
        _patchState = patch;
 
   final Future<CloudWorkspaceStateGateway?>? _gatewayFuture;
+  final CloudWorkspaceResourceStore? _resourceStore;
   final Future<ReadWorkspaceStateResponse> Function({
     required List<WorkspaceResourcePageRequest> pages,
   })?
@@ -90,6 +95,10 @@ class CloudToolsRepository
         context: .state,
         code: 'gatewayUnavailable',
       ));
+
+  CloudWorkspaceResourceStore get _requiredResourceStore =>
+      _resourceStore ??
+      (throw StateError('Cloud workspace resource store unavailable'));
 
   @override
   Future<WorkspaceToolEntity> setToolEnabledById(
@@ -488,7 +497,7 @@ class CloudToolsRepository
       return await patch(requestId: requestId, operations: operations);
     }
 
-    return await (await _gateway).patch(
+    return await _requiredResourceStore.patch(
       requestId: requestId,
       operations: operations,
     );
@@ -500,7 +509,7 @@ class CloudToolsRepository
     final read = _readState;
     if (read != null) return await read(pages: pages);
 
-    return await (await _gateway).read(pages: pages);
+    return await _requiredResourceStore.read(pages: pages);
   }
 
   PermissionAccess _access(Object? value) =>

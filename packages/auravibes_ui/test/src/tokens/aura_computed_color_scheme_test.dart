@@ -1,5 +1,5 @@
-import 'package:auravibes_ui/src/colors/aura_computed_color.dart';
-import 'package:auravibes_ui/src/colors/contrast.dart';
+import 'package:auravibes_ui/src/colors/aura_brightness.dart';
+import 'package:auravibes_ui/src/colors/color_contrast.dart';
 import 'package:auravibes_ui/src/colors/value_color.dart';
 import 'package:auravibes_ui/src/tokens/aura_computed_color_scheme.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';

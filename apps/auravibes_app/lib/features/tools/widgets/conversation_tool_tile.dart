@@ -13,8 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-export 'tool_permission_selector.dart';
-
 /// Tile widget for a single conversation tool.
 ///
 /// Shows:

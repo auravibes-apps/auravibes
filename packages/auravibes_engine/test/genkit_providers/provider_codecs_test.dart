@@ -84,6 +84,56 @@ void main() {
     expect(body['thinking'], {'type': 'enabled'});
   });
 
+  test('provider codecs encode shared audio data input', () {
+    final request = ModelRequest(
+      messages: [
+        Message(
+          role: Role.user,
+          content: [
+            MediaPart(
+              media: Media(
+                contentType: 'audio/mp3',
+                url: 'data:audio/mp3;base64,aGk=',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    final chatCodec = ChatCompletionsCodec(
+      errorLabel: 'Provider',
+      customize: (modelName, config) => (model: modelName, extraBody: {}),
+    );
+
+    final chatBody = chatCodec.buildRequestBody(
+      modelName: 'model',
+      request: request,
+      stream: false,
+    );
+    final codexBody = const OpenAICodexCodec().buildRequestBody(
+      modelName: 'model',
+      request: request,
+      stream: false,
+    );
+
+    const audio = {
+      'type': 'input_audio',
+      'input_audio': {'data': 'aGk=', 'format': 'mp3'},
+    };
+    expect(chatBody['messages'], [
+      {
+        'role': 'user',
+        'content': [audio],
+      },
+    ]);
+    expect(codexBody['input'], [
+      {
+        'role': 'user',
+        'content': [audio],
+      },
+    ]);
+  });
+
   test('Codex builds and streams responses', () async {
     const codec = OpenAICodexCodec();
     final body = codec.buildRequestBody(

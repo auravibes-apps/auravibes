@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/services/url/url_service.dart';
@@ -11,6 +12,45 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('UrlService', () {
+    test('uses validated address instead of resolving host again', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final subscription = server.listen((request) {
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..write('pinned');
+        unawaited(request.response.close());
+      });
+
+      try {
+        final response = await UrlService()
+            .execute(
+              .new(url: 'http://dns-rebinding.test:${server.port}'),
+              resolvedAddresses: [InternetAddress.loopbackIPv4.address],
+            )
+            .value;
+
+        expect(response.body, 'pinned');
+      } finally {
+        final _ = await subscription.cancel();
+        final _ = await server.close(force: true);
+      }
+    });
+
+    test('rejects address pinning when adapter cannot pin addresses', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (_, _, _) async =>
+            ResponseBody.fromString('must not be requested', 200),
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+
+      final operation = UrlService(dio: dio).execute(
+        const UrlRequest(url: 'https://example.com'),
+        resolvedAddresses: ['93.184.216.34'],
+      );
+
+      await expectLater(operation.value, throwsUnsupportedError);
+    });
+
     test('returns a successful response', () async {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
