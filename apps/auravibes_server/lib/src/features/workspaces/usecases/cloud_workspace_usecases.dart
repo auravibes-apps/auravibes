@@ -6,6 +6,7 @@ import 'package:serverpod_auth_idp_server/core.dart';
 import '../../../generated/protocol.dart';
 import '../domain/workspace_roles.dart';
 import '../repositories/cloud_workspace_repository.dart' as workspace_repo;
+import '../repositories/workspace_member_lookup.dart';
 
 class CloudWorkspaceUseCases(
   final workspace_repo.CloudWorkspaceRepository _repository,
@@ -377,7 +378,7 @@ class CloudWorkspaceUseCases(
         if (lockedInvite.email != _normalizeEmail(email)) {
           _fail(CloudWorkspaceErrorCode.inviteEmailMismatch);
         }
-        if (await _repository.findActiveMember(
+        if (await findActiveWorkspaceMember(
               session,
               workspaceId: workspace.id!,
               userId: userId,
@@ -761,7 +762,7 @@ class CloudWorkspaceUseCases(
     String userId, {
     Transaction? transaction,
   }) async {
-    final member = await _repository.findActiveMember(
+    final member = await findActiveWorkspaceMember(
       session,
       workspaceId: workspaceId,
       userId: userId,

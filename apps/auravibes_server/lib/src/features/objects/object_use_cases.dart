@@ -6,6 +6,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import '../workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
+import '../workspaces/repositories/workspace_member_lookup.dart';
 import 'object_policy.dart';
 import 'object_repository.dart';
 import 'object_scanner.dart';
@@ -35,7 +36,7 @@ class ObjectUseCases {
       session,
       workspaceId,
     );
-    final member = await workspaceRepository.findActiveMember(
+    final member = await findActiveWorkspaceMember(
       session,
       workspaceId: workspaceId,
       userId: userId,

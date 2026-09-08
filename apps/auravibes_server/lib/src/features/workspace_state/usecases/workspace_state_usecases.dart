@@ -6,6 +6,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../workspaces/domain/workspace_roles.dart';
+import '../../workspaces/repositories/workspace_member_lookup.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
@@ -638,7 +639,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     String userId, {
     Transaction? transaction,
   }) async {
-    final member = await _repository.findMember(
+    final member = await findActiveWorkspaceMember(
       session,
       workspaceId: workspaceId,
       userId: userId,

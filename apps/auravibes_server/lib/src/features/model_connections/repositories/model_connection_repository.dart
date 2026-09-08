@@ -4,18 +4,6 @@ import '../../../generated/protocol.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
 
 class ModelConnectionRepository {
-  Future<WorkspaceMember?> findMember(
-    Session session, {
-    required int workspaceId,
-    required String userId,
-  }) => WorkspaceMember.db.findFirstRow(
-    session,
-    where: (table) =>
-        table.workspaceId.equals(workspaceId) &
-        table.userId.equals(userId) &
-        table.removedAt.equals(null),
-  );
-
   Future<WorkspaceModelConnection?> findConnection(
     Session session, {
     required int workspaceId,

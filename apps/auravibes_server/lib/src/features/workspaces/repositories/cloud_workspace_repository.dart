@@ -117,22 +117,6 @@ class CloudWorkspaceRepository {
     return workspace?.deletedAt == null ? workspace : null;
   }
 
-  Future<WorkspaceMember?> findActiveMember(
-    Session session, {
-    required int workspaceId,
-    required String userId,
-    Transaction? transaction,
-    bool lock = false,
-  }) => WorkspaceMember.db.findFirstRow(
-    session,
-    where: (t) =>
-        t.workspaceId.equals(workspaceId) &
-        t.userId.equals(userId) &
-        t.removedAt.equals(null),
-    transaction: transaction,
-    lockMode: lock ? LockMode.forUpdate : null,
-  );
-
   Future<WorkspaceMember?> findMember(
     Session session, {
     required int workspaceId,

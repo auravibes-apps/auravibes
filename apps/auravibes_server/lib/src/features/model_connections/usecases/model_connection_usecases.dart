@@ -8,6 +8,7 @@ import '../../../generated/protocol.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../domain/virtual_workspace_model_selection.dart';
 import '../../workspaces/domain/workspace_roles.dart';
+import '../../workspaces/repositories/workspace_member_lookup.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../repositories/model_connection_repository.dart';
 
@@ -264,7 +265,7 @@ class ModelConnectionUseCases {
     required String userId,
     required TestAndSyncModelConnectionRequest request,
   }) async {
-    final member = await _repository.findMember(
+    final member = await findActiveWorkspaceMember(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
@@ -306,7 +307,7 @@ class ModelConnectionUseCases {
     required int workspaceId,
     required String userId,
   }) async {
-    final member = await _repository.findMember(
+    final member = await findActiveWorkspaceMember(
       session,
       workspaceId: workspaceId,
       userId: userId,

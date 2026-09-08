@@ -4,20 +4,6 @@ import '../../generated/protocol.dart';
 import '../workspace_state/workspace_secret_resolver.dart';
 
 class McpServerRepository {
-  Future<WorkspaceMember?> findMember(
-    Session session, {
-    required int workspaceId,
-    required String userId,
-    Transaction? transaction,
-  }) => WorkspaceMember.db.findFirstRow(
-    session,
-    where: (t) =>
-        t.workspaceId.equals(workspaceId) &
-        t.userId.equals(userId) &
-        t.removedAt.equals(null),
-    transaction: transaction,
-  );
-
   Future<CloudWorkspace?> findWorkspace(
     Session session, {
     required int workspaceId,

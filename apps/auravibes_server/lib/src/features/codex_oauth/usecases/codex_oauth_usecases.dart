@@ -7,6 +7,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../workspaces/domain/workspace_roles.dart';
+import '../../workspaces/repositories/workspace_member_lookup.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../repositories/codex_oauth_repository.dart';
 
@@ -192,7 +193,7 @@ class CodexOAuthUseCases(
     int workspaceId,
     String userId,
   ) async {
-    final member = await _repository.findMember(
+    final member = await findActiveWorkspaceMember(
       session,
       workspaceId: workspaceId,
       userId: userId,

@@ -11,18 +11,6 @@ class CodexOAuthRepository {
     where: (table) => table.stateHash.equals(stateHash),
   );
 
-  Future<WorkspaceMember?> findMember(
-    Session session, {
-    required int workspaceId,
-    required String userId,
-  }) => WorkspaceMember.db.findFirstRow(
-    session,
-    where: (table) =>
-        table.workspaceId.equals(workspaceId) &
-        table.userId.equals(userId) &
-        table.removedAt.equals(null),
-  );
-
   Future<CodexOAuthTransaction> insertTransaction(
     Session session,
     CodexOAuthTransaction transaction,

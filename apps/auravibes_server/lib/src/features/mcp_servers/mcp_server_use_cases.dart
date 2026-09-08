@@ -7,6 +7,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../workspaces/domain/workspace_roles.dart';
+import '../workspaces/repositories/workspace_member_lookup.dart';
 import '../workspace_state/workspace_secret_cipher.dart';
 import 'mcp_server_policy.dart';
 import 'mcp_server_probe.dart';
@@ -347,7 +348,7 @@ class McpServerUseCases(
     required String userId,
     required Transaction transaction,
   }) async {
-    final member = await _repository.findMember(
+    final member = await findActiveWorkspaceMember(
       session,
       workspaceId: workspaceId,
       userId: userId,
@@ -427,7 +428,7 @@ class McpServerUseCases(
     required DiscoverMcpServerRequest request,
   }) async {
     if (request.mcpServerId.isEmpty) _validation();
-    final member = await _repository.findMember(
+    final member = await findActiveWorkspaceMember(
       session,
       workspaceId: request.workspaceId,
       userId: userId,

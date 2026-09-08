@@ -157,5 +157,48 @@ void main() {
         );
       },
     );
+
+    test('rejects removed workspace members before model access', () async {
+      final userId = const Uuid().v4().toString();
+      final session = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final databaseSession = session.build();
+      final now = DateTime.now().toUtc();
+      final workspace = await workspace_repo.CloudWorkspaceRepository()
+          .createWorkspace(
+            databaseSession,
+            name: 'Removed member workspace',
+            ownerUserId: userId,
+            now: now,
+          );
+      final member = await WorkspaceMember.db.findFirstRow(
+        databaseSession,
+        where: (table) =>
+            table.workspaceId.equals(workspace.id!) &
+            table.userId.equals(userId),
+      );
+      await WorkspaceMember.db.updateRow(
+        databaseSession,
+        member!.copyWith(removedAt: now),
+      );
+
+      await expectLater(
+        endpoints.modelConnection.list(
+          session,
+          ListModelConnectionsRequest(workspaceId: workspace.id!),
+        ),
+        throwsA(
+          isA<CloudWorkspaceException>().having(
+            (error) => error.code,
+            'code',
+            CloudWorkspaceErrorCode.membershipRequired,
+          ),
+        ),
+      );
+    });
   });
 }

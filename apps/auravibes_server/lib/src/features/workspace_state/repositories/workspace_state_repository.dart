@@ -3,20 +3,6 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 
 class WorkspaceStateRepository {
-  Future<WorkspaceMember?> findMember(
-    Session session, {
-    required int workspaceId,
-    required String userId,
-    Transaction? transaction,
-  }) => WorkspaceMember.db.findFirstRow(
-    session,
-    where: (t) =>
-        t.workspaceId.equals(workspaceId) &
-        t.userId.equals(userId) &
-        t.removedAt.equals(null),
-    transaction: transaction,
-  );
-
   Future<CloudWorkspace?> findWorkspace(
     Session session,
     int workspaceId, {
