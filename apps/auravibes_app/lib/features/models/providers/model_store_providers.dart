@@ -12,6 +12,18 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'local_model_selection_store.dart';
 part 'model_store_providers.g.dart';
 
+Future<CloudModelStore?> _cloudModelStore(Ref ref, String workspaceId) async {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
+  );
+  if (gateway == null) return null;
+
+  return CloudModelStore(
+    workspaceId,
+    CloudModelConnectionUsecases(CloudModelGateway(gateway)),
+  );
+}
+
 @riverpod
 Future<ModelConnectionStore> modelConnectionStore(
   Ref ref,
@@ -19,17 +31,10 @@ Future<ModelConnectionStore> modelConnectionStore(
 ) async {
   final keepAlive = ref.keepAlive();
   try {
-    final gateway = await ref.watch(
-      cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
-    );
-    if (gateway == null) {
-      return await ref.watch(modelConnectionRepositoryProvider);
-    }
+    final cloud = await _cloudModelStore(ref, workspaceId);
+    if (cloud != null) return cloud;
 
-    return CloudModelStore(
-      workspaceId,
-      CloudModelConnectionUsecases(CloudModelGateway(gateway)),
-    );
+    return await ref.watch(modelConnectionRepositoryProvider);
   } finally {
     keepAlive.close();
   }
@@ -43,18 +48,11 @@ Future<ModelSelectionStore> modelSelectionStore(
 ) async {
   final keepAlive = ref.keepAlive();
   try {
-    final gateway = await ref.watch(
-      cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
-    );
-    if (gateway == null) {
-      return _LocalModelSelectionStore(
-        ref.watch(workspaceModelSelectionRepositoryProvider),
-      );
-    }
+    final cloud = await _cloudModelStore(ref, workspaceId);
+    if (cloud != null) return cloud;
 
-    return CloudModelStore(
-      workspaceId,
-      CloudModelConnectionUsecases(CloudModelGateway(gateway)),
+    return _LocalModelSelectionStore(
+      ref.watch(workspaceModelSelectionRepositoryProvider),
     );
   } finally {
     keepAlive.close();
