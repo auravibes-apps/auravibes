@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../workspaces/repositories/workspace_member_lookup.dart';
 import 'sync_wakeups.dart';
 
 class const WorkspaceStreamService() {
@@ -77,12 +78,10 @@ class const WorkspaceStreamService() {
     int workspaceId,
     String userId,
   ) async {
-    final member = await WorkspaceMember.db.findFirstRow(
+    final member = await findActiveWorkspaceMember(
       session,
-      where: (table) =>
-          table.workspaceId.equals(workspaceId) &
-          table.userId.equals(userId) &
-          table.removedAt.equals(null),
+      workspaceId: workspaceId,
+      userId: userId,
     );
     if (member == null) {
       throw CloudWorkspaceException(
