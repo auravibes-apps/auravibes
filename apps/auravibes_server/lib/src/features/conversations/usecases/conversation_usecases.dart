@@ -433,14 +433,7 @@ class ConversationUseCases {
       'Conversation turn queued: workspace=${request.workspaceId}, '
       'conversation=${request.conversationId}, turn=${result.turnId}.',
     );
-    await SyncWakeups.publishWorkspace(session, request.workspaceId);
-    final job = await ConversationJob.db.findFirstRow(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(request.workspaceId) &
-          table.requestId.equals(result.turnId),
-    );
-    if (job != null) await _publishConversationJob(session, job);
+    await _publishTurn(session, request.workspaceId, result.turnId);
     return result;
   }
 
@@ -519,14 +512,7 @@ class ConversationUseCases {
       'Conversation continuation queued: workspace=${request.workspaceId}, '
       'conversation=${request.conversationId}, turn=${result.turnId}.',
     );
-    await SyncWakeups.publishWorkspace(session, request.workspaceId);
-    final job = await ConversationJob.db.findFirstRow(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(request.workspaceId) &
-          table.requestId.equals(result.turnId),
-    );
-    if (job != null) await _publishConversationJob(session, job);
+    await _publishTurn(session, request.workspaceId, result.turnId);
     return result;
   }
 
@@ -1850,6 +1836,16 @@ class ConversationUseCases {
         ConversationStatuses.isTerminal(parent.status)) {
       throw const ConversationCancelledException();
     }
+  }
+
+  Future<void> _publishTurn(Session session, int workspace, String? id) async {
+    await SyncWakeups.publishWorkspace(session, workspace);
+    final job = await ConversationJob.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspace) & table.requestId.equals(id),
+    );
+    if (job != null) await _publishConversationJob(session, job);
   }
 
   Future<ConversationTurn> _requireTurnForMutation(
