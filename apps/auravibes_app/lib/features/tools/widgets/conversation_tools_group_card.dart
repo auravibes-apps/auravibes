@@ -44,7 +44,7 @@ class const ConversationToolsGroupCard({
     return Padding(
       padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.md)),
       child: AuraCard(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             // Header.
             ConversationGroupHeader(
@@ -150,7 +150,7 @@ class const _ToolsList({
 
     return Padding(
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.sm)),
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: groupWithTools.tools.map((toolState) {
           return ConversationToolTile(
             toolState: toolState,

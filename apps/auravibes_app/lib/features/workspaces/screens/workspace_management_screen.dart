@@ -326,7 +326,7 @@ class const _CloudAccountDisconnected({required final String workspaceId})
   @override
   Widget build(BuildContext context) {
     return AuraTile(
-      child: const AuraColumn(
+      child: const AuraFlex.column(
         children: [
           AuraText(
             child: TextLocale(LocaleKeys.cloud_accounts_status_needs_sign_in),
@@ -460,7 +460,7 @@ class const _ConnectedWorkspaceTile({
   @override
   Widget build(BuildContext context) {
     return AuraTile(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           _WorkspaceName(name: workspace.name, isActive: isActive),
           TextLocale(
@@ -504,7 +504,7 @@ class const _AvailableWorkspaceTile({
     final email = connectedAccountEmail;
 
     return AuraTile(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           Text(workspace.name),
           if (email != null)
@@ -543,7 +543,7 @@ class const _WorkspaceName({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         Text(name),
         if (isActive)

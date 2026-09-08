@@ -55,7 +55,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
     if (accounts case AsyncData(:final value)) {
       final errorText = _errorText;
 
-      return AuraColumn(
+      return AuraFlex.column(
         children: [
           AuraInput(
             controller: _name,

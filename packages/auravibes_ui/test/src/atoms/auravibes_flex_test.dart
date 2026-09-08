@@ -1,33 +1,34 @@
-import 'package:auravibes_ui/src/atoms/aura_column.dart';
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/atoms/aura_flex.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('AuraColumn', () {
+  group('AuraFlex', () {
     testWidgets('renders children with default spacing', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraColumn(children: [Text('Item 1'), Text('Item 2')]),
+            body: AuraFlex.column(children: [Text('Item 1'), Text('Item 2')]),
           ),
         ),
       );
 
       expect(find.text('Item 1'), findsOneWidget);
       expect(find.text('Item 2'), findsOneWidget);
-      expect(find.byType(Column), findsOneWidget);
-      final auraColumn = tester.widget<AuraColumn>(find.byType(AuraColumn));
-      expect(auraColumn.spacing, AuraSpacing.base);
+      expect(find.byType(Flex), findsOneWidget);
+      final auraFlex = tester.widget<AuraFlex>(find.byType(AuraFlex));
+      expect(tester.widget<Flex>(find.byType(Flex)).direction, Axis.vertical);
+      expect(auraFlex.spacing, AuraSpacing.base);
     });
 
     testWidgets('applies custom crossAxisAlignment', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraColumn(
+            body: AuraFlex.column(
               children: [SizedBox.shrink()],
               crossAxisAlignment: CrossAxisAlignment.start,
             ),
@@ -35,7 +36,7 @@ void main() {
         ),
       );
 
-      final column = tester.widget<Column>(find.byType(Column));
+      final column = tester.widget<Flex>(find.byType(Flex));
       expect(column.crossAxisAlignment, CrossAxisAlignment.start);
     });
 
@@ -43,7 +44,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraColumn(
+            body: AuraFlex.column(
               children: [SizedBox.shrink()],
               mainAxisAlignment: MainAxisAlignment.end,
             ),
@@ -51,7 +52,7 @@ void main() {
         ),
       );
 
-      final column = tester.widget<Column>(find.byType(Column));
+      final column = tester.widget<Flex>(find.byType(Flex));
       expect(column.mainAxisAlignment, MainAxisAlignment.end);
     });
 
@@ -59,7 +60,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraColumn(
+            body: AuraFlex.column(
               children: [SizedBox.shrink()],
               mainAxisSize: MainAxisSize.min,
             ),
@@ -67,7 +68,7 @@ void main() {
         ),
       );
 
-      final column = tester.widget<Column>(find.byType(Column));
+      final column = tester.widget<Flex>(find.byType(Flex));
       expect(column.mainAxisSize, MainAxisSize.min);
     });
 
@@ -75,7 +76,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraColumn(
+            body: AuraFlex.column(
               children: [SizedBox.shrink()],
               padding: AuraEdgeInsetsGeometry.medium,
             ),
@@ -93,28 +94,29 @@ void main() {
     });
   });
 
-  group('AuraRow', () {
+  group('AuraFlex', () {
     testWidgets('renders children with default spacing', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraRow(children: [Text('Item 1'), Text('Item 2')]),
+            body: AuraFlex.row(children: [Text('Item 1'), Text('Item 2')]),
           ),
         ),
       );
 
       expect(find.text('Item 1'), findsOneWidget);
       expect(find.text('Item 2'), findsOneWidget);
-      expect(find.byType(Row), findsOneWidget);
-      final auraRow = tester.widget<AuraRow>(find.byType(AuraRow));
-      expect(auraRow.spacing, AuraSpacing.base);
+      expect(find.byType(Flex), findsOneWidget);
+      final auraFlex = tester.widget<AuraFlex>(find.byType(AuraFlex));
+      expect(tester.widget<Flex>(find.byType(Flex)).direction, Axis.horizontal);
+      expect(auraFlex.spacing, AuraSpacing.base);
     });
 
     testWidgets('applies custom crossAxisAlignment', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraRow(
+            body: AuraFlex.row(
               children: [SizedBox.shrink()],
               crossAxisAlignment: CrossAxisAlignment.end,
             ),
@@ -122,7 +124,7 @@ void main() {
         ),
       );
 
-      final row = tester.widget<Row>(find.byType(Row));
+      final row = tester.widget<Flex>(find.byType(Flex));
       expect(row.crossAxisAlignment, CrossAxisAlignment.end);
     });
 
@@ -130,7 +132,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraRow(
+            body: AuraFlex.row(
               children: [SizedBox.shrink()],
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
             ),
@@ -138,7 +140,7 @@ void main() {
         ),
       );
 
-      final row = tester.widget<Row>(find.byType(Row));
+      final row = tester.widget<Flex>(find.byType(Flex));
       expect(row.mainAxisAlignment, MainAxisAlignment.spaceBetween);
     });
 
@@ -146,7 +148,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraRow(
+            body: AuraFlex.row(
               children: [SizedBox.shrink()],
               mainAxisSize: MainAxisSize.min,
             ),
@@ -154,7 +156,7 @@ void main() {
         ),
       );
 
-      final row = tester.widget<Row>(find.byType(Row));
+      final row = tester.widget<Flex>(find.byType(Flex));
       expect(row.mainAxisSize, MainAxisSize.min);
     });
 
@@ -162,7 +164,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraRow(
+            body: AuraFlex.row(
               children: [SizedBox.shrink()],
               padding: AuraEdgeInsetsGeometry.small,
             ),

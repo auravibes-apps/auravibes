@@ -22,7 +22,7 @@ class const MarkdownEditorToolbar({
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: AuraRow(
+      child: AuraFlex.row(
         children: [
           _ToolbarButton(
             icon: Icons.format_bold,

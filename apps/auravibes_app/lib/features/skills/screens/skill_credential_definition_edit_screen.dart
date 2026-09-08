@@ -314,7 +314,7 @@ class const _SkillCredentialDefinitionForm({
       padding: const EdgeInsets.all(12),
       children: [
         AuraCard(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               const AuraText(
                 child: TextLocale(
@@ -328,7 +328,7 @@ class const _SkillCredentialDefinitionForm({
                   LocaleKeys.skills_screen_title_label.tr(context: context),
                 ),
               ),
-              AuraColumn(
+              AuraFlex.column(
                 children: [
                   const AuraText(
                     child: TextLocale(
@@ -414,7 +414,7 @@ class const _AttributeRowEditor({
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,7 +441,7 @@ class const _AttributeRowEditor({
               label: Text(descriptionLabel),
               onChanged: (_) => onChanged(),
             ),
-            AuraRow(
+            AuraFlex.row(
               children: [
                 AuraSwitch(
                   value: row.optional,
@@ -461,7 +461,7 @@ class const _AttributeRowEditor({
               ],
               spacing: AuraSpacing.md,
             ),
-            AuraRow(
+            AuraFlex.row(
               children: [
                 AuraSwitch(
                   value: row.secret,

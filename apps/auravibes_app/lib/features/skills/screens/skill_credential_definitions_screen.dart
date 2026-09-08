@@ -33,7 +33,7 @@ class const SkillCredentialDefinitionsScreen({
 
                     return AuraCard(
                       child: AuraTile(
-                        child: AuraColumn(
+                        child: AuraFlex.column(
                           children: [
                             AuraText(child: Text(definition.title)),
                             AuraText(child: Text(definition.slug)),
@@ -59,7 +59,7 @@ class const SkillCredentialDefinitionsScreen({
           children: [
             for (final definition in value)
               AuraTile(
-                child: AuraColumn(
+                child: AuraFlex.column(
                   children: [
                     AuraText(child: Text(definition.title)),
                     AuraText(child: Text(definition.slug)),

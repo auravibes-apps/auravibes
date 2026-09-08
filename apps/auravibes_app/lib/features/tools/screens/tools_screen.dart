@@ -29,12 +29,12 @@ class const ToolsScreen({required final String workspaceId, super.key})
         children: [
           Padding(
             padding: const EdgeInsets.all(8),
-            child: AuraColumn(
+            child: AuraFlex.column(
               children: [
                 AuraCard(
-                  child: AuraColumn(
+                  child: AuraFlex.column(
                     children: [
-                      const AuraRow(
+                      const AuraFlex.row(
                         children: [
                           AuraText(
                             child: Icon(Icons.build_circle_outlined),
@@ -57,7 +57,7 @@ class const ToolsScreen({required final String workspaceId, super.key})
                       Row(
                         children: [
                           AuraBadge(
-                            child: AuraRow(
+                            child: AuraFlex.row(
                               children: [
                                 Icon(
                                   Icons.check_circle,

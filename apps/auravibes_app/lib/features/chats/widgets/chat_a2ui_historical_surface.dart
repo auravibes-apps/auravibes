@@ -117,7 +117,7 @@ class _ChatA2uiHistoricalSurfaceState extends State<ChatA2uiHistoricalSurface> {
     final ids = controller.activeSurfaceIds.where(_roots.contains).toList();
     if (ids.isEmpty && _issues.isEmpty) return const SizedBox.shrink();
 
-    return AuraColumn(
+    return AuraFlex.column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final id in ids)

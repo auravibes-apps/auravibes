@@ -278,7 +278,7 @@ class const _MemberTile({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraTile(
-    child: AuraColumn(
+    child: AuraFlex.column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: .xs,
       children: [Text(member.email ?? member.userId), Text(member.role)],

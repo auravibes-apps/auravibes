@@ -26,7 +26,7 @@ class const ConversationContextUsagePill({
         message: tooltip,
         child: Semantics(
           child: AuraContainer(
-            child: AuraRow(
+            child: AuraFlex.row(
               children: [
                 AuraIcon(
                   data.level.icon,

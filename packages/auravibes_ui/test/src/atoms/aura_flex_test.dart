@@ -9,7 +9,7 @@ void main() {
         home: const Scaffold(
           body: SizedBox(
             width: 200,
-            child: AuraRow(
+            child: AuraFlex.row(
               children: [
                 AuraFlexItem(child: Text('Flexible')),
                 AuraSpacer(size: 12),

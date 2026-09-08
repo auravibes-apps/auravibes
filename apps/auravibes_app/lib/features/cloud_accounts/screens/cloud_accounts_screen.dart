@@ -57,7 +57,7 @@ class const _AccountList({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         if (accounts.isEmpty)
           const AuraText(child: TextLocale(LocaleKeys.cloud_accounts_empty)),
@@ -73,7 +73,7 @@ class const _AccountList({
         ),
         for (final account in accounts)
           AuraTile(
-            child: AuraColumn(
+            child: AuraFlex.column(
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: .xs,
               children: [

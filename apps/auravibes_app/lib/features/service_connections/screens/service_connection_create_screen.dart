@@ -67,7 +67,7 @@ class _ServiceConnectionCreateScreenState
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
@@ -426,7 +426,7 @@ class const _AppSkillCredentialForm({
       padding: const EdgeInsets.all(12),
       children: [
         AuraCard(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               AuraDropdownSelector<String>(
                 options: [
@@ -528,7 +528,7 @@ class const _CredentialFormContent({
       padding: const EdgeInsets.all(12),
       children: [
         AuraCard(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               _DefinitionSelector(
                 definitions: definitions,
@@ -611,7 +611,7 @@ class const _CredentialAttributesFields({
       definition.attributesJson,
     );
 
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         for (final entry in attributes.entries)
           AuraInput(

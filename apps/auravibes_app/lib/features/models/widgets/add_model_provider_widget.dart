@@ -712,7 +712,7 @@ class const _SelectModelProvider({required final String workspaceId})
       );
     }
 
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         const AuraText(
           child: TextLocale(

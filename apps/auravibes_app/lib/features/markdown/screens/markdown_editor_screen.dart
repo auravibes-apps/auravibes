@@ -65,7 +65,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: AuraColumn(
+                        child: AuraFlex.column(
                           children: [
                             TextFormField(
                               controller: _controller,

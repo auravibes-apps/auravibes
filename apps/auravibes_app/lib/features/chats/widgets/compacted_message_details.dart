@@ -27,7 +27,7 @@ class const CompactedMessageDetails({
     };
 
     return SingleChildScrollView(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           const TextLocale(
             LocaleKeys.compaction_compacted_details_title,

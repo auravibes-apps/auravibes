@@ -15,9 +15,9 @@ class const MarkdownPreviewField({
   @override
   Widget build(BuildContext context) {
     return AuraCard(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
-          AuraRow(
+          AuraFlex.row(
             children: [
               Expanded(
                 child: AuraText(

@@ -78,7 +78,7 @@ class _CompactionSettingsSectionState
     });
 
     return AuraCard(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           const AuraText(
             child: TextLocale(LocaleKeys.compaction_settings_title),
@@ -88,10 +88,10 @@ class _CompactionSettingsSectionState
             child: TextLocale(LocaleKeys.compaction_settings_subtitle),
             style: AuraTextStyle.bodySmall,
           ),
-          AuraRow(
+          AuraFlex.row(
             children: [
               const Expanded(
-                child: AuraColumn(
+                child: AuraFlex.column(
                   children: [
                     AuraText(
                       child: TextLocale(
@@ -126,9 +126,9 @@ class _CompactionSettingsSectionState
                 ),
               ),
             ),
-          AuraColumn(
+          AuraFlex.column(
             children: [
-              AuraRow(
+              AuraFlex.row(
                 children: [
                   const Expanded(
                     child: AuraText(

@@ -75,7 +75,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
             padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
             child: AuraButton(
               onPressed: _showFullContent,
-              child: const AuraRow(
+              child: const AuraFlex.row(
                 children: [
                   TextLocale(LocaleKeys.common_show_more),
                   AuraIcon(

@@ -352,7 +352,7 @@ class const _SkillCredentialEditForm({
       padding: const EdgeInsets.all(12),
       children: [
         AuraCard(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               AuraText(
                 child: Text(state.definition.title),
@@ -499,7 +499,7 @@ class const _ModelProviderEditForm({
       padding: const EdgeInsets.all(12),
       children: [
         AuraCard(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               AuraText(
                 child: Text(state.connection.modelId),
@@ -578,7 +578,7 @@ class const _GenericServiceConnectionEditForm({
       padding: const EdgeInsets.all(12),
       children: [
         AuraCard(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               AuraText(
                 child: Text(state.connection.serviceId),

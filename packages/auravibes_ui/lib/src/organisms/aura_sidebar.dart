@@ -154,7 +154,7 @@ class const _AuraSidebarItem({
     return AuraPressable(
       child: AuraPadding(
         child: AuraText(
-          child: AuraRow(children: [icon, label], spacing: .sm),
+          child: AuraFlex.row(children: [icon, label], spacing: .sm),
           tint: selected ? AuraTint.primary : null,
         ),
         padding: .small,

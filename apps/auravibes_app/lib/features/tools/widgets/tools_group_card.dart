@@ -36,7 +36,7 @@ class const ToolsGroupCard({
     return Padding(
       padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.md)),
       child: AuraCard(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             // Header.
             ToolsGroupHeader(

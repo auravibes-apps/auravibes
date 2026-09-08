@@ -20,10 +20,8 @@ void main() {
     for (final readOnly in [false, true]) {
       test('field disabled=$disabled readOnly=$readOnly', () {
         const child = SizedBox.shrink();
-        final result = scopeChatCatalogField({
-          'disabled': disabled,
-          'readOnly': readOnly,
-        }, child);
+        final data = {'disabled': disabled, 'readOnly': readOnly};
+        final result = scopeChatCatalogField(data, child);
         if (!disabled && !readOnly) {
           expect(result, same(child));
 

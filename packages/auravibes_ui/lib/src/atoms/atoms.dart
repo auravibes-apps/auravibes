@@ -13,7 +13,6 @@ library;
 export 'aura_animated_content.dart';
 export 'aura_avatar.dart';
 export 'aura_code_block.dart';
-export 'aura_column.dart';
 export 'aura_edge_insets_geometry.dart';
 export 'aura_flex.dart';
 export 'aura_icon.dart';

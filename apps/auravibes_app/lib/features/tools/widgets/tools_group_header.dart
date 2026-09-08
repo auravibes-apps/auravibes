@@ -43,7 +43,7 @@ class const ToolsGroupHeader({
   Widget build(BuildContext context) {
     final group = groupWithTools.group;
 
-    return AuraRow(
+    return AuraFlex.row(
       children: [
         // Group icon.
         _GroupIcon(groupWithTools: groupWithTools),
@@ -51,7 +51,7 @@ class const ToolsGroupHeader({
 
         // Group name and status.
         Expanded(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               // Name row with status badge.
               AuraText(
@@ -89,7 +89,7 @@ class const ToolsGroupHeader({
         ),
 
         // Actions row.
-        AuraRow(
+        AuraFlex.row(
           children: [
             if (groupWithTools.isMcpGroup && onDelete != null)
               AuraIconButton(

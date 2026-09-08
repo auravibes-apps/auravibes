@@ -56,7 +56,7 @@ class const ConversationToolTile({
     final isWorkspaceEnabled = toolState.isWorkspaceEnabled;
 
     return AuraCard(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           _ToolSummaryRow(
             toolState: toolState,
@@ -87,7 +87,7 @@ class const _ToolSummaryRow({
   @override
   Widget build(BuildContext context) {
     return AuraPadding(
-      child: AuraRow(
+      child: AuraFlex.row(
         children: [
           _ToolIcon(
             toolState: toolState,
@@ -143,7 +143,7 @@ class const _ToolDescription({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         AuraText(child: toolState.tool.getNameWidget()),
         if (isWorkspaceEnabled)
@@ -198,11 +198,11 @@ class const _ToolPermissionSection({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         const AuraDivider(),
         AuraPadding(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               const AuraText(
                 child: TextLocale(LocaleKeys.tools_screen_permission_label),

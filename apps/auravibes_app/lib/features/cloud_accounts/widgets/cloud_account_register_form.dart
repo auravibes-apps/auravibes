@@ -44,7 +44,7 @@ class _CloudAccountRegisterFormState
   Widget build(BuildContext context) {
     final isCodeStep = _registrationRequestId != null;
 
-    return AuraColumn(
+    return AuraFlex.column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: .sm,
       children: [

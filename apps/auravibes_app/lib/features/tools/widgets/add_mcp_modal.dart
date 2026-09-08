@@ -57,7 +57,7 @@ class const AddMcpModal({required final String workspaceId, super.key})
                 padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
                 child: Stack(
                   children: [
-                    AuraColumn(
+                    AuraFlex.column(
                       children: [
                         // Error message.
                         _ErrorBanner(workspaceId: workspaceId),
@@ -118,7 +118,7 @@ class const _AddMcpModalHeader() extends StatelessWidget {
           ),
         ),
       ),
-      child: AuraRow(
+      child: AuraFlex.row(
         children: [
           const AuraIcon(Icons.extension, tint: AuraTint.primary),
           const Expanded(
@@ -283,7 +283,7 @@ class const _TransportSelector({required final String workspaceId})
         ),
     ];
 
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.mcp_modal_fields_transport_label),
@@ -329,7 +329,7 @@ class const _AuthenticationSelector({required final String workspaceId})
         )
         .toList();
 
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.mcp_modal_fields_authentication_label),

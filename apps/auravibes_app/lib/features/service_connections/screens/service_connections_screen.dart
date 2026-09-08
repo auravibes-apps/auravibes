@@ -97,7 +97,7 @@ class _ConnectionsListState extends State<_ConnectionsList> {
   Widget build(BuildContext context) {
     if (widget.connections.isEmpty) {
       return Center(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             const AuraIcon(Icons.hub_outlined, size: AuraIconSize.extraLarge),
             const AuraText(
@@ -198,7 +198,7 @@ class const _ConnectionsTab({
 
     if (visibleConnections.isEmpty) {
       return Center(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             const AuraIcon(Icons.hub_outlined, size: AuraIconSize.extraLarge),
             AuraText(
@@ -267,7 +267,7 @@ class const _ConnectionTile({
 
     return AuraCard(
       child: AuraTile(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             AuraText(
               child: Text(connection.name),

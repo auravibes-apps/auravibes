@@ -430,7 +430,7 @@ Widget _card(CatalogItemContext context) {
         ? AuraCardStyle.border
         : AuraCardStyle.elevated,
     tint: _tone(data['tone']),
-    child: AuraColumn(
+    child: AuraFlex.column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (title.isNotEmpty)
@@ -477,7 +477,7 @@ Widget _row(CatalogItemContext context) {
             children: children,
           );
         }
-        return AuraRow(
+        return AuraFlex.row(
           children: children,
           mainAxisAlignment: _mainAxis(data['justify'] as String?),
           crossAxisAlignment: alignment,
@@ -518,7 +518,7 @@ Widget _column(CatalogItemContext context) {
   return buildChatCatalogChildren(
     context,
     data['children'],
-    (children) => AuraColumn(
+    (children) => AuraFlex.column(
       children: children,
       mainAxisAlignment: _mainAxis(data['justify'] as String?),
       crossAxisAlignment: _crossAxis(data['align'] as String?),
@@ -564,7 +564,7 @@ Widget _button(CatalogItemContext context) {
               launchUrl(href, mode: LaunchMode.externalApplication),
             ),
       child: label != null
-          ? AuraRow(
+          ? AuraFlex.row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (data['icon'] case final String name)
@@ -591,7 +591,7 @@ Widget _checkBox(CatalogItemContext context) {
       builder: (_, label) => BoundBool(
         dataContext: context.dataContext,
         value: data['value'],
-        builder: (_, value) => AuraRow(
+        builder: (_, value) => AuraFlex.row(
           mainAxisSize: MainAxisSize.min,
           children: [
             AuraCheckbox(
@@ -701,7 +701,7 @@ Widget _dateTimeInput(CatalogItemContext context) {
       builder: (_, value) => BoundString(
         dataContext: context.dataContext,
         value: data['label'],
-        builder: (_, label) => AuraColumn(
+        builder: (_, label) => AuraFlex.column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (label != null) AuraText(child: Text(label)),

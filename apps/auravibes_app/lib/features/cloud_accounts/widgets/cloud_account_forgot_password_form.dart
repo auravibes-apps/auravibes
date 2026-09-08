@@ -41,7 +41,7 @@ class _CloudAccountForgotPasswordFormState
   Widget build(BuildContext context) {
     final isCodeStep = _passwordResetRequestId != null;
 
-    return AuraColumn(
+    return AuraFlex.column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: .sm,
       children: [

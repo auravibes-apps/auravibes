@@ -443,7 +443,7 @@ class const _SkillToolForm({
       padding: const EdgeInsets.all(12),
       children: [
         AuraCard(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               if (tool != null)
                 _ReadOnlyField(
@@ -550,7 +550,7 @@ class const _SkillToolForm({
                     LocaleKeys.skills_tool_requires_credential_hint,
                   ),
                 ),
-              AuraRow(
+              AuraFlex.row(
                 children: [
                   AuraSwitch(value: isEnabled, onChanged: onEnabledChanged),
                   const Expanded(
@@ -586,7 +586,7 @@ class const _QueryFieldsSection({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.skills_tool_query_section_title),
@@ -627,7 +627,7 @@ class const _QueryFieldsSection({
           ),
         AuraButton(
           onPressed: onAdd,
-          child: AuraRow(
+          child: AuraFlex.row(
             children: [
               const AuraIcon(Icons.add),
               Text(LocaleKeys.skills_tool_add_query.tr(context: context)),
@@ -652,7 +652,7 @@ class const _InputFieldsSection({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.skills_tool_inputs_section_title),
@@ -661,7 +661,7 @@ class const _InputFieldsSection({
         const AuraText(child: TextLocale(LocaleKeys.skills_tool_inputs_hint)),
         for (final field in fields)
           AuraCard(
-            child: AuraColumn(
+            child: AuraFlex.column(
               children: [
                 AuraInput(
                   controller: field.nameController,
@@ -748,7 +748,7 @@ class const _InputFieldsSection({
                   alignment: Alignment.centerRight,
                   child: AuraButton(
                     onPressed: () => onRemove(field),
-                    child: AuraRow(
+                    child: AuraFlex.row(
                       children: [
                         const AuraIcon(Icons.remove_circle_outline),
                         Text(LocaleKeys.common_remove.tr(context: context)),
@@ -766,7 +766,7 @@ class const _InputFieldsSection({
           ),
         AuraButton(
           onPressed: onAdd,
-          child: AuraRow(
+          child: AuraFlex.row(
             children: [
               const AuraIcon(Icons.add),
               Text(LocaleKeys.skills_tool_add_input.tr(context: context)),
@@ -825,7 +825,7 @@ class const _ReadOnlyField({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         AuraText(child: TextLocale(labelKey)),
         AuraSelectableText(value),

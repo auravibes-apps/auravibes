@@ -90,7 +90,7 @@ class const _SectionTile({
   @override
   Widget build(BuildContext context) {
     return AuraTile(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           TextLocale(titleKey),
           AuraText(

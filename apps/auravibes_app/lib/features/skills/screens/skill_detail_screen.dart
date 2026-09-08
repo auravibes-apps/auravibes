@@ -372,7 +372,7 @@ class const _SkillDetailForm({
         onEdit: onEditContent,
         isReadOnly: isReadOnly,
       ),
-      AuraRow(
+      AuraFlex.row(
         children: [
           AuraSwitch(
             value: isEnabled,
@@ -418,7 +418,7 @@ class const _SkillDetailForm({
       padding: const EdgeInsets.all(12),
       children: [
         AuraCard(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               ...skillFields,
               ...credentialFields,
@@ -475,7 +475,7 @@ class const _SkillToolsCard({
     );
 
     return AuraCard(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           Row(
             children: [
@@ -500,11 +500,11 @@ class const _SkillToolsCard({
                   ? const AuraText(
                       child: TextLocale(LocaleKeys.skills_tool_empty),
                     )
-                  : AuraColumn(
+                  : AuraFlex.column(
                       children: [
                         for (final tool in value)
                           AuraTile(
-                            child: AuraColumn(
+                            child: AuraFlex.column(
                               children: [
                                 AuraText(child: Text(tool.title)),
                                 AuraText(child: Text(tool.slug)),
@@ -515,7 +515,7 @@ class const _SkillToolsCard({
                             onTap: () => _openTool(context, tool.id),
                             variant: AuraTileVariant.ghost,
                             leading: const AuraIcon(Icons.link_outlined),
-                            trailing: AuraRow(
+                            trailing: AuraFlex.row(
                               children: [
                                 AuraIconButton(
                                   icon: Icons.copy_outlined,
@@ -618,7 +618,7 @@ class const _AppSkillToolsCard({
   @override
   Widget build(BuildContext context) {
     return AuraCard(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           const AuraText(
             child: TextLocale(LocaleKeys.skills_tool_section_title),
@@ -626,7 +626,7 @@ class const _AppSkillToolsCard({
           ),
           for (final tool in tools)
             AuraTile(
-              child: AuraColumn(
+              child: AuraFlex.column(
                 children: [
                   AuraText(
                     child: switch (tool.titleKey) {
@@ -704,7 +704,7 @@ class const _CredentialDefinitionSelectContent({
         definitions.any((definition) => definition.id == value);
     final hasMissingDefinition = value != null && !hasSelectedDefinition;
 
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         AuraDropdownSelector<String>(
           options: [
@@ -990,7 +990,7 @@ class const _ReadOnlyField({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         AuraText(child: TextLocale(labelKey)),
         AuraSelectableText(value),

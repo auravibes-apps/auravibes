@@ -28,7 +28,7 @@ class _AppErrorWidgetState<T extends Object> extends State<AppErrorWidget<T>> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           const AuraIcon(
             Icons.error_outline,

@@ -60,7 +60,7 @@ class const AddToolModal({required final String workspaceId, super.key})
           maxWidth: 400,
           maxHeight: MediaQuery.sizeOf(context).height * 0.7,
         ),
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             // Header with close button.
             Container(
@@ -146,7 +146,7 @@ class const _AvailableToolsList({
       return Padding(
         padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
         child: Center(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               AuraIcon(
                 tools.isEmpty ? Icons.check_circle_outline : Icons.search_off,
@@ -190,7 +190,7 @@ class const _AvailableToolTile({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraTile(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           AuraText(child: toolType.getNameWidget()),
           AuraText(

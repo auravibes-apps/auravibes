@@ -87,7 +87,7 @@ class const _SelectorContent({
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           _SkillSection(
             titleKey: LocaleKeys.skills_selector_loaded_title,
@@ -120,7 +120,7 @@ class const _SkillSection({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         AuraText(child: TextLocale(titleKey), style: AuraTextStyle.heading4),
         if (skills.isEmpty)
@@ -128,7 +128,7 @@ class const _SkillSection({
         else
           for (final skill in skills)
             AuraTile(
-              child: AuraColumn(
+              child: AuraFlex.column(
                 children: [
                   AuraText(child: Text(skill.title)),
                   AuraText(child: Text(skill.description)),

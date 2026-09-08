@@ -451,7 +451,7 @@ class const _PromptCard({
   @override
   Widget build(BuildContext context) {
     return AuraCard(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           const AuraText(
             child: TextLocale(LocaleKeys.agents_profile_prompt_title),
@@ -468,7 +468,7 @@ class const _PromptCard({
           Row(
             children: [
               const Expanded(
-                child: AuraColumn(
+                child: AuraFlex.column(
                   children: [
                     AuraText(
                       child: TextLocale(LocaleKeys.agents_enabled_label),
@@ -544,7 +544,7 @@ class const _SkillsSummaryCard({
     final hasWarning = disabledSelectedCount > 0 || unavailableCount > 0;
 
     return AuraCard(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           _CardHeader(
             title: const TextLocale(LocaleKeys.agents_skills_title),
@@ -590,7 +590,7 @@ class const _ToolPermissionsSummaryCard({
   @override
   Widget build(BuildContext context) {
     return AuraCard(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           _CardHeader(
             title: const TextLocale(LocaleKeys.agents_tool_permissions_title),
@@ -635,7 +635,7 @@ class const _CardHeader({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraRow(
+    return AuraFlex.row(
       children: [
         Expanded(
           child: AuraText(child: title, style: AuraTextStyle.heading5),
@@ -1075,7 +1075,7 @@ class const _AgentManageDialog({
           children: [
             Padding(
               padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-              child: AuraRow(
+              child: AuraFlex.row(
                 children: [
                   Expanded(
                     child: AuraText(
@@ -1144,7 +1144,7 @@ class const _UnavailableSkillSection({
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: AuraTile(
-              child: AuraColumn(
+              child: AuraFlex.column(
                 children: [
                   const TextLocale(LocaleKeys.agents_disabled_skill_label),
                   Text(ref.label),
@@ -1203,10 +1203,10 @@ class const _CollapsibleToolSection({
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           AuraTile(
-            child: AuraColumn(
+            child: AuraFlex.column(
               children: [Text(title)],
               crossAxisAlignment: CrossAxisAlignment.start,
             ),
@@ -1244,7 +1244,7 @@ class const _DialogSection({
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           AuraText(child: title, style: AuraTextStyle.heading6),
           if (isEmpty)
@@ -1270,7 +1270,7 @@ class const _AgentSkillTile({
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AuraTile(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             _SkillTitle(skill: skill),
             AuraText(
@@ -1313,7 +1313,7 @@ class const _AgentToolPermissionTile({
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AuraTile(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             AuraText(child: tool.getNameWidget()),
             AuraText(

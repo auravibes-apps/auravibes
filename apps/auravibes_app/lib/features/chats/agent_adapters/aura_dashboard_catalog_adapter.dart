@@ -116,7 +116,7 @@ Widget _progress(CatalogItemContext context, Map<String, Object?> data) {
   final indeterminate = data['indeterminate'] == true;
   final value = indeterminate ? null : (data['value'] as num?)?.toDouble();
 
-  return AuraColumn(
+  return AuraFlex.column(
     children: [
       if (label != null || data['showValue'] == true)
         Wrap(
@@ -235,7 +235,7 @@ Widget _loading(CatalogItemContext _, Map<String, Object?> data) {
         );
 
   if (data['inline'] == true) {
-    return AuraRow(
+    return AuraFlex.row(
       children: [
         indicator,
         AuraText(child: Text(label)),
@@ -244,7 +244,7 @@ Widget _loading(CatalogItemContext _, Map<String, Object?> data) {
     );
   }
 
-  return AuraColumn(
+  return AuraFlex.column(
     children: [
       indicator,
       AuraText(child: Text(label)),

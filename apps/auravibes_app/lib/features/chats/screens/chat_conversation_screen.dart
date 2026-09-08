@@ -233,7 +233,7 @@ class const _LoadedChatConversation({
     final hidesStoppedRun = stopRequested.value && isInputBusy;
 
     return AuraScreen(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           _ChatControlsBar(
             workspaceId: workspaceId,

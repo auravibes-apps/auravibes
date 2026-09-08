@@ -161,7 +161,7 @@ class const _SkillsScreenBody({
   Widget build(BuildContext context, WidgetRef ref) {
     if (skills.isEmpty) {
       return Center(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             const Icon(Icons.psychology_alt_outlined, size: 48),
             const AuraText(
@@ -219,11 +219,11 @@ class const _SkillTile({
     const tagSpacing = 8.0;
 
     return AuraCard(
-      child: AuraRow(
+      child: AuraFlex.row(
         children: [
           AuraIcon(_icon),
           Expanded(
-            child: AuraColumn(
+            child: AuraFlex.column(
               children: [
                 AuraText(
                   child: switch (skill.titleKey) {
@@ -257,7 +257,7 @@ class const _SkillTile({
               crossAxisAlignment: CrossAxisAlignment.start,
             ),
           ),
-          AuraRow(
+          AuraFlex.row(
             children: [
               AuraSwitch(value: skill.isEnabled, onChanged: onChanged),
               if (skill.source == SkillSource.user)

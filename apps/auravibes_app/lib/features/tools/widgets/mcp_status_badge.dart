@@ -55,12 +55,12 @@ class const _ErrorBadge({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraRow(
+    return AuraFlex.row(
       children: [
         AuraTooltip(
           message: groupWithTools.mcpErrorMessage ?? '',
           child: AuraBadge.text(
-            child: AuraRow(
+            child: AuraFlex.row(
               children: [
                 const AuraIcon(
                   Icons.error_outline,
@@ -101,7 +101,7 @@ class const _DisconnectedBadge({final VoidCallback? onReconnect})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraRow(
+    return AuraFlex.row(
       children: [
         AuraBadge.text(
           child: Text(LocaleKeys.tools_screen_mcp_disconnected.tr()),

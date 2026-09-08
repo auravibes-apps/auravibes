@@ -23,10 +23,10 @@ class const SettingsScreen({required final String workspaceId, super.key})
     return AuraScreen(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(screenPadding),
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             AuraCard(
-              child: AuraColumn(
+              child: AuraFlex.column(
                 children: [
                   const AuraText(
                     child: TextLocale(

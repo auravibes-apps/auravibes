@@ -12,7 +12,7 @@ class const ToolsEmptyState({
     return Padding(
       padding: padding,
       child: const Center(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             Opacity(
               opacity: 0.5,

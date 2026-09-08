@@ -14,7 +14,7 @@ class const ChatsListScreen({required final String workspaceId, super.key})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraScreen(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           AuraPadding(
             child: AppContent(

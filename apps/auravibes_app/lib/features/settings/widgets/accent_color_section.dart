@@ -17,7 +17,7 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
         ref.watch(accentHueProvider).asData?.value ?? AccentHue.defaultValue;
 
     return AuraCard(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           const AuraText(
             child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
@@ -72,7 +72,7 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
       ),
       message: StatefulBuilder(
         builder: (context, setState) {
-          return AuraColumn(
+          return AuraFlex.column(
             children: [
               _HueSwatch(hue: working, size: 48),
               _HueSlider(

@@ -37,9 +37,9 @@ class const ToolItemRow({
       padding: EdgeInsets.symmetric(
         vertical: context.auraTheme.fromSpacing(.xs),
       ),
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
-          AuraRow(
+          AuraFlex.row(
             children: [
               Container(
                 decoration: BoxDecoration(
@@ -61,7 +61,7 @@ class const ToolItemRow({
               ),
               const AuraSizedBox(width: .sm),
               Expanded(
-                child: AuraColumn(
+                child: AuraFlex.column(
                   children: [
                     AuraText(child: tool.getNameWidget()),
                     AuraText(
@@ -135,10 +135,10 @@ class const _ToolOptions({
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaceTool = tool;
 
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
         if (isEnabled)
-          AuraRow(
+          AuraFlex.row(
             children: [
               const AuraText(
                 child: TextLocale(LocaleKeys.tools_screen_permission_label),
@@ -171,7 +171,7 @@ class const _ToolOptions({
             alignment: Alignment.centerRight,
             child: AuraButton(
               onPressed: () => _confirmDelete(context, ref, workspaceTool),
-              child: const AuraRow(
+              child: const AuraFlex.row(
                 children: [
                   AuraIcon(
                     Icons.delete_outline,

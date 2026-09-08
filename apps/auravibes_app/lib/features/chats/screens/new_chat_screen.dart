@@ -108,7 +108,7 @@ class const _NewChatContent({required final String workspaceId})
     return AuraScreen(
       child: AuraLoadingOverlay(
         isLoading: state.isLoading,
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             Expanded(
               child: hasNoProviders
@@ -170,11 +170,11 @@ class const _NewChatUnavailable({required final String workspaceId})
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           const Expanded(
             child: Center(
-              child: AuraColumn(
+              child: AuraFlex.column(
                 children: [
                   AuraIcon(Icons.cloud_off_outlined),
                   TextLocale(LocaleKeys.workspace_management_cloud_unavailable),
@@ -262,7 +262,7 @@ class const _NoModelProviderPrompt({required final String workspaceId})
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
-              child: AuraColumn(
+              child: AuraFlex.column(
                 children: [
                   const AuraIcon(
                     Icons.hub_outlined,

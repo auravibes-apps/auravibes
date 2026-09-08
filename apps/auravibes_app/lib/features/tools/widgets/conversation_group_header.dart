@@ -39,9 +39,9 @@ class const ConversationGroupHeader({
   Widget build(BuildContext context) {
     final group = groupWithTools.group;
 
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
-        AuraRow(
+        AuraFlex.row(
           children: [
             Expanded(
               child: AuraText(
@@ -65,12 +65,12 @@ class const ConversationGroupHeader({
             ),
           ],
         ),
-        AuraRow(
+        AuraFlex.row(
           children: [
             _GroupIcon(groupWithTools: groupWithTools),
             const AuraSizedBox(width: .sm),
             Expanded(
-              child: AuraColumn(
+              child: AuraFlex.column(
                 children: [
                   if (groupWithTools.isMcpGroup)
                     McpStatusBadge(

@@ -121,7 +121,7 @@ class const _ApprovalCardContent({
       ),
       width: double.infinity,
       margin: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           _NavigationHeader(
             currentIndex: currentIndex,
@@ -416,9 +416,9 @@ class const _ConfirmationButtons({
         toolCall.turnRevision != null &&
         toolCall.argumentsDigest != null;
 
-    return AuraColumn(
+    return AuraFlex.column(
       children: [
-        AuraRow(
+        AuraFlex.row(
           children: [
             Expanded(
               child: AuraButton(
@@ -443,7 +443,7 @@ class const _ConfirmationButtons({
               ),
           ],
         ),
-        AuraRow(
+        AuraFlex.row(
           children: [
             Expanded(
               child: AuraButton(

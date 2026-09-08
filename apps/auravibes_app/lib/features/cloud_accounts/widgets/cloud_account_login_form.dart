@@ -35,7 +35,7 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return AuraFlex.column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: .sm,
       children: [

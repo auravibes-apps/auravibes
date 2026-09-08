@@ -84,7 +84,7 @@ class _A2uiCatalogShowcaseState extends State<A2uiCatalogShowcase> {
             AuraBadge.text(child: const Text('Release')),
           ],
         ),
-        const AuraRow(
+        const AuraFlex.row(
           children: [
             AuraText(child: Text('Left')),
             AuraFlexItem(child: SizedBox()),

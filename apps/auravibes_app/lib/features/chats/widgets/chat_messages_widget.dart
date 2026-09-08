@@ -286,7 +286,7 @@ class const _ChatMessageRow({
         : _mapMessageStatus(message.status, isStreaming);
 
     return AnimatedSize(
-      child: AuraColumn(
+      child: AuraFlex.column(
         children: [
           if (showTextBubble)
             _MessageTextContent(

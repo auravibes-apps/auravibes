@@ -75,7 +75,7 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
             .isNotEmpty;
         if (ids.isEmpty) {
           if (issuesBySurface.isNotEmpty || messageIssues.isNotEmpty) {
-            return AuraColumn(
+            return AuraFlex.column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (final entry in issuesBySurface.entries)
@@ -126,7 +126,7 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        return AuraColumn(
+        return AuraFlex.column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final id in ids) ...[

@@ -35,7 +35,7 @@ class _ChatA2uiWarningState extends State<ChatA2uiWarning> {
       padding: AuraEdgeInsetsGeometry.small,
       variant: AuraContainerVariant.surfaceVariant,
       semanticLabel: text,
-      child: AuraRow(
+      child: AuraFlex.row(
         children: [
           const ExcludeSemantics(
             child: AuraIcon(
@@ -44,7 +44,7 @@ class _ChatA2uiWarningState extends State<ChatA2uiWarning> {
             ),
           ),
           Expanded(
-            child: AuraColumn(
+            child: AuraFlex.column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AuraText(child: Text(text), tint: AuraTint.warning),
@@ -100,7 +100,7 @@ class ChatA2uiFormWarning extends StatelessWidget {
       padding: AuraEdgeInsetsGeometry.small,
       variant: AuraContainerVariant.surfaceVariant,
       semanticLabel: text,
-      child: AuraRow(
+      child: AuraFlex.row(
         children: [
           const ExcludeSemantics(
             child: AuraIcon(Icons.info_outline, tint: AuraTint.warning),

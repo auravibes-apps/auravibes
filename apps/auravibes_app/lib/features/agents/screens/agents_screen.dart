@@ -63,7 +63,7 @@ class const _AgentsList({
   Widget build(BuildContext context, WidgetRef ref) {
     if (agents.isEmpty) {
       return Center(
-        child: AuraColumn(
+        child: AuraFlex.column(
           children: [
             const Icon(Icons.smart_toy_outlined, size: 48),
             const AuraText(
@@ -87,7 +87,7 @@ class const _AgentsList({
         final agent = agents[index];
 
         return AuraTile(
-          child: AuraColumn(
+          child: AuraFlex.column(
             children: [
               Row(
                 children: [
