@@ -1,8 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_chat_gateway_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -97,13 +97,13 @@ Stream<List<ConversationEntity>> _cloudConversations(
   Ref ref,
   CloudWorkspaceRef cloud,
 ) async* {
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(cloud.localWorkspaceId)
-        .future,
+  final gateway = await cloudChatGatewayForWorkspace(
+    ref,
+    cloud.localWorkspaceId,
   );
   if (gateway == null) return;
 
-  yield (await CloudChatGateway(gateway).listConversations())
+  yield (await gateway.listConversations())
       .map(
         (conversation) =>
             _cloudConversation(conversation, cloud.localWorkspaceId),

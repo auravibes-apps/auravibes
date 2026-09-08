@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_chat_gateway_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_key.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
@@ -20,14 +20,9 @@ Stream<CloudConversationState> _watchCloudConversation(
   Ref ref,
   CloudConversationKey key,
 ) async* {
-  final session = await ref.watch(
-    workspaceSessionForRouteProvider(key.workspaceId).future,
-  );
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayProvider(session).future,
-  );
+  final gateway = await cloudChatGatewayForWorkspace(ref, key.workspaceId);
   if (gateway == null) return;
-  yield* CloudConversationStream.watch(CloudChatGateway(gateway), key);
+  yield* CloudConversationStream.watch(gateway, key);
 }
 
 /// Reconciles the local view from the authoritative snapshot after a stream
