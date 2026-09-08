@@ -111,9 +111,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.validationFailed,
       );
     }
-    final requestJson = jsonEncode(request.toJson());
-    final requestHash = (await Sha256().hash(utf8.encode(requestJson))).bytes;
-    final hash = base64UrlEncode(requestHash);
+    final hash = await _requestHash(request.toJson());
 
     return session.db.transaction((transaction) async {
       final member = await _authorize(
@@ -206,9 +204,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.validationFailed,
       );
     }
-    final hash = base64UrlEncode(
-      (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
-    );
+    final hash = await _requestHash(request.toJson());
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -331,9 +327,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     } on FormatException {
       _validationFailed();
     }
-    final hash = base64UrlEncode(
-      (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
-    );
+    final hash = await _requestHash(request.toJson());
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -920,6 +914,11 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
   Never _validationFailed() => throw CloudWorkspaceException(
     code: CloudWorkspaceErrorCode.validationFailed,
   );
+
+  Future<String> _requestHash(Map<String, dynamic> request) async =>
+      base64UrlEncode(
+        (await Sha256().hash(utf8.encode(jsonEncode(request)))).bytes,
+      );
 
   Never _staleRevision() => throw CloudWorkspaceException(
     code: CloudWorkspaceErrorCode.staleRevision,
