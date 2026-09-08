@@ -475,25 +475,12 @@ class const _ConfirmationButtons({
       context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_once,
       action: () async {
-        final turnId = toolCall.turnId;
-        final revision = toolCall.turnRevision;
-        final argumentsDigest = toolCall.argumentsDigest;
-        if (turnId != null && revision != null && argumentsDigest != null) {
-          final cloud = await ref.read(
-            cloudTurnUsecaseProvider(workspaceId).future,
-          );
-          if (cloud == null) throw StateError('Cloud turn unavailable');
-
-          return switch (await cloud.decide(
-            turnId: turnId,
-            toolCallId: toolCall.id,
-            argumentsDigest: argumentsDigest,
-            revision: revision,
-            approved: true,
-            editedArgumentsJson: toolCall.argumentsRaw,
-          )) {
-            _ => null,
-          };
+        if (await _tryCloudDecision(
+          ref,
+          approved: true,
+          editedArgumentsJson: toolCall.argumentsRaw,
+        )) {
+          return;
         }
 
         return await ref
@@ -516,25 +503,12 @@ class const _ConfirmationButtons({
       context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_conversation,
       action: () async {
-        final turnId = toolCall.turnId;
-        final revision = toolCall.turnRevision;
-        final argumentsDigest = toolCall.argumentsDigest;
-        if (turnId != null && revision != null && argumentsDigest != null) {
-          final cloud = await ref.read(
-            cloudTurnUsecaseProvider(workspaceId).future,
-          );
-          if (cloud == null) throw StateError('Cloud turn unavailable');
-
-          return switch (await cloud.decide(
-            turnId: turnId,
-            toolCallId: toolCall.id,
-            argumentsDigest: argumentsDigest,
-            revision: revision,
-            approved: true,
-            editedArgumentsJson: toolCall.argumentsRaw,
-          )) {
-            _ => null,
-          };
+        if (await _tryCloudDecision(
+          ref,
+          approved: true,
+          editedArgumentsJson: toolCall.argumentsRaw,
+        )) {
+          return;
         }
 
         return await ref
@@ -554,25 +528,7 @@ class const _ConfirmationButtons({
       context,
       errorMessageKey: LocaleKeys.tool_approval_errors_skip,
       action: () async {
-        final turnId = toolCall.turnId;
-        final revision = toolCall.turnRevision;
-        final argumentsDigest = toolCall.argumentsDigest;
-        if (turnId != null && revision != null && argumentsDigest != null) {
-          final cloud = await ref.read(
-            cloudTurnUsecaseProvider(workspaceId).future,
-          );
-          if (cloud == null) throw StateError('Cloud turn unavailable');
-
-          return switch (await cloud.decide(
-            turnId: turnId,
-            toolCallId: toolCall.id,
-            argumentsDigest: argumentsDigest,
-            revision: revision,
-            approved: false,
-          )) {
-            _ => null,
-          };
-        }
+        if (await _tryCloudDecision(ref, approved: false)) return;
 
         return await ref
             .read(auraAgentServiceProvider)
@@ -583,39 +539,48 @@ class const _ConfirmationButtons({
   }
 
   Future<void> _onStopAll(WidgetRef ref, BuildContext context) async {
-    final turnId = toolCall.turnId;
-    final revision = toolCall.turnRevision;
-    final argumentsDigest = toolCall.argumentsDigest;
-    if (turnId != null && revision != null && argumentsDigest != null) {
-      return await _runAction(
-        context,
-        errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,
-        action: () async {
-          final cloud = await ref.read(
-            cloudTurnUsecaseProvider(workspaceId).future,
-          );
-          if (cloud == null) throw StateError('Cloud turn unavailable');
-          final _ = await cloud.decide(
-            turnId: turnId,
-            toolCallId: toolCall.id,
-            argumentsDigest: argumentsDigest,
-            revision: revision,
-            approved: false,
-            stopAll: true,
-          );
-        },
-      );
-    }
     await _runAction(
       context,
       errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,
-      action: () {
-        return ref
+      action: () async {
+        if (await _tryCloudDecision(ref, approved: false, stopAll: true)) {
+          return;
+        }
+
+        await ref
             .read(auraAgentServiceProvider)
             .tools
             .stopPending(messageId: messageId);
       },
     );
+  }
+
+  Future<bool> _tryCloudDecision(
+    WidgetRef ref, {
+    required bool approved,
+    bool stopAll = false,
+    String? editedArgumentsJson,
+  }) async {
+    final turnId = toolCall.turnId;
+    final revision = toolCall.turnRevision;
+    final argumentsDigest = toolCall.argumentsDigest;
+    if (turnId == null || revision == null || argumentsDigest == null) {
+      return false;
+    }
+
+    final cloud = await ref.read(cloudTurnUsecaseProvider(workspaceId).future);
+    if (cloud == null) throw StateError('Cloud turn unavailable');
+    final _ = await cloud.decide(
+      turnId: turnId,
+      toolCallId: toolCall.id,
+      argumentsDigest: argumentsDigest,
+      revision: revision,
+      approved: approved,
+      stopAll: stopAll,
+      editedArgumentsJson: editedArgumentsJson,
+    );
+
+    return true;
   }
 
   Future<void> _runAction(
