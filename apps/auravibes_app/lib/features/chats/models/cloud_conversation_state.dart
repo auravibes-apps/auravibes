@@ -196,55 +196,40 @@ class const CloudConversationState({
 }
 
 List<String> _a2uiMessages(String? metadataJson) {
-  if (metadataJson == null) return const [];
-  try {
-    final metadata = jsonDecode(metadataJson);
-    final messages = metadata is Map ? metadata['a2uiMessages'] : null;
+  final messages = _decodeMap(metadataJson)?['a2uiMessages'];
 
-    return messages is List ? messages.whereType<String>().toList() : const [];
-  } on Object catch (_) {
-    return const [];
-  }
+  return messages is List ? messages.whereType<String>().toList() : const [];
 }
 
 Map<String, List<String>> _a2uiIssues(String? metadataJson) {
-  if (metadataJson == null) return const {};
-  try {
-    final metadata = jsonDecode(metadataJson);
-    final issues = metadata is Map ? metadata['a2uiIssuesBySurface'] : null;
-    if (issues is! Map) return const {};
+  final issues = _decodeMap(metadataJson)?['a2uiIssuesBySurface'];
+  if (issues is! Map) return const {};
 
-    return {
-      for (final entry in issues.entries)
-        if (entry.key is String && entry.value is List)
-          entry.key as String: (entry.value as List)
-              .whereType<String>()
-              .toList(),
-    };
-  } on Object catch (_) {
-    return const {};
-  }
+  return {
+    for (final entry in issues.entries)
+      if (entry.key is String && entry.value is List)
+        entry.key as String: (entry.value as List).whereType<String>().toList(),
+  };
 }
 
 List<String> _a2uiMessageIssues(String? metadataJson) {
-  if (metadataJson == null) return const [];
-  try {
-    final metadata = jsonDecode(metadataJson);
-    final issues = metadata is Map ? metadata['a2uiMessageIssues'] : null;
+  final issues = _decodeMap(metadataJson)?['a2uiMessageIssues'];
 
-    return issues is List ? issues.whereType<String>().toList() : const [];
-  } on Object catch (_) {
-    return const [];
-  }
+  return issues is List ? issues.whereType<String>().toList() : const [];
 }
 
 String? _assistantMessageId(String payloadJson) {
-  try {
-    final payload = jsonDecode(payloadJson);
+  final assistantMessageId = _decodeMap(payloadJson)?['assistantMessageId'];
 
-    return payload is Map && payload['assistantMessageId'] is String
-        ? payload['assistantMessageId'] as String
-        : null;
+  return assistantMessageId is String ? assistantMessageId : null;
+}
+
+Map? _decodeMap(String? value) {
+  if (value == null) return null;
+  try {
+    final decoded = jsonDecode(value);
+
+    return decoded is Map ? decoded : null;
   } on Object catch (_) {
     return null;
   }
