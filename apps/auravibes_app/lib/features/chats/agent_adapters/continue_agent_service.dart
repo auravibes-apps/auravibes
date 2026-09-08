@@ -141,12 +141,7 @@ class ContinueAgentService({
     if (pendingUserMessageIds.isEmpty) return;
 
     try {
-      for (final pendingUserMessageId in pendingUserMessageIds) {
-        final _ = await messageRepository.patchMessage(
-          pendingUserMessageId,
-          const MessagePatch(status: MessageStatus.error),
-        );
-      }
+      await _markPendingUsers(pendingUserMessageIds, .error);
     } on Object catch (cleanupError, cleanupStackTrace) {
       monitoringService.trackError(
         'Failed to persist pending user error state',
@@ -206,10 +201,17 @@ class ContinueAgentService({
 
   @override
   Future<void> markPendingUsersSent(List<String> pendingUserMessageIds) async {
-    for (final pendingUserMessageId in pendingUserMessageIds) {
+    await _markPendingUsers(pendingUserMessageIds, .sent);
+  }
+
+  Future<void> _markPendingUsers(
+    List<String> messageIds,
+    MessageStatus status,
+  ) async {
+    for (final messageId in messageIds) {
       final _ = await messageRepository.patchMessage(
-        pendingUserMessageId,
-        const MessagePatch(status: MessageStatus.sent),
+        messageId,
+        MessagePatch(status: status),
       );
     }
   }
