@@ -12,16 +12,22 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'local_model_selection_store.dart';
 part 'model_store_providers.g.dart';
 
-Future<CloudModelStore?> _cloudModelStore(Ref ref, String workspaceId) async {
+Future<CloudModelGateway?> _cloudModelGateway(
+  Ref ref,
+  String workspaceId,
+) async {
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
   );
+
+  return gateway == null ? null : CloudModelGateway(gateway);
+}
+
+Future<CloudModelStore?> _cloudModelStore(Ref ref, String workspaceId) async {
+  final gateway = await _cloudModelGateway(ref, workspaceId);
   if (gateway == null) return null;
 
-  return CloudModelStore(
-    workspaceId,
-    CloudModelConnectionUsecases(CloudModelGateway(gateway)),
-  );
+  return CloudModelStore(workspaceId, CloudModelConnectionUsecases(gateway));
 }
 
 @riverpod
@@ -64,12 +70,10 @@ Future<ModelSelectionStore> modelSelectionStore(
 Future<ModelCatalogStore> modelCatalogStore(Ref ref, String workspaceId) async {
   final keepAlive = ref.keepAlive();
   try {
-    final gateway = await ref.watch(
-      cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
-    );
+    final gateway = await _cloudModelGateway(ref, workspaceId);
     if (gateway == null) return await ref.watch(apiModelRepositoryProvider);
 
-    return CloudModelCatalogStore(CloudModelGateway(gateway));
+    return CloudModelCatalogStore(gateway);
   } finally {
     keepAlive.close();
   }
