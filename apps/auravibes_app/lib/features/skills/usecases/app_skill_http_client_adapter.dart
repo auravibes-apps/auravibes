@@ -3,11 +3,11 @@ import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-typedef AppSkillUrlGuard = Future<Uri> Function(String url);
+typedef AppSkillUrlGuard = Future<PublicUrlResolution> Function(String url);
 
 class AppSkillHttpClientAdapter {
   new(this._urlService, {AppSkillUrlGuard? requirePublicUri})
-    : _requirePublicUri = requirePublicUri ?? PublicUrlGuard.requireHttpsUri;
+    : _requirePublicUri = requirePublicUri ?? PublicUrlGuard.resolveHttpsUri;
 
   final UrlService _urlService;
   final AppSkillUrlGuard _requirePublicUri;
@@ -20,18 +20,19 @@ class AppSkillHttpClientAdapter {
 
     Future<void>(() async {
       try {
-        final uri = await _requirePublicUri(request.url);
+        final resolved = await _requirePublicUri(request.url);
         if (completer.isCanceled) return;
 
         final currentOperation = _urlService.execute(
           UrlRequest(
-            url: uri.toString(),
+            url: resolved.uri.toString(),
             method: request.method,
             headers: request.headers,
             body: request.body,
             timeout: request.timeout,
             format: request.format,
           ),
+          resolvedAddresses: resolved.addresses,
         );
         operation = currentOperation;
         final response = await currentOperation.valueOrCancellation();

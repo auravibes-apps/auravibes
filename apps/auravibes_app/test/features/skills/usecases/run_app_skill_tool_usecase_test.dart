@@ -133,7 +133,7 @@ void main() {
             'searxng': [_candidate('searxng')],
           },
           urlService: urlService,
-          requirePublicUri: PublicUrlGuard.requireHttpsUri,
+          requirePublicUri: PublicUrlGuard.resolveHttpsUri,
         );
 
         await expectLater(
@@ -533,7 +533,12 @@ RunAppSkillToolUsecase _usecase({
 }) {
   final effectiveUrlService = urlService ?? _MockUrlService();
   if (urlService == null) {
-    when(() => effectiveUrlService.execute(any())).thenAnswer(
+    when(
+      () => effectiveUrlService.execute(
+        any(),
+        resolvedAddresses: any(named: 'resolvedAddresses'),
+      ),
+    ).thenAnswer(
       (invocation) => CancelableOperation.fromFuture(
         (executeUrl ?? (_) async => _response(''))(
           invocation.positionalArguments.single as UrlRequest,
@@ -542,7 +547,8 @@ RunAppSkillToolUsecase _usecase({
     );
   }
 
-  Future<Uri> trustTestUrl(String url) => Future.value(Uri.parse(url));
+  Future<PublicUrlResolution> trustTestUrl(String url) async =>
+      (uri: Uri.parse(url), addresses: <String>[]);
   final httpClient = AppSkillHttpClientAdapter(
     effectiveUrlService,
     requirePublicUri: requirePublicUri ?? trustTestUrl,

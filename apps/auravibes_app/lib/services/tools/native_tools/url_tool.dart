@@ -25,13 +25,16 @@ final class UrlTool({final UrlService? _urlService})
     );
 
     () async {
-      final request = await _buildRequest(toolInput);
+      final resolved = await _buildRequest(toolInput);
       if (completer.isCanceled) {
         return;
       }
 
       final service = _urlService ?? UrlService();
-      final operation = service.execute(request);
+      final operation = service.execute(
+        resolved.request,
+        resolvedAddresses: resolved.addresses,
+      );
       responseOperation = operation;
 
       final response = await operation.valueOrCancellation();
@@ -40,7 +43,10 @@ final class UrlTool({final UrlService? _urlService})
       }
 
       completer.complete(
-        formatUrlToolResponse(response, requestedFormat: request.format),
+        formatUrlToolResponse(
+          response,
+          requestedFormat: resolved.request.format,
+        ),
       );
     }().catchError((Object error, StackTrace stackTrace) {
       if (completer.isCanceled) {
@@ -53,15 +59,15 @@ final class UrlTool({final UrlService? _urlService})
     return completer.operation;
   }
 
-  Future<UrlRequest> _buildRequest(String toolInput) async {
+  Future<({UrlRequest request, List<String> addresses})> _buildRequest(
+    String toolInput,
+  ) async {
     final request = parseUrlToolInput(toolInput);
-    final uri = Uri.parse(request.url);
-    if (request.headers.isEmpty) {
-      await PublicUrlGuard.ensureHost(uri.host);
-    } else {
-      final _ = await PublicUrlGuard.requireHttpsUri(uri.toString());
-    }
+    final resolved = await PublicUrlGuard.resolvePublicUri(
+      request.url,
+      requireHttps: request.headers.isNotEmpty,
+    );
 
-    return request;
+    return (request: request, addresses: resolved.addresses);
   }
 }
