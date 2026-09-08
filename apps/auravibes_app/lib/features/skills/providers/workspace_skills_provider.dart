@@ -1,8 +1,7 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_settings_adapter_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adapter.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -17,17 +16,13 @@ Future<List<WorkspaceSkill>> workspaceSkills(
 ) async {
   _logger.info('Load started: workspace=$workspaceId.');
   try {
-    final session = await ref.watch(
-      workspaceSessionForRouteProvider(workspaceId).future,
+    final cloudAdapter = await cloudSkillSettingsAdapterForWorkspace(
+      ref,
+      workspaceId,
     );
-    final gateway = await ref.watch(
-      cloudWorkspaceStateGatewayProvider(session).future,
-    );
-    if (gateway != null) {
+    if (cloudAdapter != null) {
       _logger.info('Cloud snapshot requested: workspace=$workspaceId.');
-      final skills = await CloudSkillSettingsAdapter(gateway)
-          .watchSkills()
-          .first;
+      final skills = await cloudAdapter.watchSkills().first;
       final appSkillRegistry = ref.watch(appSkillRegistryProvider);
       final skillsById = {for (final skill in skills) skill.id: skill};
       for (final skill in appSkillRegistry.getAll()) {

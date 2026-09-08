@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/repositories/workspace_compaction_settings_re
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_settings_adapter_provider.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adapter.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -71,16 +72,15 @@ saveWorkspaceCompactionSettingsUsecase(Ref ref, String workspaceId) async {
     workspaceSessionForRouteProvider(workspaceId).future,
   );
   if (session.cloud case final CloudWorkspaceRef _) {
-    final gateway = await ref.watch(
-      cloudWorkspaceStateGatewayProvider(session).future,
+    final cloudAdapter = await cloudSkillSettingsAdapterForWorkspace(
+      ref,
+      workspaceId,
     );
-    if (gateway == null) {
+    if (cloudAdapter == null) {
       throw StateError('Cloud workspace gateway is unavailable');
     }
 
-    return SaveWorkspaceCompactionSettingsUsecase(
-      cloudAdapter: CloudSkillSettingsAdapter(gateway),
-    );
+    return SaveWorkspaceCompactionSettingsUsecase(cloudAdapter: cloudAdapter);
   }
 
   return SaveWorkspaceCompactionSettingsUsecase(
