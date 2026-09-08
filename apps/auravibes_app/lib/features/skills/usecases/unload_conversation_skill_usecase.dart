@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
+import 'package:auravibes_app/features/skills/usecases/set_conversation_skill_loaded_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 
 import 'package:riverpod/src/providers/provider.dart';
@@ -32,50 +33,23 @@ class const UnloadConversationSkillUsecase(
               )
               .firstOrNull;
     if (userSkill != null) {
-      if (cloud != null) {
-        return await cloud.setConversationSkill(
-          conversationId,
-          userSkill.id,
-          selected: false,
-          isAppSkill: false,
-        );
-      }
-      final conversationSkillsRepository = _conversationSkillsRepository;
-      if (conversationSkillsRepository == null) {
-        throw StateError('Conversation skill store is unavailable');
-      }
-
-      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
-        conversationId,
-        userSkill.id,
-        isLoaded: false,
-      );
-
-      return;
+      return await SetConversationSkillLoadedUsecase(
+        _conversationSkillsRepository,
+        cloud,
+      ).call(conversationId, userSkill.id, isLoaded: false, isAppSkill: false);
     }
 
     final appSkill = _appSkillRegistry.getBySlug(slug);
     if (appSkill != null) {
-      if (cloud != null) {
-        return await cloud.setConversationSkill(
-          conversationId,
-          appSkill.identifier,
-          selected: false,
-          isAppSkill: true,
-        );
-      }
-      final conversationSkillsRepository = _conversationSkillsRepository;
-      if (conversationSkillsRepository == null) {
-        throw StateError('Conversation skill store is unavailable');
-      }
-
-      final _ = await conversationSkillsRepository.setAppSkillLoaded(
+      return await SetConversationSkillLoadedUsecase(
+        _conversationSkillsRepository,
+        cloud,
+      ).call(
         conversationId,
         appSkill.identifier,
         isLoaded: false,
+        isAppSkill: true,
       );
-
-      return;
     }
 
     throw StateError('Skill not found for slug: $slug');
