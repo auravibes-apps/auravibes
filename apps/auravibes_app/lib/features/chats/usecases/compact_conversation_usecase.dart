@@ -123,7 +123,11 @@ class const CompactConversationUsecase({
         summaryText = await _generateSummary(foundModel, chatHistory);
       } on Exception catch (e, stackTrace) {
         if (trigger == CompactionTrigger.auto) {
-          await _persistRequiredFailureMessage(conversationId: conversationId);
+          await _persistSystemMessage(
+            conversationId: conversationId,
+            content: _failureMessageKey,
+            status: MessageStatus.error,
+          );
         }
 
         Error.throwWithStackTrace(
@@ -207,16 +211,6 @@ class const CompactConversationUsecase({
     );
   }
 
-  Future<void> _persistRequiredFailureMessage({
-    required String conversationId,
-  }) async {
-    await _persistSystemMessage(
-      conversationId: conversationId,
-      content: _failureMessageKey,
-      status: MessageStatus.error,
-    );
-  }
-
   Future<void> _persistSystemMessage({
     required String conversationId,
     required String content,
@@ -238,13 +232,10 @@ class const CompactConversationUsecase({
       ),
     );
 
-    switch (await repository.patchMessage(
+    final _ = await repository.patchMessage(
       created.id,
       MessagePatch(status: status),
-    )) {
-      case _:
-        return;
-    }
+    );
   }
 }
 
