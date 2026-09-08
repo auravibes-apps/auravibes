@@ -79,7 +79,7 @@ final class ToolsGroupsRepositoryProvider
 }
 
 String _$toolsGroupsRepositoryHash() =>
-    r'4d0d5e678317838b6c32e9b6b03c228188e3f4c2';
+    r'2337cb14c5f7da089c2ff68df7e5861e21c7eb49';
 
 /// Provider for the tools groups repository.
 

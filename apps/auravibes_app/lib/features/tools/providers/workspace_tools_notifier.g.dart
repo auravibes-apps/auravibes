@@ -76,7 +76,7 @@ final class WorkspaceToolsRepositoryProvider
 }
 
 String _$workspaceToolsRepositoryHash() =>
-    r'96a2c8d6482f43b6c32296f96d532390390f8ea0';
+    r'120898eb5f09b5af2c03b2d4bb5086a8092d819f';
 
 final class WorkspaceToolsRepositoryFamily extends $Family
     with

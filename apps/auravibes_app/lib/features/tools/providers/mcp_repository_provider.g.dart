@@ -77,7 +77,7 @@ final class McpServersRepositoryProvider
 }
 
 String _$mcpServersRepositoryHash() =>
-    r'0b1356031e56c1ac0dd7a50018a88fd3192b7305';
+    r'e66c12860250ec99301e05b62fbd750d71c78a67';
 
 /// Provides the MCP servers repository instance.
 

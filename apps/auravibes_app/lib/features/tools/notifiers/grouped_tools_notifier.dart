@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
+import 'package:auravibes_app/features/tools/providers/cloud_tools_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/usecases/build_grouped_tools_view_use_case.dart';
@@ -23,11 +24,9 @@ ToolsGroupsRepositoryContract toolsGroupsRepository(
   Ref ref,
   WorkspaceSession session,
 ) {
-  if (session.cloud != null) {
-    return CloudToolsRepository(
-      ref.read(cloudWorkspaceStateGatewayProvider(session).future),
-    );
-  }
+  final cloud = cloudToolsRepository(ref, session);
+  if (cloud != null) return cloud;
+
   final appDatabase = ref.watch(appDatabaseProvider);
 
   return ToolsGroupsRepository(appDatabase);

@@ -2,7 +2,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
+import 'package:auravibes_app/features/tools/providers/cloud_tools_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -18,11 +18,9 @@ WorkspaceToolsRepositoryContract workspaceToolsRepository(
   Ref ref,
   WorkspaceSession session,
 ) {
-  if (session.cloud != null) {
-    return CloudToolsRepository(
-      ref.read(cloudWorkspaceStateGatewayProvider(session).future),
-    );
-  }
+  final cloud = cloudToolsRepository(ref, session);
+  if (cloud != null) return cloud;
+
   final appDatabase = ref.watch(appDatabaseProvider);
 
   return WorkspaceToolsRepository(appDatabase);
