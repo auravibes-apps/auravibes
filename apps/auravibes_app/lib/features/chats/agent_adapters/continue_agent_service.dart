@@ -109,22 +109,8 @@ class ContinueAgentService({
   }
 
   @override
-  AgentChunkSink<ChatResult<ChatMessage>> createPersistenceSink(
-    CurrentAgentMessageId currentMessageId,
-  ) {
-    return _createPersistenceSink(currentMessageId);
-  }
-
-  @override
   bool shouldCreateAssistantMessage(ChatResult<ChatMessage> chunk) {
     return chunk.entityText.isNotEmpty || _hasEncodableMetadata(chunk);
-  }
-
-  @override
-  AgentChunkSink<ChatResult<ChatMessage>> createUiStreamingSink(
-    String messageId,
-  ) {
-    return _createUiStreamingSink(messageId);
   }
 
   @override
@@ -133,14 +119,6 @@ class ContinueAgentService({
     ChatResult<ChatMessage> delta,
   ) {
     return current.concat(delta);
-  }
-
-  @override
-  Future<String> createAssistantMessage({
-    required String conversationId,
-    required ChatResult<ChatMessage> chunk,
-  }) {
-    return _createAssistantMessage(conversationId, chunk);
   }
 
   @override
@@ -154,37 +132,6 @@ class ContinueAgentService({
   @override
   Future<void> removeMessageStreaming(String messageId) {
     return messagesStreamingRuntime.remove(messageId);
-  }
-
-  @override
-  Future<void> markAssistantErrored(String messageId) {
-    return _markAssistantErrored(messageId);
-  }
-
-  @override
-  Future<void> markPendingUsersSent(List<String> messageIds) {
-    return _markPendingUsersSent(messageIds);
-  }
-
-  @override
-  Future<void> markPendingUsersErrored(List<String> messageIds) {
-    return _markPendingUsersErrored(messageIds);
-  }
-
-  @override
-  Future<void> persistStoppedAssistantMessage(
-    String? messageId,
-    ChatResult<ChatMessage>? result,
-  ) {
-    return _persistStoppedAssistantMessage(messageId, result);
-  }
-
-  @override
-  Future<void> persistCompletedAssistantMessage(
-    String messageId,
-    ChatResult<ChatMessage> result,
-  ) {
-    return _persistCompletedAssistantMessage(messageId, result);
   }
 
   MessageMetadataEntity? _markPendingToolsStopped(
@@ -205,7 +152,8 @@ class ContinueAgentService({
     );
   }
 
-  Future<void> _markPendingUsersErrored(
+  @override
+  Future<void> markPendingUsersErrored(
     List<String> pendingUserMessageIds,
   ) async {
     if (pendingUserMessageIds.isEmpty) return;
@@ -226,7 +174,8 @@ class ContinueAgentService({
     }
   }
 
-  Future<void> _persistStoppedAssistantMessage(
+  @override
+  Future<void> persistStoppedAssistantMessage(
     String? messageId,
     ChatResult<ChatMessage>? result,
   ) async {
@@ -255,7 +204,8 @@ class ContinueAgentService({
     final _ = _a2uiRuntimesByMessageId.remove(messageId);
   }
 
-  Future<void> _markAssistantErrored(String messageId) async {
+  @override
+  Future<void> markAssistantErrored(String messageId) async {
     try {
       final _ = await messageRepository.patchMessage(
         messageId,
@@ -272,7 +222,8 @@ class ContinueAgentService({
     }
   }
 
-  Future<void> _markPendingUsersSent(List<String> pendingUserMessageIds) async {
+  @override
+  Future<void> markPendingUsersSent(List<String> pendingUserMessageIds) async {
     for (final pendingUserMessageId in pendingUserMessageIds) {
       final _ = await messageRepository.patchMessage(
         pendingUserMessageId,
@@ -281,18 +232,19 @@ class ContinueAgentService({
     }
   }
 
-  Future<String> _createAssistantMessage(
-    String conversationId,
-    ChatResult<ChatMessage> currentResult,
-  ) async {
-    final metadata = currentResult.entityMetadata;
+  @override
+  Future<String> createAssistantMessage({
+    required String conversationId,
+    required ChatResult<ChatMessage> chunk,
+  }) async {
+    final metadata = chunk.entityMetadata;
     final metadataJson = metadata == null
         ? null
         : JsonCodec.encode(metadata.toJson());
     final firstMessage = await messageRepository.createMessage(
       .new(
         conversationId: conversationId,
-        content: currentResult.entityText,
+        content: chunk.entityText,
         messageType: .text,
         isUser: false,
         status: .unfinished,
@@ -308,7 +260,8 @@ class ContinueAgentService({
     return firstMessage.id;
   }
 
-  AgentChunkSink<ChatResult<ChatMessage>> _createUiStreamingSink(
+  @override
+  AgentChunkSink<ChatResult<ChatMessage>> createUiStreamingSink(
     String messageId,
   ) {
     final uiStreamingController =
@@ -325,7 +278,8 @@ class ContinueAgentService({
     return _AppChunkSink(uiStreamingController, future);
   }
 
-  AgentChunkSink<ChatResult<ChatMessage>> _createPersistenceSink(
+  @override
+  AgentChunkSink<ChatResult<ChatMessage>> createPersistenceSink(
     CurrentAgentMessageId currentMessageId,
   ) {
     final streamingController =
@@ -404,7 +358,8 @@ class ContinueAgentService({
     return JsonCodec.encode(metadata.toJson()) != null;
   }
 
-  Future<void> _persistCompletedAssistantMessage(
+  @override
+  Future<void> persistCompletedAssistantMessage(
     String messageId,
     ChatResult<ChatMessage> result,
   ) async {
