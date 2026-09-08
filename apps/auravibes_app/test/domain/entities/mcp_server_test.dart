@@ -295,6 +295,7 @@ void main() {
         issuedAt: DateTime(2020),
         expiresIn: 60,
       );
+      expect(token.expiresAt, DateTime(2020, 1, 1, 0, 1));
       expect(token.isOAuthTokenExpired, isTrue);
     });
 

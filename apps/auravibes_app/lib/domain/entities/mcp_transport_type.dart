@@ -97,10 +97,8 @@ abstract class const OAuthTokenEntity._() with _$OAuthTokenEntity {
 
   /// Returns true if the stored OAuth token is expired or unavailable.
   bool get isOAuthTokenExpired {
-    final expiresIn = this.expiresIn;
-    if (expiresIn == null) return true;
-
-    final expiresAt = issuedAt.add(Duration(seconds: expiresIn));
+    final expiresAt = this.expiresAt;
+    if (expiresAt == null) return true;
 
     // Consider expired if within 5 minutes of expiry (buffer for refresh).
     return DateTime.now().isAfter(
