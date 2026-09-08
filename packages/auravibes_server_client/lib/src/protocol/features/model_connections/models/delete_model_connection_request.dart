@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class DeleteModelConnectionRequest implements _i1.SerializableModel {
+abstract class DeleteModelConnectionRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   DeleteModelConnectionRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -48,7 +49,7 @@ abstract class DeleteModelConnectionRequest implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [DeleteModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   DeleteModelConnectionRequest copyWith({
     int? workspaceId,
     String? requestId,
@@ -67,8 +68,19 @@ abstract class DeleteModelConnectionRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'DeleteModelConnectionRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'connectionId': connectionId,
+      'expectedRevision': expectedRevision,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -87,7 +99,7 @@ class _DeleteModelConnectionRequestImpl extends DeleteModelConnectionRequest {
 
   /// Returns a shallow copy of this [DeleteModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   DeleteModelConnectionRequest copyWith({
     int? workspaceId,

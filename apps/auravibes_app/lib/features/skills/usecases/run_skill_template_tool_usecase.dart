@@ -15,24 +15,15 @@ import 'package:auravibes_engine/auravibes_engine.dart'
 import 'package:auravibes_engine/auravibes_engine.dart' as package_skills;
 import 'package:riverpod/riverpod.dart';
 
-class RunSkillTemplateToolUsecase {
-  const RunSkillTemplateToolUsecase(
-    this._skillTemplateToolsRepository,
-    this._skillsRepository,
-    this._skillCredentialDefinitionsRepository,
-    this._skillCredentialsRepository,
-    this._runSkillUrlTemplateUsecase,
-    this._workspaceSession,
-  );
-
-  final SkillTemplateToolsRepository _skillTemplateToolsRepository;
-  final SkillsRepository _skillsRepository;
+class const RunSkillTemplateToolUsecase(
+  final SkillTemplateToolsRepository _skillTemplateToolsRepository,
+  final SkillsRepository _skillsRepository,
   final SkillCredentialDefinitionsRepository
-  _skillCredentialDefinitionsRepository;
-  final SkillCredentialsRepository _skillCredentialsRepository;
-  final package_skills.RunSkillUrlTemplate _runSkillUrlTemplateUsecase;
-  final Future<WorkspaceSession> Function(String workspaceId) _workspaceSession;
-
+  _skillCredentialDefinitionsRepository,
+  final SkillCredentialsRepository _skillCredentialsRepository,
+  final package_skills.RunSkillUrlTemplate _runSkillUrlTemplateUsecase,
+  final Future<WorkspaceSession> Function(String workspaceId) _workspaceSession,
+) {
   Future<Object?> call({
     required String workspaceId,
     required String skillSlug,
@@ -146,8 +137,7 @@ final runSkillTemplateToolUsecaseProvider =
         ref.watch(skillCredentialDefinitionsRepositoryProvider),
         ref.watch(skillCredentialsRepositoryProvider),
         ref.watch(runSkillUrlTemplateUsecaseProvider),
-        (workspaceId) => ref.read(
-          workspaceSessionForRouteProvider(workspaceId).future,
-        ),
+        (workspaceId) =>
+            ref.read(workspaceSessionForRouteProvider(workspaceId).future),
       );
     });

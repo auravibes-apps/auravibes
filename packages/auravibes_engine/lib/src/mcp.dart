@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 final class McpDiscoveredTool {
-  McpDiscoveredTool({
+  new({
     required this.name,
     required Map<String, Object?> inputSchema,
     this.description,
@@ -40,13 +40,12 @@ List<McpDiscoveredTool> parseMcpToolsList(Map<String, Object?> result) {
       .toList(growable: false);
 }
 
-sealed class McpContent {
-  const McpContent();
+sealed class const McpContent() {
   Map<String, Object?> toJson();
 }
 
 final class McpTextContent extends McpContent {
-  McpTextContent(this.text, {Map<String, Object?>? annotations})
+  new(this.text, {Map<String, Object?>? annotations})
     : annotations = annotations == null ? null : _freezeMap(annotations);
   final String text;
   final Map<String, Object?>? annotations;
@@ -59,7 +58,7 @@ final class McpTextContent extends McpContent {
 }
 
 final class McpBinaryContent extends McpContent {
-  McpBinaryContent({
+  new({
     required this.type,
     required this.mimeType,
     this.data,
@@ -82,7 +81,7 @@ final class McpBinaryContent extends McpContent {
 }
 
 final class McpResourceContent extends McpContent {
-  McpResourceContent({
+  new({
     required this.uri,
     this.text,
     this.blob,
@@ -118,7 +117,7 @@ final class McpResourceContent extends McpContent {
 }
 
 class McpToolResult {
-  McpToolResult({
+  new({
     List<McpContent> content = const [],
     Map<String, Object?>? structuredContent,
     this.isStreaming = false,
@@ -133,9 +132,8 @@ class McpToolResult {
   final bool? isError;
 
   String toModelText() {
-    if (content case [
-      McpTextContent(:final text),
-    ] when structuredContent == null && !isStreaming && isError != true) {
+    if (content case [McpTextContent(:final text)]
+        when structuredContent == null && !isStreaming && isError != true) {
       return text;
     }
     return jsonEncode({

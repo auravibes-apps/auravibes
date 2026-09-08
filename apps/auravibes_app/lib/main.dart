@@ -8,14 +8,21 @@ import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiMode, SystemUiOverlayStyle, appFlavor;
+import 'package:flutter_driver/driver_extension.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
   AppFlavorConfig.appFlavor = AppFlavorResolver.resolve(appFlavor);
-  final _ = WidgetsFlutterBinding.ensureInitialized();
+  // Ponytail: debug-only bridge; enable only for MCP driver screenshots.
+  if (kDebugMode && const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
+    final _ = enableFlutterDriverExtension();
+  } else {
+    final _ = WidgetsFlutterBinding.ensureInitialized();
+  }
   AppLogging.configure(enabled: AppFlavorConfig.appFlavor != Flavor.prod);
   await MainLocale.ensureInitialized();
 
@@ -37,9 +44,7 @@ Future<void> main() async {
   });
 }
 
-class AppFlavorResolver {
-  AppFlavorResolver._();
-
+class AppFlavorResolver._() {
   static Flavor resolve(String? flavorName) {
     if (flavorName == null) {
       throw StateError('appFlavor is not initialized');
@@ -49,15 +54,14 @@ class AppFlavorResolver {
   }
 }
 
-class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
-
+class const MyApp({super.key}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeAsync = ref.watch(themeProvider);
     final routerConfig = ref.watch(routerProvider);
     final themeMode = themeAsync.asData?.value.themeMode ?? ThemeMode.system;
-    final hue = ref.watch(accentHueProvider).asData?.value ?? defaultAccentHue;
+    final hue =
+        ref.watch(accentHueProvider).asData?.value ?? AccentHue.defaultValue;
     final lightTheme = AuraTheme.light.copyWith(
       colors: AuraComputedColorScheme(
         primaryHue: hue,
@@ -75,9 +79,7 @@ class MyApp extends ConsumerWidget {
       child: MaterialApp.router(
         routerConfig: routerConfig,
         builder: (context, child) => AuraSnackBarHost(
-          child: AuraText(
-            child: child ?? const SizedBox.shrink(),
-          ),
+          child: AuraText(child: child ?? const SizedBox.shrink()),
         ),
         title: AppFlavorConfig.title,
         theme: _auraMaterialTheme(lightTheme, Brightness.light),
@@ -213,6 +215,11 @@ TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
       ? Typography.material2021().white
       : Typography.material2021().black;
 
+  final typography = auraTheme.typography;
+  final mediumWeight = typography.fontWeightMedium;
+  final smallSize = typography.fontSizeSm;
+  final extraSmallSize = typography.fontSizeXs;
+
   return baseTheme
       .apply(
         bodyColor: colors.onSurface,
@@ -256,26 +263,26 @@ TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
         ),
         titleSmall: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeSm,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          smallSize,
+          fontWeight: mediumWeight,
         ),
         bodyLarge: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeBase),
-        bodyMedium: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeSm),
-        bodySmall: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeXs),
+        bodyMedium: _auraTextStyle(auraTheme, smallSize),
+        bodySmall: _auraTextStyle(auraTheme, extraSmallSize),
         labelLarge: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeSm,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          smallSize,
+          fontWeight: mediumWeight,
         ),
         labelMedium: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeXs,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          extraSmallSize,
+          fontWeight: mediumWeight,
         ),
         labelSmall: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeXs,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          extraSmallSize,
+          fontWeight: mediumWeight,
         ),
       );
 }

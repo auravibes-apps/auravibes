@@ -9,11 +9,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ChatsListScreen extends ConsumerWidget {
-  const ChatsListScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const ChatsListScreen({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraScreen(

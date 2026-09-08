@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -10,12 +8,14 @@ import 'package:flutter/material.dart';
 /// icons and colors, typically used alongside message bubbles.
 class AuraMessageStatus extends StatefulWidget {
   /// Creates a Aura message status indicator.
-  const AuraMessageStatus({
+  const new({
     required this.status,
     super.key,
     this.size = AuraMessageStatusSize.medium,
+    this.tint,
     this.color,
     this.showAnimation = true,
+    this.semanticLabel,
   });
 
   /// The current message status.
@@ -24,12 +24,17 @@ class AuraMessageStatus extends StatefulWidget {
   /// The size of the status indicator.
   final AuraMessageStatusSize size;
 
-  /// Custom color for the status indicator. If null, uses status-appropriate
-  /// colors.
+  /// Tint for the status indicator. If null, uses status-appropriate colors.
+  final AuraTint? tint;
+
+  /// Legacy explicit color override. Prefer [tint] for theme-aware colors.
   final Color? color;
 
   /// Whether to show animations for status changes.
   final bool showAnimation;
+
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
 
   @override
   State<AuraMessageStatus> createState() => _AuraMessageStatusState();
@@ -37,6 +42,10 @@ class AuraMessageStatus extends StatefulWidget {
 
 class _AuraMessageStatusState extends State<AuraMessageStatus>
     with TickerProviderStateMixin {
+  static const double _fullTurnRadians = 2 * 3.14159;
+  static const _smallPadding = 2.0;
+  static const _mediumPadding = 4.0;
+  static const _largePadding = 6.0;
   AnimationController? _rotationController;
   AnimationController? _scaleController;
   Animation<double>? _rotationAnimation;
@@ -48,44 +57,10 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     _setupAnimations();
   }
 
-  void _setupAnimations() {
-    if (!widget.showAnimation) return;
-
-    if (widget.status == AuraMessageDeliveryStatus.sending) {
-      final rotationController = AnimationController(
-        duration: const Duration(milliseconds: 1000),
-        vsync: this,
-      );
-      _rotationController = rotationController;
-
-      final rotationAnimation = Tween<double>(
-        begin: 0,
-        end: 1,
-      ).animate(rotationController);
-      _rotationAnimation = rotationAnimation;
-
-      unawaited(rotationController.repeat());
-    } else {
-      final scaleController = AnimationController(
-        duration: DesignDuration.normal,
-        vsync: this,
-      );
-      _scaleController = scaleController;
-
-      final scaleAnimation =
-          Tween<double>(
-            begin: 0,
-            end: 1,
-          ).animate(
-            CurvedAnimation(
-              parent: scaleController,
-              curve: Curves.elasticOut,
-            ),
-          );
-      _scaleAnimation = scaleAnimation;
-
-      unawaited(scaleController.forward());
-    }
+  @override
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
   }
 
   @override
@@ -99,26 +74,16 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     }
   }
 
-  void _disposeControllers() {
-    _rotationController?.dispose();
-    _scaleController?.dispose();
-    _rotationController = null;
-    _scaleController = null;
-    _rotationAnimation = null;
-    _scaleAnimation = null;
-  }
-
-  @override
-  void dispose() {
-    _disposeControllers();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final icon = _getStatusIcon();
-    final color = widget.color ?? _getStatusColor(auraColors);
+    final tint = widget.tint;
+    final color =
+        widget.color ??
+        (tint == null
+            ? _getStatusColor(auraColors)
+            : auraColors.colorFor(tint));
 
     Widget statusIcon = Icon(
       icon,
@@ -138,7 +103,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
           animation: rotationAnimation,
           builder: (context, child) {
             return Transform.rotate(
-              angle: rotationAnimation.value * 2 * 3.14159,
+              angle: rotationAnimation.value * _fullTurnRadians,
               child: child,
             );
           },
@@ -149,20 +114,56 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
         statusIcon = AnimatedBuilder(
           animation: scaleAnimation,
           builder: (context, child) {
-            return Transform.scale(
-              scale: scaleAnimation.value,
-              child: child,
-            );
+            return Transform.scale(scale: scaleAnimation.value, child: child);
           },
           child: statusIcon,
         );
       }
     }
 
-    return Container(
-      padding: EdgeInsets.all(_getPadding()),
-      child: statusIcon,
-    );
+    return Container(padding: EdgeInsets.all(_getPadding()), child: statusIcon);
+  }
+
+  void _setupAnimations() {
+    if (!widget.showAnimation) return;
+
+    if (widget.status == AuraMessageDeliveryStatus.sending) {
+      final rotationController = AnimationController(
+        duration: const Duration(milliseconds: 1000),
+        vsync: this,
+      );
+      _rotationController = rotationController;
+
+      final rotationAnimation = Tween<double>(
+        begin: 0,
+        end: 1,
+      ).animate(rotationController);
+      _rotationAnimation = rotationAnimation;
+
+      final _ = rotationController.repeat();
+    } else {
+      final scaleController = AnimationController(
+        duration: DesignDuration.normal,
+        vsync: this,
+      );
+      _scaleController = scaleController;
+
+      final scaleAnimation = Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(parent: scaleController, curve: Curves.elasticOut),
+      );
+      _scaleAnimation = scaleAnimation;
+
+      final _ = scaleController.forward();
+    }
+  }
+
+  void _disposeControllers() {
+    _rotationController?.dispose();
+    _scaleController?.dispose();
+    _rotationController = null;
+    _scaleController = null;
+    _rotationAnimation = null;
+    _scaleAnimation = null;
   }
 
   IconData _getStatusIcon() {
@@ -200,13 +201,16 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
 
   double _getPadding() {
     return switch (widget.size) {
-      AuraMessageStatusSize.small => 2.0,
-      AuraMessageStatusSize.medium => 4.0,
-      AuraMessageStatusSize.large => 6.0,
+      AuraMessageStatusSize.small => _smallPadding,
+      AuraMessageStatusSize.medium => _mediumPadding,
+      AuraMessageStatusSize.large => _largePadding,
     };
   }
 
   String _getSemanticLabel() {
+    final semanticLabel = widget.semanticLabel;
+    if (semanticLabel != null) return semanticLabel;
+
     return switch (widget.status) {
       AuraMessageDeliveryStatus.sending => 'Message is being sent',
       AuraMessageDeliveryStatus.unfinished =>
@@ -224,8 +228,8 @@ enum AuraMessageDeliveryStatus {
   /// The message is currently being sent.
   sending,
 
-  /// The message was interrupted before completion (e.g. app crash, network.
-  /// loss). Loaded from DB with truncated content.
+  /// The message was interrupted before completion (for example, app crash or
+  /// loss). Loaded from the database with truncated content.
   unfinished,
 
   /// The message has been sent successfully.

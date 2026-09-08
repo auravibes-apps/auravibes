@@ -1,6 +1,8 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'dart:io';
+
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -11,10 +13,28 @@ import 'package:dio/dio.dart';
 /// This service handles fetching model and provider data from the external API,
 /// parsing responses, and handling network errors.
 class ModelApiService {
-  ModelApiService({Dio? dio}) : _dio = dio ?? _createDefaultDio();
+  new({Dio? dio}) : _dio = dio ?? _createDefaultDio();
 
   /// Dio client for API requests.
   final Dio _dio;
+
+  /// Fetches all models and providers from the API.
+  ///
+  /// Returns a [ModelApiResponse] containing providers and models data.
+  Future<ModelApiResponse> fetchAllModels() async {
+    final apiResponseFuture = _dio.get<Map<String, dynamic>>('/api.json');
+    final canonicalModelIdsFuture = _fetchCanonicalModelIds();
+
+    return _parseDioResponse(
+      await apiResponseFuture,
+      await canonicalModelIdsFuture,
+    );
+  }
+
+  /// Disposes the Dio client.
+  void dispose() {
+    _dio.close();
+  }
 
   /// Creates a default Dio instance with configuration.
   static Dio _createDefaultDio() {
@@ -29,19 +49,6 @@ class ModelApiService {
           'User-Agent': 'AuraVibes-App/1.0',
         },
       ),
-    );
-  }
-
-  /// Fetches all models and providers from the API.
-  ///
-  /// Returns a [ModelApiResponse] containing providers and models data.
-  Future<ModelApiResponse> fetchAllModels() async {
-    final apiResponseFuture = _dio.get<Map<String, dynamic>>('/api.json');
-    final canonicalModelIdsFuture = _fetchCanonicalModelIds();
-
-    return _parseDioResponse(
-      await apiResponseFuture,
-      await canonicalModelIdsFuture,
     );
   }
 
@@ -64,10 +71,8 @@ class ModelApiService {
     Set<String> canonicalModelIds,
   ) {
     final jsonData = response.data;
-    if (response.statusCode != 200 || jsonData == null) {
-      throw Exception(
-        'API request failed with status ${response.statusCode}',
-      );
+    if (response.statusCode != HttpStatus.ok || jsonData == null) {
+      throw Exception('API request failed with status ${response.statusCode}');
     }
 
     return _fromCatalog(
@@ -76,11 +81,6 @@ class ModelApiService {
         canonicalModelIds: canonicalModelIds,
       ),
     );
-  }
-
-  /// Disposes the Dio client.
-  void dispose() {
-    _dio.close();
   }
 }
 
@@ -130,25 +130,25 @@ ModelApiResponse _fromCatalog(ModelsDevCatalogValue catalog) {
 
 Set<String> _canonicalModelIds(Response<Map<String, dynamic>> response) {
   final jsonData = response.data;
-  if (response.statusCode != 200 || jsonData == null) return {};
+  if (response.statusCode != HttpStatus.ok || jsonData == null) return {};
 
   return jsonData.keys.toSet();
 }
 
 /// Data class representing the API response.
-class ModelApiResponse {
-  ModelApiResponse({required this.providers});
-
+class ModelApiResponse({
   /// List of providers with their models.
-  final List<ApiProviderDto> providers;
-}
+  required final List<ApiProviderDto> providers,
+});
 
 /// Data class representing an API provider.
-class ApiProviderDto {
-  ApiProviderDto({required this.modelProvider, required this.models});
-
+class ApiProviderDto({
+  /// Provider name.
+  required final ApiModelProviderEntity modelProvider,
+  required final List<ApiModelEntity> models,
+}) {
   /// Creates an ApiProviderDto from JSON.
-  factory ApiProviderDto.fromJson(
+  factory fromJson(
     Map<String, dynamic> json, {
     required ApiModelProviderEntity modelProvider,
     Set<String> canonicalModelIds = const {},
@@ -159,34 +159,21 @@ class ApiProviderDto {
         : <String, dynamic>{};
 
     final models = modelsData.entries
-        .map(
-          (e) {
-            final modelJson = e.value;
-            if (modelJson is! Map<String, dynamic>) {
-              return null;
-            }
+        .map((e) {
+          final modelJson = e.value;
+          if (modelJson is! Map<String, dynamic>) {
+            return null;
+          }
 
-            return modelJson;
-          },
-        )
+          return modelJson;
+        })
         .nonNulls
         .map(
-          (e) => ApiModelEntity.fromJson(
-            modelProvider.id,
-            e,
-            canonicalModelIds,
-          ),
+          (e) =>
+              ApiModelEntity.fromJson(modelProvider.id, e, canonicalModelIds),
         )
         .toList();
 
-    return ApiProviderDto(
-      modelProvider: modelProvider,
-      models: models,
-    );
+    return ApiProviderDto(modelProvider: modelProvider, models: models);
   }
-
-  final List<ApiModelEntity> models;
-
-  /// Provider name.
-  final ApiModelProviderEntity modelProvider;
 }

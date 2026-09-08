@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class CloudWorkspaceSummary implements _i1.SerializableModel {
+abstract class CloudWorkspaceSummary
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CloudWorkspaceSummary._({
     required this.id,
     required this.name,
@@ -42,10 +43,10 @@ abstract class CloudWorkspaceSummary implements _i1.SerializableModel {
       role: jsonSerialization['role'] as String,
       revision: jsonSerialization['revision'] as int,
       sequence: jsonSerialization['sequence'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -67,7 +68,7 @@ abstract class CloudWorkspaceSummary implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [CloudWorkspaceSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CloudWorkspaceSummary copyWith({
     int? id,
     String? name,
@@ -92,8 +93,22 @@ abstract class CloudWorkspaceSummary implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CloudWorkspaceSummary',
+      'id': id,
+      'name': name,
+      'role': role,
+      'revision': revision,
+      'sequence': sequence,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -118,7 +133,7 @@ class _CloudWorkspaceSummaryImpl extends CloudWorkspaceSummary {
 
   /// Returns a shallow copy of this [CloudWorkspaceSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CloudWorkspaceSummary copyWith({
     int? id,

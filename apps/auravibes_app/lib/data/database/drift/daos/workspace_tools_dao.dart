@@ -5,15 +5,11 @@ import 'package:drift/drift.dart';
 part 'workspace_tools_dao.g.dart';
 
 @DriftAccessor(tables: [Tools])
-class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
+class WorkspaceToolsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$WorkspaceToolsDaoMixin {
-  WorkspaceToolsDao(super.attachedDatabase);
-
   // Core operations.
-  Future<ToolsTable?> getWorkspaceTool(
-    String workspaceId,
-    String id,
-  ) =>
+  Future<ToolsTable?> getWorkspaceTool(String workspaceId, String id) =>
       (select(tools)..where(
             (tbl) => tbl.workspaceId.equals(workspaceId) & tbl.id.equals(id),
           ))
@@ -63,7 +59,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
       return updated;
     } else {
       // Insert new tool.
-      return into(tools).insertReturning(
+      return await into(tools).insertReturning(
         ToolsCompanion(
           workspaceId: Value(workspaceId),
           toolId: Value(toolId),
@@ -89,7 +85,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
       ),
     );
 
-    return (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
+    return await (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
   }
 
   Future<List<ToolsTable>> patchWorkspaceToolConfig(
@@ -138,9 +134,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
 
   /// Delete a workspace tool by its unique table ID.
   Future<bool> deleteWorkspaceToolById(String id) async {
-    final count = await (delete(
-      tools,
-    )..where((tbl) => tbl.id.equals(id))).go();
+    final count = await (delete(tools)..where((tbl) => tbl.id.equals(id))).go();
 
     return count > 0;
   }
@@ -149,23 +143,17 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
   Future<List<ToolsTable>> getWorkspaceTools(String workspaceId) =>
       (select(tools)
             ..where((tbl) => tbl.workspaceId.equals(workspaceId))
-            ..orderBy([
-              (tbl) => OrderingTerm(expression: tbl.toolId),
-            ]))
+            ..orderBy([(tbl) => OrderingTerm(expression: tbl.toolId)]))
           .get();
 
-  Future<List<ToolsTable>> getEnabledWorkspaceTools(
-    String workspaceId,
-  ) =>
+  Future<List<ToolsTable>> getEnabledWorkspaceTools(String workspaceId) =>
       (select(tools)
             ..where(
               (tbl) =>
                   tbl.workspaceId.equals(workspaceId) &
                   tbl.isEnabled.equals(true),
             )
-            ..orderBy([
-              (tbl) => OrderingTerm(expression: tbl.toolId),
-            ]))
+            ..orderBy([(tbl) => OrderingTerm(expression: tbl.toolId)]))
           .get();
 
   Future<ToolsTable?> getEnabledToolByToolName({
@@ -179,9 +167,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
                   tbl.toolId.equals(toolName) &
                   tbl.isEnabled.equals(true),
             )
-            ..orderBy([
-              (tbl) => OrderingTerm(expression: tbl.toolId),
-            ]))
+            ..orderBy([(tbl) => OrderingTerm(expression: tbl.toolId)]))
           .getSingleOrNull();
 
   Future<void> updateToolMetadata({
@@ -190,9 +176,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
     required String inputSchema,
   }) async {
     final updatedCount =
-        await (update(
-          tools,
-        )..where((tbl) => tbl.id.equals(id))).write(
+        await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
           ToolsCompanion(
             updatedAt: Value(DateTime.now()),
             description: Value(description),
@@ -291,9 +275,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
       ),
     );
 
-    return (select(
-      tools,
-    )..where((tbl) => tbl.id.equals(id))).getSingle();
+    return await (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
   }
 
   // ============================================================.

@@ -22,7 +22,7 @@ void main() {
     });
 
     final uri = Uri.parse('https://auth.openai.com/codex/device');
-    await openSystemBrowser(uri);
+    await OpenSystemBrowser.call(uri);
 
     expect(launchCall?.method, 'launch');
     expect(launchCall?.arguments, containsPair('url', uri.toString()));
@@ -33,6 +33,6 @@ void main() {
 
     final uri = Uri.parse('https://auth.openai.com/codex/device');
 
-    expect(openSystemBrowser(uri), throwsException);
+    expect(OpenSystemBrowser.call(uri), throwsException);
   });
 }

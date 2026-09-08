@@ -1,11 +1,7 @@
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
-class CloudWorkspaceRepository {
-  const CloudWorkspaceRepository(this._client);
-
-  final Client _client;
-
+class const CloudWorkspaceRepository(final Client _client) {
   Future<List<CloudWorkspaceSummary>> listWorkspaces() {
     return _client.cloudWorkspace.listAuthorizedWorkspaces();
   }

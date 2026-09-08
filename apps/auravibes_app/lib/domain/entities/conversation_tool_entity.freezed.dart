@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'conversation_tool_entity.dart';
@@ -9,6 +9,7 @@ part of 'conversation_tool_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -34,16 +35,21 @@ $ConversationToolEntityCopyWith<ConversationToolEntity> get copyWith => _$Conver
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolEntity&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  final _this = this as ConversationToolEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolEntity&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.toolId, _this.toolId) || other.toolId == _this.toolId)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.permissionMode, _this.permissionMode) || other.permissionMode == _this.permissionMode)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,toolId,isEnabled,permissionMode,createdAt,updatedAt);
+int get hashCode {
+  final _this = this as ConversationToolEntity;
+  return Object.hash(runtimeType,_this.conversationId,_this.toolId,_this.isEnabled,_this.permissionMode,_this.createdAt,_this.updatedAt);
+}
 
 @override
 String toString() {
-  return 'ConversationToolEntity(conversationId: $conversationId, toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode, createdAt: $createdAt, updatedAt: $updatedAt)';
+  final _this = this as ConversationToolEntity;
+  return 'ConversationToolEntity(conversationId: ${_this.conversationId}, toolId: ${_this.toolId}, isEnabled: ${_this.isEnabled}, permissionMode: ${_this.permissionMode}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt})';
 }
 
 
@@ -72,7 +78,7 @@ class _$ConversationToolEntityCopyWithImpl<$Res>
 /// Create a copy of ConversationToolEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? toolId = null,Object? isEnabled = null,Object? permissionMode = null,Object? createdAt = null,Object? updatedAt = null,}) {
-  return _then(_self.copyWith(
+  return _then(ConversationToolEntity(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
 as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
@@ -249,16 +255,18 @@ _$ConversationToolEntityCopyWith<_ConversationToolEntity> get copyWith => __$Con
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolEntity&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolEntity&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,toolId,isEnabled,permissionMode,createdAt,updatedAt);
+int get hashCode {
+    return Object.hash(runtimeType,conversationId,toolId,isEnabled,permissionMode,createdAt,updatedAt);
+}
 
 @override
 String toString() {
-  return 'ConversationToolEntity(conversationId: $conversationId, toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'ConversationToolEntity(conversationId: $conversationId, toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -321,16 +329,21 @@ $ConversationToolToCreateCopyWith<ConversationToolToCreate> get copyWith => _$Co
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolToCreate&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode));
+  final _this = this as ConversationToolToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolToCreate&&(identical(other.toolId, _this.toolId) || other.toolId == _this.toolId)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.permissionMode, _this.permissionMode) || other.permissionMode == _this.permissionMode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,toolId,isEnabled,permissionMode);
+int get hashCode {
+  final _this = this as ConversationToolToCreate;
+  return Object.hash(runtimeType,_this.toolId,_this.isEnabled,_this.permissionMode);
+}
 
 @override
 String toString() {
-  return 'ConversationToolToCreate(toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode)';
+  final _this = this as ConversationToolToCreate;
+  return 'ConversationToolToCreate(toolId: ${_this.toolId}, isEnabled: ${_this.isEnabled}, permissionMode: ${_this.permissionMode})';
 }
 
 
@@ -359,7 +372,7 @@ class _$ConversationToolToCreateCopyWithImpl<$Res>
 /// Create a copy of ConversationToolToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? toolId = null,Object? isEnabled = freezed,Object? permissionMode = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ConversationToolToCreate(
 toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
 as String,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool?,permissionMode: freezed == permissionMode ? _self.permissionMode : permissionMode // ignore: cast_nullable_to_non_nullable
@@ -527,16 +540,18 @@ _$ConversationToolToCreateCopyWith<_ConversationToolToCreate> get copyWith => __
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolToCreate&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolToCreate&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,toolId,isEnabled,permissionMode);
+int get hashCode {
+    return Object.hash(runtimeType,toolId,isEnabled,permissionMode);
+}
 
 @override
 String toString() {
-  return 'ConversationToolToCreate(toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode)';
+    return 'ConversationToolToCreate(toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode)';
 }
 
 

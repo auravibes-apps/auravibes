@@ -21,10 +21,10 @@ import 'package:riverpod/riverpod.dart';
 import '../../../helpers/test_app.dart';
 
 class MockSaveUsecase extends Mock
-    implements SaveWorkspaceCompactionSettingsUsecase {}
+    implements SaveWorkspaceCompactionSettingsUsecase;
 
 class MockCompactionSettingsRepository extends Mock
-    implements WorkspaceCompactionSettingsRepository {}
+    implements WorkspaceCompactionSettingsRepository;
 
 void main() {
   const testWorkspaceId = 'test-ws';
@@ -63,21 +63,15 @@ void main() {
         data: ThemeData(extensions: [AuraTheme.light]),
         child: const Scaffold(
           body: Material(
-            child: CompactionSettingsSection(
-              workspaceId: testWorkspaceId,
-            ),
+            child: CompactionSettingsSection(workspaceId: testWorkspaceId),
           ),
         ),
       ),
       overrides: [
-        compactionSettingsProvider(testWorkspaceId).overrideWith(
-          (ref) => readSettingsController().stream,
-        ),
-        saveWorkspaceCompactionSettingsUsecaseProvider(
-          testWorkspaceId,
-        ).overrideWith(
-          (ref) => readMockSave(),
-        ),
+        compactionSettingsProvider(testWorkspaceId)
+            .overrideWith((ref) => readSettingsController().stream),
+        saveWorkspaceCompactionSettingsUsecaseProvider(testWorkspaceId)
+            .overrideWith((ref) => readMockSave()),
         workspaceCompactionSettingsRepositoryProvider.overrideWith(
           (ref) => readMockRepository(),
         ),
@@ -106,6 +100,10 @@ void main() {
       await pumpSubject(tester);
       expect(find.byType(CompactionSettingsSection), findsOneWidget);
       expect(find.byType(AuraSwitch), findsOneWidget);
+      final slider = tester.widget<AuraSlider>(find.byType(AuraSlider));
+      expect(slider.value, 80);
+      expect(slider.min, 5);
+      expect(slider.max, 100);
       expect(find.byType(AuraButton), findsNWidgets(2));
     });
   });
@@ -130,10 +128,9 @@ void main() {
       final toggle = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
       expect(toggle.value, isFalse);
 
-      final textFields = find.byType(TextField);
-      final usageField = tester.widget<TextField>(textFields.first);
-      final remainingField = tester.widget<TextField>(textFields.last);
-      expect(usageField.controller?.text, '45');
+      final slider = tester.widget<AuraSlider>(find.byType(AuraSlider));
+      final remainingField = tester.widget<TextField>(find.byType(TextField));
+      expect(slider.value, 45);
       expect(remainingField.controller?.text, '999');
     });
   });
@@ -150,8 +147,9 @@ void main() {
       readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
 
-      await tester.enterText(find.byType(TextField).first, '50');
-      await tester.enterText(find.byType(TextField).last, '3000');
+      tester.widget<AuraSlider>(find.byType(AuraSlider)).onChanged?.call(50);
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), '3000');
 
       await tester.tap(
         find
@@ -192,8 +190,9 @@ void main() {
       readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
 
-      await tester.enterText(find.byType(TextField).first, '2');
-      await tester.enterText(find.byType(TextField).last, '2000');
+      tester.widget<AuraSlider>(find.byType(AuraSlider)).onChanged?.call(50);
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), '2000');
 
       await tester.tap(
         find
@@ -209,9 +208,7 @@ void main() {
         () => verify(
           () => readMockSave()(
             workspaceId: testWorkspaceId,
-            settings: const CompactionSettings(
-              usagePercentageThreshold: 2,
-            ),
+            settings: const CompactionSettings(usagePercentageThreshold: 50),
           ),
         ).called(1),
         returnsNormally,
@@ -221,9 +218,8 @@ void main() {
 
   group('_resetDefaults', () {
     testWidgets('calls reset usecase even when it fails', (tester) async {
-      when(
-        () => readMockRepository().resetOverrides(testWorkspaceId),
-      ).thenThrow(Exception('DB error'));
+      when(() => readMockRepository().resetOverrides(testWorkspaceId))
+          .thenThrow(Exception('DB error'));
 
       readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
@@ -239,17 +235,16 @@ void main() {
       await tester.pump();
 
       expect(
-        () => verify(
-          () => readMockRepository().resetOverrides(testWorkspaceId),
-        ).called(1),
+        () =>
+            verify(() => readMockRepository().resetOverrides(testWorkspaceId))
+                .called(1),
         returnsNormally,
       );
     });
 
     testWidgets('resets form fields on success', (tester) async {
-      when(
-        () => readMockRepository().resetOverrides(testWorkspaceId),
-      ).thenAnswer((_) async => CompactionSettings.defaults);
+      when(() => readMockRepository().resetOverrides(testWorkspaceId))
+          .thenAnswer((_) async => CompactionSettings.defaults);
 
       readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
@@ -264,16 +259,14 @@ void main() {
       );
       await tester.pump();
 
-      verify(
-        () => readMockRepository().resetOverrides(testWorkspaceId),
-      ).called(1);
+      verify(() => readMockRepository().resetOverrides(testWorkspaceId))
+          .called(1);
 
-      final textFields = find.byType(TextField);
-      final usageField = tester.widget<TextField>(textFields.first);
-      final remainingField = tester.widget<TextField>(textFields.last);
+      final slider = tester.widget<AuraSlider>(find.byType(AuraSlider));
+      final remainingField = tester.widget<TextField>(find.byType(TextField));
       expect(
-        usageField.controller?.text,
-        '${CompactionSettings.defaults.usagePercentageThreshold}',
+        slider.value,
+        CompactionSettings.defaults.usagePercentageThreshold,
       );
       expect(
         remainingField.controller?.text,

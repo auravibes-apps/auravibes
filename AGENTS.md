@@ -7,13 +7,6 @@
 - Check `git status --short` before and after edits.
 - Do not revert unrelated changes.
 
-## Task Ledger
-
-- For non-trivial implementation, read `.agents/plan/tasks.md` before editing.
-- Keep task status, dependencies, steps, discoveries, and evidence current.
-- Add newly discovered work to the ledger before implementing it.
-- Mark tasks done only after applicable completion gates pass.
-
 ## Commands
 
 | Task                    | Command                                                                      |
@@ -30,11 +23,44 @@
 | Code generation         | `fvm dart run melos run generate`                                            |
 | Localization generation | `fvm dart run melos run generate:localization`                               |
 
+## Flutter MCP Control
+
+- Use `dev Debug` for manual testing; it preserves the native keyboard.
+- Use the `dev Driver` VS Code launch profile, or run from `apps/auravibes_app`:
+  `fvm flutter run --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/ --dart-define=ENABLE_FLUTTER_DRIVER=true`.
+- Driver mode enables Flutter text-entry emulation. The native keyboard is
+  intentionally unavailable; enter text through MCP after focusing a field.
+- Control the running app with `mcp__dart_mcp_server__flutter_driver_command`:
+  call `get_health`, then `tap` with a finder, `enter_text` with `text`, and
+  verify with `get_text` or `screenshot`. Set `appUri` when multiple apps are
+  connected.
+- Do not use driver mode to verify real iOS keyboard behavior.
+
 ## Verification
 
 - Run the smallest focused check that proves the change.
 - For code edits, prefer focused tests, analysis, or boundary checks over generic whitespace checks.
-- Use `validate:quick` before claiming done for shared behavior, app logic, or broad refactors.
+
+- Assign one owner per validation command.
+- Run broad validation once, only after implementation stabilizes and scope requires it.
+- Do not repeat a completed command unless relevant files or configuration changed.
+- Before a long-running command, announce the exact command and expected duration.
+- In handoffs, include each command, result, duration, and relevant failures.
+- Report decision blockers immediately. Before retrying or replacing delegated work, inspect its current state and preserved output.
+
+| Scope | Required validation |
+| --- | --- |
+| Focused file/bug | Focused test or analyzer |
+| Shared app logic/broad refactor | `validate:quick` |
+| PR update/merge prep | `validate`, dependency, and import gates |
+| CI reproduction/explicit request | `test:ci` |
+| Workflow/config-only | Diff, YAML, and action validation; no Dart suites unless Dart behavior changes |
+
+- When focused validation passes and a wider gate reports only unrelated diagnostics, report those diagnostics; do not escalate to broader local suites.
+- A timeout or background job is incomplete: wait for its exit status; do not duplicate or retry it.
+- Do not rerun a suite already included in `validate`.
+- Distinguish known baseline test failures from failures caused by the change.
+- Before interpreting slow CI scope selection, verify CI head, base, and run attempt.
 - Use `git diff --check` only for docs/patch-heavy edits, generated-code reviews, or final whitespace checks when relevant; do not run it in every code-edit loop.
 - If verification cannot run, say why and name the next command to run.
 - Generated-code changes require generator output review.

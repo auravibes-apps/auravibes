@@ -3,9 +3,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'skill_credential_definition_entity.freezed.dart';
 
 @freezed
-abstract class SkillCredentialDefinitionEntity
+abstract class const SkillCredentialDefinitionEntity._()
     with _$SkillCredentialDefinitionEntity {
-  const factory SkillCredentialDefinitionEntity({
+  const factory({
     required String id,
     required String workspaceId,
     required String title,
@@ -14,25 +14,18 @@ abstract class SkillCredentialDefinitionEntity
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _SkillCredentialDefinitionEntity;
-  const SkillCredentialDefinitionEntity._();
 }
 
 @freezed
-abstract class SkillCredentialDefinitionToCreate
+abstract class const SkillCredentialDefinitionToCreate._()
     with _$SkillCredentialDefinitionToCreate {
-  const factory SkillCredentialDefinitionToCreate({
-    required String title,
-    required String attributesJson,
-  }) = _SkillCredentialDefinitionToCreate;
-  const SkillCredentialDefinitionToCreate._();
+  const factory({required String title, required String attributesJson}) =
+      _SkillCredentialDefinitionToCreate;
 }
 
 @freezed
-abstract class SkillCredentialDefinitionToUpdate
+abstract class const SkillCredentialDefinitionToUpdate._()
     with _$SkillCredentialDefinitionToUpdate {
-  const factory SkillCredentialDefinitionToUpdate({
-    String? title,
-    String? attributesJson,
-  }) = _SkillCredentialDefinitionToUpdate;
-  const SkillCredentialDefinitionToUpdate._();
+  const factory({String? title, String? attributesJson}) =
+      _SkillCredentialDefinitionToUpdate;
 }

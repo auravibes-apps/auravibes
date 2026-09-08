@@ -1,104 +1,61 @@
 const skillContextMetadataKind = 'skill_context';
 
-enum AgentPromptMessageType {
-  text,
-  system,
-}
+enum AgentPromptMessageType { text, system }
 
-enum AgentChatMessageRole {
-  system,
-  user,
-  model,
-  tool,
-}
+enum AgentChatMessageRole { system, user, model, tool }
 
-enum AgentChatPartType {
-  text,
-  reasoning,
-  toolRequest,
-  toolResponse,
-}
+enum AgentChatPartType { text, reasoning, toolRequest, toolResponse }
 
-class AgentPromptToolCall {
-  const AgentPromptToolCall({
-    required this.id,
-    required this.name,
-    required this.arguments,
-    required this.isResolved,
-    this.response,
-  });
+class const AgentPromptToolCall({
+  required final String id,
+  required final String name,
+  required final Map<String, Object?> arguments,
+  required final bool isResolved,
+  final Object? response,
+});
 
-  final String id;
-  final String name;
-  final Map<String, Object?> arguments;
-  final bool isResolved;
-  final Object? response;
-}
+class const AgentPromptMessage({
+  required final String content,
+  required final bool isUser,
+  final AgentPromptMessageType type = AgentPromptMessageType.text,
+  final bool isCompactionSummary = false,
+  final String? thinking,
+  final Map<String, Object?> modelMetadata = const {},
+  final List<AgentPromptToolCall> toolCalls = const [],
+});
 
-class AgentPromptMessage {
-  const AgentPromptMessage({
-    required this.content,
-    required this.isUser,
-    this.type = AgentPromptMessageType.text,
-    this.isCompactionSummary = false,
-    this.thinking,
-    this.modelMetadata = const {},
-    this.toolCalls = const [],
-  });
+class const AgentToolRequest({
+  required final String ref,
+  required final String name,
+  required final Map<String, Object?> input,
+});
 
-  final String content;
-  final bool isUser;
-  final AgentPromptMessageType type;
-  final bool isCompactionSummary;
-  final String? thinking;
-  final Map<String, Object?> modelMetadata;
-  final List<AgentPromptToolCall> toolCalls;
-}
-
-class AgentToolRequest {
-  const AgentToolRequest({
-    required this.ref,
-    required this.name,
-    required this.input,
-  });
-
-  final String ref;
-  final String name;
-  final Map<String, Object?> input;
-}
-
-class AgentToolResponse {
-  const AgentToolResponse({
-    required this.ref,
-    required this.name,
-    required this.output,
-  });
-
-  final String ref;
-  final String name;
-  final Object? output;
-}
+class const AgentToolResponse({
+  required final String ref,
+  required final String name,
+  required final Object? output,
+});
 
 class AgentChatPart {
-  const AgentChatPart.text(String this.text)
+  const new text(String this.text)
     : type = AgentChatPartType.text,
       reasoning = null,
       toolRequest = null,
       toolResponse = null;
 
-  const AgentChatPart.reasoning(String this.reasoning)
+  const new reasoning(String this.reasoning)
     : type = AgentChatPartType.reasoning,
       text = null,
       toolRequest = null,
       toolResponse = null;
 
-  const AgentChatPart.toolRequest(AgentToolRequest this.toolRequest)
+  const new toolRequest(AgentToolRequest this.toolRequest)
     : type = AgentChatPartType.toolRequest,
       text = null,
       reasoning = null,
       toolResponse = null;
 
-  const AgentChatPart.toolResponse(AgentToolResponse this.toolResponse)
+  const new toolResponse(AgentToolResponse this.toolResponse)
     : type = AgentChatPartType.toolResponse,
       text = null,
       reasoning = null,
@@ -111,21 +68,19 @@ class AgentChatPart {
   final AgentToolResponse? toolResponse;
 }
 
-class AgentChatMessage {
-  const AgentChatMessage({
-    required this.role,
-    this.content = '',
-    this.parts = const [],
-    this.metadata = const {},
-  });
-
-  const AgentChatMessage.user(String content)
+class const AgentChatMessage({
+  required final AgentChatMessageRole role,
+  final String content = '',
+  final List<AgentChatPart> parts = const [],
+  final Map<String, Object?> metadata = const {},
+}) {
+  const new user(String content)
     : this(role: AgentChatMessageRole.user, content: content);
 
-  const AgentChatMessage.system(String content)
+  const new system(String content)
     : this(role: AgentChatMessageRole.system, content: content);
 
-  const AgentChatMessage.model(
+  const new model(
     String content, {
     List<AgentChatPart> parts = const [],
     Map<String, Object?> metadata = const {},
@@ -135,11 +90,6 @@ class AgentChatMessage {
          parts: parts,
          metadata: metadata,
        );
-
-  final AgentChatMessageRole role;
-  final String content;
-  final List<AgentChatPart> parts;
-  final Map<String, Object?> metadata;
 
   bool get isSkillContext => metadata['kind'] == skillContextMetadataKind;
 
@@ -153,19 +103,13 @@ class AgentChatMessage {
   }
 
   List<AgentToolRequest> get toolCalls {
-    return [
-      for (final part in parts) ?part.toolRequest,
-    ];
+    return [for (final part in parts) ?part.toolRequest];
   }
 }
 
-class BuildPromptChatMessages {
-  const BuildPromptChatMessages();
-
+class const BuildPromptChatMessages() {
   List<AgentChatMessage> call(List<AgentPromptMessage> messages) {
-    return [
-      for (final message in messages) ..._mapMessage(message),
-    ];
+    return [for (final message in messages) ..._mapMessage(message)];
   }
 
   List<AgentChatMessage> _mapMessage(AgentPromptMessage message) {

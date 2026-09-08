@@ -1,13 +1,14 @@
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 class CloudChatGateway {
-  CloudChatGateway(this._stateGateway)
+  new(this._stateGateway)
     : _subscribeConversation = null,
       _getConversationSnapshot = null;
 
-  factory CloudChatGateway.forConversationTesting({
+  factory forConversationTesting({
     required CloudWorkspaceStateGateway stateGateway,
     required Stream<ConversationStreamEvent> Function(
       ConversationSubscribeRequest request,
@@ -21,7 +22,7 @@ class CloudChatGateway {
     getConversationSnapshot,
   );
 
-  CloudChatGateway._forConversationTesting(
+  new _forConversationTesting(
     this._stateGateway,
     this._subscribeConversation,
     this._getConversationSnapshot,
@@ -46,7 +47,7 @@ class CloudChatGateway {
     required String mimeType,
     required int sizeBytes,
     required String checksumSha256,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .object,
     () => _client.object.beginUpload(
       BeginUploadRequest(
@@ -61,14 +62,14 @@ class CloudChatGateway {
     ),
   );
   Future<ObjectResult> completeUpload({required int objectId}) =>
-      guardCloudCall(
+      CloudAppErrors.guardCall(
         .object,
         () => _client.object.completeUpload(
           CompleteUploadRequest(workspaceId: _workspaceId, objectId: objectId),
         ),
       );
   Future<GetDownloadResult> getDownload({required int objectId}) =>
-      guardCloudCall(
+      CloudAppErrors.guardCall(
         .object,
         () => _client.object.getDownload(
           GetDownloadRequest(workspaceId: _workspaceId, objectId: objectId),
@@ -78,7 +79,7 @@ class CloudChatGateway {
     required int objectId,
     required String requestId,
     required int expectedRevision,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .object,
     () => _client.object.delete(
       DeleteObjectRequest(
@@ -99,7 +100,7 @@ class CloudChatGateway {
     required List<String> attachmentIds,
     String? modelSelectionId,
     String? agentId,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.startTurn(
       StartTurnRequest(
@@ -112,6 +113,7 @@ class CloudChatGateway {
         attachmentIds: attachmentIds,
         modelSelectionId: modelSelectionId,
         agentId: agentId,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -119,7 +121,7 @@ class CloudChatGateway {
     required String requestId,
     required String conversationId,
     required int expectedConversationRevision,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueTurn(
       ContinueTurnRequest(
@@ -127,26 +129,31 @@ class CloudChatGateway {
         requestId: requestId,
         conversationId: conversationId,
         expectedConversationRevision: expectedConversationRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
-  Future<TurnSnapshot> getTurn({required String turnId}) => guardCloudCall(
-    .conversation,
-    () => _client.conversation.getTurn(
-      GetTurnRequest(workspaceId: _workspaceId, turnId: turnId),
-    ),
-  );
+  Future<TurnSnapshot> getTurn({required String turnId}) =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.getTurn(
+          GetTurnRequest(
+            workspaceId: _workspaceId,
+            turnId: turnId,
+            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+          ),
+        ),
+      );
 
-  Future<ConversationSnapshot> getConversationSnapshot(
-    String conversationId,
-  ) =>
+  Future<ConversationSnapshot> getConversationSnapshot(String conversationId) =>
       _getConversationSnapshot?.call(conversationId) ??
-      guardCloudCall(
+      CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.getConversationSnapshot(
           GetConversationRequest(
             workspaceId: _workspaceId,
             conversationId: conversationId,
+            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
           ),
         ),
       );
@@ -160,6 +167,7 @@ class CloudChatGateway {
       workspaceId: _workspaceId,
       conversationId: conversationId,
       afterSequence: afterSequence,
+      a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
     );
 
     return _subscribeConversation?.call(request) ??
@@ -170,7 +178,7 @@ class CloudChatGateway {
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueConversation(
       ContinueConversationRequest(
@@ -178,6 +186,7 @@ class CloudChatGateway {
         requestId: requestId,
         conversationId: conversationId,
         expectedProjectionRevision: expectedProjectionRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -189,7 +198,8 @@ class CloudChatGateway {
     required String clientMessageId,
     required String content,
     required List<String> attachmentIds,
-  }) => guardCloudCall(
+    String? metadataJson,
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.queueConversationMessage(
       QueueConversationMessageRequest(
@@ -200,6 +210,8 @@ class CloudChatGateway {
         clientMessageId: clientMessageId,
         content: content,
         attachmentIds: attachmentIds,
+        metadataJson: metadataJson,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -208,7 +220,7 @@ class CloudChatGateway {
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.stopConversation(
       StopConversationRequest(
@@ -216,6 +228,7 @@ class CloudChatGateway {
         requestId: requestId,
         conversationId: conversationId,
         expectedProjectionRevision: expectedProjectionRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -229,7 +242,7 @@ class CloudChatGateway {
     required String decision,
     bool stopAll = false,
     String? editedArgumentsJson,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.submitToolDecision(
       SubmitToolDecisionRequest(
@@ -242,6 +255,7 @@ class CloudChatGateway {
         decision: decision,
         stopAll: stopAll,
         editedArgumentsJson: editedArgumentsJson,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
@@ -249,7 +263,7 @@ class CloudChatGateway {
     required String requestId,
     required String turnId,
     required int expectedTurnRevision,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.cancelTurn(
       CancelTurnRequest(
@@ -264,7 +278,7 @@ class CloudChatGateway {
     required String requestId,
     required String conversationId,
     required int expectedConversationRevision,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.compact(
       CompactConversationRequest(
@@ -277,21 +291,21 @@ class CloudChatGateway {
   );
   Future<ConversationSummary> createConversation(
     CreateConversationRequest request,
-  ) => guardCloudCall(
+  ) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.create(
       request.copyWith(workspaceId: _workspaceId),
     ),
   );
   Future<List<ConversationSummary>> listConversations({int limit = 100}) =>
-      guardCloudCall(
+      CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.list(
           ListConversationsRequest(workspaceId: _workspaceId, limit: limit),
         ),
       );
   Future<ConversationSummary> getConversation(String conversationId) =>
-      guardCloudCall(
+      CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.get(
           GetConversationRequest(
@@ -302,26 +316,27 @@ class CloudChatGateway {
       );
   Future<List<ConversationMessageView>> listConversationMessages(
     String conversationId,
-  ) => guardCloudCall(
+  ) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.listMessages(
       ListConversationMessagesRequest(
         workspaceId: _workspaceId,
         conversationId: conversationId,
         limit: 500,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
   Future<ConversationSummary> updateConversation(
     UpdateConversationRequest request,
-  ) => guardCloudCall(
+  ) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.update(
       request.copyWith(workspaceId: _workspaceId),
     ),
   );
   Future<void> deleteConversation(DeleteConversationRequest request) =>
-      guardCloudCall(
+      CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.delete(
           request.copyWith(workspaceId: _workspaceId),

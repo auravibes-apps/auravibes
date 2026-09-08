@@ -1,0 +1,81 @@
+import 'dart:convert';
+
+import 'package:auravibes_engine/src/tool_spec.dart';
+import 'package:crypto/crypto.dart';
+
+final _validToolName = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
+
+class const ToolCatalogCandidate<T>._(
+  final ToolSpec spec,
+  final T target, [
+  final String? _sourceId,
+]) {
+  factory reserved({required ToolSpec spec, required T target}) =>
+      ToolCatalogCandidate._(spec, target);
+
+  factory external({
+    required ToolSpec spec,
+    required T target,
+    required String sourceId,
+  }) => ToolCatalogCandidate._(spec, target, sourceId);
+}
+
+class ToolCatalog<T>._(List<ToolSpec> specs, Map<String, T> targets) {
+  final List<ToolSpec> specs = List.unmodifiable(specs);
+  final Map<String, T> _targets = Map.unmodifiable(targets);
+
+  T? resolve(String modelName) => _targets[modelName];
+}
+
+ToolCatalog<T> buildToolCatalog<T>(
+  Iterable<ToolCatalogCandidate<T>> candidates,
+) {
+  final specs = <ToolSpec>[];
+  final targets = <String, T>{};
+
+  for (final candidate in candidates) {
+    final sourceId = candidate._sourceId;
+    final finalName = sourceId == null
+        ? _validatedReservedName(candidate.spec.name)
+        : _externalToolName(candidate.spec.name, sourceId);
+
+    if (targets.containsKey(finalName)) {
+      throw StateError('Duplicate tool name: $finalName');
+    }
+
+    specs.add(
+      ToolSpec(
+        name: finalName,
+        description: candidate.spec.description,
+        inputJsonSchema: candidate.spec.inputJsonSchema,
+      ),
+    );
+    targets[finalName] = candidate.target;
+  }
+
+  return ToolCatalog._(specs, targets);
+}
+
+String stableToolNameSuffix(String sourceId) => base64Url
+    .encode(sha256.convert(utf8.encode(sourceId)).bytes.take(8).toList())
+    .replaceAll('=', '')
+    .substring(0, 10);
+
+String stableExternalToolNameSuffix(String sourceId, String preferredName) =>
+    stableToolNameSuffix('$sourceId\u0000$preferredName');
+
+String _validatedReservedName(String name) {
+  if (!_validToolName.hasMatch(name)) {
+    throw ArgumentError.value(name, 'name', 'Invalid reserved tool name');
+  }
+  return name;
+}
+
+String _externalToolName(String preferredName, String sourceId) {
+  final readableName = preferredName
+      .replaceAll(RegExp('[^A-Za-z0-9_-]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+  final readableLength = readableName.length > 53 ? 53 : readableName.length;
+  return '${readableName.substring(0, readableLength)}_'
+      '${stableExternalToolNameSuffix(sourceId, preferredName)}';
+}

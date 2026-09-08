@@ -6,10 +6,7 @@ void main() {
     const usecase = BuildSkillContextMessages();
 
     final result = usecase([
-      const AgentSkill(
-        title: 'Plan & Build',
-        content: '<do work>',
-      ),
+      const AgentSkill(title: 'Plan & Build', content: '<do work>'),
     ]);
 
     expect(result, hasLength(1));

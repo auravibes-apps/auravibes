@@ -10,13 +10,14 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
+
 import '../../../features/workspace_state/models/workspace_resource_page_request.dart'
-    as _i2;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i3;
+    as _iwpkqfsy;
 
 abstract class ReadWorkspaceStateRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ReadWorkspaceStateRequest._({
     required this.workspaceId,
     required this.pages,
@@ -26,7 +27,7 @@ abstract class ReadWorkspaceStateRequest
 
   factory ReadWorkspaceStateRequest({
     required int workspaceId,
-    required List<_i2.WorkspaceResourcePageRequest> pages,
+    required List<_iwpkqfsy.WorkspaceResourcePageRequest> pages,
     int? afterSequence,
     required int eventLimit,
   }) = _ReadWorkspaceStateRequestImpl;
@@ -36,9 +37,10 @@ abstract class ReadWorkspaceStateRequest
   ) {
     return ReadWorkspaceStateRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
-      pages: _i3.Protocol().deserialize<List<_i2.WorkspaceResourcePageRequest>>(
-        jsonSerialization['pages'],
-      ),
+      pages: _if5qez1k.Protocol()
+          .deserialize<List<_iwpkqfsy.WorkspaceResourcePageRequest>>(
+            jsonSerialization['pages'],
+          ),
       afterSequence: jsonSerialization['afterSequence'] as int?,
       eventLimit: jsonSerialization['eventLimit'] as int,
     );
@@ -46,7 +48,7 @@ abstract class ReadWorkspaceStateRequest
 
   int workspaceId;
 
-  List<_i2.WorkspaceResourcePageRequest> pages;
+  List<_iwpkqfsy.WorkspaceResourcePageRequest> pages;
 
   int? afterSequence;
 
@@ -54,10 +56,10 @@ abstract class ReadWorkspaceStateRequest
 
   /// Returns a shallow copy of this [ReadWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ReadWorkspaceStateRequest copyWith({
     int? workspaceId,
-    List<_i2.WorkspaceResourcePageRequest>? pages,
+    List<_iwpkqfsy.WorkspaceResourcePageRequest>? pages,
     int? afterSequence,
     int? eventLimit,
   });
@@ -85,7 +87,7 @@ abstract class ReadWorkspaceStateRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -94,7 +96,7 @@ class _Undefined {}
 class _ReadWorkspaceStateRequestImpl extends ReadWorkspaceStateRequest {
   _ReadWorkspaceStateRequestImpl({
     required int workspaceId,
-    required List<_i2.WorkspaceResourcePageRequest> pages,
+    required List<_iwpkqfsy.WorkspaceResourcePageRequest> pages,
     int? afterSequence,
     required int eventLimit,
   }) : super._(
@@ -106,11 +108,11 @@ class _ReadWorkspaceStateRequestImpl extends ReadWorkspaceStateRequest {
 
   /// Returns a shallow copy of this [ReadWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ReadWorkspaceStateRequest copyWith({
     int? workspaceId,
-    List<_i2.WorkspaceResourcePageRequest>? pages,
+    List<_iwpkqfsy.WorkspaceResourcePageRequest>? pages,
     Object? afterSequence = _Undefined,
     int? eventLimit,
   }) {

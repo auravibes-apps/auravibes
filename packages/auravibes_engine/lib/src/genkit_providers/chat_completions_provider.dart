@@ -5,30 +5,23 @@
 
 import 'dart:convert';
 
+import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
 import 'package:genkit/plugin.dart';
 import 'package:openai_dart/openai_dart.dart' as sdk;
 
-class ProviderTransportResponse {
-  const ProviderTransportResponse({
-    required this.statusCode,
-    required this.body,
-  });
+class const ProviderTransportResponse({
+  required final int statusCode,
+  required final Stream<List<int>> body,
+});
 
-  final int statusCode;
-  final Stream<List<int>> body;
-}
+typedef ProviderTransport = Future<ProviderTransportResponse> Function(
+  Map<String, dynamic> body,
+);
 
-typedef ProviderTransport =
-    Future<ProviderTransportResponse> Function(
-      Map<String, dynamic> body,
-    );
-
-class ChatCompletionsModelDefinition {
-  const ChatCompletionsModelDefinition({required this.name, this.info});
-
-  final String name;
-  final ModelInfo? info;
-}
+class const ChatCompletionsModelDefinition({
+  required final String name,
+  final ModelInfo? info,
+});
 
 mixin ChatCompletionsSamplingOptions {
   double? get temperature;
@@ -52,21 +45,17 @@ mixin ChatCompletionsSamplingOptions {
   };
 }
 
-class ChatCompletionsCodec {
-  const ChatCompletionsCodec({
-    required this.errorLabel,
-    required this.customize,
-  });
-  final String errorLabel;
+class const ChatCompletionsCodec({
+  required final String errorLabel,
 
   /// Parses provider-specific request config once into the resolved model
   /// name and the extra body entries to merge into the request.
-  final ({String model, Map<String, dynamic> extraBody}) Function(
+  required final ({String model, Map<String, dynamic> extraBody}) Function(
     String modelName,
     Map<String, dynamic>? config,
   )
-  customize;
-
+  customize,
+}) {
   Future<ModelResponse> complete(
     ProviderTransport transport,
     Map<String, dynamic> body,
@@ -153,13 +142,12 @@ class ChatCompletionsCodec {
     };
   }
 
-  void _throwIfRawError(int statusCode, String body) {
+  void _throwIfRawError(int statusCode, String _) {
     if (statusCode >= 200 && statusCode < 300) return;
 
     throw GenkitException(
-      '$errorLabel API error: $body',
+      '$errorLabel API request failed (HTTP $statusCode).',
       status: StatusCodes.fromHttpStatus(statusCode),
-      details: body,
     );
   }
 }
@@ -227,7 +215,7 @@ Map<String, dynamic> _mediaToChatContent(Part part, Media media) {
     };
   }
 
-  final data = _dataUrlPayload(media.url);
+  final data = dataUrlPayload(media.url);
   if (data == null) {
     throw GenkitException(
       'Chat Completions media inputs require a data URL for files and audio.',
@@ -235,7 +223,7 @@ Map<String, dynamic> _mediaToChatContent(Part part, Media media) {
     );
   }
   if (contentType.startsWith('audio/')) {
-    final format = _audioFormat(contentType, 'Chat Completions');
+    final format = audioFormat(contentType, 'Chat Completions');
 
     return {
       'type': 'input_audio',
@@ -253,33 +241,7 @@ Map<String, dynamic> _mediaToChatContent(Part part, Media media) {
   };
 }
 
-String? _dataUrlPayload(String url) {
-  final comma = url.indexOf(',');
-  if (!url.startsWith(_dataUrlPrefix) || comma < 0) return null;
-  final header = url.replaceRange(comma, url.length, '');
-  if (!header.contains(';base64')) return null;
-
-  final payload = url.replaceRange(0, comma + 1, '');
-  try {
-    final _ = base64Decode(payload);
-  } on FormatException {
-    return null;
-  }
-
-  return payload;
-}
-
 const _dataUrlPrefix = 'data:';
-
-String _audioFormat(String contentType, String providerName) {
-  if (contentType == 'audio/mpeg' || contentType == 'audio/mp3') return 'mp3';
-  if (contentType == 'audio/wav' || contentType == 'audio/x-wav') return 'wav';
-
-  throw GenkitException(
-    '$providerName audio input supports only mp3 and wav.',
-    status: StatusCodes.INVALID_ARGUMENT,
-  );
-}
 
 List<Map<String, dynamic>>? _toolCallsToJson(List<Part> parts) {
   final toolCalls = parts

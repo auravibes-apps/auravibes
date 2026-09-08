@@ -10,11 +10,10 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-class CompactedMessageDetails extends StatelessWidget {
-  const CompactedMessageDetails({required this.message, super.key});
-
-  final MessageEntity message;
-
+class const CompactedMessageDetails({
+  required final MessageEntity message,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -32,10 +31,7 @@ class CompactedMessageDetails extends StatelessWidget {
         children: [
           const TextLocale(
             LocaleKeys.compaction_compacted_details_title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const AuraSizedBox(height: .md),
           _DetailRow(
@@ -54,7 +50,7 @@ class CompactedMessageDetails extends StatelessWidget {
           _DetailRow(
             label: LocaleKeys.compaction_compacted_details_created.tr(),
             value: switch (metadata?.compactionCreatedAt) {
-              final createdAt? => formatRelativeTime(createdAt),
+              final createdAt? => RelativeTimeFormatter.format(createdAt),
               _ => '',
             },
           ),
@@ -72,10 +68,7 @@ class CompactedMessageDetails extends StatelessWidget {
             ),
           ),
           const AuraSizedBox(height: .xs),
-          AuraSelectableText(
-            message.content,
-            style: AuraTextStyle.bodySmall,
-          ),
+          AuraSelectableText(message.content, style: AuraTextStyle.bodySmall),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
@@ -83,18 +76,14 @@ class CompactedMessageDetails extends StatelessWidget {
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
+class const _DetailRow({
+  required final String label,
+  required final String value,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: context.auraTheme.fromSpacing(.xs),
-      ),
+      padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.xs)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

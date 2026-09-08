@@ -4,11 +4,9 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
-class SkillCredentialDefinitionsRepository {
-  SkillCredentialDefinitionsRepository(AppDatabase database)
-    : _dao = database.skillCredentialDefinitionsDao;
-
-  final SkillCredentialDefinitionsDao _dao;
+class SkillCredentialDefinitionsRepository(AppDatabase database) {
+  final SkillCredentialDefinitionsDao _dao =
+      database.skillCredentialDefinitionsDao;
 
   Future<List<SkillCredentialDefinitionEntity>> getDefinitions(
     String workspaceId,
@@ -23,9 +21,7 @@ class SkillCredentialDefinitionsRepository {
   ) {
     return _dao
         .watchDefinitions(workspaceId)
-        .map(
-          (rows) => rows.map(_tableToEntity).toList(),
-        );
+        .map((rows) => rows.map(_tableToEntity).toList());
   }
 
   Future<SkillCredentialDefinitionEntity?> getDefinitionById(

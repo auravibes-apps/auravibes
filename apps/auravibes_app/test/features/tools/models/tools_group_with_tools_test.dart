@@ -1,8 +1,12 @@
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -35,6 +39,16 @@ void main() {
       createdAt: DateTime(2025),
       updatedAt: DateTime(2025),
     );
+    final mcpServer = McpServerEntity(
+      id: 'server_1',
+      workspaceId: 'ws1',
+      name: 'MCP Server',
+      url: 'https://example.com',
+      transport: const McpTransportTypeSSE(),
+      authenticationType: const McpAuthenticationTypeNone(),
+      createdAt: DateTime(2025),
+      updatedAt: DateTime(2025),
+    );
 
     test('enabledToolsCount counts enabled tools', () {
       final grouped = ToolsGroupWithTools(
@@ -54,10 +68,7 @@ void main() {
         createdAt: DateTime(2025),
         updatedAt: DateTime(2025),
       );
-      final grouped = ToolsGroupWithTools(
-        group: testGroup,
-        tools: [tool3],
-      );
+      final grouped = ToolsGroupWithTools(group: testGroup, tools: [tool3]);
       expect(grouped.enabledToolsCount, 0);
     });
 
@@ -79,10 +90,7 @@ void main() {
     });
 
     test('isDefaultGroup is false when group is provided', () {
-      final grouped = ToolsGroupWithTools(
-        group: testGroup,
-        tools: [tool1],
-      );
+      final grouped = ToolsGroupWithTools(group: testGroup, tools: [tool1]);
       expect(grouped.isDefaultGroup, isFalse);
     });
 
@@ -115,10 +123,7 @@ void main() {
         updatedAt: DateTime(2025),
         mcpServerId: 'server1',
       );
-      final grouped = ToolsGroupWithTools(
-        group: mcpGroup,
-        tools: [],
-      );
+      final grouped = ToolsGroupWithTools(group: mcpGroup, tools: []);
       expect(grouped.isMcpGroup, isTrue);
     });
 
@@ -133,11 +138,42 @@ void main() {
         updatedAt: DateTime(2025),
         mcpServerId: 'server_42',
       );
-      final grouped = ToolsGroupWithTools(
-        group: mcpGroup,
-        tools: [],
-      );
+      final grouped = ToolsGroupWithTools(group: mcpGroup, tools: []);
       expect(grouped.mcpServerId, 'server_42');
+    });
+
+    test('mcpErrorMessage returns server-provided error code', () {
+      final grouped = ToolsGroupWithTools(
+        group: testGroup.copyWith(mcpServerId: 'server_1'),
+        tools: const [],
+        mcpConnectionState: McpConnectionState(
+          server: mcpServer,
+          status: McpConnectionStatus.error,
+          errorMessage: 'timeout',
+        ),
+      );
+
+      expect(grouped.mcpErrorMessage, 'timeout');
+    });
+
+    test('mcpErrorMessage translates generic error key', () {
+      final grouped = ToolsGroupWithTools(
+        group: testGroup,
+        tools: const [],
+        mcpConnectionState: McpConnectionState(
+          server: mcpServer,
+          status: McpConnectionStatus.error,
+          errorMessage: LocaleKeys.tools_screen_mcp_error,
+        ),
+      );
+
+      expect(grouped.mcpErrorMessage, LocaleKeys.tools_screen_mcp_error.tr());
+    });
+
+    test('mcpErrorMessage returns null without connection state', () {
+      final grouped = ToolsGroupWithTools(group: testGroup, tools: const []);
+
+      expect(grouped.mcpErrorMessage, isNull);
     });
 
     test('isEnabled returns group.isEnabled', () {
@@ -150,10 +186,7 @@ void main() {
         createdAt: DateTime(2025),
         updatedAt: DateTime(2025),
       );
-      final grouped = ToolsGroupWithTools(
-        group: disabledGroup,
-        tools: [],
-      );
+      final grouped = ToolsGroupWithTools(group: disabledGroup, tools: []);
       expect(grouped.isEnabled, isFalse);
     });
 
@@ -195,20 +228,14 @@ void main() {
       });
 
       test('returns 5 for connected normal group', () {
-        final grouped = ToolsGroupWithTools(
-          group: testGroup,
-          tools: [tool1],
-        );
+        final grouped = ToolsGroupWithTools(group: testGroup, tools: [tool1]);
         expect(grouped.sortPriority, 5);
       });
     });
 
     group('localizedDisplayNameKey', () {
       test('returns null for non-default group', () {
-        final grouped = ToolsGroupWithTools(
-          group: testGroup,
-          tools: [tool1],
-        );
+        final grouped = ToolsGroupWithTools(group: testGroup, tools: [tool1]);
         expect(grouped.localizedDisplayNameKey, isNull);
       });
 

@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ObjectUpload implements _i1.SerializableModel {
+abstract class ObjectUpload
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ObjectUpload._({
     this.id,
     required this.workspaceId,
@@ -45,15 +46,15 @@ abstract class ObjectUpload implements _i1.SerializableModel {
       actorUserId: jsonSerialization['actorUserId'] as String,
       requestId: jsonSerialization['requestId'] as String,
       requestHash: jsonSerialization['requestHash'] as String,
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
       completedAt: jsonSerialization['completedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _isc.DateTimeJsonExtension.fromJson(
               jsonSerialization['completedAt'],
             ),
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -82,7 +83,7 @@ abstract class ObjectUpload implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ObjectUpload]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ObjectUpload copyWith({
     int? id,
     int? workspaceId,
@@ -111,8 +112,24 @@ abstract class ObjectUpload implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ObjectUpload',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'objectId': objectId,
+      'actorUserId': actorUserId,
+      'requestId': requestId,
+      'requestHash': requestHash,
+      'expiresAt': expiresAt.toJson(),
+      if (completedAt != null) 'completedAt': completedAt?.toJson(),
+      'createdAt': createdAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -143,7 +160,7 @@ class _ObjectUploadImpl extends ObjectUpload {
 
   /// Returns a shallow copy of this [ObjectUpload]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ObjectUpload copyWith({
     Object? id = _Undefined,

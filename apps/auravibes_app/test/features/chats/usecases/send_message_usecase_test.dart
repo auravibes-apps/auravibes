@@ -125,13 +125,11 @@ void main() {
           conversationId: any(named: 'conversationId'),
           context: any(named: 'context'),
         ),
-      ).thenAnswer(
-        (_) async {
-          await completer.future;
+      ).thenAnswer((_) async {
+        await completer.future;
 
-          return AgentIterationDecision.done;
-        },
-      );
+        return AgentIterationDecision.done;
+      });
 
       await fixture.usecase.sendFirstMessage(
         conversationId: 'conversation-1',
@@ -156,17 +154,16 @@ void main() {
   });
 }
 
-class _SendMessageUsecaseFixture {
-  _SendMessageUsecaseFixture({
-    required this.runAgentIterationUsecase,
-    required this.messageRepository,
-    required this.getConversationBusyStateUsecase,
-    required this.container,
-    required this.usecase,
-  });
-
-  factory _SendMessageUsecaseFixture.create() {
-    final runAgentIterationUsecase = MockAppAgentService();
+class _SendMessageUsecaseFixture({
+  required final MockAgentLoopRunner runAgentIterationUsecase,
+  required final MockMessageRepository messageRepository,
+  required final MockGetConversationBusyStateUsecase
+  getConversationBusyStateUsecase,
+  required final ProviderContainer container,
+  required final SendMessageUsecase usecase,
+}) {
+  factory create() {
+    final runAgentIterationUsecase = MockAgentLoopRunner();
     final messageRepository = MockMessageRepository();
     final getConversationBusyStateUsecase =
         MockGetConversationBusyStateUsecase();
@@ -193,11 +190,6 @@ class _SendMessageUsecaseFixture {
     );
   }
 
-  final MockAppAgentService runAgentIterationUsecase;
-  final MockMessageRepository messageRepository;
-  final MockGetConversationBusyStateUsecase getConversationBusyStateUsecase;
-  final ProviderContainer container;
-  final SendMessageUsecase usecase;
   var _isDisposed = false;
 
   void dispose() {

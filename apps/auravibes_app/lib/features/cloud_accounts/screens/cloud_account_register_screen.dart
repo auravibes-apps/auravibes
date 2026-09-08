@@ -10,16 +10,11 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class CloudAccountRegisterScreen extends StatelessWidget {
-  const CloudAccountRegisterScreen({
-    required this.workspaceId,
-    required this.returnPath,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String? returnPath;
-
+class const CloudAccountRegisterScreen({
+  required final String workspaceId,
+  required final String? returnPath,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(

@@ -33,10 +33,9 @@ void main() {
     };
 
     expect(
-      () => ModelsDevCatalogValue.parse(
-        <String, Object?>{'openai': provider},
-        maxModels: 1,
-      ),
+      () => ModelsDevCatalogValue.parse(<String, Object?>{
+        'openai': provider,
+      }, maxModels: 1),
       throwsFormatException,
     );
   });

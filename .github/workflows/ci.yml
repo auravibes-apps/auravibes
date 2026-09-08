@@ -5,26 +5,80 @@ on:
     branches: [main, dev, stage]
   pull_request:
     branches: [main, dev, stage]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-jobs:
-  build:
-    name: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
+permissions:
+  contents: read
 
+jobs:
+  format:
+    name: format
+    runs-on: ubuntu-latest
     steps:
-      - name: 📚 Git Checkout
+      - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0
           persist-credentials: false
 
-      - name: 🔧 Check FVM artifact drift
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Check formatting
+        run: melos run format:check
+
+      - name: Check import sorting
+        run: dart run import_sorter:main --exit-if-changed
+
+  analysis:
+    name: analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Analyze
+        run: melos analyze
+
+      - name: Test CI tools
+        run: dart test tool/changed_test_selector_test.dart tool/merge_lcov_test.dart
+
+  code-health:
+    name: code health
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Check unused files
+        run: melos run unused:files --no-select
+
+      - name: Check unused code
+        run: melos run unused:code --no-select
+
+      - name: Check unnecessary nullable parameters
+        run: melos run unnecessary:nullable --no-select
+
+  integrity:
+    name: integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check FVM artifact drift
         run: |
           flutter_version="$(ruby -rjson -e 'puts JSON.parse(File.read(".fvmrc")).fetch("flutter")')"
           vscode_sdk_path="$(ruby -rjson -e 'puts JSON.parse(File.read(".vscode/settings.json")).fetch("dart.flutterSdkPath")')"
@@ -37,41 +91,9 @@ jobs:
             exit 1
           fi
 
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
-        id: fvm-config-action
+      - uses: ./.github/actions/setup-workspace
 
-      - name: 🔍 Detect Flutter channel
-        id: channel-detect
-        run: |
-          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
-          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
-            echo "channel=beta" >> "$GITHUB_OUTPUT"
-          else
-            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.channel-detect.outputs.channel }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
-          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:"
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:"
-
-      - name: 🔗 Create FVM symlink for CI
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
-
-      - name: 📦 Bootstrap workspace
-        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
-        with:
-          run-bootstrap: true
-
-      - name: 📦 Check dependency artifact drift
+      - name: Check dependency artifact drift
         run: |
           if ! git diff --quiet; then
             echo "::error::Dependency artifacts are out of date. Run 'fvm dart run melos bootstrap', then commit the resulting changes."
@@ -80,109 +102,269 @@ jobs:
             git diff --exit-code
           fi
 
-      - name: ✨ Check Formatting
-        run: melos run format:check
-
-      - name: 🕵️‍♂️ Analyze
-        run: melos analyze
-
-      - name: 🗑️ Check unused files
-        run: melos run unused:files --no-select
-
-      - name: 🗑️ Check unused code
-        run: melos run unused:code --no-select
-
-      - name: 🧹 Check unnecessary nullable parameters
-        run: melos run unnecessary:nullable --no-select
-
-      - name: 📦 Dependency Validation
+      - name: Validate dependencies
         run: dart run dependency_validator
 
-      - name: 📝 Import Sorting
-        run: dart run import_sorter:main --exit-if-changed
-
-      - name: 🛠️ Generate Code
+      - name: Generate code
         run: melos run generate --no-select
 
-      - name: 📦 Check generated artifact drift
+      - name: Install matching Serverpod CLI
+        run: |
+          version="$(ruby -ryaml -e 'puts YAML.load_file("pubspec.lock").fetch("packages").fetch("serverpod").fetch("version")')"
+          dart pub global activate serverpod_cli "$version"
+
+      - name: Generate Serverpod code
+        run: melos run generate:serverpod
+
+      - name: Check generated artifact drift
         run: |
           if ! git diff --quiet; then
-            echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate', then commit the resulting changes."
+            echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate' and 'fvm dart run melos run generate:serverpod', then commit the resulting changes."
             git diff --name-only
             git diff --stat
             git diff --exit-code
           fi
 
-      - name: 🧭 Determine test scope
-        id: test-scope
-        if: github.event_name == 'pull_request'
+  change:
+    name: change
+    runs-on: ubuntu-latest
+    outputs:
+      platforms: ${{ steps.platforms.outputs.platforms }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Determine changed platforms
+        id: platforms
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PATH: ${{ github.event_path }}
+          GITHUB_SHA: ${{ github.sha }}
         run: |
-          if git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | \
-            grep -qE '^(\.github/|\.fvmrc$|analysis_options\.yaml$|dart_dependency_validator\.yaml$|pubspec\.yaml$|pubspec\.lock$)'; then
-            echo 'run_all=true' >> "$GITHUB_OUTPUT"
-            echo 'run_tests=true' >> "$GITHUB_OUTPUT"
-          elif melos list --diff="${{ github.event.pull_request.base.sha }}...HEAD" \
-            --include-dependents --dir-exists=test --parsable | grep -q .; then
-            echo 'run_all=false' >> "$GITHUB_OUTPUT"
-            echo 'run_tests=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'run_all=false' >> "$GITHUB_OUTPUT"
-            echo 'run_tests=false' >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+
+          all_platforms='["android","ios","macos","linux","windows","web"]'
+          full_build=false
+          base_sha=''
+          head_sha="$GITHUB_SHA"
+
+          case "$EVENT_NAME" in
+            pull_request)
+              base_sha="$(jq -r '.pull_request.base.sha // empty' "$EVENT_PATH")"
+              head_sha="$(jq -r '.pull_request.head.sha // empty' "$EVENT_PATH")"
+              ;;
+            push)
+              base_sha="$(jq -r '.before // empty' "$EVENT_PATH")"
+              ;;
+            workflow_dispatch)
+              full_build=true
+              ;;
+            *)
+              full_build=true
+              ;;
+          esac
+
+          if [[ "$base_sha" == "" || "$base_sha" =~ ^0+$ ]]; then
+            full_build=true
+          elif ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            full_build=true
+          elif [[ "$EVENT_NAME" == "push" ]] && ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
+            full_build=true
+          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
+            if [[ -z "$head_sha" ]] || ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
+              head_sha=HEAD
+            fi
           fi
 
-      - name: 🧪 Run affected tests with coverage
-        if: github.event_name == 'pull_request' && steps.test-scope.outputs.run_all != 'true' && steps.test-scope.outputs.run_tests == 'true'
-        run: >-
-          melos run test:ci
-          --diff="${{ github.event.pull_request.base.sha }}...HEAD"
-          --include-dependents
-          --no-select
+          if [[ "$full_build" == true ]]; then
+            printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-      - name: 🧪 No affected tests
-        if: github.event_name == 'pull_request' && steps.test-scope.outputs.run_tests == 'false'
-        run: echo 'No workspace package tests are affected by this pull request.'
+          changed_files="$(git diff --name-only --diff-filter=ACDMRTUXB "$base_sha" "$head_sha")"
+          platforms=()
 
-      - name: 🧪 Run all tests with coverage
-        if: github.event_name != 'pull_request' || steps.test-scope.outputs.run_all == 'true'
-        run: melos run test:ci --no-select
+          add_platform() {
+            local platform="$1"
+            for existing in "${platforms[@]}"; do
+              [[ "$existing" == "$platform" ]] && return
+            done
+            platforms+=("$platform")
+          }
 
-      - name: 🧭 Merge LCOV reports for Sonar
+          while IFS= read -r path; do
+            case "$path" in
+              apps/auravibes_app/android/*) add_platform android ;;
+              apps/auravibes_app/ios/*) add_platform ios ;;
+              apps/auravibes_app/macos/*) add_platform macos ;;
+              apps/auravibes_app/linux/*) add_platform linux ;;
+              apps/auravibes_app/windows/*) add_platform windows ;;
+              apps/auravibes_app/web/*) add_platform web ;;
+              apps/auravibes_app/lib/*|apps/auravibes_app/assets/*|packages/*/lib/*|packages/*/assets/*) full_build=true ;;
+              apps/auravibes_app/pubspec.yaml|apps/auravibes_app/pubspec.lock|apps/auravibes_app/pubspec_overrides.yaml) full_build=true ;;
+              packages/*/pubspec.yaml|packages/*/pubspec.lock|packages/*/pubspec_overrides.yaml) full_build=true ;;
+              pubspec.yaml|pubspec.lock|pubspec_overrides.yaml|melos.yaml) full_build=true ;;
+              .fvmrc|.fvm/*|.vscode/settings.json) full_build=true ;;
+              .github/workflows/ci.yml|.github/workflows/build-matrix.yml|.github/actions/*) full_build=true ;;
+            esac
+            [[ "$full_build" == true ]] && break
+          done <<< "$changed_files"
+
+          if [[ "$full_build" == true ]]; then
+            printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
+          elif ((${#platforms[@]} == 0)); then
+            printf 'platforms=[]\n' >> "$GITHUB_OUTPUT"
+          else
+            printf '%s\n' "${platforms[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))' | sed 's/^/platforms=/' >> "$GITHUB_OUTPUT"
+          fi
+
+  platform-builds:
+    name: platform builds
+    needs: change
+    if: ${{ needs.change.outputs.platforms != '[]' }}
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      platforms: ${{ needs.change.outputs.platforms }}
+
+
+  test-plan:
+    name: test plan
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.plan.outputs.mode }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      coverage-report-count: ${{ steps.plan.outputs.coverage-report-count }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Determine test plan
+        id: plan
+        shell: bash
         run: |
-          ruby <<'RUBY'
-          package_dirs = Dir.glob('{apps,packages,widgetbook}/*')
-            .select { |path| File.directory?(File.join(path, 'test')) }
-          abort 'No tested workspace packages found' if package_dirs.empty?
+          manifest="$RUNNER_TEMP/changed-tests.json"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if ! dart run tool/changed_test_selector.dart select \
+              --base "${{ github.event.pull_request.base.sha }}" \
+              --head HEAD \
+              --output "$manifest"; then
+              printf '%s\n' '{"mode":"full","packages":{},"reason":"selector failed"}' > "$manifest"
+            fi
+          else
+            printf '%s\n' '{"mode":"full","packages":{},"reason":"non-PR run"}' > "$manifest"
+          fi
 
-          reports = package_dirs.filter_map do |package_dir|
-            report = File.join(package_dir, 'coverage/lcov.info')
-            [package_dir, report] if File.file?(report)
-          end
+          mode="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("mode")' "$manifest")"
+          matrix="$(dart run tool/changed_test_selector.dart matrix \
+            --manifest "$manifest" \
+            --shard-package apps/auravibes_app \
+            --shard-count 3)"
+          report_count="$(ruby -rjson -e 'puts JSON.parse(ARGF.read).fetch("include").length' <<< "$matrix")"
 
-          merged = reports.flat_map do |package_dir, report|
-            records = File.read(report).split("end_of_record\n")
-            records.filter_map do |record|
-              lines = record.lines(chomp: true)
-              sf_index = lines.index { |line| line.start_with?('SF:') }
-              next if sf_index.nil?
+          {
+            echo "mode=$mode"
+            echo "matrix=$matrix"
+            echo "coverage-report-count=$report_count"
+          } >> "$GITHUB_OUTPUT"
 
-              path = lines[sf_index].delete_prefix('SF:')
-              path = File.join(package_dir, path) if path.start_with?('lib/')
-              excluded = path.end_with?('.g.dart', '.freezed.dart', '.mocks.dart') ||
-                path.end_with?('/drift_worker.js') ||
-                path.start_with?('apps/auravibes_server/lib/src/generated/')
-              next if excluded
-              abort "Non-repository coverage path: #{path}" if path.start_with?('/')
+      - name: Upload test plan
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: test-plan
+          path: ${{ runner.temp }}/changed-tests.json
+          if-no-files-found: error
 
-              lines[sf_index] = "SF:#{path}"
-              "#{lines.join("\n")}\nend_of_record\n"
-            end
-          end
+  test:
+    name: test (${{ matrix.package }} shard ${{ matrix.shardIndex }})
+    needs: [integrity, test-plan]
+    if: ${{ needs.test-plan.outputs.mode != 'none' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      max-parallel: 3
+      matrix: ${{ fromJSON(needs.test-plan.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-          Dir.mkdir('coverage') unless Dir.exist?('coverage')
-          File.write('coverage/lcov.info', merged.join)
-          RUBY
+      - uses: ./.github/actions/setup-workspace
 
-      - name: 🔐 Check Sonar token availability
+      - name: Download test plan
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: test-plan
+          path: ${{ runner.temp }}/test-plan
+
+      - name: Run selected tests
+        shell: bash
+        run: |
+          coverage=()
+          if [ "${{ needs.test-plan.outputs.mode }}" = "full" ]; then
+            coverage=(--coverage)
+          fi
+          dart run tool/changed_test_selector.dart run \
+            --manifest "$RUNNER_TEMP/test-plan/changed-tests.json" \
+            --package "${{ matrix.package }}" \
+            --total-shards "${{ matrix.totalShards }}" \
+            --shard-index "${{ matrix.shardIndex }}" \
+            "${coverage[@]}"
+
+      - name: Prepare coverage artifact
+        if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
+        shell: bash
+        run: |
+          output="$RUNNER_TEMP/coverage/${{ matrix.artifact }}"
+          mkdir -p "$output"
+          cp "${{ matrix.package }}/coverage/lcov.info" "$output/lcov.info"
+          printf '%s\n' "${{ matrix.package }}" > "$output/package-root"
+
+      - name: Upload coverage artifact
+        if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-${{ matrix.artifact }}
+          path: ${{ runner.temp }}/coverage/${{ matrix.artifact }}
+          if-no-files-found: error
+
+  coverage:
+    name: coverage and Sonar
+    needs: [test-plan, test]
+    if: ${{ always() && needs.test-plan.outputs.mode == 'full' && needs.test.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: coverage-*
+          path: ${{ runner.temp }}/coverage-artifacts
+          merge-multiple: false
+
+      - name: Merge LCOV reports for Sonar
+        run: |
+          dart run tool/merge_lcov.dart \
+            --input-root "$RUNNER_TEMP/coverage-artifacts" \
+            --output coverage/lcov.info \
+            --expected-reports "${{ needs.test-plan.outputs.coverage-report-count }}"
+
+      - name: Check Sonar token availability
         id: check-sonar-token
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -193,7 +375,7 @@ jobs:
             echo "token_available=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: ☁️ SonarCloud Scan
+      - name: SonarCloud Scan
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
         uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f
         env:
@@ -202,3 +384,236 @@ jobs:
           args: >
             -Dsonar.dart.lcov.reportPaths=coverage/lcov.info
             -Dsonar.scanner.skipJreProvisioning=true
+
+  server-compose:
+    name: server-compose / Docker smoke
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: ci-postgres-password
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect relevant changes
+        id: changes
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          WORKFLOW_SHA: ${{ github.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          zero_sha=0000000000000000000000000000000000000000
+          base=''
+          head="$WORKFLOW_SHA"
+          relevant=true
+          launcher_scripts=false
+          range_known=false
+          reason='missing or unknown commit range'
+          dockerfiles=()
+
+          is_dockerfile_path() {
+            case "$1" in
+              Dockerfile*|*/Dockerfile*|*.Dockerfile|*/*.Dockerfile)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          is_docker_related_path() {
+            case "$1" in
+              .github/workflows/ci.yml|\
+              .dockerignore|*/.dockerignore|\
+              Dockerfile*|*/Dockerfile*|*.Dockerfile|*/*.Dockerfile|\
+              compose*.yml|compose*.yaml|*/compose*.yml|*/compose*.yaml|\
+              docker-compose*.yml|docker-compose*.yaml|*/docker-compose*.yml|*/docker-compose*.yaml|\
+              scripts/start_server.sh|scripts/stop_server.sh|scripts/serverpod_worktree_env.sh)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          add_dockerfile() {
+            local dockerfile="$1"
+            local existing
+            for existing in "${dockerfiles[@]}"; do
+              if [ "$existing" = "$dockerfile" ]; then
+                return 0
+              fi
+            done
+            dockerfiles+=("$dockerfile")
+          }
+
+          inspect_path() {
+            local path="$1"
+            if is_docker_related_path "$path"; then
+              relevant=true
+            fi
+            if is_dockerfile_path "$path"; then
+              add_dockerfile "$path"
+            fi
+            case "$path" in
+              .dockerignore|*/.dockerignore)
+                if [ -f apps/auravibes_server/Dockerfile ]; then
+                  add_dockerfile apps/auravibes_server/Dockerfile
+                fi
+                ;;
+              scripts/start_server.sh|scripts/stop_server.sh|scripts/serverpod_worktree_env.sh)
+                launcher_scripts=true
+                ;;
+            esac
+          }
+
+          case "$EVENT_NAME" in
+            pull_request)
+              base="$PR_BASE_SHA"
+              head="$PR_HEAD_SHA"
+              ;;
+            push)
+              base="$BEFORE_SHA"
+              ;;
+          esac
+
+          if [ -n "$head" ] && git cat-file -e "$head^{commit}" 2>/dev/null; then
+            if [ -n "$base" ] && [ "$base" != "$zero_sha" ] \
+              && git cat-file -e "$base^{commit}" 2>/dev/null; then
+              relevant=false
+              reason="diff $base..$head"
+              if changed_paths="$(git diff --name-only --no-renames "$base" "$head")"; then
+                range_known=true
+                while IFS= read -r path; do
+                  inspect_path "$path"
+                done <<< "$changed_paths"
+              else
+                relevant=true
+                reason='unable to diff commit range'
+              fi
+            else
+              reason='missing or initial base SHA'
+            fi
+          fi
+
+          if [ "$range_known" = false ]; then
+            launcher_scripts=true
+            if [ -f apps/auravibes_server/Dockerfile ]; then
+              add_dockerfile apps/auravibes_server/Dockerfile
+            fi
+          fi
+
+          {
+            printf 'relevant=%s\n' "$relevant"
+            printf 'launcher_scripts=%s\n' "$launcher_scripts"
+            printf 'reason=%s\n' "$reason"
+            printf 'dockerfiles<<DOCKERFILES\n'
+            if ((${#dockerfiles[@]} > 0)); then
+              printf '%s\n' "${dockerfiles[@]}"
+            fi
+            printf 'DOCKERFILES\n'
+          } >> "$GITHUB_OUTPUT"
+          printf 'Relevant Docker changes: %s (%s)\n' "$relevant" "$reason"
+
+      - name: Validate changed Dockerfiles
+        if: ${{ steps.changes.outputs.dockerfiles != '' }}
+        shell: bash
+        env:
+          DOCKERFILES: ${{ steps.changes.outputs.dockerfiles }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r dockerfile; do
+            [ -n "$dockerfile" ] || continue
+            if [ ! -f "$dockerfile" ]; then
+              echo "Skipping removed Dockerfile: $dockerfile"
+              continue
+            fi
+            docker build --check --file "$dockerfile" .
+          done <<< "$DOCKERFILES"
+
+      - name: Validate Docker launcher scripts
+        if: ${{ steps.changes.outputs.launcher_scripts == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in scripts/start_server.sh scripts/stop_server.sh scripts/serverpod_worktree_env.sh; do
+            if [ -f "$script" ]; then
+              bash -n "$script"
+            fi
+          done
+
+      - name: Validate Compose configuration
+        if: ${{ steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        run: docker compose config --quiet
+
+      - name: Pull Redis images
+        if: ${{ steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        run: docker compose pull redis redis_test
+
+      - name: Start Redis services
+        if: ${{ steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        run: docker compose up -d --remove-orphans redis redis_test
+
+      - name: Smoke-test Redis commands
+        if: ${{ steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        shell: bash
+        env:
+          REDIS_PASSWORD: UWl-mNHNEUXv_xe0CWFzHBajGK1UV0B1
+          REDIS_TEST_PASSWORD: GZZj4HpiGxQK0g_kBQ3qWQMstI9y-Kze
+        run: |
+          set -euo pipefail
+
+          wait_for_redis() {
+            local service="$1"
+            local password="$2"
+            local response
+
+            for _ in {1..30}; do
+              if response="$(docker compose exec -T -e REDISCLI_AUTH="$password" "$service" redis-cli --raw ping 2>/dev/null | tr -d '\r')" \
+                && [ "$response" = 'PONG' ]; then
+                docker compose exec -T "$service" redis-cli -v
+                if [ "$(docker compose exec -T -e REDISCLI_AUTH="$password" "$service" redis-cli --raw set ci-smoke ok | tr -d '\r')" = 'OK' ] \
+                  && [ "$(docker compose exec -T -e REDISCLI_AUTH="$password" "$service" redis-cli --raw get ci-smoke | tr -d '\r')" = 'ok' ]; then
+                  return 0
+                fi
+              fi
+              sleep 1
+            done
+
+            docker compose logs "$service"
+            return 1
+          }
+
+          wait_for_redis redis "$REDIS_PASSWORD"
+          wait_for_redis redis_test "$REDIS_TEST_PASSWORD"
+
+      - name: Stop Redis services
+        if: ${{ always() && steps.changes.outputs.relevant == 'true' }}
+        working-directory: apps/auravibes_server
+        run: docker compose down -v --remove-orphans
+
+  ci-success:
+    name: ci success
+    if: ${{ always() }}
+    needs: [change, format, analysis, code-health, integrity, test-plan, test, coverage, platform-builds, server-compose]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail for failed required checks
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+
+      - name: Confirm required checks
+        run: echo 'All required CI checks passed or were intentionally skipped.'

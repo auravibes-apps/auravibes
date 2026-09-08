@@ -1,3 +1,4 @@
+// ignore_for_file: type=lint, type=warning
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -83,6 +84,56 @@ void main() {
     expect(body['thinking'], {'type': 'enabled'});
   });
 
+  test('provider codecs encode shared audio data input', () {
+    final request = ModelRequest(
+      messages: [
+        Message(
+          role: Role.user,
+          content: [
+            MediaPart(
+              media: Media(
+                contentType: 'audio/mp3',
+                url: 'data:audio/mp3;base64,aGk=',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    final chatCodec = ChatCompletionsCodec(
+      errorLabel: 'Provider',
+      customize: (modelName, config) => (model: modelName, extraBody: {}),
+    );
+
+    final chatBody = chatCodec.buildRequestBody(
+      modelName: 'model',
+      request: request,
+      stream: false,
+    );
+    final codexBody = const OpenAICodexCodec().buildRequestBody(
+      modelName: 'model',
+      request: request,
+      stream: false,
+    );
+
+    const audio = {
+      'type': 'input_audio',
+      'input_audio': {'data': 'aGk=', 'format': 'mp3'},
+    };
+    expect(chatBody['messages'], [
+      {
+        'role': 'user',
+        'content': [audio],
+      },
+    ]);
+    expect(codexBody['input'], [
+      {
+        'role': 'user',
+        'content': [audio],
+      },
+    ]);
+  });
+
   test('Codex builds and streams responses', () async {
     const codec = OpenAICodexCodec();
     final body = codec.buildRequestBody(
@@ -140,6 +191,61 @@ void main() {
     expect(tool.input, {'query': 'dart'});
   });
 
+  test('Codex streams text present only in the completed response', () async {
+    const codec = OpenAICodexCodec();
+    final chunks = <ModelResponseChunk>[];
+    final response = await codec.stream(
+      (_) async => ProviderTransportResponse(
+        statusCode: 200,
+        body: Stream.fromIterable([
+          utf8.encode(
+            'data: {"type":"response.output_text.delta",'
+            '"delta":"create"}\n',
+          ),
+          utf8.encode(
+            'data: {"type":"response.completed","response":{'
+            '"status":"completed","output_text":"create update"}}\n',
+          ),
+        ]),
+      ),
+      const {},
+      chunks.add,
+    );
+
+    expect(chunks.map((chunk) => chunk.text), ['create', ' update']);
+    expect(response.message?.text, 'create update');
+  });
+
+  test('Codex recovers authoritative text from done events', () async {
+    const codec = OpenAICodexCodec();
+    final chunks = <ModelResponseChunk>[];
+    final response = await codec.stream(
+      (_) async => ProviderTransportResponse(
+        statusCode: 200,
+        body: Stream.fromIterable([
+          utf8.encode(
+            'data: {"type":"response.output_text.delta",'
+            '"delta":"create"}\n',
+          ),
+          utf8.encode(
+            'data: {"type":"response.output_text.done",'
+            '"text":"create update"}\n',
+          ),
+          utf8.encode(
+            'data: {"type":"response.incomplete","response":{'
+            '"status":"incomplete"}}\n',
+          ),
+        ]),
+      ),
+      const {},
+      chunks.add,
+    );
+
+    expect(chunks.map((chunk) => chunk.text), ['create', ' update']);
+    expect(response.message?.text, 'create update');
+    expect(response.finishReason, FinishReason.length);
+  });
+
   test('Codex surfaces streamed failures', () async {
     const codec = OpenAICodexCodec();
 
@@ -159,11 +265,79 @@ void main() {
       throwsA(isA<GenkitException>()),
     );
   });
+
+  test('provider failures do not expose response bodies', () async {
+    const secret = 'provider-secret-value';
+    final codec = ChatCompletionsCodec(
+      errorLabel: 'Provider',
+      customize: (modelName, config) => (model: modelName, extraBody: {}),
+    );
+
+    try {
+      await codec.complete(
+        (_) async => _response({'error': secret}, statusCode: 500),
+        const {},
+      );
+      fail('Expected provider request to fail');
+    } on GenkitException catch (error) {
+      expect(error.toString(), isNot(contains(secret)));
+    }
+
+    try {
+      const codex = OpenAICodexCodec();
+      await codex.complete(
+        (_) async => _response({'error': secret}, statusCode: 500),
+        const {},
+      );
+      fail('Expected Codex request to fail');
+    } on GenkitException catch (error) {
+      expect(error.toString(), isNot(contains(secret)));
+    }
+  });
+
+  test(
+    'Codex retryability requires an exact structured server error',
+    () async {
+      const codec = OpenAICodexCodec();
+
+      try {
+        await codec.complete(
+          (_) async => _response({
+            'error': {'type': 'server_error', 'message': 'temporary'},
+          }, statusCode: 500),
+          const {},
+        );
+        fail('Expected provider request to fail');
+      } on GenkitException catch (error) {
+        expect(error.details, 'server_error');
+        expect(isRetryableCodexError(error), isTrue);
+      }
+
+      try {
+        await codec.complete(
+          (_) async => _response({
+            'error': {
+              'type': 'invalid_request_error',
+              'message': 'bad request',
+            },
+          }, statusCode: 500),
+          const {},
+        );
+        fail('Expected provider request to fail');
+      } on GenkitException catch (error) {
+        expect(error.details, isNull);
+        expect(isRetryableCodexError(error), isFalse);
+      }
+    },
+  );
 }
 
-ProviderTransportResponse _response(Map<String, Object?> body) {
+ProviderTransportResponse _response(
+  Map<String, Object?> body, {
+  int statusCode = 200,
+}) {
   return ProviderTransportResponse(
-    statusCode: 200,
+    statusCode: statusCode,
     body: Stream.value(utf8.encode(jsonEncode(body))),
   );
 }

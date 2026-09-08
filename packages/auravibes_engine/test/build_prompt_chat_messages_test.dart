@@ -6,10 +6,7 @@ void main() {
     const usecase = BuildPromptChatMessages();
 
     final result = usecase([
-      const AgentPromptMessage(
-        content: 'What is 2 + 2?',
-        isUser: true,
-      ),
+      const AgentPromptMessage(content: 'What is 2 + 2?', isUser: true),
       const AgentPromptMessage(
         content: '',
         isUser: false,
@@ -68,10 +65,10 @@ void main() {
 
     final resultMessage = result.last;
     expect(resultMessage.role, AgentChatMessageRole.tool);
-    expect(
-      resultMessage.parts.map((part) => part.toolResponse?.ref),
-      ['tool-1', 'tool-2'],
-    );
+    expect(resultMessage.parts.map((part) => part.toolResponse?.ref), [
+      'tool-1',
+      'tool-2',
+    ]);
   });
 
   test('maps only compaction summaries to system messages', () {

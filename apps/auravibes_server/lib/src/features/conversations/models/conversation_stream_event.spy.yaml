@@ -3,6 +3,7 @@ fields:
   workspaceId: int
   conversationId: String
   sequence: int
+  eventId: String?
   kind: ConversationEventType
   actorUserId: String
   payloadJson: String

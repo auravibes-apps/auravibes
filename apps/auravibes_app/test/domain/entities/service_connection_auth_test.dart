@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -29,6 +29,18 @@ void main() {
   });
 
   group('ServiceConnectionMetadata', () {
+    test('does not expose metadata values through toString', () {
+      const secret = 'oauth-state-secret';
+      const metadata = ServiceConnectionMetadata(
+        clientId: 'client-id',
+        tokenEndpoint: 'https://example.test/token?state=$secret',
+        tenantId: 'tenant-id',
+      );
+
+      expect(metadata.toString(), isNot(contains(secret)));
+      expect(metadata.toString(), contains('token_endpoint'));
+    });
+
     test('ignores unexpected scalar field types', () {
       final metadata = ServiceConnectionMetadata.fromJson({
         'client_id': 123,

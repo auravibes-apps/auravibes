@@ -10,8 +10,12 @@ part 'workspace_repository_providers.g.dart';
 @Riverpod(keepAlive: true)
 WorkspaceRepository workspaceRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
+  final attachmentFileStore = ref.watch(attachmentFileStoreProvider);
 
-  return WorkspaceRepository(appDatabase);
+  return WorkspaceRepository(
+    appDatabase,
+    attachmentFileStore: attachmentFileStore,
+  );
 }
 
 @Riverpod(keepAlive: true)

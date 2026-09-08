@@ -1,6 +1,8 @@
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,11 +13,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(
-              child: Text(testText),
-            ),
-          ),
+          home: Scaffold(body: AuraCard(child: Text(testText))),
         ),
       );
 
@@ -45,11 +43,7 @@ void main() {
     testWidgets('does not show InkWell when onTap is null', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(
-              child: Text('Non-tappable Card'),
-            ),
-          ),
+          home: Scaffold(body: AuraCard(child: Text('Non-tappable Card'))),
         ),
       );
 
@@ -116,11 +110,7 @@ void main() {
     testWidgets('renders elevated style by default', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(
-              child: Text('Elevated Card'),
-            ),
-          ),
+          home: Scaffold(body: AuraCard(child: Text('Elevated Card'))),
         ),
       );
 
@@ -129,6 +119,23 @@ void main() {
         find.byType(AuraPressable),
       );
       expect(pressable.decoration, isNotNull);
+    });
+
+    testWidgets('blends a semantic tint into the card surface', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AuraCard(child: Text('Tinted Card'), tint: AuraTint.success),
+          ),
+        ),
+      );
+
+      final pressable = tester.widget<AuraPressable>(
+        find.byType(AuraPressable),
+      );
+      final decoration = pressable.decoration;
+      if (decoration is! BoxDecoration) fail('Expected a card decoration.');
+      expect(decoration.color, isNot(AuraTheme.light.colors.surface));
     });
 
     testWidgets('applies custom padding', (tester) async {
@@ -150,10 +157,7 @@ void main() {
           matching: find.byType(AuraPadding),
         ),
       );
-      expect(
-        auraPadding.padding,
-        AuraEdgeInsetsGeometry.small,
-      );
+      expect(auraPadding.padding, AuraEdgeInsetsGeometry.small);
     });
 
     test('AuraCardStyle enum has all values', () {

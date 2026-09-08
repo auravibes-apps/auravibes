@@ -3,13 +3,18 @@
 
 import 'dart:ui';
 
-import 'package:auravibes_ui/ui.dart';
+import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_portal/flutter_portal.dart' show Portal;
+
+export 'aura_app_bar.dart';
 
 /// Screen manager.
 class AuraScreen extends StatelessWidget {
   /// Screen manager.
-  const AuraScreen({
+  const new({
     required this.child,
     this.appBar,
     this.variant = AuraScreenVariation.standard,
@@ -17,7 +22,7 @@ class AuraScreen extends StatelessWidget {
     super.key,
   });
 
-  /// Chilg.
+  /// The screen body.
   final Widget child;
 
   /// App bar.
@@ -36,10 +41,7 @@ class AuraScreen extends StatelessWidget {
 
     var container = child;
     if (padding != null) {
-      container = AuraPadding(
-        child: container,
-        padding: padding,
-      );
+      container = AuraPadding(child: container, padding: padding);
     }
 
     var content = container;
@@ -56,76 +58,17 @@ class AuraScreen extends StatelessWidget {
     content = switch (variant) {
       AuraScreenVariation.standard => content,
       AuraScreenVariation.aurora => Stack(
-        children: [
-          const _AuroraBackground(),
-          content,
-        ],
+        children: [const _AuroraBackground(), content],
       ),
     };
 
     return Scaffold(
       appBar: appBar,
-      body: Portal(
-        child: content,
-      ),
+      body: Portal(child: content),
       backgroundColor: context.auraColors.background,
       extendBodyBehindAppBar: true,
     );
   }
-}
-
-/// App Bar.
-class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
-  /// Constructor.
-  const AuraAppBar({
-    super.key,
-    this.title,
-    this.actions,
-    this.bottom,
-    this.leading,
-  });
-
-  /// Title.
-  final Widget? title;
-
-  /// Acions.
-  final List<Widget>? actions;
-
-  /// Bottom of bar.
-  final PreferredSizeWidget? bottom;
-
-  /// Optional custom leading widget that replaces the automatic back button.
-  final Widget? leading;
-
-  @override
-  Widget build(BuildContext context) {
-    final title = this.title;
-
-    return AppBar(
-      leading: leading,
-      title: title == null
-          ? null
-          : DefaultTextStyle.merge(
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-              child: AuraText(
-                child: title,
-                style: AuraTextStyle.heading5,
-              ),
-            ),
-      actions: actions,
-      bottom: bottom,
-      elevation: 0,
-      backgroundColor: DesignColors.transparent,
-      centerTitle: true,
-    );
-  }
-
-  @override
-  Size get preferredSize => Size.fromHeight(
-    kToolbarHeight + (bottom?.preferredSize.height ?? 0),
-  );
 }
 
 /// Screen variation.
@@ -137,9 +80,15 @@ enum AuraScreenVariation {
   aurora,
 }
 
-class _AuroraBackground extends StatelessWidget {
-  const _AuroraBackground();
-
+class const _AuroraBackground() extends StatelessWidget {
+  static const _outerOffset = -100.0;
+  static const _bottomOffset = -50.0;
+  static const _topBlobSize = 400.0;
+  static const _rightBlobSize = 300.0;
+  static const _bottomBlobSize = 350.0;
+  static const _blurRadius = 60.0;
+  static const _primaryAlpha = 102;
+  static const _accentAlpha = 76;
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;
@@ -150,34 +99,34 @@ class _AuroraBackground extends StatelessWidget {
         Container(color: colors.background),
         // Blob 1 (Top Left - Primary).
         Positioned(
-          left: -100,
-          top: -100,
+          left: _outerOffset,
+          top: _outerOffset,
           child: _Blob(
-            color: colors.primary.withAlpha(102),
-            size: 400,
+            color: colors.primary.withAlpha(_primaryAlpha),
+            size: _topBlobSize,
           ),
         ),
         // Blob 2 (Center Right - Secondary).
         Positioned(
           top: 200,
-          right: -100,
+          right: _outerOffset,
           child: _Blob(
-            color: colors.secondary.withAlpha(102),
-            size: 300,
+            color: colors.secondary.withAlpha(_primaryAlpha),
+            size: _rightBlobSize,
           ),
         ),
         // Blob 3 (Bottom Left - Primary/Accent).
         Positioned(
-          left: -50,
-          bottom: -50,
+          left: _bottomOffset,
+          bottom: _bottomOffset,
           child: _Blob(
-            color: colors.primary.withAlpha(76),
-            size: 350,
+            color: colors.primary.withAlpha(_accentAlpha),
+            size: _bottomBlobSize,
           ),
         ),
         // Blur Mesh.
         BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          filter: ImageFilter.blur(sigmaX: _blurRadius, sigmaY: _blurRadius),
           child: Container(color: DesignColors.transparent),
         ),
       ],
@@ -185,11 +134,8 @@ class _AuroraBackground extends StatelessWidget {
   }
 }
 
-class _Blob extends StatelessWidget {
-  const _Blob({required this.color, required this.size});
-  final Color color;
-  final double size;
-
+class const _Blob({required final Color color, required final double size})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

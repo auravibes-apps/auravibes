@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 /// with borders, background colors, focus states, and error handling.
 class AuraFieldWrapper extends StatefulWidget {
   /// Creates a Aura field wrapper.
-  const AuraFieldWrapper({
+  const new({
     required this.child,
     super.key,
     this.label,
@@ -75,6 +75,10 @@ class AuraFieldWrapper extends StatefulWidget {
 }
 
 class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
+  static const _disabledAlpha = 0.5;
+  static const _focusAlpha = 0.1;
+  static const _focusBlurRadius = 4.0;
+  static const _focusSpreadRadius = 2.0;
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -92,15 +96,9 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
             child: AnimatedContainer(
               decoration: BoxDecoration(
                 // Color: _getBackgroundColor(auraColors),.
-                border: Border.all(
-                  color: _getBorderColor(auraColors),
-                ),
+                border: Border.all(color: _getBorderColor(auraColors)),
                 borderRadius: BorderRadius.all(
-                  Radius.circular(
-                    context.auraTheme.fromBorderRadius(
-                      .xl,
-                    ),
-                  ),
+                  Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
                 ),
                 boxShadow: _getBoxShadow(auraColors),
               ),
@@ -111,11 +109,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
             decoration: BoxDecoration(
               color: _getBackgroundColor(auraColors),
               borderRadius: BorderRadius.all(
-                Radius.circular(
-                  context.auraTheme.fromBorderRadius(
-                    .xl,
-                  ),
-                ),
+                Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
               ),
               // Color: auraColors.primary,.
             ),
@@ -133,7 +127,9 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
-    if (!widget.isEnabled) return colors.surfaceVariant.withValues(alpha: 0.5);
+    if (!widget.isEnabled) {
+      return colors.surfaceVariant.withValues(alpha: _disabledAlpha);
+    }
     if (widget.isReadOnly) return colors.surfaceVariant;
 
     return colors.surface;
@@ -157,9 +153,9 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
     if (widget.isFocused && widget.state != AuraFieldState.error) {
       return [
         BoxShadow(
-          color: colors.primary.withValues(alpha: 0.1),
-          blurRadius: 4,
-          spreadRadius: 2,
+          color: colors.primary.withValues(alpha: _focusAlpha),
+          blurRadius: _focusBlurRadius,
+          spreadRadius: _focusSpreadRadius,
         ),
       ];
     }
@@ -167,9 +163,9 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
     if (widget.state == AuraFieldState.error) {
       return [
         BoxShadow(
-          color: colors.error.withValues(alpha: 0.1),
-          blurRadius: 4,
-          spreadRadius: 2,
+          color: colors.error.withValues(alpha: _focusAlpha),
+          blurRadius: _focusBlurRadius,
+          spreadRadius: _focusSpreadRadius,
         ),
       ];
     }

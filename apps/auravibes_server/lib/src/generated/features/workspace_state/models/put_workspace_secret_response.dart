@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class PutWorkspaceSecretResponse
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   PutWorkspaceSecretResponse._({
     required this.configured,
     this.displaySuffix,
@@ -32,7 +32,7 @@ abstract class PutWorkspaceSecretResponse
     Map<String, dynamic> jsonSerialization,
   ) {
     return PutWorkspaceSecretResponse(
-      configured: _i1.BoolJsonExtension.fromJson(
+      configured: _is.BoolJsonExtension.fromJson(
         jsonSerialization['configured'],
       ),
       displaySuffix: jsonSerialization['displaySuffix'] as String?,
@@ -51,7 +51,7 @@ abstract class PutWorkspaceSecretResponse
 
   /// Returns a shallow copy of this [PutWorkspaceSecretResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   PutWorkspaceSecretResponse copyWith({
     bool? configured,
     String? displaySuffix,
@@ -82,7 +82,7 @@ abstract class PutWorkspaceSecretResponse
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -103,7 +103,7 @@ class _PutWorkspaceSecretResponseImpl extends PutWorkspaceSecretResponse {
 
   /// Returns a shallow copy of this [PutWorkspaceSecretResponse]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   PutWorkspaceSecretResponse copyWith({
     bool? configured,

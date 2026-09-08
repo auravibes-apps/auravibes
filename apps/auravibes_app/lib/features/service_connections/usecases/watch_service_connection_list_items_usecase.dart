@@ -4,7 +4,7 @@ import 'package:auravibes_app/data/repositories/model_connection_repository.dart
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
@@ -14,21 +14,13 @@ import 'package:rxdart/rxdart.dart';
 
 final _logger = Logger('watch_service_connection_list_items_usecase');
 
-class WatchServiceConnectionListItemsUsecase {
-  const WatchServiceConnectionListItemsUsecase(
-    this._database,
-    this._modelConnectionRepository,
-    this._credentialDefinitionsRepository,
-    this._credentialsRepository,
-    this._now,
-  );
-
-  final AppDatabase _database;
-  final ModelConnectionRepository _modelConnectionRepository;
-  final SkillCredentialDefinitionsRepository _credentialDefinitionsRepository;
-  final SkillCredentialsRepository _credentialsRepository;
-  final DateTime Function() _now;
-
+class const WatchServiceConnectionListItemsUsecase(
+  final AppDatabase _database,
+  final ModelConnectionRepository _modelConnectionRepository,
+  final SkillCredentialDefinitionsRepository _credentialDefinitionsRepository,
+  final SkillCredentialsRepository _credentialsRepository,
+  final DateTime Function() _now,
+) {
   Stream<List<ServiceConnectionListItem>> call(String workspaceId) {
     return Rx.combineLatest4(
       _modelConnectionRepository.watchModelConnections(

@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
@@ -9,37 +10,25 @@ import 'package:logging/logging.dart';
 const _jsonAcceptHeader = {'Accept': 'application/json'};
 
 /// Result of OAuth discovery for an MCP server.
-class OAuthDiscoveryResult {
-  const OAuthDiscoveryResult({
-    required this.authorizationUrl,
-    required this.tokenUrl,
-    required this.clientId,
-    required this.scope,
-  });
-
+class const OAuthDiscoveryResult({
   /// OAuth authorization endpoint URL.
-  final String authorizationUrl;
+  required final String authorizationUrl,
 
   /// OAuth token endpoint URL.
-  final String tokenUrl;
+  required final String tokenUrl,
 
   /// OAuth client ID (may be null for public clients).
-  final String? clientId;
+  required final String? clientId,
 
   /// OAuth scope string.
-  final String? scope;
-}
+  required final String? scope,
+});
 
-class OAuthConnector {
-  const OAuthConnector({
-    required this.clientName,
-    required this.serverUrl,
-    required this.redirectUrl,
-  });
-  final String clientName;
-  final String serverUrl;
-  final String redirectUrl;
-}
+class const OAuthConnector({
+  required final String clientName,
+  required final String serverUrl,
+  required final String redirectUrl,
+});
 
 /// Service for automatically discovering OAuth configuration from MCP servers
 ///
@@ -53,9 +42,7 @@ class OAuthDiscoveryService {
     OAuthConnector registrer,
   ) async {
     try {
-      _logger.info(
-        'Discovering OAuth configuration for: ${registrer.serverUrl}',
-      );
+      _logger.info('Discovering OAuth configuration for MCP server');
 
       final baseUri = Uri.parse(registrer.serverUrl);
       final baseUrl = '${baseUri.scheme}://${baseUri.host}:${baseUri.port}';
@@ -76,8 +63,8 @@ class OAuthDiscoveryService {
 
       // No OAuth required.
       return null;
-    } on Exception catch (e) {
-      _logger.warning('OAuth discovery failed: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.warning('OAuth discovery failed', error, stackTrace);
 
       return null;
     }
@@ -91,16 +78,13 @@ class OAuthDiscoveryService {
   }) async {
     try {
       final wellKnownUrl = '$baseUrl/.well-known/oauth-authorization-server';
-      _logger.info('Trying well-known endpoint: $wellKnownUrl');
+      _logger.info('Trying well-known OAuth endpoint');
 
       final response = await http
-          .get(
-            Uri.parse(wellKnownUrl),
-            headers: _jsonAcceptHeader,
-          )
+          .get(Uri.parse(wellKnownUrl), headers: _jsonAcceptHeader)
           .timeout(const Duration(seconds: 5));
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final metadata = json.decode(response.body) as Map<String, dynamic>;
 
         final authorizationEndpoint =
@@ -134,8 +118,8 @@ class OAuthDiscoveryService {
           );
         }
       }
-    } on Exception catch (e) {
-      _logger.fine('Well-known endpoint not available: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.fine('Well-known endpoint not available', error, stackTrace);
     }
 
     return null;
@@ -146,20 +130,17 @@ class OAuthDiscoveryService {
     String serverUrl,
   ) async {
     try {
-      _logger.info('Probing MCP server directly: $serverUrl');
+      _logger.info('Probing MCP server directly');
       final uri = Uri.tryParse(serverUrl);
       if (uri == null || !uri.hasScheme || !uri.hasAuthority) return null;
 
       final response = await http
-          .get(
-            uri,
-            headers: {'Accept': 'text/event-stream'},
-          )
+          .get(uri, headers: {'Accept': 'text/event-stream'})
           .timeout(const Duration(seconds: 5));
 
       return _parseDirectProbeResponse(response);
-    } on Exception catch (e) {
-      _logger.fine('Direct server probe failed: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.fine('Direct server probe failed', error, stackTrace);
     }
 
     return null;
@@ -218,8 +199,12 @@ class OAuthDiscoveryService {
         clientId: bodyJson?['client_id'] as String?,
         scope: bodyJson?['scope'] as String?,
       );
-    } on Exception catch (e) {
-      _logger.fine('Could not parse OAuth info from response body: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.fine(
+        'Could not parse OAuth info from response body',
+        error,
+        stackTrace,
+      );
     }
 
     return null;
@@ -231,16 +216,13 @@ class OAuthDiscoveryService {
   ) async {
     try {
       final metadataUrl = '$baseUrl/oauth/metadata';
-      _logger.info('Trying OAuth metadata endpoint: $metadataUrl');
+      _logger.info('Trying OAuth metadata endpoint');
 
       final response = await http
-          .get(
-            Uri.parse(metadataUrl),
-            headers: _jsonAcceptHeader,
-          )
+          .get(Uri.parse(metadataUrl), headers: _jsonAcceptHeader)
           .timeout(const Duration(seconds: 5));
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final metadata = json.decode(response.body) as Map<String, dynamic>;
 
         final authUrl = metadata['authorization_url'] as String?;
@@ -257,8 +239,8 @@ class OAuthDiscoveryService {
           );
         }
       }
-    } on Exception catch (e) {
-      _logger.fine('OAuth metadata endpoint not available: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.fine('OAuth metadata endpoint not available', error, stackTrace);
     }
 
     return null;
@@ -271,9 +253,7 @@ class OAuthDiscoveryService {
     required String clientName,
   }) async {
     try {
-      _logger.info(
-        'Attempting dynamic client registration at: $registrationEndpoint',
-      );
+      _logger.info('Attempting dynamic OAuth client registration');
 
       final clientMetadata = {
         'client_name': clientName,
@@ -288,15 +268,13 @@ class OAuthDiscoveryService {
       final response = await http
           .post(
             Uri.parse(registrationEndpoint),
-            headers: {
-              'Content-Type': 'application/json',
-              ..._jsonAcceptHeader,
-            },
+            headers: {'Content-Type': 'application/json', ..._jsonAcceptHeader},
             body: json.encode(clientMetadata),
           )
           .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == HttpStatus.ok ||
+          response.statusCode == HttpStatus.created) {
         final registrationResponse =
             json.decode(response.body) as Map<String, dynamic>;
         final clientId = registrationResponse['client_id'] as String?;
@@ -311,11 +289,11 @@ class OAuthDiscoveryService {
       } else {
         _logger.warning(
           'Dynamic client registration '
-          'failed: ${response.statusCode} - ${response.body}',
+          'failed with status ${response.statusCode}',
         );
       }
-    } on Exception catch (e) {
-      _logger.warning('Dynamic client registration error: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.warning('Dynamic client registration error', error, stackTrace);
     }
 
     return null;

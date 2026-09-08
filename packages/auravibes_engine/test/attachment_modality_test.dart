@@ -8,19 +8,17 @@ void main() {
       AttachmentModality.image,
     );
     expect(
-      supportsAttachmentModality(
-        AttachmentModality.file,
-        ['text', 'pdf'],
-        mimeType: 'APPLICATION/PDF',
-      ),
+      supportsAttachmentModality(AttachmentModality.file, [
+        'text',
+        'pdf',
+      ], mimeType: 'APPLICATION/PDF'),
       isTrue,
     );
     expect(
-      supportsAttachmentModality(
-        AttachmentModality.file,
-        ['text', 'pdf'],
-        mimeType: 'text/csv',
-      ),
+      supportsAttachmentModality(AttachmentModality.file, [
+        'text',
+        'pdf',
+      ], mimeType: 'text/csv'),
       isFalse,
     );
     expect(supportsFileAttachments(['text', 'video']), isTrue);

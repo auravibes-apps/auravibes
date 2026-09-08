@@ -10,10 +10,7 @@ class TitlesStreamsNotifier extends _$TitlesStreamsNotifier {
   }
 
   void updateTitle(String conversationId, String title) {
-    state = {
-      ...state,
-      conversationId: title,
-    };
+    state = {...state, conversationId: title};
   }
 
   void removeTitle(String conversationId) {

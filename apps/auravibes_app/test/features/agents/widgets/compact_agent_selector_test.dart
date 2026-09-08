@@ -1,5 +1,5 @@
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
-import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
+import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';

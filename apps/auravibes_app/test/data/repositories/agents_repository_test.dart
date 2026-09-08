@@ -5,14 +5,13 @@ import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_rep
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
-import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_tool_override_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/list_agent_tool_overrides_usecase.dart';
-import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/resolve_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_tool_overrides_usecase.dart';
@@ -215,9 +214,9 @@ void main() {
       ),
     );
 
-    final listed = await ListAgentsUsecase(
-      fixture.agentsRepository,
-    ).call(fixture.workspaceId).first;
+    final listed = await fixture.agentsRepository
+        .watchAgentsByWorkspace(fixture.workspaceId)
+        .first;
     expect(listed.single.id, agent.id);
 
     final updated = await SaveAgentUsecase(fixture.agentsRepository).update(
@@ -267,10 +266,8 @@ void main() {
         );
     final noAgentSkills =
         await ListConversationAgentSkillsUsecase(
-          (conversationId, _) =>
-              fixture.conversationRepository.getConversationById(
-                conversationId,
-              ),
+          (conversationId, _) => fixture.conversationRepository
+              .getConversationById(conversationId),
           (_) => fixture.agentsRepository,
           fixture.resolveAgentSkillsUsecase.call,
         ).call(
@@ -385,27 +382,16 @@ void main() {
   });
 }
 
-class _AgentsRepositoryFixture {
-  _AgentsRepositoryFixture({
-    required this.database,
-    required this.agentsRepository,
-    required this.agentToolsRepository,
-    required this.appSettingsRepository,
-    required this.conversationRepository,
-    required this.resolveAgentSkillsUsecase,
-    required this.skillsRepository,
-    required this.workspaceId,
-  });
-
-  final AppDatabase database;
-  final AgentsRepository agentsRepository;
-  final AgentToolsRepository agentToolsRepository;
-  final AppSkillWorkspaceSettingsRepository appSettingsRepository;
-  final ConversationRepository conversationRepository;
-  final ResolveAgentSkillsUsecase resolveAgentSkillsUsecase;
-  final SkillsRepository skillsRepository;
-  final String workspaceId;
-
+class _AgentsRepositoryFixture({
+  required final AppDatabase database,
+  required final AgentsRepository agentsRepository,
+  required final AgentToolsRepository agentToolsRepository,
+  required final AppSkillWorkspaceSettingsRepository appSettingsRepository,
+  required final ConversationRepository conversationRepository,
+  required final ResolveAgentSkillsUsecase resolveAgentSkillsUsecase,
+  required final SkillsRepository skillsRepository,
+  required final String workspaceId,
+}) {
   static Future<_AgentsRepositoryFixture> create() async {
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),

@@ -58,6 +58,30 @@ void main() {
       );
     },
   );
+
+  test('returns no tools when cloud returns no resource page', () async {
+    final repository = CloudToolsRepository(
+      Future.value(
+        CloudWorkspaceStateGateway.forTesting(
+          workspace: const CloudWorkspaceRef(
+            localWorkspaceId: 'workspace',
+            serverUrl: 'https://example.com',
+            accountId: 'account',
+            cloudWorkspaceId: 7,
+          ),
+          readState: (_) async => ReadWorkspaceStateResponse(
+            pages: [],
+            currentSequence: 1,
+            events: [],
+            requiresSnapshot: false,
+          ),
+          subscribe: (_) => const Stream.empty(),
+        ),
+      ),
+    );
+
+    expect(await repository.getWorkspaceTools('workspace'), isEmpty);
+  });
 }
 
 CloudWorkspaceStateGateway _gateway(List<WorkspaceResource> resources) =>

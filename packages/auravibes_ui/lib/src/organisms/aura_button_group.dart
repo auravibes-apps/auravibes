@@ -7,16 +7,16 @@ import 'package:flutter/widgets.dart';
 
 /// A customizable button group component following the Aura design system.
 ///
-/// This component supports three modes:
-/// - [AuraButtonGroup.single] - Radio-like behavior where only one option
-///   can be selected
-/// - [AuraButtonGroup.multi] - Toggle behavior where multiple can be selected
-/// - [AuraButtonGroup.action] - Clickable buttons without selection state
+/// This component supports three modes. [AuraButtonGroup.single] provides
+/// radio-like behavior with one selected option. [AuraButtonGroup.multi]
+/// provides toggle behavior with multiple selected options. The
+/// [AuraButtonGroup.action] mode provides clickable buttons without selection
+/// state.
 class AuraButtonGroup<T> extends StatelessWidget {
   /// Creates a single-selection button group (radio behavior).
   ///
   /// Only one item can be selected at a time.
-  const AuraButtonGroup.single({
+  const new single({
     required this.items,
     required this.selectedValue,
     required ValueChanged<T> this.onChanged,
@@ -34,7 +34,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
   /// Creates a multi-selection button group (toggle behavior).
   ///
   /// Multiple items can be selected at the same time.
-  const AuraButtonGroup.multi({
+  const new multi({
     required this.items,
     required Set<T> this.selectedValues,
     required ValueChanged<Set<T>> this.onMultiChanged,
@@ -52,7 +52,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
   /// Creates an action button group (clickable without selection state).
   ///
   /// Each button triggers its own action without maintaining selection.
-  const AuraButtonGroup.action({
+  const new action({
     required this.items,
     required ValueChanged<T> this.onPressed,
     super.key,
@@ -151,10 +151,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
     }
 
     final content = orientation == Axis.horizontal
-        ? Row(
-            mainAxisSize: MainAxisSize.min,
-            children: children,
-          )
+        ? Row(mainAxisSize: MainAxisSize.min, children: children)
         : Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -194,43 +191,30 @@ class AuraButtonGroup<T> extends StatelessWidget {
   }
 }
 
-class _AuraButtonGroupItem<T> extends StatefulWidget {
-  const _AuraButtonGroupItem({
-    required this.item,
-    required this.isSelected,
-    required this.isFirst,
-    required this.isLast,
-    required this.size,
-    required this.variant,
-    required this.orientation,
-    required this.disabled,
-    required this.isLoading,
-    required this.mode,
-    required this.onTap,
-    required this.auraColors,
-    required this.auraTheme,
-  });
-
-  final AuraButtonGroupItem<T> item;
-  final bool isSelected;
-  final bool isFirst;
-  final bool isLast;
-  final AuraButtonGroupSize size;
-  final AuraButtonGroupVariant variant;
-  final Axis orientation;
-  final bool disabled;
-  final bool isLoading;
-  final _ButtonGroupMode mode;
-  final VoidCallback? onTap;
-  final AuraColorScheme auraColors;
-  final AuraTheme auraTheme;
-
+class const _AuraButtonGroupItem<T>({
+  required final AuraButtonGroupItem<T> item,
+  required final bool isSelected,
+  required final bool isFirst,
+  required final bool isLast,
+  required final AuraButtonGroupSize size,
+  required final AuraButtonGroupVariant variant,
+  required final Axis orientation,
+  required final bool disabled,
+  required final bool isLoading,
+  required final _ButtonGroupMode mode,
+  required final VoidCallback? onTap,
+  required final AuraColorScheme auraColors,
+  required final AuraTheme auraTheme,
+}) extends StatefulWidget {
   @override
   State<_AuraButtonGroupItem<T>> createState() =>
       _AuraButtonGroupItemState<T>();
 }
 
 class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
+  static const _hoverAlpha = 0.1;
+  static const _activeAlpha = 0.2;
+  static const _selectedAlpha = 0.6;
   bool _isHovering = false;
   bool _isPressed = false;
 
@@ -247,41 +231,60 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
       cursor: widget.disabled || widget.isLoading
           ? SystemMouseCursors.basic
           : SystemMouseCursors.click,
-      child: GestureDetector(
-        child: AnimatedContainer(
-          padding: padding,
-          decoration: BoxDecoration(color: backgroundColor, border: border),
-          child: widget.isLoading
-              ? AuraLoadingCircle(
-                  tint: AuraTint.primary,
-                  size: _getLoadingSize(),
-                  itemBuilder: (context, _) => DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: _getForegroundColor(),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                )
-              : DefaultTextStyle(
-                  style: TextStyle(
-                    color: foregroundColor,
-                    fontSize: _getFontSize(),
-                    fontWeight: widget.auraTheme.typography.fontWeightMedium,
-                  ),
-                  child: IconTheme(
-                    data: IconThemeData(
-                      size: _getIconSize(),
-                      color: foregroundColor,
-                    ),
-                    child: widget.item.child,
-                  ),
+      child: Semantics(
+        child: SizedBox(
+          height: 48,
+          child: Center(
+            child: GestureDetector(
+              child: AnimatedContainer(
+                padding: padding,
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  border: border,
                 ),
-          duration: widget.auraTheme.animation.normal,
+                child: widget.isLoading
+                    ? AuraLoadingCircle(
+                        tint: AuraTint.primary,
+                        size: _getLoadingSize(),
+                        itemBuilder: (context, _) => DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: _getForegroundColor(),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                    : DefaultTextStyle(
+                        style: TextStyle(
+                          color: foregroundColor,
+                          fontSize: _getFontSize(),
+                          fontWeight:
+                              widget.auraTheme.typography.fontWeightMedium,
+                        ),
+                        child: IconTheme(
+                          data: IconThemeData(
+                            size: _getIconSize(),
+                            color: foregroundColor,
+                          ),
+                          child: widget.item.child,
+                        ),
+                      ),
+                duration: widget.auraTheme.animation.normal,
+              ),
+              onTapDown: (_) => setState(() => _isPressed = true),
+              onTapUp: (_) => setState(() => _isPressed = false),
+              onTap: widget.onTap,
+              onTapCancel: () => setState(() => _isPressed = false),
+              excludeFromSemantics: true,
+            ),
+          ),
         ),
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
+        container: true,
+        excludeSemantics: true,
+        enabled: !widget.disabled && !widget.isLoading,
+        selected: widget.isSelected,
+        button: widget.mode == _ButtonGroupMode.action,
+        label: widget.item.semanticLabel ?? 'Button',
         onTap: widget.onTap,
-        onTapCancel: () => setState(() => _isPressed = false),
       ),
     );
   }
@@ -342,7 +345,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     if (isActive) return colors.primary;
     if (isHovered) return colors.primary.withValues(alpha: 0.8);
 
-    return colors.primary.withValues(alpha: 0.6);
+    return colors.primary.withValues(alpha: _selectedAlpha);
   }
 
   Color _getOutlinedBackgroundColor(
@@ -351,7 +354,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     required bool isHovered,
   }) {
     if (isActive) return colors.primary;
-    if (isHovered) return colors.primary.withValues(alpha: 0.1);
+    if (isHovered) return colors.primary.withValues(alpha: _hoverAlpha);
 
     return DesignColors.transparent;
   }
@@ -361,8 +364,8 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     required bool isActive,
     required bool isHovered,
   }) {
-    if (isActive) return colors.primary.withValues(alpha: 0.2);
-    if (isHovered) return colors.primary.withValues(alpha: 0.1);
+    if (isActive) return colors.primary.withValues(alpha: _activeAlpha);
+    if (isHovered) return colors.primary.withValues(alpha: _hoverAlpha);
 
     return DesignColors.transparent;
   }
@@ -431,11 +434,12 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
 /// Represents an item in an [AuraButtonGroup].
 class AuraButtonGroupItem<T> {
   /// Creates a button group item.
-  const AuraButtonGroupItem({
+  const new({
     required this.value,
     required this.child,
     this.disabled = false,
     this.isLoading = false,
+    this.semanticLabel,
   });
 
   /// The value associated with this item.
@@ -449,6 +453,9 @@ class AuraButtonGroupItem<T> {
 
   /// Whether this specific item is in a loading state.
   final bool isLoading;
+
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
 }
 
 /// The size of an [AuraButtonGroup].
@@ -475,8 +482,4 @@ enum AuraButtonGroupVariant {
   ghost,
 }
 
-enum _ButtonGroupMode {
-  single,
-  multi,
-  action,
-}
+enum _ButtonGroupMode { single, multi, action }

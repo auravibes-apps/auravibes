@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ConversationProjectionView implements _i1.SerializableModel {
+abstract class ConversationProjectionView
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ConversationProjectionView._({
     required this.id,
     required this.workspaceId,
@@ -49,7 +50,7 @@ abstract class ConversationProjectionView implements _i1.SerializableModel {
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       activeExecutionId: jsonSerialization['activeExecutionId'] as String?,
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -75,7 +76,7 @@ abstract class ConversationProjectionView implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ConversationProjectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ConversationProjectionView copyWith({
     String? id,
     int? workspaceId,
@@ -104,8 +105,24 @@ abstract class ConversationProjectionView implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ConversationProjectionView',
+      'id': id,
+      'workspaceId': workspaceId,
+      'executionState': executionState,
+      'projectionRevision': projectionRevision,
+      'sequence': sequence,
+      if (modelId != null) 'modelId': modelId,
+      if (agentId != null) 'agentId': agentId,
+      if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      'updatedAt': updatedAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -136,7 +153,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
 
   /// Returns a shallow copy of this [ConversationProjectionView]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ConversationProjectionView copyWith({
     String? id,

@@ -3,14 +3,10 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
-class ToolsEmptyState extends StatelessWidget {
-  const ToolsEmptyState({
-    super.key,
-    this.padding = const EdgeInsets.all(24),
-  });
-
-  final EdgeInsetsGeometry padding;
-
+class const ToolsEmptyState({
+  super.key,
+  final EdgeInsetsGeometry padding = const EdgeInsets.all(24),
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(

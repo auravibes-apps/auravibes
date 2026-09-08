@@ -18,10 +18,7 @@ QueryExecutor createTestConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -121,9 +118,7 @@ void main() {
 
     test('watchByWorkspaceId emits null initially then updates', () async {
       final stream = fixture.database.workspaceCompactionSettingsDao
-          .watchByWorkspaceId(
-            workspaceId,
-          );
+          .watchByWorkspaceId(workspaceId);
 
       final completer = Completer<bool>();
       var callCount = 0;

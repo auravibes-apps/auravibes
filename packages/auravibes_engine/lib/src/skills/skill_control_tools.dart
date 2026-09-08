@@ -1,50 +1,11 @@
+import 'package:auravibes_engine/src/skills/skill_command.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
 
-const loadSkillToolName = 'load_skill';
-const unloadSkillToolName = 'unload_skill';
-const skillControlToolNames = <String>{
-  loadSkillToolName,
-  unloadSkillToolName,
-};
+@Deprecated('Use skillCommandToolNames instead.')
+const Set<String> skillControlToolNames = skillCommandToolNames;
 
+@Deprecated('Use buildSkillCommandToolSpecs() instead.')
 List<ToolSpec> buildSkillControlToolSpecs({
   required Iterable<String> loadableSkillSlugs,
   required Iterable<String> loadedSkillSlugs,
-}) {
-  final loadable = loadableSkillSlugs.toSet().toList(growable: false);
-  final loaded = loadedSkillSlugs.toSet().toList(growable: false);
-  return [
-    if (loadable.isNotEmpty)
-      _skillControlToolSpec(
-        name: loadSkillToolName,
-        description: 'Load a skill for the current conversation.',
-        skillSlugs: loadable,
-      ),
-    if (loaded.isNotEmpty)
-      _skillControlToolSpec(
-        name: unloadSkillToolName,
-        description: 'Unload a skill from the current conversation.',
-        skillSlugs: loaded,
-      ),
-  ];
-}
-
-ToolSpec _skillControlToolSpec({
-  required String name,
-  required String description,
-  required Iterable<String> skillSlugs,
-}) => ToolSpec(
-  name: name,
-  description: description,
-  inputJsonSchema: {
-    'type': 'object',
-    'properties': {
-      'slug': {
-        'type': 'string',
-        'enum': skillSlugs.toSet().toList(growable: false),
-      },
-    },
-    'required': const ['slug'],
-    'additionalProperties': false,
-  },
-);
+}) => buildSkillCommandToolSpecs();

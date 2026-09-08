@@ -184,12 +184,7 @@ void main() {
       ) async {
         await tester.pumpWidget(
           const MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: null,
-              ),
-            ),
+            home: Scaffold(body: AuraSwitch(value: false, onChanged: null)),
           ),
         );
 
@@ -230,9 +225,7 @@ void main() {
         expect(constraints?.maxWidth, 36.0);
       });
 
-      testWidgets('renders with base size correctly (default)', (
-        tester,
-      ) async {
+      testWidgets('renders with base size correctly (default)', (tester) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -334,12 +327,7 @@ void main() {
       ) async {
         await tester.pumpWidget(
           const MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: null,
-              ),
-            ),
+            home: Scaffold(body: AuraSwitch(value: false, onChanged: null)),
           ),
         );
 
@@ -585,9 +573,7 @@ void main() {
     });
 
     group('Animation', () {
-      testWidgets('animates thumb position when value changes', (
-        tester,
-      ) async {
+      testWidgets('animates thumb position when value changes', (tester) async {
         var currentValue = false;
 
         await tester.pumpWidget(

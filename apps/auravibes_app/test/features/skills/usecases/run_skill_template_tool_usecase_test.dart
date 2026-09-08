@@ -8,18 +8,17 @@ import 'package:auravibes_engine/auravibes_engine.dart' as engine;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _SkillsRepository extends Mock implements SkillsRepository {}
+class _SkillsRepository extends Mock implements SkillsRepository;
 
 class _SkillTemplateToolsRepository extends Mock
-    implements SkillTemplateToolsRepository {}
+    implements SkillTemplateToolsRepository;
 
 class _CredentialDefinitionsRepository extends Mock
-    implements SkillCredentialDefinitionsRepository {}
+    implements SkillCredentialDefinitionsRepository;
 
-class _CredentialsRepository extends Mock
-    implements SkillCredentialsRepository {}
+class _CredentialsRepository extends Mock implements SkillCredentialsRepository;
 
-class _RunSkillUrlTemplate extends Mock implements engine.RunSkillUrlTemplate {}
+class _RunSkillUrlTemplate extends Mock implements engine.RunSkillUrlTemplate;
 
 void main() {
   test('cloud template execution never reads local repositories', () async {

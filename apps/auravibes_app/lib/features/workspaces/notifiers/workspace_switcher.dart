@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
 import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usecase.dart';
@@ -23,7 +24,8 @@ final _logger = Logger('WorkspaceSwitcher');
 @Riverpod(keepAlive: true)
 class WorkspaceSwitcher extends _$WorkspaceSwitcher {
   Timer? _debounceTimer;
-  Future<void> _switchQueue = Future<void>.value();
+  final _switchQueue = Queue<({String workspaceId, int generation})>();
+  var _isProcessingQueue = false;
   var _switchGeneration = 0;
 
   @override
@@ -42,35 +44,42 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
     final switchGeneration = ++_switchGeneration;
 
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      unawaited(_queueSwitch(workspaceId, switchGeneration));
+      _queueSwitch(workspaceId, switchGeneration);
     });
   }
 
-  Future<void> _queueSwitch(
-    String workspaceId,
-    int switchGeneration,
-  ) async {
-    final previousSwitch = _switchQueue;
-    final completion = Completer<void>();
-    _switchQueue = completion.future;
+  /// Cancels any pending debounced switch.
+  void cancelPendingSwitch() {
+    _debounceTimer?.cancel();
+    _switchGeneration++;
+    state = const WorkspaceSwitchState();
+  }
 
-    try {
-      await previousSwitch;
-    } on Object catch (error, stackTrace) {
-      _logger.severe('Workspace switch queue failed', error, stackTrace);
-    }
+  /// Clears the current error state and returns to idle.
+  void clearError() {
+    state = const WorkspaceSwitchState();
+  }
 
+  void _queueSwitch(String workspaceId, int switchGeneration) {
+    _switchQueue.add((workspaceId: workspaceId, generation: switchGeneration));
+    if (_isProcessingQueue) return;
+
+    _isProcessingQueue = true;
+    unawaited(_drainSwitchQueue());
+  }
+
+  Future<void> _drainSwitchQueue() async {
     try {
-      await _performSwitch(workspaceId, switchGeneration);
+      while (_switchQueue.isNotEmpty) {
+        final request = _switchQueue.removeFirst();
+        await _performSwitch(request.workspaceId, request.generation);
+      }
     } finally {
-      completion.complete();
+      _isProcessingQueue = false;
     }
   }
 
-  Future<void> _performSwitch(
-    String workspaceId,
-    int switchGeneration,
-  ) async {
+  Future<void> _performSwitch(String workspaceId, int switchGeneration) async {
     final startTime = DateTime.now();
 
     try {
@@ -100,8 +109,8 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
       if (ref.mounted && switchGeneration == _switchGeneration) {
         state = const WorkspaceSwitchState();
       }
-    } on Object catch (e) {
-      _logger.severe('Workspace switch failed: $e');
+    } on Object catch (error, stackTrace) {
+      _logger.severe('Workspace switch failed', error, stackTrace);
       if (ref.mounted && switchGeneration == _switchGeneration) {
         state = WorkspaceSwitchState(
           status: SwitchStatus.error,
@@ -110,17 +119,5 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
         );
       }
     }
-  }
-
-  /// Cancels any pending debounced switch.
-  void cancelPendingSwitch() {
-    _debounceTimer?.cancel();
-    _switchGeneration++;
-    state = const WorkspaceSwitchState();
-  }
-
-  /// Clears the current error state and returns to idle.
-  void clearError() {
-    state = const WorkspaceSwitchState();
   }
 }

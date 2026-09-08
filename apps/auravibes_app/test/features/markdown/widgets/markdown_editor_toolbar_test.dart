@@ -18,10 +18,7 @@ void main() {
               child: Scaffold(
                 body: Column(
                   children: [
-                    TextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                    ),
+                    TextField(controller: controller, focusNode: focusNode),
                     MarkdownEditorToolbar(
                       controller: controller,
                       focusNode: focusNode,

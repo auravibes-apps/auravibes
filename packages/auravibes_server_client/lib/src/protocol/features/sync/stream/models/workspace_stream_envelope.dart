@@ -10,11 +10,13 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import '../../../../features/sync/stream/models/workspace_stream_envelope_kind.dart'
-    as _i2;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
+import '../../../../features/sync/stream/models/workspace_stream_envelope_kind.dart'
+    as _iqlazk70;
+
+abstract class WorkspaceStreamEnvelope
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceStreamEnvelope._({
     required this.kind,
     required this.workspaceId,
@@ -28,7 +30,7 @@ abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
   });
 
   factory WorkspaceStreamEnvelope({
-    required _i2.WorkspaceStreamEnvelopeKind kind,
+    required _iqlazk70.WorkspaceStreamEnvelopeKind kind,
     required int workspaceId,
     required int sequence,
     required String eventId,
@@ -43,7 +45,7 @@ abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceStreamEnvelope(
-      kind: _i2.WorkspaceStreamEnvelopeKind.fromJson(
+      kind: _iqlazk70.WorkspaceStreamEnvelopeKind.fromJson(
         (jsonSerialization['kind'] as String),
       ),
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -53,13 +55,13 @@ abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
       resourceKind: jsonSerialization['resourceKind'] as String,
       resourceId: jsonSerialization['resourceId'] as String?,
       payloadJson: jsonSerialization['payloadJson'] as String?,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
   }
 
-  _i2.WorkspaceStreamEnvelopeKind kind;
+  _iqlazk70.WorkspaceStreamEnvelopeKind kind;
 
   int workspaceId;
 
@@ -79,9 +81,9 @@ abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceStreamEnvelope]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceStreamEnvelope copyWith({
-    _i2.WorkspaceStreamEnvelopeKind? kind,
+    _iqlazk70.WorkspaceStreamEnvelopeKind? kind,
     int? workspaceId,
     int? sequence,
     String? eventId,
@@ -108,8 +110,24 @@ abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceStreamEnvelope',
+      'kind': kind.toJson(),
+      'workspaceId': workspaceId,
+      'sequence': sequence,
+      'eventId': eventId,
+      'eventKind': eventKind,
+      'resourceKind': resourceKind,
+      if (resourceId != null) 'resourceId': resourceId,
+      if (payloadJson != null) 'payloadJson': payloadJson,
+      'createdAt': createdAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -117,7 +135,7 @@ class _Undefined {}
 
 class _WorkspaceStreamEnvelopeImpl extends WorkspaceStreamEnvelope {
   _WorkspaceStreamEnvelopeImpl({
-    required _i2.WorkspaceStreamEnvelopeKind kind,
+    required _iqlazk70.WorkspaceStreamEnvelopeKind kind,
     required int workspaceId,
     required int sequence,
     required String eventId,
@@ -140,10 +158,10 @@ class _WorkspaceStreamEnvelopeImpl extends WorkspaceStreamEnvelope {
 
   /// Returns a shallow copy of this [WorkspaceStreamEnvelope]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceStreamEnvelope copyWith({
-    _i2.WorkspaceStreamEnvelopeKind? kind,
+    _iqlazk70.WorkspaceStreamEnvelopeKind? kind,
     int? workspaceId,
     int? sequence,
     String? eventId,

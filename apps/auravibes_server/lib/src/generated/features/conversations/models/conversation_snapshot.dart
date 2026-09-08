@@ -10,19 +10,20 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import '../../../features/conversations/models/conversation_projection_view.dart'
-    as _i2;
-import '../../../features/conversations/models/conversation_message_view.dart'
-    as _i3;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
+
 import '../../../features/conversations/models/conversation_execution_view.dart'
-    as _i4;
+    as _iid4e7gg;
+import '../../../features/conversations/models/conversation_message_view.dart'
+    as _iwfcarya;
+import '../../../features/conversations/models/conversation_projection_view.dart'
+    as _iu8ytkcm;
 import '../../../features/conversations/models/conversation_tool_call_view.dart'
-    as _i5;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i6;
+    as _irozunu0;
 
 abstract class ConversationSnapshot
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ConversationSnapshot._({
     required this.conversation,
     required this.messages,
@@ -33,11 +34,11 @@ abstract class ConversationSnapshot
   });
 
   factory ConversationSnapshot({
-    required _i2.ConversationProjectionView conversation,
-    required List<_i3.ConversationMessageView> messages,
-    required List<_i3.ConversationMessageView> pendingMessages,
-    _i4.ConversationExecutionView? activeExecution,
-    required List<_i5.ConversationToolCallView> toolCalls,
+    required _iu8ytkcm.ConversationProjectionView conversation,
+    required List<_iwfcarya.ConversationMessageView> messages,
+    required List<_iwfcarya.ConversationMessageView> pendingMessages,
+    _iid4e7gg.ConversationExecutionView? activeExecution,
+    required List<_irozunu0.ConversationToolCallView> toolCalls,
     required int sequence,
   }) = _ConversationSnapshotImpl;
 
@@ -45,49 +46,53 @@ abstract class ConversationSnapshot
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationSnapshot(
-      conversation: _i6.Protocol().deserialize<_i2.ConversationProjectionView>(
-        jsonSerialization['conversation'],
-      ),
-      messages: _i6.Protocol().deserialize<List<_i3.ConversationMessageView>>(
-        jsonSerialization['messages'],
-      ),
-      pendingMessages: _i6.Protocol()
-          .deserialize<List<_i3.ConversationMessageView>>(
+      conversation: _if5qez1k.Protocol()
+          .deserialize<_iu8ytkcm.ConversationProjectionView>(
+            jsonSerialization['conversation'],
+          ),
+      messages: _if5qez1k.Protocol()
+          .deserialize<List<_iwfcarya.ConversationMessageView>>(
+            jsonSerialization['messages'],
+          ),
+      pendingMessages: _if5qez1k.Protocol()
+          .deserialize<List<_iwfcarya.ConversationMessageView>>(
             jsonSerialization['pendingMessages'],
           ),
       activeExecution: jsonSerialization['activeExecution'] == null
           ? null
-          : _i6.Protocol().deserialize<_i4.ConversationExecutionView>(
-              jsonSerialization['activeExecution'],
-            ),
-      toolCalls: _i6.Protocol().deserialize<List<_i5.ConversationToolCallView>>(
-        jsonSerialization['toolCalls'],
-      ),
+          : _if5qez1k.Protocol()
+                .deserialize<_iid4e7gg.ConversationExecutionView>(
+                  jsonSerialization['activeExecution'],
+                ),
+      toolCalls: _if5qez1k.Protocol()
+          .deserialize<List<_irozunu0.ConversationToolCallView>>(
+            jsonSerialization['toolCalls'],
+          ),
       sequence: jsonSerialization['sequence'] as int,
     );
   }
 
-  _i2.ConversationProjectionView conversation;
+  _iu8ytkcm.ConversationProjectionView conversation;
 
-  List<_i3.ConversationMessageView> messages;
+  List<_iwfcarya.ConversationMessageView> messages;
 
-  List<_i3.ConversationMessageView> pendingMessages;
+  List<_iwfcarya.ConversationMessageView> pendingMessages;
 
-  _i4.ConversationExecutionView? activeExecution;
+  _iid4e7gg.ConversationExecutionView? activeExecution;
 
-  List<_i5.ConversationToolCallView> toolCalls;
+  List<_irozunu0.ConversationToolCallView> toolCalls;
 
   int sequence;
 
   /// Returns a shallow copy of this [ConversationSnapshot]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationSnapshot copyWith({
-    _i2.ConversationProjectionView? conversation,
-    List<_i3.ConversationMessageView>? messages,
-    List<_i3.ConversationMessageView>? pendingMessages,
-    _i4.ConversationExecutionView? activeExecution,
-    List<_i5.ConversationToolCallView>? toolCalls,
+    _iu8ytkcm.ConversationProjectionView? conversation,
+    List<_iwfcarya.ConversationMessageView>? messages,
+    List<_iwfcarya.ConversationMessageView>? pendingMessages,
+    _iid4e7gg.ConversationExecutionView? activeExecution,
+    List<_irozunu0.ConversationToolCallView>? toolCalls,
     int? sequence,
   });
   @override
@@ -121,7 +126,7 @@ abstract class ConversationSnapshot
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -129,11 +134,11 @@ class _Undefined {}
 
 class _ConversationSnapshotImpl extends ConversationSnapshot {
   _ConversationSnapshotImpl({
-    required _i2.ConversationProjectionView conversation,
-    required List<_i3.ConversationMessageView> messages,
-    required List<_i3.ConversationMessageView> pendingMessages,
-    _i4.ConversationExecutionView? activeExecution,
-    required List<_i5.ConversationToolCallView> toolCalls,
+    required _iu8ytkcm.ConversationProjectionView conversation,
+    required List<_iwfcarya.ConversationMessageView> messages,
+    required List<_iwfcarya.ConversationMessageView> pendingMessages,
+    _iid4e7gg.ConversationExecutionView? activeExecution,
+    required List<_irozunu0.ConversationToolCallView> toolCalls,
     required int sequence,
   }) : super._(
          conversation: conversation,
@@ -146,14 +151,14 @@ class _ConversationSnapshotImpl extends ConversationSnapshot {
 
   /// Returns a shallow copy of this [ConversationSnapshot]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationSnapshot copyWith({
-    _i2.ConversationProjectionView? conversation,
-    List<_i3.ConversationMessageView>? messages,
-    List<_i3.ConversationMessageView>? pendingMessages,
+    _iu8ytkcm.ConversationProjectionView? conversation,
+    List<_iwfcarya.ConversationMessageView>? messages,
+    List<_iwfcarya.ConversationMessageView>? pendingMessages,
     Object? activeExecution = _Undefined,
-    List<_i5.ConversationToolCallView>? toolCalls,
+    List<_irozunu0.ConversationToolCallView>? toolCalls,
     int? sequence,
   }) {
     return ConversationSnapshot(
@@ -162,7 +167,7 @@ class _ConversationSnapshotImpl extends ConversationSnapshot {
       pendingMessages:
           pendingMessages ??
           this.pendingMessages.map((e0) => e0.copyWith()).toList(),
-      activeExecution: activeExecution is _i4.ConversationExecutionView?
+      activeExecution: activeExecution is _iid4e7gg.ConversationExecutionView?
           ? activeExecution
           : this.activeExecution?.copyWith(),
       toolCalls:

@@ -3,26 +3,21 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
 typedef ReadCloudAgents = Future<List<WorkspaceResource>> Function();
-typedef PatchCloudAgents =
-    Future<PatchWorkspaceStateResponse> Function({
-      required String requestId,
-      required List<WorkspacePatchOperation> operations,
-    });
+typedef PatchCloudAgents = Future<PatchWorkspaceStateResponse> Function({
+  required String requestId,
+  required List<WorkspacePatchOperation> operations,
+});
 
-class CloudAgentRepository implements AgentRepository {
-  CloudAgentRepository({
-    required this.workspaceId,
-    required this.read,
-    required this.patch,
-  });
-
-  final String workspaceId;
-  final ReadCloudAgents read;
-  final PatchCloudAgents patch;
+class CloudAgentRepository({
+  required final String workspaceId,
+  required final ReadCloudAgents read,
+  required final PatchCloudAgents patch,
+}) implements AgentRepository {
   final Map<String, int> _revisions = {};
 
   @override
@@ -85,10 +80,7 @@ class CloudAgentRepository implements AgentRepository {
   }
 
   @override
-  Future<AgentEntity> updateAgent(
-    String agentId,
-    AgentToUpdate agent,
-  ) async {
+  Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async {
     final resources = await read();
     final associations = _agentSkillAssociations(resources, agentId);
     for (final resource in resources) {
@@ -116,10 +108,7 @@ class CloudAgentRepository implements AgentRepository {
     );
     _revisions[agentId] = resource.revision;
 
-    return _decode(
-      resource,
-      response.resources,
-    );
+    return _decode(resource, response.resources);
   }
 
   @override
@@ -281,4 +270,32 @@ class CloudAgentRepository implements AgentRepository {
       visibility: CloudResourceMapper.visibility(data['visibility']),
     );
   }
+}
+
+CloudAgentRepository cloudAgentRepositoryFromStore({
+  required String workspaceId,
+  required CloudWorkspaceResourceStore store,
+}) => CloudAgentRepository(
+  patch: store.patch,
+  workspaceId: workspaceId,
+  read: () => _readCloudAgentResources(store),
+);
+
+Future<List<WorkspaceResource>> _readCloudAgentResources(
+  CloudWorkspaceResourceStore store,
+) async {
+  final response = await store.read(
+    pages: [
+      WorkspaceResourcePageRequest(
+        resourceKind: WorkspaceResourceKind.agent,
+        limit: 100,
+      ),
+      WorkspaceResourcePageRequest(
+        resourceKind: WorkspaceResourceKind.agentAssociation,
+        limit: 100,
+      ),
+    ],
+  );
+
+  return response.pages.expand((page) => page.resources).toList();
 }

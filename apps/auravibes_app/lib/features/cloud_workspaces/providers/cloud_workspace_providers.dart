@@ -1,6 +1,6 @@
 // ignore_for_file: implementation_imports, newline-before-return
 
-// hooks_riverpod publicly exports providers implemented under riverpod/lib/src.
+// Hooks Riverpod publicly exports providers implemented under riverpod/lib/src.
 
 import 'package:auravibes_app/app_env_config.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
@@ -62,5 +62,5 @@ cloudWorkspaceDetailProvider =
         cloudWorkspaceUseCasesProvider(key.accountId).future,
       );
 
-      return useCases?.loadDetail(key.workspaceId);
+      return await useCases?.loadDetail(key.workspaceId);
     });

@@ -19,13 +19,22 @@ void main() {
         state: 'state',
       );
 
-      expect(uri.toString(), startsWith(openAICodexAuthorizationEndpoint));
-      expect(uri.queryParameters['client_id'], openAICodexClientId);
+      expect(
+        uri.toString(),
+        startsWith(ModelProviderOAuthProfiles.authorizationEndpoint),
+      );
+      expect(
+        uri.queryParameters['client_id'],
+        ModelProviderOAuthProfiles.clientId,
+      );
       expect(
         uri.queryParameters['redirect_uri'],
         'http://localhost:1455/auth/callback',
       );
-      expect(uri.queryParameters['scope'], openAICodexScopes.join(' '));
+      expect(
+        uri.queryParameters['scope'],
+        ModelProviderOAuthProfiles.scopes.join(' '),
+      );
       expect(uri.queryParameters['code_challenge'], 'challenge');
       expect(uri.queryParameters['state'], 'state');
       expect(uri.queryParameters['originator'], 'auravibes');
@@ -59,11 +68,54 @@ void main() {
       expect(token.accessToken, 'access');
     });
 
+    test('closes browser server when browser launch fails', () async {
+      int? port;
+
+      await expectLater(
+        CodexOAuthService(
+          openBrowser: (uri) async {
+            port = Uri.parse(uri.queryParameters['redirect_uri']!).port;
+            throw StateError('browser launch failed');
+          },
+        ).authenticateWithBrowser(),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(port, isNotNull);
+      final boundPort = port;
+      if (boundPort == null) {
+        fail('Browser launch did not receive a redirect URI');
+      }
+      final server = await HttpServer.bind(
+        InternetAddress.loopbackIPv4,
+        boundPort,
+      );
+      addTearDown(() => server.close(force: true));
+    });
+
+    test('cancels browser authentication', () async {
+      var cancelled = false;
+
+      await expectLater(
+        CodexOAuthService(
+          openBrowser: (_) {
+            cancelled = true;
+
+            return Future<void>.value();
+          },
+        ).authenticateWithBrowser(isCancelled: () => cancelled),
+        throwsA(isA<CodexOAuthCanceledException>()),
+      );
+    });
+
     test('exchanges code response into OAuth token', () async {
       final dio = Dio()
         ..httpClientAdapter = _FakeHttpClientAdapter(
           onFetch: (options) async {
-            expect(options.uri.toString(), openAICodexTokenEndpoint);
+            expect(
+              options.uri.toString(),
+              ModelProviderOAuthProfiles.tokenEndpoint,
+            );
 
             return _json({
               'access_token': 'access',
@@ -115,16 +167,17 @@ void main() {
           },
         );
 
-      final token =
-          await CodexOAuthService(
-            dio: dio,
-          ).authenticateWithDeviceCode(
+      final token = await CodexOAuthService(dio: dio)
+          .authenticateWithDeviceCode(
             onDeviceCode: (deviceCode) {
               shownCode = deviceCode;
             },
           );
 
-      expect(shownCode?.verificationUrl, '$openAICodexIssuer/codex/device');
+      expect(
+        shownCode?.verificationUrl,
+        '${ModelProviderOAuthProfiles.issuer}/codex/device',
+      );
       expect(shownCode?.userCode, 'ABCD-EFGH');
       expect(token.accessToken, 'access');
     });
@@ -155,9 +208,8 @@ void main() {
           },
         );
 
-      final token = await CodexOAuthService(
-        dio: dio,
-      ).authenticateWithDeviceCode();
+      final token = await CodexOAuthService(dio: dio)
+          .authenticateWithDeviceCode();
 
       expect(tokenPolls, 2);
       expect(token.accessToken, 'access');
@@ -179,9 +231,8 @@ void main() {
         );
 
       await expectLater(
-        CodexOAuthService(dio: dio).authenticateWithDeviceCode(
-          isCancelled: () => true,
-        ),
+        CodexOAuthService(dio: dio)
+            .authenticateWithDeviceCode(isCancelled: () => true),
         throwsA(isA<CodexOAuthCanceledException>()),
       );
     });
@@ -213,11 +264,9 @@ String _jwt(Map<String, Object?> claims) {
   return 'header.$payload.signature';
 }
 
-final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required this.onFetch});
-
-  final Future<ResponseBody> Function(RequestOptions options) onFetch;
-
+final class _FakeHttpClientAdapter({
+  required final Future<ResponseBody> Function(RequestOptions options) onFetch,
+}) implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,

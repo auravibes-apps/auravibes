@@ -8,11 +8,7 @@ void main() {
   group('AuraTypingIndicator', () {
     testWidgets('renders three animated dots', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraTypingIndicator(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraTypingIndicator())),
       );
 
       // Find all containers that represent dots.
@@ -28,9 +24,7 @@ void main() {
     testWidgets('hides container when showContainer is false', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraTypingIndicator(showContainer: false),
-          ),
+          home: Scaffold(body: AuraTypingIndicator(showContainer: false)),
         ),
       );
 
@@ -45,9 +39,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraTypingIndicator(
-              size: AuraTypingIndicatorSize.small,
-            ),
+            body: AuraTypingIndicator(size: AuraTypingIndicatorSize.small),
           ),
         ),
       );
@@ -61,11 +53,7 @@ void main() {
 
     testWidgets('applies medium size correctly', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraTypingIndicator(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraTypingIndicator())),
       );
 
       // Check that dots are rendered with correct size.
@@ -79,9 +67,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraTypingIndicator(
-              size: AuraTypingIndicatorSize.large,
-            ),
+            body: AuraTypingIndicator(size: AuraTypingIndicatorSize.large),
           ),
         ),
       );
@@ -98,25 +84,19 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraTypingIndicator(
-              color: customColor,
-            ),
-          ),
+          home: Scaffold(body: AuraTypingIndicator(color: customColor)),
         ),
       );
 
       // Find dot containers and check their color.
       final dotContainers = tester
           .widgetList<Container>(find.byType(Container))
-          .where(
-            (container) {
-              final decoration = container.decoration;
+          .where((container) {
+            final decoration = container.decoration;
 
-              return decoration is BoxDecoration &&
-                  decoration.shape == BoxShape.circle;
-            },
-          )
+            return decoration is BoxDecoration &&
+                decoration.shape == BoxShape.circle;
+          })
           .toList();
 
       expect(dotContainers.length, 3);
@@ -132,12 +112,8 @@ void main() {
     testWidgets('uses default color when none provided', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: const Scaffold(
-            body: AuraTypingIndicator(),
-          ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          home: const Scaffold(body: AuraTypingIndicator()),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -145,14 +121,12 @@ void main() {
       // (OnSurfaceVariant in light theme).
       final dotContainers = tester
           .widgetList<Container>(find.byType(Container))
-          .where(
-            (container) {
-              final decoration = container.decoration;
+          .where((container) {
+            final decoration = container.decoration;
 
-              return decoration is BoxDecoration &&
-                  decoration.shape == BoxShape.circle;
-            },
-          )
+            return decoration is BoxDecoration &&
+                decoration.shape == BoxShape.circle;
+          })
           .toList();
 
       expect(dotContainers.length, 3);
@@ -168,11 +142,7 @@ void main() {
 
     testWidgets('has proper semantic label', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraTypingIndicator(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraTypingIndicator())),
       );
 
       expect(find.bySemanticsLabel('AI is typing'), findsOneWidget);
@@ -180,11 +150,7 @@ void main() {
 
     testWidgets('animates dots with staggered timing', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraTypingIndicator(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraTypingIndicator())),
       );
 
       // Pump a few frames to let animation start.
@@ -206,9 +172,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraTypingIndicator(
-              animationDuration: customDuration,
-            ),
+            body: AuraTypingIndicator(animationDuration: customDuration),
           ),
         ),
       );

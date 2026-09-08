@@ -8,6 +8,10 @@ part 'last_workspace_selection_repository_provider.g.dart';
 @Riverpod(keepAlive: true)
 WorkspaceSelectionRepository lastWorkspaceSelectionRepository(Ref ref) {
   final preferences = ref.watch(sharedPreferencesProvider.future);
+  final namespace = ref.watch(appStorageNamespaceProvider);
+  final storageKey = namespace == 'auravibes_app'
+      ? 'last_selected_workspace_id'
+      : '$namespace.last_selected_workspace_id';
 
-  return LastWorkspaceSelectionRepository(preferences);
+  return LastWorkspaceSelectionRepository(preferences, storageKey: storageKey);
 }

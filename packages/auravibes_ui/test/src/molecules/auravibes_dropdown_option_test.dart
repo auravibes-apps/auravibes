@@ -9,11 +9,7 @@ void main() {
     testWidgets('renders with default label from value', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraDropdownOption<String>(
-              value: 'Option 1',
-            ),
-          ),
+          home: Scaffold(body: AuraDropdownOption<String>(value: 'Option 1')),
         ),
       );
 
@@ -69,10 +65,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraDropdownOption<String>(
-              value: 'opt1',
-              isSelected: true,
-            ),
+            body: AuraDropdownOption<String>(value: 'opt1', isSelected: true),
           ),
         ),
       );
@@ -84,11 +77,7 @@ void main() {
     testWidgets('does not show check icon when not selected', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraDropdownOption<String>(
-              value: 'opt1',
-            ),
-          ),
+          home: Scaffold(body: AuraDropdownOption<String>(value: 'opt1')),
         ),
       );
 

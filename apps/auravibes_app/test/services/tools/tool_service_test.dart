@@ -6,10 +6,7 @@ void main() {
   group('ToolService', () {
     test('availableTools contains calculator', () {
       expect(ToolService.availableTools, hasLength(1));
-      expect(
-        ToolService.availableTools.first.type,
-        UserToolType.calculator,
-      );
+      expect(ToolService.availableTools.first.type, UserToolType.calculator);
     });
 
     group('getTypes', () {
@@ -20,9 +17,7 @@ void main() {
       });
 
       test('excludes types in without list', () {
-        final types = ToolService.getTypes(
-          without: [UserToolType.calculator],
-        );
+        final types = ToolService.getTypes(without: [UserToolType.calculator]);
         expect(types, isEmpty);
       });
 
@@ -43,9 +38,7 @@ void main() {
       });
 
       test('returns null for unknown type', () {
-        final tool = ToolService.getTool(
-          UserToolType.calculator,
-        );
+        final tool = ToolService.getTool(UserToolType.calculator);
         expect(tool, isNotNull);
       });
     });

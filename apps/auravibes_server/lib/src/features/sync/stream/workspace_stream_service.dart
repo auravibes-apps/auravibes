@@ -1,12 +1,11 @@
 import 'dart:async';
+
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import 'sync_wakeups.dart';
 
-class WorkspaceStreamService {
-  const WorkspaceStreamService();
-
+class const WorkspaceStreamService() {
   static const pageSize = 100;
   static const pollInterval = Duration(seconds: 1);
 

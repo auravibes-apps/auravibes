@@ -77,10 +77,7 @@ void main() {
 
     test('fromJson creates error variant when error field present', () {
       final json = {
-        'error': {
-          'message': 'Rate limited',
-          'type': 'rate_limit_error',
-        },
+        'error': {'message': 'Rate limited', 'type': 'rate_limit_error'},
         'request_id': 'req-123',
         'type': 'error',
       };

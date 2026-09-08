@@ -1,44 +1,22 @@
 import 'dart:async';
 
-class AgentQueuedDraft {
-  const AgentQueuedDraft({
-    required this.content,
-    this.payload,
-  });
+class const AgentQueuedDraft({
+  required final String content,
+  final Object? payload,
+});
 
-  final String content;
-  final Object? payload;
-}
+class const AgentCreatedMessage({required final String id});
 
-class AgentCreatedMessage {
-  const AgentCreatedMessage({
-    required this.id,
-  });
-
-  final String id;
-}
-
-class AgentConversationMessage {
-  const AgentConversationMessage({
-    required this.id,
-    required this.conversationId,
-    required this.content,
-    required this.type,
-    required this.status,
-    required this.isUser,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  final String id;
-  final String conversationId;
-  final String content;
-  final String type;
-  final String status;
-  final bool isUser;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-}
+class const AgentConversationMessage({
+  required final String id,
+  required final String conversationId,
+  required final String content,
+  required final String type,
+  required final String status,
+  required final bool isUser,
+  required final DateTime createdAt,
+  required final DateTime updatedAt,
+});
 
 abstract interface class AgentConversationDataProvider {
   Future<String?> getWorkspaceId(String conversationId);
@@ -104,12 +82,7 @@ abstract interface class AgentSendQueueRuntime {
   void clear(String conversationId);
 }
 
-class AgentRateLimitRetryRuntime {
-  const AgentRateLimitRetryRuntime({
-    required this.start,
-    required this.clear,
-  });
-
-  final void Function(String conversationId, DateTime retryAt) start;
-  final void Function(String conversationId) clear;
-}
+class const AgentRateLimitRetryRuntime({
+  required final void Function(String conversationId, DateTime retryAt) start,
+  required final void Function(String conversationId) clear,
+});

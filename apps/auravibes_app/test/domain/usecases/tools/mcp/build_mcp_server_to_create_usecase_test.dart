@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
-import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -49,10 +49,7 @@ void main() {
       bearerToken: null,
     );
 
-    expect(
-      () => usecase.call(form),
-      throwsA(isA<Exception>()),
-    );
+    expect(() => usecase.call(form), throwsA(isA<Exception>()));
   });
 
   test('throws when oauth discovery fails', () {
@@ -65,9 +62,6 @@ void main() {
       bearerToken: null,
     );
 
-    expect(
-      () => usecase.call(form),
-      throwsA(isA<Exception>()),
-    );
+    expect(() => usecase.call(form), throwsA(isA<Exception>()));
   });
 }

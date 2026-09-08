@@ -59,12 +59,10 @@ void main() {
               child: const ToolsManagementModal(workspaceId: 'ws-1'),
             ),
             overrides: [
-              conversationToolsProvider(
-                workspaceId: 'ws-1',
-              ).overrideWith(_MockConversationToolsNotifier.new),
-              groupedConversationToolsProvider(
-                workspaceId: 'ws-1',
-              ).overrideWith(_MockGroupedConversationToolsNotifier.new),
+              conversationToolsProvider(workspaceId: 'ws-1')
+                  .overrideWith(_MockConversationToolsNotifier.new),
+              groupedConversationToolsProvider(workspaceId: 'ws-1')
+                  .overrideWith(_MockGroupedConversationToolsNotifier.new),
               workspaceSessionForRouteProvider('ws-1').overrideWithValue(
                 const AsyncData(
                   WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),

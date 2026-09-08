@@ -5,8 +5,9 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_operations_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
@@ -33,7 +34,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _Gateway extends Mock implements CloudWorkspaceStateGateway {}
+class _Gateway extends Mock implements CloudWorkspaceStateGateway;
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
@@ -168,19 +169,18 @@ void main() {
       Never local() => throw StateError('local storage touched');
       final container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(workspace),
-          workspaceSessionForRouteProvider(workspaceId).overrideWithValue(
-            const AsyncData(workspace),
-          ),
+          workspaceSessionProvider(workspace).overrideWithValue(workspace),
+          workspaceSessionForRouteProvider(workspaceId)
+              .overrideWithValue(const AsyncData(workspace)),
           cloudWorkspaceStateGatewayProvider.overrideWith(
             (_, _) async => gateway,
           ),
-          cloudWorkspaceStateGatewayForWorkspaceProvider(
-            workspaceId,
-          ).overrideWith((_) async => gateway),
+          cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId)
+              .overrideWith((_) async => gateway),
           workspaceSkillsProvider(workspaceId).overrideWith(
             (_) => CloudSkillSettingsAdapter(gateway).watchSkills().first,
           ),
+          serviceConnectionRepositoryProvider.overrideWith((_) => local()),
           skillsRepositoryProvider.overrideWith((_) => local()),
           skillTemplateToolsRepositoryProvider.overrideWith((_) => local()),
           skillCredentialDefinitionsRepositoryProvider.overrideWith(
@@ -235,11 +235,9 @@ void main() {
         workspaceId: workspaceId,
         slug: 'agents',
       );
-      final updatedSkill =
-          await container.read(updateSkillUsecaseProvider(workspaceId))(
-            skill.id,
-            const SkillToUpdate(description: 'Updated forecast'),
-          );
+      final updatedSkill = await container.read(
+        updateSkillUsecaseProvider(workspaceId),
+      )(skill.id, const SkillToUpdate(description: 'Updated forecast'));
       final duplicatedSkill = await container.read(
         duplicateSkillUsecaseProvider(workspaceId),
       )(skill.id);
@@ -287,13 +285,9 @@ void main() {
               requiresCredential: true,
             ),
           );
-      final updatedTool =
-          await container.read(
-            updateSkillTemplateToolUsecaseProvider(workspaceId),
-          )(
-            tool.id,
-            const SkillTemplateToolToUpdate(description: 'Updated tool'),
-          );
+      final updatedTool = await container.read(
+        updateSkillTemplateToolUsecaseProvider(workspaceId),
+      )(tool.id, const SkillTemplateToolToUpdate(description: 'Updated tool'));
       final duplicatedTool = await container.read(
         duplicateSkillTemplateToolUsecaseProvider(workspaceId),
       )(tool.id);
@@ -381,17 +375,13 @@ void main() {
 
       await container
           .read(skillCredentialOperationsProvider(workspaceId))
-          .delete(
-            credential.id,
-          );
+          .delete(credential.id);
       await container.read(deleteSkillTemplateToolProvider(workspaceId))(
         duplicatedTool.id,
       );
       await container.read(
         deleteSkillCredentialDefinitionProvider(workspaceId),
-      )(
-        updatedDefinition.id,
-      );
+      )(updatedDefinition.id);
       await container.read(deleteSkillProvider(workspaceId))(
         duplicatedSkill.id,
       );

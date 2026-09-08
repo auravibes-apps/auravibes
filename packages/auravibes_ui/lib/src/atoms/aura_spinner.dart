@@ -1,18 +1,16 @@
-// Required: UI components keep related private widgets together.
-
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
+export 'aura_loading_overlay.dart';
+
 /// A customizable loading spinner component following the Aura design system.
-///
-/// This spinner widget provides consistent loading indicators with different
-/// sizes and styles across the application.
 class AuraSpinner extends StatelessWidget {
-  /// Creates a Aura spinner.
-  const AuraSpinner({
+  /// Creates an Aura spinner.
+  const new({
     super.key,
     this.size = AuraSpinnerSize.medium,
+    this.tint,
     this.color,
     this.strokeWidth,
     this.semanticLabel,
@@ -21,29 +19,34 @@ class AuraSpinner extends StatelessWidget {
   /// The size of the spinner.
   final AuraSpinnerSize size;
 
-  /// The color of the spinner. If null, uses the primary color.
+  /// The tint of the spinner. If null, uses the primary tint.
+  final AuraTint? tint;
+
+  /// Legacy explicit color override. Prefer [tint] for theme-aware colors.
   final Color? color;
 
   /// The width of the spinner stroke. If null, uses a default based on size.
   final double? strokeWidth;
 
-  /// A semantic label for the spinner for accessibility.
+  /// Semantic label announced by assistive technologies.
+  ///
+  /// Pass localized text when loading state needs an accessibility
+  /// announcement.
+  /// If omitted, spinner has no semantic label.
   final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final spinnerSize = _getSpinnerSize();
-    final spinnerColor = color ?? auraColors.primary;
-    final spinnerStrokeWidth = strokeWidth ?? _getDefaultStrokeWidth();
+    final spinnerColor = color ?? auraColors.colorFor(tint ?? AuraTint.primary);
 
     return SizedBox(
-      width: spinnerSize,
-      height: spinnerSize,
+      width: _getSpinnerSize(),
+      height: _getSpinnerSize(),
       child: CircularProgressIndicator(
         color: spinnerColor,
-        strokeWidth: spinnerStrokeWidth,
-        semanticsLabel: semanticLabel ?? 'Loading',
+        strokeWidth: strokeWidth ?? _getDefaultStrokeWidth(),
+        semanticsLabel: semanticLabel,
       ),
     );
   }
@@ -66,109 +69,6 @@ class AuraSpinner extends StatelessWidget {
       AuraSpinnerSize.large => 3.0,
       AuraSpinnerSize.extraLarge => 4.0,
     };
-  }
-}
-
-/// A specialized full-screen loading overlay component.
-///
-/// This provides a consistent way to show loading states that cover the entire
-/// screen.
-class AuraLoadingOverlay extends StatelessWidget {
-  /// Creates a Aura loading overlay.
-  const AuraLoadingOverlay({
-    super.key,
-    this.isLoading = true,
-    this.child,
-    this.message,
-    this.backgroundColor,
-    this.spinnerSize = AuraSpinnerSize.large,
-    this.spinnerColor,
-  });
-
-  /// Whether the loading overlay is visible.
-  final bool isLoading;
-
-  /// The widget to display behind the loading overlay.
-  final Widget? child;
-
-  /// Optional message to display with the spinner.
-  final String? message;
-
-  /// The background color of the overlay.
-  final Color? backgroundColor;
-
-  /// The size of the loading spinner.
-  final AuraSpinnerSize spinnerSize;
-
-  /// The color of the loading spinner.
-  final Color? spinnerColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final child = this.child;
-
-    if (!isLoading) {
-      return child ?? const SizedBox.shrink();
-    }
-
-    final auraColors = context.auraColors;
-    final auraTheme = context.auraTheme;
-    final typography = auraTheme.typography;
-    final message = this.message;
-    final overlay = ColoredBox(
-      color: backgroundColor ?? auraColors.scrim,
-      child: Center(
-        child: Container(
-          padding: EdgeInsets.all(auraTheme.fromSpacing(.xl)),
-          decoration: BoxDecoration(
-            color: auraColors.surface,
-            borderRadius: BorderRadius.all(
-              Radius.circular(
-                auraTheme.fromBorderRadius(.lg),
-              ),
-            ),
-            boxShadow: const [DesignShadows.lg],
-          ),
-          child: message != null
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AuraSpinner(
-                      size: spinnerSize,
-                      color: spinnerColor,
-                    ),
-                    SizedBox(height: auraTheme.fromSpacing(.md)),
-                    Text(
-                      message,
-                      style: TextStyle(
-                        color: auraColors.onSurfaceVariant,
-                        fontSize: typography.fontSizeLg,
-                        fontWeight: typography.fontWeightRegular,
-                        fontFamily: typography.bodyFontFamily,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                )
-              : AuraSpinner(
-                  size: spinnerSize,
-                  color: spinnerColor,
-                ),
-        ),
-      ),
-    );
-
-    if (child != null) {
-      return Stack(
-        children: [
-          child,
-          if (isLoading) overlay,
-        ],
-      );
-    }
-
-    return overlay;
   }
 }
 

@@ -3,12 +3,10 @@ import 'dart:async';
 import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LastWorkspaceSelectionRepository implements WorkspaceSelectionRepository {
-  LastWorkspaceSelectionRepository(this._preferences);
-
-  static const _key = 'last_selected_workspace_id';
-
-  final Future<SharedPreferences> _preferences;
+class LastWorkspaceSelectionRepository(
+  final Future<SharedPreferences> _preferences, {
+  final String storageKey = 'last_selected_workspace_id',
+}) implements WorkspaceSelectionRepository {
   Future<void> _writeQueue = Future<void>.value();
 
   @override
@@ -16,12 +14,12 @@ class LastWorkspaceSelectionRepository implements WorkspaceSelectionRepository {
     await _writeQueue;
     final preferences = await _preferences;
 
-    return preferences.getString(_key);
+    return preferences.getString(storageKey);
   }
 
   @override
   Future<void> save(String workspaceId) => _enqueueWrite((preferences) async {
-    final didSave = await preferences.setString(_key, workspaceId);
+    final didSave = await preferences.setString(storageKey, workspaceId);
     if (!didSave) {
       throw StateError('Unable to save the selected workspace.');
     }
@@ -32,7 +30,7 @@ class LastWorkspaceSelectionRepository implements WorkspaceSelectionRepository {
   @override
   Future<void> clearIfMatches(String workspaceId) {
     return _enqueueWrite((preferences) async {
-      if (preferences.getString(_key) != workspaceId) return;
+      if (preferences.getString(storageKey) != workspaceId) return;
 
       await _clear(preferences);
     });
@@ -57,7 +55,7 @@ class LastWorkspaceSelectionRepository implements WorkspaceSelectionRepository {
   }
 
   Future<void> _clear(SharedPreferences preferences) async {
-    final didClear = await preferences.remove(_key);
+    final didClear = await preferences.remove(storageKey);
     if (!didClear) {
       throw StateError('Unable to clear the selected workspace.');
     }

@@ -10,15 +10,17 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ContinueTurnRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ContinueTurnRequest._({
     required this.workspaceId,
     required this.requestId,
     required this.conversationId,
     required this.expectedConversationRevision,
+    this.a2uiSupportedComponents,
   });
 
   factory ContinueTurnRequest({
@@ -26,6 +28,7 @@ abstract class ContinueTurnRequest
     required String requestId,
     required String conversationId,
     required int expectedConversationRevision,
+    List<String>? a2uiSupportedComponents,
   }) = _ContinueTurnRequestImpl;
 
   factory ContinueTurnRequest.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -35,6 +38,12 @@ abstract class ContinueTurnRequest
       conversationId: jsonSerialization['conversationId'] as String,
       expectedConversationRevision:
           jsonSerialization['expectedConversationRevision'] as int,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _if5qez1k.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -46,14 +55,17 @@ abstract class ContinueTurnRequest
 
   int expectedConversationRevision;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [ContinueTurnRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ContinueTurnRequest copyWith({
     int? workspaceId,
     String? requestId,
     String? conversationId,
     int? expectedConversationRevision,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -63,6 +75,8 @@ abstract class ContinueTurnRequest
       'requestId': requestId,
       'conversationId': conversationId,
       'expectedConversationRevision': expectedConversationRevision,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
@@ -74,14 +88,18 @@ abstract class ContinueTurnRequest
       'requestId': requestId,
       'conversationId': conversationId,
       'expectedConversationRevision': expectedConversationRevision,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
+
+class _Undefined {}
 
 class _ContinueTurnRequestImpl extends ContinueTurnRequest {
   _ContinueTurnRequestImpl({
@@ -89,22 +107,25 @@ class _ContinueTurnRequestImpl extends ContinueTurnRequest {
     required String requestId,
     required String conversationId,
     required int expectedConversationRevision,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
          conversationId: conversationId,
          expectedConversationRevision: expectedConversationRevision,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [ContinueTurnRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ContinueTurnRequest copyWith({
     int? workspaceId,
     String? requestId,
     String? conversationId,
     int? expectedConversationRevision,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return ContinueTurnRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -112,6 +133,9 @@ class _ContinueTurnRequestImpl extends ContinueTurnRequest {
       conversationId: conversationId ?? this.conversationId,
       expectedConversationRevision:
           expectedConversationRevision ?? this.expectedConversationRevision,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

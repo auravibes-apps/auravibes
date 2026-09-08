@@ -11,13 +11,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _Gateway extends Mock implements CloudWorkspaceStateGateway {}
+class _Gateway extends Mock implements CloudWorkspaceStateGateway;
 
-class _Client extends Mock implements Client {}
+class _Client extends Mock implements Client;
 
-class _Conversation extends Mock implements EndpointConversation {}
+class _Conversation extends Mock implements EndpointConversation;
 
-class _GetConversationRequest extends Fake implements GetConversationRequest {}
+class _GetConversationRequest extends Fake implements GetConversationRequest;
 
 void main() {
   setUpAll(() => registerFallbackValue(_GetConversationRequest()));

@@ -10,31 +10,34 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import '../../../features/objects/models/object_error_code.dart' as _i2;
+import 'package:serverpod/serverpod.dart' as _is;
+
+import '../../../features/objects/models/object_error_code.dart' as _isve5p20;
 
 abstract class ObjectException
     implements
-        _i1.SerializableException,
-        _i1.SerializableModel,
-        _i1.ProtocolSerialization {
+        _is.SerializableException,
+        _is.SerializableModel,
+        _is.ProtocolSerialization {
   ObjectException._({required this.code});
 
-  factory ObjectException({required _i2.ObjectErrorCode code}) =
+  factory ObjectException({required _isve5p20.ObjectErrorCode code}) =
       _ObjectExceptionImpl;
 
   factory ObjectException.fromJson(Map<String, dynamic> jsonSerialization) {
     return ObjectException(
-      code: _i2.ObjectErrorCode.fromJson((jsonSerialization['code'] as String)),
+      code: _isve5p20.ObjectErrorCode.fromJson(
+        (jsonSerialization['code'] as String),
+      ),
     );
   }
 
-  _i2.ObjectErrorCode code;
+  _isve5p20.ObjectErrorCode code;
 
   /// Returns a shallow copy of this [ObjectException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  ObjectException copyWith({_i2.ObjectErrorCode? code});
+  @_is.useResult
+  ObjectException copyWith({_isve5p20.ObjectErrorCode? code});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -58,14 +61,14 @@ abstract class ObjectException
 }
 
 class _ObjectExceptionImpl extends ObjectException {
-  _ObjectExceptionImpl({required _i2.ObjectErrorCode code})
+  _ObjectExceptionImpl({required _isve5p20.ObjectErrorCode code})
     : super._(code: code);
 
   /// Returns a shallow copy of this [ObjectException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
-  ObjectException copyWith({_i2.ObjectErrorCode? code}) {
+  ObjectException copyWith({_isve5p20.ObjectErrorCode? code}) {
     return ObjectException(code: code ?? this.code);
   }
 }

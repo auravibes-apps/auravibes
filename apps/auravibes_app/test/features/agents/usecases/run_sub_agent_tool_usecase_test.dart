@@ -5,7 +5,7 @@ import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/features/agents/usecases/run_sub_agent_tool_usecase.dart';
+import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -14,20 +14,14 @@ void main() {
     test('lists all enabled agents with types', () async {
       final repository = _MockAgentsRepository();
       final now = DateTime(2026);
-      when(
-        () => repository.getAgentsByWorkspace('workspace-1'),
-      ).thenAnswer(
+      when(() => repository.getAgentsByWorkspace('workspace-1')).thenAnswer(
         (_) async => [
           _agent(
             id: 'main',
             now: now,
             visibility: AgentVisibility.chatSelector,
           ),
-          _agent(
-            id: 'sub',
-            now: now,
-            visibility: AgentVisibility.subAgentList,
-          ),
+          _agent(id: 'sub', now: now, visibility: AgentVisibility.subAgentList),
           _agent(id: 'both', now: now, visibility: AgentVisibility.both),
           _agent(
             id: 'off',
@@ -38,9 +32,8 @@ void main() {
         ],
       );
 
-      final agents = await AppSubAgentCatalog(
-        repository,
-      ).listSubAgents('workspace-1');
+      final agents = await AppSubAgentCatalog(repository)
+          .listSubAgents('workspace-1');
 
       expect(agents.map((agent) => agent.id), ['main', 'sub', 'both']);
       expect(agents.map((agent) => agent.types), [
@@ -53,27 +46,22 @@ void main() {
     test('gets only enabled sub-agent-list agents', () async {
       final repository = _MockAgentsRepository();
       final now = DateTime(2026);
-      when(
-        () => repository.getAgentById('sub'),
-      ).thenAnswer(
+      when(() => repository.getAgentById('sub')).thenAnswer(
         (_) async => _agent(
           id: 'sub',
           now: now,
           visibility: AgentVisibility.subAgentList,
         ),
       );
-      when(
-        () => repository.getAgentById('main'),
-      ).thenAnswer(
+      when(() => repository.getAgentById('main')).thenAnswer(
         (_) async => _agent(
           id: 'main',
           now: now,
           visibility: AgentVisibility.chatSelector,
         ),
       );
-      when(
-        () => repository.getAgentById('missing'),
-      ).thenAnswer((_) async => null);
+      when(() => repository.getAgentById('missing'))
+          .thenAnswer((_) async => null);
 
       final catalog = AppSubAgentCatalog(repository);
 
@@ -102,15 +90,12 @@ void main() {
         agentId: 'agent-1',
         parentConversationId: 'parent',
       );
-      when(
-        () => repository.createConversation(input),
-      ).thenAnswer((_) async => created);
-      when(
-        () => repository.getConversationById('child'),
-      ).thenAnswer((_) async => created);
-      when(
-        () => repository.getConversationById('missing'),
-      ).thenAnswer((_) async => null);
+      when(() => repository.createConversation(input))
+          .thenAnswer((_) async => created);
+      when(() => repository.getConversationById('child'))
+          .thenAnswer((_) async => created);
+      when(() => repository.getConversationById('missing'))
+          .thenAnswer((_) async => null);
 
       final store = AppSubAgentConversationStore(repository);
 
@@ -142,9 +127,7 @@ void main() {
         isUser: true,
         status: MessageStatus.sent,
       );
-      when(
-        () => repository.createMessage(input),
-      ).thenAnswer(
+      when(() => repository.createMessage(input)).thenAnswer(
         (_) async => _message(
           id: 'message-1',
           conversationId: 'child',
@@ -204,7 +187,7 @@ AgentEntity _agent({
   );
 }
 
-class _MockAgentsRepository extends Mock implements AgentsRepository {}
+class _MockAgentsRepository extends Mock implements AgentsRepository;
 
 ConversationEntity _conversation({
   required String id,
@@ -244,6 +227,6 @@ MessageEntity _message({
 }
 
 class _MockConversationRepository extends Mock
-    implements ConversationRepository {}
+    implements ConversationRepository;
 
-class _MockMessageRepository extends Mock implements MessageRepository {}
+class _MockMessageRepository extends Mock implements MessageRepository;

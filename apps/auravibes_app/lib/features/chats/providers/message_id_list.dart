@@ -1,5 +1,3 @@
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -11,74 +9,43 @@ import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'conversation_selection_provider.dart';
 
+part 'cloud_message_tools.dart';
 part 'message_id_list.g.dart';
+part 'pending_tool_call.dart';
+part 'streaming_message_metadata.dart';
 
-extension ChatMessagesFamilyTestOverride on ChatMessagesFamily {
+final _logger = Logger('message_id_list');
+
+extension MessageIdList on ChatMessagesFamily {
   Override overrideWithValue(Stream<List<MessageEntity>> value) =>
       overrideWith((_, _) => value);
 }
 
-extension ConversationCompactionExecutionStateFamilyTestOverride
+extension MessageIdListCompaction
     on ConversationCompactionExecutionStateFamily {
   Override overrideWithValue(CompactionExecutionState? value) =>
       overrideWith((_, _) => value);
 }
-
-ToolCallResultStatus? cloudToolCallResultStatus(String status) =>
-    switch (status) {
-      'pending' || 'needsConfirmation' => null,
-      'approved' || 'running' || 'granted' => ToolCallResultStatus.running,
-      'success' => ToolCallResultStatus.success,
-      'denied' => ToolCallResultStatus.skippedByUser,
-      'toolNotFound' => ToolCallResultStatus.toolNotFound,
-      'disabledInWorkspace' => ToolCallResultStatus.disabledInWorkspace,
-      'disabledInConversation' => ToolCallResultStatus.disabledInConversation,
-      'disabledByAgent' => ToolCallResultStatus.disabledByAgent,
-      'notConfigured' => ToolCallResultStatus.notConfigured,
-      'executionError' => ToolCallResultStatus.executionError,
-      _ => ToolCallResultStatus.executionError,
-    };
-
-List<PendingToolCall> cloudPendingToolCalls(
-  CloudConversationState? state,
-) => [
-  if (state case final cloudState?)
-    for (final call in cloudState.toolCalls)
-      if (call.status == 'pending')
-        for (final message in cloudState.messages)
-          if (message.id == call.messageId && message.turnRevision != null)
-            PendingToolCall(
-              toolCall: MessageToolCallEntity(
-                id: call.id,
-                name: call.name,
-                argumentsRaw: call.argumentsJson,
-                argumentsDigest: call.argumentsDigest,
-                turnId: message.turnId ?? call.turnId,
-                turnRevision: message.turnRevision,
-                responseRaw: call.resultJson,
-              ),
-              messageId: call.messageId,
-              sourceConversationId: cloudState.conversation.id,
-            ),
-];
 
 @riverpod
 Stream<List<MessageEntity>> chatMessagesByConversation(
@@ -95,11 +62,7 @@ Stream<List<MessageEntity>> chatMessagesByConversation(
         .watchMessagesByConversation(conversationId);
   }
 
-  return _cloudMessages(
-    ref,
-    workspaceId,
-    conversationId,
-  );
+  return _cloudMessages(ref, workspaceId, conversationId);
 }
 
 Stream<List<MessageEntity>> _cloudMessages(
@@ -109,9 +72,10 @@ Stream<List<MessageEntity>> _cloudMessages(
 ) {
   final controller = StreamController<List<MessageEntity>>();
   final subscription = ref.listen(
-    cloudConversationStateProvider(
-      (workspaceId: workspaceId, conversationId: conversationId),
-    ),
+    cloudConversationStateProvider((
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    )),
     (_, next) {
       switch (next) {
         case AsyncData(:final value):
@@ -130,10 +94,29 @@ Stream<List<MessageEntity>> _cloudMessages(
   return controller.stream;
 }
 
+@visibleForTesting
+List<MessageEntity> readCloudConversationMessagesForTesting(
+  CloudConversationState state,
+) => _readCloudConversationMessages(state);
+
 List<MessageEntity> _readCloudConversationMessages(
   CloudConversationState state,
 ) {
-  final messages = state.messages.map(_readCloudMessage).toList();
+  final activeAssistantId = state.activeExecution?.assistantMessageId;
+  final isExecutionRunning = state.activeExecution?.status == 'running';
+  final messages = state.messages
+      .map(
+        (message) => _readCloudMessage(
+          message,
+          a2uiMessages: activeAssistantId == message.id && isExecutionRunning
+              ? null
+              : state.a2uiMessagesByAssistantMessageId[message.id],
+          a2uiIssuesBySurface: state.a2uiIssuesByAssistantMessageId[message.id],
+          a2uiMessageIssues:
+              state.a2uiMessageIssuesByAssistantMessageId[message.id],
+        ),
+      )
+      .toList();
   final assistantMessageId = state.activeExecution?.assistantMessageId;
   if (assistantMessageId == null || state.activeAssistantContent.isEmpty) {
     return messages;
@@ -144,65 +127,76 @@ List<MessageEntity> _readCloudConversationMessages(
   if (index < 0) return messages;
 
   messages[index] = messages[index].copyWith(
-    content: '${messages[index].content}${state.activeAssistantContent}',
+    content: state.activeAssistantRenderedContent,
   );
 
   return messages;
 }
 
-MessageEntity _readCloudMessage(ConversationMessageView message) =>
-    MessageEntity(
-      id: message.id,
-      conversationId: message.conversationId,
-      content: message.content,
-      messageType: MessageType.fromString(message.kind),
-      isUser: message.role == 'user',
-      status: switch (message.status) {
-        'queued' || 'running' || 'awaitingApproval' => MessageStatus.unfinished,
-        'completed' => MessageStatus.sent,
-        'failed' || 'cancelled' => MessageStatus.error,
-        final status => MessageStatus.fromString(status),
-      },
-      createdAt: message.createdAt,
-      updatedAt: message.updatedAt,
-      metadata:
-          MessageMetadataEntity.fromJsonString(
-            message.metadataJson,
-          )?.copyWith(
-            toolCalls: message.toolCalls
-                .map(
-                  (call) => MessageToolCallEntity(
-                    id: call.id,
-                    name: call.name,
-                    argumentsRaw: call.argumentsJson,
-                    argumentsDigest: call.argumentsDigest,
-                    turnId: message.turnId,
-                    turnRevision: message.turnRevision,
-                    responseRaw: call.resultJson,
-                    resultStatus: cloudToolCallResultStatus(call.status),
-                  ),
-                )
-                .toList(),
-          ) ??
-          MessageMetadataEntity(
-            toolCalls: message.toolCalls
-                .map(
-                  (call) => MessageToolCallEntity(
-                    id: call.id,
-                    name: call.name,
-                    argumentsRaw: call.argumentsJson,
-                    argumentsDigest: call.argumentsDigest,
-                    turnId: message.turnId,
-                    turnRevision: message.turnRevision,
-                    responseRaw: call.resultJson,
-                    resultStatus: cloudToolCallResultStatus(call.status),
-                  ),
-                )
-                .toList(),
-          ),
-    );
+MessageEntity _readCloudMessage(
+  ConversationMessageView message, {
+  List<String>? a2uiMessages,
+  Map<String, List<String>>? a2uiIssuesBySurface,
+  List<String>? a2uiMessageIssues,
+}) {
+  final metadata =
+      MessageMetadataEntity.fromJsonString(message.metadataJson) ??
+      const MessageMetadataEntity();
+  final mergedA2uiMessages = {
+    ...metadata.a2uiMessages,
+    ...?a2uiMessages,
+  }.toList();
+  final mergedA2uiIssuesBySurface = <String, List<String>>{
+    ...metadata.a2uiIssuesBySurface,
+    ...?a2uiIssuesBySurface,
+  };
+  final mergedA2uiMessageIssues = {
+    ...metadata.a2uiMessageIssues,
+    ...?a2uiMessageIssues,
+  }.toList();
+  final toolCalls = message.toolCalls
+      .map(
+        (call) => MessageToolCallEntity(
+          id: call.id,
+          name: call.name,
+          argumentsRaw: call.argumentsJson,
+          argumentsDigest: call.argumentsDigest,
+          turnId: message.turnId,
+          turnRevision: message.turnRevision,
+          responseRaw: call.resultJson,
+          resultStatus: CloudMessageTools.resultStatus(call.status),
+        ),
+      )
+      .toList();
+
+  return MessageEntity(
+    id: message.id,
+    conversationId: message.conversationId,
+    content: message.content,
+    messageType: MessageType.fromString(message.kind),
+    isUser: message.role == 'user',
+    status: switch (message.status) {
+      'queued' ||
+      'running' ||
+      'awaitingApproval' ||
+      'awaitingUserAction' => MessageStatus.unfinished,
+      'completed' => MessageStatus.sent,
+      'failed' || 'cancelled' => MessageStatus.error,
+      final status => MessageStatus.fromString(status),
+    },
+    createdAt: message.createdAt,
+    updatedAt: message.updatedAt,
+    metadata: metadata.copyWith(
+      a2uiMessages: mergedA2uiMessages,
+      a2uiIssuesBySurface: mergedA2uiIssuesBySurface,
+      a2uiMessageIssues: mergedA2uiMessageIssues,
+      toolCalls: toolCalls,
+    ),
+  );
+}
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Stream<MessageEntity?> latestAssistantMessageByConversation(
   Ref ref,
   String conversationId,
@@ -213,6 +207,7 @@ Stream<MessageEntity?> latestAssistantMessageByConversation(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Stream<List<MessageEntity>> chatMessages(
   Ref ref,
   String workspaceId,
@@ -242,6 +237,7 @@ Stream<List<MessageEntity>> chatMessages(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 List<String> chatMessageIds(
   Ref ref,
   String workspaceId,
@@ -256,6 +252,7 @@ List<String> chatMessageIds(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 MessageEntity? messageConversationById(
   Ref ref,
   String workspaceId,
@@ -276,7 +273,7 @@ MessageEntity? messageConversationById(
   if (streamingResult == null) return messageEntity;
 
   final streamingMetadata = streamingResult.entityMetadata;
-  final metadata = mergeStreamingMessageMetadata(
+  final metadata = StreamingMessageMetadata.merge(
     messageEntity.metadata,
     streamingMetadata,
   );
@@ -287,31 +284,8 @@ MessageEntity? messageConversationById(
   );
 }
 
-MessageMetadataEntity? mergeStreamingMessageMetadata(
-  MessageMetadataEntity? current,
-  MessageMetadataEntity? streaming,
-) {
-  if (streaming == null) return current;
-
-  var toolCalls = streaming.toolCalls;
-  if (toolCalls.isEmpty) {
-    toolCalls = current?.toolCalls ?? const <MessageToolCallEntity>[];
-  }
-
-  return (current ?? const MessageMetadataEntity()).copyWith(
-    toolCalls: toolCalls,
-    promptTokens: streaming.promptTokens ?? current?.promptTokens,
-    completionTokens: streaming.completionTokens ?? current?.completionTokens,
-    totalTokens: streaming.totalTokens ?? current?.totalTokens,
-    thinking: streaming.thinking ?? current?.thinking,
-    modelMetadata: {
-      ...?current?.modelMetadata,
-      ...streaming.modelMetadata,
-    },
-  );
-}
-
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 bool isMessageStreaming(Ref ref, String messageId) {
   return ref.watch(
     messagesStreamingProvider.select((state) => state.containsKey(messageId)),
@@ -319,6 +293,7 @@ bool isMessageStreaming(Ref ref, String messageId) {
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<ConversationBusyState> conversationBusyState(
   Ref ref,
   String workspaceId,
@@ -329,12 +304,10 @@ Future<ConversationBusyState> conversationBusyState(
   );
   if (session.cloud != null) {
     final projection = ref.watch(
-      cloudConversationStateProvider(
-        (
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-      ),
+      cloudConversationStateProvider((
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      )),
     );
 
     return ConversationBusyState.cloud(
@@ -359,13 +332,14 @@ Future<ConversationBusyState> conversationBusyState(
 
   final usecase = ref.watch(getConversationBusyStateUsecaseProvider);
 
-  return usecase.call(
+  return await usecase.call(
     conversationId: conversationId,
     isCompacting: isCompacting,
   );
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 List<ConversationQueuedDraft> conversationQueuedDrafts(
   Ref ref,
   String _workspaceId,
@@ -381,6 +355,7 @@ List<ConversationQueuedDraft> conversationQueuedDrafts(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 CompactionExecutionState? conversationCompactionExecutionState(
   Ref ref,
   String _workspaceId,
@@ -391,21 +366,8 @@ CompactionExecutionState? conversationCompactionExecutionState(
   return ref.watch(compactionExecutionStateProvider(conversationId));
 }
 
-class PendingToolCall {
-  const PendingToolCall({
-    required this.toolCall,
-    required this.messageId,
-    this.sourceConversationId = '',
-    this.sourceLabel,
-  });
-
-  final MessageToolCallEntity toolCall;
-  final String messageId;
-  final String sourceConversationId;
-  final String? sourceLabel;
-}
-
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 int conversationUsedTokens(Ref ref, String workspaceId, String conversationId) {
   final messages = ref
       .watch(chatMessagesProvider(workspaceId, conversationId))
@@ -429,6 +391,7 @@ int conversationUsedTokens(Ref ref, String workspaceId, String conversationId) {
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<int?> conversationContextLimit(
   Ref ref,
   String workspaceId,
@@ -464,6 +427,7 @@ Future<int?> conversationContextLimit(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<List<PendingToolCall>> pendingToolCalls(
   Ref ref,
   String workspaceId,
@@ -534,7 +498,7 @@ Future<List<PendingToolCall>> pendingToolCalls(
             ).future,
           ))?.workspaceId;
 
-      return _pendingToolCallsForConversation(
+      return await _pendingToolCallsForConversation(
         ref,
         conversationId: sourceConversationId,
         workspaceId: sourceWorkspaceId,
@@ -569,9 +533,9 @@ Future<List<PendingToolCall>> _pendingToolCallsForConversation(
 
   final resolvedWorkspaceId = workspaceId;
   if (resolvedWorkspaceId == null) {
-    debugPrint(
-      '[pendingToolCalls] No workspaceId for conversation $conversationId; '
-      'returning pending tool calls as needing confirmation',
+    _logger.fine(
+      'No workspaceId for conversation $conversationId; returning pending '
+      'tool calls as needing confirmation',
     );
 
     return pendingCalls
@@ -589,11 +553,17 @@ Future<List<PendingToolCall>> _pendingToolCallsForConversation(
   final decisionUsecase = ref.watch(
     resolveToolApprovalDecisionUsecaseProvider(resolvedWorkspaceId),
   );
+  final catalog = await ref
+      .watch(loadConversationToolSpecsUsecaseProvider(resolvedWorkspaceId))
+      .buildCatalog(
+        conversationId: conversationId,
+        workspaceId: resolvedWorkspaceId,
+      );
   const resolver = ToolResolverService();
 
   final entries = await Future.wait(
     pendingCalls.map((toolCall) async {
-      final resolvedTool = resolver.resolveTool(toolCall.name);
+      final resolvedTool = resolver.resolveTool(toolCall.name, catalog);
       if (resolvedTool == null) {
         return (toolCall: toolCall, needsConfirmation: true);
       }
@@ -610,8 +580,12 @@ Future<List<PendingToolCall>> _pendingToolCallsForConversation(
           toolCall: toolCall,
           needsConfirmation: decision.needsConfirmation,
         );
-      } on Object catch (error) {
-        debugPrint('[pendingToolCalls] Error resolving $toolCall: $error');
+      } on Object catch (error, stackTrace) {
+        _logger.warning(
+          'Error resolving pending tool call ${toolCall.id}/${toolCall.name}',
+          error,
+          stackTrace,
+        );
 
         return (toolCall: toolCall, needsConfirmation: true);
       }

@@ -7,10 +7,7 @@ void main() {
       final parsed = ToolNameFormatter.parse('mcp_42_s_read_file');
 
       expect(
-        ToolNameFormatter.formatDisplayName(
-          parsed,
-          mcpServerName: 'My Server',
-        ),
+        ToolNameFormatter.formatDisplayName(parsed, mcpServerName: 'My Server'),
         'My Server: Read File',
       );
     });

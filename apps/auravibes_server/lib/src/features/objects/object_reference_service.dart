@@ -3,11 +3,8 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import 'object_repository.dart';
 
-class ObjectReferenceService {
-  ObjectReferenceService({ObjectRepository? repository})
-    : repository = repository ?? ObjectRepository();
-
-  final ObjectRepository repository;
+class ObjectReferenceService({ObjectRepository? repository}) {
+  final ObjectRepository repository = repository ?? ObjectRepository();
 
   Future<void> attachToMessage(
     Session session, {

@@ -62,17 +62,11 @@ AgentContinuationPreparer<_Model, String, _Chat, String> _usecase({
   );
 }
 
-class _FakeAgentContinuationProvider
-    implements AgentContinuationProvider<_Model, String, _Chat, String> {
-  const _FakeAgentContinuationProvider(
-    this._loadConversation,
-    this._loadSelectedModel,
-  );
-
+class const _FakeAgentContinuationProvider(
   final Future<AgentConversationReference?> Function(String conversationId)
-  _loadConversation;
-  final Future<_Model?> Function(String modelId) _loadSelectedModel;
-
+  _loadConversation,
+  final Future<_Model?> Function(String modelId) _loadSelectedModel,
+) implements AgentContinuationProvider<_Model, String, _Chat, String> {
   @override
   Future<AgentConversationReference?> loadConversation(String conversationId) {
     return _loadConversation(conversationId);
@@ -131,21 +125,10 @@ class _FakeAgentContinuationProvider
   }
 }
 
-class _Model {
-  const _Model(this.id, {required this.supportsToolCalls});
+class const _Model(final String id, {required final bool supportsToolCalls});
 
-  final String id;
-  final bool supportsToolCalls;
-}
-
-class _Chat {
-  const _Chat(
-    this.content, {
-    this.isSystem = false,
-    this.isSkillContext = false,
-  });
-
-  final String content;
-  final bool isSystem;
-  final bool isSkillContext;
-}
+class const _Chat(
+  final String content, {
+  final bool isSystem = false,
+  final bool isSkillContext = false,
+});

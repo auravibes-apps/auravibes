@@ -147,9 +147,7 @@ void main() {
               tint: customColor,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -172,9 +170,7 @@ void main() {
               icon: Icons.add,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -193,10 +189,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraFloatingActionButton(
-              onPressed: null,
-              icon: Icons.add,
-            ),
+            body: AuraFloatingActionButton(onPressed: null, icon: Icons.add),
           ),
         ),
       );

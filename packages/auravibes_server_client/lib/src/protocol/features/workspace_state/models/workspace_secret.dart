@@ -10,14 +10,17 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import '../../../features/workspace_state/models/workspace_secret_kind.dart'
-    as _i2;
-import '../../../features/workspace_state/models/workspace_secret_scope.dart'
-    as _i3;
-import 'dart:typed_data' as _i4;
+import 'dart:typed_data' as _idt;
 
-abstract class WorkspaceSecret implements _i1.SerializableModel {
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
+
+import '../../../features/workspace_state/models/workspace_secret_kind.dart'
+    as _iffvdh0v;
+import '../../../features/workspace_state/models/workspace_secret_scope.dart'
+    as _iews8xwg;
+
+abstract class WorkspaceSecret
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceSecret._({
     this.id,
     required this.workspaceId,
@@ -40,13 +43,13 @@ abstract class WorkspaceSecret implements _i1.SerializableModel {
   factory WorkspaceSecret({
     int? id,
     required int workspaceId,
-    required _i2.WorkspaceSecretKind secretKind,
-    required _i3.WorkspaceSecretScope scope,
+    required _iffvdh0v.WorkspaceSecretKind secretKind,
+    required _iews8xwg.WorkspaceSecretScope scope,
     required String ownerUserId,
     required String resourceId,
-    required _i4.ByteData ciphertext,
-    required _i4.ByteData nonce,
-    required _i4.ByteData authenticationTag,
+    required _idt.ByteData ciphertext,
+    required _idt.ByteData nonce,
+    required _idt.ByteData authenticationTag,
     required String algorithm,
     required int keyVersion,
     String? displaySuffix,
@@ -60,34 +63,34 @@ abstract class WorkspaceSecret implements _i1.SerializableModel {
     return WorkspaceSecret(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
-      secretKind: _i2.WorkspaceSecretKind.fromJson(
+      secretKind: _iffvdh0v.WorkspaceSecretKind.fromJson(
         (jsonSerialization['secretKind'] as String),
       ),
-      scope: _i3.WorkspaceSecretScope.fromJson(
+      scope: _iews8xwg.WorkspaceSecretScope.fromJson(
         (jsonSerialization['scope'] as String),
       ),
       ownerUserId: jsonSerialization['ownerUserId'] as String,
       resourceId: jsonSerialization['resourceId'] as String,
-      ciphertext: _i1.ByteDataJsonExtension.fromJson(
+      ciphertext: _isc.ByteDataJsonExtension.fromJson(
         jsonSerialization['ciphertext'],
       ),
-      nonce: _i1.ByteDataJsonExtension.fromJson(jsonSerialization['nonce']),
-      authenticationTag: _i1.ByteDataJsonExtension.fromJson(
+      nonce: _isc.ByteDataJsonExtension.fromJson(jsonSerialization['nonce']),
+      authenticationTag: _isc.ByteDataJsonExtension.fromJson(
         jsonSerialization['authenticationTag'],
       ),
       algorithm: jsonSerialization['algorithm'] as String,
       keyVersion: jsonSerialization['keyVersion'] as int,
       displaySuffix: jsonSerialization['displaySuffix'] as String?,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -98,19 +101,19 @@ abstract class WorkspaceSecret implements _i1.SerializableModel {
 
   int workspaceId;
 
-  _i2.WorkspaceSecretKind secretKind;
+  _iffvdh0v.WorkspaceSecretKind secretKind;
 
-  _i3.WorkspaceSecretScope scope;
+  _iews8xwg.WorkspaceSecretScope scope;
 
   String ownerUserId;
 
   String resourceId;
 
-  _i4.ByteData ciphertext;
+  _idt.ByteData ciphertext;
 
-  _i4.ByteData nonce;
+  _idt.ByteData nonce;
 
-  _i4.ByteData authenticationTag;
+  _idt.ByteData authenticationTag;
 
   String algorithm;
 
@@ -128,17 +131,17 @@ abstract class WorkspaceSecret implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceSecret]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceSecret copyWith({
     int? id,
     int? workspaceId,
-    _i2.WorkspaceSecretKind? secretKind,
-    _i3.WorkspaceSecretScope? scope,
+    _iffvdh0v.WorkspaceSecretKind? secretKind,
+    _iews8xwg.WorkspaceSecretScope? scope,
     String? ownerUserId,
     String? resourceId,
-    _i4.ByteData? ciphertext,
-    _i4.ByteData? nonce,
-    _i4.ByteData? authenticationTag,
+    _idt.ByteData? ciphertext,
+    _idt.ByteData? nonce,
+    _idt.ByteData? authenticationTag,
     String? algorithm,
     int? keyVersion,
     String? displaySuffix,
@@ -171,8 +174,31 @@ abstract class WorkspaceSecret implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceSecret',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'secretKind': secretKind.toJson(),
+      'scope': scope.toJson(),
+      'ownerUserId': ownerUserId,
+      'resourceId': resourceId,
+      'ciphertext': ciphertext.toJson(),
+      'nonce': nonce.toJson(),
+      'authenticationTag': authenticationTag.toJson(),
+      'algorithm': algorithm,
+      'keyVersion': keyVersion,
+      if (displaySuffix != null) 'displaySuffix': displaySuffix,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+      if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -182,13 +208,13 @@ class _WorkspaceSecretImpl extends WorkspaceSecret {
   _WorkspaceSecretImpl({
     int? id,
     required int workspaceId,
-    required _i2.WorkspaceSecretKind secretKind,
-    required _i3.WorkspaceSecretScope scope,
+    required _iffvdh0v.WorkspaceSecretKind secretKind,
+    required _iews8xwg.WorkspaceSecretScope scope,
     required String ownerUserId,
     required String resourceId,
-    required _i4.ByteData ciphertext,
-    required _i4.ByteData nonce,
-    required _i4.ByteData authenticationTag,
+    required _idt.ByteData ciphertext,
+    required _idt.ByteData nonce,
+    required _idt.ByteData authenticationTag,
     required String algorithm,
     required int keyVersion,
     String? displaySuffix,
@@ -217,18 +243,18 @@ class _WorkspaceSecretImpl extends WorkspaceSecret {
 
   /// Returns a shallow copy of this [WorkspaceSecret]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceSecret copyWith({
     Object? id = _Undefined,
     int? workspaceId,
-    _i2.WorkspaceSecretKind? secretKind,
-    _i3.WorkspaceSecretScope? scope,
+    _iffvdh0v.WorkspaceSecretKind? secretKind,
+    _iews8xwg.WorkspaceSecretScope? scope,
     String? ownerUserId,
     String? resourceId,
-    _i4.ByteData? ciphertext,
-    _i4.ByteData? nonce,
-    _i4.ByteData? authenticationTag,
+    _idt.ByteData? ciphertext,
+    _idt.ByteData? nonce,
+    _idt.ByteData? authenticationTag,
     String? algorithm,
     int? keyVersion,
     Object? displaySuffix = _Undefined,

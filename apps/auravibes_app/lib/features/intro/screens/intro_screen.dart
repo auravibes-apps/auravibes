@@ -11,16 +11,31 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class IntroScreen extends ConsumerStatefulWidget {
-  const IntroScreen({super.key});
-
+class const IntroScreen({super.key}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<IntroScreen> createState() => _IntroScreenState();
 }
 
 class _IntroScreenState extends ConsumerState<IntroScreen> {
+  static const _slideButtonSpacing = 8.0;
   _IntroSlide _slide = _IntroSlide.welcome;
   WorkspaceEntity? _createdWorkspace;
+
+  String get _titleKey => switch (_slide) {
+    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_title,
+    _IntroSlide.workspaceContext =>
+      LocaleKeys.intro_flow_workspace_context_title,
+    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_title,
+    _IntroSlide.ready => LocaleKeys.intro_flow_ready_title,
+  };
+
+  String get _bodyKey => switch (_slide) {
+    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_body,
+    _IntroSlide.workspaceContext =>
+      LocaleKeys.intro_flow_workspace_context_body,
+    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_body,
+    _IntroSlide.ready => LocaleKeys.intro_flow_ready_body,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -67,22 +82,6 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
       variant: AuraScreenVariation.aurora,
     );
   }
-
-  String get _titleKey => switch (_slide) {
-    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_title,
-    _IntroSlide.workspaceContext =>
-      LocaleKeys.intro_flow_workspace_context_title,
-    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_title,
-    _IntroSlide.ready => LocaleKeys.intro_flow_ready_title,
-  };
-
-  String get _bodyKey => switch (_slide) {
-    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_body,
-    _IntroSlide.workspaceContext =>
-      LocaleKeys.intro_flow_workspace_context_body,
-    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_body,
-    _IntroSlide.ready => LocaleKeys.intro_flow_ready_body,
-  };
 
   void _continue() {
     final next = _slide.next;
@@ -134,11 +133,8 @@ String _serviceConnectionCreateLocation(String workspaceId) {
       'service-connections/new?type=${ServiceConnectionCreateType.modelProvider.name}';
 }
 
-class _ProgressIndicator extends StatelessWidget {
-  const _ProgressIndicator({required this.activeSlide});
-
-  final _IntroSlide activeSlide;
-
+class const _ProgressIndicator({required final _IntroSlide activeSlide})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;
@@ -149,7 +145,9 @@ class _ProgressIndicator extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(
-                right: index == _IntroSlide.values.length - 1 ? 0 : 8,
+                right: index == _IntroSlide.values.length - 1
+                    ? 0
+                    : _IntroScreenState._slideButtonSpacing,
               ),
               child: DecoratedBox(
                 key: ValueKey('intro_progress_step_$index'),
@@ -168,12 +166,10 @@ class _ProgressIndicator extends StatelessWidget {
   }
 }
 
-class _SlideContent extends StatelessWidget {
-  const _SlideContent({required this.titleKey, required this.bodyKey});
-
-  final String titleKey;
-  final String bodyKey;
-
+class const _SlideContent({
+  required final String titleKey,
+  required final String bodyKey,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -187,21 +183,13 @@ class _SlideContent extends StatelessWidget {
   }
 }
 
-class _SlideActions extends StatelessWidget {
-  const _SlideActions({
-    required this.slide,
-    required this.onBack,
-    required this.onContinue,
-    required this.onConnectAi,
-    required this.onSkipAi,
-  });
-
-  final _IntroSlide slide;
-  final VoidCallback onBack;
-  final VoidCallback onContinue;
-  final VoidCallback onConnectAi;
-  final VoidCallback onSkipAi;
-
+class const _SlideActions({
+  required final _IntroSlide slide,
+  required final VoidCallback onBack,
+  required final VoidCallback onContinue,
+  required final VoidCallback onConnectAi,
+  required final VoidCallback onSkipAi,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (slide == _IntroSlide.workspaceChoice) return const SizedBox.shrink();

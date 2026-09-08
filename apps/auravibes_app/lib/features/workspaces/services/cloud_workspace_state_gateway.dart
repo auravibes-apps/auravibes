@@ -5,18 +5,15 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-typedef WorkspaceStateRead =
-    Future<ReadWorkspaceStateResponse> Function(
-      ReadWorkspaceStateRequest request,
-    );
-typedef WorkspaceStreamSubscribe =
-    Stream<WorkspaceStreamEnvelope> Function(
-      WorkspaceSubscribeRequest request,
-    );
-typedef WorkspaceSecretPut =
-    Future<PutWorkspaceSecretResponse> Function(
-      PutWorkspaceSecretRequest request,
-    );
+typedef WorkspaceStateRead = Future<ReadWorkspaceStateResponse> Function(
+  ReadWorkspaceStateRequest request,
+);
+typedef WorkspaceStreamSubscribe = Stream<WorkspaceStreamEnvelope> Function(
+  WorkspaceSubscribeRequest request,
+);
+typedef WorkspaceSecretPut = Future<PutWorkspaceSecretResponse> Function(
+  PutWorkspaceSecretRequest request,
+);
 typedef WorkspaceCredentialMutation =
     Future<MutateWorkspaceCredentialResponse> Function(
       MutateWorkspaceCredentialRequest request,
@@ -24,7 +21,11 @@ typedef WorkspaceCredentialMutation =
 typedef WorkspaceReconnectDelay = Future<void> Function(Duration duration);
 
 class CloudWorkspaceStateGateway {
-  CloudWorkspaceStateGateway({
+  static const _pageSize = 100;
+  static const _stateReadTimeout = Duration(seconds: 15);
+  static const _initialReconnectDelay = Duration(milliseconds: 250);
+  static const _maxReconnectDelay = Duration(seconds: 8);
+  new({
     required Client client,
     required CloudWorkspaceRef workspace,
     this.readTimeout = _stateReadTimeout,
@@ -38,7 +39,7 @@ class CloudWorkspaceStateGateway {
        _mutateCredential = null,
        _delay = _defaultDelay;
 
-  CloudWorkspaceStateGateway.forTesting({
+  new forTesting({
     required this._workspace,
     required this._readState,
     required this._subscribe,
@@ -47,32 +48,24 @@ class CloudWorkspaceStateGateway {
     this._delay = _defaultDelay,
     this.readTimeout = _stateReadTimeout,
   }) : _client = null;
-
-  static const _pageSize = 100;
-  static const _stateReadTimeout = Duration(seconds: 15);
-  static const _initialReconnectDelay = Duration(milliseconds: 250);
-  static const _maxReconnectDelay = Duration(seconds: 8);
-
-  static Future<void> _defaultDelay(Duration duration) =>
-      Future<void>.delayed(duration);
-
-  final Client? _client;
+  final Duration readTimeout;
+  final WorkspaceSecretPut? _putSecret;
   final CloudWorkspaceRef _workspace;
   final WorkspaceStateRead _readState;
   final WorkspaceStreamSubscribe _subscribe;
-  final WorkspaceSecretPut? _putSecret;
   final WorkspaceCredentialMutation? _mutateCredential;
   final WorkspaceReconnectDelay _delay;
-  final Duration readTimeout;
+
+  final Client? _client;
   Future<void> _readTail = Future.value();
   bool _disposed = false;
   final _disposedSignal = Completer<bool>();
 
+  bool get isDisposed => _disposed;
+
   Client get client => _requiredClient;
 
   CloudWorkspaceRef get workspace => _workspace;
-
-  bool get isDisposed => _disposed;
 
   Client get _requiredClient {
     final client = _client;
@@ -92,7 +85,7 @@ class CloudWorkspaceStateGateway {
   Future<ReadWorkspaceStateResponse> read({
     required List<WorkspaceResourcePageRequest> pages,
     int? afterSequence,
-    int eventLimit = 100,
+    int eventLimit = _pageSize,
   }) {
     final request = ReadWorkspaceStateRequest(
       workspaceId: _workspace.cloudWorkspaceId,
@@ -102,27 +95,13 @@ class CloudWorkspaceStateGateway {
     );
     final read = _enqueueRead(request);
 
-    return guardCloudCall(.state, () => read.timeout(readTimeout));
-  }
-
-  Future<ReadWorkspaceStateResponse> _enqueueRead(
-    ReadWorkspaceStateRequest request,
-  ) async {
-    final previousRead = _readTail;
-    final completion = Completer<void>();
-    _readTail = completion.future;
-    await previousRead;
-    try {
-      return await _readState(request);
-    } finally {
-      completion.complete();
-    }
+    return CloudAppErrors.guardCall(.state, () => read.timeout(readTimeout));
   }
 
   Future<PatchWorkspaceStateResponse> patch({
     required String requestId,
     required List<WorkspacePatchOperation> operations,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .state,
     () => _requiredClient.workspaceState.patch(
       PatchWorkspaceStateRequest(
@@ -152,7 +131,7 @@ class CloudWorkspaceStateGateway {
     );
     final putSecret = _putSecret;
 
-    return guardCloudCall(
+    return CloudAppErrors.guardCall(
       .state,
       () =>
           putSecret?.call(request) ??
@@ -181,7 +160,7 @@ class CloudWorkspaceStateGateway {
     );
     final mutateCredential = _mutateCredential;
 
-    return guardCloudCall(
+    return CloudAppErrors.guardCall(
       .state,
       () =>
           mutateCredential?.call(request) ??
@@ -192,17 +171,14 @@ class CloudWorkspaceStateGateway {
   Stream<List<WorkspaceResource>> watchResources(
     List<WorkspaceResourceKind> kinds, {
     int limit = _pageSize,
-  }) => watch(
-    kinds.map((kind) => kind.name).toSet(),
-    () async {
-      final snapshot = await _readAll(kinds, limit.clamp(1, _pageSize));
+  }) => watch(kinds.map((kind) => kind.name).toSet(), () async {
+    final snapshot = await _readAll(kinds, limit.clamp(1, _pageSize));
 
-      return (
-        value: snapshot.resources,
-        currentSequence: snapshot.currentSequence,
-      );
-    },
-  );
+    return (
+      value: snapshot.resources,
+      currentSequence: snapshot.currentSequence,
+    );
+  });
 
   Stream<T> watch<T>(
     Set<String> resourceKinds,
@@ -225,10 +201,7 @@ class CloudWorkspaceStateGateway {
         ),
       );
       try {
-        while (await Future.any([
-          events.moveNext(),
-          _disposedSignal.future,
-        ])) {
+        while (await Future.any([events.moveNext(), _disposedSignal.future])) {
           final event = events.current;
           if (event.sequence <= lastSequence) continue;
 
@@ -246,7 +219,7 @@ class CloudWorkspaceStateGateway {
         }
       } on CloudWorkspaceException catch (error) {
         if (_isTerminal(error.code)) {
-          translateCloudException(error, CloudOperationContext.state);
+          CloudAppErrors.translateException(error, CloudOperationContext.state);
         }
       } on CloudAppException catch (error) {
         if (_isTerminalCode(error.code)) {
@@ -258,16 +231,32 @@ class CloudWorkspaceStateGateway {
         final _ = await events.cancel();
       }
       if (_disposed) return;
-      await Future.any([
-        _delay(reconnectDelay),
-        _disposedSignal.future,
-      ]);
+      await Future.any([_delay(reconnectDelay), _disposedSignal.future]);
       reconnectDelay = Duration(
         milliseconds: (reconnectDelay.inMilliseconds * 2).clamp(
           _initialReconnectDelay.inMilliseconds,
           _maxReconnectDelay.inMilliseconds,
         ),
       );
+    }
+  }
+
+  static bool _isTerminalCode(String? code) =>
+      code == CloudWorkspaceErrorCode.authenticationRequired.name ||
+      code == CloudWorkspaceErrorCode.membershipRequired.name ||
+      code == CloudWorkspaceErrorCode.workspaceNotFound.name;
+
+  Future<ReadWorkspaceStateResponse> _enqueueRead(
+    ReadWorkspaceStateRequest request,
+  ) async {
+    final previousRead = _readTail;
+    final completion = Completer<void>();
+    _readTail = completion.future;
+    await previousRead;
+    try {
+      return await _readState(request);
+    } finally {
+      completion.complete();
     }
   }
 
@@ -336,8 +325,6 @@ class CloudWorkspaceStateGateway {
       code == CloudWorkspaceErrorCode.membershipRequired ||
       code == CloudWorkspaceErrorCode.workspaceNotFound;
 
-  static bool _isTerminalCode(String? code) =>
-      code == CloudWorkspaceErrorCode.authenticationRequired.name ||
-      code == CloudWorkspaceErrorCode.membershipRequired.name ||
-      code == CloudWorkspaceErrorCode.workspaceNotFound.name;
+  static Future<void> _defaultDelay(Duration duration) =>
+      Future<void>.delayed(duration);
 }

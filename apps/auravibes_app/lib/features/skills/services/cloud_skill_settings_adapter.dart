@@ -5,17 +5,19 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
-class CloudSkillSettingsAdapter {
-  const CloudSkillSettingsAdapter(this._gateway);
-
-  final CloudWorkspaceStateGateway _gateway;
+class const CloudSkillSettingsAdapter(
+  final CloudWorkspaceStateGateway _gateway,
+) {
+  CloudWorkspaceResourceStore get _store =>
+      CloudWorkspaceResourceStore(_gateway);
 
   Stream<List<WorkspaceSkill>> watchSkills() {
-    return _gateway
+    return _store
         .watchResources(const [
           WorkspaceResourceKind.skill,
           WorkspaceResourceKind.skillSetting,
@@ -25,7 +27,7 @@ class CloudSkillSettingsAdapter {
 
   Stream<({CompactionSettings settings, int? revision})>
   watchCompactionSettingsState() {
-    return _gateway
+    return _store
         .watchResources(const [WorkspaceResourceKind.compactionSetting])
         .map((resources) {
           final active = resources.where((item) => item.deletedAt == null);
@@ -48,7 +50,7 @@ class CloudSkillSettingsAdapter {
     CompactionSettings settings, {
     int? expectedRevision,
   }) async {
-    final _ = await _gateway.patch(
+    final _ = await _store.patch(
       requestId: const UuidV7().generate(),
       operations: [
         WorkspacePatchOperation(
@@ -72,14 +74,17 @@ class CloudSkillSettingsAdapter {
   ) async {
     final state = await watchCompactionSettingsState().first;
 
-    return saveCompactionSettings(settings, expectedRevision: state.revision);
+    return await saveCompactionSettings(
+      settings,
+      expectedRevision: state.revision,
+    );
   }
 
   Future<void> resetCompactionSettings() async {
     final state = await watchCompactionSettingsState().first;
     final revision = state.revision;
     if (revision == null) return;
-    final _ = await _gateway.patch(
+    final _ = await _store.patch(
       requestId: const UuidV7().generate(),
       operations: [
         WorkspacePatchOperation(
@@ -109,7 +114,7 @@ class CloudSkillSettingsAdapter {
     } else {
       operation = WorkspacePatchOperationKind.update;
     }
-    final _ = await _gateway.patch(
+    final _ = await _store.patch(
       requestId: const UuidV7().generate(),
       operations: [
         WorkspacePatchOperation(
@@ -136,13 +141,12 @@ class CloudSkillSettingsAdapter {
     required String? secret,
     int? expectedRevision,
   }) async {
-    final _ = await _gateway.putSecret(
-      requestId: const UuidV7().generate(),
-      secretKind: WorkspaceSecretKind.skillCredential,
+    final _ = await _store.putSecret(
+      kind: WorkspaceSecretKind.skillCredential,
       scope: WorkspaceSecretScope.workspace,
       resourceId: credentialId,
       secret: secret,
-      expectedRevision: expectedRevision,
+      revision: expectedRevision,
     );
   }
 
@@ -179,13 +183,13 @@ class CloudSkillSettingsAdapter {
           final kind = SkillKind.values.byName(data['kind'] as String);
 
           return WorkspaceSkill(
+            source: SkillSource.values.byName(
+              data['source'] as String? ?? SkillSource.user.name,
+            ),
             id: resource.resourceId,
             slug: data['slug'] as String,
             title: data['title'] as String,
             description: data['description'] as String,
-            source: SkillSource.values.byName(
-              data['source'] as String? ?? SkillSource.user.name,
-            ),
             kind: kind,
             isEnabled:
                 settings[resource.resourceId] ?? data['isEnabled'] as bool,

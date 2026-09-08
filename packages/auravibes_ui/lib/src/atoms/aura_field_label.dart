@@ -10,12 +10,13 @@ import 'package:flutter/material.dart';
 /// with optional required field indicators.
 class AuraFieldLabel extends StatelessWidget {
   /// Creates a Aura field label.
-  const AuraFieldLabel({
+  const new({
     required this.child,
     super.key,
     this.isRequired = false,
     this.style,
     this.semanticLabel,
+    this.requiredLabel = 'required',
   });
 
   /// The label text to display.
@@ -29,6 +30,9 @@ class AuraFieldLabel extends StatelessWidget {
 
   /// A semantic label for accessibility.
   final String? semanticLabel;
+
+  /// The semantic label appended to the required-field indicator.
+  final String requiredLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +62,7 @@ class AuraFieldLabel extends StatelessWidget {
               style: TextStyle(
                 fontWeight: context.auraTheme.typography.fontWeightMedium,
               ),
-              semanticsLabel: 'required',
+              semanticsLabel: requiredLabel,
             ),
             style: style ?? AuraTextStyle.bodySmall,
             tint: AuraTint.error,

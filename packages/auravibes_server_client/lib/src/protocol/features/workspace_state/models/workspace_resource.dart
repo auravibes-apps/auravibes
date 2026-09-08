@@ -10,11 +10,13 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import '../../../features/workspace_state/models/workspace_resource_kind.dart'
-    as _i2;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class WorkspaceResource implements _i1.SerializableModel {
+import '../../../features/workspace_state/models/workspace_resource_kind.dart'
+    as _iz7spkcy;
+
+abstract class WorkspaceResource
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   WorkspaceResource._({
     this.id,
     required this.workspaceId,
@@ -30,7 +32,7 @@ abstract class WorkspaceResource implements _i1.SerializableModel {
   factory WorkspaceResource({
     int? id,
     required int workspaceId,
-    required _i2.WorkspaceResourceKind resourceKind,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
     required String resourceId,
     required String data,
     required int revision,
@@ -43,21 +45,21 @@ abstract class WorkspaceResource implements _i1.SerializableModel {
     return WorkspaceResource(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
-      resourceKind: _i2.WorkspaceResourceKind.fromJson(
+      resourceKind: _iz7spkcy.WorkspaceResourceKind.fromJson(
         (jsonSerialization['resourceKind'] as String),
       ),
       resourceId: jsonSerialization['resourceId'] as String,
       data: jsonSerialization['data'] as String,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -68,7 +70,7 @@ abstract class WorkspaceResource implements _i1.SerializableModel {
 
   int workspaceId;
 
-  _i2.WorkspaceResourceKind resourceKind;
+  _iz7spkcy.WorkspaceResourceKind resourceKind;
 
   String resourceId;
 
@@ -84,11 +86,11 @@ abstract class WorkspaceResource implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [WorkspaceResource]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   WorkspaceResource copyWith({
     int? id,
     int? workspaceId,
-    _i2.WorkspaceResourceKind? resourceKind,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
     String? resourceId,
     String? data,
     int? revision,
@@ -113,8 +115,24 @@ abstract class WorkspaceResource implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'WorkspaceResource',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'resourceKind': resourceKind.toJson(),
+      'resourceId': resourceId,
+      'data': data,
+      'revision': revision,
+      'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
+      if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -124,7 +142,7 @@ class _WorkspaceResourceImpl extends WorkspaceResource {
   _WorkspaceResourceImpl({
     int? id,
     required int workspaceId,
-    required _i2.WorkspaceResourceKind resourceKind,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
     required String resourceId,
     required String data,
     required int revision,
@@ -145,12 +163,12 @@ class _WorkspaceResourceImpl extends WorkspaceResource {
 
   /// Returns a shallow copy of this [WorkspaceResource]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   WorkspaceResource copyWith({
     Object? id = _Undefined,
     int? workspaceId,
-    _i2.WorkspaceResourceKind? resourceKind,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
     String? resourceId,
     String? data,
     int? revision,

@@ -34,11 +34,8 @@ void main() {
   });
 }
 
-class _FakeObjectScanner implements ObjectScanner {
-  const _FakeObjectScanner(this.result);
-
-  final ObjectScanResult result;
-
+class const _FakeObjectScanner(final ObjectScanResult result)
+    implements ObjectScanner {
   @override
   Future<ObjectScanResult> scan({
     required String objectKey,

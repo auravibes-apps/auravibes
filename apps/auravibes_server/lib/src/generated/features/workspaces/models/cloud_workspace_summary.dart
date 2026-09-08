@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class CloudWorkspaceSummary
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   CloudWorkspaceSummary._({
     required this.id,
     required this.name,
@@ -43,10 +43,10 @@ abstract class CloudWorkspaceSummary
       role: jsonSerialization['role'] as String,
       revision: jsonSerialization['revision'] as int,
       sequence: jsonSerialization['sequence'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
     );
@@ -68,7 +68,7 @@ abstract class CloudWorkspaceSummary
 
   /// Returns a shallow copy of this [CloudWorkspaceSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   CloudWorkspaceSummary copyWith({
     int? id,
     String? name,
@@ -108,7 +108,7 @@ abstract class CloudWorkspaceSummary
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -133,7 +133,7 @@ class _CloudWorkspaceSummaryImpl extends CloudWorkspaceSummary {
 
   /// Returns a shallow copy of this [CloudWorkspaceSummary]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   CloudWorkspaceSummary copyWith({
     int? id,

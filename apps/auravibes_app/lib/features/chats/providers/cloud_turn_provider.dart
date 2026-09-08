@@ -6,10 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'cloud_turn_provider.g.dart';
 
 @riverpod
-Future<CloudTurnUsecase?> cloudTurnUsecase(
-  Ref ref,
-  String workspaceId,
-) async {
+Future<CloudTurnUsecase?> cloudTurnUsecase(Ref ref, String workspaceId) async {
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
   );

@@ -2,17 +2,11 @@ import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 
 enum AgentToolGrantLevel { once, conversation }
 
-class AgentApprovableToolCall {
-  const AgentApprovableToolCall({
-    required this.conversationId,
-    required this.name,
-    required this.argumentsRaw,
-  });
-
-  final String conversationId;
-  final String name;
-  final String argumentsRaw;
-}
+class const AgentApprovableToolCall({
+  required final String conversationId,
+  required final String name,
+  required final String argumentsRaw,
+});
 
 abstract interface class ApproveToolCallProvider<TTool extends Object> {
   Future<AgentApprovableToolCall?> loadToolCall({
@@ -20,7 +14,10 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
     required String toolCallId,
   });
 
-  TTool? resolveTool(String toolName);
+  Future<TTool?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  });
 
   Future<void> grantToolForConversation({
     required String conversationId,
@@ -67,18 +64,13 @@ abstract interface class SkipToolCallProvider {
   Future<void> resumeConversationIfReady({required String messageId});
 }
 
-// ignore: one_member_abstracts, provider interface keeps DB writes injectable.
 abstract interface class StopPendingToolCallsProvider {
   Future<void> stopPendingToolCalls({required String messageId});
 }
 
-class ApproveToolCallService<TTool extends Object> {
-  const ApproveToolCallService({
-    required this.provider,
-  });
-
-  final ApproveToolCallProvider<TTool> provider;
-
+class const ApproveToolCallService<TTool extends Object>({
+  required final ApproveToolCallProvider<TTool> provider,
+}) {
   Future<void> call({
     required String toolCallId,
     required String messageId,
@@ -90,7 +82,10 @@ class ApproveToolCallService<TTool extends Object> {
     );
     if (toolCall == null) return;
 
-    final tool = provider.resolveTool(toolCall.name);
+    final tool = await provider.resolveTool(
+      conversationId: toolCall.conversationId,
+      toolName: toolCall.name,
+    );
     if (tool == null) {
       await provider.updateToolCallResult(
         messageId: messageId,
@@ -152,13 +147,9 @@ class ApproveToolCallService<TTool extends Object> {
   }
 }
 
-class SkipToolCallService {
-  const SkipToolCallService({
-    required this.provider,
-  });
-
-  final SkipToolCallProvider provider;
-
+class const SkipToolCallService({
+  required final SkipToolCallProvider provider,
+}) {
   Future<void> call({
     required String toolCallId,
     required String messageId,

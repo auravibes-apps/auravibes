@@ -51,11 +51,8 @@ ToolsGroupEntity _group({
   );
 }
 
-class _MockGroupedNotifier extends GroupedToolsNotifier {
-  _MockGroupedNotifier(this.groups);
-
-  final List<ToolsGroupWithTools> groups;
-
+class _MockGroupedNotifier(final List<ToolsGroupWithTools> groups)
+    extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
 
@@ -83,22 +80,15 @@ class _MockMcpConnectionNotifier extends McpConnectionNotifier {
   }
 }
 
-class _Subject extends StatelessWidget {
-  const _Subject({required this.child});
-
-  final Widget child;
-
+class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
       child: TestProviderScope(
         overrides: [
-          mcpConnectionProvider.overrideWith(
-            _MockMcpConnectionNotifier.new,
-          ),
-          groupedToolsProvider(
-            _workspaceId,
-          ).overrideWith(() => _MockGroupedNotifier([])),
+          mcpConnectionProvider.overrideWith(_MockMcpConnectionNotifier.new),
+          groupedToolsProvider(_workspaceId)
+              .overrideWith(() => _MockGroupedNotifier([])),
         ],
         child: MaterialApp(
           home: Theme(
@@ -204,10 +194,7 @@ void main() {
   });
 
   testWidgets('renders inside AuraCard', (tester) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(),
-      tools: [],
-    );
+    final groupWithTools = ToolsGroupWithTools(group: _group(), tools: []);
 
     await tester.pumpWidget(
       _Subject(
@@ -274,10 +261,7 @@ void main() {
   testWidgets('shows empty message when tools list is empty and expanded', (
     tester,
   ) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(),
-      tools: [],
-    );
+    final groupWithTools = ToolsGroupWithTools(group: _group(), tools: []);
 
     await tester.pumpWidget(
       _Subject(
@@ -317,10 +301,7 @@ void main() {
   });
 
   testWidgets('MCP group with error shows reconnect', (tester) async {
-    final mcpGroup = _group(
-      id: 'mcp-g1',
-      name: 'MCP Server',
-    );
+    final mcpGroup = _group(id: 'mcp-g1', name: 'MCP Server');
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],

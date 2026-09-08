@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class WorkspaceModelConnection
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   WorkspaceModelConnection._({
     this.id,
     required this.workspaceId,
@@ -55,17 +55,17 @@ abstract class WorkspaceModelConnection
       name: jsonSerialization['name'] as String,
       url: jsonSerialization['url'] as String?,
       keySuffix: jsonSerialization['keySuffix'] as String?,
-      hasSecret: _i1.BoolJsonExtension.fromJson(jsonSerialization['hasSecret']),
+      hasSecret: _is.BoolJsonExtension.fromJson(jsonSerialization['hasSecret']),
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -99,11 +99,11 @@ abstract class WorkspaceModelConnection
   DateTime? deletedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [WorkspaceModelConnection]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkspaceModelConnection copyWith({
     int? id,
     int? workspaceId,
@@ -161,13 +161,11 @@ abstract class WorkspaceModelConnection
   }
 
   static WorkspaceModelConnectionIncludeList includeList({
-    _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
+    _is.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
     WorkspaceModelConnectionInclude? include,
   }) {
     return WorkspaceModelConnectionIncludeList._(
@@ -175,8 +173,6 @@ abstract class WorkspaceModelConnection
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(WorkspaceModelConnection.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(WorkspaceModelConnection.t),
       include: include,
     );
@@ -184,7 +180,7 @@ abstract class WorkspaceModelConnection
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -221,7 +217,7 @@ class _WorkspaceModelConnectionImpl extends WorkspaceModelConnection {
 
   /// Returns a shallow copy of this [WorkspaceModelConnection]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkspaceModelConnection copyWith({
     Object? id = _Undefined,
@@ -255,113 +251,113 @@ class _WorkspaceModelConnectionImpl extends WorkspaceModelConnection {
 }
 
 class WorkspaceModelConnectionUpdateTable
-    extends _i1.UpdateTable<WorkspaceModelConnectionTable> {
+    extends _is.UpdateTable<WorkspaceModelConnectionTable> {
   WorkspaceModelConnectionUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<String, String> connectionId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> connectionId(String value) => _is.ColumnValue(
     table.connectionId,
     value,
   );
 
-  _i1.ColumnValue<String, String> providerId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> providerId(String value) => _is.ColumnValue(
     table.providerId,
     value,
   );
 
-  _i1.ColumnValue<String, String> name(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> name(String value) => _is.ColumnValue(
     table.name,
     value,
   );
 
-  _i1.ColumnValue<String, String> url(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> url(String? value) => _is.ColumnValue(
     table.url,
     value,
   );
 
-  _i1.ColumnValue<String, String> keySuffix(String? value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> keySuffix(String? value) => _is.ColumnValue(
     table.keySuffix,
     value,
   );
 
-  _i1.ColumnValue<bool, bool> hasSecret(bool value) => _i1.ColumnValue(
+  _is.ColumnValue<bool, bool> hasSecret(bool value) => _is.ColumnValue(
     table.hasSecret,
     value,
   );
 
-  _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> revision(int value) => _is.ColumnValue(
     table.revision,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _is.ColumnValue(
         table.updatedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.deletedAt,
         value,
       );
 }
 
-class WorkspaceModelConnectionTable extends _i1.Table<int?> {
+class WorkspaceModelConnectionTable extends _is.Table<int?> {
   WorkspaceModelConnectionTable({super.tableRelation})
     : super(tableName: 'workspace_model_connection') {
     updateTable = WorkspaceModelConnectionUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    connectionId = _i1.ColumnString(
+    connectionId = _is.ColumnString(
       'connectionId',
       this,
     );
-    providerId = _i1.ColumnString(
+    providerId = _is.ColumnString(
       'providerId',
       this,
     );
-    name = _i1.ColumnString(
+    name = _is.ColumnString(
       'name',
       this,
     );
-    url = _i1.ColumnString(
+    url = _is.ColumnString(
       'url',
       this,
     );
-    keySuffix = _i1.ColumnString(
+    keySuffix = _is.ColumnString(
       'keySuffix',
       this,
     );
-    hasSecret = _i1.ColumnBool(
+    hasSecret = _is.ColumnBool(
       'hasSecret',
       this,
     );
-    revision = _i1.ColumnInt(
+    revision = _is.ColumnInt(
       'revision',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    updatedAt = _i1.ColumnDateTime(
+    updatedAt = _is.ColumnDateTime(
       'updatedAt',
       this,
     );
-    deletedAt = _i1.ColumnDateTime(
+    deletedAt = _is.ColumnDateTime(
       'deletedAt',
       this,
     );
@@ -369,30 +365,30 @@ class WorkspaceModelConnectionTable extends _i1.Table<int?> {
 
   late final WorkspaceModelConnectionUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnString connectionId;
+  late final _is.ColumnString connectionId;
 
-  late final _i1.ColumnString providerId;
+  late final _is.ColumnString providerId;
 
-  late final _i1.ColumnString name;
+  late final _is.ColumnString name;
 
-  late final _i1.ColumnString url;
+  late final _is.ColumnString url;
 
-  late final _i1.ColumnString keySuffix;
+  late final _is.ColumnString keySuffix;
 
-  late final _i1.ColumnBool hasSecret;
+  late final _is.ColumnBool hasSecret;
 
-  late final _i1.ColumnInt revision;
+  late final _is.ColumnInt revision;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime updatedAt;
+  late final _is.ColumnDateTime updatedAt;
 
-  late final _i1.ColumnDateTime deletedAt;
+  late final _is.ColumnDateTime deletedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     connectionId,
@@ -408,24 +404,22 @@ class WorkspaceModelConnectionTable extends _i1.Table<int?> {
   ];
 }
 
-class WorkspaceModelConnectionInclude extends _i1.IncludeObject {
+class WorkspaceModelConnectionInclude extends _is.IncludeObject {
   WorkspaceModelConnectionInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceModelConnection.t;
+  _is.Table<int?> get table => WorkspaceModelConnection.t;
 }
 
-class WorkspaceModelConnectionIncludeList extends _i1.IncludeList {
+class WorkspaceModelConnectionIncludeList extends _is.IncludeList {
   WorkspaceModelConnectionIncludeList._({
-    _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -433,10 +427,10 @@ class WorkspaceModelConnectionIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceModelConnection.t;
+  _is.Table<int?> get table => WorkspaceModelConnection.t;
 }
 
 class WorkspaceModelConnectionRepository {
@@ -465,24 +459,20 @@ class WorkspaceModelConnectionRepository {
   /// );
   /// ```
   Future<List<WorkspaceModelConnection>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<WorkspaceModelConnection>(
       where: where?.call(WorkspaceModelConnection.t),
       orderBy: orderBy?.call(WorkspaceModelConnection.t),
       orderByList: orderByList?.call(WorkspaceModelConnection.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -509,23 +499,19 @@ class WorkspaceModelConnectionRepository {
   /// );
   /// ```
   Future<WorkspaceModelConnection?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<WorkspaceModelConnection>(
       where: where?.call(WorkspaceModelConnection.t),
       orderBy: orderBy?.call(WorkspaceModelConnection.t),
       orderByList: orderByList?.call(WorkspaceModelConnection.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -535,11 +521,11 @@ class WorkspaceModelConnectionRepository {
 
   /// Finds a single [WorkspaceModelConnection] by its [id] or null if no such row exists.
   Future<WorkspaceModelConnection?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<WorkspaceModelConnection>(
       id,
@@ -564,9 +550,9 @@ class WorkspaceModelConnectionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceModelConnection>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceModelConnection> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -582,9 +568,9 @@ class WorkspaceModelConnectionRepository {
   ///
   /// The returned [WorkspaceModelConnection] will have its `id` field set.
   Future<WorkspaceModelConnection> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceModelConnection row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<WorkspaceModelConnection>(
       row,
@@ -613,13 +599,13 @@ class WorkspaceModelConnectionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceModelConnection>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceModelConnection> rows, {
-    required _i1.ColumnSelections<WorkspaceModelConnectionTable>
+    required _is.ColumnSelections<WorkspaceModelConnectionTable>
     conflictColumns,
-    _i1.ColumnSelections<WorkspaceModelConnectionTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable>? updateWhere,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceModelConnectionTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceModelConnectionTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<WorkspaceModelConnection>(
@@ -646,13 +632,13 @@ class WorkspaceModelConnectionRepository {
   ///
   /// The returned [WorkspaceModelConnection] will have its `id` field set.
   Future<WorkspaceModelConnection?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceModelConnection row, {
-    required _i1.ColumnSelections<WorkspaceModelConnectionTable>
+    required _is.ColumnSelections<WorkspaceModelConnectionTable>
     conflictColumns,
-    _i1.ColumnSelections<WorkspaceModelConnectionTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable>? updateWhere,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceModelConnectionTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceModelConnectionTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<WorkspaceModelConnection>(
       row,
@@ -673,10 +659,10 @@ class WorkspaceModelConnectionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceModelConnection>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceModelConnection> rows, {
-    _i1.ColumnSelections<WorkspaceModelConnectionTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceModelConnectionTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<WorkspaceModelConnection>(
@@ -691,10 +677,10 @@ class WorkspaceModelConnectionRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<WorkspaceModelConnection> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceModelConnection row, {
-    _i1.ColumnSelections<WorkspaceModelConnectionTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceModelConnectionTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<WorkspaceModelConnection>(
       row,
@@ -706,11 +692,11 @@ class WorkspaceModelConnectionRepository {
   /// Updates a single [WorkspaceModelConnection] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<WorkspaceModelConnection?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<WorkspaceModelConnectionUpdateTable>
+    required _is.ColumnValueListBuilder<WorkspaceModelConnectionUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<WorkspaceModelConnection>(
       id,
@@ -726,17 +712,15 @@ class WorkspaceModelConnectionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceModelConnection>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<WorkspaceModelConnectionUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<WorkspaceModelConnectionUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable> where,
+    required _is.WhereExpressionBuilder<WorkspaceModelConnectionTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
-    _i1.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<WorkspaceModelConnection>(
@@ -746,8 +730,6 @@ class WorkspaceModelConnectionRepository {
       offset: offset,
       orderBy: orderBy?.call(WorkspaceModelConnection.t),
       orderByList: orderByList?.call(WorkspaceModelConnection.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -765,21 +747,17 @@ class WorkspaceModelConnectionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceModelConnection>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceModelConnection> rows, {
-    _i1.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<WorkspaceModelConnection>(
       rows,
       orderBy: orderBy?.call(WorkspaceModelConnection.t),
       orderByList: orderByList?.call(WorkspaceModelConnection.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -787,9 +765,9 @@ class WorkspaceModelConnectionRepository {
 
   /// Deletes a single [WorkspaceModelConnection].
   Future<WorkspaceModelConnection> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceModelConnection row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<WorkspaceModelConnection>(
       row,
@@ -806,21 +784,17 @@ class WorkspaceModelConnectionRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceModelConnection>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable> where,
-    _i1.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceModelConnectionTable> where,
+    _is.OrderByBuilder<WorkspaceModelConnectionTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceModelConnectionTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<WorkspaceModelConnection>(
       where: where(WorkspaceModelConnection.t),
       orderBy: orderBy?.call(WorkspaceModelConnection.t),
       orderByList: orderByList?.call(WorkspaceModelConnection.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -829,10 +803,10 @@ class WorkspaceModelConnectionRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceModelConnectionTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<WorkspaceModelConnection>(
       where: where?.call(WorkspaceModelConnection.t),
@@ -843,11 +817,11 @@ class WorkspaceModelConnectionRepository {
 
   /// Acquires row-level locks on [WorkspaceModelConnection] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceModelConnectionTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceModelConnectionTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<WorkspaceModelConnection>(
       where: where(WorkspaceModelConnection.t),

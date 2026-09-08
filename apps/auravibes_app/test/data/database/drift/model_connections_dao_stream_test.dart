@@ -31,9 +31,7 @@ void main() {
         name: const Value('OpenAI'),
         serviceId: const Value('openai'),
         kind: const Value(ServiceConnectionKindTable.modelProvider),
-        authenticationType: const Value(
-          ServiceAuthenticationTypeTable.apiKey,
-        ),
+        authenticationType: const Value(ServiceAuthenticationTypeTable.apiKey),
         encryptedAuthValue: const Value('encrypted'),
         workspaceId: Value(workspace.id),
       ),

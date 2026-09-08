@@ -35,9 +35,9 @@ Future<SkillDetail?> skillDetail(
                 .isAppSkillEnabled(workspaceId, appSkill.identifier));
 
   return SkillDetail(
+    source: SkillSource.app,
     id: appSkill.identifier,
     workspaceId: workspaceId,
-    source: SkillSource.app,
     kind: SkillKind.native,
     title: sourceSkill?.title ?? appSkill.title,
     slug: sourceSkill?.slug ?? appSkill.slug,

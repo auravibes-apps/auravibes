@@ -31,10 +31,7 @@ void main() {
 
     test('streamableHttp toJson', () {
       const transport = McpTransportTypeStreamableHttp(useHttp2: true);
-      expect(
-        transport.toJson(),
-        {'type': 'streamableHttp', 'useHttp2': true},
-      );
+      expect(transport.toJson(), {'type': 'streamableHttp', 'useHttp2': true});
     });
   });
 
@@ -228,9 +225,7 @@ void main() {
         final errors = form.validationErrors;
         expect(
           errors,
-          contains(
-            'Bearer token is required for Bearer Token authentication.',
-          ),
+          contains('Bearer token is required for Bearer Token authentication.'),
         );
       });
 
@@ -245,9 +240,7 @@ void main() {
         final errors = form.validationErrors;
         expect(
           errors,
-          contains(
-            'Bearer token is required for Bearer Token authentication.',
-          ),
+          contains('Bearer token is required for Bearer Token authentication.'),
         );
       });
 
@@ -406,9 +399,7 @@ void main() {
     });
 
     test('toEntity handles null optional fields', () {
-      const model = OAuthTokenModel(
-        accessToken: 'access',
-      );
+      const model = OAuthTokenModel(accessToken: 'access');
 
       final entity = model.toEntity();
       expect(entity.accessToken, 'access');

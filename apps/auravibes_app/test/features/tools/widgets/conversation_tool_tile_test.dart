@@ -1,6 +1,7 @@
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
+import 'package:auravibes_app/features/tools/widgets/tool_permission_selector.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,11 +22,8 @@ WorkspaceToolEntity _tool({String id = 't1'}) {
   );
 }
 
-class _MockConversationToolsNotifier extends ConversationToolsNotifier {
-  _MockConversationToolsNotifier(this.states);
-
-  final List<ConversationToolState> states;
-
+class _MockConversationToolsNotifier(final List<ConversationToolState> states)
+    extends ConversationToolsNotifier {
   @override
   Future<List<ConversationToolState>> build({
     required String workspaceId,
@@ -33,15 +31,10 @@ class _MockConversationToolsNotifier extends ConversationToolsNotifier {
   }) async => states;
 }
 
-class _Subject extends StatelessWidget {
-  const _Subject({
-    required this.toolState,
-    this.conversationId,
-  });
-
-  final ConversationToolState toolState;
-  final String? conversationId;
-
+class const _Subject({
+  required final ConversationToolState toolState,
+  final String? conversationId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TestableApp(
@@ -61,9 +54,7 @@ class _Subject extends StatelessWidget {
         conversationToolsProvider(
           workspaceId: _workspaceId,
           conversationId: conversationId,
-        ).overrideWith(
-          () => _MockConversationToolsNotifier([toolState]),
-        ),
+        ).overrideWith(() => _MockConversationToolsNotifier([toolState])),
       ],
     );
   }
@@ -271,11 +262,7 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    await _pumpSubject(
-      tester,
-      toolState: toolState,
-      conversationId: 'conv-1',
-    );
+    await _pumpSubject(tester, toolState: toolState, conversationId: 'conv-1');
 
     expect(find.byType(AuraCard), findsOneWidget);
   });

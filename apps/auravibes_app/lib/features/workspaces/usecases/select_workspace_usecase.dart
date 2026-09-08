@@ -4,13 +4,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'select_workspace_usecase.g.dart';
 
-class SelectWorkspaceUsecase {
-  const SelectWorkspaceUsecase({
-    required this._selectionRepository,
-  });
-
-  final WorkspaceSelectionRepository _selectionRepository;
-
+class const SelectWorkspaceUsecase({
+  required final WorkspaceSelectionRepository _selectionRepository,
+}) {
   Future<String> call({required String workspaceId}) async {
     if (workspaceId.isEmpty ||
         workspaceId == '.' ||

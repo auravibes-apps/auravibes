@@ -241,10 +241,7 @@ String _codexJsonResponse(Map<String, dynamic> response) {
     }
   }
 
-  return jsonEncode({
-    'answer': textParts.join().trim(),
-    'sources': sources,
-  });
+  return jsonEncode({'answer': textParts.join().trim(), 'sources': sources});
 }
 
 Map<String, dynamic>? _decodeObject(String data) {

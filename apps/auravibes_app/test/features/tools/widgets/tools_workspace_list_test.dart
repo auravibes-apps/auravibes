@@ -47,11 +47,8 @@ class _LoadingNotifier extends GroupedToolsNotifier {
       _completer.future;
 }
 
-class _DataNotifier extends GroupedToolsNotifier {
-  _DataNotifier(this.groups);
-
-  final List<ToolsGroupWithTools> groups;
-
+class _DataNotifier(final List<ToolsGroupWithTools> groups)
+    extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
 }
@@ -69,9 +66,8 @@ void main() {
       EasyLocalization(
         child: TestProviderScope(
           overrides: [
-            groupedToolsProvider(
-              _workspaceId,
-            ).overrideWith(_LoadingNotifier.new),
+            groupedToolsProvider(_workspaceId)
+                .overrideWith(_LoadingNotifier.new),
           ],
           child: MaterialApp(
             home: Theme(
@@ -105,9 +101,8 @@ void main() {
       EasyLocalization(
         child: TestProviderScope(
           overrides: [
-            groupedToolsProvider(
-              _workspaceId,
-            ).overrideWith(() => _DataNotifier(groups)),
+            groupedToolsProvider(_workspaceId)
+                .overrideWith(() => _DataNotifier(groups)),
           ],
           child: MaterialApp(
             home: Theme(

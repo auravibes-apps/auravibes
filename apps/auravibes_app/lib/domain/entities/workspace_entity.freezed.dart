@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'workspace_entity.dart';
@@ -9,6 +9,7 @@ part of 'workspace_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -33,16 +34,21 @@ $WorkspaceEntityCopyWith<WorkspaceEntity> get copyWith => _$WorkspaceEntityCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
+  final _this = this as WorkspaceEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.cloudWorkspaceId, _this.cloudWorkspaceId) || other.cloudWorkspaceId == _this.cloudWorkspaceId)&&(identical(other.cloudAccountId, _this.cloudAccountId) || other.cloudAccountId == _this.cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,createdAt,updatedAt,url,cloudWorkspaceId,cloudAccountId);
+int get hashCode {
+  final _this = this as WorkspaceEntity;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.type,_this.createdAt,_this.updatedAt,_this.url,_this.cloudWorkspaceId,_this.cloudAccountId);
+}
 
 @override
 String toString() {
-  return 'WorkspaceEntity(id: $id, name: $name, type: $type, createdAt: $createdAt, updatedAt: $updatedAt, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
+  final _this = this as WorkspaceEntity;
+  return 'WorkspaceEntity(id: ${_this.id}, name: ${_this.name}, type: ${_this.type}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, url: ${_this.url}, cloudWorkspaceId: ${_this.cloudWorkspaceId}, cloudAccountId: ${_this.cloudAccountId})';
 }
 
 
@@ -71,7 +77,7 @@ class _$WorkspaceEntityCopyWithImpl<$Res>
 /// Create a copy of WorkspaceEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? type = null,Object? createdAt = null,Object? updatedAt = null,Object? url = freezed,Object? cloudWorkspaceId = freezed,Object? cloudAccountId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
@@ -251,16 +257,18 @@ _$WorkspaceEntityCopyWith<_WorkspaceEntity> get copyWith => __$WorkspaceEntityCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,createdAt,updatedAt,url,cloudWorkspaceId,cloudAccountId);
+int get hashCode {
+    return Object.hash(runtimeType,id,name,type,createdAt,updatedAt,url,cloudWorkspaceId,cloudAccountId);
+}
 
 @override
 String toString() {
-  return 'WorkspaceEntity(id: $id, name: $name, type: $type, createdAt: $createdAt, updatedAt: $updatedAt, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
+    return 'WorkspaceEntity(id: $id, name: $name, type: $type, createdAt: $createdAt, updatedAt: $updatedAt, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
 }
 
 
@@ -324,16 +332,21 @@ $WorkspaceToCreateCopyWith<WorkspaceToCreate> get copyWith => _$WorkspaceToCreat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
+  final _this = this as WorkspaceToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.cloudWorkspaceId, _this.cloudWorkspaceId) || other.cloudWorkspaceId == _this.cloudWorkspaceId)&&(identical(other.cloudAccountId, _this.cloudAccountId) || other.cloudAccountId == _this.cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
+int get hashCode {
+  final _this = this as WorkspaceToCreate;
+  return Object.hash(runtimeType,_this.name,_this.type,_this.url,_this.cloudWorkspaceId,_this.cloudAccountId);
+}
 
 @override
 String toString() {
-  return 'WorkspaceToCreate(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
+  final _this = this as WorkspaceToCreate;
+  return 'WorkspaceToCreate(name: ${_this.name}, type: ${_this.type}, url: ${_this.url}, cloudWorkspaceId: ${_this.cloudWorkspaceId}, cloudAccountId: ${_this.cloudAccountId})';
 }
 
 
@@ -362,7 +375,7 @@ class _$WorkspaceToCreateCopyWithImpl<$Res>
 /// Create a copy of WorkspaceToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? type = null,Object? url = freezed,Object? cloudWorkspaceId = freezed,Object? cloudAccountId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as WorkspaceType,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -533,16 +546,18 @@ _$WorkspaceToCreateCopyWith<_WorkspaceToCreate> get copyWith => __$WorkspaceToCr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
+int get hashCode {
+    return Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
+}
 
 @override
 String toString() {
-  return 'WorkspaceToCreate(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
+    return 'WorkspaceToCreate(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
 }
 
 
@@ -598,16 +613,21 @@ $WorkspacePatchCopyWith<WorkspacePatch> get copyWith => _$WorkspacePatchCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspacePatch&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
+  final _this = this as WorkspacePatch;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspacePatch&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.cloudWorkspaceId, _this.cloudWorkspaceId) || other.cloudWorkspaceId == _this.cloudWorkspaceId)&&(identical(other.cloudAccountId, _this.cloudAccountId) || other.cloudAccountId == _this.cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
+int get hashCode {
+  final _this = this as WorkspacePatch;
+  return Object.hash(runtimeType,_this.name,_this.type,_this.url,_this.cloudWorkspaceId,_this.cloudAccountId);
+}
 
 @override
 String toString() {
-  return 'WorkspacePatch(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
+  final _this = this as WorkspacePatch;
+  return 'WorkspacePatch(name: ${_this.name}, type: ${_this.type}, url: ${_this.url}, cloudWorkspaceId: ${_this.cloudWorkspaceId}, cloudAccountId: ${_this.cloudAccountId})';
 }
 
 
@@ -636,7 +656,7 @@ class _$WorkspacePatchCopyWithImpl<$Res>
 /// Create a copy of WorkspacePatch
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? type = freezed,Object? url = freezed,Object? cloudWorkspaceId = freezed,Object? cloudAccountId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspacePatch(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as WorkspaceType?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -802,16 +822,18 @@ _$WorkspacePatchCopyWith<_WorkspacePatch> get copyWith => __$WorkspacePatchCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspacePatch&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspacePatch&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
+int get hashCode {
+    return Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
+}
 
 @override
 String toString() {
-  return 'WorkspacePatch(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
+    return 'WorkspacePatch(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
 }
 
 

@@ -56,4 +56,4 @@ final class LastWorkspaceSelectionRepositoryProvider
 }
 
 String _$lastWorkspaceSelectionRepositoryHash() =>
-    r'9eaf74dc630414862a8ebc06942a73c4662b97ef';
+    r'ce68fbe2281ec107c9ede5768d815d97f70269e5';

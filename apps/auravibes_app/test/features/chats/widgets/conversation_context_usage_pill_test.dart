@@ -12,7 +12,7 @@ void main() {
   Widget buildSubject({required ContextUsageData data}) {
     final container = ProviderContainer(
       overrides: [
-        contextUsageProvider.overrideWithValue(data),
+        contextUsageProvider('ws-1', 'conv-1').overrideWithValue(data),
       ],
     );
     addTearDown(container.dispose);
@@ -42,10 +42,7 @@ void main() {
   }
 
   testWidgets('renders normal usage level', (tester) async {
-    final data = ContextUsageData.compute(
-      usedTokens: 50,
-      limitTokens: 100,
-    );
+    final data = ContextUsageData.compute(usedTokens: 50, limitTokens: 100);
 
     await tester.pumpWidget(buildSubject(data: data));
     await tester.pump();
@@ -57,10 +54,7 @@ void main() {
   });
 
   testWidgets('renders elevated usage level', (tester) async {
-    final data = ContextUsageData.compute(
-      usedTokens: 7500,
-      limitTokens: 10000,
-    );
+    final data = ContextUsageData.compute(usedTokens: 7500, limitTokens: 10000);
 
     await tester.pumpWidget(buildSubject(data: data));
     await tester.pump();
@@ -71,10 +65,7 @@ void main() {
   });
 
   testWidgets('renders warning usage level', (tester) async {
-    final data = ContextUsageData.compute(
-      usedTokens: 8500,
-      limitTokens: 10000,
-    );
+    final data = ContextUsageData.compute(usedTokens: 8500, limitTokens: 10000);
 
     await tester.pumpWidget(buildSubject(data: data));
     await tester.pump();
@@ -98,10 +89,7 @@ void main() {
   });
 
   testWidgets('renders unknown level when no limit', (tester) async {
-    final data = ContextUsageData.compute(
-      usedTokens: 500,
-      limitTokens: null,
-    );
+    final data = ContextUsageData.compute(usedTokens: 500, limitTokens: null);
 
     await tester.pumpWidget(buildSubject(data: data));
     await tester.pump();
@@ -112,10 +100,7 @@ void main() {
   });
 
   testWidgets('renders progress indicator', (tester) async {
-    final data = ContextUsageData.compute(
-      usedTokens: 50,
-      limitTokens: 100,
-    );
+    final data = ContextUsageData.compute(usedTokens: 50, limitTokens: 100);
 
     await tester.pumpWidget(buildSubject(data: data));
     await tester.pump();

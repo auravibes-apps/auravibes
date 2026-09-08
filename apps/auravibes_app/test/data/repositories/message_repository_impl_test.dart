@@ -161,10 +161,7 @@ void main() {
       final fileStore = _FakeAttachmentFileStore(
         persistedPaths: {'/tmp/draft.png': '/support/draft.png'},
       );
-      repository = MessageRepository(
-        database,
-        attachmentFileStore: fileStore,
-      );
+      repository = MessageRepository(database, attachmentFileStore: fileStore);
 
       final created = await repository.createMessage(
         const MessageToCreate(
@@ -195,10 +192,7 @@ void main() {
       final fileStore = _FakeAttachmentFileStore(
         persistedPaths: {'/tmp/draft.png': '/support/image.png'},
       );
-      repository = MessageRepository(
-        database,
-        attachmentFileStore: fileStore,
-      );
+      repository = MessageRepository(database, attachmentFileStore: fileStore);
       final created = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
@@ -798,7 +792,7 @@ void main() {
 }
 
 class _FakeAttachmentFileStore extends AttachmentFileStore {
-  _FakeAttachmentFileStore({Map<String, String>? persistedPaths})
+  new({Map<String, String>? persistedPaths})
     : _persistedPaths = persistedPaths ?? const {};
 
   final Map<String, String> _persistedPaths;

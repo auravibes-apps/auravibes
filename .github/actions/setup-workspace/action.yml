@@ -1,0 +1,41 @@
+name: Setup Flutter workspace
+description: Configure FVM, Flutter, and Melos for a checked-out workspace.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup FVM
+      uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
+      id: fvm-config-action
+
+    - name: Detect Flutter channel
+      id: channel-detect
+      shell: bash
+      run: |
+        version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
+        if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
+          echo "channel=beta" >> "$GITHUB_OUTPUT"
+        else
+          echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      with:
+        flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+        channel: ${{ steps.channel-detect.outputs.channel }}
+        cache: true
+        cache-key: "flutter-:os:-:channel:-:version:-:arch:"
+        cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:"
+        pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:"
+
+    - name: Create FVM symlink for CI
+      shell: bash
+      run: |
+        mkdir -p .fvm
+        ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+
+    - name: Bootstrap workspace
+      uses: bluefireteam/melos-action@b79b63bcd183f823740a7976cbdb4b0fc95a0eb8
+      with:
+        run-bootstrap: true

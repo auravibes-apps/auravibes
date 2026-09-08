@@ -148,7 +148,7 @@ final class WorkspaceSessionForRouteProvider
 }
 
 String _$workspaceSessionForRouteHash() =>
-    r'8fc38222353456640586554b4a7e4b033e0ff0ce';
+    r'fdbecb263fffd877c0a8994c9455c6aae55538de';
 
 final class WorkspaceSessionForRouteFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<WorkspaceSession>, String> {
@@ -393,7 +393,7 @@ final class CloudWorkspaceStateGatewayForWorkspaceProvider
 }
 
 String _$cloudWorkspaceStateGatewayForWorkspaceHash() =>
-    r'878f83707ec41159d90752514f0aaff1f82734f2';
+    r'33a5bc63fcf2b48e669cbfc7038d9915d35d527d';
 
 final class CloudWorkspaceStateGatewayForWorkspaceFamily extends $Family
     with

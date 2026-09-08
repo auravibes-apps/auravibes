@@ -7,7 +7,7 @@ part 'workspace_model_selection_entity.freezed.dart';
 @freezed
 abstract class WorkspaceModelSelectionEntity
     with _$WorkspaceModelSelectionEntity {
-  const factory WorkspaceModelSelectionEntity({
+  const factory({
     required String id,
     required String modelId,
     required DateTime createdAt,
@@ -24,7 +24,7 @@ abstract class WorkspaceModelSelectionEntity
 @freezed
 abstract class WorkspaceModelSelectionWithConnectionEntity
     with _$WorkspaceModelSelectionWithConnectionEntity {
-  const factory WorkspaceModelSelectionWithConnectionEntity({
+  const factory({
     required WorkspaceModelSelectionEntity workspaceModelSelection,
     required ModelConnectionEntity modelConnection,
     required ApiModelProviderEntity modelsProvider,
@@ -34,16 +34,13 @@ abstract class WorkspaceModelSelectionWithConnectionEntity
 @freezed
 abstract class WorkspaceModelSelectionFilter
     with _$WorkspaceModelSelectionFilter {
-  const factory WorkspaceModelSelectionFilter({
-    @Default([]) List<String> workspaces,
-  }) = _WorkspaceModelSelectionFilter;
+  const factory({@Default([]) List<String> workspaces}) =
+      _WorkspaceModelSelectionFilter;
 }
 
 @freezed
 abstract class WorkspaceModelSelectionToCreate
     with _$WorkspaceModelSelectionToCreate {
-  const factory WorkspaceModelSelectionToCreate({
-    required String modelId,
-    required String modelConnectionId,
-  }) = _WorkspaceModelSelectionToCreate;
+  const factory({required String modelId, required String modelConnectionId}) =
+      _WorkspaceModelSelectionToCreate;
 }

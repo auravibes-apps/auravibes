@@ -16,25 +16,19 @@ class _StubRepository implements WorkspaceModelSelectionRepository {
 
   @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
-  getWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) async {
+  getWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) async {
     return selectionResults;
   }
 
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
-  watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) {
+  watchWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
     return Stream.value(selectionResults);
   }
 
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?>
-  getWorkspaceModelSelectionById(
-    String id,
-  ) async {
+  getWorkspaceModelSelectionById(String id) async {
     return byIdResult;
   }
 
@@ -80,9 +74,7 @@ void main() {
       final repo = _StubRepository();
 
       final result = await repo
-          .watchWorkspaceModelSelections(
-            const WorkspaceModelSelectionFilter(),
-          )
+          .watchWorkspaceModelSelections(const WorkspaceModelSelectionFilter())
           .first;
 
       expect(result, isEmpty);

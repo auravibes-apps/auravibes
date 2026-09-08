@@ -15,11 +15,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ToolsScreen extends ConsumerWidget {
-  const ToolsScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const ToolsScreen({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final capabilities = ref

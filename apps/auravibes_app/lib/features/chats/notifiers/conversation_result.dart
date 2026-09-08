@@ -6,22 +6,14 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_result.g.dart';
 
-sealed class ConversationResult {
-  const ConversationResult();
-}
+sealed class const ConversationResult();
 
-class ConversationFound extends ConversationResult {
-  const ConversationFound(this.conversation);
-  final ConversationEntity conversation;
-}
+class const ConversationFound(final ConversationEntity conversation)
+    extends ConversationResult;
 
-class ConversationNotFound extends ConversationResult {
-  const ConversationNotFound();
-}
+class const ConversationNotFound() extends ConversationResult;
 
-class ConversationWorkspaceMismatch extends ConversationResult {
-  const ConversationWorkspaceMismatch();
-}
+class const ConversationWorkspaceMismatch() extends ConversationResult;
 
 @riverpod
 class ConversationChatNotifier extends _$ConversationChatNotifier {
@@ -116,10 +108,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     }
     final updatedConversation = await ref
         .read(conversationRepositoryProvider)
-        .patchConversation(
-          result.conversation.id,
-          patch,
-        );
+        .patchConversation(result.conversation.id, patch);
 
     state = AsyncData(ConversationFound(updatedConversation));
   }

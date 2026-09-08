@@ -8,11 +8,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ToolCountEnabledWidget extends ConsumerWidget {
-  const ToolCountEnabledWidget({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const ToolCountEnabledWidget({
+  required final String workspaceId,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final countAsync = ref.watch(

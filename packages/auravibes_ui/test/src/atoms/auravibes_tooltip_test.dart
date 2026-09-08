@@ -8,10 +8,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraTooltip(
-              message: 'Tooltip text',
-              child: Text('Target'),
-            ),
+            body: AuraTooltip(message: 'Tooltip text', child: Text('Target')),
           ),
         ),
       );
@@ -23,10 +20,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraTooltip(
-              message: 'Tooltip text',
-              child: Text('Target'),
-            ),
+            body: AuraTooltip(message: 'Tooltip text', child: Text('Target')),
           ),
         ),
       );
@@ -63,10 +57,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraTooltip(
-              message: 'Below',
-              child: Text('Target'),
-            ),
+            body: AuraTooltip(message: 'Below', child: Text('Target')),
           ),
         ),
       );
@@ -100,10 +91,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraTooltip(
-              message: 'Primary',
-              child: Text('Target'),
-            ),
+            body: AuraTooltip(message: 'Primary', child: Text('Target')),
           ),
         ),
       );
@@ -118,10 +106,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraTooltip(
-              message: 'Tooltip text',
-              child: Text('Target'),
-            ),
+            body: AuraTooltip(message: 'Tooltip text', child: Text('Target')),
           ),
         ),
       );
@@ -131,10 +116,7 @@ void main() {
       expect(tooltip.decoration, isA<BoxDecoration>());
       expect(
         tooltip.padding,
-        const EdgeInsets.symmetric(
-          vertical: 4,
-          horizontal: 8,
-        ),
+        const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       );
       expect(tooltip.textStyle?.fontSize, 12);
       expect(tooltip.textStyle?.fontWeight, FontWeight.w500);

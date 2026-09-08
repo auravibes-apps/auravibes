@@ -52,13 +52,8 @@ void main() {
       });
 
       test('sse returns all auth types', () {
-        const state = McpFormState(
-          transport: McpTransportTypeOptions.sse,
-        );
-        expect(
-          state.availableAuthTypes,
-          McpAuthenticationTypeOptions.values,
-        );
+        const state = McpFormState(transport: McpTransportTypeOptions.sse);
+        expect(state.availableAuthTypes, McpAuthenticationTypeOptions.values);
       });
     });
 
@@ -118,24 +113,17 @@ void main() {
 
     group('isValid', () {
       test('returns false when name is empty', () {
-        const state = McpFormState(
-          url: 'https://example.com',
-        );
+        const state = McpFormState(url: 'https://example.com');
         expect(state.isValid, isFalse);
       });
 
       test('returns false when url is empty', () {
-        const state = McpFormState(
-          name: 'Test',
-        );
+        const state = McpFormState(name: 'Test');
         expect(state.isValid, isFalse);
       });
 
       test('returns true for valid none auth', () {
-        const state = McpFormState(
-          name: 'Test',
-          url: 'https://example.com',
-        );
+        const state = McpFormState(name: 'Test', url: 'https://example.com');
         expect(state.isValid, isTrue);
       });
 
@@ -183,7 +171,9 @@ void main() {
     setUp(() async {
       final testContainer = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ).overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ),
           workspaceSessionForRouteProvider.overrideWith(
@@ -215,10 +205,7 @@ void main() {
 
     test('setDescription updates description', () {
       readNotifier().setDescription('Desc');
-      expect(
-        readContainer().read(mcpFormProvider('ws1')).description,
-        'Desc',
-      );
+      expect(readContainer().read(mcpFormProvider('ws1')).description, 'Desc');
     });
 
     test('setUrl updates url', () {
@@ -234,10 +221,7 @@ void main() {
       expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isTrue);
 
       readNotifier().setTransport(McpTransportTypeOptions.sse);
-      expect(
-        readContainer().read(mcpFormProvider('ws1')).useHttp2,
-        isFalse,
-      );
+      expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isFalse);
     });
 
     test('setTransport resets auth when switching to streamableHttp', () {
@@ -291,10 +275,7 @@ void main() {
 
     test('setSubmitting updates flag', () {
       readNotifier().setSubmitting(value: true);
-      expect(
-        readContainer().read(mcpFormProvider('ws1')).isSubmitting,
-        isTrue,
-      );
+      expect(readContainer().read(mcpFormProvider('ws1')).isSubmitting, isTrue);
     });
 
     test('setError sets error message', () {
@@ -309,10 +290,7 @@ void main() {
       readNotifier()
         ..setError('Error')
         ..clearError();
-      expect(
-        readContainer().read(mcpFormProvider('ws1')).errorMessage,
-        isNull,
-      );
+      expect(readContainer().read(mcpFormProvider('ws1')).errorMessage, isNull);
     });
 
     test('submit returns false when invalid', () async {
@@ -370,7 +348,9 @@ void main() {
       readContainer().dispose();
       final failingContainer = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ).overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ),
           workspaceSessionForRouteProvider.overrideWith(
@@ -378,9 +358,7 @@ void main() {
               LocalWorkspaceRef(localWorkspaceId: 'ws1'),
             ),
           ),
-          mcpConnectionProvider.overrideWith(
-            _FailingMcpConnectionNotifier.new,
-          ),
+          mcpConnectionProvider.overrideWith(_FailingMcpConnectionNotifier.new),
         ],
       );
       final workspaceSession = await failingContainer.read(

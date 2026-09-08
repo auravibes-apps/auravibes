@@ -1,5 +1,5 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -7,7 +7,7 @@ part 'model_connection_entity.freezed.dart';
 
 @freezed
 abstract class ModelConnectionEntity with _$ModelConnectionEntity {
-  const factory ModelConnectionEntity({
+  const factory({
     required String id,
     required String name,
     required String modelId,
@@ -22,13 +22,13 @@ abstract class ModelConnectionEntity with _$ModelConnectionEntity {
   }) = _ModelConnectionEntity;
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
   @Assert(
     'authMode == ModelProviderAuthMode.oauth2 || key != ""',
     'API-key connections require a non-empty key.',
   )
-  const factory ModelConnectionToCreate({
+  const factory({
     required String name,
     required String workspaceId,
     required String modelId,
@@ -43,7 +43,7 @@ abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
 
 @freezed
 abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
-  const factory ModelConnectionForEdit({
+  const factory({
     required String id,
     required String name,
     required String modelId,
@@ -55,20 +55,16 @@ abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
   }) = _ModelConnectionForEdit;
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class ModelConnectionToUpdate with _$ModelConnectionToUpdate {
   // Null means preserve the existing persisted value for that field.
   // ignore: unnecessary-nullable
-  const factory ModelConnectionToUpdate({
-    String? name,
-    String? key,
-    String? url,
-  }) = _ModelConnectionToUpdate;
+  const factory({String? name, String? key, String? url}) =
+      _ModelConnectionToUpdate;
 }
 
 @freezed
 abstract class ModelConnectionFilter with _$ModelConnectionFilter {
-  const factory ModelConnectionFilter({
-    @Default([]) List<String> workspaces,
-  }) = _ModelConnectionFilter;
+  const factory({@Default([]) List<String> workspaces}) =
+      _ModelConnectionFilter;
 }

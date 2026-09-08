@@ -8,10 +8,8 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _FakeMcpServersRepository implements McpServersRepository {
-  _FakeMcpServersRepository(this._servers);
-  final Map<String, McpServerEntity> _servers;
-
+class _FakeMcpServersRepository(final Map<String, McpServerEntity> _servers)
+    implements McpServersRepository {
   @override
   Future<McpServerEntity?> getMcpServerById(String serverId) async =>
       _servers[serverId];

@@ -11,10 +11,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: const Scaffold(
-          body: AppErrorWidget(
-            error: error,
-            stackTrace: StackTrace.empty,
-          ),
+          body: AppErrorWidget(error: error, stackTrace: StackTrace.empty),
         ),
         theme: ThemeData(extensions: [AuraTheme.light]),
       ),
@@ -33,10 +30,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: const Scaffold(
-          body: AppErrorWidget(
-            error: 42,
-            stackTrace: StackTrace.empty,
-          ),
+          body: AppErrorWidget(error: 42, stackTrace: StackTrace.empty),
         ),
         theme: ThemeData(extensions: [AuraTheme.light]),
       ),

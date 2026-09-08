@@ -80,6 +80,10 @@ abstract class LocaleKeys {
       'models_screens.add_provider.connect_browser';
   static const models_screens_add_provider_use_device_code =
       'models_screens.add_provider.use_device_code';
+  static const models_screens_add_provider_oauth_waiting =
+      'models_screens.add_provider.oauth_waiting';
+  static const models_screens_add_provider_cancel_connection =
+      'models_screens.add_provider.cancel_connection';
   static const models_screens_add_provider_device_code_instruction =
       'models_screens.add_provider.device_code_instruction';
   static const models_screens_add_provider_device_code_step_code =
@@ -150,6 +154,8 @@ abstract class LocaleKeys {
       'service_connections.empty_title';
   static const service_connections_empty_subtitle =
       'service_connections.empty_subtitle';
+  static const service_connections_empty_filter =
+      'service_connections.empty_filter';
   static const service_connections_delete_credential_title =
       'service_connections.delete_credential_title';
   static const service_connections_delete_credential_confirm =
@@ -168,6 +174,14 @@ abstract class LocaleKeys {
       'service_connections.candidate.model_provider';
   static const service_connections_candidate_app_skill =
       'service_connections.candidate.app_skill';
+  static const service_connections_filter_all =
+      'service_connections.filter.all';
+  static const service_connections_filter_model_providers =
+      'service_connections.filter.model_providers';
+  static const service_connections_filter_skill_credentials =
+      'service_connections.filter.skill_credentials';
+  static const service_connections_filter_mcp_servers =
+      'service_connections.filter.mcp_servers';
   static const service_connections_type_model_provider =
       'service_connections.type.model_provider';
   static const service_connections_type_skill_credential =
@@ -340,6 +354,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.voice_record_label';
   static const chats_screens_chat_conversation_image_attachment_label =
       'chats_screens.chat_conversation.image_attachment_label';
+  static const chats_screens_chat_conversation_a2ui_image_loading =
+      'chats_screens.chat_conversation.a2ui_image_loading';
+  static const chats_screens_chat_conversation_a2ui_image_error =
+      'chats_screens.chat_conversation.a2ui_image_error';
   static const chats_screens_chat_conversation_attachment_unsupported =
       'chats_screens.chat_conversation.attachment_unsupported';
   static const chats_screens_chat_conversation_switch_model_unsupported_title =
@@ -358,6 +376,20 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.send_error';
   static const chats_screens_chat_conversation_continue_agent =
       'chats_screens.chat_conversation.continue_agent';
+  static const chats_screens_chat_conversation_submit_answers =
+      'chats_screens.chat_conversation.submit_answers';
+  static const chats_screens_chat_conversation_form_submitted =
+      'chats_screens.chat_conversation.form_submitted';
+  static const chats_screens_chat_conversation_remove_tag =
+      'chats_screens.chat_conversation.remove_tag';
+  static const chats_screens_chat_conversation_a2ui_unavailable =
+      'chats_screens.chat_conversation.a2ui_unavailable';
+  static const chats_screens_chat_conversation_copy_a2ui_diagnostic =
+      'chats_screens.chat_conversation.copy_a2ui_diagnostic';
+  static const chats_screens_chat_conversation_a2ui_diagnostic_copied =
+      'chats_screens.chat_conversation.a2ui_diagnostic_copied';
+  static const chats_screens_chat_conversation_a2ui_form_invalid =
+      'chats_screens.chat_conversation.a2ui_form_invalid';
   static const chats_screens_chat_conversation_continue_error =
       'chats_screens.chat_conversation.continue_error';
   static const chats_screens_chat_conversation_rate_limit_retry =

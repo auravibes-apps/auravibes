@@ -69,6 +69,8 @@
       "create_button": "Create Provider",
       "connect_browser": "Connect with browser",
       "use_device_code": "Use device code",
+      "oauth_waiting": "Waiting for authorization...",
+      "cancel_connection": "Cancel connection",
       "device_code_instruction": "Open this URL and enter the code.",
       "device_code_step_code": "1. Copy this code",
       "device_code_step_link": "2. Open this link",
@@ -122,6 +124,7 @@
     "save_error": "Unable to save connection",
     "empty_title": "No connections",
     "empty_subtitle": "Add a model provider or skill credential to connect this workspace.",
+    "empty_filter": "No connections for {type}",
     "delete_credential_title": "Delete skill credential",
     "delete_credential_confirm": "Delete credential \"{name}\"? This action cannot be undone.",
     "delete_credential_error": "Unable to delete skill credential",
@@ -132,6 +135,12 @@
     "candidate": {
       "model_provider": "Model provider {serviceId}",
       "app_skill": "Service skill {serviceId}"
+    },
+    "filter": {
+      "all": "All",
+      "model_providers": "Model providers",
+      "skill_credentials": "Skill credentials",
+      "mcp_servers": "MCP servers"
     },
     "type": {
       "model_provider": "Model Provider",
@@ -264,6 +273,8 @@
       "recording_status": "Recording",
       "voice_record_label": "Voice Record",
       "image_attachment_label": "Image",
+      "a2ui_image_loading": "Loading image…",
+      "a2ui_image_error": "Image unavailable",
       "attachment_unsupported": "Current model does not support this input.",
       "switch_model_unsupported_title": "Switch model?",
       "switch_model_unsupported_body": "This model does not support {modalities}. Unsupported attachments will be skipped.",
@@ -273,6 +284,13 @@
       "stop_error": "Could not stop the conversation. Please try again.",
       "send_error": "Could not send the message. Please try again.",
       "continue_agent": "Continue agent",
+      "submit_answers": "Submit answers",
+      "form_submitted": "Form answers submitted",
+      "remove_tag": "Remove {tag}",
+      "a2ui_unavailable": "This UI could not be loaded.",
+      "copy_a2ui_diagnostic": "Copy diagnostic details",
+      "a2ui_diagnostic_copied": "Diagnostic copied",
+      "a2ui_form_invalid": "Check your answers and try again.",
       "continue_error": "Could not continue the agent. Please try again.",
       "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",
       "waiting_for_tools": "Waiting for tools to connect...",

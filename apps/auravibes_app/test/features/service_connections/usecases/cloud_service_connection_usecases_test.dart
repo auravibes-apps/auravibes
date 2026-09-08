@@ -12,10 +12,10 @@ void main() {
     String? submittedSecret;
     final usecases = CloudServiceConnectionUsecases(
       CloudWorkspaceResourceStore.forTesting(
-        watch: (_) => const Stream.empty(),
         patch: ({required requestId, required operations}) async {
           return PatchWorkspaceStateResponse(resources: [], sequence: 1);
         },
+        watch: (_) => const Stream.empty(),
         putSecret:
             ({
               required requestId,
@@ -44,9 +44,9 @@ void main() {
               required clearSecret,
               expectedSecretRevision,
             }) async {
-              resourceWrite =
-                  jsonDecode(resourceOperation.data ?? '{}')
-                      as Map<String, dynamic>;
+              resourceWrite = jsonDecode(
+                resourceOperation.data ?? '{}',
+              ) as Map<String, dynamic>;
               submittedSecret = secret;
 
               return MutateWorkspaceCredentialResponse(
@@ -88,7 +88,6 @@ void main() {
     Map<String, dynamic>? metadata;
     final usecases = CloudServiceConnectionUsecases(
       CloudWorkspaceResourceStore.forTesting(
-        watch: (_) => const Stream.empty(),
         patch: ({required requestId, required operations}) async {
           final operation = operations.single;
           resourceRevision = operation.expectedRevision;
@@ -96,6 +95,7 @@ void main() {
 
           return PatchWorkspaceStateResponse(resources: [], sequence: 1);
         },
+        watch: (_) => const Stream.empty(),
         putSecret:
             ({
               required requestId,
@@ -126,9 +126,9 @@ void main() {
             }) async {
               resourceRevision = resourceOperation.expectedRevision;
               secretRevision = expectedSecretRevision;
-              metadata =
-                  jsonDecode(resourceOperation.data ?? '{}')
-                      as Map<String, dynamic>;
+              metadata = jsonDecode(
+                resourceOperation.data ?? '{}',
+              ) as Map<String, dynamic>;
 
               return MutateWorkspaceCredentialResponse(
                 resource: WorkspaceResource(
@@ -178,10 +178,10 @@ void main() {
     var mutationTouched = false;
     final usecases = CloudServiceConnectionUsecases(
       CloudWorkspaceResourceStore.forTesting(
-        watch: (_) => const Stream.empty(),
         patch: ({required requestId, required operations}) async {
           throw StateError('stale revision');
         },
+        watch: (_) => const Stream.empty(),
         putSecret:
             ({
               required requestId,
@@ -236,6 +236,9 @@ void main() {
     final now = DateTime(2026);
     final usecases = CloudServiceConnectionUsecases(
       CloudWorkspaceResourceStore.forTesting(
+        patch: ({required requestId, required operations}) async {
+          return PatchWorkspaceStateResponse(resources: [], sequence: 2);
+        },
         watch: (_) => Stream.value([
           WorkspaceResource(
             workspaceId: 1,
@@ -250,9 +253,6 @@ void main() {
             updatedAt: now,
           ),
         ]),
-        patch: ({required requestId, required operations}) async {
-          return PatchWorkspaceStateResponse(resources: [], sequence: 2);
-        },
         putSecret:
             ({
               required requestId,

@@ -152,7 +152,7 @@ final class ConversationToolsNotifierProvider
 }
 
 String _$conversationToolsNotifierHash() =>
-    r'2d24155512db1888f6e361bd5ac4eeb3d6a9b39b';
+    r'fbb628e5e303895c2dc0bc0ad99863032b28b8cc';
 
 /// Provider for managing conversation tool settings
 ///
@@ -237,18 +237,18 @@ abstract class _$ConversationToolsNotifier
   }
 }
 
-/// Provider to get context-aware tools for chat.
-/// (conversation -> workspace -> app defaults)
+/// Provider to get context-aware tools for chat (conversation, workspace, and
+/// app defaults).
 
 @ProviderFor(ContextAwareToolsNotifier)
 final contextAwareToolsProvider = ContextAwareToolsNotifierFamily._();
 
-/// Provider to get context-aware tools for chat.
-/// (conversation -> workspace -> app defaults)
+/// Provider to get context-aware tools for chat (conversation, workspace, and
+/// app defaults).
 final class ContextAwareToolsNotifierProvider
     extends $AsyncNotifierProvider<ContextAwareToolsNotifier, List<String>> {
-  /// Provider to get context-aware tools for chat.
-  /// (conversation -> workspace -> app defaults)
+  /// Provider to get context-aware tools for chat (conversation, workspace, and
+  /// app defaults).
   ContextAwareToolsNotifierProvider._({
     required ContextAwareToolsNotifierFamily super.from,
     required ({String conversationId, String workspaceId}) super.argument,
@@ -287,10 +287,10 @@ final class ContextAwareToolsNotifierProvider
 }
 
 String _$contextAwareToolsNotifierHash() =>
-    r'c280cb49fe771a2a7847b24bbfd2b3c51fdde2b4';
+    r'eef0d0dccaa2cea747ec4c4d80adad0cb8911525';
 
-/// Provider to get context-aware tools for chat.
-/// (conversation -> workspace -> app defaults)
+/// Provider to get context-aware tools for chat (conversation, workspace, and
+/// app defaults).
 
 final class ContextAwareToolsNotifierFamily extends $Family
     with
@@ -310,8 +310,8 @@ final class ContextAwareToolsNotifierFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Provider to get context-aware tools for chat.
-  /// (conversation -> workspace -> app defaults)
+  /// Provider to get context-aware tools for chat (conversation, workspace, and
+  /// app defaults).
 
   ContextAwareToolsNotifierProvider call({
     required String conversationId,
@@ -325,8 +325,8 @@ final class ContextAwareToolsNotifierFamily extends $Family
   String toString() => r'contextAwareToolsProvider';
 }
 
-/// Provider to get context-aware tools for chat.
-/// (conversation -> workspace -> app defaults)
+/// Provider to get context-aware tools for chat (conversation, workspace, and
+/// app defaults).
 
 abstract class _$ContextAwareToolsNotifier
     extends $AsyncNotifier<List<String>> {
@@ -362,9 +362,8 @@ abstract class _$ContextAwareToolsNotifier
 
 /// Provider to get context-aware tools as full entities for chat.
 ///
-/// Returns [WorkspaceToolEntity] list with table IDs needed for
-/// generating composite tool IDs.
-/// (conversation -> workspace -> app defaults)
+/// Returns a [WorkspaceToolEntity] list with table IDs needed for generating
+/// composite tool IDs across conversation, workspace, and app defaults.
 
 @ProviderFor(ContextAwareToolEntitiesNotifier)
 final contextAwareToolEntitiesProvider =
@@ -372,9 +371,8 @@ final contextAwareToolEntitiesProvider =
 
 /// Provider to get context-aware tools as full entities for chat.
 ///
-/// Returns [WorkspaceToolEntity] list with table IDs needed for
-/// generating composite tool IDs.
-/// (conversation -> workspace -> app defaults)
+/// Returns a [WorkspaceToolEntity] list with table IDs needed for generating
+/// composite tool IDs across conversation, workspace, and app defaults.
 final class ContextAwareToolEntitiesNotifierProvider
     extends
         $AsyncNotifierProvider<
@@ -383,9 +381,8 @@ final class ContextAwareToolEntitiesNotifierProvider
         > {
   /// Provider to get context-aware tools as full entities for chat.
   ///
-  /// Returns [WorkspaceToolEntity] list with table IDs needed for
-  /// generating composite tool IDs.
-  /// (conversation -> workspace -> app defaults)
+  /// Returns a [WorkspaceToolEntity] list with table IDs needed for generating
+  /// composite tool IDs across conversation, workspace, and app defaults.
   ContextAwareToolEntitiesNotifierProvider._({
     required ContextAwareToolEntitiesNotifierFamily super.from,
     required ({String conversationId, String workspaceId}) super.argument,
@@ -425,13 +422,12 @@ final class ContextAwareToolEntitiesNotifierProvider
 }
 
 String _$contextAwareToolEntitiesNotifierHash() =>
-    r'458109237a208244713bc3d47b482e5e53bc04e7';
+    r'cb158dc734c446fc43046dd407cb01b1c65c76d4';
 
 /// Provider to get context-aware tools as full entities for chat.
 ///
-/// Returns [WorkspaceToolEntity] list with table IDs needed for
-/// generating composite tool IDs.
-/// (conversation -> workspace -> app defaults)
+/// Returns a [WorkspaceToolEntity] list with table IDs needed for generating
+/// composite tool IDs across conversation, workspace, and app defaults.
 
 final class ContextAwareToolEntitiesNotifierFamily extends $Family
     with
@@ -453,9 +449,8 @@ final class ContextAwareToolEntitiesNotifierFamily extends $Family
 
   /// Provider to get context-aware tools as full entities for chat.
   ///
-  /// Returns [WorkspaceToolEntity] list with table IDs needed for
-  /// generating composite tool IDs.
-  /// (conversation -> workspace -> app defaults)
+  /// Returns a [WorkspaceToolEntity] list with table IDs needed for generating
+  /// composite tool IDs across conversation, workspace, and app defaults.
 
   ContextAwareToolEntitiesNotifierProvider call({
     required String conversationId,
@@ -471,9 +466,8 @@ final class ContextAwareToolEntitiesNotifierFamily extends $Family
 
 /// Provider to get context-aware tools as full entities for chat.
 ///
-/// Returns [WorkspaceToolEntity] list with table IDs needed for
-/// generating composite tool IDs.
-/// (conversation -> workspace -> app defaults)
+/// Returns a [WorkspaceToolEntity] list with table IDs needed for generating
+/// composite tool IDs across conversation, workspace, and app defaults.
 
 abstract class _$ContextAwareToolEntitiesNotifier
     extends $AsyncNotifier<List<WorkspaceToolEntity>> {

@@ -1,11 +1,16 @@
 include: ../analysis_options.yaml
 
 analyzer:
-  enable-experiment:
-    - private-named-parameters
-
   errors:
     document_ignores: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   rules:

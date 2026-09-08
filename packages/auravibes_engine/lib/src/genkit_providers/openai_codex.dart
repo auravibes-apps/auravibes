@@ -5,11 +5,10 @@
 import 'dart:convert';
 
 import 'package:auravibes_engine/src/genkit_providers/chat_completions_provider.dart';
+import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
 import 'package:genkit/plugin.dart';
 
-class OpenAICodexCodec {
-  const OpenAICodexCodec();
-
+class const OpenAICodexCodec() {
   Future<ModelResponse> complete(
     ProviderTransport transport,
     Map<String, dynamic> body,
@@ -75,9 +74,9 @@ class OpenAICodexCodec {
     if (statusCode >= 200 && statusCode < 300) return;
 
     throw GenkitException(
-      'OpenAI Codex API error: $body',
+      'OpenAI Codex API request failed (HTTP $statusCode).',
       status: StatusCodes.fromHttpStatus(statusCode),
-      details: body,
+      details: _retryableErrorDetail(body),
     );
   }
 }
@@ -85,13 +84,11 @@ class OpenAICodexCodec {
 Map<String, dynamic> _decodeStreamEvent(String data) {
   try {
     return jsonDecode(data) as Map<String, dynamic>;
-  } on Object catch (error, stackTrace) {
+  } on Object catch (_, stackTrace) {
     Error.throwWithStackTrace(
       GenkitException(
         'OpenAI Codex stream parse error.',
         status: StatusCodes.INTERNAL,
-        details: data,
-        underlyingException: error,
         stackTrace: stackTrace,
       ),
       stackTrace,
@@ -128,10 +125,7 @@ List<Map<String, dynamic>> _messageToInput(Message message) {
   final role = message.role == Role.model ? 'assistant' : message.role.value;
 
   return [
-    {
-      'role': role,
-      'content': _contentToInput(message.content),
-    },
+    {'role': role, 'content': _contentToInput(message.content)},
     if (message.role == Role.model) ..._toolCallsToInput(message.content),
   ];
 }
@@ -177,7 +171,7 @@ Map<String, dynamic> _mediaToInput(Part part, Media media) {
     return {'type': 'input_image', 'image_url': media.url};
   }
 
-  final data = _dataUrlPayload(media.url);
+  final data = dataUrlPayload(media.url);
   if (data == null) {
     throw GenkitException(
       'OpenAI Responses media inputs require a data URL for files and audio.',
@@ -185,7 +179,7 @@ Map<String, dynamic> _mediaToInput(Part part, Media media) {
     );
   }
   if (contentType.startsWith('audio/')) {
-    final format = _audioFormat(contentType, 'OpenAI Responses');
+    final format = audioFormat(contentType, 'OpenAI Responses');
 
     return {
       'type': 'input_audio',
@@ -201,32 +195,6 @@ Map<String, dynamic> _mediaToInput(Part part, Media media) {
   };
 }
 
-String? _dataUrlPayload(String url) {
-  final comma = url.indexOf(',');
-  if (!url.startsWith(_dataUrlPrefix) || comma < 0) return null;
-  final header = url.replaceRange(comma, url.length, '');
-  if (!header.contains(';base64')) return null;
-
-  final payload = url.replaceRange(0, comma + 1, '');
-  try {
-    final _ = base64Decode(payload);
-  } on FormatException {
-    return null;
-  }
-
-  return payload;
-}
-
-String _audioFormat(String contentType, String providerName) {
-  if (contentType == 'audio/mpeg' || contentType == 'audio/mp3') return 'mp3';
-  if (contentType == 'audio/wav' || contentType == 'audio/x-wav') return 'wav';
-
-  throw GenkitException(
-    '$providerName audio input supports only mp3 and wav.',
-    status: StatusCodes.INVALID_ARGUMENT,
-  );
-}
-
 Map<String, dynamic> _toolToJson(ToolDefinition tool) {
   return {
     'type': 'function',
@@ -234,10 +202,7 @@ Map<String, dynamic> _toolToJson(ToolDefinition tool) {
     'description': tool.description,
     'parameters':
         tool.inputSchema ??
-        <String, dynamic>{
-          'type': 'object',
-          'properties': <String, dynamic>{},
-        },
+        <String, dynamic>{'type': 'object', 'properties': <String, dynamic>{}},
   };
 }
 
@@ -328,14 +293,16 @@ class _CodexStreamAccumulator {
       _throwFailedEvent(event);
     }
     if (type == 'response.completed') {
-      _complete(event);
-
-      return const [];
+      return _finish(event, FinishReason.stop);
+    }
+    if (type == 'response.incomplete') {
+      return _finish(event, FinishReason.length);
+    }
+    if (type == 'response.output_text.done') {
+      return _reconcileText(event['text']);
     }
     if (type == 'response.output_item.done') {
-      _addTool(event);
-
-      return const [];
+      return _addOutputItem(event);
     }
 
     return type == 'response.output_text.delta' ? _addText(event) : const [];
@@ -344,28 +311,52 @@ class _CodexStreamAccumulator {
   Never _throwFailedEvent(Map<String, dynamic> event) {
     final details = _failedEventDetails(event);
     throw GenkitException(
-      'OpenAI Codex API error: ${jsonEncode(details['error'])}',
+      'OpenAI Codex API request failed while streaming.',
       status: StatusCodes.INTERNAL,
-      details: jsonEncode(details),
+      details: _retryableErrorDetail(jsonEncode(details['error'])),
       stackTrace: StackTrace.current,
     );
   }
 
-  void _complete(Map<String, dynamic> event) {
+  List<Part> _finish(Map<String, dynamic> event, FinishReason finishReason) {
     final response = event['response'] as Map<String, dynamic>?;
     _usage = _usageFromJson(response?['usage'] as Map<String, dynamic>?);
-    _finishReasonValue = FinishReason.stop;
+    _finishReasonValue = finishReason;
+    if (response == null) return const [];
+    return _reconcileText(_responseText(response));
   }
 
-  void _addTool(Map<String, dynamic> event) {
+  List<Part> _reconcileText(Object? value) {
+    if (value is! String || value.isEmpty) return const [];
+    final streamedText = _text.toString();
+    if (!value.startsWith(streamedText) ||
+        value.length == streamedText.length) {
+      return const [];
+    }
+    final suffix = value.substring(streamedText.length);
+    _text.write(suffix);
+
+    return [TextPart(text: suffix)];
+  }
+
+  List<Part> _addOutputItem(Map<String, dynamic> event) {
     final item = event['item'] as Map<String, dynamic>?;
-    if (item?['type'] != 'function_call') return;
+    if (item == null) return const [];
+    if (item['type'] == 'message') {
+      return _reconcileText(
+        _responseText({
+          'output': [item],
+        }),
+      );
+    }
+    if (item['type'] != 'function_call') return const [];
 
     _tools.addAll(
       _toolRequestsFromResponse({
         'output': [item],
       }),
     );
+    return const [];
   }
 
   List<Part> _addText(Map<String, dynamic> event) {
@@ -408,4 +399,27 @@ Map<String, dynamic> _failedEventDetails(Map<String, dynamic> event) {
 bool isRetryableCodexError(GenkitException error) {
   return error.status == StatusCodes.INTERNAL &&
       '${error.details}'.contains('server_error');
+}
+
+String? _retryableErrorDetail(String body) {
+  try {
+    final decoded = jsonDecode(body);
+    if (decoded == 'server_error') return 'server_error';
+    if (decoded is! Map<String, dynamic>) return null;
+
+    final error = decoded['error'];
+    if (error == 'server_error') return 'server_error';
+    if (error is Map<String, dynamic> &&
+        (error['type'] == 'server_error' || error['code'] == 'server_error')) {
+      return 'server_error';
+    }
+    if (decoded['type'] == 'server_error' ||
+        decoded['code'] == 'server_error') {
+      return 'server_error';
+    }
+  } on Object {
+    return null;
+  }
+
+  return null;
 }

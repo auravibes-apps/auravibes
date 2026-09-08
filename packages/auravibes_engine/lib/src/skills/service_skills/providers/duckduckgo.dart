@@ -64,8 +64,7 @@ CancelableOperation<Object?> _search(
         'cache-control': 'max-age=0',
         'content-type': 'application/x-www-form-urlencoded',
         'referer': 'https://html.duckduckgo.com/',
-        'user-agent':
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
       },
       body: body,
     ),
@@ -200,14 +199,8 @@ bool _isAnomalyResponse(String html) {
   return html.contains('anomaly-modal') || html.contains('anomaly.js');
 }
 
-class _DuckDuckGoResult {
-  const _DuckDuckGoResult({
-    required this.title,
-    required this.url,
-    this.snippet,
-  });
-
-  final String title;
-  final String url;
-  final String? snippet;
-}
+class const _DuckDuckGoResult({
+  required final String title,
+  required final String url,
+  final String? snippet,
+});

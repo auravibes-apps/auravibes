@@ -26,7 +26,9 @@ workspaceModelSelectionById(
     workspaceModelSelectionId,
   );
   if (selectedModel == null ||
-      !isOpenAICodexProvider(selectedModel.modelConnection.modelId)) {
+      !ModelProviderOAuthProfiles.isCodexProvider(
+        selectedModel.modelConnection.modelId,
+      )) {
     return selectedModel;
   }
 
@@ -41,7 +43,7 @@ workspaceModelSelectionById(
   return selectedModel.copyWith(
     workspaceModelSelection: selectedModel.workspaceModelSelection.copyWith(
       modelName: openAIModel.name,
-      modalitiesInput: codexInputModalities(openAIModel),
+      modalitiesInput: CodexInputModalities.forModel(openAIModel),
       modalitiesOutput: openAIModel.modalitiesOutput,
       supportsReasoning: openAIModel.supportsReasoning,
       supportsToolCalls: openAIModel.supportsToolCalls,
@@ -50,6 +52,7 @@ workspaceModelSelectionById(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<int?> modelContextLimit(
   Ref ref,
   String workspaceId,
@@ -74,3 +77,4 @@ Future<int?> modelContextLimit(
 
   return value?.limitContext;
 }
+// Top-level API/provider declarations are required by their consumers.

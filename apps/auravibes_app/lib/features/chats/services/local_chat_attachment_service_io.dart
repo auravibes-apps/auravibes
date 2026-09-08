@@ -3,7 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
+import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
@@ -17,11 +18,11 @@ final _logger = Logger('local_chat_attachment_service');
 const _macRecordingSampleRate = 44100;
 const _macRecordingChannels = 1;
 
-class LocalChatAttachmentService {
-  LocalChatAttachmentService({AudioRecorder? recorder})
-    : _recorder = recorder ?? AudioRecorder();
-
-  final AudioRecorder _recorder;
+class LocalChatAttachmentServiceIo({
+  AudioRecorder? recorder,
+  final String storageNamespace = 'auravibes_app',
+}) {
+  final AudioRecorder _recorder = recorder ?? AudioRecorder();
   String? _recordingPath;
   BytesBuilder? _recordingBytes;
   Completer<void>? _recordingStreamDone;
@@ -33,7 +34,7 @@ class LocalChatAttachmentService {
   }) async {
     final source = File(sourcePath);
     final fileSize = await source.length();
-    if (fileSize > maxChatAttachmentBytes) {
+    if (fileSize > ChatAttachmentModality.maxChatAttachmentBytes) {
       throw StateError('Attachment is too large.');
     }
     final fileName = p.basename(sourcePath);
@@ -44,25 +45,23 @@ class LocalChatAttachmentService {
     final mimeType =
         lookupMimeType(sourcePath, headerBytes: headerBytes) ??
         'application/octet-stream';
-    final directory = await getTemporaryDirectory();
-
-    final attachmentDirectory = Directory(
-      p.join(directory.path, 'chat_attachments_draft'),
+    final attachmentDirectory = await _draftDirectory();
+    final createdAttachmentDirectory = await attachmentDirectory.create(
+      recursive: true,
     );
-    final _ = await attachmentDirectory.create(recursive: true);
 
     final localPath = p.join(
-      attachmentDirectory.path,
+      createdAttachmentDirectory.path,
       '${const UuidV7().generate()}-$fileName',
     );
-    final _ = await source.copy(localPath);
+    final copied = await source.copy(localPath);
 
     return MessageAttachmentToCreate(
-      localPath: localPath,
+      localPath: copied.path,
       fileName: fileName,
       displayName: displayName ?? fileName,
       mimeType: mimeType,
-      modality: attachmentModalityForMimeType(mimeType),
+      modality: ChatAttachmentModality.forMimeType(mimeType),
       sizeBytes: fileSize,
     );
   }
@@ -87,13 +86,17 @@ class LocalChatAttachmentService {
         }
       }
     }
-    _logger.fine('Voice recording input devices: $devices');
+    _logger.fine('Voice recording input devices detected: ${devices.length}');
 
-    final directory = await getTemporaryDirectory();
-    final path = p.join(directory.path, '${const UuidV7().generate()}.wav');
+    final directory = await _temporaryRoot();
+    final createdDirectory = await directory.create(recursive: true);
+    final path = p.join(
+      createdDirectory.path,
+      '${const UuidV7().generate()}.wav',
+    );
     _recordingPath = path;
     if (Platform.isMacOS) {
-      await _startMacVoiceRecording(path, device);
+      await _startMacVoiceRecording(device);
 
       return;
     }
@@ -102,7 +105,7 @@ class LocalChatAttachmentService {
       RecordConfig(encoder: AudioEncoder.wav, device: device),
       path: path,
     );
-    _logger.fine('Started voice recording at $path');
+    _logger.fine('Started voice recording');
   }
 
   Future<MessageAttachmentToCreate?> stopVoiceRecording() async {
@@ -117,15 +120,15 @@ class LocalChatAttachmentService {
     }
 
     final file = File(path);
-    if (!await waitForRecordedFile(file)) {
-      _logger.warning('Voice recording file was not ready: $path');
+    if (!await LocalChatAttachmentRecording.waitForRecordedFile(file)) {
+      _logger.warning('Voice recording file was not ready');
 
       return null;
     }
 
     try {
       final attachment = await copyIntoAppStorage(path);
-      _logger.fine('Created voice attachment ${attachment.localPath}');
+      _logger.fine('Created voice attachment');
 
       return attachment;
     } finally {
@@ -145,11 +148,7 @@ class LocalChatAttachmentService {
   }
 
   Future<void> deleteAttachment(String localPath) async {
-    final tempDirectory = await getTemporaryDirectory();
-    final draftDirectory = p.join(
-      tempDirectory.path,
-      'chat_attachments_draft',
-    );
+    final draftDirectory = (await _draftDirectory()).path;
     if (!p.isWithin(draftDirectory, p.normalize(localPath))) return;
 
     final file = File(localPath);
@@ -158,7 +157,20 @@ class LocalChatAttachmentService {
     }
   }
 
-  Future<void> _startMacVoiceRecording(String path, InputDevice? device) async {
+  Future<Directory> _temporaryRoot() async {
+    final directory = await getTemporaryDirectory();
+    if (storageNamespace == 'auravibes_app') return directory;
+
+    return Directory(p.join(directory.path, storageNamespace));
+  }
+
+  Future<Directory> _draftDirectory() async {
+    final root = await _temporaryRoot();
+
+    return Directory(p.join(root.path, 'chat_attachments_draft'));
+  }
+
+  Future<void> _startMacVoiceRecording(InputDevice? device) async {
     final stream = await _recorder.startStream(
       RecordConfig(
         encoder: AudioEncoder.pcm16bits,
@@ -176,7 +188,7 @@ class LocalChatAttachmentService {
       onDone: done.complete,
       cancelOnError: true,
     );
-    _logger.fine('Started voice stream recording at $path');
+    _logger.fine('Started voice stream recording');
   }
 
   Future<String?> _stopMacVoiceRecording() async {
@@ -192,7 +204,7 @@ class LocalChatAttachmentService {
     final file = File(path);
     final _ = await file.parent.create(recursive: true);
     final _ = await file.writeAsBytes(
-      pcm16ToWav(
+      LocalChatAttachmentRecording.pcm16ToWav(
         pcmBytes,
         sampleRate: _macRecordingSampleRate,
         channels: _macRecordingChannels,
@@ -226,54 +238,70 @@ class LocalChatAttachmentService {
 }
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
+typedef LocalChatAttachmentService = LocalChatAttachmentServiceIo;
+
+// ignore: unused-code, conditional export implementation used on IO platforms.
 final localChatAttachmentServiceProvider = Provider<LocalChatAttachmentService>(
-  (_) => LocalChatAttachmentService(),
+  (ref) => LocalChatAttachmentServiceIo(
+    storageNamespace: ref.watch(appStorageNamespaceProvider),
+  ),
 );
 
-@visibleForTesting
-Future<bool> waitForRecordedFile(
-  File file, {
-  Duration timeout = const Duration(seconds: 1),
-  Duration pollInterval = const Duration(milliseconds: 50),
-}) async {
-  final deadline = DateTime.now().add(timeout);
-  while (DateTime.now().isBefore(deadline)) {
-    if (file.existsSync() && file.lengthSync() > 0) return true;
-    await Future<void>.delayed(pollInterval);
+abstract final class LocalChatAttachmentRecording {
+  @visibleForTesting
+  static Future<bool> waitForRecordedFile(
+    File file, {
+    Duration timeout = const Duration(seconds: 1),
+    Duration pollInterval = const Duration(milliseconds: 50),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      if (file.existsSync() && file.lengthSync() > 0) return true;
+      await Future<void>.delayed(pollInterval);
+    }
+
+    return file.existsSync() && file.lengthSync() > 0;
   }
 
-  return file.existsSync() && file.lengthSync() > 0;
-}
+  @visibleForTesting
+  static Uint8List pcm16ToWav(
+    Uint8List pcmBytes, {
+    required int sampleRate,
+    required int channels,
+  }) {
+    const bitsPerSample = 16;
+    const wavHeaderSize = 44;
+    const fmtChunkSize = 16;
+    const pcmFormat = 1;
+    const bytesPerSample = 8;
+    const dataChunkOffset = 36;
+    final blockAlign = channels * bitsPerSample ~/ bytesPerSample;
+    final byteRate = sampleRate * blockAlign;
+    final dataLength = pcmBytes.length;
+    final bytes = Uint8List(dataLength + wavHeaderSize);
+    final data = ByteData.sublistView(bytes);
+    const waveOffset = 8;
+    const formatOffset = 12;
+    const dataOffset = 36;
+    const fmtChunkSizeOffset = 16;
 
-@visibleForTesting
-Uint8List pcm16ToWav(
-  Uint8List pcmBytes, {
-  required int sampleRate,
-  required int channels,
-}) {
-  const bitsPerSample = 16;
-  final blockAlign = channels * bitsPerSample ~/ 8;
-  final byteRate = sampleRate * blockAlign;
-  final dataLength = pcmBytes.length;
-  final bytes = Uint8List(dataLength + 44);
-  final data = ByteData.sublistView(bytes);
+    bytes
+      ..setAll(0, 'RIFF'.codeUnits)
+      ..setAll(waveOffset, 'WAVE'.codeUnits)
+      ..setAll(formatOffset, 'fmt '.codeUnits)
+      ..setAll(dataOffset, 'data'.codeUnits)
+      ..setAll(wavHeaderSize, pcmBytes);
+    data
+      ..setUint32(4, dataLength + dataChunkOffset, Endian.little)
+      ..setUint32(fmtChunkSizeOffset, fmtChunkSize, Endian.little)
+      ..setUint16(20, pcmFormat, Endian.little)
+      ..setUint16(22, channels, Endian.little)
+      ..setUint32(24, sampleRate, Endian.little)
+      ..setUint32(28, byteRate, Endian.little)
+      ..setUint16(32, blockAlign, Endian.little)
+      ..setUint16(34, bitsPerSample, Endian.little)
+      ..setUint32(40, dataLength, Endian.little);
 
-  bytes
-    ..setAll(0, 'RIFF'.codeUnits)
-    ..setAll(8, 'WAVE'.codeUnits)
-    ..setAll(12, 'fmt '.codeUnits)
-    ..setAll(36, 'data'.codeUnits)
-    ..setAll(44, pcmBytes);
-  data
-    ..setUint32(4, dataLength + 36, Endian.little)
-    ..setUint32(16, 16, Endian.little)
-    ..setUint16(20, 1, Endian.little)
-    ..setUint16(22, channels, Endian.little)
-    ..setUint32(24, sampleRate, Endian.little)
-    ..setUint32(28, byteRate, Endian.little)
-    ..setUint16(32, blockAlign, Endian.little)
-    ..setUint16(34, bitsPerSample, Endian.little)
-    ..setUint32(40, dataLength, Endian.little);
-
-  return bytes;
+    return bytes;
+  }
 }

@@ -8,9 +8,9 @@ part 'tools_group_entity.freezed.dart';
 /// Tools groups organize related tools together, such as tools from
 /// a single MCP server.
 @freezed
-abstract class ToolsGroupEntity with _$ToolsGroupEntity {
+abstract class const ToolsGroupEntity._() with _$ToolsGroupEntity {
   /// Creates a new ToolsGroupEntity instance.
-  const factory ToolsGroupEntity({
+  const factory({
     /// Unique ID of this tools group record in the database.
     required String id,
 
@@ -36,7 +36,6 @@ abstract class ToolsGroupEntity with _$ToolsGroupEntity {
     /// If set, this group represents tools from an MCP server.
     String? mcpServerId,
   }) = _ToolsGroupEntity;
-  const ToolsGroupEntity._();
 
   /// Returns true if this group is linked to an MCP server.
   bool get isMcpGroup => mcpServerId?.isNotEmpty ?? false;
@@ -44,9 +43,9 @@ abstract class ToolsGroupEntity with _$ToolsGroupEntity {
 
 /// Entity for creating/updating tools group settings.
 @freezed
-abstract class ToolsGroupToCreate with _$ToolsGroupToCreate {
+abstract class const ToolsGroupToCreate._() with _$ToolsGroupToCreate {
   /// Creates a new ToolsGroupToCreate instance.
-  const factory ToolsGroupToCreate({
+  const factory({
     /// Name of the tools group.
     required String name,
 
@@ -59,7 +58,6 @@ abstract class ToolsGroupToCreate with _$ToolsGroupToCreate {
     /// Optional reference to the MCP server this group belongs to.
     String? mcpServerId,
   }) = _ToolsGroupToCreate;
-  const ToolsGroupToCreate._();
 
   /// Returns true if the name is valid.
   bool get hasValidName => name.isNotEmpty;

@@ -4,7 +4,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
@@ -15,11 +15,9 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required this.onFetch});
-
-  final Future<ResponseBody> Function(RequestOptions options) onFetch;
-
+final class _FakeHttpClientAdapter({
+  required final Future<ResponseBody> Function(RequestOptions options) onFetch,
+}) implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -466,6 +464,52 @@ void main() {
       },
     );
 
+    test(
+      'forceRefresh stores a generic error for invalid token responses',
+      () async {
+        final dio = Dio()
+          ..httpClientAdapter = _FakeHttpClientAdapter(
+            onFetch: (_) async {
+              return ResponseBody.fromString(
+                jsonEncode({'access_token': 123}),
+                200,
+                headers: {
+                  Headers.contentTypeHeader: [Headers.jsonContentType],
+                },
+              );
+            },
+          );
+        final fixture = await createFixture();
+        addTearDown(fixture.close);
+        final service = OAuthCredentialService(
+          fixture.serviceConnectionRepository,
+          dio: dio,
+        );
+        final credentialId = await _insertOAuthCredential(
+          fixture,
+          secret: const ServiceConnectionSecretOAuth2(
+            accessToken: 'access',
+            refreshToken: 'refresh',
+          ),
+          metadata: const ServiceConnectionMetadata(
+            tokenEndpoint: 'https://1.1.1.1/token',
+          ),
+          expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
+        );
+
+        await expectLater(
+          service.forceRefresh(credentialId),
+          throwsA(isA<FormatException>()),
+        );
+
+        final row = await (fixture.database.select(
+          fixture.database.serviceConnections,
+        )..where((tbl) => tbl.id.equals(credentialId))).getSingle();
+        expect(row.authStatus, ServiceConnectionAuthStatus.needsReauth);
+        expect(row.lastAuthError, 'OAuth refresh response was invalid.');
+      },
+    );
+
     test('getValidAccessToken throws when connection is missing', () async {
       final fixture = await createFixture();
       addTearDown(fixture.close);
@@ -551,22 +595,13 @@ Future<String> _insertOAuthCredential(
   return row.id;
 }
 
-class _Fixture {
-  const _Fixture({
-    required this.database,
-    required this.encryption,
-    required this.workspaceId,
-  });
-
-  final AppDatabase database;
-  final EncryptionService encryption;
-  final String workspaceId;
-
+class const _Fixture({
+  required final AppDatabase database,
+  required final EncryptionService encryption,
+  required final String workspaceId,
+}) {
   ServiceConnectionRepository get serviceConnectionRepository {
-    return ServiceConnectionRepository(
-      database,
-      encryption,
-    );
+    return ServiceConnectionRepository(database, encryption);
   }
 
   Future<void> close() {
@@ -574,8 +609,8 @@ class _Fixture {
   }
 }
 
-class _FakeSecretKeyManager extends SecretKeyManager {
-  _FakeSecretKeyManager() : super();
+class _FakeSecretKeyManager() extends SecretKeyManager {
+  this : super();
 
   @override
   Future<SecretKey> getOrCreateSecretKey() async {

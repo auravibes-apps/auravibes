@@ -16,24 +16,19 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 ///
 /// This is a more compact version of the full WorkspaceToolCard,
 /// designed for use within collapsible group cards.
-class ToolItemRow extends HookConsumerWidget {
-  const ToolItemRow({
-    required this.tool,
-    required this.workspaceId,
-    this.showDeleteButton = true,
-    super.key,
-  });
-
+class const ToolItemRow({
   /// The tool to display.
-  final WorkspaceToolEntity tool;
-  final String workspaceId;
+  required final WorkspaceToolEntity tool,
+  required final String workspaceId,
 
   /// Whether to show the delete button.
   /// Should be false for MCP tools (they can't be individually deleted).
-  final bool showDeleteButton;
-
+  final bool showDeleteButton = true,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    const iconSize = 36.0;
     final isExpanded = useState(false);
     final isEnabled = tool.isEnabled;
     final permissionMode = tool.permissionMode;
@@ -52,13 +47,11 @@ class ToolItemRow extends HookConsumerWidget {
                       ? context.auraColors.primary.withValues(alpha: 0.1)
                       : context.auraColors.surfaceVariant,
                   borderRadius: BorderRadius.all(
-                    Radius.circular(
-                      context.auraTheme.fromBorderRadius(.sm),
-                    ),
+                    Radius.circular(context.auraTheme.fromBorderRadius(.sm)),
                   ),
                 ),
-                width: 36,
-                height: 36,
+                width: iconSize,
+                height: iconSize,
                 child: Center(
                   child: AuraText(
                     child: tool.getIconWidget(),
@@ -86,11 +79,7 @@ class ToolItemRow extends HookConsumerWidget {
               ),
               AuraSwitch(
                 value: isEnabled,
-                onChanged: (value) {
-                  ref
-                      .read(workspaceToolsProvider(workspaceId).notifier)
-                      .setToolEnabled(tool.id, isEnabled: value);
-                },
+                onChanged: (value) => _setToolEnabled(ref, value),
                 size: AuraSwitchSize.sm,
               ),
               AuraIconButton.custom(
@@ -110,7 +99,7 @@ class ToolItemRow extends HookConsumerWidget {
           if (isExpanded.value)
             Padding(
               padding: EdgeInsets.only(
-                left: 36 + context.auraTheme.fromSpacing(.sm),
+                left: iconSize + context.auraTheme.fromSpacing(.sm),
                 top: context.auraTheme.fromSpacing(.sm),
               ),
               child: _ToolOptions(
@@ -126,24 +115,22 @@ class ToolItemRow extends HookConsumerWidget {
       ),
     );
   }
+
+  void _setToolEnabled(WidgetRef ref, bool value) {
+    ref
+        .read(workspaceToolsProvider(workspaceId).notifier)
+        .setToolEnabled(tool.id, isEnabled: value);
+  }
 }
 
 /// Options section for an expanded tool item.
-class _ToolOptions extends HookConsumerWidget {
-  const _ToolOptions({
-    required this.tool,
-    required this.workspaceId,
-    required this.isEnabled,
-    required this.permissionMode,
-    required this.showDeleteButton,
-  });
-
-  final WorkspaceToolEntity tool;
-  final String workspaceId;
-  final bool isEnabled;
-  final ToolPermissionMode permissionMode;
-  final bool showDeleteButton;
-
+class const _ToolOptions({
+  required final WorkspaceToolEntity tool,
+  required final String workspaceId,
+  required final bool isEnabled,
+  required final ToolPermissionMode permissionMode,
+  required final bool showDeleteButton,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaceTool = tool;
@@ -173,14 +160,7 @@ class _ToolOptions extends HookConsumerWidget {
                   ),
                 ],
                 selectedValue: permissionMode,
-                onChanged: (mode) {
-                  ref
-                      .read(workspaceToolsProvider(workspaceId).notifier)
-                      .setToolPermissionMode(
-                        workspaceTool.id,
-                        permissionMode: mode,
-                      );
-                },
+                onChanged: (mode) => _setPermissionMode(ref, mode),
                 size: AuraButtonGroupSize.sm,
               ),
             ],
@@ -214,12 +194,20 @@ class _ToolOptions extends HookConsumerWidget {
     );
   }
 
+  void _setPermissionMode(WidgetRef ref, ToolPermissionMode? mode) {
+    if (mode == null) return;
+
+    ref
+        .read(workspaceToolsProvider(workspaceId).notifier)
+        .setToolPermissionMode(tool.id, permissionMode: mode);
+  }
+
   Future<void> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
     WorkspaceToolEntity workspaceTool,
   ) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.tools_screen_remove_tool_title),
       message: const TextLocale(LocaleKeys.tools_screen_remove_tool_confirm),

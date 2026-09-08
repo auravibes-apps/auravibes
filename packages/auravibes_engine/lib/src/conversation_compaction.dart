@@ -20,15 +20,10 @@ const conversationCompactionRequestPrompt =
     'Please create a comprehensive summary of the above conversation. '
     'Preserve all goals, decisions, technical details, and current status.';
 
-class ConversationCompactionMessage {
-  const ConversationCompactionMessage({
-    required this.role,
-    required this.content,
-  });
-
-  final String role;
-  final String content;
-}
+class const ConversationCompactionMessage({
+  required final String role,
+  required final String content,
+});
 
 List<ConversationCompactionMessage> buildConversationCompactionMessages(
   Iterable<ConversationCompactionMessage> history,

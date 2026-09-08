@@ -17,16 +17,81 @@ import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_app/services/tools/native_tool_type.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart' as hooks;
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/framework.dart' show Override;
 import 'package:rxdart/rxdart.dart';
+
+ProviderContainer _pendingToolContainer({List<Override> overrides = const []}) {
+  return ProviderContainer(
+    overrides: [
+      workspaceSessionForRouteProvider.overrideWith(
+        (_, workspaceId) =>
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
+      ),
+      loadConversationToolSpecsUsecaseProvider.overrideWith(
+        (_, _) => const _FakeLoadConversationToolSpecsUsecase(),
+      ),
+      ...overrides,
+    ],
+  );
+}
+
+class const _FakeLoadConversationToolSpecsUsecase()
+    implements LoadConversationToolSpecsUsecase {
+  @override
+  Future<List<ToolSpec>> call({
+    required String conversationId,
+    required String workspaceId,
+  }) async => (await buildCatalog(
+    conversationId: conversationId,
+    workspaceId: workspaceId,
+  )).specs;
+
+  @override
+  Future<ToolCatalog<ResolvedTool>> buildCatalog({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
+    return buildToolCatalog([
+      ToolCatalogCandidate.external(
+        spec: ToolSpec(
+          name: 'built_in_calc_calculator',
+          description: 'Calculator',
+          inputJsonSchema: {},
+        ),
+        target: ResolvedTool.builtIn(
+          tableId: 'calc',
+          toolIdentifier: 'calculator',
+          tooltype: UserToolType.calculator,
+        ),
+        sourceId: 'calc',
+      ),
+      ToolCatalogCandidate.external(
+        spec: ToolSpec(
+          name: 'native_ws-tool-url_url',
+          description: 'URL',
+          inputJsonSchema: {},
+        ),
+        target: ResolvedTool.native(
+          tableId: 'url',
+          nativeToolType: NativeToolType.url,
+        ),
+        sourceId: 'url',
+      ),
+    ]);
+  }
+}
 
 MessageToolCallEntity _pendingToolCall({
   required String id,
@@ -57,15 +122,15 @@ MessageEntity _assistantMessage({
   );
 }
 
-class _FakeResolveToolApprovalDecisionUsecase
-    extends ResolveToolApprovalDecisionUsecase {
-  _FakeResolveToolApprovalDecisionUsecase(this._decisions)
+class _FakeResolveToolApprovalDecisionUsecase(
+  final Map<String, ToolApprovalDecision> _decisions,
+) extends ResolveToolApprovalDecisionUsecase {
+  this
     : super(
         conversationToolsRepository: _NoOpConversationToolsRepository(),
         toolsGroupsRepository: _NoOpToolsGroupsRepository(),
         workspaceToolsRepository: _NoOpWorkspaceToolsRepository(),
       );
-  final Map<String, ToolApprovalDecision> _decisions;
 
   @override
   Future<ToolApprovalDecision> call({
@@ -129,11 +194,9 @@ class _StreamingMessageRepository implements MessageRepository {
   Null noSuchMethod(Invocation invocation) => null;
 }
 
-class _StaticMessageRepository implements MessageRepository {
-  const _StaticMessageRepository(this._messagesByConversationId);
-
-  final Map<String, List<MessageEntity>> _messagesByConversationId;
-
+class const _StaticMessageRepository(
+  final Map<String, List<MessageEntity>> _messagesByConversationId,
+) implements MessageRepository {
   @override
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
@@ -170,67 +233,62 @@ class _StaticMessageRepository implements MessageRepository {
 }
 
 void main() {
-  testWidgets(
-    'updates from real chatMessagesProvider without overlapping '
-    'scheduler tasks',
-    (tester) async {
-      final repository = _StreamingMessageRepository();
-      addTearDown(repository.dispose);
+  testWidgets('updates pending calls from chat provider', (tester) async {
+    final repository = _StreamingMessageRepository();
+    addTearDown(repository.dispose);
 
-      await tester.pumpWidget(
-        hooks.ProviderScope(
-          overrides: [
-            workspaceSessionProvider.overrideWithValue(
-              const WorkspaceSession(
-                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
-              ),
+    await tester.pumpWidget(
+      hooks.ProviderScope(
+        overrides: [
+          workspaceSessionProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
             ),
-            workspaceSessionForRouteProvider('ws-1').overrideWith(
-              (_) async => const WorkspaceSession(
-                LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-              ),
+          ).overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
             ),
-            conversationSelectedProvider.overrideWithValue('conv-1'),
-            childConversationsStreamProvider(
-              'ws-1',
-              parentConversationId: 'conv-1',
-            ).overrideWithValue(const AsyncValue.data([])),
-            conversationByIdStreamProvider(
-              'ws-1',
-              conversationId: 'conv-1',
-            ).overrideWithValue(const AsyncValue.data(null)),
-            messageRepositoryProvider.overrideWithValue(repository),
-          ],
-          child: hooks.Consumer(
-            builder: (context, ref, child) {
-              final pendingCalls = ref.watch(
-                pendingToolCallsProvider('ws-1', 'conv-1'),
-              );
-
-              return Directionality(
-                textDirection: TextDirection.ltr,
-                child: Text('${pendingCalls.value?.length ?? 0}'),
-              );
-            },
           ),
-        ),
-      );
-
-      repository
-        ..emit(const <MessageEntity>[])
-        ..emit([
-          _assistantMessage(
-            id: 'msg-1',
+          workspaceSessionForRouteProvider('ws-1').overrideWith(
+            (_) async => const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ),
+          conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            'ws-1',
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
+          conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'conv-1',
-          ),
-        ]);
-      await tester.pump();
-      await tester.pump();
+          ).overrideWithValue(const AsyncValue.data(null)),
+          messageRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: hooks.Consumer(
+          builder: (context, ref, child) {
+            final pendingCalls = ref.watch(
+              pendingToolCallsProvider('ws-1', 'conv-1'),
+            );
 
-      expect(tester.takeException(), isNull);
-      expect(find.text('0'), findsOneWidget);
-    },
-  );
+            return Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text('${pendingCalls.value?.length ?? 0}'),
+            );
+          },
+        ),
+      ),
+    );
+
+    repository
+      ..emit(const <MessageEntity>[])
+      ..emit([_assistantMessage(id: 'msg-1', conversationId: 'conv-1')]);
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('0'), findsOneWidget);
+  });
 
   testWidgets(
     'streams assistant response through real message providers without '
@@ -243,7 +301,11 @@ void main() {
       await tester.pumpWidget(
         hooks.ProviderScope(
           overrides: [
-            workspaceSessionProvider.overrideWithValue(
+            workspaceSessionProvider(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ).overrideWithValue(
               const WorkspaceSession(
                 LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
               ),
@@ -315,7 +377,7 @@ void main() {
   );
 
   group('pendingToolCallsProvider', () {
-    var container = ProviderContainer();
+    var container = _pendingToolContainer();
 
     tearDown(() {
       container.dispose();
@@ -339,21 +401,22 @@ void main() {
         ),
       ];
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
-            const WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-            ),
+          workspaceSessionProvider(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+          ).overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
           ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(const AsyncValue.data([])),
-          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
-            AsyncValue<List<MessageEntity>>.data(messages),
-          ),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
           conversationByIdStreamProvider(
             'ws-1',
             conversationId: 'conv-1',
@@ -412,21 +475,22 @@ void main() {
         ),
       ];
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
-            const WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-            ),
+          workspaceSessionProvider(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+          ).overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
           ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(const AsyncValue.data([])),
-          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
-            AsyncValue<List<MessageEntity>>.data(messages),
-          ),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
           conversationByIdStreamProvider(
             'ws-1',
             conversationId: 'conv-1',
@@ -493,27 +557,26 @@ void main() {
         parentConversationId: 'conv-1',
       );
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
-            const WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-            ),
+          workspaceSessionProvider(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+          ).overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
           ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(AsyncValue.data([childConversation])),
-          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
-            const AsyncValue<List<MessageEntity>>.data([]),
-          ),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(const AsyncValue<List<MessageEntity>>.data([])),
           chatMessagesByConversationProvider(
             'ws-1',
             'child-1',
-          ).overrideWithValue(
-            AsyncValue.data(childMessages),
-          ),
+          ).overrideWithValue(AsyncValue.data(childMessages)),
           conversationByIdStreamProvider(
             'ws-1',
             conversationId: 'child-1',
@@ -567,16 +630,17 @@ void main() {
         ),
       ];
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(const AsyncValue.data([])),
-          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
-            AsyncValue<List<MessageEntity>>.data(messages),
-          ),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
           conversationByIdStreamProvider(
             'ws-1',
             conversationId: 'conv-1',
@@ -624,16 +688,17 @@ void main() {
         ),
       ];
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(const AsyncValue.data([])),
-          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
-            AsyncValue<List<MessageEntity>>.data(messages),
-          ),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
           conversationByIdStreamProvider(
             'ws-1',
             conversationId: 'conv-1',
@@ -673,274 +738,250 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test(
-      'T025: re-evaluates when decision use case changes '
-      'from needsConfirmation to granted',
-      () async {
-        final messages = [
-          _assistantMessage(
-            id: 'msg-1',
+    test('T025: reevaluates when decision use case changes', () async {
+      final messages = [
+        _assistantMessage(
+          id: 'msg-1',
+          conversationId: 'conv-1',
+          toolCalls: [
+            _pendingToolCall(id: 'tc-1', name: 'native_ws-tool-url_url'),
+          ],
+        ),
+      ];
+
+      final needsConfirmUseCase = _FakeResolveToolApprovalDecisionUsecase({
+        'tc-1': const ToolApprovalDecision(
+          toolCallId: 'tc-1',
+          permissionResult: ToolPermissionResult.needsConfirmation,
+          permissionTableId: 'url',
+        ),
+      });
+
+      final grantedUseCase = _FakeResolveToolApprovalDecisionUsecase({
+        'tc-1': const ToolApprovalDecision(
+          toolCallId: 'tc-1',
+          permissionResult: ToolPermissionResult.granted,
+          permissionTableId: 'url',
+        ),
+      });
+
+      container = _pendingToolContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            'ws-1',
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
+          conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'conv-1',
-            toolCalls: [
-              _pendingToolCall(
-                id: 'tc-1',
-                name: 'native_ws-tool-url_url',
-              ),
-            ],
-          ),
-        ];
-
-        final needsConfirmUseCase = _FakeResolveToolApprovalDecisionUsecase({
-          'tc-1': const ToolApprovalDecision(
-            toolCallId: 'tc-1',
-            permissionResult: ToolPermissionResult.needsConfirmation,
-            permissionTableId: 'url',
-          ),
-        });
-
-        final grantedUseCase = _FakeResolveToolApprovalDecisionUsecase({
-          'tc-1': const ToolApprovalDecision(
-            toolCallId: 'tc-1',
-            permissionResult: ToolPermissionResult.granted,
-            permissionTableId: 'url',
-          ),
-        });
-
-        container = ProviderContainer(
-          overrides: [
-            conversationSelectedProvider.overrideWithValue('conv-1'),
-            childConversationsStreamProvider(
-              'ws-1',
-              parentConversationId: 'conv-1',
-            ).overrideWithValue(const AsyncValue.data([])),
-            chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
-              AsyncValue<List<MessageEntity>>.data(messages),
-            ),
-            conversationByIdStreamProvider(
-              'ws-1',
-              conversationId: 'conv-1',
-            ).overrideWithValue(
-              AsyncValue<ConversationEntity?>.data(
-                ConversationEntity(
-                  id: 'conv-1',
-                  title: 'Test',
-                  workspaceId: 'ws-1',
-                  isPinned: false,
-                  createdAt: DateTime(2026),
-                  updatedAt: DateTime(2026),
-                ),
+          ).overrideWithValue(
+            AsyncValue<ConversationEntity?>.data(
+              ConversationEntity(
+                id: 'conv-1',
+                title: 'Test',
+                workspaceId: 'ws-1',
+                isPinned: false,
+                createdAt: DateTime(2026),
+                updatedAt: DateTime(2026),
               ),
             ),
-            resolveToolApprovalDecisionUsecaseProvider(
-              'ws-1',
-            ).overrideWithValue(
-              needsConfirmUseCase,
-            ),
-          ],
-        );
+          ),
+          resolveToolApprovalDecisionUsecaseProvider('ws-1')
+              .overrideWithValue(needsConfirmUseCase),
+        ],
+      );
 
-        final first = await container.read(
-          pendingToolCallsProvider('ws-1', 'conv-1').future,
-        );
-        expect(first.length, 1);
-        expect(first.firstOrNull?.toolCall.id, 'tc-1');
+      final first = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
+      expect(first.length, 1);
+      expect(first.firstOrNull?.toolCall.id, 'tc-1');
 
-        container.dispose();
+      container.dispose();
 
-        container = ProviderContainer(
-          overrides: [
-            conversationSelectedProvider.overrideWithValue('conv-1'),
-            childConversationsStreamProvider(
-              'ws-1',
-              parentConversationId: 'conv-1',
-            ).overrideWithValue(const AsyncValue.data([])),
-            chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
-              AsyncValue<List<MessageEntity>>.data(messages),
-            ),
-            conversationByIdStreamProvider(
-              'ws-1',
-              conversationId: 'conv-1',
-            ).overrideWithValue(
-              AsyncValue<ConversationEntity?>.data(
-                ConversationEntity(
-                  id: 'conv-1',
-                  title: 'Test',
-                  workspaceId: 'ws-1',
-                  isPinned: false,
-                  createdAt: DateTime(2026),
-                  updatedAt: DateTime(2026),
-                ),
+      container = _pendingToolContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            'ws-1',
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
+          conversationByIdStreamProvider(
+            'ws-1',
+            conversationId: 'conv-1',
+          ).overrideWithValue(
+            AsyncValue<ConversationEntity?>.data(
+              ConversationEntity(
+                id: 'conv-1',
+                title: 'Test',
+                workspaceId: 'ws-1',
+                isPinned: false,
+                createdAt: DateTime(2026),
+                updatedAt: DateTime(2026),
               ),
             ),
-            resolveToolApprovalDecisionUsecaseProvider(
-              'ws-1',
-            ).overrideWithValue(
-              grantedUseCase,
-            ),
-          ],
-        );
+          ),
+          resolveToolApprovalDecisionUsecaseProvider('ws-1')
+              .overrideWithValue(grantedUseCase),
+        ],
+      );
 
-        final second = await container.read(
-          pendingToolCallsProvider('ws-1', 'conv-1').future,
-        );
-        expect(second, isEmpty);
-      },
-    );
+      final second = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
+      expect(second, isEmpty);
+    });
 
-    test(
-      'T026: 20 consecutive approved-tool updates produce '
-      'zero approval-card entries',
-      () async {
-        final toolCalls = List.generate(
+    test('T026: handles 20 approved-tool updates', () async {
+      final toolCalls = List.generate(
+        20,
+        (i) => _pendingToolCall(id: 'tc-$i', name: 'built_in_calc_calculator'),
+      );
+
+      final messages = [
+        _assistantMessage(
+          id: 'msg-1',
+          conversationId: 'conv-1',
+          toolCalls: toolCalls,
+        ),
+      ];
+
+      final decisions = Map.fromEntries(
+        List.generate(
           20,
-          (i) => _pendingToolCall(
-            id: 'tc-$i',
-            name: 'built_in_calc_calculator',
+          (i) => MapEntry(
+            'tc-$i',
+            ToolApprovalDecision(
+              toolCallId: 'tc-$i',
+              permissionResult: ToolPermissionResult.granted,
+              permissionTableId: 'calculator',
+            ),
           ),
-        );
+        ),
+      );
 
-        final messages = [
-          _assistantMessage(
-            id: 'msg-1',
+      container = _pendingToolContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            'ws-1',
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
+          conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'conv-1',
-            toolCalls: toolCalls,
-          ),
-        ];
-
-        final decisions = Map.fromEntries(
-          List.generate(
-            20,
-            (i) => MapEntry(
-              'tc-$i',
-              ToolApprovalDecision(
-                toolCallId: 'tc-$i',
-                permissionResult: ToolPermissionResult.granted,
-                permissionTableId: 'calculator',
+          ).overrideWithValue(
+            AsyncValue<ConversationEntity?>.data(
+              ConversationEntity(
+                id: 'conv-1',
+                title: 'Test',
+                workspaceId: 'ws-1',
+                isPinned: false,
+                createdAt: DateTime(2026),
+                updatedAt: DateTime(2026),
               ),
             ),
           ),
-        );
+          resolveToolApprovalDecisionUsecaseProvider('ws-1').overrideWithValue(
+            _FakeResolveToolApprovalDecisionUsecase(decisions),
+          ),
+        ],
+      );
 
-        container = ProviderContainer(
-          overrides: [
-            conversationSelectedProvider.overrideWithValue('conv-1'),
-            childConversationsStreamProvider(
-              'ws-1',
-              parentConversationId: 'conv-1',
-            ).overrideWithValue(const AsyncValue.data([])),
-            chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
-              AsyncValue<List<MessageEntity>>.data(messages),
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
+      expect(result, isEmpty);
+    });
+
+    test('T027: filters completed and disabled tools', () async {
+      final messages = [
+        _assistantMessage(
+          id: 'msg-1',
+          conversationId: 'conv-1',
+          toolCalls: [
+            const MessageToolCallEntity(
+              id: 'tc-completed',
+              name: 'built_in_calc_calculator',
+              argumentsRaw: '{}',
+              resultStatus: ToolCallResultStatus.success,
             ),
-            conversationByIdStreamProvider(
-              'ws-1',
-              conversationId: 'conv-1',
-            ).overrideWithValue(
-              AsyncValue<ConversationEntity?>.data(
-                ConversationEntity(
-                  id: 'conv-1',
-                  title: 'Test',
-                  workspaceId: 'ws-1',
-                  isPinned: false,
-                  createdAt: DateTime(2026),
-                  updatedAt: DateTime(2026),
-                ),
-              ),
+            const MessageToolCallEntity(
+              id: 'tc-skipped',
+              name: 'built_in_calc_calculator',
+              argumentsRaw: '{}',
+              resultStatus: ToolCallResultStatus.skippedByUser,
             ),
-            resolveToolApprovalDecisionUsecaseProvider(
-              'ws-1',
-            ).overrideWithValue(
-              _FakeResolveToolApprovalDecisionUsecase(decisions),
+            const MessageToolCallEntity(
+              id: 'tc-stopped',
+              name: 'built_in_calc_calculator',
+              argumentsRaw: '{}',
+              resultStatus: ToolCallResultStatus.stoppedByUser,
+            ),
+            _pendingToolCall(
+              id: 'tc-needs-confirm',
+              name: 'native_ws-tool-url_url',
             ),
           ],
-        );
+        ),
+      ];
 
-        final result = await container.read(
-          pendingToolCallsProvider('ws-1', 'conv-1').future,
-        );
-        expect(result, isEmpty);
-      },
-    );
-
-    test(
-      'T027: excludes completed, skipped, and disabled tools; '
-      'includes only needsConfirmation',
-      () async {
-        final messages = [
-          _assistantMessage(
-            id: 'msg-1',
+      container = _pendingToolContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            'ws-1',
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
+          conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'conv-1',
-            toolCalls: [
-              const MessageToolCallEntity(
-                id: 'tc-completed',
-                name: 'built_in_calc_calculator',
-                argumentsRaw: '{}',
-                resultStatus: ToolCallResultStatus.success,
+          ).overrideWithValue(
+            AsyncValue<ConversationEntity?>.data(
+              ConversationEntity(
+                id: 'conv-1',
+                title: 'Test',
+                workspaceId: 'ws-1',
+                isPinned: false,
+                createdAt: DateTime(2026),
+                updatedAt: DateTime(2026),
               ),
-              const MessageToolCallEntity(
-                id: 'tc-skipped',
-                name: 'built_in_calc_calculator',
-                argumentsRaw: '{}',
-                resultStatus: ToolCallResultStatus.skippedByUser,
-              ),
-              const MessageToolCallEntity(
-                id: 'tc-stopped',
-                name: 'built_in_calc_calculator',
-                argumentsRaw: '{}',
-                resultStatus: ToolCallResultStatus.stoppedByUser,
-              ),
-              _pendingToolCall(
-                id: 'tc-needs-confirm',
-                name: 'native_ws-tool-url_url',
-              ),
-            ],
+            ),
           ),
-        ];
-
-        container = ProviderContainer(
-          overrides: [
-            conversationSelectedProvider.overrideWithValue('conv-1'),
-            childConversationsStreamProvider(
-              'ws-1',
-              parentConversationId: 'conv-1',
-            ).overrideWithValue(const AsyncValue.data([])),
-            chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
-              AsyncValue<List<MessageEntity>>.data(messages),
-            ),
-            conversationByIdStreamProvider(
-              'ws-1',
-              conversationId: 'conv-1',
-            ).overrideWithValue(
-              AsyncValue<ConversationEntity?>.data(
-                ConversationEntity(
-                  id: 'conv-1',
-                  title: 'Test',
-                  workspaceId: 'ws-1',
-                  isPinned: false,
-                  createdAt: DateTime(2026),
-                  updatedAt: DateTime(2026),
-                ),
+          resolveToolApprovalDecisionUsecaseProvider('ws-1').overrideWithValue(
+            _FakeResolveToolApprovalDecisionUsecase({
+              'tc-needs-confirm': const ToolApprovalDecision(
+                toolCallId: 'tc-needs-confirm',
+                permissionResult: ToolPermissionResult.needsConfirmation,
+                permissionTableId: 'url',
               ),
-            ),
-            resolveToolApprovalDecisionUsecaseProvider(
-              'ws-1',
-            ).overrideWithValue(
-              _FakeResolveToolApprovalDecisionUsecase({
-                'tc-needs-confirm': const ToolApprovalDecision(
-                  toolCallId: 'tc-needs-confirm',
-                  permissionResult: ToolPermissionResult.needsConfirmation,
-                  permissionTableId: 'url',
-                ),
-              }),
-            ),
-          ],
-        );
+            }),
+          ),
+        ],
+      );
 
-        final result = await container.read(
-          pendingToolCallsProvider('ws-1', 'conv-1').future,
-        );
-        expect(result.length, 1);
-        expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
-      },
-    );
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
+      expect(result.length, 1);
+      expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
+    });
   });
 }

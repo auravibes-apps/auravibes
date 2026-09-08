@@ -10,12 +10,13 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
+
 import '../../../features/workspace_state/models/workspace_resource_kind.dart'
-    as _i2;
+    as _iz7spkcy;
 
 abstract class WorkspaceResource
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   WorkspaceResource._({
     this.id,
     required this.workspaceId,
@@ -31,7 +32,7 @@ abstract class WorkspaceResource
   factory WorkspaceResource({
     int? id,
     required int workspaceId,
-    required _i2.WorkspaceResourceKind resourceKind,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
     required String resourceId,
     required String data,
     required int revision,
@@ -44,21 +45,21 @@ abstract class WorkspaceResource
     return WorkspaceResource(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
-      resourceKind: _i2.WorkspaceResourceKind.fromJson(
+      resourceKind: _iz7spkcy.WorkspaceResourceKind.fromJson(
         (jsonSerialization['resourceKind'] as String),
       ),
       resourceId: jsonSerialization['resourceId'] as String,
       data: jsonSerialization['data'] as String,
       revision: jsonSerialization['revision'] as int,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+      updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -71,7 +72,7 @@ abstract class WorkspaceResource
 
   int workspaceId;
 
-  _i2.WorkspaceResourceKind resourceKind;
+  _iz7spkcy.WorkspaceResourceKind resourceKind;
 
   String resourceId;
 
@@ -86,15 +87,15 @@ abstract class WorkspaceResource
   DateTime? deletedAt;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [WorkspaceResource]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkspaceResource copyWith({
     int? id,
     int? workspaceId,
-    _i2.WorkspaceResourceKind? resourceKind,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
     String? resourceId,
     String? data,
     int? revision,
@@ -139,13 +140,11 @@ abstract class WorkspaceResource
   }
 
   static WorkspaceResourceIncludeList includeList({
-    _i1.WhereExpressionBuilder<WorkspaceResourceTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceResourceTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceResourceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
+    _is.OrderByBuilder<WorkspaceResourceTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
     WorkspaceResourceInclude? include,
   }) {
     return WorkspaceResourceIncludeList._(
@@ -153,8 +152,6 @@ abstract class WorkspaceResource
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(WorkspaceResource.t),
-      orderDescending: // ignore: deprecated_member_use_from_same_package
-          orderDescending,
       orderByList: orderByList?.call(WorkspaceResource.t),
       include: include,
     );
@@ -162,7 +159,7 @@ abstract class WorkspaceResource
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -172,7 +169,7 @@ class _WorkspaceResourceImpl extends WorkspaceResource {
   _WorkspaceResourceImpl({
     int? id,
     required int workspaceId,
-    required _i2.WorkspaceResourceKind resourceKind,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
     required String resourceId,
     required String data,
     required int revision,
@@ -193,12 +190,12 @@ class _WorkspaceResourceImpl extends WorkspaceResource {
 
   /// Returns a shallow copy of this [WorkspaceResource]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkspaceResource copyWith({
     Object? id = _Undefined,
     int? workspaceId,
-    _i2.WorkspaceResourceKind? resourceKind,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
     String? resourceId,
     String? data,
     int? revision,
@@ -221,88 +218,91 @@ class _WorkspaceResourceImpl extends WorkspaceResource {
 }
 
 class WorkspaceResourceUpdateTable
-    extends _i1.UpdateTable<WorkspaceResourceTable> {
+    extends _is.UpdateTable<WorkspaceResourceTable> {
   WorkspaceResourceUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> workspaceId(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> workspaceId(int value) => _is.ColumnValue(
     table.workspaceId,
     value,
   );
 
-  _i1.ColumnValue<_i2.WorkspaceResourceKind, _i2.WorkspaceResourceKind>
-  resourceKind(_i2.WorkspaceResourceKind value) => _i1.ColumnValue(
+  _is.ColumnValue<
+    _iz7spkcy.WorkspaceResourceKind,
+    _iz7spkcy.WorkspaceResourceKind
+  >
+  resourceKind(_iz7spkcy.WorkspaceResourceKind value) => _is.ColumnValue(
     table.resourceKind,
     value,
   );
 
-  _i1.ColumnValue<String, String> resourceId(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> resourceId(String value) => _is.ColumnValue(
     table.resourceId,
     value,
   );
 
-  _i1.ColumnValue<String, String> data(String value) => _i1.ColumnValue(
+  _is.ColumnValue<String, String> data(String value) => _is.ColumnValue(
     table.data,
     value,
   );
 
-  _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
+  _is.ColumnValue<int, int> revision(int value) => _is.ColumnValue(
     table.revision,
     value,
   );
 
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+      _is.ColumnValue(
         table.createdAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _is.ColumnValue(
         table.updatedAt,
         value,
       );
 
-  _i1.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
-      _i1.ColumnValue(
+  _is.ColumnValue<DateTime, DateTime> deletedAt(DateTime? value) =>
+      _is.ColumnValue(
         table.deletedAt,
         value,
       );
 }
 
-class WorkspaceResourceTable extends _i1.Table<int?> {
+class WorkspaceResourceTable extends _is.Table<int?> {
   WorkspaceResourceTable({super.tableRelation})
     : super(tableName: 'workspace_resource') {
     updateTable = WorkspaceResourceUpdateTable(this);
-    workspaceId = _i1.ColumnInt(
+    workspaceId = _is.ColumnInt(
       'workspaceId',
       this,
     );
-    resourceKind = _i1.ColumnEnum(
+    resourceKind = _is.ColumnEnum(
       'resourceKind',
       this,
-      _i1.EnumSerialization.byName,
+      _is.EnumSerialization.byName,
     );
-    resourceId = _i1.ColumnString(
+    resourceId = _is.ColumnString(
       'resourceId',
       this,
     );
-    data = _i1.ColumnString(
+    data = _is.ColumnString(
       'data',
       this,
     );
-    revision = _i1.ColumnInt(
+    revision = _is.ColumnInt(
       'revision',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
+    createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
     );
-    updatedAt = _i1.ColumnDateTime(
+    updatedAt = _is.ColumnDateTime(
       'updatedAt',
       this,
     );
-    deletedAt = _i1.ColumnDateTime(
+    deletedAt = _is.ColumnDateTime(
       'deletedAt',
       this,
     );
@@ -310,24 +310,24 @@ class WorkspaceResourceTable extends _i1.Table<int?> {
 
   late final WorkspaceResourceUpdateTable updateTable;
 
-  late final _i1.ColumnInt workspaceId;
+  late final _is.ColumnInt workspaceId;
 
-  late final _i1.ColumnEnum<_i2.WorkspaceResourceKind> resourceKind;
+  late final _is.ColumnEnum<_iz7spkcy.WorkspaceResourceKind> resourceKind;
 
-  late final _i1.ColumnString resourceId;
+  late final _is.ColumnString resourceId;
 
-  late final _i1.ColumnString data;
+  late final _is.ColumnString data;
 
-  late final _i1.ColumnInt revision;
+  late final _is.ColumnInt revision;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _is.ColumnDateTime createdAt;
 
-  late final _i1.ColumnDateTime updatedAt;
+  late final _is.ColumnDateTime updatedAt;
 
-  late final _i1.ColumnDateTime deletedAt;
+  late final _is.ColumnDateTime deletedAt;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     workspaceId,
     resourceKind,
@@ -340,24 +340,22 @@ class WorkspaceResourceTable extends _i1.Table<int?> {
   ];
 }
 
-class WorkspaceResourceInclude extends _i1.IncludeObject {
+class WorkspaceResourceInclude extends _is.IncludeObject {
   WorkspaceResourceInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceResource.t;
+  _is.Table<int?> get table => WorkspaceResource.t;
 }
 
-class WorkspaceResourceIncludeList extends _i1.IncludeList {
+class WorkspaceResourceIncludeList extends _is.IncludeList {
   WorkspaceResourceIncludeList._({
-    _i1.WhereExpressionBuilder<WorkspaceResourceTable>? where,
+    _is.WhereExpressionBuilder<WorkspaceResourceTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -365,10 +363,10 @@ class WorkspaceResourceIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => WorkspaceResource.t;
+  _is.Table<int?> get table => WorkspaceResource.t;
 }
 
 class WorkspaceResourceRepository {
@@ -397,24 +395,20 @@ class WorkspaceResourceRepository {
   /// );
   /// ```
   Future<List<WorkspaceResource>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceResourceTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceResourceTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceResourceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceResourceTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<WorkspaceResource>(
       where: where?.call(WorkspaceResource.t),
       orderBy: orderBy?.call(WorkspaceResource.t),
       orderByList: orderByList?.call(WorkspaceResource.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -441,23 +435,19 @@ class WorkspaceResourceRepository {
   /// );
   /// ```
   Future<WorkspaceResource?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceResourceTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceResourceTable>? where,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceResourceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<WorkspaceResourceTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<WorkspaceResource>(
       where: where?.call(WorkspaceResource.t),
       orderBy: orderBy?.call(WorkspaceResource.t),
       orderByList: orderByList?.call(WorkspaceResource.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -467,11 +457,11 @@ class WorkspaceResourceRepository {
 
   /// Finds a single [WorkspaceResource] by its [id] or null if no such row exists.
   Future<WorkspaceResource?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<WorkspaceResource>(
       id,
@@ -496,9 +486,9 @@ class WorkspaceResourceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceResource>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceResource> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
@@ -514,9 +504,9 @@ class WorkspaceResourceRepository {
   ///
   /// The returned [WorkspaceResource] will have its `id` field set.
   Future<WorkspaceResource> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceResource row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.insertRow<WorkspaceResource>(
       row,
@@ -545,12 +535,12 @@ class WorkspaceResourceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceResource>> upsert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceResource> rows, {
-    required _i1.ColumnSelections<WorkspaceResourceTable> conflictColumns,
-    _i1.ColumnSelections<WorkspaceResourceTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceResourceTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkspaceResourceTable> conflictColumns,
+    _is.ColumnSelections<WorkspaceResourceTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceResourceTable>? updateWhere,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.upsert<WorkspaceResource>(
@@ -577,12 +567,12 @@ class WorkspaceResourceRepository {
   ///
   /// The returned [WorkspaceResource] will have its `id` field set.
   Future<WorkspaceResource?> upsertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceResource row, {
-    required _i1.ColumnSelections<WorkspaceResourceTable> conflictColumns,
-    _i1.ColumnSelections<WorkspaceResourceTable>? updateColumns,
-    _i1.WhereExpressionBuilder<WorkspaceResourceTable>? updateWhere,
-    _i1.Transaction? transaction,
+    required _is.ColumnSelections<WorkspaceResourceTable> conflictColumns,
+    _is.ColumnSelections<WorkspaceResourceTable>? updateColumns,
+    _is.WhereExpressionBuilder<WorkspaceResourceTable>? updateWhere,
+    _is.Transaction? transaction,
   }) async {
     return session.db.upsertRow<WorkspaceResource>(
       row,
@@ -603,10 +593,10 @@ class WorkspaceResourceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceResource>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceResource> rows, {
-    _i1.ColumnSelections<WorkspaceResourceTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceResourceTable>? columns,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.update<WorkspaceResource>(
@@ -621,10 +611,10 @@ class WorkspaceResourceRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<WorkspaceResource> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceResource row, {
-    _i1.ColumnSelections<WorkspaceResourceTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<WorkspaceResourceTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<WorkspaceResource>(
       row,
@@ -636,11 +626,11 @@ class WorkspaceResourceRepository {
   /// Updates a single [WorkspaceResource] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<WorkspaceResource?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<WorkspaceResourceUpdateTable>
+    required _is.ColumnValueListBuilder<WorkspaceResourceUpdateTable>
     columnValues,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<WorkspaceResource>(
       id,
@@ -656,17 +646,15 @@ class WorkspaceResourceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceResource>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<WorkspaceResourceUpdateTable>
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<WorkspaceResourceUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<WorkspaceResourceTable> where,
+    required _is.WhereExpressionBuilder<WorkspaceResourceTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<WorkspaceResourceTable>? orderBy,
-    _i1.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceResourceTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.updateWhere<WorkspaceResource>(
@@ -676,8 +664,6 @@ class WorkspaceResourceRepository {
       offset: offset,
       orderBy: orderBy?.call(WorkspaceResource.t),
       orderByList: orderByList?.call(WorkspaceResource.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -695,21 +681,17 @@ class WorkspaceResourceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceResource>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<WorkspaceResource> rows, {
-    _i1.OrderByBuilder<WorkspaceResourceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<WorkspaceResourceTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.delete<WorkspaceResource>(
       rows,
       orderBy: orderBy?.call(WorkspaceResource.t),
       orderByList: orderByList?.call(WorkspaceResource.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -717,9 +699,9 @@ class WorkspaceResourceRepository {
 
   /// Deletes a single [WorkspaceResource].
   Future<WorkspaceResource> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     WorkspaceResource row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.deleteRow<WorkspaceResource>(
       row,
@@ -736,21 +718,17 @@ class WorkspaceResourceRepository {
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
   Future<List<WorkspaceResource>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceResourceTable> where,
-    _i1.OrderByBuilder<WorkspaceResourceTable>? orderBy,
-    @Deprecated('Use desc() on the orderBy column instead.')
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceResourceTable> where,
+    _is.OrderByBuilder<WorkspaceResourceTable>? orderBy,
+    _is.OrderByListBuilder<WorkspaceResourceTable>? orderByList,
+    _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
     return session.db.deleteWhere<WorkspaceResource>(
       where: where(WorkspaceResource.t),
       orderBy: orderBy?.call(WorkspaceResource.t),
       orderByList: orderByList?.call(WorkspaceResource.t),
-      orderDescending: // ignore: deprecated_member_use
-          orderDescending,
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -759,10 +737,10 @@ class WorkspaceResourceRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<WorkspaceResourceTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<WorkspaceResourceTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<WorkspaceResource>(
       where: where?.call(WorkspaceResource.t),
@@ -773,11 +751,11 @@ class WorkspaceResourceRepository {
 
   /// Acquires row-level locks on [WorkspaceResource] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<WorkspaceResourceTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<WorkspaceResourceTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<WorkspaceResource>(
       where: where(WorkspaceResource.t),

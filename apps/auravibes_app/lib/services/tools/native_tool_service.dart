@@ -10,9 +10,7 @@ class NativeToolService {
   static List<NativeToolType> getTypes() =>
       _availableTools.map((e) => e.type).toList();
 
-  static NativeToolEntity<Object, Object>? getTool(
-    NativeToolType toolType,
-  ) {
+  static NativeToolEntity<Object, Object>? getTool(NativeToolType toolType) {
     return _availableTools.firstWhereOrNull(
       (element) => element.type == toolType,
     );

@@ -11,7 +11,7 @@ import 'package:gpt_markdown/gpt_markdown.dart';
 /// messages, including different states and content types.
 class AuraMessageBubble extends StatelessWidget {
   /// Creates a Aura message bubble.
-  const AuraMessageBubble({
+  const new({
     required this.content,
     required this.isUser,
     super.key,
@@ -21,6 +21,11 @@ class AuraMessageBubble extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.maxWidth,
+    this.manageAlignment = true,
+    this.now,
+    this.imageProvider,
+    this.imageSemanticLabel = 'Image message',
+    this.imageErrorLabel = 'Failed to load image',
   });
 
   /// The content of the message.
@@ -47,78 +52,98 @@ class AuraMessageBubble extends StatelessWidget {
   /// Maximum width of the message bubble.
   final double? maxWidth;
 
+  /// Whether the bubble manages its chat-side placement.
+  ///
+  /// Set to false when a parent controls placement, such as Widgetbook's
+  /// an external alignment wrapper.
+  final bool manageAlignment;
+
+  /// Supplies the current time for deterministic timestamp rendering.
+  final DateTime Function()? now;
+
+  /// An optional local image provider used instead of [content].
+  final ImageProvider<Object>? imageProvider;
+
+  /// Semantic label for image content.
+  final String? imageSemanticLabel;
+
+  /// Semantic label shown when image content fails to load.
+  final String imageErrorLabel;
+
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final timestamp = this.timestamp;
+    final startSpacing = isUser ? AuraSpacing.xl : AuraSpacing.md;
+    final endSpacing = isUser ? AuraSpacing.md : AuraSpacing.xl;
+
+    final bubble = GestureDetector(
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: maxWidth ?? MediaQuery.sizeOf(context).width * 0.75,
+        ),
+        margin: manageAlignment
+            ? EdgeInsetsDirectional.only(
+                start: context.auraTheme.fromSpacing(startSpacing),
+                end: context.auraTheme.fromSpacing(endSpacing),
+                bottom: context.auraTheme.fromSpacing(.sm),
+              )
+            : EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.sm)),
+        child: Column(
+          crossAxisAlignment: isUser
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: _getPadding(spacing: context.auraTheme.spacing),
+              decoration: _getDecoration(
+                auraColors,
+                borderRadius: context.auraTheme.fromBorderRadius(.xl),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _AuraMessageBubbleContent(
+                    content: content,
+                    contentType: contentType,
+                    textColor: isUser
+                        ? auraColors.onPrimary
+                        : auraColors.onSurface,
+                    imageProvider: imageProvider,
+                    imageSemanticLabel: imageSemanticLabel,
+                    imageErrorLabel: imageErrorLabel,
+                  ),
+                  if (timestamp != null) ...[
+                    const AuraSizedBox(height: .xs),
+                    _AuraMessageBubbleTimestamp(
+                      timestamp: timestamp,
+                      textColor: isUser
+                          ? auraColors.onPrimary.withValues(alpha: 0.7)
+                          : auraColors.onSurfaceVariant,
+                      now: now,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (status != AuraMessageDeliveryStatus.sent) ...[
+              SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
+              AuraMessageStatus(status: status),
+            ],
+          ],
+        ),
+      ),
+      onTap: onTap,
+      onLongPress: onLongPress,
+    );
+
+    if (!manageAlignment) return bubble;
 
     return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: GestureDetector(
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: maxWidth ?? MediaQuery.sizeOf(context).width * 0.75,
-          ),
-          margin: EdgeInsets.only(
-            left: context.auraTheme.fromSpacing(
-              isUser ? .xl : .md,
-            ),
-            right: context.auraTheme.fromSpacing(
-              isUser ? .md : .xl,
-            ),
-            bottom: context.auraTheme.fromSpacing(.sm),
-          ),
-          child: Column(
-            crossAxisAlignment: isUser
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: _getPadding(
-                  spacing: context.auraTheme.spacing,
-                ),
-                decoration: _getDecoration(
-                  auraColors,
-                  borderRadius: context.auraTheme.fromBorderRadius(
-                    .xl,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _AuraMessageBubbleContent(
-                      content: content,
-                      contentType: contentType,
-                      textColor: isUser
-                          ? auraColors.onPrimary
-                          : auraColors.onSurface,
-                    ),
-                    if (timestamp != null) ...[
-                      const AuraSizedBox(height: .xs),
-                      _AuraMessageBubbleTimestamp(
-                        timestamp: timestamp,
-                        textColor: isUser
-                            ? auraColors.onPrimary.withValues(alpha: 0.7)
-                            : auraColors.onSurfaceVariant,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (status != AuraMessageDeliveryStatus.sent) ...[
-                SizedBox(
-                  height: context.auraTheme.fromSpacing(.xs) / 2,
-                ),
-                AuraMessageStatus(
-                  status: status,
-                ),
-              ],
-            ],
-          ),
-        ),
-        onTap: onTap,
-        onLongPress: onLongPress,
-      ),
+      alignment: isUser
+          ? AlignmentDirectional.centerEnd
+          : AlignmentDirectional.centerStart,
+      child: bubble,
     );
   }
 
@@ -148,18 +173,15 @@ class AuraMessageBubble extends StatelessWidget {
       border: status == AuraMessageDeliveryStatus.error
           ? Border.fromBorderSide(BorderSide(color: auraColors.error))
           : null,
-      borderRadius: BorderRadius.all(
-        Radius.circular(borderRadius),
-      ),
+      borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
       boxShadow: [
         if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
       ],
     );
   }
 
-  static String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
+  static String _formatTimestamp(DateTime timestamp, {DateTime? now}) {
+    final difference = (now ?? DateTime.now()).difference(timestamp);
 
     if (difference.inMinutes < 1) {
       return 'Just now';
@@ -173,17 +195,15 @@ class AuraMessageBubble extends StatelessWidget {
   }
 }
 
-class _AuraMessageBubbleContent extends StatelessWidget {
-  const _AuraMessageBubbleContent({
-    required this.content,
-    required this.contentType,
-    required this.textColor,
-  });
-
-  final String content;
-  final AuraMessageContentType contentType;
-  final Color textColor;
-
+class const _AuraMessageBubbleContent({
+  required final String content,
+  required final AuraMessageContentType contentType,
+  required final Color textColor,
+  required final ImageProvider<Object>? imageProvider,
+  required final String? imageSemanticLabel,
+  required final String imageErrorLabel,
+}) extends StatelessWidget {
+  static const _attachmentIconSize = 20.0;
   @override
   Widget build(BuildContext context) {
     final typography = context.auraTheme.typography;
@@ -201,43 +221,33 @@ class _AuraMessageBubbleContent extends StatelessWidget {
       ),
       AuraMessageContentType.image => ClipRRect(
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.md),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
         ),
-        child: Image.network(
-          content,
+        child: Image(
+          image: imageProvider ?? NetworkImage(content),
           errorBuilder: (context, error, stackTrace) => Container(
-            padding: EdgeInsets.all(
-              context.auraTheme.fromSpacing(.md),
-            ),
+            padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.broken_image,
-                  size: 20,
+                  size: _attachmentIconSize,
                   color: textColor,
                 ),
                 const AuraSizedBox(width: .sm),
-                Text(
-                  'Failed to load image',
-                  style: TextStyle(color: textColor),
-                ),
+                Text(imageErrorLabel, style: TextStyle(color: textColor)),
               ],
             ),
           ),
+          semanticLabel: imageSemanticLabel,
           fit: BoxFit.cover,
         ),
       ),
       AuraMessageContentType.file => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.attach_file,
-            size: 20,
-            color: textColor,
-          ),
+          Icon(Icons.attach_file, size: _attachmentIconSize, color: textColor),
           const AuraSizedBox(width: .sm),
           Flexible(
             child: Text(
@@ -256,21 +266,17 @@ class _AuraMessageBubbleContent extends StatelessWidget {
   }
 }
 
-class _AuraMessageBubbleTimestamp extends StatelessWidget {
-  const _AuraMessageBubbleTimestamp({
-    required this.timestamp,
-    required this.textColor,
-  });
-
-  final DateTime timestamp;
-  final Color textColor;
-
+class const _AuraMessageBubbleTimestamp({
+  required final DateTime timestamp,
+  required final Color textColor,
+  required final DateTime Function()? now,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final typography = context.auraTheme.typography;
 
     return Text(
-      AuraMessageBubble._formatTimestamp(timestamp),
+      AuraMessageBubble._formatTimestamp(timestamp, now: now?.call()),
       style: TextStyle(
         color: textColor,
         fontSize: typography.fontSizeXs,

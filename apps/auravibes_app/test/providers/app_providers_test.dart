@@ -1,3 +1,4 @@
+import 'package:auravibes_app/app_storage_namespace.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -9,9 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(
-      () => DatabaseConnection(
-        LazyDatabase(() async => NativeDatabase.memory()),
-      ),
+      () =>
+          DatabaseConnection(LazyDatabase(() async => NativeDatabase.memory())),
     ),
   );
 }
@@ -71,7 +71,7 @@ void main() {
 
       expect(
         AppDatabase.databaseNameForHashSource(source),
-        AppDatabase.databaseNameForHashSource(source),
+        AppStorageNamespace.forHashSource(source),
       );
     });
 

@@ -6,11 +6,11 @@ import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/models/services/model_sync_service.dart';
 import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
-import 'package:auravibes_app/services/model_sync_service.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,16 +40,11 @@ ModelSyncService modelSyncService(Ref ref) {
     apiService: apiService,
   );
 
-  final service = ModelSyncService(
-    syncApiModelsUseCase: syncApiModelsUseCase,
-  );
+  final service = ModelSyncService(syncApiModelsUseCase: syncApiModelsUseCase);
 
-  final timer = Timer.periodic(
-    const Duration(hours: 5),
-    (_) {
-      service.performFullSync();
-    },
-  );
+  final timer = Timer.periodic(const Duration(hours: 5), (_) {
+    service.performFullSync();
+  });
 
   final _ = ref.onDispose(timer.cancel);
 
@@ -66,19 +61,22 @@ Future<List<ApiModelProviderEntity>> apiModelProviders(
   );
   final providers = await catalog.getAllProviders();
   final realProviders = providers
-      .where((p) => !isOpenAICodexProvider(p.id) && p.type != null)
+      .where(
+        (p) =>
+            !ModelProviderOAuthProfiles.isCodexProvider(p.id) && p.type != null,
+      )
       .toList();
   final openAIProvider = realProviders.firstWhereOrNull(
     (provider) => provider.id == 'openai',
   );
-  if (openAIProvider == null || openAICodexClientId.isEmpty) {
+  if (openAIProvider == null || ModelProviderOAuthProfiles.clientId.isEmpty) {
     return realProviders;
   }
 
   return [
     ApiModelProviderEntity(
-      id: openAICodexProviderId,
-      name: openAICodexDisplayName,
+      id: ModelProviderOAuthProfiles.providerId,
+      name: ModelProviderOAuthProfiles.displayName,
       type: .openai,
       url: openAIProvider.url,
       doc: openAIProvider.doc,
@@ -88,6 +86,7 @@ Future<List<ApiModelProviderEntity>> apiModelProviders(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<List<ApiModelEntity>> getAllModels(
   Ref ref, {
   required String workspaceId,
@@ -96,10 +95,11 @@ Future<List<ApiModelEntity>> getAllModels(
     modelCatalogStoreProvider(workspaceId).future,
   );
 
-  return catalog.getAllModels();
+  return await catalog.getAllModels();
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<ApiModelEntity?> getModelByProviderAndModelId(
   Ref ref, {
   required String workspaceId,
@@ -110,7 +110,7 @@ Future<ApiModelEntity?> getModelByProviderAndModelId(
     modelCatalogStoreProvider(workspaceId).future,
   );
 
-  return catalog.getModelByProviderAndModelId(providerId, modelId);
+  return await catalog.getModelByProviderAndModelId(providerId, modelId);
 }
 
 @riverpod
@@ -123,5 +123,6 @@ Future<List<ApiModelEntity>> getModelsByProvider(
     modelCatalogStoreProvider(workspaceId).future,
   );
 
-  return catalog.getModelsByProvider(providerId);
+  return await catalog.getModelsByProvider(providerId);
 }
+// Top-level API/provider declarations are required by their consumers.

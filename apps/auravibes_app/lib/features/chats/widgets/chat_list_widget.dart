@@ -16,11 +16,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ChatListWidget extends ConsumerWidget {
-  const ChatListWidget({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const ChatListWidget({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatListAsync = ref.watch(
@@ -54,11 +51,8 @@ class ChatListWidget extends ConsumerWidget {
   }
 }
 
-class _ChatListEmptyState extends StatelessWidget {
-  const _ChatListEmptyState({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _ChatListEmptyState({required final String workspaceId})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -67,10 +61,7 @@ class _ChatListEmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AuraIcon(
-              Icons.chat_outlined,
-              size: AuraIconSize.extraLarge,
-            ),
+            const AuraIcon(Icons.chat_outlined, size: AuraIconSize.extraLarge),
             const SizedBox(height: 16),
             const AuraText(
               child: TextLocale(
@@ -102,12 +93,10 @@ class _ChatListEmptyState extends StatelessWidget {
   }
 }
 
-class _ChatTile extends ConsumerStatefulWidget {
-  const _ChatTile({required this.chat, required this.workspaceId});
-
-  final ConversationEntity chat;
-  final String workspaceId;
-
+class const _ChatTile({
+  required final ConversationEntity chat,
+  required final String workspaceId,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_ChatTile> createState() => _ChatTileState();
 }
@@ -119,26 +108,6 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
   void dispose() {
     _menuController.close();
     super.dispose();
-  }
-
-  Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await showDeleteConversationConfirmDialog(context);
-    if (!confirmed) return;
-
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
-    );
-    if (cloud != null) {
-      await cloud.delete(widget.chat);
-
-      return;
-    }
-
-    final _ = await ref
-        .read(conversationRepositoryProvider)
-        .deleteConversation(widget.chat.id);
-
-    return;
   }
 
   @override
@@ -183,7 +152,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                 const SizedBox(height: 4),
                 AuraText(
                   child: Text(
-                    formatRelativeTime(widget.chat.updatedAt),
+                    RelativeTimeFormatter.format(widget.chat.updatedAt),
                     overflow: TextOverflow.ellipsis,
                   ),
                   style: AuraTextStyle.bodySmall,
@@ -220,13 +189,35 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
           ),
         ],
       ),
-      onTap: () {
-        ConversationRoute(
-          workspaceId: widget.workspaceId,
-          chatId: widget.chat.id,
-        ).go(context);
-      },
+      onTap: () => _openConversation(context),
       style: AuraCardStyle.border,
     );
+  }
+
+  Future<void> _handleDelete(BuildContext context) async {
+    final confirmed = await DeleteConversationConfirmDialog.show(context);
+    if (!confirmed) return;
+
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
+    );
+    if (cloud != null) {
+      await cloud.delete(widget.chat);
+
+      return;
+    }
+
+    final _ = await ref
+        .read(conversationRepositoryProvider)
+        .deleteConversation(widget.chat.id);
+
+    return;
+  }
+
+  void _openConversation(BuildContext context) {
+    ConversationRoute(
+      workspaceId: widget.workspaceId,
+      chatId: widget.chat.id,
+    ).go(context);
   }
 }

@@ -1,36 +1,12 @@
 import 'dart:convert';
 
+import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
-class CloudAccountSession {
-  const CloudAccountSession({
-    required this.serverUrl,
-    required this.userId,
-    required this.email,
-  });
-
-  factory CloudAccountSession.fromJson(Map<String, Object?> json) {
-    return CloudAccountSession(
-      serverUrl: json['serverUrl']! as String,
-      userId: json['userId']! as String,
-      email: json['email']! as String,
-    );
-  }
-
-  final String serverUrl;
-  final String userId;
-  final String email;
-
-  Map<String, Object?> toJson() {
-    return {'serverUrl': serverUrl, 'userId': userId, 'email': email};
-  }
-}
+export 'cloud_account_session.dart';
 
 class ServerpodAuthStore {
-  ServerpodAuthStore({FlutterSecureStorage? secureStorage})
-    : _secureStorage = secureStorage ?? _defaultStorage;
-
   static const _accountIndexKey = 'serverpod_cloud_accounts_v2';
   static const _legacyAccountIndexKey = 'serverpod_cloud_accounts_v1';
   static const _preferredAccountKey = 'serverpod_preferred_account_v2';
@@ -43,21 +19,33 @@ class ServerpodAuthStore {
     ),
   );
 
+  new({
+    FlutterSecureStorage? secureStorage,
+    this.storageNamespace = 'auravibes_app',
+  }) : _secureStorage = secureStorage ?? _defaultStorage;
+  final String storageNamespace;
+
   final FlutterSecureStorage _secureStorage;
   Future<void> _indexMutation = Future.value();
+
+  bool get _usesLegacyKeys => storageNamespace == 'auravibes_app';
 
   Future<List<CloudAccountSession>> listAccounts({
     String? legacyServerUrl,
   }) async {
-    var raw = await _secureStorage.read(key: _accountIndexKey);
-    if ((raw == null || raw.isEmpty) && legacyServerUrl != null) {
+    var raw = await _secureStorage.read(key: _key(_accountIndexKey));
+    if (_usesLegacyKeys &&
+        (raw == null || raw.isEmpty) &&
+        legacyServerUrl != null) {
       final legacy = await _secureStorage.read(key: _legacyAccountIndexKey);
       if (legacy != null && legacy.isNotEmpty) {
         final decoded = jsonDecode(legacy) as List<dynamic>;
         final migrated = [
           for (final item in decoded)
             CloudAccountSession(
-              serverUrl: canonicalServerOrigin(legacyServerUrl),
+              serverUrl: CloudAccountIdentity.canonicalServerOrigin(
+                legacyServerUrl,
+              ),
               userId: (item as Map)['userId'] as String,
               email: item['email'] as String,
             ),
@@ -96,13 +84,15 @@ class ServerpodAuthStore {
               existing.serverUrl != account.serverUrl)
             existing,
         CloudAccountSession(
-          serverUrl: canonicalServerOrigin(account.serverUrl),
+          serverUrl: CloudAccountIdentity.canonicalServerOrigin(
+            account.serverUrl,
+          ),
           userId: account.userId,
           email: account.email,
         ),
       ];
       await _secureStorage.write(
-        key: _accountIndexKey,
+        key: _key(_accountIndexKey),
         value: jsonEncode([for (final item in next) item.toJson()]),
       );
     });
@@ -112,12 +102,12 @@ class ServerpodAuthStore {
     required String serverUrl,
     required String userId,
   }) async {
-    final origin = canonicalServerOrigin(serverUrl);
+    final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
     await authSuccessStorage(serverUrl: origin, userId: userId).set(null);
     await _mutateIndex(() async {
       final accounts = await listAccounts();
       await _secureStorage.write(
-        key: _accountIndexKey,
+        key: _key(_accountIndexKey),
         value: jsonEncode([
           for (final account in accounts)
             if (account.userId != userId || account.serverUrl != origin)
@@ -125,13 +115,14 @@ class ServerpodAuthStore {
         ]),
       );
     });
-    if (await preferredAccountIdentity() == accountIdentity(origin, userId)) {
-      await _secureStorage.delete(key: _preferredAccountKey);
+    if (await preferredAccountIdentity() ==
+        CloudAccountIdentity.accountIdentity(origin, userId)) {
+      await _secureStorage.delete(key: _key(_preferredAccountKey));
     }
   }
 
   Future<String?> preferredAccountIdentity() {
-    return _secureStorage.read(key: _preferredAccountKey);
+    return _secureStorage.read(key: _key(_preferredAccountKey));
   }
 
   Future<void> setPreferredAccountIdentity({
@@ -139,8 +130,8 @@ class ServerpodAuthStore {
     required String userId,
   }) {
     return _secureStorage.write(
-      key: _preferredAccountKey,
-      value: accountIdentity(serverUrl, userId),
+      key: _key(_preferredAccountKey),
+      value: CloudAccountIdentity.accountIdentity(serverUrl, userId),
     );
   }
 
@@ -151,14 +142,16 @@ class ServerpodAuthStore {
     return KeyValueClientAuthSuccessStorage(
       keyValueStorage: _SecureKeyValueStorage(
         secureStorage: _secureStorage,
-        keyPrefix: _authKey(serverUrl, userId),
-        legacyKeyPrefix: '$_legacyAuthPrefix$userId',
+        keyPrefix: _key(_authKey(serverUrl, userId)),
+        legacyKeyPrefix: _usesLegacyKeys ? '$_legacyAuthPrefix$userId' : null,
       ),
     );
   }
 
+  String _key(String key) => _usesLegacyKeys ? key : '$storageNamespace.$key';
+
   static String _authKey(String serverUrl, String userId) =>
-      '$_authPrefix${accountIdentity(serverUrl, userId)}';
+      '$_authPrefix${CloudAccountIdentity.accountIdentity(serverUrl, userId)}';
 
   Future<void> _mutateIndex(Future<void> Function() mutation) async {
     final previousMutation = _indexMutation;
@@ -180,17 +173,11 @@ class ServerpodAuthStore {
   }
 }
 
-class _SecureKeyValueStorage implements KeyValueStorage {
-  const _SecureKeyValueStorage({
-    required this._secureStorage,
-    required this._keyPrefix,
-    this._legacyKeyPrefix,
-  });
-
-  final FlutterSecureStorage _secureStorage;
-  final String _keyPrefix;
-  final String? _legacyKeyPrefix;
-
+class const _SecureKeyValueStorage({
+  required final FlutterSecureStorage _secureStorage,
+  required final String _keyPrefix,
+  final String? _legacyKeyPrefix,
+}) implements KeyValueStorage {
   @override
   Future<String?> get(String key) async {
     final storageKey = '$_keyPrefix.$key';
@@ -220,14 +207,17 @@ class _SecureKeyValueStorage implements KeyValueStorage {
   }
 }
 
-String canonicalServerOrigin(String serverUrl) {
-  final uri = Uri.parse(serverUrl);
-  if (!uri.hasScheme || uri.host.isEmpty) {
-    throw FormatException('Invalid server URL', serverUrl);
+abstract final class CloudAccountIdentity {
+  static String canonicalServerOrigin(String serverUrl) {
+    final uri = Uri.parse(serverUrl);
+    if (!uri.hasScheme || uri.host.isEmpty) {
+      throw FormatException('Invalid server URL', serverUrl);
+    }
+
+    return uri.replace(path: '').toString();
   }
 
-  return uri.replace(path: '').toString();
+  static String accountIdentity(String serverUrl, String userId) =>
+      '${Uri.encodeComponent(canonicalServerOrigin(serverUrl))}:$userId';
 }
-
-String accountIdentity(String serverUrl, String userId) =>
-    '${Uri.encodeComponent(canonicalServerOrigin(serverUrl))}:$userId';
+// Top-level API/provider declarations are required by their consumers.

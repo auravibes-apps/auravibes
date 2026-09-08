@@ -44,10 +44,7 @@ void main() {
 
     test('constructor accepts all field types', () {
       for (final type in ModelInputFieldType.values) {
-        final widget = EnhancedModelInput(
-          workspaceId: 'ws-1',
-          fieldType: type,
-        );
+        final widget = EnhancedModelInput(workspaceId: 'ws-1', fieldType: type);
         expect(widget.fieldType, type);
       }
     });

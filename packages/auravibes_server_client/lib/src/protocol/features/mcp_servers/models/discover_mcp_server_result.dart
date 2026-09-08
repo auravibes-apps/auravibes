@@ -10,12 +10,17 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import '../../../features/mcp_servers/models/mcp_server_health.dart' as _i2;
-import '../../../features/mcp_servers/models/discovered_mcp_tool.dart' as _i3;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class DiscoverMcpServerResult implements _i1.SerializableModel {
+import '../../../features/mcp_servers/models/discovered_mcp_tool.dart'
+    as _ihus3ex7;
+import '../../../features/mcp_servers/models/mcp_server_health.dart'
+    as _idve4l1s;
+
+abstract class DiscoverMcpServerResult
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   DiscoverMcpServerResult._({
     required this.health,
     this.serverName,
@@ -26,11 +31,11 @@ abstract class DiscoverMcpServerResult implements _i1.SerializableModel {
   });
 
   factory DiscoverMcpServerResult({
-    required _i2.McpServerHealth health,
+    required _idve4l1s.McpServerHealth health,
     String? serverName,
     String? serverVersion,
     String? protocolVersion,
-    required List<_i3.DiscoveredMcpTool> tools,
+    required List<_ihus3ex7.DiscoveredMcpTool> tools,
     String? errorCode,
   }) = _DiscoverMcpServerResultImpl;
 
@@ -38,20 +43,21 @@ abstract class DiscoverMcpServerResult implements _i1.SerializableModel {
     Map<String, dynamic> jsonSerialization,
   ) {
     return DiscoverMcpServerResult(
-      health: _i2.McpServerHealth.fromJson(
+      health: _idve4l1s.McpServerHealth.fromJson(
         (jsonSerialization['health'] as String),
       ),
       serverName: jsonSerialization['serverName'] as String?,
       serverVersion: jsonSerialization['serverVersion'] as String?,
       protocolVersion: jsonSerialization['protocolVersion'] as String?,
-      tools: _i4.Protocol().deserialize<List<_i3.DiscoveredMcpTool>>(
-        jsonSerialization['tools'],
-      ),
+      tools: _isctvzjc.Protocol()
+          .deserialize<List<_ihus3ex7.DiscoveredMcpTool>>(
+            jsonSerialization['tools'],
+          ),
       errorCode: jsonSerialization['errorCode'] as String?,
     );
   }
 
-  _i2.McpServerHealth health;
+  _idve4l1s.McpServerHealth health;
 
   String? serverName;
 
@@ -59,19 +65,19 @@ abstract class DiscoverMcpServerResult implements _i1.SerializableModel {
 
   String? protocolVersion;
 
-  List<_i3.DiscoveredMcpTool> tools;
+  List<_ihus3ex7.DiscoveredMcpTool> tools;
 
   String? errorCode;
 
   /// Returns a shallow copy of this [DiscoverMcpServerResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   DiscoverMcpServerResult copyWith({
-    _i2.McpServerHealth? health,
+    _idve4l1s.McpServerHealth? health,
     String? serverName,
     String? serverVersion,
     String? protocolVersion,
-    List<_i3.DiscoveredMcpTool>? tools,
+    List<_ihus3ex7.DiscoveredMcpTool>? tools,
     String? errorCode,
   });
   @override
@@ -88,8 +94,21 @@ abstract class DiscoverMcpServerResult implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'DiscoverMcpServerResult',
+      'health': health.toJson(),
+      if (serverName != null) 'serverName': serverName,
+      if (serverVersion != null) 'serverVersion': serverVersion,
+      if (protocolVersion != null) 'protocolVersion': protocolVersion,
+      'tools': tools.toJson(valueToJson: (v) => v.toJsonForProtocol()),
+      if (errorCode != null) 'errorCode': errorCode,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -97,11 +116,11 @@ class _Undefined {}
 
 class _DiscoverMcpServerResultImpl extends DiscoverMcpServerResult {
   _DiscoverMcpServerResultImpl({
-    required _i2.McpServerHealth health,
+    required _idve4l1s.McpServerHealth health,
     String? serverName,
     String? serverVersion,
     String? protocolVersion,
-    required List<_i3.DiscoveredMcpTool> tools,
+    required List<_ihus3ex7.DiscoveredMcpTool> tools,
     String? errorCode,
   }) : super._(
          health: health,
@@ -114,14 +133,14 @@ class _DiscoverMcpServerResultImpl extends DiscoverMcpServerResult {
 
   /// Returns a shallow copy of this [DiscoverMcpServerResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   DiscoverMcpServerResult copyWith({
-    _i2.McpServerHealth? health,
+    _idve4l1s.McpServerHealth? health,
     Object? serverName = _Undefined,
     Object? serverVersion = _Undefined,
     Object? protocolVersion = _Undefined,
-    List<_i3.DiscoveredMcpTool>? tools,
+    List<_ihus3ex7.DiscoveredMcpTool>? tools,
     Object? errorCode = _Undefined,
   }) {
     return DiscoverMcpServerResult(

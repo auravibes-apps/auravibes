@@ -17,7 +17,7 @@ QueryExecutor _testConnection() {
 }
 
 final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
+  new(this.createConnection);
 
   final QueryExecutor Function() createConnection;
   AppDatabase? _database;
@@ -63,10 +63,7 @@ void main() {
     });
 
     test('fromString returns sent', () {
-      expect(
-        MessageTableStatus.fromString('sent'),
-        MessageTableStatus.sent,
-      );
+      expect(MessageTableStatus.fromString('sent'), MessageTableStatus.sent);
     });
 
     test('fromString returns unfinished', () {
@@ -77,17 +74,11 @@ void main() {
     });
 
     test('fromString returns error', () {
-      expect(
-        MessageTableStatus.fromString('error'),
-        MessageTableStatus.error,
-      );
+      expect(MessageTableStatus.fromString('error'), MessageTableStatus.error);
     });
 
     test('fromString is case insensitive', () {
-      expect(
-        MessageTableStatus.fromString('SENT'),
-        MessageTableStatus.sent,
-      );
+      expect(MessageTableStatus.fromString('SENT'), MessageTableStatus.sent);
     });
 
     test('fromString throws on invalid', () {
@@ -121,9 +112,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       columns = await fixture.database
-          .customSelect(
-            'PRAGMA table_info(messages)',
-          )
+          .customSelect('PRAGMA table_info(messages)')
           .get();
     });
 
@@ -173,9 +162,7 @@ void main() {
     });
 
     test('status is not null', () {
-      final col = columns.firstWhere(
-        (r) => r.read<String>('name') == 'status',
-      );
+      final col = columns.firstWhere((r) => r.read<String>('name') == 'status');
       expect(col.read<int>('notnull'), 1);
     });
 

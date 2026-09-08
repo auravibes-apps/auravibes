@@ -1,12 +1,10 @@
-enum MessageType {
+enum MessageType(final String value) {
   text('text'),
   image('image'),
   toolCall('tool_call'),
   system('system');
 
-  const MessageType(this.value);
-
-  factory MessageType.fromString(String value) {
+  factory fromString(String value) {
     switch (value.toLowerCase()) {
       case 'text':
         return MessageType.text;
@@ -20,8 +18,6 @@ enum MessageType {
         throw ArgumentError('Invalid message type: $value');
     }
   }
-  final String value;
-
   String get displayName {
     switch (this) {
       case MessageType.text:
@@ -41,25 +37,25 @@ enum MessageType {
 /// ## Status Flow
 ///
 /// ### User Message Flow:
-/// 1. `sending` - Transient state, may be briefly persisted until confirmation
-///    from AI service
-/// 2. `sent` - Persisted to DB after successful confirmation from AI service
-/// 3. `error` - If sending fails
+/// 1. `sending`: Transient state that may be briefly persisted until
+///    confirmation from the AI service.
+/// 2. `sent`: Persisted to the database after successful confirmation from the
+///    AI service.
+/// 3. `error`: Sending failed.
 ///
 /// ### AI Response Flow:
-/// 1. `unfinished` - Persisted to DB immediately, represents "outcome unknown"
-///    - Survives app restart/crash, allows recovery of incomplete responses
-///    - In-memory streaming state is tracked separately by
-///      `MessagesStreamingNotifier`
-/// 2. `sent` - Response completed successfully
-/// 3. `error` - Response failed (partial content preserved in DB)
+/// 1. `unfinished`: Persisted to the database immediately and represents an
+///    unknown outcome. It survives app restart or a crash, allowing recovery
+///    of incomplete responses. In-memory streaming state is tracked separately
+///    by `MessagesStreamingNotifier`.
+/// 2. `sent`: Response completed successfully.
+/// 3. `error`: Response failed; partial content is preserved in the database.
 ///
 /// ### Key Distinction:
-/// - `sending` = transient state, primarily in-memory but may be briefly
-///   persisted until confirmation
-/// - `unfinished` = persisted to DB, means "pending outcome" (app could
-///   close, crash, error)
-enum MessageStatus {
+/// `sending` is transient and primarily in-memory, but may be briefly
+/// persisted until confirmation. `unfinished` is persisted to the database
+/// and means a pending outcome if the app closes, crashes, or errors.
+enum MessageStatus(final String value) {
   /// Transient state for UI feedback while actively transmitting.
   /// May be briefly persisted until confirmation from AI service.
   sending('sending'),
@@ -74,9 +70,7 @@ enum MessageStatus {
   /// Message failed - check error details in metadata.
   error('error');
 
-  const MessageStatus(this.value);
-
-  factory MessageStatus.fromString(String value) {
+  factory fromString(String value) {
     switch (value.toLowerCase()) {
       case 'sending':
         return MessageStatus.sending;
@@ -90,8 +84,6 @@ enum MessageStatus {
         throw ArgumentError('Invalid message status: $value');
     }
   }
-  final String value;
-
   String get displayName {
     switch (this) {
       case MessageStatus.sending:

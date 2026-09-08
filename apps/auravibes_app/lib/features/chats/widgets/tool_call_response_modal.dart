@@ -10,18 +10,15 @@ import 'package:flutter/material.dart';
 /// Shows the full response content in a scrollable view with markdown
 /// rendering. Used when tool call responses exceed the preview limit
 /// in the chat view.
-class ToolCallResponseModal extends StatelessWidget {
-  const ToolCallResponseModal({
-    required this.toolName,
-    required this.content,
-    super.key,
-  });
-
+class const ToolCallResponseModal({
   /// The name of the tool that generated the response.
-  final String toolName;
+  required final String toolName,
 
   /// The markdown content to display.
-  final String content;
+  required final String content,
+  super.key,
+}) extends StatelessWidget {
+  static const _dividerOpacity = 0.2;
 
   /// Shows the tool call response modal as a dialog.
   static Future<void> show(
@@ -31,10 +28,8 @@ class ToolCallResponseModal extends StatelessWidget {
   }) {
     return showDialog<void>(
       context: context,
-      builder: (context) => ToolCallResponseModal(
-        toolName: toolName,
-        content: content,
-      ),
+      builder: (context) =>
+          ToolCallResponseModal(toolName: toolName, content: content),
     );
   }
 
@@ -43,9 +38,7 @@ class ToolCallResponseModal extends StatelessWidget {
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.xl),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       child: Container(
@@ -63,16 +56,10 @@ class ToolCallResponseModal extends StatelessWidget {
             // Scrollable markdown content.
             Flexible(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(
-                  context.auraTheme.fromSpacing(.md),
-                ),
+                padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
                 child: SizedBox(
                   width: double.infinity,
-                  child: AuraText(
-                    child: GptMarkdown(
-                      content,
-                    ),
-                  ),
+                  child: AuraText(child: GptMarkdown(content)),
                 ),
               ),
             ),
@@ -86,30 +73,24 @@ class ToolCallResponseModal extends StatelessWidget {
   }
 }
 
-class _ToolCallResponseModalHeader extends StatelessWidget {
-  const _ToolCallResponseModalHeader({required this.toolName});
-
-  final String toolName;
-
+class const _ToolCallResponseModalHeader({required final String toolName})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.md),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: context.auraColors.outline.withValues(alpha: 0.2),
+            color: context.auraColors.outline.withValues(
+              alpha: ToolCallResponseModal._dividerOpacity,
+            ),
           ),
         ),
       ),
       child: Row(
         children: [
-          const AuraIcon(
-            Icons.terminal,
-            tint: AuraTint.primary,
-          ),
+          const AuraIcon(Icons.terminal, tint: AuraTint.primary),
           const AuraSizedBox(width: .sm),
           Expanded(
             child: AuraText(
@@ -127,19 +108,17 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
   }
 }
 
-class _ToolCallResponseModalFooter extends StatelessWidget {
-  const _ToolCallResponseModalFooter();
-
+class const _ToolCallResponseModalFooter() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.md),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: context.auraColors.outline.withValues(alpha: 0.2),
+            color: context.auraColors.outline.withValues(
+              alpha: ToolCallResponseModal._dividerOpacity,
+            ),
           ),
         ),
       ),

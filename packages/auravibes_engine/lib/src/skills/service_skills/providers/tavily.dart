@@ -23,13 +23,7 @@ crawling, and research workflows.
       _extractInputSchema,
       _extract,
     ),
-    _tool(
-      'crawl',
-      'Crawl',
-      'Crawl a website.',
-      fetchInputSchema,
-      _crawl,
-    ),
+    _tool('crawl', 'Crawl', 'Crawl a website.', fetchInputSchema, _crawl),
     _tool('map', 'Map', 'Map a website.', _mapInputSchema, _map),
     _tool(
       'research',

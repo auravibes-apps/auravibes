@@ -230,8 +230,8 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
   /// Human-readable name of the workspace.
   final String name;
 
-  /// Type of workspace (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of workspace (local or remote). Stored as a string to handle enum
+  /// conversion.
   final WorkspaceType type;
 
   /// URL for remote workspaces, null for local workspaces.
@@ -2120,8 +2120,8 @@ class ApiModelProvidersTable extends DataClass
   /// Human-readable name of the model.
   final String name;
 
-  /// Type of chat model (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of chat model (local or remote). Stored as a string to handle enum
+  /// conversion.
   final ModelProvidersTableType? type;
   final String? url;
   final String? doc;
@@ -2788,8 +2788,8 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   final String name;
   final String? family;
 
-  /// Type of chat model (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of chat model (local or remote). Stored as a string to handle enum
+  /// conversion.
   final List<String>? modalitiesInput;
   final List<String>? modalitiesOutput;
   final bool? openWeights;
@@ -12840,30 +12840,28 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ]);
 }
 
-typedef $$WorkspacesTableCreateCompanionBuilder =
-    WorkspacesCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String name,
-      required WorkspaceType type,
-      Value<String?> url,
-      Value<String?> cloudWorkspaceId,
-      Value<String?> cloudAccountId,
-      Value<int> rowid,
-    });
-typedef $$WorkspacesTableUpdateCompanionBuilder =
-    WorkspacesCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> name,
-      Value<WorkspaceType> type,
-      Value<String?> url,
-      Value<String?> cloudWorkspaceId,
-      Value<String?> cloudAccountId,
-      Value<int> rowid,
-    });
+typedef $$WorkspacesTableCreateCompanionBuilder = WorkspacesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  required String name,
+  required WorkspaceType type,
+  Value<String?> url,
+  Value<String?> cloudWorkspaceId,
+  Value<String?> cloudAccountId,
+  Value<int> rowid,
+});
+typedef $$WorkspacesTableUpdateCompanionBuilder = WorkspacesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String> name,
+  Value<WorkspaceType> type,
+  Value<String?> url,
+  Value<String?> cloudWorkspaceId,
+  Value<String?> cloudAccountId,
+  Value<int> rowid,
+});
 
 final class $$WorkspacesTableReferences
     extends BaseReferences<_$AppDatabase, $WorkspacesTable, WorkspacesTable> {
@@ -13823,7 +13821,7 @@ class $$WorkspacesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$WorkspacesTable, WorkspacesTable>(table),
                   $$WorkspacesTableReferences(db, table, e),
                 ),
               )
@@ -14181,13 +14179,11 @@ final class $$ServiceConnectionsTableReferences
     $WorkspaceModelSelectionsTable,
     List<WorkspaceModelSelectionTable>
   >
-  _workspaceModelSelectionsRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.workspaceModelSelections,
-    aliasName:
-        'service_connections__id__workspace_model_selections__model_connection_id',
-  );
+  _workspaceModelSelectionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceModelSelections,
+        aliasName: 'service_connections__id__workspace_model_selections__model_connection_id',
+      );
 
   $$WorkspaceModelSelectionsTableProcessedTableManager
   get workspaceModelSelectionsRefs {
@@ -14787,7 +14783,9 @@ class $$ServiceConnectionsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ServiceConnectionsTable, ServiceConnectionTable>(
+                    table,
+                  ),
                   $$ServiceConnectionsTableReferences(db, table, e),
                 ),
               )
@@ -14822,19 +14820,16 @@ class $$ServiceConnectionsTableTableManager
                         >
                       >(state) {
                         if (workspaceId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceId,
-                                    referencedTable:
-                                        $$ServiceConnectionsTableReferences
-                                            ._workspaceIdTable(db),
-                                    referencedColumn:
-                                        $$ServiceConnectionsTableReferences
-                                            ._workspaceIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$ServiceConnectionsTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn:
+                                $$ServiceConnectionsTableReferences
+                                    ._workspaceIdTable(db)
+                                    .id,
+                          ) as T;
                         }
 
                         return state;
@@ -15260,7 +15255,10 @@ class $$WorkspaceModelSelectionsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $WorkspaceModelSelectionsTable,
+                    WorkspaceModelSelectionTable
+                  >(table),
                   $$WorkspaceModelSelectionsTableReferences(db, table, e),
                 ),
               )
@@ -15289,19 +15287,17 @@ class $$WorkspaceModelSelectionsTableTableManager
                         >
                       >(state) {
                         if (modelConnectionId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.modelConnectionId,
-                                    referencedTable:
-                                        $$WorkspaceModelSelectionsTableReferences
-                                            ._modelConnectionIdTable(db),
-                                    referencedColumn:
-                                        $$WorkspaceModelSelectionsTableReferences
-                                            ._modelConnectionIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.modelConnectionId,
+                            referencedTable:
+                                $$WorkspaceModelSelectionsTableReferences
+                                    ._modelConnectionIdTable(db),
+                            referencedColumn:
+                                $$WorkspaceModelSelectionsTableReferences
+                                    ._modelConnectionIdTable(db)
+                                    .id,
+                          ) as T;
                         }
 
                         return state;
@@ -15619,7 +15615,9 @@ class $$ApiModelProvidersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ApiModelProvidersTable, ApiModelProvidersTable>(
+                    table,
+                  ),
                   $$ApiModelProvidersTableReferences(db, table, e),
                 ),
               )
@@ -15674,46 +15672,44 @@ typedef $$ApiModelProvidersTableProcessedTableManager =
       ApiModelProvidersTable,
       PrefetchHooks Function({bool apiModelsRefs})
     >;
-typedef $$ApiModelsTableCreateCompanionBuilder =
-    ApiModelsCompanion Function({
-      required String modelProvider,
-      required String id,
-      required String name,
-      Value<String?> family,
-      Value<List<String>?> modalitiesInput,
-      Value<List<String>?> modalitiesOutput,
-      Value<bool?> openWeights,
-      Value<bool> supportsReasoning,
-      Value<bool> isCanonical,
-      Value<bool> supportsPriorityMode,
-      Value<bool> supportsToolCalls,
-      Value<double?> costInput,
-      Value<double?> costOutput,
-      Value<double?> costCacheRead,
-      required int limitContext,
-      required int limitOutput,
-      Value<int> rowid,
-    });
-typedef $$ApiModelsTableUpdateCompanionBuilder =
-    ApiModelsCompanion Function({
-      Value<String> modelProvider,
-      Value<String> id,
-      Value<String> name,
-      Value<String?> family,
-      Value<List<String>?> modalitiesInput,
-      Value<List<String>?> modalitiesOutput,
-      Value<bool?> openWeights,
-      Value<bool> supportsReasoning,
-      Value<bool> isCanonical,
-      Value<bool> supportsPriorityMode,
-      Value<bool> supportsToolCalls,
-      Value<double?> costInput,
-      Value<double?> costOutput,
-      Value<double?> costCacheRead,
-      Value<int> limitContext,
-      Value<int> limitOutput,
-      Value<int> rowid,
-    });
+typedef $$ApiModelsTableCreateCompanionBuilder = ApiModelsCompanion Function({
+  required String modelProvider,
+  required String id,
+  required String name,
+  Value<String?> family,
+  Value<List<String>?> modalitiesInput,
+  Value<List<String>?> modalitiesOutput,
+  Value<bool?> openWeights,
+  Value<bool> supportsReasoning,
+  Value<bool> isCanonical,
+  Value<bool> supportsPriorityMode,
+  Value<bool> supportsToolCalls,
+  Value<double?> costInput,
+  Value<double?> costOutput,
+  Value<double?> costCacheRead,
+  required int limitContext,
+  required int limitOutput,
+  Value<int> rowid,
+});
+typedef $$ApiModelsTableUpdateCompanionBuilder = ApiModelsCompanion Function({
+  Value<String> modelProvider,
+  Value<String> id,
+  Value<String> name,
+  Value<String?> family,
+  Value<List<String>?> modalitiesInput,
+  Value<List<String>?> modalitiesOutput,
+  Value<bool?> openWeights,
+  Value<bool> supportsReasoning,
+  Value<bool> isCanonical,
+  Value<bool> supportsPriorityMode,
+  Value<bool> supportsToolCalls,
+  Value<double?> costInput,
+  Value<double?> costOutput,
+  Value<double?> costCacheRead,
+  Value<int> limitContext,
+  Value<int> limitOutput,
+  Value<int> rowid,
+});
 
 final class $$ApiModelsTableReferences
     extends BaseReferences<_$AppDatabase, $ApiModelsTable, ApiModelsTable> {
@@ -16164,7 +16160,7 @@ class $$ApiModelsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ApiModelsTable, ApiModelsTable>(table),
                   $$ApiModelsTableReferences(db, table, e),
                 ),
               )
@@ -16190,17 +16186,15 @@ class $$ApiModelsTableTableManager
                     >
                   >(state) {
                     if (modelProvider) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.modelProvider,
-                                referencedTable: $$ApiModelsTableReferences
-                                    ._modelProviderTable(db),
-                                referencedColumn: $$ApiModelsTableReferences
-                                    ._modelProviderTable(db)
-                                    .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.modelProvider,
+                        referencedTable: $$ApiModelsTableReferences
+                            ._modelProviderTable(db),
+                        referencedColumn: $$ApiModelsTableReferences
+                            ._modelProviderTable(db)
+                            .id,
+                      ) as T;
                     }
 
                     return state;
@@ -16228,32 +16222,30 @@ typedef $$ApiModelsTableProcessedTableManager =
       ApiModelsTable,
       PrefetchHooks Function({bool modelProvider})
     >;
-typedef $$AgentsTableCreateCompanionBuilder =
-    AgentsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String workspaceId,
-      required String name,
-      Value<String> description,
-      required String content,
-      Value<bool> isEnabled,
-      Value<String> visibility,
-      Value<int> rowid,
-    });
-typedef $$AgentsTableUpdateCompanionBuilder =
-    AgentsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> workspaceId,
-      Value<String> name,
-      Value<String> description,
-      Value<String> content,
-      Value<bool> isEnabled,
-      Value<String> visibility,
-      Value<int> rowid,
-    });
+typedef $$AgentsTableCreateCompanionBuilder = AgentsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  required String workspaceId,
+  required String name,
+  Value<String> description,
+  required String content,
+  Value<bool> isEnabled,
+  Value<String> visibility,
+  Value<int> rowid,
+});
+typedef $$AgentsTableUpdateCompanionBuilder = AgentsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String> workspaceId,
+  Value<String> name,
+  Value<String> description,
+  Value<String> content,
+  Value<bool> isEnabled,
+  Value<String> visibility,
+  Value<int> rowid,
+});
 
 final class $$AgentsTableReferences
     extends BaseReferences<_$AppDatabase, $AgentsTable, AgentsTable> {
@@ -16769,8 +16761,10 @@ class $$AgentsTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$AgentsTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$AgentsTable, AgentsTable>(table),
+                  $$AgentsTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback:
@@ -16804,17 +16798,15 @@ class $$AgentsTableTableManager
                         >
                       >(state) {
                         if (workspaceId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceId,
-                                    referencedTable: $$AgentsTableReferences
-                                        ._workspaceIdTable(db),
-                                    referencedColumn: $$AgentsTableReferences
-                                        ._workspaceIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$AgentsTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn: $$AgentsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                          ) as T;
                         }
 
                         return state;
@@ -17697,7 +17689,7 @@ class $$ConversationsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ConversationsTable, ConversationsTable>(table),
                   $$ConversationsTableReferences(db, table, e),
                 ),
               )
@@ -17736,64 +17728,48 @@ class $$ConversationsTableTableManager
                         >
                       >(state) {
                         if (workspaceId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceId,
-                                    referencedTable:
-                                        $$ConversationsTableReferences
-                                            ._workspaceIdTable(db),
-                                    referencedColumn:
-                                        $$ConversationsTableReferences
-                                            ._workspaceIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$ConversationsTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn: $$ConversationsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                          ) as T;
                         }
                         if (modelId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.modelId,
-                                    referencedTable:
-                                        $$ConversationsTableReferences
-                                            ._modelIdTable(db),
-                                    referencedColumn:
-                                        $$ConversationsTableReferences
-                                            ._modelIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.modelId,
+                            referencedTable: $$ConversationsTableReferences
+                                ._modelIdTable(db),
+                            referencedColumn: $$ConversationsTableReferences
+                                ._modelIdTable(db)
+                                .id,
+                          ) as T;
                         }
                         if (agentId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.agentId,
-                                    referencedTable:
-                                        $$ConversationsTableReferences
-                                            ._agentIdTable(db),
-                                    referencedColumn:
-                                        $$ConversationsTableReferences
-                                            ._agentIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.agentId,
+                            referencedTable: $$ConversationsTableReferences
+                                ._agentIdTable(db),
+                            referencedColumn: $$ConversationsTableReferences
+                                ._agentIdTable(db)
+                                .id,
+                          ) as T;
                         }
                         if (parentConversationId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.parentConversationId,
-                                    referencedTable:
-                                        $$ConversationsTableReferences
-                                            ._parentConversationIdTable(db),
-                                    referencedColumn:
-                                        $$ConversationsTableReferences
-                                            ._parentConversationIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.parentConversationId,
+                            referencedTable: $$ConversationsTableReferences
+                                ._parentConversationIdTable(db),
+                            referencedColumn: $$ConversationsTableReferences
+                                ._parentConversationIdTable(db)
+                                .id,
+                          ) as T;
                         }
 
                         return state;
@@ -18280,7 +18256,10 @@ class $$SkillCredentialDefinitionsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $SkillCredentialDefinitionsTable,
+                    SkillCredentialDefinitionsTable
+                  >(table),
                   $$SkillCredentialDefinitionsTableReferences(db, table, e),
                 ),
               )
@@ -18306,19 +18285,17 @@ class $$SkillCredentialDefinitionsTableTableManager
                     >
                   >(state) {
                     if (workspaceId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.workspaceId,
-                                referencedTable:
-                                    $$SkillCredentialDefinitionsTableReferences
-                                        ._workspaceIdTable(db),
-                                referencedColumn:
-                                    $$SkillCredentialDefinitionsTableReferences
-                                        ._workspaceIdTable(db)
-                                        .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable:
+                            $$SkillCredentialDefinitionsTableReferences
+                                ._workspaceIdTable(db),
+                        referencedColumn:
+                            $$SkillCredentialDefinitionsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                      ) as T;
                     }
 
                     return state;
@@ -18372,40 +18349,38 @@ typedef $$SkillCredentialDefinitionsTableProcessedTableManager =
       SkillCredentialDefinitionsTable,
       PrefetchHooks Function({bool workspaceId, bool skillsRefs})
     >;
-typedef $$SkillsTableCreateCompanionBuilder =
-    SkillsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String workspaceId,
-      required SkillSourceTable source,
-      required SkillKindTable kind,
-      required String title,
-      required String slug,
-      required String description,
-      required String content,
-      Value<String?> credentialDefinitionId,
-      Value<bool> isCredentialOptional,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
-typedef $$SkillsTableUpdateCompanionBuilder =
-    SkillsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> workspaceId,
-      Value<SkillSourceTable> source,
-      Value<SkillKindTable> kind,
-      Value<String> title,
-      Value<String> slug,
-      Value<String> description,
-      Value<String> content,
-      Value<String?> credentialDefinitionId,
-      Value<bool> isCredentialOptional,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
+typedef $$SkillsTableCreateCompanionBuilder = SkillsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  required String workspaceId,
+  required SkillSourceTable source,
+  required SkillKindTable kind,
+  required String title,
+  required String slug,
+  required String description,
+  required String content,
+  Value<String?> credentialDefinitionId,
+  Value<bool> isCredentialOptional,
+  Value<bool> isEnabled,
+  Value<int> rowid,
+});
+typedef $$SkillsTableUpdateCompanionBuilder = SkillsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String> workspaceId,
+  Value<SkillSourceTable> source,
+  Value<SkillKindTable> kind,
+  Value<String> title,
+  Value<String> slug,
+  Value<String> description,
+  Value<String> content,
+  Value<String?> credentialDefinitionId,
+  Value<bool> isCredentialOptional,
+  Value<bool> isEnabled,
+  Value<int> rowid,
+});
 
 final class $$SkillsTableReferences
     extends BaseReferences<_$AppDatabase, $SkillsTable, SkillsTable> {
@@ -19092,8 +19067,10 @@ class $$SkillsTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$SkillsTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$SkillsTable, SkillsTable>(table),
+                  $$SkillsTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback:
@@ -19128,30 +19105,26 @@ class $$SkillsTableTableManager
                         >
                       >(state) {
                         if (workspaceId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceId,
-                                    referencedTable: $$SkillsTableReferences
-                                        ._workspaceIdTable(db),
-                                    referencedColumn: $$SkillsTableReferences
-                                        ._workspaceIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$SkillsTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn: $$SkillsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                          ) as T;
                         }
                         if (credentialDefinitionId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.credentialDefinitionId,
-                                    referencedTable: $$SkillsTableReferences
-                                        ._credentialDefinitionIdTable(db),
-                                    referencedColumn: $$SkillsTableReferences
-                                        ._credentialDefinitionIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.credentialDefinitionId,
+                            referencedTable: $$SkillsTableReferences
+                                ._credentialDefinitionIdTable(db),
+                            referencedColumn: $$SkillsTableReferences
+                                ._credentialDefinitionIdTable(db)
+                                .id,
+                          ) as T;
                         }
 
                         return state;
@@ -19596,7 +19569,7 @@ class $$AgentSkillsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$AgentSkillsTable, AgentSkillsTable>(table),
                   $$AgentSkillsTableReferences(db, table, e),
                 ),
               )
@@ -19622,30 +19595,26 @@ class $$AgentSkillsTableTableManager
                     >
                   >(state) {
                     if (agentId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.agentId,
-                                referencedTable: $$AgentSkillsTableReferences
-                                    ._agentIdTable(db),
-                                referencedColumn: $$AgentSkillsTableReferences
-                                    ._agentIdTable(db)
-                                    .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.agentId,
+                        referencedTable: $$AgentSkillsTableReferences
+                            ._agentIdTable(db),
+                        referencedColumn: $$AgentSkillsTableReferences
+                            ._agentIdTable(db)
+                            .id,
+                      ) as T;
                     }
                     if (workspaceSkillId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.workspaceSkillId,
-                                referencedTable: $$AgentSkillsTableReferences
-                                    ._workspaceSkillIdTable(db),
-                                referencedColumn: $$AgentSkillsTableReferences
-                                    ._workspaceSkillIdTable(db)
-                                    .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceSkillId,
+                        referencedTable: $$AgentSkillsTableReferences
+                            ._workspaceSkillIdTable(db),
+                        referencedColumn: $$AgentSkillsTableReferences
+                            ._workspaceSkillIdTable(db)
+                            .id,
+                      ) as T;
                     }
 
                     return state;
@@ -19673,34 +19642,32 @@ typedef $$AgentSkillsTableProcessedTableManager =
       AgentSkillsTable,
       PrefetchHooks Function({bool agentId, bool workspaceSkillId})
     >;
-typedef $$McpServersTableCreateCompanionBuilder =
-    McpServersCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String workspaceId,
-      required String name,
-      required String url,
-      required McpTransportType transport,
-      Value<String?> serviceConnectionId,
-      Value<String?> description,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
-typedef $$McpServersTableUpdateCompanionBuilder =
-    McpServersCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> workspaceId,
-      Value<String> name,
-      Value<String> url,
-      Value<McpTransportType> transport,
-      Value<String?> serviceConnectionId,
-      Value<String?> description,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
+typedef $$McpServersTableCreateCompanionBuilder = McpServersCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  required String workspaceId,
+  required String name,
+  required String url,
+  required McpTransportType transport,
+  Value<String?> serviceConnectionId,
+  Value<String?> description,
+  Value<bool> isEnabled,
+  Value<int> rowid,
+});
+typedef $$McpServersTableUpdateCompanionBuilder = McpServersCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String> workspaceId,
+  Value<String> name,
+  Value<String> url,
+  Value<McpTransportType> transport,
+  Value<String?> serviceConnectionId,
+  Value<String?> description,
+  Value<bool> isEnabled,
+  Value<int> rowid,
+});
 
 final class $$McpServersTableReferences
     extends BaseReferences<_$AppDatabase, $McpServersTable, McpServersTable> {
@@ -20172,7 +20139,7 @@ class $$McpServersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$McpServersTable, McpServersTable>(table),
                   $$McpServersTableReferences(db, table, e),
                 ),
               )
@@ -20205,32 +20172,26 @@ class $$McpServersTableTableManager
                         >
                       >(state) {
                         if (workspaceId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceId,
-                                    referencedTable: $$McpServersTableReferences
-                                        ._workspaceIdTable(db),
-                                    referencedColumn:
-                                        $$McpServersTableReferences
-                                            ._workspaceIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$McpServersTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn: $$McpServersTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                          ) as T;
                         }
                         if (serviceConnectionId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.serviceConnectionId,
-                                    referencedTable: $$McpServersTableReferences
-                                        ._serviceConnectionIdTable(db),
-                                    referencedColumn:
-                                        $$McpServersTableReferences
-                                            ._serviceConnectionIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.serviceConnectionId,
+                            referencedTable: $$McpServersTableReferences
+                                ._serviceConnectionIdTable(db),
+                            referencedColumn: $$McpServersTableReferences
+                                ._serviceConnectionIdTable(db)
+                                .id,
+                          ) as T;
                         }
 
                         return state;
@@ -20743,7 +20704,7 @@ class $$ToolsGroupsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ToolsGroupsTable, ToolsGroupsTable>(table),
                   $$ToolsGroupsTableReferences(db, table, e),
                 ),
               )
@@ -20770,34 +20731,26 @@ class $$ToolsGroupsTableTableManager
                         >
                       >(state) {
                         if (workspaceId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceId,
-                                    referencedTable:
-                                        $$ToolsGroupsTableReferences
-                                            ._workspaceIdTable(db),
-                                    referencedColumn:
-                                        $$ToolsGroupsTableReferences
-                                            ._workspaceIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$ToolsGroupsTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn: $$ToolsGroupsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                          ) as T;
                         }
                         if (mcpServerId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.mcpServerId,
-                                    referencedTable:
-                                        $$ToolsGroupsTableReferences
-                                            ._mcpServerIdTable(db),
-                                    referencedColumn:
-                                        $$ToolsGroupsTableReferences
-                                            ._mcpServerIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.mcpServerId,
+                            referencedTable: $$ToolsGroupsTableReferences
+                                ._mcpServerIdTable(db),
+                            referencedColumn: $$ToolsGroupsTableReferences
+                                ._mcpServerIdTable(db)
+                                .id,
+                          ) as T;
                         }
 
                         return state;
@@ -20851,36 +20804,34 @@ typedef $$ToolsGroupsTableProcessedTableManager =
         bool toolsRefs,
       })
     >;
-typedef $$ToolsTableCreateCompanionBuilder =
-    ToolsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String workspaceId,
-      Value<String?> workspaceToolsGroupId,
-      required String toolId,
-      Value<String?> description,
-      Value<String?> config,
-      Value<String?> inputSchema,
-      Value<bool> isEnabled,
-      Value<PermissionAccess> permissions,
-      Value<int> rowid,
-    });
-typedef $$ToolsTableUpdateCompanionBuilder =
-    ToolsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> workspaceId,
-      Value<String?> workspaceToolsGroupId,
-      Value<String> toolId,
-      Value<String?> description,
-      Value<String?> config,
-      Value<String?> inputSchema,
-      Value<bool> isEnabled,
-      Value<PermissionAccess> permissions,
-      Value<int> rowid,
-    });
+typedef $$ToolsTableCreateCompanionBuilder = ToolsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  required String workspaceId,
+  Value<String?> workspaceToolsGroupId,
+  required String toolId,
+  Value<String?> description,
+  Value<String?> config,
+  Value<String?> inputSchema,
+  Value<bool> isEnabled,
+  Value<PermissionAccess> permissions,
+  Value<int> rowid,
+});
+typedef $$ToolsTableUpdateCompanionBuilder = ToolsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String> workspaceId,
+  Value<String?> workspaceToolsGroupId,
+  Value<String> toolId,
+  Value<String?> description,
+  Value<String?> config,
+  Value<String?> inputSchema,
+  Value<bool> isEnabled,
+  Value<PermissionAccess> permissions,
+  Value<int> rowid,
+});
 
 final class $$ToolsTableReferences
     extends BaseReferences<_$AppDatabase, $ToolsTable, ToolsTable> {
@@ -21448,8 +21399,10 @@ class $$ToolsTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$ToolsTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$ToolsTable, ToolsTable>(table),
+                  $$ToolsTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback:
@@ -21482,30 +21435,26 @@ class $$ToolsTableTableManager
                         >
                       >(state) {
                         if (workspaceId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceId,
-                                    referencedTable: $$ToolsTableReferences
-                                        ._workspaceIdTable(db),
-                                    referencedColumn: $$ToolsTableReferences
-                                        ._workspaceIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$ToolsTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn: $$ToolsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                          ) as T;
                         }
                         if (workspaceToolsGroupId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceToolsGroupId,
-                                    referencedTable: $$ToolsTableReferences
-                                        ._workspaceToolsGroupIdTable(db),
-                                    referencedColumn: $$ToolsTableReferences
-                                        ._workspaceToolsGroupIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceToolsGroupId,
+                            referencedTable: $$ToolsTableReferences
+                                ._workspaceToolsGroupIdTable(db),
+                            referencedColumn: $$ToolsTableReferences
+                                ._workspaceToolsGroupIdTable(db)
+                                .id,
+                          ) as T;
                         }
 
                         return state;
@@ -21581,26 +21530,24 @@ typedef $$ToolsTableProcessedTableManager =
         bool conversationToolsRefs,
       })
     >;
-typedef $$AgentToolsTableCreateCompanionBuilder =
-    AgentToolsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String agentId,
-      required String toolId,
-      required PermissionAccess permissions,
-      Value<int> rowid,
-    });
-typedef $$AgentToolsTableUpdateCompanionBuilder =
-    AgentToolsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> agentId,
-      Value<String> toolId,
-      Value<PermissionAccess> permissions,
-      Value<int> rowid,
-    });
+typedef $$AgentToolsTableCreateCompanionBuilder = AgentToolsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  required String agentId,
+  required String toolId,
+  required PermissionAccess permissions,
+  Value<int> rowid,
+});
+typedef $$AgentToolsTableUpdateCompanionBuilder = AgentToolsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String> agentId,
+  Value<String> toolId,
+  Value<PermissionAccess> permissions,
+  Value<int> rowid,
+});
 
 final class $$AgentToolsTableReferences
     extends BaseReferences<_$AppDatabase, $AgentToolsTable, AgentToolsTable> {
@@ -21930,7 +21877,7 @@ class $$AgentToolsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$AgentToolsTable, AgentToolsTable>(table),
                   $$AgentToolsTableReferences(db, table, e),
                 ),
               )
@@ -21956,30 +21903,26 @@ class $$AgentToolsTableTableManager
                     >
                   >(state) {
                     if (agentId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.agentId,
-                                referencedTable: $$AgentToolsTableReferences
-                                    ._agentIdTable(db),
-                                referencedColumn: $$AgentToolsTableReferences
-                                    ._agentIdTable(db)
-                                    .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.agentId,
+                        referencedTable: $$AgentToolsTableReferences
+                            ._agentIdTable(db),
+                        referencedColumn: $$AgentToolsTableReferences
+                            ._agentIdTable(db)
+                            .id,
+                      ) as T;
                     }
                     if (toolId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.toolId,
-                                referencedTable: $$AgentToolsTableReferences
-                                    ._toolIdTable(db),
-                                referencedColumn: $$AgentToolsTableReferences
-                                    ._toolIdTable(db)
-                                    .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.toolId,
+                        referencedTable: $$AgentToolsTableReferences
+                            ._toolIdTable(db),
+                        referencedColumn: $$AgentToolsTableReferences
+                            ._toolIdTable(db)
+                            .id,
+                      ) as T;
                     }
 
                     return state;
@@ -22007,32 +21950,30 @@ typedef $$AgentToolsTableProcessedTableManager =
       AgentToolsTable,
       PrefetchHooks Function({bool agentId, bool toolId})
     >;
-typedef $$MessagesTableCreateCompanionBuilder =
-    MessagesCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String conversationId,
-      required String content,
-      required MessagesTableType messageType,
-      required bool isUser,
-      required MessageTableStatus status,
-      Value<String?> metadata,
-      Value<int> rowid,
-    });
-typedef $$MessagesTableUpdateCompanionBuilder =
-    MessagesCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> conversationId,
-      Value<String> content,
-      Value<MessagesTableType> messageType,
-      Value<bool> isUser,
-      Value<MessageTableStatus> status,
-      Value<String?> metadata,
-      Value<int> rowid,
-    });
+typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  required String conversationId,
+  required String content,
+  required MessagesTableType messageType,
+  required bool isUser,
+  required MessageTableStatus status,
+  Value<String?> metadata,
+  Value<int> rowid,
+});
+typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String> conversationId,
+  Value<String> content,
+  Value<MessagesTableType> messageType,
+  Value<bool> isUser,
+  Value<MessageTableStatus> status,
+  Value<String?> metadata,
+  Value<int> rowid,
+});
 
 final class $$MessagesTableReferences
     extends BaseReferences<_$AppDatabase, $MessagesTable, MessagesTable> {
@@ -22420,7 +22361,7 @@ class $$MessagesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$MessagesTable, MessagesTable>(table),
                   $$MessagesTableReferences(db, table, e),
                 ),
               )
@@ -22449,17 +22390,15 @@ class $$MessagesTableTableManager
                         >
                       >(state) {
                         if (conversationId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.conversationId,
-                                    referencedTable: $$MessagesTableReferences
-                                        ._conversationIdTable(db),
-                                    referencedColumn: $$MessagesTableReferences
-                                        ._conversationIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.conversationId,
+                            referencedTable: $$MessagesTableReferences
+                                ._conversationIdTable(db),
+                            referencedColumn: $$MessagesTableReferences
+                                ._conversationIdTable(db)
+                                .id,
+                          ) as T;
                         }
 
                         return state;
@@ -22873,7 +22812,10 @@ class $$MessageAttachmentsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $MessageAttachmentsTable,
+                    MessageAttachmentsTable
+                  >(table),
                   $$MessageAttachmentsTableReferences(db, table, e),
                 ),
               )
@@ -22899,19 +22841,15 @@ class $$MessageAttachmentsTableTableManager
                     >
                   >(state) {
                     if (messageId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.messageId,
-                                referencedTable:
-                                    $$MessageAttachmentsTableReferences
-                                        ._messageIdTable(db),
-                                referencedColumn:
-                                    $$MessageAttachmentsTableReferences
-                                        ._messageIdTable(db)
-                                        .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.messageId,
+                        referencedTable: $$MessageAttachmentsTableReferences
+                            ._messageIdTable(db),
+                        referencedColumn: $$MessageAttachmentsTableReferences
+                            ._messageIdTable(db)
+                            .id,
+                      ) as T;
                     }
 
                     return state;
@@ -23322,7 +23260,9 @@ class $$ConversationToolsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ConversationToolsTable, ConversationToolsTable>(
+                    table,
+                  ),
                   $$ConversationToolsTableReferences(db, table, e),
                 ),
               )
@@ -23348,34 +23288,26 @@ class $$ConversationToolsTableTableManager
                     >
                   >(state) {
                     if (conversationId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.conversationId,
-                                referencedTable:
-                                    $$ConversationToolsTableReferences
-                                        ._conversationIdTable(db),
-                                referencedColumn:
-                                    $$ConversationToolsTableReferences
-                                        ._conversationIdTable(db)
-                                        .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.conversationId,
+                        referencedTable: $$ConversationToolsTableReferences
+                            ._conversationIdTable(db),
+                        referencedColumn: $$ConversationToolsTableReferences
+                            ._conversationIdTable(db)
+                            .id,
+                      ) as T;
                     }
                     if (toolId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.toolId,
-                                referencedTable:
-                                    $$ConversationToolsTableReferences
-                                        ._toolIdTable(db),
-                                referencedColumn:
-                                    $$ConversationToolsTableReferences
-                                        ._toolIdTable(db)
-                                        .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.toolId,
+                        referencedTable: $$ConversationToolsTableReferences
+                            ._toolIdTable(db),
+                        referencedColumn: $$ConversationToolsTableReferences
+                            ._toolIdTable(db)
+                            .id,
+                      ) as T;
                     }
 
                     return state;
@@ -23725,7 +23657,10 @@ class $$WorkspaceCompactionSettingsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $WorkspaceCompactionSettingsTable,
+                    WorkspaceCompactionSettingsTable
+                  >(table),
                   $$WorkspaceCompactionSettingsTableReferences(db, table, e),
                 ),
               )
@@ -23751,19 +23686,17 @@ class $$WorkspaceCompactionSettingsTableTableManager
                     >
                   >(state) {
                     if (workspaceId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.workspaceId,
-                                referencedTable:
-                                    $$WorkspaceCompactionSettingsTableReferences
-                                        ._workspaceIdTable(db),
-                                referencedColumn:
-                                    $$WorkspaceCompactionSettingsTableReferences
-                                        ._workspaceIdTable(db)
-                                        .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable:
+                            $$WorkspaceCompactionSettingsTableReferences
+                                ._workspaceIdTable(db),
+                        referencedColumn:
+                            $$WorkspaceCompactionSettingsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                      ) as T;
                     }
 
                     return state;
@@ -24211,7 +24144,10 @@ class $$SkillTemplateToolsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $SkillTemplateToolsTable,
+                    SkillTemplateToolsTable
+                  >(table),
                   $$SkillTemplateToolsTableReferences(db, table, e),
                 ),
               )
@@ -24237,19 +24173,15 @@ class $$SkillTemplateToolsTableTableManager
                     >
                   >(state) {
                     if (skillId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.skillId,
-                                referencedTable:
-                                    $$SkillTemplateToolsTableReferences
-                                        ._skillIdTable(db),
-                                referencedColumn:
-                                    $$SkillTemplateToolsTableReferences
-                                        ._skillIdTable(db)
-                                        .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.skillId,
+                        referencedTable: $$SkillTemplateToolsTableReferences
+                            ._skillIdTable(db),
+                        referencedColumn: $$SkillTemplateToolsTableReferences
+                            ._skillIdTable(db)
+                            .id,
+                      ) as T;
                     }
 
                     return state;
@@ -24658,7 +24590,10 @@ class $$ConversationSkillsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $ConversationSkillsTable,
+                    ConversationSkillsTable
+                  >(table),
                   $$ConversationSkillsTableReferences(db, table, e),
                 ),
               )
@@ -24685,34 +24620,28 @@ class $$ConversationSkillsTableTableManager
                         >
                       >(state) {
                         if (conversationId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.conversationId,
-                                    referencedTable:
-                                        $$ConversationSkillsTableReferences
-                                            ._conversationIdTable(db),
-                                    referencedColumn:
-                                        $$ConversationSkillsTableReferences
-                                            ._conversationIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.conversationId,
+                            referencedTable: $$ConversationSkillsTableReferences
+                                ._conversationIdTable(db),
+                            referencedColumn:
+                                $$ConversationSkillsTableReferences
+                                    ._conversationIdTable(db)
+                                    .id,
+                          ) as T;
                         }
                         if (workspaceSkillId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceSkillId,
-                                    referencedTable:
-                                        $$ConversationSkillsTableReferences
-                                            ._workspaceSkillIdTable(db),
-                                    referencedColumn:
-                                        $$ConversationSkillsTableReferences
-                                            ._workspaceSkillIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceSkillId,
+                            referencedTable: $$ConversationSkillsTableReferences
+                                ._workspaceSkillIdTable(db),
+                            referencedColumn:
+                                $$ConversationSkillsTableReferences
+                                    ._workspaceSkillIdTable(db)
+                                    .id,
+                          ) as T;
                         }
 
                         return state;
@@ -25039,7 +24968,10 @@ class $$AppSkillWorkspaceSettingsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $AppSkillWorkspaceSettingsTable,
+                    AppSkillWorkspaceSettingsTable
+                  >(table),
                   $$AppSkillWorkspaceSettingsTableReferences(db, table, e),
                 ),
               )
@@ -25065,19 +24997,17 @@ class $$AppSkillWorkspaceSettingsTableTableManager
                     >
                   >(state) {
                     if (workspaceId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.workspaceId,
-                                referencedTable:
-                                    $$AppSkillWorkspaceSettingsTableReferences
-                                        ._workspaceIdTable(db),
-                                referencedColumn:
-                                    $$AppSkillWorkspaceSettingsTableReferences
-                                        ._workspaceIdTable(db)
-                                        .id,
-                              )
-                              as T;
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable:
+                            $$AppSkillWorkspaceSettingsTableReferences
+                                ._workspaceIdTable(db),
+                        referencedColumn:
+                            $$AppSkillWorkspaceSettingsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                      ) as T;
                     }
 
                     return state;

@@ -7,29 +7,21 @@ const Map<String, dynamic> defaultAppSkillToolInputJsonSchema = {
   'additionalProperties': false,
 };
 
-class AppSkillToolDefinition {
-  const AppSkillToolDefinition({
-    required this.slug,
-    required this.title,
-    required this.description,
-    this.inputJsonSchema = defaultAppSkillToolInputJsonSchema,
-    this.urlTemplate,
-    this.callback,
-    this.requiresCredential = false,
-    this.titleKey,
-    this.descriptionKey,
-  }) : assert(
-         urlTemplate == null || callback == null,
-         'AppSkillToolDefinition cannot use both urlTemplate and callback.',
-       );
-
-  final String slug;
-  final String title;
-  final String description;
-  final Map<String, dynamic> inputJsonSchema;
-  final AppSkillUrlTemplate? urlTemplate;
-  final AppSkillToolCallback? callback;
-  final bool requiresCredential;
-  final String? titleKey;
-  final String? descriptionKey;
+class const AppSkillToolDefinition({
+  required final String slug,
+  required final String title,
+  required final String description,
+  final Map<String, dynamic> inputJsonSchema =
+      defaultAppSkillToolInputJsonSchema,
+  final AppSkillUrlTemplate? urlTemplate,
+  final AppSkillToolCallback? callback,
+  final bool requiresCredential = false,
+  final String? titleKey,
+  final String? descriptionKey,
+}) {
+  this
+    : assert(
+        urlTemplate == null || callback == null,
+        'AppSkillToolDefinition cannot use both urlTemplate and callback.',
+      );
 }

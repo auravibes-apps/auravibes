@@ -30,6 +30,67 @@ void main() {
       expect(wasPressed, isTrue);
     });
 
+    testWidgets('uses intrinsic width by default', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AuraButton(
+                onPressed: () {
+                  final _ = Object();
+                },
+                child: const Text('Button'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.getSize(find.byType(AuraButton)).width, lessThan(200));
+    });
+
+    testWidgets('uses intrinsic height by default', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AuraButton(
+                onPressed: () {
+                  final _ = Object();
+                },
+                child: const Text('Button'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.getSize(find.byType(AuraButton)).height, lessThan(100));
+    });
+
+    testWidgets('centers content in a tight parent', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              child: AuraButton(
+                onPressed: () {
+                  final _ = Object();
+                },
+                child: const Text('Button'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final buttonRect = tester.getRect(find.byType(AuraButton));
+      final textRect = tester.getRect(find.text('Button'));
+
+      expect(textRect.center.dx, closeTo(buttonRect.center.dx, 0.5));
+    });
+
     testWidgets('applies ghost variant styling correctly', (tester) async {
       await tester.pumpWidget(
         MaterialApp(

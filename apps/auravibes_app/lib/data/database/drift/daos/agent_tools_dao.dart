@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'agent_tools_dao.g.dart';
 
 @DriftAccessor(tables: [AgentTools])
-class AgentToolsDao extends DatabaseAccessor<AppDatabase>
+class AgentToolsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$AgentToolsDaoMixin {
-  AgentToolsDao(super.attachedDatabase);
-
   Future<List<AgentToolsTable>> getAgentTools(String agentId) {
     return (select(agentTools)
           ..where((tbl) => tbl.agentId.equals(agentId))

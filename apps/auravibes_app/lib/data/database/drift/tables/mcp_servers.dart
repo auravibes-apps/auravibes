@@ -9,6 +9,8 @@ import 'package:drift/drift.dart';
 
 export 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 
+// Required: Framework declaration must remain top-level.
+// ignore: prefer-static-class
 final JsonTypeConverter2<McpTransportType, String, Object?>
 transportTypeConverter = TypeConverter.json2(
   fromJson: _transportTypeFromJson,
@@ -31,11 +33,8 @@ McpTransportType _transportTypeFromJson(Object? json) {
 @DataClassName('McpServersTable')
 class McpServers extends Table with TableMixin {
   /// Reference to the workspace this MCP server belongs to.
-  TextColumn get workspaceId => text().references(
-    Workspaces,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
 
   /// User-friendly name for the MCP server.
   TextColumn get name => text()();

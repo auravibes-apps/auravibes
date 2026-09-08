@@ -63,7 +63,9 @@ void main() {
           final result = await OAuthDiscoveryService.discoverOAuth(registrer);
           expect(result, isNull);
         },
-        () => MockClient((request) async => Response('{}', 404)),
+        () {
+          return MockClient((request) async => Response('{}', 404));
+        },
       );
     });
 

@@ -96,18 +96,12 @@ void main() {
     });
 
     test('isValid false when workspaceId is empty', () {
-      const create = ConversationToCreate(
-        title: 'New Chat',
-        workspaceId: '',
-      );
+      const create = ConversationToCreate(title: 'New Chat', workspaceId: '');
       expect(create.isValid, isFalse);
     });
 
     test('hasValidTitle false when title is empty', () {
-      const create = ConversationToCreate(
-        title: '',
-        workspaceId: 'ws_1',
-      );
+      const create = ConversationToCreate(title: '', workspaceId: 'ws_1');
       expect(create.hasValidTitle, isFalse);
       expect(create.isValid, isFalse);
     });

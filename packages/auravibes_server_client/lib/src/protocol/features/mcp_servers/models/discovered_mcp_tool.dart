@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class DiscoveredMcpTool implements _i1.SerializableModel {
+abstract class DiscoveredMcpTool
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   DiscoveredMcpTool._({
     required this.name,
     this.description,
@@ -41,7 +42,7 @@ abstract class DiscoveredMcpTool implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [DiscoveredMcpTool]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   DiscoveredMcpTool copyWith({
     String? name,
     String? description,
@@ -58,8 +59,18 @@ abstract class DiscoveredMcpTool implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'DiscoveredMcpTool',
+      'name': name,
+      if (description != null) 'description': description,
+      'inputSchemaJson': inputSchemaJson,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -78,7 +89,7 @@ class _DiscoveredMcpToolImpl extends DiscoveredMcpTool {
 
   /// Returns a shallow copy of this [DiscoveredMcpTool]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   DiscoveredMcpTool copyWith({
     String? name,

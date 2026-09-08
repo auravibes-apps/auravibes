@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 ///
 /// Color, motion, elevation, and layout raw tokens live here as static
 /// consts. Spacing, border radius, and typography values are intentionally
-/// absent: they are theme-owned (see AuraTheme in `aura_theme.dart`) so a
+/// absent. They are theme-owned (see AuraTheme in `aura_theme.dart`) so a
 /// subtree `Theme` override can rescale them. Call sites select them via the
 /// AuraSpacing / AuraBorderRadius enums (and AuraTextStyle for type).
-class DesignTokens {
-  DesignTokens._();
-}
+class DesignTokens._();
 
 /// Hue color values for semantic colors.
 ///
@@ -23,9 +21,7 @@ class DesignTokens {
 /// recalculate these hue values using the same conversion process instead of
 /// choosing arbitrary numbers, to keep the token set consistent and
 /// traceable back to the source design.
-class HueColorValues {
-  HueColorValues._();
-
+class HueColorValues._() {
   /// Hue value (in degrees) for the success semantic color (green range).
   static const double success = 149.04;
 
@@ -43,9 +39,7 @@ class HueColorValues {
 ///
 /// Provides a comprehensive color palette including primary, secondary,
 /// accent, neutral, and semantic colors for consistent UI design.
-class DesignColors {
-  DesignColors._();
-
+class DesignColors._() {
   // Primary colors.
 
   /// Main primary color for primary actions and branding.
@@ -130,9 +124,7 @@ class DesignColors {
 ///
 /// All values are in logical pixels, providing a scale from subtle to
 /// prominent borders.
-class DesignBorderWidth {
-  DesignBorderWidth._();
-
+class DesignBorderWidth._() {
   /// Thin border width (1px) for subtle dividers and outlines.
   static const double thin = 1;
 
@@ -146,9 +138,7 @@ class DesignBorderWidth {
 /// Elevation tokens for consistent shadow depth and layering.
 ///
 /// Values represent the elevation height in logical pixels for shadow effects.
-class DesignElevation {
-  DesignElevation._();
-
+class DesignElevation._() {
   /// No elevation for flat elements and backgrounds.
   static const double none = 0;
 
@@ -168,9 +158,7 @@ class DesignElevation {
 /// Animation duration tokens for consistent motion timing.
 ///
 /// Provides standard durations for different animation speeds and transitions.
-class DesignDuration {
-  DesignDuration._();
-
+class DesignDuration._() {
   /// Fast animation duration (150ms) for quick transitions and
   /// micro-interactions.
   static const Duration fast = Duration(milliseconds: 150);
@@ -188,9 +176,7 @@ class DesignDuration {
 ///
 /// All values are in logical pixels, defining screen width thresholds
 /// for responsive layout adjustments.
-class DesignBreakpoints {
-  DesignBreakpoints._();
-
+class DesignBreakpoints._() {
   /// Small breakpoint (640px) for mobile devices and narrow screens.
   static const double sm = 640;
 
@@ -210,9 +196,7 @@ class DesignBreakpoints {
 /// Input size tokens for consistent form input dimensions and spacing.
 ///
 /// Defines heights and padding for small, medium, and large input variants.
-class DesignInputSizes {
-  DesignInputSizes._();
-
+class DesignInputSizes._() {
   /// Small input height (32px, 2rem) for compact input fields.
   static const double heightSm = 32;
 
@@ -245,9 +229,7 @@ class DesignInputSizes {
 ///
 /// Provides predefined BoxShadow objects for different elevation levels
 /// and visual effects.
-class DesignShadows {
-  DesignShadows._();
-
+class DesignShadows._() {
   /// Small shadow for subtle elevation and hover states.
   static const BoxShadow sm = BoxShadow(
     color: Color(0x0D000000),

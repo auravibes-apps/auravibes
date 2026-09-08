@@ -14,9 +14,9 @@ Future<List<SkillCredentialDefinitionEntity>> skillCredentialDefinitions(
   String workspaceId,
 ) async {
   final cloud = await _cloudSkillStore(ref, workspaceId);
-  if (cloud != null) return cloud.definitions();
+  if (cloud != null) return await cloud.definitions();
 
-  return ref
+  return await ref
       .watch(skillCredentialDefinitionsRepositoryProvider)
       .getDefinitions(workspaceId);
 }
@@ -27,13 +27,11 @@ Future<CloudSkillStore?> _cloudSkillStore(Ref ref, String workspaceId) async {
   );
   if (gateway == null) return null;
 
-  return CloudSkillStore(
-    CloudWorkspaceResourceStore(gateway),
-    workspaceId,
-  );
+  return CloudSkillStore(CloudWorkspaceResourceStore(gateway), workspaceId);
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<SkillCredentialDefinitionEntity?> skillCredentialDefinition(
   Ref ref,
   String workspaceId,

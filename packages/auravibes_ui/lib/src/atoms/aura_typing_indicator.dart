@@ -1,6 +1,4 @@
 // Required: Component callbacks stay colocated with UI state.
-import 'dart:async';
-
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -11,12 +9,14 @@ import 'package:flutter/material.dart';
 /// that the AI is processing or typing a response.
 class AuraTypingIndicator extends StatefulWidget {
   /// Creates a Aura typing indicator.
-  const AuraTypingIndicator({
+  const new({
     super.key,
     this.size = AuraTypingIndicatorSize.medium,
     this.color,
     this.showContainer = true,
     this.animationDuration = const Duration(milliseconds: 600),
+    this.manageAlignment = true,
+    this.semanticLabel = 'AI is typing',
   });
 
   /// The size of the typing indicator.
@@ -31,12 +31,25 @@ class AuraTypingIndicator extends StatefulWidget {
   /// The duration of the animation cycle.
   final Duration animationDuration;
 
+  /// Whether the indicator manages its chat-side placement.
+  final bool manageAlignment;
+
+  /// A semantic label announced while typing.
+  final String? semanticLabel;
+
   @override
   State<AuraTypingIndicator> createState() => _AuraTypingIndicatorState();
 }
 
 class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     with TickerProviderStateMixin {
+  static const _dotCount = 3;
+  static const _stagger = 0.2;
+  static const _animationSpan = 0.4;
+  static const _initialScale = 0.4;
+  static const _smallDot = 4.0;
+  static const _mediumDot = 6.0;
+  static const _largeDot = 8.0;
   AnimationController? _animationController;
   List<Animation<double>> _dotAnimations = const [];
 
@@ -50,26 +63,12 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     _animationController = animationController;
 
     // Create staggered animations for each dot.
-    _dotAnimations = List.generate(3, (index) {
-      final begin = index * 0.2; // Stagger by 20% of the animation.
-      final end = begin + 0.4; // Each dot animates for 40% of the cycle.
+    _dotAnimations = List.generate(
+      _dotCount,
+      (index) => _buildDotAnimation(index, animationController),
+    );
 
-      return Tween<double>(
-        begin: 0.4,
-        end: 1,
-      ).animate(
-        CurvedAnimation(
-          parent: animationController,
-          curve: Interval(
-            begin,
-            end,
-            curve: Curves.easeInOut,
-          ),
-        ),
-      );
-    });
-
-    unawaited(animationController.repeat());
+    final _ = animationController.repeat();
   }
 
   @override
@@ -85,80 +84,87 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
 
     final content = Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (index) {
-        return AnimatedBuilder(
+      children: List.generate(
+        3,
+        (index) => AnimatedBuilder(
           animation: _dotAnimations[index],
-          builder: (context, child) {
-            return Opacity(
-              opacity: _dotAnimations[index].value,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: dotColor,
-                  shape: BoxShape.circle,
-                ),
-                width: _getDotSize(),
-                height: _getDotSize(),
-                margin: EdgeInsets.symmetric(
-                  horizontal: _getDotSpacing() / 2,
-                ),
+          builder: (context, child) => Opacity(
+            opacity: _dotAnimations[index].value,
+            child: Container(
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
               ),
-            );
-          },
-        );
-      }),
+              width: _getDotSize(),
+              height: _getDotSize(),
+              margin: EdgeInsets.symmetric(horizontal: _getDotSpacing() / 2),
+            ),
+          ),
+        ),
+      ),
     );
 
     if (!widget.showContainer) {
-      return Semantics(
-        child: content,
-        label: 'AI is typing',
-      );
+      return Semantics(child: content, label: widget.semanticLabel);
     }
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: _getContainerPadding(spacing: context.auraTheme.spacing),
-        decoration: BoxDecoration(
-          color: auraColors.surfaceVariant,
-          borderRadius:
-              BorderRadius.all(
-                Radius.circular(
-                  context.auraTheme.fromBorderRadius(.lg),
-                ),
-              ).copyWith(
-                bottomLeft: Radius.circular(
-                  context.auraTheme.fromBorderRadius(.sm),
-                ),
+    final indicator = Container(
+      padding: _getContainerPadding(spacing: context.auraTheme.spacing),
+      decoration: BoxDecoration(
+        color: auraColors.surfaceVariant,
+        borderRadius:
+            BorderRadius.all(
+              Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
+            ).copyWith(
+              bottomLeft: Radius.circular(
+                context.auraTheme.fromBorderRadius(.sm),
               ),
-          boxShadow: const [DesignShadows.sm],
-        ),
-        margin: EdgeInsets.only(
-          left: context.auraTheme.fromSpacing(.md),
-          right: context.auraTheme.fromSpacing(.xl),
-          bottom: context.auraTheme.fromSpacing(.sm),
-        ),
-        child: Semantics(
-          child: content,
-          label: 'AI is typing',
-        ),
+            ),
+        boxShadow: const [DesignShadows.sm],
+      ),
+      margin: widget.manageAlignment
+          ? EdgeInsetsDirectional.only(
+              start: context.auraTheme.fromSpacing(.md),
+              end: context.auraTheme.fromSpacing(.xl),
+              bottom: context.auraTheme.fromSpacing(.sm),
+            )
+          : EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.sm)),
+      child: Semantics(child: content, label: widget.semanticLabel),
+    );
+
+    if (!widget.manageAlignment) return indicator;
+
+    return Align(alignment: AlignmentDirectional.centerStart, child: indicator);
+  }
+
+  Animation<double> _buildDotAnimation(
+    int index,
+    AnimationController animationController,
+  ) {
+    final begin = index * _stagger;
+    final end = begin + _animationSpan;
+
+    return Tween<double>(begin: _initialScale, end: 1).animate(
+      CurvedAnimation(
+        parent: animationController,
+        curve: Interval(begin, end, curve: Curves.easeInOut),
       ),
     );
   }
 
   double _getDotSize() {
     return switch (widget.size) {
-      AuraTypingIndicatorSize.small => 4.0,
-      AuraTypingIndicatorSize.medium => 6.0,
-      AuraTypingIndicatorSize.large => 8.0,
+      AuraTypingIndicatorSize.small => _smallDot,
+      AuraTypingIndicatorSize.medium => _mediumDot,
+      AuraTypingIndicatorSize.large => _largeDot,
     };
   }
 
   double _getDotSpacing() {
     return switch (widget.size) {
-      AuraTypingIndicatorSize.small => 4.0,
-      AuraTypingIndicatorSize.medium => 6.0,
-      AuraTypingIndicatorSize.large => 8.0,
+      AuraTypingIndicatorSize.small => _smallDot,
+      AuraTypingIndicatorSize.medium => _mediumDot,
+      AuraTypingIndicatorSize.large => _largeDot,
     };
   }
 

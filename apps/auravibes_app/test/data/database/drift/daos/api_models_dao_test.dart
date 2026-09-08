@@ -23,10 +23,7 @@ Future<void> seedProvider(
   ApiModelProvidersCompanion.insert(id: id, name: name),
 );
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -108,10 +105,7 @@ void main() {
         ),
       );
       final model = await fixture.database.apiModelsDao
-          .getModelByProviderAndModelId(
-            'openai',
-            'gpt-4',
-          );
+          .getModelByProviderAndModelId('openai', 'gpt-4');
       expect(model, isNotNull);
       expect(
         (model ?? fail('Expected model to be non-null')).name,
@@ -121,10 +115,7 @@ void main() {
 
     test('getModelByProviderAndModelId returns null when not found', () async {
       final model = await fixture.database.apiModelsDao
-          .getModelByProviderAndModelId(
-            'openai',
-            'nonexistent',
-          );
+          .getModelByProviderAndModelId('openai', 'nonexistent');
       expect(model, isNull);
     });
 
@@ -150,9 +141,7 @@ void main() {
         ),
       );
       final openaiModels = await fixture.database.apiModelsDao
-          .getModelsByProvider(
-            'openai',
-          );
+          .getModelsByProvider('openai');
       expect(openaiModels.length, equals(1));
       expect(openaiModels.firstOrNull?.name, equals('GPT-4'));
     });
@@ -382,9 +371,7 @@ void main() {
         ),
       );
       final results = await fixture.database.apiModelsDao
-          .getModelsByMinContextLimit(
-            100000,
-          );
+          .getModelsByMinContextLimit(100000);
       expect(results.length, equals(1));
       expect(results.firstOrNull?.name, equals('GPT-4'));
     });

@@ -1,11 +1,16 @@
 # Dependabot configuration file - enable regular dependency checks.
 version: 2
+# Exclude every dependency from cooldown; 1 day is schema minimum and has no effect here.
 
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: daily
+    cooldown:
+      default-days: 1
+      exclude:
+        - "*"
     groups:
       github-actions:
         patterns:
@@ -14,3 +19,7 @@ updates:
     directory: /
     schedule:
       interval: daily
+    cooldown:
+      default-days: 1
+      exclude:
+        - "*"

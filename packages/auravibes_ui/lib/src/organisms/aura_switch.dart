@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -10,20 +11,21 @@ import 'package:flutter/widgets.dart';
 /// This switch supports multiple sizes and states (on/off, disabled, loading)
 /// while maintaining consistency with the design tokens.
 class AuraSwitch extends StatefulWidget {
+  /// The padding between the track edge and the thumb.
+  /// This creates the visual gap that makes the thumb appear to float
+  /// inside the track, consistent across all sizes.
+  static const double _thumbPadding = 2;
+
   /// Creates an Aura switch.
-  const AuraSwitch({
+  const new({
     required this.value,
     required this.onChanged,
     super.key,
     this.size = AuraSwitchSize.base,
     this.disabled = false,
     this.isLoading = false,
+    this.semanticLabel = 'Switch',
   });
-
-  /// The padding between the track edge and the thumb.
-  /// This creates the visual gap that makes the thumb appear to float
-  /// inside the track, consistent across all sizes.
-  static const double _thumbPadding = 2;
 
   /// Whether the switch is on or off.
   final bool value;
@@ -42,11 +44,25 @@ class AuraSwitch extends StatefulWidget {
   /// Whether the switch is in a loading state.
   final bool isLoading;
 
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
+
   @override
   State<AuraSwitch> createState() => _AuraSwitchState();
 }
 
 class _AuraSwitchState extends State<AuraSwitch> {
+  static const _loadingScale = 0.6;
+  static const _half = 2.0;
+  static const _smallTrackWidth = 36.0;
+  static const _baseTrackWidth = 44.0;
+  static const _largeTrackWidth = 52.0;
+  static const _smallTrackHeight = 20.0;
+  static const _baseTrackHeight = 24.0;
+  static const _largeTrackHeight = 28.0;
+  static const _smallThumbSize = 16.0;
+  static const _baseThumbSize = 20.0;
+  static const _largeThumbSize = 24.0;
   bool _isFocused = false;
 
   @override
@@ -55,8 +71,9 @@ class _AuraSwitchState extends State<AuraSwitch> {
     final auraTheme = context.auraTheme;
 
     final onChanged = widget.onChanged;
-    final isInteractive =
-        !widget.disabled && !widget.isLoading && onChanged != null;
+    final isDisabled =
+        widget.disabled || !AuraInteractionScope.of(context).allowsValueChanges;
+    final isInteractive = !isDisabled && !widget.isLoading && onChanged != null;
 
     final trackWidth = _getTrackWidth();
     final trackHeight = _getTrackHeight();
@@ -67,9 +84,10 @@ class _AuraSwitchState extends State<AuraSwitch> {
         ? trackWidth - thumbSize - thumbPadding * 2
         : 0.0;
 
-    final trackColor = _getTrackColor(auraColors);
+    final trackColor = _getTrackColor(auraColors, disabled: isDisabled);
     final thumbColor = _getThumbColor(auraColors);
     final loadingTint = _getLoadingTint();
+    final normalAnimation = auraTheme.animation.normal;
 
     void handleToggle() => onChanged?.call(!widget.value);
 
@@ -91,13 +109,13 @@ class _AuraSwitchState extends State<AuraSwitch> {
             : SystemMouseCursors.basic,
         child: GestureDetector(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             child: Center(
               child: AnimatedContainer(
                 padding: EdgeInsets.all(thumbPadding),
                 decoration: BoxDecoration(
                   color: trackColor,
-                  borderRadius: BorderRadius.circular(trackHeight / 2),
+                  borderRadius: BorderRadius.circular(trackHeight / _half),
                   boxShadow: _isFocused
                       ? [
                           BoxShadow(
@@ -115,9 +133,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
                       child: AnimatedContainer(
                         decoration: BoxDecoration(
                           color: thumbColor,
-                          boxShadow: widget.disabled
-                              ? null
-                              : [DesignShadows.sm],
+                          boxShadow: isDisabled ? null : [DesignShadows.sm],
                           shape: BoxShape.circle,
                         ),
                         width: thumbSize,
@@ -125,20 +141,20 @@ class _AuraSwitchState extends State<AuraSwitch> {
                         child: widget.isLoading
                             ? AuraLoadingCircle(
                                 tint: loadingTint,
-                                size: thumbSize * 0.6,
+                                size: thumbSize * _loadingScale,
                               )
                             : null,
-                        duration: auraTheme.animation.normal,
+                        duration: normalAnimation,
                       ),
                       left: thumbOffset,
                       top: 0,
                       bottom: 0,
                       curve: Curves.easeInOut,
-                      duration: auraTheme.animation.normal,
+                      duration: normalAnimation,
                     ),
                   ],
                 ),
-                duration: auraTheme.animation.normal,
+                duration: normalAnimation,
               ),
             ),
           ),
@@ -148,37 +164,38 @@ class _AuraSwitchState extends State<AuraSwitch> {
       ),
       enabled: isInteractive,
       toggled: widget.value,
+      label: widget.semanticLabel,
     );
   }
 
   double _getTrackWidth() {
     return switch (widget.size) {
-      AuraSwitchSize.sm => 36.0,
-      AuraSwitchSize.base => 44.0,
-      AuraSwitchSize.lg => 52.0,
+      AuraSwitchSize.sm => _smallTrackWidth,
+      AuraSwitchSize.base => _baseTrackWidth,
+      AuraSwitchSize.lg => _largeTrackWidth,
     };
   }
 
   double _getTrackHeight() {
     return switch (widget.size) {
-      AuraSwitchSize.sm => 20.0,
-      AuraSwitchSize.base => 24.0,
-      AuraSwitchSize.lg => 28.0,
+      AuraSwitchSize.sm => _smallTrackHeight,
+      AuraSwitchSize.base => _baseTrackHeight,
+      AuraSwitchSize.lg => _largeTrackHeight,
     };
   }
 
   double _getThumbSize() {
     return switch (widget.size) {
-      AuraSwitchSize.sm => 16.0,
-      AuraSwitchSize.base => 20.0,
-      AuraSwitchSize.lg => 24.0,
+      AuraSwitchSize.sm => _smallThumbSize,
+      AuraSwitchSize.base => _baseThumbSize,
+      AuraSwitchSize.lg => _largeThumbSize,
     };
   }
 
   double _getThumbPadding() => AuraSwitch._thumbPadding;
 
-  Color _getTrackColor(AuraColorScheme colors) {
-    if (widget.disabled) {
+  Color _getTrackColor(AuraColorScheme colors, {required bool disabled}) {
+    if (disabled) {
       return colors.outlineVariant;
     }
 

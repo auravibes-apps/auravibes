@@ -10,14 +10,15 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
+
 import '../../../features/workspace_state/models/workspace_secret_kind.dart'
-    as _i2;
+    as _iffvdh0v;
 import '../../../features/workspace_state/models/workspace_secret_scope.dart'
-    as _i3;
+    as _iews8xwg;
 
 abstract class PutWorkspaceSecretRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   PutWorkspaceSecretRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -31,8 +32,8 @@ abstract class PutWorkspaceSecretRequest
   factory PutWorkspaceSecretRequest({
     required int workspaceId,
     required String requestId,
-    required _i2.WorkspaceSecretKind secretKind,
-    required _i3.WorkspaceSecretScope scope,
+    required _iffvdh0v.WorkspaceSecretKind secretKind,
+    required _iews8xwg.WorkspaceSecretScope scope,
     required String resourceId,
     String? secret,
     int? expectedRevision,
@@ -44,10 +45,10 @@ abstract class PutWorkspaceSecretRequest
     return PutWorkspaceSecretRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
-      secretKind: _i2.WorkspaceSecretKind.fromJson(
+      secretKind: _iffvdh0v.WorkspaceSecretKind.fromJson(
         (jsonSerialization['secretKind'] as String),
       ),
-      scope: _i3.WorkspaceSecretScope.fromJson(
+      scope: _iews8xwg.WorkspaceSecretScope.fromJson(
         (jsonSerialization['scope'] as String),
       ),
       resourceId: jsonSerialization['resourceId'] as String,
@@ -60,9 +61,9 @@ abstract class PutWorkspaceSecretRequest
 
   String requestId;
 
-  _i2.WorkspaceSecretKind secretKind;
+  _iffvdh0v.WorkspaceSecretKind secretKind;
 
-  _i3.WorkspaceSecretScope scope;
+  _iews8xwg.WorkspaceSecretScope scope;
 
   String resourceId;
 
@@ -72,12 +73,12 @@ abstract class PutWorkspaceSecretRequest
 
   /// Returns a shallow copy of this [PutWorkspaceSecretRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   PutWorkspaceSecretRequest copyWith({
     int? workspaceId,
     String? requestId,
-    _i2.WorkspaceSecretKind? secretKind,
-    _i3.WorkspaceSecretScope? scope,
+    _iffvdh0v.WorkspaceSecretKind? secretKind,
+    _iews8xwg.WorkspaceSecretScope? scope,
     String? resourceId,
     String? secret,
     int? expectedRevision,
@@ -112,7 +113,7 @@ abstract class PutWorkspaceSecretRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -122,8 +123,8 @@ class _PutWorkspaceSecretRequestImpl extends PutWorkspaceSecretRequest {
   _PutWorkspaceSecretRequestImpl({
     required int workspaceId,
     required String requestId,
-    required _i2.WorkspaceSecretKind secretKind,
-    required _i3.WorkspaceSecretScope scope,
+    required _iffvdh0v.WorkspaceSecretKind secretKind,
+    required _iews8xwg.WorkspaceSecretScope scope,
     required String resourceId,
     String? secret,
     int? expectedRevision,
@@ -139,13 +140,13 @@ class _PutWorkspaceSecretRequestImpl extends PutWorkspaceSecretRequest {
 
   /// Returns a shallow copy of this [PutWorkspaceSecretRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   PutWorkspaceSecretRequest copyWith({
     int? workspaceId,
     String? requestId,
-    _i2.WorkspaceSecretKind? secretKind,
-    _i3.WorkspaceSecretScope? scope,
+    _iffvdh0v.WorkspaceSecretKind? secretKind,
+    _iews8xwg.WorkspaceSecretScope? scope,
     String? resourceId,
     Object? secret = _Undefined,
     Object? expectedRevision = _Undefined,

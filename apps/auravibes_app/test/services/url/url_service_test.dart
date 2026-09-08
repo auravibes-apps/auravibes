@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/services/url/url_service.dart';
@@ -26,9 +27,7 @@ void main() {
       final service = UrlService(dio: dio);
 
       final response = await service
-          .execute(
-            const UrlRequest(url: 'https://example.com'),
-          )
+          .execute(const UrlRequest(url: 'https://example.com'))
           .value;
 
       expect(response.statusCode, 200);
@@ -350,9 +349,7 @@ void main() {
               await (requestStream ??
                       fail('Expected requestStream to be non-null'))
                   .toList();
-          streamedBody = String.fromCharCodes(
-            chunks.expand((chunk) => chunk),
-          );
+          streamedBody = String.fromCharCodes(chunks.expand((chunk) => chunk));
 
           return ResponseBody.fromString('ok', 200);
         },
@@ -433,6 +430,67 @@ void main() {
 
       expect(response.body, contains('[truncated]'));
       expect(response.body, isNot(contains('overflow')));
+    });
+
+    test('caps streamed response bodies by UTF-8 bytes', () async {
+      final largeBody = String.fromCharCode(0x20AC) * (1024 * 1024 + 1);
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          return ResponseBody.fromString(largeBody, 200);
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com'))
+          .value;
+
+      final replacementCharacter = String.fromCharCode(0xFFFD);
+      expect(response.body, contains('[truncated]'));
+      expect(response.body, isNot(contains(replacementCharacter)));
+      expect(utf8.encode(response.body).length, lessThan(1024 * 1024 + 100));
+    });
+
+    test('preserves UTF-8 code points split across response chunks', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          return ResponseBody(
+            Stream<Uint8List>.fromIterable([
+              Uint8List.fromList([0xE2]),
+              Uint8List.fromList([0x82, 0xAC]),
+            ]),
+            200,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com'))
+          .value;
+
+      expect(response.body, String.fromCharCode(0x20AC));
+    });
+
+    test('preserves malformed trailing bytes on normal completion', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          return ResponseBody(
+            Stream<Uint8List>.value(Uint8List.fromList([0xE2])),
+            200,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com'))
+          .value;
+
+      expect(response.body, String.fromCharCode(0xFFFD));
     });
 
     test('includes elapsed duration in response', () async {
@@ -541,9 +599,7 @@ void main() {
         final service = UrlService(dio: dio);
 
         final _ = await service
-            .execute(
-              const UrlRequest(url: 'https://example.com'),
-            )
+            .execute(const UrlRequest(url: 'https://example.com'))
             .value;
 
         expect(userAgent, contains('Mozilla/5.0'));
@@ -587,9 +643,7 @@ void main() {
         final service = UrlService(dio: dio);
 
         final _ = await service
-            .execute(
-              const UrlRequest(url: 'https://example.com'),
-            )
+            .execute(const UrlRequest(url: 'https://example.com'))
             .value;
 
         expect(acceptLanguage, 'en-US,en;q=0.9');
@@ -622,16 +676,14 @@ void main() {
   });
 }
 
-final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required this._onFetch});
-
-  final Future<ResponseBody> Function(
+final class _FakeHttpClientAdapter({
+  required final Future<ResponseBody> Function(
     RequestOptions,
     Stream<Uint8List>?,
     Future<void>?,
   )
-  _onFetch;
-
+  _onFetch,
+}) implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,

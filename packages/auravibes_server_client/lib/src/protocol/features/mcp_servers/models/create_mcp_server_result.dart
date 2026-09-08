@@ -10,12 +10,15 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import '../../../features/mcp_servers/models/discover_mcp_server_result.dart'
-    as _i2;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class CreateMcpServerResult implements _i1.SerializableModel {
+import '../../../features/mcp_servers/models/discover_mcp_server_result.dart'
+    as _iihu1tr0;
+
+abstract class CreateMcpServerResult
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CreateMcpServerResult._({
     required this.mcpServerId,
     required this.createdAt,
@@ -25,7 +28,7 @@ abstract class CreateMcpServerResult implements _i1.SerializableModel {
   factory CreateMcpServerResult({
     required String mcpServerId,
     required DateTime createdAt,
-    required _i2.DiscoverMcpServerResult discovery,
+    required _iihu1tr0.DiscoverMcpServerResult discovery,
   }) = _CreateMcpServerResultImpl;
 
   factory CreateMcpServerResult.fromJson(
@@ -33,12 +36,13 @@ abstract class CreateMcpServerResult implements _i1.SerializableModel {
   ) {
     return CreateMcpServerResult(
       mcpServerId: jsonSerialization['mcpServerId'] as String,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
-      discovery: _i3.Protocol().deserialize<_i2.DiscoverMcpServerResult>(
-        jsonSerialization['discovery'],
-      ),
+      discovery: _isctvzjc.Protocol()
+          .deserialize<_iihu1tr0.DiscoverMcpServerResult>(
+            jsonSerialization['discovery'],
+          ),
     );
   }
 
@@ -46,15 +50,15 @@ abstract class CreateMcpServerResult implements _i1.SerializableModel {
 
   DateTime createdAt;
 
-  _i2.DiscoverMcpServerResult discovery;
+  _iihu1tr0.DiscoverMcpServerResult discovery;
 
   /// Returns a shallow copy of this [CreateMcpServerResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CreateMcpServerResult copyWith({
     String? mcpServerId,
     DateTime? createdAt,
-    _i2.DiscoverMcpServerResult? discovery,
+    _iihu1tr0.DiscoverMcpServerResult? discovery,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -67,8 +71,18 @@ abstract class CreateMcpServerResult implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CreateMcpServerResult',
+      'mcpServerId': mcpServerId,
+      'createdAt': createdAt.toJson(),
+      'discovery': discovery.toJsonForProtocol(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -76,7 +90,7 @@ class _CreateMcpServerResultImpl extends CreateMcpServerResult {
   _CreateMcpServerResultImpl({
     required String mcpServerId,
     required DateTime createdAt,
-    required _i2.DiscoverMcpServerResult discovery,
+    required _iihu1tr0.DiscoverMcpServerResult discovery,
   }) : super._(
          mcpServerId: mcpServerId,
          createdAt: createdAt,
@@ -85,12 +99,12 @@ class _CreateMcpServerResultImpl extends CreateMcpServerResult {
 
   /// Returns a shallow copy of this [CreateMcpServerResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CreateMcpServerResult copyWith({
     String? mcpServerId,
     DateTime? createdAt,
-    _i2.DiscoverMcpServerResult? discovery,
+    _iihu1tr0.DiscoverMcpServerResult? discovery,
   }) {
     return CreateMcpServerResult(
       mcpServerId: mcpServerId ?? this.mcpServerId,

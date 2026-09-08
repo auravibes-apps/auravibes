@@ -7,11 +7,7 @@ void main() {
   group('AuraSpinner', () {
     testWidgets('renders spinner correctly', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinner(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraSpinner())),
       );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -32,11 +28,7 @@ void main() {
             ? const AuraSpinner()
             : AuraSpinner(size: size);
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(body: spinner),
-          ),
-        );
+        await tester.pumpWidget(MaterialApp(home: Scaffold(body: spinner)));
 
         final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
         expect(sizedBox.width, dimension, reason: label);
@@ -49,11 +41,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinner(
-              color: customColor,
-            ),
-          ),
+          home: Scaffold(body: AuraSpinner(color: customColor)),
         ),
       );
 
@@ -67,11 +55,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinner(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraSpinner())),
       );
 
       final progressIndicator = tester.widget<CircularProgressIndicator>(
@@ -85,11 +69,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinner(
-              strokeWidth: customStrokeWidth,
-            ),
-          ),
+          home: Scaffold(body: AuraSpinner(strokeWidth: customStrokeWidth)),
         ),
       );
 
@@ -104,11 +84,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinner(
-              semanticLabel: semanticLabel,
-            ),
-          ),
+          home: Scaffold(body: AuraSpinner(semanticLabel: semanticLabel)),
         ),
       );
 
@@ -118,21 +94,15 @@ void main() {
       expect(progressIndicator.semanticsLabel, semanticLabel);
     });
 
-    testWidgets('applies default semantic label when none provided', (
-      tester,
-    ) async {
+    testWidgets('omits semantic label when none provided', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinner(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraSpinner())),
       );
 
       final progressIndicator = tester.widget<CircularProgressIndicator>(
         find.byType(CircularProgressIndicator),
       );
-      expect(progressIndicator.semanticsLabel, 'Loading');
+      expect(progressIndicator.semanticsLabel, isNull);
     });
 
     group('AuraSpinnerSize enum', () {
@@ -150,11 +120,7 @@ void main() {
   group('AuraLoadingOverlay', () {
     testWidgets('shows overlay when isLoading is true', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraLoadingOverlay(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraLoadingOverlay())),
       );
 
       expect(find.byType(AuraSpinner), findsOneWidget);
@@ -167,11 +133,7 @@ void main() {
     testWidgets('hides overlay when isLoading is false', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraLoadingOverlay(
-              isLoading: false,
-            ),
-          ),
+          home: Scaffold(body: AuraLoadingOverlay(isLoading: false)),
         ),
       );
 
@@ -185,10 +147,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraLoadingOverlay(
-              isLoading: false,
-              child: Text(childText),
-            ),
+            body: AuraLoadingOverlay(isLoading: false, child: Text(childText)),
           ),
         ),
       );
@@ -204,11 +163,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraLoadingOverlay(
-              child: Text(childText),
-            ),
-          ),
+          home: Scaffold(body: AuraLoadingOverlay(child: Text(childText))),
         ),
       );
 
@@ -229,11 +184,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraLoadingOverlay(
-              message: message,
-            ),
-          ),
+          home: Scaffold(body: AuraLoadingOverlay(message: message)),
         ),
       );
 
@@ -247,9 +198,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraLoadingOverlay(
-              backgroundColor: customBackgroundColor,
-            ),
+            body: AuraLoadingOverlay(backgroundColor: customBackgroundColor),
           ),
         ),
       );

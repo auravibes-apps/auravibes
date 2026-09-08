@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_engine/src/agent_stream_service.dart';
 import 'package:test/test.dart';
+
 import 'support/fake_cancellation_effects.dart';
 
 void main() {
@@ -198,27 +199,15 @@ void main() {
   );
 }
 
-class _Chunk {
-  const _Chunk(this.text);
+class const _Chunk(final String text);
 
-  final String text;
-}
-
-class _FakeAgentStreamProvider implements AgentStreamProvider<_Chunk> {
-  const _FakeAgentStreamProvider({
-    required this.persistenceSink,
-    required this.uiSink,
-    required this.calls,
-    this.throwOnConcat = false,
-    this.onStartMessageStreaming,
-  });
-
-  final _MemorySink<_Chunk> persistenceSink;
-  final _MemorySink<_Chunk> uiSink;
-  final List<String> calls;
-  final bool throwOnConcat;
-  final void Function(String messageId)? onStartMessageStreaming;
-
+class const _FakeAgentStreamProvider({
+  required final _MemorySink<_Chunk> persistenceSink,
+  required final _MemorySink<_Chunk> uiSink,
+  required final List<String> calls,
+  final bool throwOnConcat = false,
+  final void Function(String messageId)? onStartMessageStreaming,
+}) implements AgentStreamProvider<_Chunk> {
   @override
   void startConversationStreaming(String conversationId) {
     calls.add('start:$conversationId');

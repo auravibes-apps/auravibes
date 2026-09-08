@@ -2,16 +2,11 @@ import 'dart:async';
 
 typedef ConversationJobDrain = Future<void> Function(bool Function() isActive);
 
-final class ConversationJobDispatcher {
-  ConversationJobDispatcher({
-    required this._drain,
-    required this._onError,
-    this.recoveryInterval = const Duration(seconds: 30),
-  });
-
-  final ConversationJobDrain _drain;
-  final void Function(Object error, StackTrace stackTrace) _onError;
-  final Duration recoveryInterval;
+final class ConversationJobDispatcher({
+  required final ConversationJobDrain _drain,
+  required final void Function(Object error, StackTrace stackTrace) _onError,
+  final Duration recoveryInterval = const Duration(seconds: 30),
+}) {
   StreamSubscription<void>? _subscription;
   Timer? _recoveryTimer;
   Future<void>? _drainTask;

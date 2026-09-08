@@ -1,27 +1,21 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
-import 'package:auravibes_app/providers/chatbot_service_provider.dart';
-import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
-class GenerateTitleUsecase {
-  const GenerateTitleUsecase({
-    required this.conversationRepo,
-    required this.chatbotService,
-    required this.titlesStreamingRuntime,
-    required this.monitoringService,
-  });
-
-  final ConversationRepository conversationRepo;
-  final ChatbotService chatbotService;
-  final TitlesStreamingRuntime titlesStreamingRuntime;
-  final MonitoringService monitoringService;
+class const GenerateTitleUsecase({
+  required final ConversationRepository conversationRepo,
+  required final ChatbotService chatbotService,
+  required final TitlesStreamingRuntime titlesStreamingRuntime,
+  required final MonitoringService monitoringService,
+}) {
   void call({
     required String conversationId,
     required String firstMessage,
@@ -54,9 +48,7 @@ class GenerateTitleUsecase {
           store: (t) async {
             final _ = await conversationRepo.patchConversation(
               conversationId,
-              .new(
-                title: t,
-              ),
+              .new(title: t),
             );
           },
         )
@@ -64,13 +56,11 @@ class GenerateTitleUsecase {
   }
 }
 
-final generateTitleUsecaseProvider = Provider<GenerateTitleUsecase>(
-  (ref) {
-    return GenerateTitleUsecase(
-      conversationRepo: ref.watch(conversationRepositoryProvider),
-      chatbotService: ref.watch(chatbotServiceProvider),
-      titlesStreamingRuntime: ref.watch(titlesStreamingRuntimeProvider),
-      monitoringService: ref.watch(monitoringServiceProvider),
-    );
-  },
-);
+final generateTitleUsecaseProvider = Provider<GenerateTitleUsecase>((ref) {
+  return GenerateTitleUsecase(
+    conversationRepo: ref.watch(conversationRepositoryProvider),
+    chatbotService: ref.watch(chatbotServiceProvider),
+    titlesStreamingRuntime: ref.watch(titlesStreamingRuntimeProvider),
+    monitoringService: ref.watch(monitoringServiceProvider),
+  );
+});

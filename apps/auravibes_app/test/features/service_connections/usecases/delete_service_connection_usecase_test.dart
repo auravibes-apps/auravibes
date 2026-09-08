@@ -20,9 +20,8 @@ void main() {
       () async {
         final modelRepository = _MockModelConnectionRepository();
         final credentialsRepository = _MockSkillCredentialsRepository();
-        when(
-          () => modelRepository.deleteModelConnection('model-connection-1'),
-        ).thenAnswer((_) => Future<void>.value());
+        when(() => modelRepository.deleteModelConnection('model-connection-1'))
+            .thenAnswer((_) => Future<void>.value());
         final usecase = DeleteServiceConnectionUsecase(
           modelConnectionRepository: modelRepository,
           deleteSkillCredential: credentialsRepository.deleteCredential,
@@ -48,9 +47,8 @@ void main() {
     test('deletes skill credentials through credentials repository', () async {
       final modelRepository = _MockModelConnectionRepository();
       final credentialsRepository = _MockSkillCredentialsRepository();
-      when(
-        () => credentialsRepository.deleteCredential('credential-1'),
-      ).thenAnswer((_) => Future<void>.value());
+      when(() => credentialsRepository.deleteCredential('credential-1'))
+          .thenAnswer((_) => Future<void>.value());
       final usecase = DeleteServiceConnectionUsecase(
         modelConnectionRepository: modelRepository,
         deleteSkillCredential: credentialsRepository.deleteCredential,
@@ -84,9 +82,7 @@ void main() {
       );
 
       expect(deletedId, 'cloud-credential');
-      final _ = verifyNever(
-        () => modelRepository.deleteModelConnection(any()),
-      );
+      final _ = verifyNever(() => modelRepository.deleteModelConnection(any()));
     });
 
     test('rejects MCP server delete requests', () {
@@ -122,15 +118,13 @@ void main() {
         final session = Completer<WorkspaceSession>();
         final container = ProviderContainer(
           overrides: [
-            workspaceSessionForRouteProvider('workspace').overrideWith(
-              (_) => session.future,
-            ),
+            workspaceSessionForRouteProvider('workspace')
+                .overrideWith((_) => session.future),
             cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async {
               return _MockCloudWorkspaceStateGateway();
             }),
-            modelConnectionStoreProvider('workspace').overrideWith(
-              (_) async => _MockModelConnectionStore(),
-            ),
+            modelConnectionStoreProvider('workspace')
+                .overrideWith((_) async => _MockModelConnectionStore()),
           ],
         );
         addTearDown(container.dispose);
@@ -152,12 +146,12 @@ void main() {
 }
 
 class _MockCloudWorkspaceStateGateway extends Mock
-    implements CloudWorkspaceStateGateway {}
+    implements CloudWorkspaceStateGateway;
 
 class _MockModelConnectionRepository extends Mock
-    implements ModelConnectionRepository {}
+    implements ModelConnectionRepository;
 
-class _MockModelConnectionStore extends Mock implements ModelConnectionStore {}
+class _MockModelConnectionStore extends Mock implements ModelConnectionStore;
 
 class _MockSkillCredentialsRepository extends Mock
-    implements SkillCredentialsRepository {}
+    implements SkillCredentialsRepository;

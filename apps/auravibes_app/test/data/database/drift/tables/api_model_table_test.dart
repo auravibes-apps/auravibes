@@ -15,10 +15,7 @@ QueryExecutor _testConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -42,9 +39,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       columns = await fixture.database
-          .customSelect(
-            'PRAGMA table_info(api_models)',
-          )
+          .customSelect('PRAGMA table_info(api_models)')
           .get();
     });
 
@@ -80,9 +75,7 @@ void main() {
     });
 
     test('composite primary key on id and model_provider', () {
-      final idCol = columns.firstWhere(
-        (r) => r.read<String>('name') == 'id',
-      );
+      final idCol = columns.firstWhere((r) => r.read<String>('name') == 'id');
       final mpCol = columns.firstWhere(
         (r) => r.read<String>('name') == 'model_provider',
       );

@@ -5,26 +5,34 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
+typedef WorkspaceResourceRead = Future<ReadWorkspaceStateResponse> Function({
+  required List<WorkspaceResourcePageRequest> pages,
+  required int eventLimit,
+  int? afterSequence,
+});
+
 class CloudWorkspaceResourceStore {
-  CloudWorkspaceResourceStore(CloudWorkspaceStateGateway gateway)
-    : _watch = gateway.watchResources,
+  new(CloudWorkspaceStateGateway gateway)
+    : _read = gateway.read,
+      _watch = gateway.watchResources,
       _patch = gateway.patch,
       _putSecret = gateway.putSecret,
       _mutateCredential = gateway.mutateCredential;
 
-  CloudWorkspaceResourceStore.deferred(
-    Future<CloudWorkspaceStateGateway?> gateway,
-  ) : _watch = ((kinds) async* {
+  new deferred(Future<CloudWorkspaceStateGateway?> gateway)
+    : _read = (({required pages, required eventLimit, afterSequence}) async {
+        return await (await _requireGateway(gateway)).read(
+          pages: pages,
+          afterSequence: afterSequence,
+          eventLimit: eventLimit,
+        );
+      }),
+      _watch = ((kinds) async* {
         yield* (await _requireGateway(gateway)).watchResources(kinds);
       }),
-      _patch =
-          (({
-            required requestId,
-            required operations,
-          }) async => (await _requireGateway(gateway)).patch(
-            requestId: requestId,
-            operations: operations,
-          )),
+      _patch = (({required requestId, required operations}) async =>
+          await (await _requireGateway(gateway))
+              .patch(requestId: requestId, operations: operations)),
       _putSecret =
           (({
             required requestId,
@@ -33,7 +41,7 @@ class CloudWorkspaceResourceStore {
             required resourceId,
             secret,
             expectedRevision,
-          }) async => (await _requireGateway(gateway)).putSecret(
+          }) async => await (await _requireGateway(gateway)).putSecret(
             requestId: requestId,
             secretKind: secretKind,
             scope: scope,
@@ -50,7 +58,7 @@ class CloudWorkspaceResourceStore {
             required secret,
             required clearSecret,
             expectedSecretRevision,
-          }) async => (await _requireGateway(gateway)).mutateCredential(
+          }) async => await (await _requireGateway(gateway)).mutateCredential(
             requestId: requestId,
             resourceOperation: resourceOperation,
             secretKind: secretKind,
@@ -60,13 +68,15 @@ class CloudWorkspaceResourceStore {
             expectedSecretRevision: expectedSecretRevision,
           ));
 
-  const CloudWorkspaceResourceStore.forTesting({
+  const new forTesting({
     required this._watch,
     required this._patch,
     required this._putSecret,
     required this._mutateCredential,
+    this._read = _unsupportedRead,
   });
 
+  final WorkspaceResourceRead _read;
   final Stream<List<WorkspaceResource>> Function(
     List<WorkspaceResourceKind> kinds,
   )
@@ -96,8 +106,24 @@ class CloudWorkspaceResourceStore {
   })
   _mutateCredential;
 
+  Future<ReadWorkspaceStateResponse> read({
+    required List<WorkspaceResourcePageRequest> pages,
+    int? afterSequence,
+    int eventLimit = 100,
+  }) =>
+      _read(pages: pages, afterSequence: afterSequence, eventLimit: eventLimit);
+
+  Future<PatchWorkspaceStateResponse> patch({
+    required String requestId,
+    required List<WorkspacePatchOperation> operations,
+  }) => _patch(requestId: requestId, operations: operations);
+
+  Stream<List<WorkspaceResource>> watchResources(
+    List<WorkspaceResourceKind> kinds,
+  ) => _watch(kinds);
+
   Stream<List<WorkspaceResource>> watch(WorkspaceResourceKind kind) =>
-      _watch([kind]);
+      watchResources([kind]);
 
   Future<void> create({
     required WorkspaceResourceKind kind,
@@ -222,6 +248,12 @@ class CloudWorkspaceResourceStore {
     );
   }
 }
+
+Future<ReadWorkspaceStateResponse> _unsupportedRead({
+  required List<WorkspaceResourcePageRequest> pages,
+  required int eventLimit,
+  int? afterSequence,
+}) => throw UnimplementedError('$pages$afterSequence$eventLimit');
 
 Future<CloudWorkspaceStateGateway> _requireGateway(
   Future<CloudWorkspaceStateGateway?> gateway,

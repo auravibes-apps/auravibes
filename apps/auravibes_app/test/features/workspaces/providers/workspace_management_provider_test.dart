@@ -26,9 +26,7 @@ class _WorkspaceManagementModeFixture {
   void editWorkspace(WorkspaceEntity workspace) {
     container
         .read(workspaceManagementModeProvider.notifier)
-        .editWorkspace(
-          workspace,
-        );
+        .editWorkspace(workspace);
   }
 
   void clearEditing() {

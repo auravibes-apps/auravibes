@@ -1,4 +1,5 @@
-import 'package:auravibes_ui/ui.dart';
+import 'package:auravibes_ui/src/atoms/aura_text.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// A customizable field hint component following the Aura design system.
@@ -7,7 +8,7 @@ import 'package:flutter/material.dart';
 /// typography and styling for field descriptions.
 class AuraFieldHint extends StatelessWidget {
   /// Creates a Aura field hint.
-  const AuraFieldHint({
+  const new({
     super.key,
     this.text,
     this.error,
@@ -44,10 +45,7 @@ class AuraFieldHint extends StatelessWidget {
         : (style ?? AuraTextStyle.caption);
 
     return AuraText(
-      child: Semantics(
-        child: displayText,
-        label: semanticLabel,
-      ),
+      child: Semantics(child: displayText, label: semanticLabel),
       style: textStyle,
       tint: isError ? AuraTint.error : null,
     );

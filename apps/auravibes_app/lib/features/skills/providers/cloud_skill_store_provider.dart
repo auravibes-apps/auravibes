@@ -5,17 +5,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'cloud_skill_store_provider.g.dart';
 
-extension CloudSkillStoreFamilyTestOverride on CloudSkillStoreFamily {
-  Override overrideWithValue(CloudSkillStore? value) =>
-      overrideWith((_, _) => value);
-}
-
 @riverpod
 CloudSkillStore? cloudSkillStore(Ref ref, String workspaceId) {
   final session = ref
-      .watch(
-        workspaceSessionForRouteProvider(workspaceId),
-      )
+      .watch(workspaceSessionForRouteProvider(workspaceId))
       .requireValue;
   final cloud = session.cloud;
   if (cloud == null) return null;

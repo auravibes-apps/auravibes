@@ -79,45 +79,27 @@ void main() {
       });
 
       test('returns null for non-mcp prefix', () {
-        expect(
-          McpToolIdComponents.fromComposite('built_in_123_tool'),
-          isNull,
-        );
+        expect(McpToolIdComponents.fromComposite('built_in_123_tool'), isNull);
       });
 
       test('returns null when no underscores after prefix', () {
-        expect(
-          McpToolIdComponents.fromComposite('mcp_nounderscore'),
-          isNull,
-        );
+        expect(McpToolIdComponents.fromComposite('mcp_nounderscore'), isNull);
       });
 
       test('returns null when only one underscore after prefix', () {
-        expect(
-          McpToolIdComponents.fromComposite('mcp_id_onlyslug'),
-          isNull,
-        );
+        expect(McpToolIdComponents.fromComposite('mcp_id_onlyslug'), isNull);
       });
 
       test('returns null for empty parts', () {
-        expect(
-          McpToolIdComponents.fromComposite('mcp__slug_tool'),
-          isNull,
-        );
+        expect(McpToolIdComponents.fromComposite('mcp__slug_tool'), isNull);
       });
 
       test('returns null for empty slug', () {
-        expect(
-          McpToolIdComponents.fromComposite('mcp_id__tool'),
-          isNull,
-        );
+        expect(McpToolIdComponents.fromComposite('mcp_id__tool'), isNull);
       });
 
       test('returns null for empty tool identifier', () {
-        expect(
-          McpToolIdComponents.fromComposite('mcp_id_slug_'),
-          isNull,
-        );
+        expect(McpToolIdComponents.fromComposite('mcp_id_slug_'), isNull);
       });
 
       test('parses composite ID with underscores in tool name', () {
@@ -238,9 +220,7 @@ void main() {
           appDatabaseProvider.overrideWithValue(getDatabase()),
           mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
           mcpManagerServiceProvider.overrideWithValue(mcpManagerService),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
+          encryptionServiceProvider.overrideWithValue(_FakeEncryptionService()),
           currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
           workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
             const AsyncData(
@@ -502,9 +482,7 @@ void main() {
 
     test('disconnectMcpServer sets disconnected and clears client', () {
       final notifier = container.read(mcpConnectionProvider.notifier)
-        ..state = [
-          _connectedState(),
-        ];
+        ..state = [_connectedState()];
 
       notifier.disconnectMcpServer('server-1');
 
@@ -516,9 +494,7 @@ void main() {
 
     test('disconnectMcpServer does nothing for missing server', () {
       final notifier = container.read(mcpConnectionProvider.notifier)
-        ..state = [
-          _connectedState(),
-        ];
+        ..state = [_connectedState()];
 
       notifier.disconnectMcpServer('nonexistent');
 
@@ -575,47 +551,41 @@ void main() {
       },
     );
 
-    test(
-      'callTool throws descriptive message for missing server',
-      () async {
-        final notifier = container.read(mcpConnectionProvider.notifier);
+    test('callTool throws descriptive message for missing server', () async {
+      final notifier = container.read(mcpConnectionProvider.notifier);
 
-        try {
-          final _ = await notifier.callTool(
-            mcpServerId: 'missing',
-            toolIdentifier: 'sum',
-            arguments: const {},
-          );
-          fail('Should have thrown');
-        } on Exception catch (e) {
-          expect(e.toString(), contains('MCP server not found'));
-        }
-      },
-    );
+      try {
+        final _ = await notifier.callTool(
+          mcpServerId: 'missing',
+          toolIdentifier: 'sum',
+          arguments: const {},
+        );
+        fail('Should have thrown');
+      } on Exception catch (e) {
+        expect(e.toString(), contains('MCP server not found'));
+      }
+    });
 
-    test(
-      'callTool throws descriptive message for not connected',
-      () async {
-        final notifier = container.read(mcpConnectionProvider.notifier)
-          ..state = [
-            McpConnectionState(
-              server: _server,
-              status: McpConnectionStatus.disconnected,
-            ),
-          ];
+    test('callTool throws descriptive message for not connected', () async {
+      final notifier = container.read(mcpConnectionProvider.notifier)
+        ..state = [
+          McpConnectionState(
+            server: _server,
+            status: McpConnectionStatus.disconnected,
+          ),
+        ];
 
-        try {
-          final _ = await notifier.callTool(
-            mcpServerId: 'server-1',
-            toolIdentifier: 'sum',
-            arguments: const {},
-          );
-          fail('Should have thrown');
-        } on Exception catch (e) {
-          expect(e.toString(), contains('MCP server not connected'));
-        }
-      },
-    );
+      try {
+        final _ = await notifier.callTool(
+          mcpServerId: 'server-1',
+          toolIdentifier: 'sum',
+          arguments: const {},
+        );
+        fail('Should have thrown');
+      } on Exception catch (e) {
+        expect(e.toString(), contains('MCP server not connected'));
+      }
+    });
 
     test('reconnectMcpServer with server in state handles error', () async {
       final fakeService = _FailingMcpManagerService();
@@ -686,17 +656,11 @@ void main() {
     });
 
     test('McpToolIdComponents handles first underscore at position 0', () {
-      expect(
-        McpToolIdComponents.fromComposite('mcp_'),
-        isNull,
-      );
+      expect(McpToolIdComponents.fromComposite('mcp_'), isNull);
     });
 
     test('McpToolIdComponents handles second underscore at position 0', () {
-      expect(
-        McpToolIdComponents.fromComposite('mcp_abc_'),
-        isNull,
-      );
+      expect(McpToolIdComponents.fromComposite('mcp_abc_'), isNull);
     });
 
     test('reconnectMcpServer with server not in db returns empty', () async {
@@ -766,9 +730,7 @@ void main() {
       );
 
       final credentials = await getDatabase()
-          .select(
-            getDatabase().serviceConnections,
-          )
+          .select(getDatabase().serviceConnections)
           .get();
       expect(credentials, isEmpty);
       expect(testContainer.read(mcpConnectionProvider), isEmpty);
@@ -905,9 +867,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       final credentials = await getDatabase()
-          .select(
-            getDatabase().serviceConnections,
-          )
+          .select(getDatabase().serviceConnections)
           .get();
       expect(credentials, hasLength(1));
       expect(credentials.single.keySuffix, '-token');
@@ -973,9 +933,7 @@ class _FakeMcpServersRepository implements McpServersRepository {
       serverById;
 
   @override
-  Future<List<McpServerEntity>> getMcpServersForWorkspace(
-    String workspaceId,
-  ) {
+  Future<List<McpServerEntity>> getMcpServersForWorkspace(String workspaceId) {
     throw UnimplementedError();
   }
 
@@ -990,8 +948,8 @@ class _FakeMcpServersRepository implements McpServersRepository {
   }
 }
 
-final class _FakeEncryptionService extends EncryptionService {
-  _FakeEncryptionService() : super(SecretKeyManager());
+final class _FakeEncryptionService() extends EncryptionService {
+  this : super(SecretKeyManager());
 
   @override
   Future<String> decrypt(String encryptedBase64) async => encryptedBase64;
@@ -1008,9 +966,8 @@ class _FailingMcpManagerService extends McpManagerService {
 }
 
 class _SuccessfulMcpManagerService extends McpManagerService {
-  _SuccessfulMcpManagerService({
-    _FakeMcpManagerClient? client,
-  }) : _client = client ?? _FakeMcpManagerClient();
+  new({_FakeMcpManagerClient? client})
+    : _client = client ?? _FakeMcpManagerClient();
 
   final _FakeMcpManagerClient _client;
   final connectedServers = <McpServerToCreate>[];
@@ -1045,14 +1002,9 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   }
 }
 
-class _FakeMcpManagerClient implements McpManagerClient {
-  _FakeMcpManagerClient({
-    Stream<OAuthTokenEntity>? tokenUpdates,
-  }) : this._(tokenUpdates);
-
-  _FakeMcpManagerClient._(this._tokenUpdates);
-
-  final Stream<OAuthTokenEntity>? _tokenUpdates;
+class _FakeMcpManagerClient._(final Stream<OAuthTokenEntity>? _tokenUpdates)
+    implements McpManagerClient {
+  new({Stream<OAuthTokenEntity>? tokenUpdates}) : this._(tokenUpdates);
 
   @override
   Stream<OAuthTokenEntity>? get onTokenUpdate => _tokenUpdates;

@@ -6,12 +6,12 @@ enum CredentialsModelType {
   google('google');
 
   /// Creates a new CredentialsModelType with the given string value.
-  const CredentialsModelType(this.value);
+  new(this.value);
 
   /// Creates a credentials model type from a string value.
   ///
-  /// Throws [ArgumentError] if the value is not a valid chat model type
-  factory CredentialsModelType.fromString(String value) {
+  /// Throws [ArgumentError] if the value is not a valid chat model type.
+  factory fromString(String value) {
     switch (value.toLowerCase()) {
       case 'openai':
         return CredentialsModelType.openai;

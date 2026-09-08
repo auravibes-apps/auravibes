@@ -6,49 +6,42 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:crypto/crypto.dart';
 import 'package:uuid/v7.dart';
 
-typedef BeginCloudAttachmentUpload =
-    Future<BeginUploadResult> Function({
-      required String requestId,
-      required String purpose,
-      required String displayName,
-      required String mimeType,
-      required int sizeBytes,
-      required String checksumSha256,
-    });
-typedef UploadCloudAttachmentBytes =
-    Future<void> Function(BeginUploadResult upload, Uint8List bytes);
-typedef CompleteCloudAttachmentUpload =
-    Future<ObjectResult> Function({required int objectId});
-typedef ResolveCloudAttachmentDownload =
-    Future<GetDownloadResult> Function({required int objectId});
-typedef DeleteCloudAttachmentObject =
-    Future<void> Function({
-      required int objectId,
-      required String requestId,
-      required int expectedRevision,
-    });
+typedef BeginCloudAttachmentUpload = Future<BeginUploadResult> Function({
+  required String requestId,
+  required String purpose,
+  required String displayName,
+  required String mimeType,
+  required int sizeBytes,
+  required String checksumSha256,
+});
+typedef UploadCloudAttachmentBytes = Future<void> Function(
+  BeginUploadResult upload,
+  Uint8List bytes,
+);
+typedef CompleteCloudAttachmentUpload = Future<ObjectResult> Function({
+  required int objectId,
+});
+typedef ResolveCloudAttachmentDownload = Future<GetDownloadResult> Function({
+  required int objectId,
+});
+typedef DeleteCloudAttachmentObject = Future<void> Function({
+  required int objectId,
+  required String requestId,
+  required int expectedRevision,
+});
 typedef ReadCloudAttachmentBytes = Future<Uint8List> Function(String localPath);
 
-class CloudChatAttachmentUsecase {
-  const CloudChatAttachmentUsecase({
-    required this._beginUpload,
-    required this._uploadBytes,
-    required this._completeUpload,
-    required this._getDownload,
-    required this._deleteObject,
-    required this._readBytes,
-  });
-
-  final BeginCloudAttachmentUpload _beginUpload;
-  final UploadCloudAttachmentBytes _uploadBytes;
-  final CompleteCloudAttachmentUpload _completeUpload;
-  final ResolveCloudAttachmentDownload _getDownload;
-  final DeleteCloudAttachmentObject _deleteObject;
-  final ReadCloudAttachmentBytes _readBytes;
-
+class const CloudChatAttachmentUsecase({
+  required final BeginCloudAttachmentUpload _beginUpload,
+  required final UploadCloudAttachmentBytes _uploadBytes,
+  required final CompleteCloudAttachmentUpload _completeUpload,
+  required final ResolveCloudAttachmentDownload _getDownload,
+  required final DeleteCloudAttachmentObject _deleteObject,
+  required final ReadCloudAttachmentBytes _readBytes,
+}) {
   Future<List<ObjectResult>> uploadDraftResults({
     required List<MessageAttachmentToCreate> attachments,
-  }) => guardCloudCall(.object, () async {
+  }) => CloudAppErrors.guardCall(.object, () async {
     final objects = <ObjectResult>[];
     final uploads = <BeginUploadResult>[];
     try {
@@ -58,7 +51,7 @@ class CloudChatAttachmentUsecase {
         if (bytes.length != attachment.sizeBytes) {
           throw StateError('Attachment changed before upload.');
         }
-        final checksum = cloudAttachmentChecksum(bytes);
+        final checksum = CloudAttachmentChecksum.fromBytes(bytes);
         final upload = await _beginUpload(
           requestId: const UuidV7().generate(),
           purpose: 'message_attachment',
@@ -94,7 +87,7 @@ class CloudChatAttachmentUsecase {
   });
 
   Future<Uri> getDownload({required int objectId}) =>
-      guardCloudCall(.object, () async {
+      CloudAppErrors.guardCall(.object, () async {
         final result = await _getDownload(objectId: objectId);
         final uri = Uri.parse(result.downloadUrl);
         if (!uri.isScheme('https')) {
@@ -108,7 +101,7 @@ class CloudChatAttachmentUsecase {
     required int objectId,
     required String requestId,
     required int expectedRevision,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .object,
     () => _deleteObject(
       objectId: objectId,
@@ -148,5 +141,6 @@ class CloudChatAttachmentUsecase {
   }
 }
 
-String cloudAttachmentChecksum(Uint8List bytes) =>
-    sha256.convert(bytes).toString();
+abstract final class CloudAttachmentChecksum {
+  static String fromBytes(Uint8List bytes) => sha256.convert(bytes).toString();
+}

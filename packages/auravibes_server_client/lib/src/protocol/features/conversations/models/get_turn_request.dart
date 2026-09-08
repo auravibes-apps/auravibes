@@ -10,23 +10,34 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class GetTurnRequest implements _i1.SerializableModel {
+abstract class GetTurnRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   GetTurnRequest._({
     required this.workspaceId,
     required this.turnId,
+    this.a2uiSupportedComponents,
   });
 
   factory GetTurnRequest({
     required int workspaceId,
     required String turnId,
+    List<String>? a2uiSupportedComponents,
   }) = _GetTurnRequestImpl;
 
   factory GetTurnRequest.fromJson(Map<String, dynamic> jsonSerialization) {
     return GetTurnRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       turnId: jsonSerialization['turnId'] as String,
+      a2uiSupportedComponents:
+          jsonSerialization['a2uiSupportedComponents'] == null
+          ? null
+          : _isctvzjc.Protocol().deserialize<List<String>>(
+              jsonSerialization['a2uiSupportedComponents'],
+            ),
     );
   }
 
@@ -34,12 +45,15 @@ abstract class GetTurnRequest implements _i1.SerializableModel {
 
   String turnId;
 
+  List<String>? a2uiSupportedComponents;
+
   /// Returns a shallow copy of this [GetTurnRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   GetTurnRequest copyWith({
     int? workspaceId,
     String? turnId,
+    List<String>? a2uiSupportedComponents,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -47,35 +61,56 @@ abstract class GetTurnRequest implements _i1.SerializableModel {
       '__className__': 'GetTurnRequest',
       'workspaceId': workspaceId,
       'turnId': turnId,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+    };
+  }
+
+  @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'GetTurnRequest',
+      'workspaceId': workspaceId,
+      'turnId': turnId,
+      if (a2uiSupportedComponents != null)
+        'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
   }
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
+
+class _Undefined {}
 
 class _GetTurnRequestImpl extends GetTurnRequest {
   _GetTurnRequestImpl({
     required int workspaceId,
     required String turnId,
+    List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          turnId: turnId,
+         a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
   /// Returns a shallow copy of this [GetTurnRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   GetTurnRequest copyWith({
     int? workspaceId,
     String? turnId,
+    Object? a2uiSupportedComponents = _Undefined,
   }) {
     return GetTurnRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       turnId: turnId ?? this.turnId,
+      a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
+          ? a2uiSupportedComponents
+          : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
     );
   }
 }

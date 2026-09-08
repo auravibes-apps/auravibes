@@ -10,9 +10,9 @@ part 'workspace_entity.freezed.dart';
 /// A workspace is a container for organizing and managing different
 /// projects or environments within the Aura application.
 @freezed
-abstract class WorkspaceEntity with _$WorkspaceEntity {
+abstract class const WorkspaceEntity._() with _$WorkspaceEntity {
   /// Creates a new Workspace instance.
-  const factory WorkspaceEntity({
+  const factory({
     /// Unique identifier for the workspace.
     required String id,
 
@@ -37,13 +37,12 @@ abstract class WorkspaceEntity with _$WorkspaceEntity {
     /// Cloud account identifier used to access this local mirror.
     String? cloudAccountId,
   }) = _WorkspaceEntity;
-  const WorkspaceEntity._();
 }
 
 @freezed
-abstract class WorkspaceToCreate with _$WorkspaceToCreate {
+abstract class const WorkspaceToCreate._() with _$WorkspaceToCreate {
   /// Creates a new WorkspaceToCreate instance.
-  const factory WorkspaceToCreate({
+  const factory({
     /// Human-readable name of the workspace.
     required String name,
 
@@ -59,7 +58,6 @@ abstract class WorkspaceToCreate with _$WorkspaceToCreate {
     /// Cloud account identifier that owns this local mirror.
     String? cloudAccountId,
   }) = _WorkspaceToCreate;
-  const WorkspaceToCreate._();
 
   /// Returns true if the workspace name is not empty.
   bool get hasValidName => name.isNotEmpty;
@@ -93,18 +91,16 @@ abstract class WorkspaceToCreate with _$WorkspaceToCreate {
 }
 
 @freezed
-abstract class WorkspacePatch with _$WorkspacePatch {
+abstract class const WorkspacePatch._() with _$WorkspacePatch {
   // Null fields mean the patch leaves those values unchanged.
   // ignore: unnecessary-nullable
-  const factory WorkspacePatch({
+  const factory({
     String? name,
     WorkspaceType? type,
     String? url,
     String? cloudWorkspaceId,
     String? cloudAccountId,
   }) = _WorkspacePatch;
-  const WorkspacePatch._();
-
   String? validationErrorFor(WorkspaceEntity current) {
     final name = this.name;
     final url = this.url;

@@ -23,9 +23,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -47,9 +45,7 @@ void main() {
               options: const [],
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -71,9 +67,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -103,9 +97,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -130,9 +122,7 @@ void main() {
               label: const Text('Select an option'),
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -157,9 +147,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -186,9 +174,7 @@ void main() {
               ),
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -210,9 +196,7 @@ void main() {
               tint: AuraTint.secondary,
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -222,9 +206,7 @@ void main() {
       expect(radio.tint, AuraTint.secondary);
     });
 
-    testWidgets('does not call onChanged for disabled option', (
-      tester,
-    ) async {
+    testWidgets('does not call onChanged for disabled option', (tester) async {
       String? selectedValue;
 
       await tester.pumpWidget(
@@ -242,9 +224,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -273,9 +253,7 @@ void main() {
               title: const Text('Option 1'),
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -298,9 +276,7 @@ void main() {
               title: const Text('Option 1'),
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -322,9 +298,7 @@ void main() {
               subtitle: const Text('Subtitle text'),
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -347,9 +321,7 @@ void main() {
               title: const Text('Option 1'),
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -372,9 +344,7 @@ void main() {
               title: const Text('Option 1'),
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -399,9 +369,7 @@ void main() {
               disabled: true,
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -425,9 +393,7 @@ void main() {
               tint: AuraTint.secondary,
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 

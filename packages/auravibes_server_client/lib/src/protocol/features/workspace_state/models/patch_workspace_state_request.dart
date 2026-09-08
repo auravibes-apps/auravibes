@@ -10,12 +10,15 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import '../../../features/workspace_state/models/workspace_patch_operation.dart'
-    as _i2;
-import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
+import 'package:auravibes_server_client/src/protocol/protocol.dart'
+    as _isctvzjc;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class PatchWorkspaceStateRequest implements _i1.SerializableModel {
+import '../../../features/workspace_state/models/workspace_patch_operation.dart'
+    as _iou6lkaa;
+
+abstract class PatchWorkspaceStateRequest
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   PatchWorkspaceStateRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -25,7 +28,7 @@ abstract class PatchWorkspaceStateRequest implements _i1.SerializableModel {
   factory PatchWorkspaceStateRequest({
     required int workspaceId,
     required String requestId,
-    required List<_i2.WorkspacePatchOperation> operations,
+    required List<_iou6lkaa.WorkspacePatchOperation> operations,
   }) = _PatchWorkspaceStateRequestImpl;
 
   factory PatchWorkspaceStateRequest.fromJson(
@@ -34,9 +37,10 @@ abstract class PatchWorkspaceStateRequest implements _i1.SerializableModel {
     return PatchWorkspaceStateRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
-      operations: _i3.Protocol().deserialize<List<_i2.WorkspacePatchOperation>>(
-        jsonSerialization['operations'],
-      ),
+      operations: _isctvzjc.Protocol()
+          .deserialize<List<_iou6lkaa.WorkspacePatchOperation>>(
+            jsonSerialization['operations'],
+          ),
     );
   }
 
@@ -44,15 +48,15 @@ abstract class PatchWorkspaceStateRequest implements _i1.SerializableModel {
 
   String requestId;
 
-  List<_i2.WorkspacePatchOperation> operations;
+  List<_iou6lkaa.WorkspacePatchOperation> operations;
 
   /// Returns a shallow copy of this [PatchWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   PatchWorkspaceStateRequest copyWith({
     int? workspaceId,
     String? requestId,
-    List<_i2.WorkspacePatchOperation>? operations,
+    List<_iou6lkaa.WorkspacePatchOperation>? operations,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -65,8 +69,20 @@ abstract class PatchWorkspaceStateRequest implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'PatchWorkspaceStateRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'operations': operations.toJson(
+        valueToJson: (v) => v.toJsonForProtocol(),
+      ),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -74,7 +90,7 @@ class _PatchWorkspaceStateRequestImpl extends PatchWorkspaceStateRequest {
   _PatchWorkspaceStateRequestImpl({
     required int workspaceId,
     required String requestId,
-    required List<_i2.WorkspacePatchOperation> operations,
+    required List<_iou6lkaa.WorkspacePatchOperation> operations,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -83,12 +99,12 @@ class _PatchWorkspaceStateRequestImpl extends PatchWorkspaceStateRequest {
 
   /// Returns a shallow copy of this [PatchWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   PatchWorkspaceStateRequest copyWith({
     int? workspaceId,
     String? requestId,
-    List<_i2.WorkspacePatchOperation>? operations,
+    List<_iou6lkaa.WorkspacePatchOperation>? operations,
   }) {
     return PatchWorkspaceStateRequest(
       workspaceId: workspaceId ?? this.workspaceId,

@@ -9,10 +9,10 @@ import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-final class UrlTool extends NativeToolEntity<String, String> {
-  UrlTool({this._urlService});
-
-  final UrlService? _urlService;
+final class UrlTool({final UrlService? _urlService})
+    extends NativeToolEntity<String, String> {
+  @override
+  NativeToolType get type => .url;
 
   @override
   ToolSpec getTool() => urlToolSpec;
@@ -57,14 +57,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
     final request = parseUrlToolInput(toolInput);
     final uri = Uri.parse(request.url);
     if (request.headers.isEmpty) {
-      await ensurePublicHost(uri.host);
+      await PublicUrlGuard.ensureHost(uri.host);
     } else {
-      final _ = await requirePublicHttpsUri(uri.toString());
+      final _ = await PublicUrlGuard.requireHttpsUri(uri.toString());
     }
 
     return request;
   }
-
-  @override
-  NativeToolType get type => .url;
 }

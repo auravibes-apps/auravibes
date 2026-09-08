@@ -11,12 +11,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraColumn(
-              children: [
-                Text('Item 1'),
-                Text('Item 2'),
-              ],
-            ),
+            body: AuraColumn(children: [Text('Item 1'), Text('Item 2')]),
           ),
         ),
       );
@@ -103,12 +98,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraRow(
-              children: [
-                Text('Item 1'),
-                Text('Item 2'),
-              ],
-            ),
+            body: AuraRow(children: [Text('Item 1'), Text('Item 2')]),
           ),
         ),
       );

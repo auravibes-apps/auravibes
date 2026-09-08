@@ -14,11 +14,9 @@ extension UserToolTypeWidgets on UserToolType {
   }
 
   Widget getNameWidget() {
-    return TextLocale(
-      switch (this) {
-        UserToolType.calculator => LocaleKeys.tools_names_calculator_name,
-      },
-    );
+    return TextLocale(switch (this) {
+      UserToolType.calculator => LocaleKeys.tools_names_calculator_name,
+    });
   }
 
   Widget getDescriptionWidget() {
@@ -36,19 +34,15 @@ extension NativeToolTypeWidgets on NativeToolType {
   }
 
   Widget getNameWidget() {
-    return TextLocale(
-      switch (this) {
-        NativeToolType.url => LocaleKeys.tools_names_url_name,
-      },
-    );
+    return TextLocale(switch (this) {
+      NativeToolType.url => LocaleKeys.tools_names_url_name,
+    });
   }
 
   Widget getDescriptionWidget() {
-    return TextLocale(
-      switch (this) {
-        NativeToolType.url => LocaleKeys.tools_names_url_description,
-      },
-    );
+    return TextLocale(switch (this) {
+      NativeToolType.url => LocaleKeys.tools_names_url_description,
+    });
   }
 }
 

@@ -10,8 +10,8 @@ part 'conversation_entity.freezed.dart';
 /// chat messages within a specific workspace.
 ///
 @freezed
-abstract class ConversationEntity with _$ConversationEntity {
-  const factory ConversationEntity({
+abstract class const ConversationEntity._() with _$ConversationEntity {
+  const factory({
     /// Unique identifier for the conversation.
     required String id,
 
@@ -42,7 +42,6 @@ abstract class ConversationEntity with _$ConversationEntity {
     /// Parent conversation id for hidden child/sub-agent conversations.
     String? parentConversationId,
   }) = _ConversationEntity;
-  const ConversationEntity._();
 
   /// Returns true if the conversation has a valid title.
   bool get hasValidTitle => title.isNotEmpty;
@@ -54,8 +53,8 @@ abstract class ConversationEntity with _$ConversationEntity {
 }
 
 @freezed
-abstract class ConversationToCreate with _$ConversationToCreate {
-  const factory ConversationToCreate({
+abstract class const ConversationToCreate._() with _$ConversationToCreate {
+  const factory({
     /// Human-readable title of the conversation.
     required String title,
 
@@ -74,7 +73,6 @@ abstract class ConversationToCreate with _$ConversationToCreate {
     /// Whether this conversation is pinned.
     bool? isPinned,
   }) = _ConversationToCreate;
-  const ConversationToCreate._();
 
   /// Returns true if the conversation has a valid title.
   bool get hasValidTitle => title.isNotEmpty;
@@ -94,8 +92,8 @@ abstract class ConversationToCreate with _$ConversationToCreate {
 }
 
 @freezed
-abstract class ConversationPatch with _$ConversationPatch {
-  const factory ConversationPatch({
+abstract class const ConversationPatch._() with _$ConversationPatch {
+  const factory({
     /// Human-readable title of the conversation.
     String? title,
 
@@ -111,8 +109,6 @@ abstract class ConversationPatch with _$ConversationPatch {
     /// Whether this conversation is pinned.
     bool? isPinned,
   }) = _ConversationPatch;
-  const ConversationPatch._();
-
   bool get isValid {
     final title = this.title;
     if (title != null && title.isEmpty) return false;

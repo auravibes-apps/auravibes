@@ -14,10 +14,7 @@ QueryExecutor _testConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -140,21 +137,18 @@ void main() {
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
-      expect(
-        names,
-        {
-          'id',
-          'workspace_id',
-          'name',
-          'url',
-          'transport',
-          'service_connection_id',
-          'description',
-          'is_enabled',
-          'created_at',
-          'updated_at',
-        },
-      );
+      expect(names, {
+        'id',
+        'workspace_id',
+        'name',
+        'url',
+        'transport',
+        'service_connection_id',
+        'description',
+        'is_enabled',
+        'created_at',
+        'updated_at',
+      });
     });
 
     test('id is primary key', () {
@@ -170,9 +164,7 @@ void main() {
     });
 
     test('is_enabled column exists', () {
-      final col = columns.where(
-        (r) => r.read<String>('name') == 'is_enabled',
-      );
+      final col = columns.where((r) => r.read<String>('name') == 'is_enabled');
       expect(col, isNotEmpty);
     });
 
@@ -234,10 +226,7 @@ void main() {
 
     test('oauth is a McpAuthenticationType', () {
       final auth = McpAuthenticationTypeOAuth(
-        token: OAuthTokenEntity(
-          accessToken: 'at',
-          issuedAt: DateTime(2026),
-        ),
+        token: OAuthTokenEntity(accessToken: 'at', issuedAt: DateTime(2026)),
         clientId: 'cid',
         authorizationEndpoint: 'https://a.co',
         tokenEndpoint: 'https://t.co',

@@ -1,15 +1,10 @@
 import 'package:meta/meta.dart';
 
 @immutable
-class AgentIterationContext {
-  const AgentIterationContext({
-    required this.origin,
-    this.ackMessageIds = const [],
-  });
-
-  final AgentIterationOrigin origin;
-  final List<String> ackMessageIds;
-
+class const AgentIterationContext({
+  required final AgentIterationOrigin origin,
+  final List<String> ackMessageIds = const [],
+}) {
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
@@ -22,11 +17,7 @@ class AgentIterationContext {
   int get hashCode => Object.hash(origin, Object.hashAll(ackMessageIds));
 }
 
-enum AgentIterationOrigin {
-  userMessage,
-  toolResume,
-  manualContinue,
-}
+enum AgentIterationOrigin { userMessage, toolResume, manualContinue }
 
 bool _listEquals<T>(List<T> a, List<T> b) {
   if (a.length != b.length) return false;

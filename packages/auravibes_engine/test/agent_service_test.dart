@@ -1,6 +1,7 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_service.dart';
 import 'package:test/test.dart';
+
 import 'support/fake_cancellation_effects.dart';
 
 AgentService _buildAgentService(
@@ -20,10 +21,7 @@ AgentService _buildAgentService(
     cancellationEffects: cancellationEffects ?? FakeCancellationEffects(),
     rateLimitRetryRuntime:
         rateLimitRetryRuntime ??
-        AgentRateLimitRetryRuntime(
-          start: (_, _) {},
-          clear: (_) {},
-        ),
+        AgentRateLimitRetryRuntime(start: (_, _) {}, clear: (_) {}),
     rateLimitRetryDelay: rateLimitRetryDelay ?? defaultAgentRateLimitRetryDelay,
     now: now ?? DateTime.now,
     sleep: sleep ?? Future<void>.delayed,
@@ -284,7 +282,7 @@ void main() {
 
 class _FakeAgentConversationDataProvider
     implements AgentDataProvider, AgentModelProvider, AgentLoopToolProvider {
-  _FakeAgentConversationDataProvider({
+  new({
     this.workspaceId = 'workspace-1',
     List<ContinueAgentResult>? continueResults,
     List<Object>? continueErrors,
@@ -346,9 +344,7 @@ class _FakeAgentConversationDataProvider
   }
 
   @override
-  Future<void> autoCompactConversation({
-    required String conversationId,
-  }) async {
+  Future<void> autoCompactConversation({required String conversationId}) async {
     onAutoCompact?.call();
   }
 
@@ -384,12 +380,9 @@ class _FakeAgentConversationDataProvider
   Future<void> stopLatestPendingTools(String conversationId) async {}
 }
 
-class _FakeAgentSendQueueRuntime implements AgentSendQueueRuntime {
-  _FakeAgentSendQueueRuntime({
-    this.drafts = const [],
-  });
-
-  final List<AgentQueuedDraft> drafts;
+class _FakeAgentSendQueueRuntime({
+  final List<AgentQueuedDraft> drafts = const [],
+}) implements AgentSendQueueRuntime {
   final cleared = <String>[];
   var _didDequeue = false;
 

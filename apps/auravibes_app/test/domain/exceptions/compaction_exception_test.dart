@@ -16,7 +16,8 @@ void main() {
       final inner = Exception('inner');
       final ex = CompactionFailedException(cause: inner);
       expect(ex.cause, same(inner));
-      expect(ex.toString(), contains('Caused by: $inner'));
+      expect(ex.toString(), contains('Caused by: ${inner.runtimeType}'));
+      expect(ex.toString(), isNot(contains('inner')));
     });
   });
 
@@ -31,10 +32,7 @@ void main() {
   group('CompactionUnavailableException', () {
     test('has correct locale key', () {
       const ex = CompactionUnavailableException();
-      expect(
-        ex.localeKey,
-        LocaleKeys.compaction_errors_compaction_unavailable,
-      );
+      expect(ex.localeKey, LocaleKeys.compaction_errors_compaction_unavailable);
     });
   });
 

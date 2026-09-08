@@ -72,16 +72,12 @@ class _StubMessageRepository implements MessageRepository {
   }
 
   @override
-  Future<List<MessageEntity>> getUserMessages(
-    String conversationId,
-  ) async {
+  Future<List<MessageEntity>> getUserMessages(String conversationId) async {
     return userMessages;
   }
 
   @override
-  Future<List<MessageEntity>> getSystemMessages(
-    String conversationId,
-  ) async {
+  Future<List<MessageEntity>> getSystemMessages(String conversationId) async {
     return systemMessages;
   }
 
@@ -108,10 +104,7 @@ class _StubMessageRepository implements MessageRepository {
   }
 
   @override
-  Future<MessageEntity> patchMessage(
-    String id,
-    MessagePatch message,
-  ) async {
+  Future<MessageEntity> patchMessage(String id, MessagePatch message) async {
     final entity = MessageEntity(
       id: id,
       conversationId: 'conv-1',
@@ -146,9 +139,7 @@ class _StubMessageRepository implements MessageRepository {
   }
 
   @override
-  Future<int> getMessageCountByConversation(
-    String conversationId,
-  ) async {
+  Future<int> getMessageCountByConversation(String conversationId) async {
     return countResult;
   }
 
@@ -209,10 +200,7 @@ void main() {
     test('getMessagesByType returns filtered list', () async {
       final repo = _StubMessageRepository();
 
-      final result = await repo.getMessagesByType(
-        'c-1',
-        MessageType.system,
-      );
+      final result = await repo.getMessagesByType('c-1', MessageType.system);
 
       expect(result, isEmpty);
     });
@@ -288,10 +276,7 @@ void main() {
     test('getMessagesByStatus returns list', () async {
       final repo = _StubMessageRepository();
 
-      final result = await repo.getMessagesByStatus(
-        'c-1',
-        MessageStatus.error,
-      );
+      final result = await repo.getMessagesByStatus('c-1', MessageStatus.error);
 
       expect(result, isEmpty);
     });
@@ -328,10 +313,7 @@ void main() {
 
     test('toString without cause', () {
       const ex = MessageException('oops');
-      expect(
-        ex.toString(),
-        'MessageException: oops',
-      );
+      expect(ex.toString(), 'MessageException: oops');
     });
 
     test('toString includes cause when provided', () {

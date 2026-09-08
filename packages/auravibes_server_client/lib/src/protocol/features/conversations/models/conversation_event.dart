@@ -10,11 +10,13 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import '../../../features/conversations/models/conversation_event_type.dart'
-    as _i2;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ConversationEvent implements _i1.SerializableModel {
+import '../../../features/conversations/models/conversation_event_type.dart'
+    as _iccy8d0z;
+
+abstract class ConversationEvent
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ConversationEvent._({
     this.id,
     required this.workspaceId,
@@ -36,7 +38,7 @@ abstract class ConversationEvent implements _i1.SerializableModel {
     required String eventId,
     required String actorUserId,
     required String requestId,
-    required _i2.ConversationEventType kind,
+    required _iccy8d0z.ConversationEventType kind,
     required String payloadJson,
     required DateTime createdAt,
   }) = _ConversationEventImpl;
@@ -50,11 +52,11 @@ abstract class ConversationEvent implements _i1.SerializableModel {
       eventId: jsonSerialization['eventId'] as String,
       actorUserId: jsonSerialization['actorUserId'] as String,
       requestId: jsonSerialization['requestId'] as String,
-      kind: _i2.ConversationEventType.fromJson(
+      kind: _iccy8d0z.ConversationEventType.fromJson(
         (jsonSerialization['kind'] as String),
       ),
       payloadJson: jsonSerialization['payloadJson'] as String,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -77,7 +79,7 @@ abstract class ConversationEvent implements _i1.SerializableModel {
 
   String requestId;
 
-  _i2.ConversationEventType kind;
+  _iccy8d0z.ConversationEventType kind;
 
   String payloadJson;
 
@@ -85,7 +87,7 @@ abstract class ConversationEvent implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ConversationEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ConversationEvent copyWith({
     int? id,
     int? workspaceId,
@@ -94,7 +96,7 @@ abstract class ConversationEvent implements _i1.SerializableModel {
     String? eventId,
     String? actorUserId,
     String? requestId,
-    _i2.ConversationEventType? kind,
+    _iccy8d0z.ConversationEventType? kind,
     String? payloadJson,
     DateTime? createdAt,
   });
@@ -116,8 +118,25 @@ abstract class ConversationEvent implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ConversationEvent',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'conversationId': conversationId,
+      'sequence': sequence,
+      'eventId': eventId,
+      'actorUserId': actorUserId,
+      'requestId': requestId,
+      'kind': kind.toJson(),
+      'payloadJson': payloadJson,
+      'createdAt': createdAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -132,7 +151,7 @@ class _ConversationEventImpl extends ConversationEvent {
     required String eventId,
     required String actorUserId,
     required String requestId,
-    required _i2.ConversationEventType kind,
+    required _iccy8d0z.ConversationEventType kind,
     required String payloadJson,
     required DateTime createdAt,
   }) : super._(
@@ -150,7 +169,7 @@ class _ConversationEventImpl extends ConversationEvent {
 
   /// Returns a shallow copy of this [ConversationEvent]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ConversationEvent copyWith({
     Object? id = _Undefined,
@@ -160,7 +179,7 @@ class _ConversationEventImpl extends ConversationEvent {
     String? eventId,
     String? actorUserId,
     String? requestId,
-    _i2.ConversationEventType? kind,
+    _iccy8d0z.ConversationEventType? kind,
     String? payloadJson,
     DateTime? createdAt,
   }) {

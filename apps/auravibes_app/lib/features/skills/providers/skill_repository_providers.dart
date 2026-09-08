@@ -26,9 +26,7 @@ SkillTemplateToolsRepository skillTemplateToolsRepository(Ref ref) {
 SkillCredentialDefinitionsRepository skillCredentialDefinitionsRepository(
   Ref ref,
 ) {
-  return SkillCredentialDefinitionsRepository(
-    ref.watch(appDatabaseProvider),
-  );
+  return SkillCredentialDefinitionsRepository(ref.watch(appDatabaseProvider));
 }
 
 @Riverpod(keepAlive: true)
@@ -48,9 +46,7 @@ ConversationSkillsRepository conversationSkillsRepository(Ref ref) {
 AppSkillWorkspaceSettingsRepository appSkillWorkspaceSettingsRepository(
   Ref ref,
 ) {
-  return AppSkillWorkspaceSettingsRepository(
-    ref.watch(appDatabaseProvider),
-  );
+  return AppSkillWorkspaceSettingsRepository(ref.watch(appDatabaseProvider));
 }
 
 @Riverpod(keepAlive: true)

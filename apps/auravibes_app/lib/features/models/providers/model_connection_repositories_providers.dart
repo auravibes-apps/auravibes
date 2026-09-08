@@ -17,7 +17,5 @@ ModelConnectionRepository modelConnectionRepository(Ref ref) {
 
 @Riverpod(keepAlive: true)
 WorkspaceModelSelectionRepository workspaceModelSelectionRepository(Ref ref) {
-  final appDatabase = ref.watch(appDatabaseProvider);
-
-  return WorkspaceModelSelectionRepository(appDatabase);
+  return WorkspaceModelSelectionRepository(ref.watch(appDatabaseProvider));
 }

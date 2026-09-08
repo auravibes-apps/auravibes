@@ -6,9 +6,7 @@ import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/url_request.dart';
 import 'package:liquify/liquify.dart';
 
-class ResolveSkillUrlTemplate {
-  const ResolveSkillUrlTemplate();
-
+class const ResolveSkillUrlTemplate() {
   UrlRequest call({
     required SkillUrlTemplate template,
     required Map<String, dynamic> inputs,
@@ -67,9 +65,9 @@ class ResolveSkillUrlTemplate {
 
     try {
       return jsonEncode(jsonDecode(rendered));
-    } on FormatException catch (error, stackTrace) {
+    } on FormatException catch (_, stackTrace) {
       Error.throwWithStackTrace(
-        FormatException('Rendered JSON body is invalid: ${error.message}'),
+        const FormatException('Rendered JSON body is invalid.'),
         stackTrace,
       );
     }
@@ -86,9 +84,9 @@ class ResolveSkillUrlTemplate {
   String _render(String source, _TemplateContext context) {
     try {
       return Liquid().parse(source).render(context.values);
-    } on Object catch (error, stackTrace) {
+    } on Object catch (_, stackTrace) {
       Error.throwWithStackTrace(
-        FormatException('Liquid template render failed: $error'),
+        const FormatException('Liquid template render failed.'),
         stackTrace,
       );
     }
@@ -131,24 +129,20 @@ void validateSkillTemplateTool({
   )) {
     try {
       jsonDecode(rendered);
-    } on FormatException catch (error, stackTrace) {
+    } on FormatException catch (_, stackTrace) {
       Error.throwWithStackTrace(
-        FormatException('Rendered JSON body is invalid: ${error.message}'),
+        const FormatException('Rendered JSON body is invalid.'),
         stackTrace,
       );
     }
   }
 }
 
-class _TemplateValidationReferences {
-  const _TemplateValidationReferences({
-    required this.inputDefinitions,
-    required this.credentialDefinitions,
-  });
-
-  final Map<String, SkillTemplateInputDefinition> inputDefinitions;
-  final Map<String, SkillCredentialAttributeDefinition> credentialDefinitions;
-
+class const _TemplateValidationReferences({
+  required final Map<String, SkillTemplateInputDefinition> inputDefinitions,
+  required final Map<String, SkillCredentialAttributeDefinition>
+  credentialDefinitions,
+}) {
   void validate(String value) {
     _parseLiquid(value);
     final locals = _loopLocals(value);
@@ -222,9 +216,7 @@ final _legacyPlaceholderPattern = RegExp(
 final _legacyWholeJsonPlaceholderPattern = RegExp(
   r'"\{(input|credential):([A-Za-z0-9_]+)\}"',
 );
-final _forTagPattern = RegExp(
-  r'\{%\s*for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\b',
-);
+final _forTagPattern = RegExp(r'\{%\s*for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\b');
 final _bareOutputPattern = RegExp(r'\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\b');
 final _bareConditionPattern = RegExp(
   r'\{%\s*(?:if|unless|elsif)\s+([A-Za-z_][A-Za-z0-9_]*)\b',
@@ -280,9 +272,9 @@ String _canonicalizeTemplate(String value) {
 void _parseLiquid(String value) {
   try {
     Liquid().parse(value);
-  } on Object catch (error, stackTrace) {
+  } on Object catch (_, stackTrace) {
     Error.throwWithStackTrace(
-      FormatException('Invalid Liquid template: $error'),
+      const FormatException('Invalid Liquid template.'),
       stackTrace,
     );
   }
@@ -371,9 +363,9 @@ String _renderJsonBodySample(
             entry.key: 'credential-value',
       },
     });
-  } on Object catch (error, stackTrace) {
+  } on Object catch (_, stackTrace) {
     Error.throwWithStackTrace(
-      FormatException('Liquid template render failed: $error'),
+      const FormatException('Liquid template render failed.'),
       stackTrace,
     );
   }
@@ -393,26 +385,18 @@ bool _requiresJsonFilter(String type) => switch (type.trim().toLowerCase()) {
   _ => false,
 };
 
-class _TemplateReference {
-  const _TemplateReference({required this.source, required this.key});
+class const _TemplateReference({
+  required final String source,
+  required final String key,
+});
 
-  final String source;
-  final String key;
-}
-
-class _TemplateContext {
-  const _TemplateContext({
-    required this.inputs,
-    required this.credentials,
-    required this.inputDefinitions,
-    required this.credentialDefinitions,
-  });
-
-  final Map<String, dynamic> inputs;
-  final Map<String, String> credentials;
-  final Map<String, SkillTemplateInputDefinition> inputDefinitions;
-  final Map<String, SkillCredentialAttributeDefinition> credentialDefinitions;
-
+class const _TemplateContext({
+  required final Map<String, dynamic> inputs,
+  required final Map<String, String> credentials,
+  required final Map<String, SkillTemplateInputDefinition> inputDefinitions,
+  required final Map<String, SkillCredentialAttributeDefinition>
+  credentialDefinitions,
+}) {
   Map<String, dynamic> get values => {
     'input': inputs,
     'credential': credentials,

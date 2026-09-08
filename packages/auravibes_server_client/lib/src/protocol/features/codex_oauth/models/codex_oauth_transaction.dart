@@ -10,10 +10,12 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'dart:typed_data' as _i2;
+import 'dart:typed_data' as _idt;
 
-abstract class CodexOAuthTransaction implements _i1.SerializableModel {
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
+
+abstract class CodexOAuthTransaction
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CodexOAuthTransaction._({
     this.id,
     required this.transactionId,
@@ -37,9 +39,9 @@ abstract class CodexOAuthTransaction implements _i1.SerializableModel {
     required String connectionId,
     required String userId,
     required String stateHash,
-    required _i2.ByteData verifierCiphertext,
-    required _i2.ByteData verifierNonce,
-    required _i2.ByteData verifierAuthenticationTag,
+    required _idt.ByteData verifierCiphertext,
+    required _idt.ByteData verifierNonce,
+    required _idt.ByteData verifierAuthenticationTag,
     required String redirectUri,
     required DateTime expiresAt,
     DateTime? consumedAt,
@@ -56,23 +58,25 @@ abstract class CodexOAuthTransaction implements _i1.SerializableModel {
       connectionId: jsonSerialization['connectionId'] as String,
       userId: jsonSerialization['userId'] as String,
       stateHash: jsonSerialization['stateHash'] as String,
-      verifierCiphertext: _i1.ByteDataJsonExtension.fromJson(
+      verifierCiphertext: _isc.ByteDataJsonExtension.fromJson(
         jsonSerialization['verifierCiphertext'],
       ),
-      verifierNonce: _i1.ByteDataJsonExtension.fromJson(
+      verifierNonce: _isc.ByteDataJsonExtension.fromJson(
         jsonSerialization['verifierNonce'],
       ),
-      verifierAuthenticationTag: _i1.ByteDataJsonExtension.fromJson(
+      verifierAuthenticationTag: _isc.ByteDataJsonExtension.fromJson(
         jsonSerialization['verifierAuthenticationTag'],
       ),
       redirectUri: jsonSerialization['redirectUri'] as String,
-      expiresAt: _i1.DateTimeJsonExtension.fromJson(
+      expiresAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
       consumedAt: jsonSerialization['consumedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['consumedAt']),
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
+          : _isc.DateTimeJsonExtension.fromJson(
+              jsonSerialization['consumedAt'],
+            ),
+      createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
@@ -93,11 +97,11 @@ abstract class CodexOAuthTransaction implements _i1.SerializableModel {
 
   String stateHash;
 
-  _i2.ByteData verifierCiphertext;
+  _idt.ByteData verifierCiphertext;
 
-  _i2.ByteData verifierNonce;
+  _idt.ByteData verifierNonce;
 
-  _i2.ByteData verifierAuthenticationTag;
+  _idt.ByteData verifierAuthenticationTag;
 
   String redirectUri;
 
@@ -109,7 +113,7 @@ abstract class CodexOAuthTransaction implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [CodexOAuthTransaction]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CodexOAuthTransaction copyWith({
     int? id,
     String? transactionId,
@@ -117,9 +121,9 @@ abstract class CodexOAuthTransaction implements _i1.SerializableModel {
     String? connectionId,
     String? userId,
     String? stateHash,
-    _i2.ByteData? verifierCiphertext,
-    _i2.ByteData? verifierNonce,
-    _i2.ByteData? verifierAuthenticationTag,
+    _idt.ByteData? verifierCiphertext,
+    _idt.ByteData? verifierNonce,
+    _idt.ByteData? verifierAuthenticationTag,
     String? redirectUri,
     DateTime? expiresAt,
     DateTime? consumedAt,
@@ -146,8 +150,28 @@ abstract class CodexOAuthTransaction implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CodexOAuthTransaction',
+      if (id != null) 'id': id,
+      'transactionId': transactionId,
+      'workspaceId': workspaceId,
+      'connectionId': connectionId,
+      'userId': userId,
+      'stateHash': stateHash,
+      'verifierCiphertext': verifierCiphertext.toJson(),
+      'verifierNonce': verifierNonce.toJson(),
+      'verifierAuthenticationTag': verifierAuthenticationTag.toJson(),
+      'redirectUri': redirectUri,
+      'expiresAt': expiresAt.toJson(),
+      if (consumedAt != null) 'consumedAt': consumedAt?.toJson(),
+      'createdAt': createdAt.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -161,9 +185,9 @@ class _CodexOAuthTransactionImpl extends CodexOAuthTransaction {
     required String connectionId,
     required String userId,
     required String stateHash,
-    required _i2.ByteData verifierCiphertext,
-    required _i2.ByteData verifierNonce,
-    required _i2.ByteData verifierAuthenticationTag,
+    required _idt.ByteData verifierCiphertext,
+    required _idt.ByteData verifierNonce,
+    required _idt.ByteData verifierAuthenticationTag,
     required String redirectUri,
     required DateTime expiresAt,
     DateTime? consumedAt,
@@ -186,7 +210,7 @@ class _CodexOAuthTransactionImpl extends CodexOAuthTransaction {
 
   /// Returns a shallow copy of this [CodexOAuthTransaction]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CodexOAuthTransaction copyWith({
     Object? id = _Undefined,
@@ -195,9 +219,9 @@ class _CodexOAuthTransactionImpl extends CodexOAuthTransaction {
     String? connectionId,
     String? userId,
     String? stateHash,
-    _i2.ByteData? verifierCiphertext,
-    _i2.ByteData? verifierNonce,
-    _i2.ByteData? verifierAuthenticationTag,
+    _idt.ByteData? verifierCiphertext,
+    _idt.ByteData? verifierNonce,
+    _idt.ByteData? verifierAuthenticationTag,
     String? redirectUri,
     DateTime? expiresAt,
     Object? consumedAt = _Undefined,

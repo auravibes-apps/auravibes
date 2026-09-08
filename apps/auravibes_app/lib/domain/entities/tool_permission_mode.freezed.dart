@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'tool_permission_mode.dart';
@@ -9,6 +9,7 @@ part of 'tool_permission_mode.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -36,16 +37,21 @@ $WorkspaceToolEntityCopyWith<WorkspaceToolEntity> get copyWith => _$WorkspaceToo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.config, config) || other.config == config)&&(identical(other.description, description) || other.description == description)&&(identical(other.inputSchema, inputSchema) || other.inputSchema == inputSchema)&&(identical(other.workspaceToolsGroupId, workspaceToolsGroupId) || other.workspaceToolsGroupId == workspaceToolsGroupId));
+  final _this = this as WorkspaceToolEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToolEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.toolId, _this.toolId) || other.toolId == _this.toolId)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.permissionMode, _this.permissionMode) || other.permissionMode == _this.permissionMode)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.config, _this.config) || other.config == _this.config)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.inputSchema, _this.inputSchema) || other.inputSchema == _this.inputSchema)&&(identical(other.workspaceToolsGroupId, _this.workspaceToolsGroupId) || other.workspaceToolsGroupId == _this.workspaceToolsGroupId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,toolId,isEnabled,permissionMode,createdAt,updatedAt,config,description,inputSchema,workspaceToolsGroupId);
+int get hashCode {
+  final _this = this as WorkspaceToolEntity;
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.toolId,_this.isEnabled,_this.permissionMode,_this.createdAt,_this.updatedAt,_this.config,_this.description,_this.inputSchema,_this.workspaceToolsGroupId);
+}
 
 @override
 String toString() {
-  return 'WorkspaceToolEntity(id: $id, workspaceId: $workspaceId, toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode, createdAt: $createdAt, updatedAt: $updatedAt, config: $config, description: $description, inputSchema: $inputSchema, workspaceToolsGroupId: $workspaceToolsGroupId)';
+  final _this = this as WorkspaceToolEntity;
+  return 'WorkspaceToolEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, toolId: ${_this.toolId}, isEnabled: ${_this.isEnabled}, permissionMode: ${_this.permissionMode}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, config: ${_this.config}, description: ${_this.description}, inputSchema: ${_this.inputSchema}, workspaceToolsGroupId: ${_this.workspaceToolsGroupId})';
 }
 
 
@@ -74,7 +80,7 @@ class _$WorkspaceToolEntityCopyWithImpl<$Res>
 /// Create a copy of WorkspaceToolEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? toolId = null,Object? isEnabled = null,Object? permissionMode = null,Object? createdAt = null,Object? updatedAt = null,Object? config = freezed,Object? description = freezed,Object? inputSchema = freezed,Object? workspaceToolsGroupId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceToolEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
@@ -263,16 +269,18 @@ _$WorkspaceToolEntityCopyWith<_WorkspaceToolEntity> get copyWith => __$Workspace
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.config, config) || other.config == config)&&(identical(other.description, description) || other.description == description)&&(identical(other.inputSchema, inputSchema) || other.inputSchema == inputSchema)&&(identical(other.workspaceToolsGroupId, workspaceToolsGroupId) || other.workspaceToolsGroupId == workspaceToolsGroupId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.config, config) || other.config == config)&&(identical(other.description, description) || other.description == description)&&(identical(other.inputSchema, inputSchema) || other.inputSchema == inputSchema)&&(identical(other.workspaceToolsGroupId, workspaceToolsGroupId) || other.workspaceToolsGroupId == workspaceToolsGroupId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,toolId,isEnabled,permissionMode,createdAt,updatedAt,config,description,inputSchema,workspaceToolsGroupId);
+int get hashCode {
+    return Object.hash(runtimeType,id,workspaceId,toolId,isEnabled,permissionMode,createdAt,updatedAt,config,description,inputSchema,workspaceToolsGroupId);
+}
 
 @override
 String toString() {
-  return 'WorkspaceToolEntity(id: $id, workspaceId: $workspaceId, toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode, createdAt: $createdAt, updatedAt: $updatedAt, config: $config, description: $description, inputSchema: $inputSchema, workspaceToolsGroupId: $workspaceToolsGroupId)';
+    return 'WorkspaceToolEntity(id: $id, workspaceId: $workspaceId, toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode, createdAt: $createdAt, updatedAt: $updatedAt, config: $config, description: $description, inputSchema: $inputSchema, workspaceToolsGroupId: $workspaceToolsGroupId)';
 }
 
 
@@ -340,16 +348,21 @@ $WorkspaceToolToCreateCopyWith<WorkspaceToolToCreate> get copyWith => _$Workspac
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToolToCreate&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.config, config) || other.config == config)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.description, description) || other.description == description)&&(identical(other.inputSchema, inputSchema) || other.inputSchema == inputSchema)&&(identical(other.workspaceToolsGroupId, workspaceToolsGroupId) || other.workspaceToolsGroupId == workspaceToolsGroupId));
+  final _this = this as WorkspaceToolToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToolToCreate&&(identical(other.toolId, _this.toolId) || other.toolId == _this.toolId)&&(identical(other.config, _this.config) || other.config == _this.config)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.inputSchema, _this.inputSchema) || other.inputSchema == _this.inputSchema)&&(identical(other.workspaceToolsGroupId, _this.workspaceToolsGroupId) || other.workspaceToolsGroupId == _this.workspaceToolsGroupId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,toolId,config,isEnabled,description,inputSchema,workspaceToolsGroupId);
+int get hashCode {
+  final _this = this as WorkspaceToolToCreate;
+  return Object.hash(runtimeType,_this.toolId,_this.config,_this.isEnabled,_this.description,_this.inputSchema,_this.workspaceToolsGroupId);
+}
 
 @override
 String toString() {
-  return 'WorkspaceToolToCreate(toolId: $toolId, config: $config, isEnabled: $isEnabled, description: $description, inputSchema: $inputSchema, workspaceToolsGroupId: $workspaceToolsGroupId)';
+  final _this = this as WorkspaceToolToCreate;
+  return 'WorkspaceToolToCreate(toolId: ${_this.toolId}, config: ${_this.config}, isEnabled: ${_this.isEnabled}, description: ${_this.description}, inputSchema: ${_this.inputSchema}, workspaceToolsGroupId: ${_this.workspaceToolsGroupId})';
 }
 
 
@@ -378,7 +391,7 @@ class _$WorkspaceToolToCreateCopyWithImpl<$Res>
 /// Create a copy of WorkspaceToolToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? toolId = null,Object? config = freezed,Object? isEnabled = freezed,Object? description = freezed,Object? inputSchema = freezed,Object? workspaceToolsGroupId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceToolToCreate(
 toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
 as String,config: freezed == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
 as String?,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
@@ -552,16 +565,18 @@ _$WorkspaceToolToCreateCopyWith<_WorkspaceToolToCreate> get copyWith => __$Works
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToolToCreate&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.config, config) || other.config == config)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.description, description) || other.description == description)&&(identical(other.inputSchema, inputSchema) || other.inputSchema == inputSchema)&&(identical(other.workspaceToolsGroupId, workspaceToolsGroupId) || other.workspaceToolsGroupId == workspaceToolsGroupId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToolToCreate&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.config, config) || other.config == config)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.description, description) || other.description == description)&&(identical(other.inputSchema, inputSchema) || other.inputSchema == inputSchema)&&(identical(other.workspaceToolsGroupId, workspaceToolsGroupId) || other.workspaceToolsGroupId == workspaceToolsGroupId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,toolId,config,isEnabled,description,inputSchema,workspaceToolsGroupId);
+int get hashCode {
+    return Object.hash(runtimeType,toolId,config,isEnabled,description,inputSchema,workspaceToolsGroupId);
+}
 
 @override
 String toString() {
-  return 'WorkspaceToolToCreate(toolId: $toolId, config: $config, isEnabled: $isEnabled, description: $description, inputSchema: $inputSchema, workspaceToolsGroupId: $workspaceToolsGroupId)';
+    return 'WorkspaceToolToCreate(toolId: $toolId, config: $config, isEnabled: $isEnabled, description: $description, inputSchema: $inputSchema, workspaceToolsGroupId: $workspaceToolsGroupId)';
 }
 
 

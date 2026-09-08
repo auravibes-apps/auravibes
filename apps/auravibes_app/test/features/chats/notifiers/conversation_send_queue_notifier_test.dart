@@ -27,10 +27,7 @@ void main() {
         draft: const ChatDraft(text: 'Second queued message'),
       );
 
-      expect(
-        notifier.peek('conversation-1')?.content,
-        'First queued message',
-      );
+      expect(notifier.peek('conversation-1')?.content, 'First queued message');
       expect(notifier.dequeue('conversation-1')?.id, first.id);
       expect(notifier.dequeue('conversation-1')?.id, second.id);
       expect(notifier.dequeue('conversation-1'), isNull);

@@ -74,7 +74,11 @@ abstract final class SyncWakeups {
       return;
     }
     try {
-      await session.messages.postMessage(channel, message, global: true);
+      await session.messages.postMessage(
+        channel,
+        message,
+        scope: MessageScope.global,
+      );
       if (job != null) {
         session.log(
           'Published global conversation job wakeup: '
@@ -91,7 +95,7 @@ abstract final class SyncWakeups {
                   'job=${job.id}, workspace=${job.workspaceId}, '
                   'kind=${job.kind}.',
         level: LogLevel.warning,
-        exception: error,
+        exception: error.runtimeType,
         stackTrace: stackTrace,
       );
     }

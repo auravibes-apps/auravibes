@@ -66,7 +66,7 @@ final class WorkspaceSkillsProvider
   }
 }
 
-String _$workspaceSkillsHash() => r'74d6ef41aba3e60b34d656f0a0f5815ffc2918f1';
+String _$workspaceSkillsHash() => r'94a8c875fb35b282c90c86995c7198997e0966f5';
 
 final class WorkspaceSkillsFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<WorkspaceSkill>>, String> {

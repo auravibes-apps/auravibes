@@ -69,6 +69,8 @@
       "create_button": "Crear Proveedor",
       "connect_browser": "Conectar con navegador",
       "use_device_code": "Usar código de dispositivo",
+      "oauth_waiting": "Esperando autorización...",
+      "cancel_connection": "Cancelar conexión",
       "device_code_instruction": "Abre esta URL e ingresa el código.",
       "device_code_step_code": "1. Copia este código",
       "device_code_step_link": "2. Abre este enlace",
@@ -122,6 +124,7 @@
     "save_error": "No se pudo guardar la conexión",
     "empty_title": "No hay conexiones",
     "empty_subtitle": "Agrega un proveedor de modelo o credencial de habilidad para conectar este espacio de trabajo.",
+    "empty_filter": "No hay conexiones de {type}",
     "delete_credential_title": "Eliminar credencial de habilidad",
     "delete_credential_confirm": "¿Eliminar la credencial \"{name}\"? Esta acción no se puede deshacer.",
     "delete_credential_error": "No se pudo eliminar la credencial de habilidad",
@@ -132,6 +135,12 @@
     "candidate": {
       "model_provider": "Proveedor de modelo {serviceId}",
       "app_skill": "Habilidad de servicio {serviceId}"
+    },
+    "filter": {
+      "all": "Todas",
+      "model_providers": "Proveedores de modelo",
+      "skill_credentials": "Credenciales de habilidad",
+      "mcp_servers": "Servidores MCP"
     },
     "type": {
       "model_provider": "Proveedor de Modelo",
@@ -264,6 +273,8 @@
       "recording_status": "Grabando",
       "voice_record_label": "Nota de voz",
       "image_attachment_label": "Imagen",
+      "a2ui_image_loading": "Cargando imagen…",
+      "a2ui_image_error": "Imagen no disponible",
       "attachment_unsupported": "El modelo actual no admite esta entrada.",
       "switch_model_unsupported_title": "¿Cambiar modelo?",
       "switch_model_unsupported_body": "Este modelo no admite {modalities}. Los adjuntos no compatibles se omitirán.",
@@ -273,6 +284,13 @@
       "stop_error": "No se pudo detener la conversación. Inténtalo de nuevo.",
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
       "continue_agent": "Continuar agente",
+      "submit_answers": "Enviar respuestas",
+      "form_submitted": "Respuestas del formulario enviadas",
+      "remove_tag": "Quitar {tag}",
+      "a2ui_unavailable": "No se pudo cargar esta interfaz.",
+      "copy_a2ui_diagnostic": "Copiar detalles del diagnóstico",
+      "a2ui_diagnostic_copied": "Diagnóstico copiado",
+      "a2ui_form_invalid": "Revisa tus respuestas e inténtalo de nuevo.",
       "continue_error": "No se pudo continuar el agente. Inténtalo de nuevo.",
       "rate_limit_retry": "Se alcanzó el límite de uso. Reintentando en {seconds}s.",
       "waiting_for_tools": "Esperando a que las herramientas se conecten...",

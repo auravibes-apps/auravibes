@@ -34,17 +34,13 @@ void main() {
   });
 }
 
-class _FakeResumeProvider implements AgentToolResumeProvider {
-  _FakeResumeProvider({
-    this.reference = const AgentToolResumeReference(
-      conversationId: 'c1',
-      workspaceId: 'w1',
-    ),
-    this.decision = AgentIterationDecision.done,
-  });
-
-  final AgentToolResumeReference? reference;
-  final AgentIterationDecision decision;
+class _FakeResumeProvider({
+  final AgentToolResumeReference? reference = const AgentToolResumeReference(
+    conversationId: 'c1',
+    workspaceId: 'w1',
+  ),
+  final AgentIterationDecision decision = AgentIterationDecision.done,
+}) implements AgentToolResumeProvider {
   final calls = <String>[];
   final contexts = <AgentIterationContext>[];
 

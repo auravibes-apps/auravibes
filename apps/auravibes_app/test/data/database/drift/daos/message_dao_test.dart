@@ -17,10 +17,7 @@ QueryExecutor createTestConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -194,11 +191,7 @@ void main() {
         );
       }
       final page = await fixture.database.messageDao
-          .getMessagesByConversationPaginated(
-            conversationId,
-            2,
-            0,
-          );
+          .getMessagesByConversationPaginated(conversationId, 2, 0);
       expect(page.length, equals(2));
     });
 

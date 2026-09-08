@@ -17,12 +17,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'grouped_tools_notifier.g.dart';
 
-extension ToolsGroupsRepositoryFamilyTestOverride
-    on ToolsGroupsRepositoryFamily {
-  Override overrideWithValue(ToolsGroupsRepositoryContract value) =>
-      overrideWith((_, _) => value);
-}
-
 /// Provider for the tools groups repository.
 @riverpod
 ToolsGroupsRepositoryContract toolsGroupsRepository(
@@ -41,12 +35,10 @@ ToolsGroupsRepositoryContract toolsGroupsRepository(
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all tools groups for the current workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches tool groups for the current workspace, groups tools
+/// by workspaceToolsGroupId, creates a Built-in Tools group for ungrouped
+/// tools, enriches MCP groups with connection state, and sorts default, error,
+/// and newest groups first.
 @riverpod
 class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   String _workspaceId = '';
@@ -107,13 +99,8 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
 
   /// Toggle an MCP group's enabled status.
   ///
-  /// When disabled:
-  /// - Hides tools from AI
-  /// - Disconnects the MCP server
-  ///
-  /// When enabled:
-  /// - Shows tools to AI
-  /// - Reconnects to the MCP server
+  /// When disabled, this hides tools from AI and disconnects the MCP server.
+  /// When enabled, this shows tools to AI and reconnects to the MCP server.
   Future<void> setMcpGroupEnabled(
     String groupId, {
     required bool isEnabled,
@@ -153,9 +140,8 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
 
   /// Delete an MCP group and its server.
   ///
-  /// This will:
-  /// - Disconnect from the MCP server
-  /// - Delete the MCP server (cascades to tools group and tools)
+  /// This disconnects from the MCP server and deletes it, cascading to its
+  /// tools group and tools.
   Future<void> deleteMcpGroup(String groupId) async {
     final repository = ref.read(
       toolsGroupsRepositoryProvider(_requiredSession),
@@ -243,8 +229,5 @@ Future<int> totalToolsCount(Ref ref, String workspaceId) async {
     groupedToolsProvider(workspaceId).future,
   );
 
-  return groupedTools.fold<int>(
-    0,
-    (sum, group) => sum + group.totalToolsCount,
-  );
+  return groupedTools.fold<int>(0, (sum, group) => sum + group.totalToolsCount);
 }

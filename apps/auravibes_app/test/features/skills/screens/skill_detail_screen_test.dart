@@ -51,9 +51,8 @@ void main() {
                     skillId: value.skillId,
                     key: ValueKey('${value.workspaceId}:${value.skillId}'),
                   ),
-                  builder: (context, child) => AuraSnackBarHost(
-                    child: child ?? const SizedBox.shrink(),
-                  ),
+                  builder: (context, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,
@@ -72,10 +71,7 @@ void main() {
     );
   }
 
-  Future<void> pumpUntilFound(
-    WidgetTester tester,
-    Finder finder,
-  ) async {
+  Future<void> pumpUntilFound(WidgetTester tester, Finder finder) async {
     for (var attempt = 0; attempt < 40; attempt++) {
       await tester.pump(const Duration(milliseconds: 200));
       if (finder.evaluate().isNotEmpty) return;
@@ -88,25 +84,23 @@ void main() {
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     addTearDown(appSkillDatabase.close);
-    final appSkillWorkspace =
-        await WorkspaceRepository(
-          appSkillDatabase,
-        ).createWorkspace(
+    final appSkillWorkspace = await WorkspaceRepository(appSkillDatabase)
+        .createWorkspace(
           const WorkspaceToCreate(
             name: 'Test Workspace',
             type: WorkspaceType.local,
           ),
         );
+    final appSkillSession = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: appSkillWorkspace.id),
+    );
     final appSkillContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(appSkillDatabase),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: appSkillWorkspace.id),
-          ),
-        ),
+        workspaceSessionProvider(appSkillSession)
+            .overrideWithValue(appSkillSession),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(appSkillWorkspace.id).overrideWithValue(null),
       ],
     );
     addTearDown(appSkillContainer.dispose);
@@ -118,42 +112,38 @@ void main() {
       _FakeSecretKeyManager(),
     );
     final selectedCredentialWorkspace =
-        await WorkspaceRepository(
-          selectedCredentialDatabase,
-        ).createWorkspace(
+        await WorkspaceRepository(selectedCredentialDatabase).createWorkspace(
           const WorkspaceToCreate(
             name: 'Test Workspace',
             type: WorkspaceType.local,
           ),
         );
+    final selectedCredentialSession = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: selectedCredentialWorkspace.id),
+    );
     final selectedCredentialContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(selectedCredentialDatabase),
         encryptionServiceProvider.overrideWithValue(selectedEncryptionService),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: selectedCredentialWorkspace.id),
-          ),
-        ),
+        workspaceSessionProvider(selectedCredentialSession)
+            .overrideWithValue(selectedCredentialSession),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(selectedCredentialWorkspace.id)
+            .overrideWithValue(null),
       ],
     );
     addTearDown(selectedCredentialContainer.dispose);
     final definition =
-        await SkillCredentialDefinitionsRepository(
-          selectedCredentialDatabase,
-        ).createDefinition(
-          selectedCredentialWorkspace.id,
-          const SkillCredentialDefinitionToCreate(
-            title: 'TheCatAPI Key',
-            attributesJson: '{"apiKey":{"description":"API key"}}',
-          ),
-        );
+        await SkillCredentialDefinitionsRepository(selectedCredentialDatabase)
+            .createDefinition(
+              selectedCredentialWorkspace.id,
+              const SkillCredentialDefinitionToCreate(
+                title: 'TheCatAPI Key',
+                attributesJson: '{"apiKey":{"description":"API key"}}',
+              ),
+            );
     final skillWithDefinition =
-        await SkillsRepository(
-          selectedCredentialDatabase,
-        ).createSkill(
+        await SkillsRepository(selectedCredentialDatabase).createSkill(
           selectedCredentialWorkspace.id,
           SkillToCreate(
             kind: SkillKind.template,
@@ -176,19 +166,16 @@ void main() {
           ),
         );
     final optionalDefinition =
-        await SkillCredentialDefinitionsRepository(
-          selectedCredentialDatabase,
-        ).createDefinition(
-          selectedCredentialWorkspace.id,
-          const SkillCredentialDefinitionToCreate(
-            title: 'Optional API Key',
-            attributesJson: '{"apiKey":{"description":"API key"}}',
-          ),
-        );
-    final optionalSkill =
-        await SkillsRepository(
-          selectedCredentialDatabase,
-        ).createSkill(
+        await SkillCredentialDefinitionsRepository(selectedCredentialDatabase)
+            .createDefinition(
+              selectedCredentialWorkspace.id,
+              const SkillCredentialDefinitionToCreate(
+                title: 'Optional API Key',
+                attributesJson: '{"apiKey":{"description":"API key"}}',
+              ),
+            );
+    final optionalSkill = await SkillsRepository(selectedCredentialDatabase)
+        .createSkill(
           selectedCredentialWorkspace.id,
           SkillToCreate(
             kind: SkillKind.template,
@@ -204,31 +191,28 @@ void main() {
     );
     addTearDown(staleCredentialDatabase.close);
     final staleCredentialWorkspace =
-        await WorkspaceRepository(
-          staleCredentialDatabase,
-        ).createWorkspace(
+        await WorkspaceRepository(staleCredentialDatabase).createWorkspace(
           const WorkspaceToCreate(
             name: 'Test Workspace',
             type: WorkspaceType.local,
           ),
         );
+    final staleCredentialSession = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: staleCredentialWorkspace.id),
+    );
     final staleCredentialContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(staleCredentialDatabase),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: staleCredentialWorkspace.id),
-          ),
-        ),
+        workspaceSessionProvider(staleCredentialSession)
+            .overrideWithValue(staleCredentialSession),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(staleCredentialWorkspace.id)
+            .overrideWithValue(null),
       ],
     );
     addTearDown(staleCredentialContainer.dispose);
     final skillWithStaleDefinition =
-        await SkillsRepository(
-          staleCredentialDatabase,
-        ).createSkill(
+        await SkillsRepository(staleCredentialDatabase).createSkill(
           staleCredentialWorkspace.id,
           const SkillToCreate(
             kind: SkillKind.template,
@@ -303,14 +287,8 @@ class _FakeSecretKeyManager extends SecretKeyManager {
   Future<SecretKey> getOrCreateSecretKey() async => _key;
 }
 
-class _SkillDetailScreenFixture {
-  const _SkillDetailScreenFixture({
-    required this.container,
-    required this.workspaceId,
-    required this.skillId,
-  });
-
-  final ProviderContainer container;
-  final String workspaceId;
-  final String skillId;
-}
+class const _SkillDetailScreenFixture({
+  required final ProviderContainer container,
+  required final String workspaceId,
+  required final String skillId,
+});

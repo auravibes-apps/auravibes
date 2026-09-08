@@ -8,17 +8,15 @@ enum ModelProvidersTableType {
   openrouter('openrouter');
 
   /// Creates a new CredentialsModelType with the given string value.
-  const ModelProvidersTableType(this.value);
+  new(this.value);
 
   /// Creates a credentials model type from a string value.
   ///
-  /// Throws [ArgumentError] if the value is not a valid chat model type
+  /// Throws [ArgumentError] if the value is not a valid chat model type.
   static ModelProvidersTableType? fromString(String value) {
     final lowerValue = value.toLowerCase();
 
-    return values.firstWhereOrNull(
-      (element) => element.value == lowerValue,
-    );
+    return values.firstWhereOrNull((element) => element.value == lowerValue);
   }
 
   final String value;
@@ -36,8 +34,8 @@ class ApiModelProviders extends Table {
   /// Human-readable name of the model.
   TextColumn get name => text()();
 
-  /// Type of chat model (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of chat model (local or remote). Stored as a string to handle enum
+  /// conversion.
   TextColumn get type => textEnum<ModelProvidersTableType>().nullable()();
 
   TextColumn get url => text().nullable()();

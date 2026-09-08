@@ -1,11 +1,7 @@
 import 'package:auravibes_engine/src/agent_runtime.dart';
 import 'package:auravibes_engine/src/providers/agent_data_provider.dart';
 
-class ConversationsNamespace {
-  const ConversationsNamespace({required this.data});
-
-  final AgentDataProvider data;
-
+class const ConversationsNamespace({required final AgentDataProvider data}) {
   Future<List<AgentConversationMessage>> getMessages({
     required String conversationId,
   }) {

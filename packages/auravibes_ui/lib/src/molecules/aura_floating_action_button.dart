@@ -1,5 +1,4 @@
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
-import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -10,8 +9,15 @@ import 'package:flutter/material.dart';
 /// This FAB supports different sizes, icons, extended variants with text,
 /// and proper elevation and shadows.
 class AuraFloatingActionButton extends StatelessWidget {
+  static const _miniSize = 40.0;
+  static const _largeSize = 72.0;
+  static const _miniIconSize = 16.0;
+  static const _regularIconSize = 20.0;
+  static const _largeIconSize = 24.0;
+  static const _regularSize = 56.0;
+
   /// Creates a Aura floating action button.
-  const AuraFloatingActionButton({
+  const new({
     required this.onPressed,
     required this.icon,
     super.key,
@@ -23,7 +29,7 @@ class AuraFloatingActionButton extends StatelessWidget {
   }) : text = null;
 
   /// Creates an extended Aura floating action button with text.
-  const AuraFloatingActionButton.extended({
+  const new extended({
     required this.onPressed,
     required this.icon,
     required this.text,
@@ -64,6 +70,7 @@ class AuraFloatingActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final labelText = text;
+    final tooltip = this.tooltip;
     final resolvedTint = tint ?? AuraTint.primary;
     final resolvedBackground = auraColors.colorFor(resolvedTint);
     final resolvedForeground = auraColors.onTint(resolvedTint);
@@ -76,6 +83,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     Widget fab;
     if (size == AuraFABSize.extended && labelText != null) {
       fab = FloatingActionButton.extended(
+        tooltip: tooltip,
         foregroundColor: resolvedForeground,
         backgroundColor: resolvedBackground,
         heroTag: heroTag,
@@ -98,11 +106,8 @@ class AuraFloatingActionButton extends StatelessWidget {
       );
     } else {
       fab = FloatingActionButton(
-        child: Icon(
-          icon,
-          size: _getIconPixels(),
-          color: resolvedForeground,
-        ),
+        child: Icon(icon, size: _getIconPixels(), color: resolvedForeground),
+        tooltip: tooltip,
         foregroundColor: resolvedForeground,
         backgroundColor: resolvedBackground,
         heroTag: heroTag,
@@ -115,48 +120,37 @@ class AuraFloatingActionButton extends StatelessWidget {
       );
 
       if (size == AuraFABSize.mini || size == AuraFABSize.large) {
-        fab = SizedBox(
-          width: _getFABSize(),
-          height: _getFABSize(),
-          child: fab,
-        );
+        fab = SizedBox(width: _getFABSize(), height: _getFABSize(), child: fab);
       }
     }
 
-    final tooltip = this.tooltip;
-    if (tooltip != null) {
-      fab = AuraTooltip(
-        message: tooltip,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      child: Semantics(
         child: fab,
-      );
-    }
-
-    if (semanticLabel != null) {
-      fab = Semantics(
-        child: fab,
+        enabled: onPressed != null,
         button: true,
-        label: semanticLabel,
-      );
-    }
-
-    return fab;
+        label: semanticLabel ?? tooltip ?? 'Floating action button',
+        onTap: onPressed,
+      ),
+    );
   }
 
   double _getFABSize() {
     return switch (size) {
-      AuraFABSize.mini => 40.0,
-      AuraFABSize.regular => 56.0,
-      AuraFABSize.large => 72.0,
-      AuraFABSize.extended => 56.0, // Height for extended.
+      AuraFABSize.mini => _miniSize,
+      AuraFABSize.regular => _regularSize,
+      AuraFABSize.large => _largeSize,
+      AuraFABSize.extended => _regularSize, // Height for extended.
     };
   }
 
   double _getIconPixels() {
     return switch (size) {
-      AuraFABSize.mini => 16,
-      AuraFABSize.regular => 20,
-      AuraFABSize.large => 24,
-      AuraFABSize.extended => 20,
+      AuraFABSize.mini => _miniIconSize,
+      AuraFABSize.regular => _regularIconSize,
+      AuraFABSize.large => _largeIconSize,
+      AuraFABSize.extended => _regularIconSize,
     };
   }
 

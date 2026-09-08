@@ -1,11 +1,8 @@
-enum UrlResponseFormat {
+enum UrlResponseFormat(final String label) {
   defaultFormat(''),
   markdown('markdown'),
   text('text'),
   html('html');
-
-  const UrlResponseFormat(this.label);
-  final String label;
 
   String get acceptHeader => switch (this) {
     .html =>

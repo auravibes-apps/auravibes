@@ -145,10 +145,7 @@ CancelableOperation<Object?> _fetch(
     positiveIntInput(input, 'perUrlTimeoutMs'),
   );
 
-  return postJson(
-    context,
-    'https://api.fetch.tinyfish.ai',
-    {'X-API-Key': apiKey(input)},
-    body,
-  );
+  return postJson(context, 'https://api.fetch.tinyfish.ai', {
+    'X-API-Key': apiKey(input),
+  }, body);
 }

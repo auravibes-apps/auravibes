@@ -1,29 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 
-class ObjectMetadata {
-  const ObjectMetadata({
-    required this.sizeBytes,
-    required this.mimeType,
-    required this.checksumSha256,
-  });
+class const ObjectMetadata({
+  required final int sizeBytes,
+  required final String mimeType,
+  required final String checksumSha256,
+});
 
-  final int sizeBytes;
-  final String mimeType;
-  final String checksumSha256;
-}
-
-class SignedObjectRequest {
-  const SignedObjectRequest({
-    required this.url,
-    required this.headers,
-    required this.expiresAt,
-  });
-
-  final Uri url;
-  final Map<String, String> headers;
-  final DateTime expiresAt;
-}
+class const SignedObjectRequest({
+  required final Uri url,
+  required final Map<String, String> headers,
+  required final DateTime expiresAt,
+});
 
 abstract interface class ObjectStore {
   Future<SignedObjectRequest> signPut({
@@ -45,9 +33,7 @@ abstract interface class ObjectStore {
   Future<void> delete(String key);
 }
 
-class UnconfiguredObjectStore implements ObjectStore {
-  const UnconfiguredObjectStore();
-
+class const UnconfiguredObjectStore() implements ObjectStore {
   Never _missing() => throw StateError('Object store is not configured.');
 
   @override
@@ -75,12 +61,8 @@ class UnconfiguredObjectStore implements ObjectStore {
 
 /// Narrow private-store adapter. The gateway issues short-lived object URLs;
 /// permanent credentials remain server-side in the Authorization header.
-class HttpObjectStore implements ObjectStore {
-  HttpObjectStore({required this.endpoint, this.bearerToken});
-
-  final Uri endpoint;
-  final String? bearerToken;
-
+class HttpObjectStore({required final Uri endpoint, final String? bearerToken})
+    implements ObjectStore {
   Uri _uri(String key, [Map<String, String>? query]) => endpoint.replace(
     path: '${endpoint.path.replaceFirst(RegExp(r'/$'), '')}/$key',
     queryParameters: query,

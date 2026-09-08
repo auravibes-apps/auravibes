@@ -24,20 +24,6 @@ void main() {
     var creates = 0;
     var discoveries = 0;
     final repository = CloudToolsRepository.forTesting(
-      read: ({required pages}) async => ReadWorkspaceStateResponse(
-        pages: [
-          for (final page in pages)
-            WorkspaceResourcePage(
-              resourceKind: page.resourceKind,
-              resources: resources
-                  .where((item) => item.resourceKind == page.resourceKind)
-                  .toList(),
-            ),
-        ],
-        currentSequence: 1,
-        events: const [],
-        requiresSnapshot: false,
-      ),
       patch: ({required requestId, required operations}) async {
         patchedKinds.addAll(operations.map((item) => item.resourceKind));
         final changed = <WorkspaceResource>[];
@@ -65,6 +51,20 @@ void main() {
 
         return PatchWorkspaceStateResponse(resources: changed, sequence: 1);
       },
+      read: ({required pages}) async => ReadWorkspaceStateResponse(
+        pages: [
+          for (final page in pages)
+            WorkspaceResourcePage(
+              resourceKind: page.resourceKind,
+              resources: resources
+                  .where((item) => item.resourceKind == page.resourceKind)
+                  .toList(),
+            ),
+        ],
+        currentSequence: 1,
+        events: const [],
+        requiresSnapshot: false,
+      ),
       create:
           ({
             required requestId,
@@ -177,7 +177,16 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'workspace-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account',
+              cloudWorkspaceId: 7,
+            ),
+          ),
+        ).overrideWithValue(
           const WorkspaceSession(
             CloudWorkspaceRef(
               localWorkspaceId: 'workspace-1',
@@ -200,8 +209,26 @@ void main() {
           ),
         ),
         mcpServersRepositoryProvider.overrideWithValue(repository),
-        toolsGroupsRepositoryProvider.overrideWithValue(repository),
-        workspaceToolsRepositoryProvider.overrideWithValue(repository),
+        toolsGroupsRepositoryProvider(
+          const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'workspace-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account',
+              cloudWorkspaceId: 7,
+            ),
+          ),
+        ).overrideWithValue(repository),
+        workspaceToolsRepositoryProvider(
+          const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'workspace-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account',
+              cloudWorkspaceId: 7,
+            ),
+          ),
+        ).overrideWithValue(repository),
         mcpManagerServiceProvider.overrideWith(
           (_) => throw StateError('local MCP manager accessed'),
         ),
@@ -254,18 +281,13 @@ void main() {
     final grouped = container.read(
       groupedToolsProvider('workspace-1').notifier,
     );
-    final _ = await container.read(
-      groupedToolsProvider('workspace-1').future,
-    );
+    final _ = await container.read(groupedToolsProvider('workspace-1').future);
     await grouped.setMcpGroupEnabled(groupId, isEnabled: false);
     await grouped.reconnectMcp('server-1');
     await grouped.deleteMcpGroup(groupId);
 
     expect(discoveries, 3);
-    expect(
-      resources.any((item) => item.resourceId == groupServerId),
-      isFalse,
-    );
+    expect(resources.any((item) => item.resourceId == groupServerId), isFalse);
     expect(
       resources.any(
         (item) =>

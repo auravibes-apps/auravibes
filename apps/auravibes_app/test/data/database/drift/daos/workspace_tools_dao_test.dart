@@ -17,10 +17,7 @@ QueryExecutor createTestConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -71,10 +68,7 @@ void main() {
 
       await fixture.database.workspaceToolsDao.insertToolsBatch([companion]);
       final tool = await fixture.database.workspaceToolsDao
-          .getWorkspaceToolByToolId(
-            workspaceId,
-            toolId,
-          );
+          .getWorkspaceToolByToolId(workspaceId, toolId);
 
       return tool ?? fail('Expected workspace tool');
     }
@@ -88,14 +82,8 @@ void main() {
 
     test('insertToolsBatch inserts tools', () async {
       await fixture.database.workspaceToolsDao.insertToolsBatch([
-        ToolsCompanion.insert(
-          workspaceId: workspaceId,
-          toolId: 'tool1',
-        ),
-        ToolsCompanion.insert(
-          workspaceId: workspaceId,
-          toolId: 'tool2',
-        ),
+        ToolsCompanion.insert(workspaceId: workspaceId, toolId: 'tool1'),
+        ToolsCompanion.insert(workspaceId: workspaceId, toolId: 'tool2'),
       ]);
       final tools = await fixture.database.workspaceToolsDao.getWorkspaceTools(
         workspaceId,
@@ -128,10 +116,7 @@ void main() {
     test('getWorkspaceToolByToolId returns tool', () async {
       final _ = await seedTool();
       final found = await fixture.database.workspaceToolsDao
-          .getWorkspaceToolByToolId(
-            workspaceId,
-            'web_search',
-          );
+          .getWorkspaceToolByToolId(workspaceId, 'web_search');
       expect(found, isNotNull);
       expect(
         (found ?? fail('Expected found to be non-null')).toolId,
@@ -141,11 +126,7 @@ void main() {
 
     test('setWorkspaceToolEnabled inserts new when not exists', () async {
       final result = await fixture.database.workspaceToolsDao
-          .setWorkspaceToolEnabled(
-            workspaceId,
-            'new_tool',
-            isEnabled: true,
-          );
+          .setWorkspaceToolEnabled(workspaceId, 'new_tool', isEnabled: true);
       expect(result.toolId, equals('new_tool'));
       expect(result.isEnabled, isTrue);
     });
@@ -153,70 +134,48 @@ void main() {
     test('setWorkspaceToolEnabled updates existing', () async {
       final _ = await seedTool(toolId: 'existing');
       final result = await fixture.database.workspaceToolsDao
-          .setWorkspaceToolEnabled(
-            workspaceId,
-            'existing',
-            isEnabled: true,
-          );
+          .setWorkspaceToolEnabled(workspaceId, 'existing', isEnabled: true);
       expect(result.isEnabled, isTrue);
     });
 
     test('setWorkspaceToolEnabledById updates by id', () async {
       final created = await seedTool(toolId: 't1');
       final updated = await fixture.database.workspaceToolsDao
-          .setWorkspaceToolEnabledById(
-            created.id,
-            isEnabled: true,
-          );
+          .setWorkspaceToolEnabledById(created.id, isEnabled: true);
       expect(updated.isEnabled, isTrue);
     });
 
     test('patchWorkspaceToolConfig updates config', () async {
       final _ = await seedTool(toolId: 'cfg_tool');
       final results = await fixture.database.workspaceToolsDao
-          .patchWorkspaceToolConfig(
-            workspaceId,
-            'cfg_tool',
-            '{"key":"val"}',
-          );
+          .patchWorkspaceToolConfig(workspaceId, 'cfg_tool', '{"key":"val"}');
       expect(results.firstOrNull?.config, equals('{"key":"val"}'));
     });
 
     test('deleteWorkspaceToolByToolId deletes by toolId', () async {
       final _ = await seedTool(toolId: 'del_me');
       final deleted = await fixture.database.workspaceToolsDao
-          .deleteWorkspaceToolByToolId(
-            workspaceId,
-            'del_me',
-          );
+          .deleteWorkspaceToolByToolId(workspaceId, 'del_me');
       expect(deleted, isTrue);
     });
 
     test('deleteWorkspaceToolByToolId returns false when not found', () async {
       final deleted = await fixture.database.workspaceToolsDao
-          .deleteWorkspaceToolByToolId(
-            workspaceId,
-            'missing',
-          );
+          .deleteWorkspaceToolByToolId(workspaceId, 'missing');
       expect(deleted, isFalse);
     });
 
     test('deleteWorkspaceTool deletes by id', () async {
       final created = await seedTool(toolId: 'del_id');
       final deleted = await fixture.database.workspaceToolsDao
-          .deleteWorkspaceTool(
-            workspaceId,
-            created.id,
-          );
+          .deleteWorkspaceTool(workspaceId, created.id);
       expect(deleted, isTrue);
     });
 
     test('deleteWorkspaceToolById deletes by id only', () async {
       final created = await seedTool(toolId: 'del_by_id');
       final deleted = await fixture.database.workspaceToolsDao
-          .deleteWorkspaceToolById(
-            created.id,
-          );
+          .deleteWorkspaceToolById(created.id);
       expect(deleted, isTrue);
     });
 
@@ -224,9 +183,7 @@ void main() {
       final _ = await seedTool(toolId: 'on', isEnabled: true);
       final _ = await seedTool(toolId: 'off');
       final enabled = await fixture.database.workspaceToolsDao
-          .getEnabledWorkspaceTools(
-            workspaceId,
-          );
+          .getEnabledWorkspaceTools(workspaceId);
       expect(enabled.length, equals(1));
       expect(enabled.firstOrNull?.toolId, equals('on'));
     });
@@ -278,25 +235,16 @@ void main() {
     });
 
     test('getWorkspaceToolConfig returns config string', () async {
-      final created = await seedTool(
-        toolId: 'cfg',
-        config: '{"k":"v"}',
-      );
+      final created = await seedTool(toolId: 'cfg', config: '{"k":"v"}');
       final config = await fixture.database.workspaceToolsDao
-          .getWorkspaceToolConfig(
-            workspaceId,
-            created.id,
-          );
+          .getWorkspaceToolConfig(workspaceId, created.id);
       expect(config, equals('{"k":"v"}'));
     });
 
     test('getWorkspaceToolConfigByToolId returns config', () async {
       final _ = await seedTool(toolId: 'cfg2', config: 'abc');
       final config = await fixture.database.workspaceToolsDao
-          .getWorkspaceToolConfigByToolId(
-            workspaceId,
-            'cfg2',
-          );
+          .getWorkspaceToolConfigByToolId(workspaceId, 'cfg2');
       expect(config, equals('abc'));
     });
 
@@ -404,9 +352,7 @@ void main() {
         ),
       ]);
       final deleted = await fixture.database.workspaceToolsDao
-          .deleteToolsByGroupId(
-            group.id,
-          );
+          .deleteToolsByGroupId(group.id);
       expect(deleted, equals(2));
     });
 

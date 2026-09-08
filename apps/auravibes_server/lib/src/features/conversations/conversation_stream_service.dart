@@ -4,10 +4,9 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../sync/stream/sync_wakeups.dart';
+import 'engine/a2ui_protocol.dart';
 
-class ConversationStreamService {
-  const ConversationStreamService();
-
+class const ConversationStreamService() {
   static const pageSize = 100;
   static const pollInterval = Duration(seconds: 1);
 
@@ -57,9 +56,17 @@ class ConversationStreamService {
           orderBy: (table) => table.sequence,
           limit: pageSize,
         );
+        final components = cloudA2uiComponentsForClient(
+          request.a2uiSupportedComponents,
+          isChildConversation: conversation.parentConversationStableId != null,
+        );
         for (final event in events) {
           cursor = event.sequence;
-          yield eventFor(event, conversationId: request.conversationId);
+          final outgoing = eventFor(
+            event,
+            conversationId: request.conversationId,
+          );
+          if (canDeliver(outgoing, components)) yield outgoing;
         }
         if (events.length < pageSize) {
           final wakeup = pendingWakeup ??= wakeups.moveNext().whenComplete(
@@ -73,7 +80,10 @@ class ConversationStreamService {
             progressEvent.then((hasEvent) => hasEvent ? 'progress' : 'none'),
             Future<String>.delayed(pollInterval, () => 'poll'),
           ]);
-          if (source == 'progress') yield progress.current;
+          if (source == 'progress' &&
+              canDeliver(progress.current, components)) {
+            yield progress.current;
+          }
         }
       }
     } finally {
@@ -89,11 +99,19 @@ class ConversationStreamService {
     workspaceId: event.workspaceId,
     conversationId: conversationId,
     sequence: event.sequence,
+    eventId: event.eventId,
     kind: event.kind,
     actorUserId: event.actorUserId,
     payloadJson: event.payloadJson,
     createdAt: event.createdAt,
   );
+
+  static bool canDeliver(
+    ConversationStreamEvent event,
+    Set<String> components,
+  ) =>
+      event.kind != ConversationEventType.a2uiMessage ||
+      isCloudA2uiPayloadSupported(event.payloadJson, components);
 
   Future<Conversation> _requireMembership(
     Session session, {

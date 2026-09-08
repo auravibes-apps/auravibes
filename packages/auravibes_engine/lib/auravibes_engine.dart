@@ -1,3 +1,10 @@
+export 'src/a2ui/a2ui_action.dart';
+export 'src/a2ui/a2ui_catalog.dart';
+export 'src/a2ui/a2ui_chat_contract.dart';
+export 'src/a2ui/a2ui_form_validation.dart';
+export 'src/a2ui/a2ui_stream_decoder.dart';
+export 'src/a2ui/a2ui_validation.dart';
+export 'src/a2ui/a2ui_wire_codec.dart';
 export 'src/agent_continuation_preparer.dart';
 export 'src/agent_iteration_context.dart';
 export 'src/agent_iteration_decision.dart';
@@ -57,15 +64,19 @@ export 'src/skills/models/url_request_method.dart';
 export 'src/skills/models/url_response.dart';
 export 'src/skills/models/url_response_format.dart';
 export 'src/skills/service_skills/service_skill_definitions.dart';
+export 'src/skills/skill_command.dart';
 export 'src/skills/skill_control_tools.dart';
 export 'src/skills/skill_eligibility.dart';
 export 'src/skills/skill_tool_materialization.dart';
 export 'src/skills/skills_manager.dart';
 export 'src/sub_agents/sub_agent_runner.dart';
 export 'src/sub_agents/sub_agent_tool_specs.dart';
+export 'src/tool_approval_target.dart';
+export 'src/tool_argument_validator.dart';
 export 'src/tool_call_actions.dart'
     hide ApproveToolCallService, SkipToolCallService;
 export 'src/tool_calls.dart';
+export 'src/tool_catalog.dart';
 export 'src/tool_execution_dispatcher.dart'
     hide AgentToolExecutionDispatcher, safeJsonDecodeToolArguments;
 export 'src/tool_name_resolver.dart';

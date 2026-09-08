@@ -138,10 +138,7 @@ void main() {
             'gpt-4': <String, dynamic>{
               'id': 'gpt-4',
               'name': 'GPT-4',
-              'limit': <String, dynamic>{
-                'context': 128000,
-                'output': 4096,
-              },
+              'limit': <String, dynamic>{'context': 128000, 'output': 4096},
               'modalities': <String, dynamic>{
                 'input': ['text'],
                 'output': ['text'],
@@ -171,10 +168,7 @@ void main() {
       });
 
       test('fromJson handles missing models key', () {
-        final json = <String, dynamic>{
-          'id': 'test',
-          'name': 'Test',
-        };
+        final json = <String, dynamic>{'id': 'test', 'name': 'Test'};
 
         final dto = _providerDtoFromJson(json);
 
@@ -190,10 +184,7 @@ void main() {
             'model-b': <String, dynamic>{
               'id': 'model-b',
               'name': 'Model B',
-              'limit': <String, dynamic>{
-                'context': 128000,
-                'output': 4096,
-              },
+              'limit': <String, dynamic>{'context': 128000, 'output': 4096},
               'modalities': <String, dynamic>{
                 'input': ['text'],
                 'output': ['text'],
@@ -268,10 +259,7 @@ void main() {
                 'gpt-4': <String, dynamic>{
                   'id': 'gpt-4',
                   'name': 'GPT-4',
-                  'limit': <String, dynamic>{
-                    'context': 128000,
-                    'output': 4096,
-                  },
+                  'limit': <String, dynamic>{'context': 128000, 'output': 4096},
                   'modalities': <String, dynamic>{
                     'input': ['text'],
                     'output': ['text'],
@@ -312,10 +300,7 @@ void main() {
                 'gpt-4': <String, dynamic>{
                   'id': 'gpt-4',
                   'name': 'GPT-4',
-                  'limit': <String, dynamic>{
-                    'context': 128000,
-                    'output': 4096,
-                  },
+                  'limit': <String, dynamic>{'context': 128000, 'output': 4096},
                   'modalities': <String, dynamic>{
                     'input': ['text'],
                     'output': ['text'],
@@ -438,10 +423,7 @@ void main() {
         final dio = _createDioWithNon200();
         final service = ModelApiService(dio: dio);
 
-        expect(
-          service.fetchAllModels,
-          throwsA(isA<Exception>()),
-        );
+        expect(service.fetchAllModels, throwsA(isA<Exception>()));
 
         dio.close();
       });
@@ -450,10 +432,7 @@ void main() {
         final dio = _createDioWithNullData();
         final service = ModelApiService(dio: dio);
 
-        expect(
-          service.fetchAllModels,
-          throwsA(isA<Exception>()),
-        );
+        expect(service.fetchAllModels, throwsA(isA<Exception>()));
 
         dio.close();
       });
@@ -462,10 +441,7 @@ void main() {
         final dio = _createDioWithNon200(statusCode: 404);
         final service = ModelApiService(dio: dio);
 
-        expect(
-          service.fetchAllModels,
-          throwsA(isA<Exception>()),
-        );
+        expect(service.fetchAllModels, throwsA(isA<Exception>()));
 
         dio.close();
       });

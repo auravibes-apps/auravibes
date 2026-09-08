@@ -1,43 +1,18 @@
-// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 
+import 'package:auravibes_app/features/chats/models/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:riverpod/riverpod.dart';
 
-class ConversationBusyState {
-  const ConversationBusyState({
-    required this.isStreaming,
-    required this.hasPendingTools,
-    this.isCompacting = false,
-    this.cloudExecutionBusy = false,
-  });
+// Required: Existing helpers remain top-level for local feature use.
+export '../models/conversation_busy_state.dart';
 
-  const ConversationBusyState.cloud({required bool isBusy})
-    : isStreaming = false,
-      hasPendingTools = false,
-      isCompacting = false,
-      cloudExecutionBusy = isBusy;
-
-  final bool isStreaming;
-  final bool hasPendingTools;
-  final bool isCompacting;
-  final bool cloudExecutionBusy;
-
-  bool get isBusy =>
-      cloudExecutionBusy || isStreaming || hasPendingTools || isCompacting;
-}
-
-class GetConversationBusyStateUsecase {
-  const GetConversationBusyStateUsecase({
-    required this.messageRepository,
-    required this.conversationStreamingRuntime,
-  });
-
-  final MessageRepository messageRepository;
-  final ConversationStreamingRuntime conversationStreamingRuntime;
-
+class const GetConversationBusyStateUsecase({
+  required final MessageRepository messageRepository,
+  required final ConversationStreamingRuntime conversationStreamingRuntime,
+}) {
   Future<ConversationBusyState> call({
     required String conversationId,
     bool isCompacting = false,
@@ -50,7 +25,8 @@ class GetConversationBusyStateUsecase {
       conversationId,
     );
 
-    final latestAssistantMessage = findLatestAssistantMessage(messages);
+    final latestAssistantMessage =
+        ConversationBusyStateQueries.latestAssistantMessage(messages);
     final hasPendingTools =
         latestAssistantMessage?.metadata?.toolCalls.any(
           (toolCall) => toolCall.isPending,
@@ -65,14 +41,16 @@ class GetConversationBusyStateUsecase {
   }
 }
 
-MessageEntity? findLatestAssistantMessage(List<MessageEntity> messages) {
-  for (final message in messages.reversed) {
-    if (!message.isUser) {
-      return message;
+abstract final class ConversationBusyStateQueries {
+  static MessageEntity? latestAssistantMessage(List<MessageEntity> messages) {
+    for (final message in messages.reversed) {
+      if (!message.isUser) {
+        return message;
+      }
     }
-  }
 
-  return null;
+    return null;
+  }
 }
 
 final getConversationBusyStateUsecaseProvider =

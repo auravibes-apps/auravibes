@@ -21,9 +21,7 @@ void main() {
     });
 
     test('start adds conversationId to set', () {
-      final notifier = container.read(
-        conversationStreamingProvider.notifier,
-      );
+      final notifier = container.read(conversationStreamingProvider.notifier);
 
       notifier.start('conv-1');
 
@@ -31,24 +29,20 @@ void main() {
     });
 
     test('start adds multiple conversationIds', () {
-      final notifier = container.read(
-        conversationStreamingProvider.notifier,
-      );
+      final notifier = container.read(conversationStreamingProvider.notifier);
 
       notifier
         ..start('conv-1')
         ..start('conv-2');
 
-      expect(
-        container.read(conversationStreamingProvider),
-        {'conv-1', 'conv-2'},
-      );
+      expect(container.read(conversationStreamingProvider), {
+        'conv-1',
+        'conv-2',
+      });
     });
 
     test('isStreaming returns true for active conversation', () {
-      final notifier = container.read(
-        conversationStreamingProvider.notifier,
-      );
+      final notifier = container.read(conversationStreamingProvider.notifier);
 
       notifier.start('conv-1');
 
@@ -56,9 +50,7 @@ void main() {
     });
 
     test('isStreaming returns false for unknown conversation', () {
-      final notifier = container.read(
-        conversationStreamingProvider.notifier,
-      );
+      final notifier = container.read(conversationStreamingProvider.notifier);
 
       notifier.start('conv-1');
 
@@ -66,25 +58,18 @@ void main() {
     });
 
     test('remove removes conversationId from set', () {
-      final notifier = container.read(
-        conversationStreamingProvider.notifier,
-      );
+      final notifier = container.read(conversationStreamingProvider.notifier);
 
       notifier
         ..start('conv-1')
         ..start('conv-2')
         ..remove('conv-1');
 
-      expect(
-        container.read(conversationStreamingProvider),
-        {'conv-2'},
-      );
+      expect(container.read(conversationStreamingProvider), {'conv-2'});
     });
 
     test('remove with unknown id is no-op', () {
-      final notifier = container.read(
-        conversationStreamingProvider.notifier,
-      );
+      final notifier = container.read(conversationStreamingProvider.notifier);
 
       notifier
         ..start('conv-1')
@@ -94,9 +79,7 @@ void main() {
     });
 
     test('start with duplicate id does not duplicate', () {
-      final notifier = container.read(
-        conversationStreamingProvider.notifier,
-      );
+      final notifier = container.read(conversationStreamingProvider.notifier);
 
       notifier
         ..start('conv-1')

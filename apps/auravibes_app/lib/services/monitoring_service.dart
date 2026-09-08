@@ -5,13 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:riverpod/riverpod.dart';
 
 class MonitoringService {
-  MonitoringService({
+  static const _maxLogFieldLength = 500;
+  new({
     ValueSetter<String>? debugLogger,
     this.enableConsoleLogging = kDebugMode,
   }) : _debugLogger = debugLogger ?? _defaultDebugLogger;
+  final bool enableConsoleLogging;
 
   final ValueSetter<String> _debugLogger;
-  final bool enableConsoleLogging;
 
   void trackError(
     String concept, {
@@ -29,9 +30,9 @@ class MonitoringService {
   }
 
   String _sanitize(Object value) {
-    final normalized = redactLogValue(
-      value,
-    ).replaceAll(RegExp(r'\s+'), ' ').trim();
+    final normalized = LogRedaction.redact(value)
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
 
     if (normalized.length <= _maxLogFieldLength) {
       return normalized;
@@ -39,8 +40,6 @@ class MonitoringService {
 
     return '${normalized.firstCharacters(_maxLogFieldLength)}...';
   }
-
-  static const _maxLogFieldLength = 500;
 
   static void _defaultDebugLogger(String message) {
     debugPrint(message);

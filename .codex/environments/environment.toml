@@ -3,9 +3,7 @@ version = 1
 name = "AuraVibes Flutter"
 
 [setup]
-script = '''
-fvm use
-'''
+script = "fvm use"
 
 [[actions]]
 name = "Bootstrap"
@@ -31,3 +29,10 @@ command = "fvm dart run melos run format:check"
 name = "Test"
 icon = "test"
 command = "fvm dart run melos run test"
+
+[[actions]]
+name = "Widgetbook (Web Server)"
+icon = "tool"
+command = '''
+cd widgetbook
+fvm flutter run -d web-server'''

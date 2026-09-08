@@ -17,8 +17,15 @@ import 'package:flutter/material.dart';
 /// )
 /// ```
 class AuraTooltip extends StatelessWidget {
+  static const _verticalPadding = 4.0;
+  static const _horizontalPadding = 8.0;
+  static const _cornerRadius = 8.0;
+  static const _shadowOffset = 2.0;
+  static const _shadowAlpha = 0.15;
+  static const _fontSize = 12.0;
+
   /// Creates an Aura tooltip.
-  const AuraTooltip({
+  const new({
     required this.message,
     required this.child,
     super.key,
@@ -60,24 +67,24 @@ class AuraTooltip extends StatelessWidget {
     return Tooltip(
       message: message,
       padding: const EdgeInsets.symmetric(
-        vertical: 4,
-        horizontal: 8,
+        vertical: _verticalPadding,
+        horizontal: _horizontalPadding,
       ),
       preferBelow: preferBelow,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
+        borderRadius: const BorderRadius.all(Radius.circular(_cornerRadius)),
         boxShadow: [
           BoxShadow(
-            color: auraColors.shadow.withValues(alpha: 0.15),
-            offset: const Offset(0, 2),
-            blurRadius: 8,
+            color: auraColors.shadow.withValues(alpha: _shadowAlpha),
+            offset: const Offset(0, _shadowOffset),
+            blurRadius: _cornerRadius,
           ),
         ],
       ),
       textStyle: TextStyle(
         color: textColor,
-        fontSize: 12,
+        fontSize: _fontSize,
         fontWeight: FontWeight.w500,
       ),
       waitDuration: waitDuration,

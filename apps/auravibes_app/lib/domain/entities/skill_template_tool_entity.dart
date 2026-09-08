@@ -3,8 +3,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'skill_template_tool_entity.freezed.dart';
 
 @freezed
-abstract class SkillTemplateToolEntity with _$SkillTemplateToolEntity {
-  const factory SkillTemplateToolEntity({
+abstract class const SkillTemplateToolEntity._()
+    with _$SkillTemplateToolEntity {
+  const factory({
     required String id,
     required String skillId,
     required SkillTemplateToolType templateType,
@@ -18,12 +19,12 @@ abstract class SkillTemplateToolEntity with _$SkillTemplateToolEntity {
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _SkillTemplateToolEntity;
-  const SkillTemplateToolEntity._();
 }
 
 @freezed
-abstract class SkillTemplateToolToCreate with _$SkillTemplateToolToCreate {
-  const factory SkillTemplateToolToCreate({
+abstract class const SkillTemplateToolToCreate._()
+    with _$SkillTemplateToolToCreate {
+  const factory({
     required SkillTemplateToolType templateType,
     required String title,
     required String description,
@@ -32,12 +33,12 @@ abstract class SkillTemplateToolToCreate with _$SkillTemplateToolToCreate {
     @Default(false) bool requiresCredential,
     @Default(true) bool isEnabled,
   }) = _SkillTemplateToolToCreate;
-  const SkillTemplateToolToCreate._();
 }
 
 @freezed
-abstract class SkillTemplateToolToUpdate with _$SkillTemplateToolToUpdate {
-  const factory SkillTemplateToolToUpdate({
+abstract class const SkillTemplateToolToUpdate._()
+    with _$SkillTemplateToolToUpdate {
+  const factory({
     String? title,
     String? description,
     String? templateJson,
@@ -45,7 +46,6 @@ abstract class SkillTemplateToolToUpdate with _$SkillTemplateToolToUpdate {
     bool? requiresCredential,
     bool? isEnabled,
   }) = _SkillTemplateToolToUpdate;
-  const SkillTemplateToolToUpdate._();
 }
 
 enum SkillTemplateToolType { url }

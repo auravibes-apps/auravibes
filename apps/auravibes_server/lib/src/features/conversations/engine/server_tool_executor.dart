@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -91,17 +92,147 @@ PatchWorkspaceStateRequest cloudSkillSelectionPatchRequest({
 
 typedef ServerToolExecutorInterlock = Future<void> Function();
 
-class ServerToolExecutorService {
-  const ServerToolExecutorService({
-    this.beforeChildLaunch,
-    this.afterChildContinuation,
-    this.beforeSkillSelectionMutation,
+Future<Object?> runCompiledServiceSkillTool({
+  required String skillSlug,
+  required String toolSlug,
+  required Map<String, dynamic> input,
+  Map<String, String> credentials = const {},
+  required SkillHttpClient httpClient,
+}) {
+  final skill = serviceSkillDefinitions
+      .where((candidate) => candidate.slug == skillSlug)
+      .firstOrNull;
+  final nativeTool = skill?.nativeTools
+      .where((candidate) => candidate.slug == toolSlug)
+      .firstOrNull;
+  if (skill == null ||
+      nativeTool == null ||
+      (nativeTool.urlTemplate == null && nativeTool.callback == null)) {
+    throw const ServerToolNotConfiguredException();
+  }
+  return AppSkillExecutor(
+        RunSkillUrlTemplate(const ResolveSkillUrlTemplate(), httpClient),
+        httpClient,
+      )
+      .run(
+        skill: skill,
+        toolSlug: toolSlug,
+        input: input,
+        credentials: credentials,
+      )
+      .value;
+}
+
+Future<({Uri uri, List<InternetAddress> addresses})>
+validateServerSkillRequestTarget(
+  UrlRequest request, {
+  required bool requireHttps,
+  Future<List<InternetAddress>> Function(String host) lookup =
+      InternetAddress.lookup,
+}) async {
+  final uri = requirePublicUriSyntax(request.url, requireHttps: requireHttps);
+  final addresses = await lookup(uri.host);
+  if (addresses.isEmpty ||
+      addresses.any(
+        (address) => isPrivateIpAddress(
+          address.rawAddress,
+          isIpv6: address.type == InternetAddressType.IPv6,
+        ),
+      )) {
+    throw const FormatException(publicUrlError);
+  }
+  return (uri: uri, addresses: addresses);
+}
+
+void rejectServerSkillRedirect(bool isRedirect) {
+  if (isRedirect) throw const HttpException('Redirect rejected.');
+}
+
+Future<String> readBoundedServerSkillResponse(
+  Stream<List<int>> response, {
+  int maxBytes = McpServerPolicy.maxResponseBytes,
+}) async {
+  final bytes = <int>[];
+  await for (final chunk in response) {
+    bytes.addAll(chunk);
+    if (bytes.length > maxBytes) {
+      throw const FormatException('Tool response is too large.');
+    }
+  }
+  return utf8.decode(bytes);
+}
+
+Future<void> closeOnServerSkillCancellation({
+  required Future<bool> Function() isCancelled,
+  required void Function() close,
+  required Future<void> done,
+  Duration pollInterval = const Duration(milliseconds: 100),
+}) async {
+  while (true) {
+    if (await isCancelled()) {
+      close();
+      return;
+    }
+    final completed = await Future.any([
+      done.then((_) => true),
+      Future<void>.delayed(pollInterval).then((_) => false),
+    ]);
+    if (completed) return;
+  }
+}
+
+Future<T> runBoundedServerSkillRequest<T>({
+  required Duration timeout,
+  required Future<T> Function() run,
+  required void Function() close,
+}) async {
+  final timedOut = Completer<T>();
+  final timer = Timer(timeout, () {
+    close();
+    timedOut.completeError(
+      TimeoutException('Tool request timed out.', timeout),
+    );
   });
+  try {
+    return await Future.any([run(), timedOut.future]);
+  } finally {
+    timer.cancel();
+  }
+}
 
-  final ServerToolExecutorInterlock? beforeChildLaunch;
-  final ServerToolExecutorInterlock? afterChildContinuation;
-  final ServerToolExecutorInterlock? beforeSkillSelectionMutation;
+Future<T> runBoundedServerSkillHttpRequest<T>({
+  required Duration timeout,
+  required Future<T> Function(void Function(HttpClient client) registerClient)
+  run,
+  void Function(HttpClient client)? closeClient,
+}) {
+  HttpClient? activeClient;
+  var closed = false;
+  void close() {
+    closed = true;
+    final client = activeClient;
+    if (client != null) {
+      (closeClient ?? (client) => client.close(force: true))(client);
+    }
+  }
 
+  return runBoundedServerSkillRequest(
+    timeout: timeout,
+    close: close,
+    run: () => run((client) {
+      activeClient = client;
+      if (closed) {
+        (closeClient ?? (client) => client.close(force: true))(client);
+      }
+    }),
+  );
+}
+
+class const ServerToolExecutorService({
+  final ServerToolExecutorInterlock? beforeChildLaunch,
+  final ServerToolExecutorInterlock? afterChildContinuation,
+  final ServerToolExecutorInterlock? beforeSkillSelectionMutation,
+}) {
   Future<Object?> call(
     Session session,
     ConversationTurn turn,
@@ -147,6 +278,15 @@ class ServerToolExecutorService {
     ServerResolvedTool tool,
     ServerToolRequest request,
   ) async {
+    if (tool.descriptor.toolIdentifier == listSkillsToolName) {
+      return _listSkills(session, turn);
+    }
+    if (tool.descriptor.toolIdentifier == listSkillCredentialsToolName) {
+      return _listSkillCredentials(session, turn, request.arguments);
+    }
+    if (tool.descriptor.toolIdentifier == callSkillToolName) {
+      return _runDispatchedSkill(session, turn, request.arguments);
+    }
     final slug = request.arguments['slug'];
     if (slug is! String || slug.isEmpty) {
       throw const ServerToolNotConfiguredException();
@@ -201,10 +341,15 @@ class ServerToolExecutorService {
         controlName: controlName,
         isSelected: selection != null,
       )) {
-        return {
-          'skillId': existingSkillId,
-          'selected': controlName == loadSkillToolName,
-        };
+        if (controlName == unloadSkillToolName) return {'unloaded': slug};
+        final state = await _skillCommandState(session, turn);
+        final manifest = await buildCloudSkillManifest(
+          slug: slug,
+          userSkills: state.userSkills,
+          tools: _materializeStateTools(state),
+        );
+        if (manifest == null) throw const ServerToolNotConfiguredException();
+        return {'loaded': slug, 'manifest': manifest.toJson()};
       }
     }
     final controls = materializeCloudSkillControlTools(
@@ -303,11 +448,241 @@ class ServerToolExecutorService {
         transaction,
       ),
     );
+    if (controlName == unloadSkillToolName) return {'unloaded': slug};
+    final state = await _skillCommandState(session, turn);
+    final manifest = await buildCloudSkillManifest(
+      slug: slug,
+      userSkills: state.userSkills,
+      tools: _materializeStateTools(state),
+    );
+    if (manifest == null) throw const ServerToolNotConfiguredException();
+    return {'loaded': slug, 'manifest': manifest.toJson()};
+  }
+
+  Future<Object?> _runDispatchedSkill(
+    Session session,
+    ConversationTurn turn,
+    Map<String, dynamic> arguments,
+  ) async {
+    final target = SkillCommandTarget.fromArguments(arguments);
+    final state = await _skillCommandState(session, turn);
+    final tools = _materializeStateTools(state);
+    final resolved = await resolveCloudSkillCommandTarget(
+      command: target,
+      userSkills: state.userSkills,
+      tools: tools,
+    );
+    final normalized = Map<String, dynamic>.from(target.args);
+    final result = await switch (resolved.descriptor.kind) {
+      AgentResolvedToolKind.skillTemplate => _runSkill(
+        session,
+        turn,
+        resolved,
+        normalized,
+      ),
+      AgentResolvedToolKind.skillNative
+          when resolved.descriptor.skillSlug == agentsSkillSlug =>
+        _runSubAgentTool(session, turn, resolved, normalized),
+      AgentResolvedToolKind.skillNative => _runNativeSkill(
+        session,
+        turn,
+        resolved,
+        normalized,
+      ),
+      _ => throw const ServerToolNotConfiguredException(),
+    };
+    return {'result': result};
+  }
+
+  Future<Object?> _listSkills(Session session, ConversationTurn turn) async {
+    final state = await _skillCommandState(session, turn);
+    final controls = materializeCloudSkillControlTools(
+      selectedSkillIds: state.selectedSkillIds,
+      userSkills: state.userSkills,
+      templateTools: state.templateTools,
+      appSkillSettings: state.appSkillSettings,
+      serviceConnections: state.serviceConnections,
+      isChildConversation:
+          state.conversation.parentConversationStableId != null,
+    );
+    List<Map<String, String>> summaries(String controlName) {
+      final control = controls
+          .where((candidate) => candidate.spec.name == controlName)
+          .firstOrNull;
+      final slugs =
+          ((control?.spec.inputJsonSchema['properties'] as Map?)?['slug']
+                  as Map?)?['enum']
+              as List? ??
+          const [];
+      return slugs.whereType<String>().map((slug) {
+          final user = state.userSkills
+              .where((skill) => skill['slug'] == slug)
+              .firstOrNull;
+          final app = serviceSkillDefinitions
+              .where((skill) => skill.identifier == slug || skill.slug == slug)
+              .firstOrNull;
+          return {
+            'slug': slug,
+            'title': user?['title'] is String
+                ? user!['title']! as String
+                : app?.title ??
+                      (slug == agentsSkillSlug ? agentsSkillTitle : slug),
+          };
+        }).toList()
+        ..sort((left, right) => left['slug']!.compareTo(right['slug']!));
+    }
+
     return {
-      'skillId': skillId,
-      'selected': patchRequest.operations.single.operation.name == 'create',
+      'loadable': summaries(loadSkillToolName),
+      'loaded': summaries(unloadSkillToolName),
     };
   }
+
+  Future<Object?> _listSkillCredentials(
+    Session session,
+    ConversationTurn turn,
+    Map<String, dynamic> arguments,
+  ) async {
+    final slug = arguments['slug'];
+    if (slug is! String || slug.isEmpty) {
+      throw const FormatException('slug required');
+    }
+    final state = await _skillCommandState(session, turn);
+    final user = state.userSkills
+        .where((skill) => skill['slug'] == slug)
+        .firstOrNull;
+    final app = serviceSkillDefinitions
+        .where((skill) => skill.slug == slug || skill.identifier == slug)
+        .firstOrNull;
+    final selectedId = user?['id'] ?? app?.identifier ?? slug;
+    if (!state.authorizedSkillIds.contains(selectedId)) {
+      throw const ServerToolNotConfiguredException();
+    }
+    final credentials = state.serviceConnections.where((connection) {
+      if (connection['isEnabled'] == false || connection['hasSecret'] != true) {
+        return false;
+      }
+      if (user != null) {
+        return connection['kind'] == 'skillCredential' &&
+            connection['credentialDefinitionId'] ==
+                user['credentialDefinitionId'];
+      }
+      return app != null &&
+          connection['kind'] == 'appSkillCredential' &&
+          connection['serviceId'] == app.identifier;
+    });
+    return {
+      'skillSlug': slug,
+      'credentials': [
+        for (final credential in credentials)
+          {
+            'id': credential['id'],
+            'name': credential['name'] ?? credential['id'],
+          },
+      ],
+    };
+  }
+
+  Future<
+    ({
+      Conversation conversation,
+      Set<String> selectedSkillIds,
+      Set<String> authorizedSkillIds,
+      List<Map<String, dynamic>> userSkills,
+      List<Map<String, dynamic>> templateTools,
+      List<Map<String, dynamic>> appSkillSettings,
+      List<Map<String, dynamic>> serviceConnections,
+    })
+  >
+  _skillCommandState(Session session, ConversationTurn turn) async {
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(turn.conversationId) &
+          table.workspaceId.equals(turn.workspaceId),
+    );
+    if (conversation == null) throw const ServerToolNotConfiguredException();
+    final resources = await WorkspaceResource.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(turn.workspaceId) &
+          table.deletedAt.equals(null),
+    );
+    Map<String, dynamic> withId(WorkspaceResource resource) => {
+      'id': resource.resourceId,
+      ..._jsonMap(resource.data),
+    };
+    final selectedSkillIds = resources
+        .where(
+          (resource) =>
+              resource.resourceKind ==
+              WorkspaceResourceKind.conversationSkillSelection,
+        )
+        .map(withId)
+        .where((data) => data['conversationId'] == conversation.stableId)
+        .map((data) => data['skillId'])
+        .whereType<String>()
+        .toSet();
+    return (
+      conversation: conversation,
+      selectedSkillIds: selectedSkillIds,
+      authorizedSkillIds: cloudAuthorizedSkillIds(
+        conversation: conversation,
+        resources: resources,
+      ),
+      userSkills: resources
+          .where(
+            (resource) =>
+                resource.resourceKind == WorkspaceResourceKind.skill &&
+                _jsonMap(resource.data)['source'] != 'app',
+          )
+          .map(withId)
+          .toList(),
+      templateTools: resources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.skillTemplateTool,
+          )
+          .map(withId)
+          .toList(),
+      appSkillSettings: resources
+          .where(
+            (resource) =>
+                resource.resourceKind == WorkspaceResourceKind.skillSetting,
+          )
+          .map(withId)
+          .toList(),
+      serviceConnections: resources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.serviceConnection,
+          )
+          .map(withId)
+          .toList(),
+    );
+  }
+
+  List<ServerResolvedTool> _materializeStateTools(
+    ({
+      Conversation conversation,
+      Set<String> selectedSkillIds,
+      Set<String> authorizedSkillIds,
+      List<Map<String, dynamic>> userSkills,
+      List<Map<String, dynamic>> templateTools,
+      List<Map<String, dynamic>> appSkillSettings,
+      List<Map<String, dynamic>> serviceConnections,
+    })
+    state,
+  ) => materializeCloudSkillTools(
+    selectedSkillIds: state.authorizedSkillIds,
+    userSkills: state.userSkills,
+    templateTools: state.templateTools,
+    appSkillSettings: state.appSkillSettings,
+    serviceConnections: state.serviceConnections,
+    isChildConversation: state.conversation.parentConversationStableId != null,
+  );
 
   String? _cloudSkillId(
     String slug, {
@@ -368,17 +743,17 @@ class ServerToolExecutorService {
     final nativeTool = skill?.nativeTools
         .where((candidate) => candidate.slug == tool.descriptor.toolIdentifier)
         .firstOrNull;
-    final template = nativeTool?.urlTemplate;
     final credentialId = arguments['credentialId'];
-    if (skill == null || nativeTool == null || template == null) {
+    if (skill == null ||
+        nativeTool == null ||
+        (nativeTool.urlTemplate == null && nativeTool.callback == null)) {
       throw const ServerToolNotConfiguredException();
     }
     var credentials = const <String, String>{};
     if (nativeTool.requiresCredential) {
-      if (credentialId is! String || credentialId.isEmpty) {
-        throw const ServerToolNotConfiguredException();
-      }
-      if (!cloudToolAllowsCredential(tool, credentialId)) {
+      if (credentialId is! String ||
+          credentialId.isEmpty ||
+          !cloudToolAllowsCredential(tool, credentialId)) {
         throw const ServerToolNotConfiguredException();
       }
       final connectionId = cloudServiceConnectionId(credentialId);
@@ -404,30 +779,18 @@ class ServerToolExecutorService {
         _jsonMap(await const WorkspaceSecretCipher().decrypt(session, secret)),
       );
     }
-    final request = const ResolveSkillUrlTemplate()(
-      template: template.template,
-      inputs: arguments,
-      credentials: credentials,
-      inputDefinitions: template.inputs,
-    );
-    final uri = requirePublicUriSyntax(
-      request.url,
+    final httpClient = _skillHttpClient(
+      session,
+      turn,
       requireHttps: credentials.isNotEmpty,
     );
-    final addresses = await InternetAddress.lookup(uri.host);
-    if (addresses.any(
-      (address) => isPrivateIpAddress(
-        address.rawAddress,
-        isIpv6: address.type == InternetAddressType.IPv6,
-      ),
-    )) {
-      throw const FormatException(publicUrlError);
-    }
-    await _throwIfCancelled(session, turn);
-    final response = await _request(session, turn, uri, addresses, request);
-    return const UrlContentTransformer()
-        .transform(response, requestedFormat: request.format)
-        .body;
+    return runCompiledServiceSkillTool(
+      skillSlug: skill.slug,
+      toolSlug: nativeTool.slug,
+      input: arguments,
+      credentials: credentials,
+      httpClient: httpClient,
+    );
   }
 
   Future<Object?> _runSubAgentTool(
@@ -1016,14 +1379,42 @@ class ServerToolExecutorService {
     }
   }
 
+  SkillHttpClient _skillHttpClient(
+    Session session,
+    ConversationTurn turn, {
+    required bool requireHttps,
+  }) =>
+      (input) => CancelableOperation<UrlResponse>.fromFuture(
+        runBoundedServerSkillHttpRequest(
+          timeout: input.timeout,
+          run: (registerClient) async {
+            final target = await validateServerSkillRequestTarget(
+              input,
+              requireHttps: requireHttps,
+            );
+            await _throwIfCancelled(session, turn);
+            return _request(
+              session,
+              turn,
+              target.uri,
+              target.addresses,
+              input,
+              onClient: registerClient,
+            );
+          },
+        ),
+      );
+
   Future<UrlResponse> _request(
     Session session,
     ConversationTurn turn,
     Uri uri,
     List<InternetAddress> addresses,
-    UrlRequest input,
-  ) async {
+    UrlRequest input, {
+    void Function(HttpClient client)? onClient,
+  }) async {
     final client = _client(addresses);
+    onClient?.call(client);
     final requestDone = Completer<void>();
     unawaited(_closeClientOnCancellation(client, session, turn, requestDone));
     final stopwatch = Stopwatch()..start();
@@ -1033,7 +1424,7 @@ class ServerToolExecutorService {
       input.headers.forEach(request.headers.set);
       if (input.body != null) request.write(input.body);
       final response = await request.close();
-      if (response.isRedirect) throw const HttpException('Redirect rejected.');
+      rejectServerSkillRedirect(response.isRedirect);
       final headers = <String, List<String>>{};
       response.headers.forEach((name, values) => headers[name] = values);
       return UrlResponse(
@@ -1091,37 +1482,25 @@ class ServerToolExecutorService {
     Session session,
     ConversationTurn turn,
     Completer<void> requestDone,
-  ) async {
-    while (!requestDone.isCompleted) {
-      if (await const DatabaseConversationCancellationProbe().isCancelled(
-        session,
-        turn.id!,
-      )) {
-        if (!requestDone.isCompleted) client.close(force: true);
-        return;
-      }
-      await Future.any([
-        Future<void>.delayed(const Duration(milliseconds: 100)),
-        requestDone.future,
-      ]);
-    }
-  }
+  ) => closeOnServerSkillCancellation(
+    isCancelled: () =>
+        const DatabaseConversationCancellationProbe().isCancelled(
+          session,
+          turn.id!,
+        ),
+    close: () {
+      if (!requestDone.isCompleted) client.close(force: true);
+    },
+    done: requestDone.future,
+  );
 
   HttpClient _client(List<InternetAddress> addresses) => HttpClient()
     ..connectionTimeout = const Duration(seconds: 10)
     ..connectionFactory = (target, proxyHost, proxyPort) =>
         Socket.startConnect(addresses.first, target.port);
 
-  Future<String> _readResponse(HttpClientResponse response) async {
-    final bytes = <int>[];
-    await for (final chunk in response) {
-      bytes.addAll(chunk);
-      if (bytes.length > McpServerPolicy.maxResponseBytes) {
-        throw const FormatException('Tool response is too large.');
-      }
-    }
-    return utf8.decode(bytes);
-  }
+  Future<String> _readResponse(HttpClientResponse response) =>
+      readBoundedServerSkillResponse(response);
 
   Future<WorkspaceResource> _resource(
     Session session,
@@ -1163,6 +1542,4 @@ class ServerToolExecutorService {
   }
 }
 
-class ServerToolNotConfiguredException implements Exception {
-  const ServerToolNotConfiguredException();
-}
+class const ServerToolNotConfiguredException() implements Exception;

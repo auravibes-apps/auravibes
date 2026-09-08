@@ -13,7 +13,7 @@ final _log = Logger('dao:api_models');
 class ApiModelsDao extends DatabaseAccessor<AppDatabase>
     with _$ApiModelsDaoMixin {
   /// Creates a new [ApiModelsDao] instance.
-  ApiModelsDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   /// Retrieves all API models from the database.
   ///
@@ -83,11 +83,9 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<bool> deleteModelByProviderAndId(String providerId, String id) async {
-    final deleteCount =
-        await (delete(apiModels)..where(
-              (t) => t.modelProvider.equals(providerId) & t.id.equals(id),
-            ))
-            .go();
+    final deleteCount = await (delete(
+      apiModels,
+    )..where((t) => t.modelProvider.equals(providerId) & t.id.equals(id))).go();
 
     return deleteCount > 0;
   }
@@ -158,16 +156,20 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   /// Returns the list of inserted models.
   Future<List<ApiModelsTable>> batchInsertModels(
     List<ApiModelsCompanion> models,
-  ) async {
+  ) {
     return transaction(() async {
       final results = <ApiModelsTable>[];
       for (final model in models) {
         try {
           final inserted = await upsertModel(model);
           results.add(inserted);
-        } on Exception catch (e) {
+        } on Exception catch (error, stackTrace) {
           // Continue with other models if one fails.
-          _log.severe('Failed to insert model ${model.id.value}: $e');
+          _log.severe(
+            'Failed to insert model ${model.id.value}',
+            error,
+            stackTrace,
+          );
         }
       }
 
@@ -181,7 +183,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   /// Returns the list of inserted/updated models.
   Future<List<ApiModelsTable>> batchUpsertModels(
     List<ApiModelsCompanion> models,
-  ) async {
+  ) {
     return transaction(() async {
       return [for (final model in models) await upsertModel(model)];
     });

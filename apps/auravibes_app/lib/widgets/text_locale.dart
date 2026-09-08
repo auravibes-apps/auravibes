@@ -1,40 +1,23 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-class TextLocale extends StatelessWidget {
-  const TextLocale(
-    this.data, {
-    super.key,
-    this.args,
-    this.style,
-    this.strutStyle,
-    this.textAlign,
-    this.locale,
-    this.softWrap,
-    this.overflow,
-    this.textScaler,
-    this.maxLines,
-    this.semanticsLabel,
-    this.textWidthBasis,
-    this.textHeightBehavior,
-    this.selectionColor,
-  });
-
-  final List<String>? args;
-  final String data;
-  final TextStyle? style;
-  final StrutStyle? strutStyle;
-  final TextAlign? textAlign;
-  final Locale? locale;
-  final bool? softWrap;
-  final TextOverflow? overflow;
-  final TextScaler? textScaler;
-  final int? maxLines;
-  final String? semanticsLabel;
-  final TextWidthBasis? textWidthBasis;
-  final TextHeightBehavior? textHeightBehavior;
-  final Color? selectionColor;
-
+class const TextLocale(
+  final String data, {
+  super.key,
+  final List<String>? args,
+  final TextStyle? style,
+  final StrutStyle? strutStyle,
+  final TextAlign? textAlign,
+  final Locale? locale,
+  final bool? softWrap,
+  final TextOverflow? overflow,
+  final TextScaler? textScaler,
+  final int? maxLines,
+  final String? semanticsLabel,
+  final TextWidthBasis? textWidthBasis,
+  final TextHeightBehavior? textHeightBehavior,
+  final Color? selectionColor,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(

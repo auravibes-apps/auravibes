@@ -18,6 +18,25 @@ void main() {
       expect(await repository.read(), 'ws-1');
     });
 
+    test('stores selection under configured key', () async {
+      SharedPreferences.setMockInitialValues({});
+      final preferences = await SharedPreferences.getInstance();
+      final repository = LastWorkspaceSelectionRepository(
+        Future<SharedPreferences>.value(preferences),
+        storageKey: 'auravibes_app_0123456789abcdef.last_selected_workspace_id',
+      );
+
+      await repository.save('ws-1');
+
+      expect(preferences.getString('last_selected_workspace_id'), isNull);
+      expect(
+        preferences.getString(
+          'auravibes_app_0123456789abcdef.last_selected_workspace_id',
+        ),
+        'ws-1',
+      );
+    });
+
     test('waits for queued writes before reading', () async {
       final repository = await _createRepository();
 

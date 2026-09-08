@@ -13,15 +13,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'save_workspace_compaction_settings_usecase.g.dart';
 
-class SaveWorkspaceCompactionSettingsUsecase {
-  const SaveWorkspaceCompactionSettingsUsecase({
-    this.repository,
-    this.cloudAdapter,
-  });
-
-  final WorkspaceCompactionSettingsRepository? repository;
-  final CloudSkillSettingsAdapter? cloudAdapter;
-
+class const SaveWorkspaceCompactionSettingsUsecase({
+  final WorkspaceCompactionSettingsRepository? repository,
+  final CloudSkillSettingsAdapter? cloudAdapter,
+}) {
   Future<CompactionSettings> call({
     required String workspaceId,
     required CompactionSettings settings,
@@ -40,7 +35,7 @@ class SaveWorkspaceCompactionSettingsUsecase {
 
   Future<void> reset({required String workspaceId}) async {
     final cloud = cloudAdapter;
-    if (cloud != null) return cloud.resetCompactionSettings();
+    if (cloud != null) return await cloud.resetCompactionSettings();
     final localRepository = repository;
     if (localRepository == null) {
       throw StateError('Compaction settings store is unavailable');
@@ -92,3 +87,4 @@ saveWorkspaceCompactionSettingsUsecase(Ref ref, String workspaceId) async {
     repository: ref.watch(workspaceCompactionSettingsRepositoryProvider),
   );
 }
+// Top-level API/provider declarations are required by their consumers.

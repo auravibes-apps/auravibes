@@ -10,15 +10,16 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import '../../../features/workspace_state/models/workspace_resource_kind.dart'
-    as _i2;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
+
 import '../../../features/workspace_state/models/workspace_resource.dart'
-    as _i3;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i4;
+    as _i4gad2ja;
+import '../../../features/workspace_state/models/workspace_resource_kind.dart'
+    as _iz7spkcy;
 
 abstract class WorkspaceResourcePage
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   WorkspaceResourcePage._({
     required this.resourceKind,
     required this.resources,
@@ -26,8 +27,8 @@ abstract class WorkspaceResourcePage
   });
 
   factory WorkspaceResourcePage({
-    required _i2.WorkspaceResourceKind resourceKind,
-    required List<_i3.WorkspaceResource> resources,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
+    required List<_i4gad2ja.WorkspaceResource> resources,
     String? nextResourceId,
   }) = _WorkspaceResourcePageImpl;
 
@@ -35,28 +36,29 @@ abstract class WorkspaceResourcePage
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceResourcePage(
-      resourceKind: _i2.WorkspaceResourceKind.fromJson(
+      resourceKind: _iz7spkcy.WorkspaceResourceKind.fromJson(
         (jsonSerialization['resourceKind'] as String),
       ),
-      resources: _i4.Protocol().deserialize<List<_i3.WorkspaceResource>>(
-        jsonSerialization['resources'],
-      ),
+      resources: _if5qez1k.Protocol()
+          .deserialize<List<_i4gad2ja.WorkspaceResource>>(
+            jsonSerialization['resources'],
+          ),
       nextResourceId: jsonSerialization['nextResourceId'] as String?,
     );
   }
 
-  _i2.WorkspaceResourceKind resourceKind;
+  _iz7spkcy.WorkspaceResourceKind resourceKind;
 
-  List<_i3.WorkspaceResource> resources;
+  List<_i4gad2ja.WorkspaceResource> resources;
 
   String? nextResourceId;
 
   /// Returns a shallow copy of this [WorkspaceResourcePage]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   WorkspaceResourcePage copyWith({
-    _i2.WorkspaceResourceKind? resourceKind,
-    List<_i3.WorkspaceResource>? resources,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
+    List<_i4gad2ja.WorkspaceResource>? resources,
     String? nextResourceId,
   });
   @override
@@ -81,7 +83,7 @@ abstract class WorkspaceResourcePage
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -89,8 +91,8 @@ class _Undefined {}
 
 class _WorkspaceResourcePageImpl extends WorkspaceResourcePage {
   _WorkspaceResourcePageImpl({
-    required _i2.WorkspaceResourceKind resourceKind,
-    required List<_i3.WorkspaceResource> resources,
+    required _iz7spkcy.WorkspaceResourceKind resourceKind,
+    required List<_i4gad2ja.WorkspaceResource> resources,
     String? nextResourceId,
   }) : super._(
          resourceKind: resourceKind,
@@ -100,11 +102,11 @@ class _WorkspaceResourcePageImpl extends WorkspaceResourcePage {
 
   /// Returns a shallow copy of this [WorkspaceResourcePage]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   WorkspaceResourcePage copyWith({
-    _i2.WorkspaceResourceKind? resourceKind,
-    List<_i3.WorkspaceResource>? resources,
+    _iz7spkcy.WorkspaceResourceKind? resourceKind,
+    List<_i4gad2ja.WorkspaceResource>? resources,
     Object? nextResourceId = _Undefined,
   }) {
     return WorkspaceResourcePage(

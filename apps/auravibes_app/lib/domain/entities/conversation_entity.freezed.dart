@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'conversation_entity.dart';
@@ -9,6 +9,7 @@ part of 'conversation_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -35,16 +36,21 @@ $ConversationEntityCopyWith<ConversationEntity> get copyWith => _$ConversationEn
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId));
+  final _this = this as ConversationEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.isPinned, _this.isPinned) || other.isPinned == _this.isPinned)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.revision, _this.revision) || other.revision == _this.revision)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.parentConversationId, _this.parentConversationId) || other.parentConversationId == _this.parentConversationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,revision,modelId,agentId,parentConversationId);
+int get hashCode {
+  final _this = this as ConversationEntity;
+  return Object.hash(runtimeType,_this.id,_this.title,_this.workspaceId,_this.isPinned,_this.createdAt,_this.updatedAt,_this.revision,_this.modelId,_this.agentId,_this.parentConversationId);
+}
 
 @override
 String toString() {
-  return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, revision: $revision, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId)';
+  final _this = this as ConversationEntity;
+  return 'ConversationEntity(id: ${_this.id}, title: ${_this.title}, workspaceId: ${_this.workspaceId}, isPinned: ${_this.isPinned}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, revision: ${_this.revision}, modelId: ${_this.modelId}, agentId: ${_this.agentId}, parentConversationId: ${_this.parentConversationId})';
 }
 
 
@@ -73,7 +79,7 @@ class _$ConversationEntityCopyWithImpl<$Res>
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? revision = null,Object? modelId = freezed,Object? agentId = freezed,Object? parentConversationId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ConversationEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -259,16 +265,18 @@ _$ConversationEntityCopyWith<_ConversationEntity> get copyWith => __$Conversatio
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,revision,modelId,agentId,parentConversationId);
+int get hashCode {
+    return Object.hash(runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,revision,modelId,agentId,parentConversationId);
+}
 
 @override
 String toString() {
-  return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, revision: $revision, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId)';
+    return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, revision: $revision, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId)';
 }
 
 
@@ -335,16 +343,21 @@ $ConversationToCreateCopyWith<ConversationToCreate> get copyWith => _$Conversati
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
+  final _this = this as ConversationToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToCreate&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.parentConversationId, _this.parentConversationId) || other.parentConversationId == _this.parentConversationId)&&(identical(other.isPinned, _this.isPinned) || other.isPinned == _this.isPinned));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,workspaceId,modelId,agentId,parentConversationId,isPinned);
+int get hashCode {
+  final _this = this as ConversationToCreate;
+  return Object.hash(runtimeType,_this.title,_this.workspaceId,_this.modelId,_this.agentId,_this.parentConversationId,_this.isPinned);
+}
 
 @override
 String toString() {
-  return 'ConversationToCreate(title: $title, workspaceId: $workspaceId, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId, isPinned: $isPinned)';
+  final _this = this as ConversationToCreate;
+  return 'ConversationToCreate(title: ${_this.title}, workspaceId: ${_this.workspaceId}, modelId: ${_this.modelId}, agentId: ${_this.agentId}, parentConversationId: ${_this.parentConversationId}, isPinned: ${_this.isPinned})';
 }
 
 
@@ -373,7 +386,7 @@ class _$ConversationToCreateCopyWithImpl<$Res>
 /// Create a copy of ConversationToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? workspaceId = null,Object? modelId = freezed,Object? agentId = freezed,Object? parentConversationId = freezed,Object? isPinned = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ConversationToCreate(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -547,16 +560,18 @@ _$ConversationToCreateCopyWith<_ConversationToCreate> get copyWith => __$Convers
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,workspaceId,modelId,agentId,parentConversationId,isPinned);
+int get hashCode {
+    return Object.hash(runtimeType,title,workspaceId,modelId,agentId,parentConversationId,isPinned);
+}
 
 @override
 String toString() {
-  return 'ConversationToCreate(title: $title, workspaceId: $workspaceId, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId, isPinned: $isPinned)';
+    return 'ConversationToCreate(title: $title, workspaceId: $workspaceId, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId, isPinned: $isPinned)';
 }
 
 
@@ -618,16 +633,21 @@ $ConversationPatchCopyWith<ConversationPatch> get copyWith => _$ConversationPatc
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationPatch&&(identical(other.title, title) || other.title == title)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.clearAgent, clearAgent) || other.clearAgent == clearAgent)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
+  final _this = this as ConversationPatch;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationPatch&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.clearAgent, _this.clearAgent) || other.clearAgent == _this.clearAgent)&&(identical(other.isPinned, _this.isPinned) || other.isPinned == _this.isPinned));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,modelId,agentId,clearAgent,isPinned);
+int get hashCode {
+  final _this = this as ConversationPatch;
+  return Object.hash(runtimeType,_this.title,_this.modelId,_this.agentId,_this.clearAgent,_this.isPinned);
+}
 
 @override
 String toString() {
-  return 'ConversationPatch(title: $title, modelId: $modelId, agentId: $agentId, clearAgent: $clearAgent, isPinned: $isPinned)';
+  final _this = this as ConversationPatch;
+  return 'ConversationPatch(title: ${_this.title}, modelId: ${_this.modelId}, agentId: ${_this.agentId}, clearAgent: ${_this.clearAgent}, isPinned: ${_this.isPinned})';
 }
 
 
@@ -656,7 +676,7 @@ class _$ConversationPatchCopyWithImpl<$Res>
 /// Create a copy of ConversationPatch
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? modelId = freezed,Object? agentId = freezed,Object? clearAgent = null,Object? isPinned = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ConversationPatch(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
@@ -827,16 +847,18 @@ _$ConversationPatchCopyWith<_ConversationPatch> get copyWith => __$ConversationP
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationPatch&&(identical(other.title, title) || other.title == title)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.clearAgent, clearAgent) || other.clearAgent == clearAgent)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationPatch&&(identical(other.title, title) || other.title == title)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.clearAgent, clearAgent) || other.clearAgent == clearAgent)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,modelId,agentId,clearAgent,isPinned);
+int get hashCode {
+    return Object.hash(runtimeType,title,modelId,agentId,clearAgent,isPinned);
+}
 
 @override
 String toString() {
-  return 'ConversationPatch(title: $title, modelId: $modelId, agentId: $agentId, clearAgent: $clearAgent, isPinned: $isPinned)';
+    return 'ConversationPatch(title: $title, modelId: $modelId, agentId: $agentId, clearAgent: $clearAgent, isPinned: $isPinned)';
 }
 
 

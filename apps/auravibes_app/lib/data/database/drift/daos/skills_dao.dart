@@ -5,9 +5,9 @@ import 'package:drift/drift.dart';
 part 'skills_dao.g.dart';
 
 @DriftAccessor(tables: [Skills])
-class SkillsDao extends DatabaseAccessor<AppDatabase> with _$SkillsDaoMixin {
-  SkillsDao(super.attachedDatabase);
-
+class SkillsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
+    with _$SkillsDaoMixin {
   Future<List<SkillsTable>> getWorkspaceSkills(String workspaceId) =>
       (select(skills)
             ..where((tbl) => tbl.workspaceId.equals(workspaceId))

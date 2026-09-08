@@ -9,16 +9,11 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class CloudAccountForgotPasswordScreen extends StatelessWidget {
-  const CloudAccountForgotPasswordScreen({
-    required this.workspaceId,
-    required this.returnPath,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String? returnPath;
-
+class const CloudAccountForgotPasswordScreen({
+  required final String workspaceId,
+  required final String? returnPath,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(

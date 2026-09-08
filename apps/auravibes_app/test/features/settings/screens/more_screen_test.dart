@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +49,13 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('More'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(MoreScreen),
+        matching: find.byType(AuraList),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Workspaces'), findsOneWidget);
     expect(find.text('Service Connections'), findsOneWidget);
     expect(find.text('Credential Definitions'), findsOneWidget);

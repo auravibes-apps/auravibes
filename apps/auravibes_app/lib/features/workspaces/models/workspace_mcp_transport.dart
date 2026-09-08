@@ -1,0 +1,1 @@
+enum WorkspaceMcpTransport { streamableHttp, sse }

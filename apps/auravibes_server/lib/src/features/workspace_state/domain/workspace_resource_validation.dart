@@ -2,12 +2,10 @@ import 'dart:convert';
 
 import '../../../generated/protocol.dart';
 
-class WorkspaceResourceReference {
-  const WorkspaceResourceReference(this.kind, this.id);
-
-  final WorkspaceResourceKind kind;
-  final String id;
-}
+class const WorkspaceResourceReference(
+  final WorkspaceResourceKind kind,
+  final String id,
+);
 
 class WorkspaceResourceValidation {
   static const _maxDataBytes = 64 * 1024;

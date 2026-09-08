@@ -6,16 +6,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ChatQueuedMessagesIndicator extends ConsumerWidget {
-  const ChatQueuedMessagesIndicator({
-    required this.conversationId,
-    required this.queuedDrafts,
-    super.key,
-  });
-
-  final String conversationId;
-  final List<ConversationQueuedDraft> queuedDrafts;
-
+class const ChatQueuedMessagesIndicator({
+  required final String conversationId,
+  required final List<ConversationQueuedDraft> queuedDrafts,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (queuedDrafts.isEmpty) {
@@ -60,7 +55,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
               ),
             ],
           ),
-          const AuraDivider(height: 1),
+          const AuraDivider(),
           for (final (index, draft) in queuedDrafts.indexed)
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -95,8 +90,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (index < queuedDrafts.length - 1)
-                  const AuraDivider(height: 1),
+                if (index < queuedDrafts.length - 1) const AuraDivider(),
               ],
             ),
         ],

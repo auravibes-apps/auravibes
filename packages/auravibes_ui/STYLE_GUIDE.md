@@ -2,19 +2,21 @@
 
 ## Overview
 
-This guide establishes the **const-first design pattern** for the AuraVibes UI component library. The goal is to maximize compile-time constants by using enums instead of runtime `Color` values, enabling better performance, type safety, and maintainability.
+This guide establishes the **const-first design pattern** for the AuraVibes UI component library. Use enums for semantic choices and resolve them from the active Aura theme at build time. This preserves const-friendly APIs without pretending every low-level rendering primitive can accept an enum.
 
 ## Core Principle
 
-**Components should only accept const-compatible parameters (enums), not runtime `Color` values.**
+**Components should use const-compatible selectors (`AuraTint`) for semantic accent colors.** Runtime colors remain valid for low-level primitives whose job is to render a resolved interaction layer.
 
 ### What This Means
 
-- ✅ **Use Enums**: Component parameters use enum variants (e.g., `AuraColorVariant.primary`)
-- ✅ **Compile-Time Constants**: All styling decisions are made at compile time
+- ✅ **Use Enums**: Component parameters use enum variants (e.g., `AuraTint.primary`)
+- ✅ **Const-Friendly APIs**: Semantic styling choices are compile-time values;
+  theme colors resolve at build time
 - ✅ **Type Safety**: Invalid color values are caught at compile time, not runtime
-- ❌ **No Runtime Colors**: Avoid passing `Color` objects directly to components
-- ❗ **Exception**: `children` and dropdown lists can be variable
+- ❌ **No Runtime Colors**: Avoid passing `Color` objects to semantic component APIs
+- ❗ **Exceptions**: `children`, title widgets, dropdown lists, and low-level
+  primitives such as `AuraPressable.color` can be variable
 
 ## Pattern: Color Parameters
 
@@ -46,24 +48,24 @@ MyWidget(
 
 ```dart
 class MyWidget extends StatelessWidget {
-  final AuraColorVariant? backgroundColor;
+  final AuraTint? tint;
   
   const MyWidget({
-    this.backgroundColor, // ✅ Const-compatible enum
+    this.tint, // ✅ Const-compatible enum
   });
   
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     return Container(
-      color: auraColors.getColor(backgroundColor) ?? auraColors.primary,
+      color: tint == null ? null : auraColors.colorFor(tint!),
     );
   }
 }
 
 // Usage - compile-time constant
 const MyWidget(
-  backgroundColor: AuraColorVariant.primary, // ✅ Const-compatible
+  tint: AuraTint.primary, // ✅ Const-compatible
 )
 ```
 
@@ -71,19 +73,14 @@ const MyWidget(
 
 ### 1. Enum-Based Color System
 
-Use `AuraColorVariant` enum for all color parameters:
+Use `AuraTint` for semantic accent parameters:
 
 ```dart
-enum AuraColorVariant {
-  // Core colors
+enum AuraTint {
   primary,
-  onPrimary,
   secondary,
-  onSurface,
-  onSurfaceVariant,
-  surfaceVariant,
+  tertiary,
   error,
-  // Semantic colors
   success,
   warning,
   info,
@@ -92,31 +89,26 @@ enum AuraColorVariant {
 
 ### 2. Theme Resolution
 
-Colors are resolved from enums via `AuraColorScheme.getColor()`:
+Colors are resolved from tints via `AuraColorScheme.colorFor()`:
 
 ```dart
-Color? getColor(AuraColorVariant? variant) {
-  return switch (variant) {
-    null => null,
-    AuraColorVariant.primary => primary,
-    AuraColorVariant.onSurface => onSurface,
-    AuraColorVariant.onSurfaceVariant => onSurfaceVariant,
-    AuraColorVariant.surfaceVariant => surfaceVariant,
-    AuraColorVariant.error => error,
-    AuraColorVariant.onError => onError,
-    AuraColorVariant.onPrimary => onPrimary,
-    AuraColorVariant.secondary => secondary,
-    AuraColorVariant.success => success,
-    AuraColorVariant.warning => warning,
-    AuraColorVariant.info => info,
+Color colorFor(AuraTint tint) {
+  return switch (tint) {
+    AuraTint.primary => primary,
+    AuraTint.secondary => secondary,
+    AuraTint.tertiary => tertiary,
+    AuraTint.error => error,
+    AuraTint.success => success,
+    AuraTint.warning => warning,
+    AuraTint.info => info,
   };
 }
 ```
 
-**Note**: `getColor()` returns `Color?` - always provide a fallback when using:
+`colorFor()` returns an opaque resolved color:
 
 ```dart
-final color = auraColors.getColor(variant) ?? auraColors.primary;
+final color = auraColors.colorFor(AuraTint.primary);
 ```
 
 ### 3. Component Implementation
@@ -125,25 +117,24 @@ When implementing components:
 
 1. **Declare enum parameters**:
    ```dart
-   final AuraColorVariant? backgroundColor;
-   final AuraColorVariant? foregroundColor;
+   final AuraTint? tint;
    ```
 
 2. **Resolve colors in build method**:
    ```dart
-   @override
-   Widget build(BuildContext context) {
-     final auraColors = context.auraColors;
-     final bgColor = auraColors.getColor(backgroundColor) ?? auraColors.primary;
-     // Use bgColor...
-   }
+     @override
+     Widget build(BuildContext context) {
+       final auraColors = context.auraColors;
+       final color = tint == null ? null : auraColors.colorFor(tint!);
+       // Use color...
+     }
    ```
 
 3. **Pass enums to child components**:
    ```dart
    AuraIcon(
      icon,
-     color: AuraColorVariant.primary, // ✅ Pass enum, not Color
+     tint: AuraTint.primary, // ✅ Pass enum, not Color
    )
    ```
 
@@ -161,27 +152,93 @@ Color _getTextColor(AuraColorScheme auraColors) {
 }
 ```
 
-**Option 2**: Add opacity-specific enum variants (future enhancement)
+**Option 2**: Add opacity-specific enum variants only when a repeated semantic
+state needs a named design token.
 ```dart
-enum AuraColorVariant {
+enum AuraTint {
   // ... existing variants
-  onSurfaceVariantDisabled, // Maps to onSurfaceVariant with 0.6 opacity
+  // Add a named tint only for a repeated semantic state.
 }
 ```
+
+## Interactive State Contract
+
+Aura interaction is a state layer over a component's persistent decoration.
+`AuraPressable.color` is the resolved, opaque base hue for that layer; its
+alpha is intentionally ignored. The primitive owns these values:
+
+- inactive: transparent state layer;
+- hover or keyboard focus: 8% base-color layer;
+- pressed: 16% base-color layer;
+- focus: a visible 2px Aura focus ring outside the target.
+
+Do not pass `primary.withValues(alpha: ...)` to `AuraPressable.color`. That
+reintroduces the old bug where the primitive applied opacity to an already
+transparent color: an opaque color became 50% on hover and 100% while pressed,
+while a pre-dimmed color became too faint. Pass the opaque theme color and put
+any persistent surface fill in `decoration`.
+
+### Tabs
+
+`AuraTabs` supports two static modes. The default mode gives each item a title
+and child; selection changes content and calls the index callback. The
+`AuraTabs.selector` mode gives each option a title and generic value; it renders
+only the tab strip and calls the value callback so the caller can render or
+bind content separately. Neither mode routes, loads, persists, or binds server
+data.
+
+For the underline-tab pattern:
+
+- accept each title as a widget so callers can compose text, icons, or other
+  Aura content; provide `semanticLabel` when a custom title has no useful
+  semantics;
+- use a 48px minimum tab target (`AuraSpacing.xl2`), including padding;
+- keep inactive tab backgrounds transparent;
+- keep hover/focus/pressed layers inside each tab target;
+- use `AuraBorderRadius.md` (6px) for the state layer;
+- use primary text plus a 2px primary underline for the selected tab;
+- use one 1px divider below the complete tab strip;
+- do not draw a border around each tab or turn its whole area into a filled
+  pill;
+- keep selected state persistent while hover remains transient. Hovering
+  `Details` must not select it when `Activity` is selected.
+
+The indicator must have an explicit width bounded by its tab. A widthless
+indicator placed as a child of an unbounded horizontal `Row` can collapse to
+zero, producing a selected tab with no visible underline. Use a bounded
+`Stack`/`Positioned(left: 0, right: 0, bottom: 0)` (or an equivalent layout)
+and keep the indicator separate from the hit target so it cannot intercept
+pointer input.
+
+## Validation Checklist
+
+Before completing an interactive component:
+
+1. Inspect the primitive implementation and all callers for duplicated alpha,
+   decoration, focus, and hit-target behavior.
+2. Test inactive, hovered, pressed, focused, and selected states, including an
+   inactive hovered tab while another tab is selected.
+3. Assert content and callback changes, invalid/empty input behavior, semantic
+   role/selected state, keyboard activation, minimum target size, and visible
+   indicator geometry.
+4. Render the Widgetbook story and inspect spacing, contrast, radius, borders,
+   and state bounds. Do not infer visual correctness from a passing build.
+5. Keep component visuals on Aura primitives and tokens. Do not introduce
+   Material `TabBar`/`TabBarView` styling merely because their API is familiar.
 
 ## Components Checklist
 
 All components must follow this pattern:
 
-- [x] **AuraContainer** - `backgroundColor: AuraColorVariant?`
-- [x] **AuraAvatar** - `backgroundColor`, `foregroundColor: AuraColorVariant?`
-- [x] **AuraIcon** - `color: AuraColorVariant?`
-- [x] **AuraIconButton** - `color`, `backgroundColor: AuraColorVariant?`
-- [x] **AuraDivider** - `color: AuraColorVariant?`
-- [x] **AuraFloatingActionButton** - `backgroundColor`, `foregroundColor: AuraColorVariant?`
-- [x] **AuraButton** - Uses `AuraColorVariant` enum
+- [x] **AuraContainer** - Uses `variant: AuraContainerVariant`
+- [x] **AuraAvatar** - Uses Aura semantic selectors where applicable
+- [x] **AuraIcon** - Uses `tint: AuraTint?`
+- [x] **AuraIconButton** - Uses Aura semantic selectors where applicable
+- [x] **AuraDivider** - Uses Aura semantic selectors where applicable
+- [x] **AuraFloatingActionButton** - Uses Aura semantic selectors where applicable
+- [x] **AuraButton** - Uses Aura semantic selectors where applicable
 - [x] **AuraBadge** - Uses variant enums
-- [x] **AuraText** - Uses `AuraColorVariant` enum
+- [x] **AuraText** - Uses `tint: AuraTint?`
 
 ## Testing Guidelines
 
@@ -189,13 +246,13 @@ When testing const-first components:
 
 1. **Use enum values in tests**:
    ```dart
-   const customColor = AuraColorVariant.error;
+   const customTint = AuraTint.error;
    
    await tester.pumpWidget(
-     const MaterialApp(
+     MaterialApp(
        home: AuraIcon(
          Icons.star,
-         color: customColor,
+         tint: customTint,
        ),
      ),
    );
@@ -207,7 +264,7 @@ When testing const-first components:
    expect(iconWidget.color, isNotNull); // Color is resolved from enum
    ```
 
-3. **Don't test for exact Color equality**:
+3. **Don't test for exact resolved Color equality unless testing a token contract**:
    ```dart
    // ❌ Bad - tests implementation details
    expect(iconWidget.color, Colors.red);
@@ -226,14 +283,19 @@ When testing const-first components:
 
 ## Migration Guide
 
-When encountering `Color?` parameters in components:
+When encountering a semantic `Color?` parameter in a component:
 
 1. **Identify the parameter**: Find all `Color?` parameters
-2. **Replace with enum**: Change `Color?` to `AuraColorVariant?`
-3. **Update build method**: Resolve color using `auraColors.getColor()`
+2. **Replace with selector**: Change it to `AuraTint?` when the value is a
+   semantic accent
+3. **Update build method**: Resolve the tint using `auraColors.colorFor()`
 4. **Fix consumers**: Update all usages to pass enum values
 5. **Update tests**: Change test color constants to enum values
 6. **Run analysis**: Verify with `dart analyze`
+
+Do not mechanically migrate low-level rendering APIs. `AuraPressable.color`
+must remain a resolved `Color` because it applies interaction alpha at render
+time; pass it an opaque theme color.
 
 ## Example Migration
 
@@ -256,12 +318,13 @@ class AuraContainer extends StatelessWidget {
   }
 }
 
-// After
-class AuraContainer extends StatelessWidget {
-  final AuraColorVariant? backgroundColor;
+// After: semantic selector on a component
+class AuraAccent extends StatelessWidget {
+  final AuraTint? tint;
+  final Widget child;
   
-  const AuraContainer({
-    this.backgroundColor,
+  const AuraAccent({
+    this.tint,
     required this.child,
   });
   
@@ -269,7 +332,7 @@ class AuraContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     return Container(
-      color: auraColors.getColor(backgroundColor),
+      color: tint == null ? null : auraColors.colorFor(tint!),
       child: child,
     );
   }
@@ -343,10 +406,11 @@ void showAuraSnackBar(...) {
 ## References
 
 - Flutter const optimization: https://api.flutter.dev/flutter/dart-core/const.html
-- AuraColorVariant definition: `lib/src/tokens/design_tokens.dart`
-- AuraColorScheme implementation: `lib/src/tokens/auravibes_theme.dart`
+- `AuraTint`, spacing, radius, and border definitions:
+  `lib/src/tokens/design_tokens.dart`
+- Aura color scheme implementation: `lib/src/tokens/aura_theme.dart`
 
 ---
 
-**Last Updated**: 2026-03-12
-**Version**: 1.1.0
+**Last Updated**: 2026-08-26
+**Version**: 1.2.0

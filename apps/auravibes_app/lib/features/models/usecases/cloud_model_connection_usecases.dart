@@ -2,11 +2,7 @@ import 'package:auravibes_app/features/models/models/cloud_model_resources.dart'
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-class CloudModelConnectionUsecases {
-  const CloudModelConnectionUsecases(this._gateway);
-
-  final CloudModelGateway _gateway;
-
+class const CloudModelConnectionUsecases(final CloudModelGateway _gateway) {
   Stream<List<CloudModelConnection>> watchConnections() => _gateway
       .watchModelConnections()
       .map((items) => items.map(CloudModelConnection.fromView).toList());

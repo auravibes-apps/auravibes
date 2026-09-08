@@ -9,22 +9,14 @@ import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 
 /// A reusable widget for displaying model provider logos.
-class ModelLogo extends StatelessWidget {
-  const ModelLogo({
-    required this.modelId,
-    this.height = 20,
-    this.width,
-    this.svgBuilder,
-    this.httpClient,
-    super.key,
-  });
-
-  final String modelId;
-  final double height;
-  final double? width;
-  final Widget Function(BuildContext context, String url)? svgBuilder;
-  final http.Client? httpClient;
-
+class const ModelLogo({
+  required final String modelId,
+  final double height = 20,
+  final double? width,
+  final Widget Function(BuildContext context, String url)? svgBuilder,
+  final http.Client? httpClient,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = 'https://models.dev/logos/$modelId.svg';

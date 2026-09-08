@@ -36,9 +36,7 @@ void main() {
             ),
             conversationRepositoryProvider.overrideWithValue(repository),
           ],
-          child: const MaterialApp(
-            home: _SidebarWorkspaceHost(),
-          ),
+          child: const MaterialApp(home: _SidebarWorkspaceHost()),
         ),
       );
 
@@ -56,55 +54,50 @@ void main() {
     },
   );
 
-  testWidgets(
-    're-subscribes when workspace id changes',
-    (tester) async {
-      final repository = _RecordingConversationRepository();
-      addTearDown(repository.close);
+  testWidgets('re-subscribes when workspace id changes', (tester) async {
+    final repository = _RecordingConversationRepository();
+    addTearDown(repository.close);
 
-      await tester.pumpWidget(
-        TestProviderScope(
-          overrides: [
-            workspaceSessionForRouteProvider.overrideWith(
-              (_, workspaceId) async => WorkspaceSession(
-                LocalWorkspaceRef(localWorkspaceId: workspaceId),
-              ),
+    await tester.pumpWidget(
+      TestProviderScope(
+        overrides: [
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
             ),
-            conversationRepositoryProvider.overrideWithValue(repository),
-          ],
-          child: const MaterialApp(
-            home: _SidebarWorkspaceHost(),
           ),
-        ),
-      );
+          conversationRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: const MaterialApp(home: _SidebarWorkspaceHost()),
+      ),
+    );
 
-      await tester.tap(find.byKey(_SidebarWorkspaceHost.loadWorkspaceKey));
-      await tester.pump();
+    await tester.tap(find.byKey(_SidebarWorkspaceHost.loadWorkspaceKey));
+    await tester.pump();
 
-      expect(
-        repository.workspaceWatchCalls,
-        equals([
-          const _WorkspaceWatchCall(workspaceId: 'workspace-1', limit: 10),
-        ]),
-      );
-      expect(repository._controllers, hasLength(1));
-      final firstController = repository._controllers.single;
+    expect(
+      repository.workspaceWatchCalls,
+      equals([
+        const _WorkspaceWatchCall(workspaceId: 'workspace-1', limit: 10),
+      ]),
+    );
+    expect(repository._controllers, hasLength(1));
+    final firstController = repository._controllers.single;
 
-      await tester.tap(find.byKey(_SidebarWorkspaceHost.switchWorkspaceKey));
-      await tester.pump();
-      await tester.pump();
+    await tester.tap(find.byKey(_SidebarWorkspaceHost.switchWorkspaceKey));
+    await tester.pump();
+    await tester.pump();
 
-      expect(
-        repository.workspaceWatchCalls,
-        equals([
-          const _WorkspaceWatchCall(workspaceId: 'workspace-1', limit: 10),
-          const _WorkspaceWatchCall(workspaceId: 'workspace-2', limit: 10),
-        ]),
-      );
-      expect(repository._controllers, hasLength(1));
-      expect(repository._controllers, isNot(contains(firstController)));
-    },
-  );
+    expect(
+      repository.workspaceWatchCalls,
+      equals([
+        const _WorkspaceWatchCall(workspaceId: 'workspace-1', limit: 10),
+        const _WorkspaceWatchCall(workspaceId: 'workspace-2', limit: 10),
+      ]),
+    );
+    expect(repository._controllers, hasLength(1));
+    expect(repository._controllers, isNot(contains(firstController)));
+  });
 
   testWidgets('renders SizedBox.shrink when workspaceId is null', (
     tester,
@@ -122,9 +115,7 @@ void main() {
           ),
           conversationRepositoryProvider.overrideWithValue(repository),
         ],
-        child: const MaterialApp(
-          home: _SidebarWorkspaceHost(),
-        ),
+        child: const MaterialApp(home: _SidebarWorkspaceHost()),
       ),
     );
     await tester.pump();
@@ -146,9 +137,7 @@ void main() {
           ),
           conversationRepositoryProvider.overrideWithValue(repository),
         ],
-        child: const MaterialApp(
-          home: _SidebarWorkspaceHost(),
-        ),
+        child: const MaterialApp(home: _SidebarWorkspaceHost()),
       ),
     );
 
@@ -193,32 +182,23 @@ void main() {
 
     expect(
       repository.workspaceWatchCalls,
-      equals([
-        const _WorkspaceWatchCall(workspaceId: 'workspace-1', limit: 5),
-      ]),
+      equals([const _WorkspaceWatchCall(workspaceId: 'workspace-1', limit: 5)]),
     );
   });
 
   test('SidebarConversationsWidget stores properties', () {
-    const widget = SidebarConversationsWidget(
-      workspaceId: 'ws-1',
-      limit: 5,
-    );
+    const widget = SidebarConversationsWidget(workspaceId: 'ws-1', limit: 5);
     expect(widget.workspaceId, 'ws-1');
     expect(widget.limit, 5);
   });
 
   test('SidebarConversationsWidget accepts empty workspaceId', () {
-    const widget = SidebarConversationsWidget(
-      workspaceId: '',
-    );
+    const widget = SidebarConversationsWidget(workspaceId: '');
     expect(widget.workspaceId, isEmpty);
   });
 
   test('SidebarConversationsWidget default limit is 10', () {
-    const widget = SidebarConversationsWidget(
-      workspaceId: 'ws-1',
-    );
+    const widget = SidebarConversationsWidget(workspaceId: 'ws-1');
     expect(widget.limit, 10);
   });
 
@@ -253,9 +233,7 @@ void main() {
               child: SizedBox(
                 width: 300,
                 height: 800,
-                child: SidebarConversationsWidget(
-                  workspaceId: '',
-                ),
+                child: SidebarConversationsWidget(workspaceId: ''),
               ),
             ),
           ),
@@ -289,9 +267,7 @@ void main() {
               child: SizedBox(
                 width: 300,
                 height: 800,
-                child: SidebarConversationsWidget(
-                  workspaceId: 'workspace-1',
-                ),
+                child: SidebarConversationsWidget(workspaceId: 'workspace-1'),
               ),
             ),
           ),
@@ -362,9 +338,7 @@ void main() {
 
   testWidgets(
     'renders conversations with compacting row when compaction is running',
-    (
-      tester,
-    ) async {
+    (tester) async {
       final conversations = [
         ConversationEntity(
           id: 'conv-1',
@@ -445,11 +419,9 @@ void main() {
   );
 }
 
-class _SeededConversationRepository extends _RecordingConversationRepository {
-  _SeededConversationRepository(this._conversations);
-
-  final List<ConversationEntity> _conversations;
-
+class _SeededConversationRepository(
+  final List<ConversationEntity> _conversations,
+) extends _RecordingConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
@@ -477,20 +449,16 @@ class _SeededConversationRepository extends _RecordingConversationRepository {
   }
 }
 
-class _TestCompactionExecution extends CompactionExecution {
-  _TestCompactionExecution(this._initialState);
-
-  final Map<String, CompactionExecutionState> _initialState;
-
+class _TestCompactionExecution(
+  final Map<String, CompactionExecutionState> _initialState,
+) extends CompactionExecution {
   @override
   Map<String, CompactionExecutionState> build() {
     return Map.unmodifiable(_initialState);
   }
 }
 
-class _SidebarWorkspaceHost extends StatefulWidget {
-  const _SidebarWorkspaceHost();
-
+class const _SidebarWorkspaceHost() extends StatefulWidget {
   static const loadWorkspaceKey = Key('load-workspace');
   static const switchWorkspaceKey = Key('switch-workspace');
 
@@ -527,12 +495,10 @@ class _SidebarWorkspaceHostState extends State<_SidebarWorkspaceHost> {
 }
 
 @immutable
-class _WorkspaceWatchCall {
-  const _WorkspaceWatchCall({required this.workspaceId, required this.limit});
-
-  final String workspaceId;
-  final int? limit;
-
+class const _WorkspaceWatchCall({
+  required final String workspaceId,
+  required final int? limit,
+}) {
   @override
   bool operator ==(Object other) {
     return other is _WorkspaceWatchCall &&

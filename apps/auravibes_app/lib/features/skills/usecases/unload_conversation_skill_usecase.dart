@@ -9,19 +9,12 @@ import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 
 import 'package:riverpod/src/providers/provider.dart';
 
-class UnloadConversationSkillUsecase {
-  const UnloadConversationSkillUsecase(
-    this._skillsRepository,
-    this._conversationSkillsRepository,
-    this._appSkillRegistry, [
-    this.cloudStore,
-  ]);
-
-  final SkillsRepository? _skillsRepository;
-  final ConversationSkillsRepository? _conversationSkillsRepository;
-  final AppSkillRegistry _appSkillRegistry;
-  final CloudSkillStore? cloudStore;
-
+class const UnloadConversationSkillUsecase(
+  final SkillsRepository? _skillsRepository,
+  final ConversationSkillsRepository? _conversationSkillsRepository,
+  final AppSkillRegistry _appSkillRegistry, [
+  final CloudSkillStore? cloudStore,
+]) {
   Future<void> call({
     required String conversationId,
     required String workspaceId,
@@ -40,7 +33,7 @@ class UnloadConversationSkillUsecase {
               .firstOrNull;
     if (userSkill != null) {
       if (cloud != null) {
-        return cloud.setConversationSkill(
+        return await cloud.setConversationSkill(
           conversationId,
           userSkill.id,
           selected: false,
@@ -64,7 +57,7 @@ class UnloadConversationSkillUsecase {
     final appSkill = _appSkillRegistry.getBySlug(slug);
     if (appSkill != null) {
       if (cloud != null) {
-        return cloud.setConversationSkill(
+        return await cloud.setConversationSkill(
           conversationId,
           appSkill.identifier,
           selected: false,
@@ -91,17 +84,13 @@ class UnloadConversationSkillUsecase {
 
 final ProviderFamily<UnloadConversationSkillUsecase, String>
 unloadConversationSkillUsecaseProvider =
-    Provider.family<UnloadConversationSkillUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<UnloadConversationSkillUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return UnloadConversationSkillUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloud == null
-              ? ref.watch(conversationSkillsRepositoryProvider)
-              : null,
-          ref.watch(appSkillRegistryProvider),
-          cloud,
-        );
-      },
-    );
+      return UnloadConversationSkillUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloud == null ? ref.watch(conversationSkillsRepositoryProvider) : null,
+        ref.watch(appSkillRegistryProvider),
+        cloud,
+      );
+    });

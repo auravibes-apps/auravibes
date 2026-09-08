@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'conversation_tools_group_with_tools.dart';
@@ -9,6 +9,7 @@ part of 'conversation_tools_group_with_tools.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $ConversationToolsGroupWithToolsCopyWith<ConversationToolsGroupWithTools> get co
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolsGroupWithTools&&(identical(other.group, group) || other.group == group)&&const DeepCollectionEquality().equals(other.tools, tools)&&(identical(other.defaultGroupType, defaultGroupType) || other.defaultGroupType == defaultGroupType)&&(identical(other.mcpConnectionState, mcpConnectionState) || other.mcpConnectionState == mcpConnectionState));
+  final _this = this as ConversationToolsGroupWithTools;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolsGroupWithTools&&(identical(other.group, _this.group) || other.group == _this.group)&&const DeepCollectionEquality().equals(other.tools, _this.tools)&&(identical(other.defaultGroupType, _this.defaultGroupType) || other.defaultGroupType == _this.defaultGroupType)&&(identical(other.mcpConnectionState, _this.mcpConnectionState) || other.mcpConnectionState == _this.mcpConnectionState));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,group,const DeepCollectionEquality().hash(tools),defaultGroupType,mcpConnectionState);
+int get hashCode {
+  final _this = this as ConversationToolsGroupWithTools;
+  return Object.hash(runtimeType,_this.group,const DeepCollectionEquality().hash(_this.tools),_this.defaultGroupType,_this.mcpConnectionState);
+}
 
 @override
 String toString() {
-  return 'ConversationToolsGroupWithTools(group: $group, tools: $tools, defaultGroupType: $defaultGroupType, mcpConnectionState: $mcpConnectionState)';
+  final _this = this as ConversationToolsGroupWithTools;
+  return 'ConversationToolsGroupWithTools(group: ${_this.group}, tools: ${_this.tools}, defaultGroupType: ${_this.defaultGroupType}, mcpConnectionState: ${_this.mcpConnectionState})';
 }
 
 
@@ -63,7 +69,7 @@ class _$ConversationToolsGroupWithToolsCopyWithImpl<$Res>
 /// Create a copy of ConversationToolsGroupWithTools
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? group = freezed,Object? tools = null,Object? defaultGroupType = freezed,Object? mcpConnectionState = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ConversationToolsGroupWithTools(
 group: freezed == group ? _self.group : group // ignore: cast_nullable_to_non_nullable
 as ToolsGroupEntity?,tools: null == tools ? _self.tools : tools // ignore: cast_nullable_to_non_nullable
 as List<ConversationToolState>,defaultGroupType: freezed == defaultGroupType ? _self.defaultGroupType : defaultGroupType // ignore: cast_nullable_to_non_nullable
@@ -233,7 +239,7 @@ return $default(_that.group,_that.tools,_that.defaultGroupType,_that.mcpConnecti
 
 
 class _ConversationToolsGroupWithTools extends ConversationToolsGroupWithTools {
-  const _ConversationToolsGroupWithTools({required this.group, required final  List<ConversationToolState> tools, this.defaultGroupType, this.mcpConnectionState}): assert(group != null || defaultGroupType != null),assert(group == null || defaultGroupType == null),_tools = tools,super._();
+  const _ConversationToolsGroupWithTools({required this.group, required  List<ConversationToolState> tools, this.defaultGroupType, this.mcpConnectionState}): assert(group != null || defaultGroupType != null),assert(group == null || defaultGroupType == null),_tools = tools,super._();
   
 
 @override final  ToolsGroupEntity? group;
@@ -257,16 +263,18 @@ _$ConversationToolsGroupWithToolsCopyWith<_ConversationToolsGroupWithTools> get 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolsGroupWithTools&&(identical(other.group, group) || other.group == group)&&const DeepCollectionEquality().equals(other._tools, _tools)&&(identical(other.defaultGroupType, defaultGroupType) || other.defaultGroupType == defaultGroupType)&&(identical(other.mcpConnectionState, mcpConnectionState) || other.mcpConnectionState == mcpConnectionState));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolsGroupWithTools&&(identical(other.group, group) || other.group == group)&&const DeepCollectionEquality().equals(other.tools, _tools)&&(identical(other.defaultGroupType, defaultGroupType) || other.defaultGroupType == defaultGroupType)&&(identical(other.mcpConnectionState, mcpConnectionState) || other.mcpConnectionState == mcpConnectionState));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,group,const DeepCollectionEquality().hash(_tools),defaultGroupType,mcpConnectionState);
+int get hashCode {
+    return Object.hash(runtimeType,group,const DeepCollectionEquality().hash(_tools),defaultGroupType,mcpConnectionState);
+}
 
 @override
 String toString() {
-  return 'ConversationToolsGroupWithTools(group: $group, tools: $tools, defaultGroupType: $defaultGroupType, mcpConnectionState: $mcpConnectionState)';
+    return 'ConversationToolsGroupWithTools(group: $group, tools: $tools, defaultGroupType: $defaultGroupType, mcpConnectionState: $mcpConnectionState)';
 }
 
 

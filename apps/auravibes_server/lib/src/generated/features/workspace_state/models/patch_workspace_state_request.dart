@@ -10,13 +10,14 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
+
 import '../../../features/workspace_state/models/workspace_patch_operation.dart'
-    as _i2;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i3;
+    as _iou6lkaa;
 
 abstract class PatchWorkspaceStateRequest
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   PatchWorkspaceStateRequest._({
     required this.workspaceId,
     required this.requestId,
@@ -26,7 +27,7 @@ abstract class PatchWorkspaceStateRequest
   factory PatchWorkspaceStateRequest({
     required int workspaceId,
     required String requestId,
-    required List<_i2.WorkspacePatchOperation> operations,
+    required List<_iou6lkaa.WorkspacePatchOperation> operations,
   }) = _PatchWorkspaceStateRequestImpl;
 
   factory PatchWorkspaceStateRequest.fromJson(
@@ -35,9 +36,10 @@ abstract class PatchWorkspaceStateRequest
     return PatchWorkspaceStateRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
-      operations: _i3.Protocol().deserialize<List<_i2.WorkspacePatchOperation>>(
-        jsonSerialization['operations'],
-      ),
+      operations: _if5qez1k.Protocol()
+          .deserialize<List<_iou6lkaa.WorkspacePatchOperation>>(
+            jsonSerialization['operations'],
+          ),
     );
   }
 
@@ -45,15 +47,15 @@ abstract class PatchWorkspaceStateRequest
 
   String requestId;
 
-  List<_i2.WorkspacePatchOperation> operations;
+  List<_iou6lkaa.WorkspacePatchOperation> operations;
 
   /// Returns a shallow copy of this [PatchWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   PatchWorkspaceStateRequest copyWith({
     int? workspaceId,
     String? requestId,
-    List<_i2.WorkspacePatchOperation>? operations,
+    List<_iou6lkaa.WorkspacePatchOperation>? operations,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -79,7 +81,7 @@ abstract class PatchWorkspaceStateRequest
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -87,7 +89,7 @@ class _PatchWorkspaceStateRequestImpl extends PatchWorkspaceStateRequest {
   _PatchWorkspaceStateRequestImpl({
     required int workspaceId,
     required String requestId,
-    required List<_i2.WorkspacePatchOperation> operations,
+    required List<_iou6lkaa.WorkspacePatchOperation> operations,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -96,12 +98,12 @@ class _PatchWorkspaceStateRequestImpl extends PatchWorkspaceStateRequest {
 
   /// Returns a shallow copy of this [PatchWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   PatchWorkspaceStateRequest copyWith({
     int? workspaceId,
     String? requestId,
-    List<_i2.WorkspacePatchOperation>? operations,
+    List<_iou6lkaa.WorkspacePatchOperation>? operations,
   }) {
     return PatchWorkspaceStateRequest(
       workspaceId: workspaceId ?? this.workspaceId,

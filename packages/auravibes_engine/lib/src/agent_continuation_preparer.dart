@@ -1,26 +1,14 @@
-class AgentConversationReference {
-  const AgentConversationReference({
-    required this.workspaceId,
-    required this.modelId,
-  });
+class const AgentConversationReference({
+  required final String workspaceId,
+  required final String? modelId,
+});
 
-  final String workspaceId;
-  final String? modelId;
-}
-
-class PreparedContinueAgentInput<TModel, TChatMessage, TTool> {
-  const PreparedContinueAgentInput({
-    required this.model,
-    required this.chatHistory,
-    required this.enabledTools,
-    required this.messagesCount,
-  });
-
-  final TModel model;
-  final List<TChatMessage> chatHistory;
-  final List<TTool> enabledTools;
-  final int messagesCount;
-}
+class const PreparedContinueAgentInput<TModel, TChatMessage, TTool>({
+  required final TModel model,
+  required final List<TChatMessage> chatHistory,
+  required final List<TTool> enabledTools,
+  required final int messagesCount,
+});
 
 abstract interface class AgentContinuationProvider<
   TModel,
@@ -61,12 +49,15 @@ abstract interface class AgentContinuationProvider<
   bool isUserMessage(TChatMessage message);
 }
 
-class AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool> {
-  const AgentContinuationPreparer({required this.provider});
-
-  final AgentContinuationProvider<TModel, TMessage, TChatMessage, TTool>
-  provider;
-
+class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
+  required final AgentContinuationProvider<
+    TModel,
+    TMessage,
+    TChatMessage,
+    TTool
+  >
+  provider,
+}) {
   Future<PreparedContinueAgentInput<TModel, TChatMessage, TTool>> call({
     required String conversationId,
   }) async {

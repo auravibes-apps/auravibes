@@ -3,40 +3,28 @@ import 'dart:collection';
 import 'package:auravibes_engine/src/tool_calls.dart';
 import 'package:auravibes_engine/src/transcript_context.dart';
 
-class AgentPromptHistorySelection {
-  AgentPromptHistorySelection(List<String> messageIds)
-    : messageIds = UnmodifiableListView(List.of(messageIds));
-
-  final List<String> messageIds;
+class AgentPromptHistorySelection(List<String> messageIds) {
+  final List<String> messageIds = UnmodifiableListView(List.of(messageIds));
 }
 
-sealed class AgentCompactionRangeSelection {
-  const AgentCompactionRangeSelection();
+sealed class const AgentCompactionRangeSelection();
+
+class AgentCompactionRangeSelected({
+  required final String fromMessageId,
+  required final String throughMessageId,
+  required List<String> messageIds,
+  required List<String> keptTailMessageIds,
+}) extends AgentCompactionRangeSelection {
+  final List<String> messageIds = UnmodifiableListView(List.of(messageIds));
+  final List<String> keptTailMessageIds = UnmodifiableListView(
+    List.of(keptTailMessageIds),
+  );
 }
 
-class AgentCompactionRangeSelected extends AgentCompactionRangeSelection {
-  AgentCompactionRangeSelected({
-    required this.fromMessageId,
-    required this.throughMessageId,
-    required List<String> messageIds,
-    required List<String> keptTailMessageIds,
-  }) : messageIds = UnmodifiableListView(List.of(messageIds)),
-       keptTailMessageIds = UnmodifiableListView(List.of(keptTailMessageIds));
+class const AgentCompactionNoRange() extends AgentCompactionRangeSelection;
 
-  final String fromMessageId;
-  final String throughMessageId;
-  final List<String> messageIds;
-  final List<String> keptTailMessageIds;
-}
-
-class AgentCompactionNoRange extends AgentCompactionRangeSelection {
-  const AgentCompactionNoRange();
-}
-
-class AgentCompactionUnsafeUnresolvedTool
-    extends AgentCompactionRangeSelection {
-  const AgentCompactionUnsafeUnresolvedTool();
-}
+class const AgentCompactionUnsafeUnresolvedTool()
+    extends AgentCompactionRangeSelection;
 
 AgentPromptHistorySelection selectAgentPromptHistory(
   AgentContextSnapshot context,

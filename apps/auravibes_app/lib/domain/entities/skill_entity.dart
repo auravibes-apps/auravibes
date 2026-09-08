@@ -3,8 +3,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'skill_entity.freezed.dart';
 
 @freezed
-abstract class SkillEntity with _$SkillEntity {
-  const factory SkillEntity({
+abstract class const SkillEntity._() with _$SkillEntity {
+  const factory({
     required String id,
     required String workspaceId,
     required SkillSource source,
@@ -19,12 +19,11 @@ abstract class SkillEntity with _$SkillEntity {
     required DateTime updatedAt,
     String? credentialDefinitionId,
   }) = _SkillEntity;
-  const SkillEntity._();
 }
 
 @freezed
-abstract class SkillToCreate with _$SkillToCreate {
-  const factory SkillToCreate({
+abstract class const SkillToCreate._() with _$SkillToCreate {
+  const factory({
     required SkillKind kind,
     required String title,
     required String description,
@@ -33,12 +32,11 @@ abstract class SkillToCreate with _$SkillToCreate {
     @Default(false) bool isCredentialOptional,
     @Default(true) bool isEnabled,
   }) = _SkillToCreate;
-  const SkillToCreate._();
 }
 
 @freezed
-abstract class SkillToUpdate with _$SkillToUpdate {
-  const factory SkillToUpdate({
+abstract class const SkillToUpdate._() with _$SkillToUpdate {
+  const factory({
     String? title,
     String? description,
     String? content,
@@ -47,7 +45,6 @@ abstract class SkillToUpdate with _$SkillToUpdate {
     bool? isCredentialOptional,
     bool? isEnabled,
   }) = _SkillToUpdate;
-  const SkillToUpdate._();
 }
 
 enum SkillSource { user, app }

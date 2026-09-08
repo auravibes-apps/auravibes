@@ -8,18 +8,16 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'conversation_tools_group_with_tools.freezed.dart';
 
 @freezed
-abstract class ConversationToolsGroupWithTools
+abstract class const ConversationToolsGroupWithTools._()
     with _$ConversationToolsGroupWithTools, ToolsGroupMixin {
   @Assert('group != null || defaultGroupType != null')
   @Assert('group == null || defaultGroupType == null')
-  const factory ConversationToolsGroupWithTools({
+  const factory({
     required ToolsGroupEntity? group,
     required List<ConversationToolState> tools,
     DefaultToolGroupType? defaultGroupType,
     McpConnectionState? mcpConnectionState,
   }) = _ConversationToolsGroupWithTools;
-
-  const ConversationToolsGroupWithTools._();
 
   int get enabledToolsCount => tools.where((t) => t.isEnabled).length;
 

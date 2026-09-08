@@ -68,16 +68,15 @@ void main() {
       await tester.tap(themeTiles.first);
       final _ = await tester.pumpAndSettle();
 
-      expect(find.byType(AuraRadioGroup<AppTheme>), findsOneWidget);
+      expect(find.byType(AuraChoicePicker<AppTheme>), findsOneWidget);
     });
 
     testWidgets('changing theme keeps settings screen visible', (tester) async {
       SharedPreferences.setMockInitialValues({});
       final container = ProviderContainer(
         overrides: [
-          compactionSettingsProvider('test-ws').overrideWith(
-            (ref) => Stream.value(CompactionSettings.defaults),
-          ),
+          compactionSettingsProvider('test-ws')
+              .overrideWith((ref) => Stream.value(CompactionSettings.defaults)),
         ],
       );
       addTearDown(container.dispose);
@@ -112,14 +111,12 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(SettingsScreen), findsOneWidget);
-      expect(find.byType(AuraRadioGroup<AppTheme>), findsNothing);
+      expect(find.byType(AuraChoicePicker<AppTheme>), findsNothing);
     });
   });
 }
 
-class _ThemeModeTestApp extends ConsumerWidget {
-  const _ThemeModeTestApp();
-
+class const _ThemeModeTestApp() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode =

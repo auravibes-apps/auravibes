@@ -4,12 +4,10 @@ import 'package:auravibes_engine/src/skills/execution/skill_http_client.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 
-class AppSkillExecutor {
-  const AppSkillExecutor(this._runSkillUrlTemplate, this._httpClient);
-
-  final RunSkillUrlTemplate _runSkillUrlTemplate;
-  final SkillHttpClient _httpClient;
-
+class const AppSkillExecutor(
+  final RunSkillUrlTemplate _runSkillUrlTemplate,
+  final SkillHttpClient _httpClient,
+) {
   CancelableOperation<Object?> run({
     required AppSkillDefinition skill,
     required String toolSlug,
@@ -36,10 +34,7 @@ class AppSkillExecutor {
 
     final callback = resolvedTool.callback;
     if (callback != null) {
-      return callback(
-        {...input, 'credential': credentials},
-        _httpClient,
-      );
+      return callback({...input, 'credential': credentials}, _httpClient);
     }
 
     throw UnsupportedError('App skill tool has no executor: $toolSlug');

@@ -58,14 +58,9 @@ void main() {
         ),
       );
 
-      final result =
-          jsonDecode(
-                await runner.listAgents(
-                  'w1',
-                  arguments: const {'type': 'sub_agent'},
-                ),
-              )
-              as Map<String, Object?>;
+      final result = jsonDecode(
+        await runner.listAgents('w1', arguments: const {'type': 'sub_agent'}),
+      ) as Map<String, Object?>;
 
       expect(result['agents'], [
         {
@@ -80,14 +75,9 @@ void main() {
     test('rejects unknown list_agents type', () async {
       final runner = _runner();
 
-      final result =
-          jsonDecode(
-                await runner.listAgents(
-                  'w1',
-                  arguments: const {'type': 'other'},
-                ),
-              )
-              as Map<String, Object?>;
+      final result = jsonDecode(
+        await runner.listAgents('w1', arguments: const {'type': 'other'}),
+      ) as Map<String, Object?>;
 
       expect(result['status'], 'error');
       expect(result['content'], 'Unknown agent type.');
@@ -124,15 +114,13 @@ void main() {
         );
         final runner = _runner(conversations: conversations);
 
-        final result =
-            jsonDecode(
-                  await runner.run(
-                    parentConversationId: 'child-parent',
-                    workspaceId: 'w1',
-                    arguments: const {'title': 'Task', 'prompt': 'Do it'},
-                  ),
-                )
-                as Map<String, Object?>;
+        final result = jsonDecode(
+          await runner.run(
+            parentConversationId: 'child-parent',
+            workspaceId: 'w1',
+            arguments: const {'title': 'Task', 'prompt': 'Do it'},
+          ),
+        ) as Map<String, Object?>;
 
         expect(result['status'], 'error');
         expect(result['content'], 'Sub-agents cannot start sub-agents.');
@@ -142,23 +130,19 @@ void main() {
 
     test('rejects unknown agent without creating child', () async {
       final conversations = _ConversationStore();
-      final runner = _runner(
-        conversations: conversations,
-      );
+      final runner = _runner(conversations: conversations);
 
-      final result =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: const {
-                    'title': 'Task',
-                    'prompt': 'Do it',
-                    'agentId': 'missing',
-                  },
-                ),
-              )
-              as Map<String, Object?>;
+      final result = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {
+            'title': 'Task',
+            'prompt': 'Do it',
+            'agentId': 'missing',
+          },
+        ),
+      ) as Map<String, Object?>;
 
       expect(result['status'], 'error');
       expect(result['agentId'], 'missing');
@@ -170,33 +154,27 @@ void main() {
       final conversations = _ConversationStore();
       final runner = _runner(conversations: conversations);
 
-      final missingTitle =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: const {'prompt': 'Do it'},
-                ),
-              )
-              as Map<String, Object?>;
-      final missingPrompt =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: const {'title': 'Task'},
-                ),
-              )
-              as Map<String, Object?>;
-      final missingParent =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'missing',
-                  workspaceId: 'w1',
-                  arguments: const {'title': 'Task', 'prompt': 'Do it'},
-                ),
-              )
-              as Map<String, Object?>;
+      final missingTitle = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'prompt': 'Do it'},
+        ),
+      ) as Map<String, Object?>;
+      final missingPrompt = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task'},
+        ),
+      ) as Map<String, Object?>;
+      final missingParent = jsonDecode(
+        await runner.run(
+          parentConversationId: 'missing',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+        ),
+      ) as Map<String, Object?>;
 
       expect(missingTitle['content'], 'Missing title.');
       expect(missingPrompt['content'], 'Missing prompt.');
@@ -208,30 +186,26 @@ void main() {
       final conversations = _ConversationStore();
       final runner = _runner(conversations: conversations);
 
-      final titleResult =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: {
-                    'title': 'x' * (maxSubAgentTitleLength + 1),
-                    'prompt': 'Do it',
-                  },
-                ),
-              )
-              as Map<String, Object?>;
-      final promptResult =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: {
-                    'title': 'Task',
-                    'prompt': 'x' * (maxSubAgentPromptLength + 1),
-                  },
-                ),
-              )
-              as Map<String, Object?>;
+      final titleResult = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: {
+            'title': 'x' * (maxSubAgentTitleLength + 1),
+            'prompt': 'Do it',
+          },
+        ),
+      ) as Map<String, Object?>;
+      final promptResult = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: {
+            'title': 'Task',
+            'prompt': 'x' * (maxSubAgentPromptLength + 1),
+          },
+        ),
+      ) as Map<String, Object?>;
 
       expect(titleResult['content'], 'Title is too long.');
       expect(promptResult['content'], 'Prompt is too long.');
@@ -257,19 +231,17 @@ void main() {
         },
       );
 
-      final result =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: const {
-                    'title': ' Task ',
-                    'prompt': ' Do it ',
-                    'agentId': ' agent-1 ',
-                  },
-                ),
-              )
-              as Map<String, Object?>;
+      final result = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {
+            'title': ' Task ',
+            'prompt': ' Do it ',
+            'agentId': ' agent-1 ',
+          },
+        ),
+      ) as Map<String, Object?>;
 
       expect(result['status'], 'done');
       expect(result['agentId'], 'agent-1');
@@ -297,15 +269,13 @@ void main() {
           },
         );
 
-        final result =
-            jsonDecode(
-                  await runner.run(
-                    parentConversationId: 'parent',
-                    workspaceId: 'w1',
-                    arguments: const {'title': 'Task', 'prompt': 'Do it'},
-                  ),
-                )
-                as Map<String, Object?>;
+        final result = jsonDecode(
+          await runner.run(
+            parentConversationId: 'parent',
+            workspaceId: 'w1',
+            arguments: const {'title': 'Task', 'prompt': 'Do it'},
+          ),
+        ) as Map<String, Object?>;
 
         expect(result['conversationId'], 'child');
         expect(result['status'], 'done');
@@ -333,15 +303,13 @@ void main() {
         },
       );
 
-      final result =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: const {'title': 'Task', 'prompt': 'Do it'},
-                ),
-              )
-              as Map<String, Object?>;
+      final result = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+        ),
+      ) as Map<String, Object?>;
 
       expect(result['conversationId'], 'child');
       expect(result['status'], 'stopped');
@@ -364,15 +332,13 @@ void main() {
         },
       );
 
-      final result =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: const {'title': 'Task', 'prompt': 'Do it'},
-                ),
-              )
-              as Map<String, Object?>;
+      final result = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+        ),
+      ) as Map<String, Object?>;
 
       expect(result['conversationId'], 'child');
       expect(result['status'], 'error');
@@ -382,15 +348,13 @@ void main() {
     test('returns error when prompt creation throws', () async {
       final runner = _runner(messages: _ThrowingMessages());
 
-      final result =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: const {'title': 'Task', 'prompt': 'Do it'},
-                ),
-              )
-              as Map<String, Object?>;
+      final result = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+        ),
+      ) as Map<String, Object?>;
 
       expect(result['conversationId'], 'child');
       expect(result['status'], 'error');
@@ -412,15 +376,13 @@ void main() {
         },
       );
 
-      final result =
-          jsonDecode(
-                await runner.run(
-                  parentConversationId: 'parent',
-                  workspaceId: 'w1',
-                  arguments: const {'title': 'Task', 'prompt': 'Do it'},
-                ),
-              )
-              as Map<String, Object?>;
+      final result = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+        ),
+      ) as Map<String, Object?>;
 
       expect(result['conversationId'], 'child');
       expect(result['status'], 'stopped');
@@ -450,11 +412,8 @@ SubAgentRunner _runner({
   );
 }
 
-class _Catalog implements SubAgentCatalog {
-  const _Catalog({this.entries = const []});
-
-  final List<SubAgentCatalogEntry> entries;
-
+class const _Catalog({final List<SubAgentCatalogEntry> entries = const []})
+    implements SubAgentCatalog {
   @override
   Future<SubAgentCatalogEntry?> getSubAgent(String agentId) async {
     return entries.where((entry) => entry.id == agentId).firstOrNull;
@@ -466,17 +425,14 @@ class _Catalog implements SubAgentCatalog {
   }
 }
 
-class _ConversationStore implements SubAgentConversationStore {
-  _ConversationStore({
-    this.parent = const SubAgentConversationRecord(
-      id: 'parent',
-      workspaceId: 'w1',
-      modelId: 'm1',
-      parentConversationId: null,
-    ),
-  });
-
-  final SubAgentConversationRecord parent;
+class _ConversationStore({
+  final SubAgentConversationRecord parent = const SubAgentConversationRecord(
+    id: 'parent',
+    workspaceId: 'w1',
+    modelId: 'm1',
+    parentConversationId: null,
+  ),
+}) implements SubAgentConversationStore {
   final createdChildren = <String>[];
 
   @override
@@ -572,17 +528,11 @@ class _Tracker {
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
 }
 
-class _TestSubAgentRequestHandle implements SubAgentRequestHandle {
-  const _TestSubAgentRequestHandle(
-    this._tracker,
-    this._parentId,
-    this._childId,
-  );
-
-  final _Tracker _tracker;
-  final String _parentId;
-  final String _childId;
-
+class const _TestSubAgentRequestHandle(
+  final _Tracker _tracker,
+  final String _parentId,
+  final String _childId,
+) implements SubAgentRequestHandle {
   @override
   Future<SubAgentCompletionStatus> get completion =>
       _tracker.waitForCompletion(_childId);

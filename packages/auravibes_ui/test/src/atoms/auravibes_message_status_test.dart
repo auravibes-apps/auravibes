@@ -15,9 +15,7 @@ void main() {
               showAnimation: false, // Disable animation for stable testing.
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -38,9 +36,7 @@ void main() {
               showAnimation: false, // Disable animation for stable testing.
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -207,9 +203,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sent,
-            ),
+            body: AuraMessageStatus(status: AuraMessageDeliveryStatus.sent),
           ),
         ),
       );
@@ -250,9 +244,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sending,
-            ),
+            body: AuraMessageStatus(status: AuraMessageDeliveryStatus.sending),
           ),
         ),
       );
@@ -289,9 +281,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sending,
-            ),
+            body: AuraMessageStatus(status: AuraMessageDeliveryStatus.sending),
           ),
         ),
       );
@@ -307,9 +297,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sent,
-            ),
+            body: AuraMessageStatus(status: AuraMessageDeliveryStatus.sent),
           ),
         ),
       );

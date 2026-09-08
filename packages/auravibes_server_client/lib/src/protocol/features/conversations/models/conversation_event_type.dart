@@ -10,9 +10,9 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-enum ConversationEventType implements _i1.SerializableModel {
+enum ConversationEventType implements _isc.SerializableModel {
   messageQueued,
   messageEdited,
   messageReordered,
@@ -27,7 +27,8 @@ enum ConversationEventType implements _i1.SerializableModel {
   toolCallCreated,
   toolApprovalRequested,
   toolDecisionRecorded,
-  toolResolved;
+  toolResolved,
+  a2uiMessage;
 
   static ConversationEventType fromJson(String name) {
     switch (name) {
@@ -61,6 +62,8 @@ enum ConversationEventType implements _i1.SerializableModel {
         return ConversationEventType.toolDecisionRecorded;
       case 'toolResolved':
         return ConversationEventType.toolResolved;
+      case 'a2uiMessage':
+        return ConversationEventType.a2uiMessage;
       default:
         throw ArgumentError(
           'Value "$name" cannot be converted to "ConversationEventType"',

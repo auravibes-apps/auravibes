@@ -35,9 +35,7 @@ void main() {
             body: Portal(
               child: AuraPopupMenu(
                 child: const Text('Open Menu'),
-                items: const [
-                  AuraPopupMenuItem(title: Text('Item 1')),
-                ],
+                items: const [AuraPopupMenuItem(title: Text('Item 1'))],
                 controller: controller,
               ),
             ),
@@ -63,9 +61,7 @@ void main() {
             body: Portal(
               child: AuraPopupMenu(
                 child: const Text('Open Menu'),
-                items: const [
-                  AuraPopupMenuItem(title: Text('Item 1')),
-                ],
+                items: const [AuraPopupMenuItem(title: Text('Item 1'))],
                 controller: controller,
               ),
             ),
@@ -92,9 +88,7 @@ void main() {
             body: Portal(
               child: AuraPopupMenu(
                 child: const Text('Open Menu'),
-                items: const [
-                  AuraPopupMenuItem(title: Text('Item 1')),
-                ],
+                items: const [AuraPopupMenuItem(title: Text('Item 1'))],
                 controller: controller,
               ),
             ),
@@ -120,9 +114,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: Builder(builder: item.build),
-          ),
+          home: Scaffold(body: Builder(builder: item.build)),
         ),
       );
 
@@ -141,9 +133,7 @@ void main() {
             body: Portal(
               child: AuraPopupMenu(
                 child: const Text('Open Menu'),
-                items: const [
-                  AuraPopupMenuItem(title: Text('Item 1')),
-                ],
+                items: const [AuraPopupMenuItem(title: Text('Item 1'))],
                 controller: controller,
               ),
             ),
@@ -173,9 +163,7 @@ void main() {
               child: Center(
                 child: AuraPopupMenu(
                   child: const Text('Open Menu'),
-                  items: const [
-                    AuraPopupMenuItem(title: Text('Item 1')),
-                  ],
+                  items: const [AuraPopupMenuItem(title: Text('Item 1'))],
                   controller: controller,
                 ),
               ),
@@ -243,9 +231,7 @@ void main() {
             body: Portal(
               child: AuraPopupMenu(
                 child: const Text('Open Menu'),
-                items: const [
-                  AuraPopupMenuDivider(),
-                ],
+                items: const [AuraPopupMenuDivider()],
                 controller: controller,
               ),
             ),
@@ -265,9 +251,7 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraPopupMenuButton(
-                items: [
-                  AuraPopupMenuItem(title: Text('Edit')),
-                ],
+                items: [AuraPopupMenuItem(title: Text('Edit'))],
               ),
             ),
           ),
@@ -301,9 +285,7 @@ void main() {
                       onPressed: controller.toggle,
                       child: const Text('Menu'),
                     ),
-                    items: const [
-                      AuraPopupMenuItem(title: Text('Item 1')),
-                    ],
+                    items: const [AuraPopupMenuItem(title: Text('Item 1'))],
                     controller: controller,
                   ),
                   TextButton(

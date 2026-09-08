@@ -1,11 +1,8 @@
-enum UrlRequestMethod {
+enum UrlRequestMethod(final String value) {
   get('GET'),
   post('POST'),
   put('PUT'),
   delete('DELETE'),
   patch('PATCH'),
-  head('HEAD');
-
-  const UrlRequestMethod(this.value);
-  final String value;
+  head('HEAD'),
 }

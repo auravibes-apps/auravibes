@@ -11,14 +11,13 @@ part 'tools_groups_dao.g.dart';
 class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
     with _$ToolsGroupsDaoMixin {
   /// Creates a new [ToolsGroupsDao] instance.
-  ToolsGroupsDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   /// Insert a new tools group.
   ///
   /// Returns the inserted row.
-  Future<ToolsGroupsTable> insertToolsGroup(
-    ToolsGroupsCompanion companion,
-  ) => into(toolsGroups).insertReturning(companion);
+  Future<ToolsGroupsTable> insertToolsGroup(ToolsGroupsCompanion companion) =>
+      into(toolsGroups).insertReturning(companion);
 
   /// Delete a tools group by ID.
   ///

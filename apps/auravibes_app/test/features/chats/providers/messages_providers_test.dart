@@ -16,6 +16,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
+void _ignoreProviderUpdate(Object? _, Object? _) {
+  final _ = Object();
+}
+
 MessageEntity _message({
   required String id,
   required String content,
@@ -168,16 +172,14 @@ class _MessagesProvidersFixture {
     _repository = repository;
     _container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
-          const WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-          ),
+        workspaceSessionProvider(
+          const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+        ).overrideWithValue(
+          const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
         ),
         workspaceSessionForRouteProvider('ws-1').overrideWithValue(
           const AsyncData(
-            WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-            ),
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
           ),
         ),
         conversationSelectedProvider.overrideWithValue('conv-1'),
@@ -269,26 +271,19 @@ void main() {
       );
       expect(messages, hasLength(1));
 
-      expect(
-        fixture.container.read(isMessageStreamingProvider('m1')),
-        isFalse,
-      );
+      expect(fixture.container.read(isMessageStreamingProvider('m1')), isFalse);
     });
 
     test('returns true when message is streaming', () async {
       fixture.container
         ..listen(
           chatMessagesProvider('ws-1', 'conv-1'),
-          (_, _) {
-            final _ = Object();
-          },
+          _ignoreProviderUpdate,
           fireImmediately: true,
         )
         ..listen(
           isMessageStreamingProvider('m1'),
-          (_, _) {
-            final _ = Object();
-          },
+          _ignoreProviderUpdate,
           fireImmediately: true,
         );
       fixture.repository.emit([
@@ -301,10 +296,7 @@ void main() {
           .startSubscription(CompositeSubscription(), 'm1');
       await Future<void>.delayed(Duration.zero);
 
-      expect(
-        fixture.container.read(isMessageStreamingProvider('m1')),
-        isTrue,
-      );
+      expect(fixture.container.read(isMessageStreamingProvider('m1')), isTrue);
     });
   });
 
@@ -386,9 +378,7 @@ void main() {
   group('conversationQueuedDraftsProvider', () {
     test('returns empty list by default', () {
       final container = ProviderContainer(
-        overrides: [
-          conversationSelectedProvider.overrideWithValue('conv-1'),
-        ],
+        overrides: [conversationSelectedProvider.overrideWithValue('conv-1')],
       );
       addTearDown(container.dispose);
 

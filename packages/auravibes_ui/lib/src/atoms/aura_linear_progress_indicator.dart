@@ -6,8 +6,8 @@ import 'package:flutter/widgets.dart';
 /// A linear progress indicator following the Aura design system.
 class AuraLinearProgressIndicator extends StatelessWidget {
   /// Creates an Aura linear progress indicator.
-  const AuraLinearProgressIndicator({
-    required this.value,
+  const new({
+    this.value,
     super.key,
     this.height = 4,
     this.tint = AuraTint.primary,
@@ -17,10 +17,10 @@ class AuraLinearProgressIndicator extends StatelessWidget {
     this.semanticValue,
   });
 
-  /// Current progress value.
+  /// Current progress value. Null renders an indeterminate track.
   ///
   /// Values outside `0.0..1.0` are clamped.
-  final double value;
+  final double? value;
 
   /// Height of the progress track.
   final double height;
@@ -43,7 +43,7 @@ class AuraLinearProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final clampedValue = value.clamp(0.0, 1.0);
+    final clampedValue = value?.clamp(0.0, 1.0);
     final clampedBackgroundAlpha = backgroundAlpha.clamp(0.0, 1.0);
 
     return Semantics(
@@ -61,13 +61,20 @@ class AuraLinearProgressIndicator extends StatelessWidget {
                   alpha: clampedBackgroundAlpha,
                 ),
               ),
-              FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: clampedValue,
-                child: ColoredBox(
-                  color: auraColors.colorFor(tint),
+              if (clampedValue case final value?)
+                FractionallySizedBox(
+                  alignment: AlignmentDirectional.centerStart,
+                  widthFactor: value,
+                  child: ColoredBox(color: auraColors.colorFor(tint)),
+                )
+              else
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.35,
+                    child: ColoredBox(color: auraColors.colorFor(tint)),
+                  ),
                 ),
-              ),
             ],
           ),
         ),

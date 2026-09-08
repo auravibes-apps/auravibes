@@ -10,41 +10,43 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
+import 'package:serverpod/serverpod.dart' as _is;
+
 import '../../../features/conversations/models/conversation_summary.dart'
-    as _i2;
-import 'package:auravibes_server/src/generated/protocol.dart' as _i3;
+    as _ihi7wpgt;
 
 abstract class ConversationPage
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   ConversationPage._({
     required this.conversations,
     this.nextCursor,
   });
 
   factory ConversationPage({
-    required List<_i2.ConversationSummary> conversations,
+    required List<_ihi7wpgt.ConversationSummary> conversations,
     String? nextCursor,
   }) = _ConversationPageImpl;
 
   factory ConversationPage.fromJson(Map<String, dynamic> jsonSerialization) {
     return ConversationPage(
-      conversations: _i3.Protocol().deserialize<List<_i2.ConversationSummary>>(
-        jsonSerialization['conversations'],
-      ),
+      conversations: _if5qez1k.Protocol()
+          .deserialize<List<_ihi7wpgt.ConversationSummary>>(
+            jsonSerialization['conversations'],
+          ),
       nextCursor: jsonSerialization['nextCursor'] as String?,
     );
   }
 
-  List<_i2.ConversationSummary> conversations;
+  List<_ihi7wpgt.ConversationSummary> conversations;
 
   String? nextCursor;
 
   /// Returns a shallow copy of this [ConversationPage]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   ConversationPage copyWith({
-    List<_i2.ConversationSummary>? conversations,
+    List<_ihi7wpgt.ConversationSummary>? conversations,
     String? nextCursor,
   });
   @override
@@ -69,7 +71,7 @@ abstract class ConversationPage
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -77,7 +79,7 @@ class _Undefined {}
 
 class _ConversationPageImpl extends ConversationPage {
   _ConversationPageImpl({
-    required List<_i2.ConversationSummary> conversations,
+    required List<_ihi7wpgt.ConversationSummary> conversations,
     String? nextCursor,
   }) : super._(
          conversations: conversations,
@@ -86,10 +88,10 @@ class _ConversationPageImpl extends ConversationPage {
 
   /// Returns a shallow copy of this [ConversationPage]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   ConversationPage copyWith({
-    List<_i2.ConversationSummary>? conversations,
+    List<_ihi7wpgt.ConversationSummary>? conversations,
     Object? nextCursor = _Undefined,
   }) {
     return ConversationPage(

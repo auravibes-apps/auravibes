@@ -56,9 +56,8 @@ void main() {
         createGroupRow(id: 'g1', name: 'Group 1'),
         createGroupRow(id: 'g2', name: 'Group 2'),
       ];
-      when(
-        () => mockDao.getToolsGroupsForWorkspace('ws-1'),
-      ).thenAnswer((_) async => rows);
+      when(() => mockDao.getToolsGroupsForWorkspace('ws-1'))
+          .thenAnswer((_) async => rows);
 
       final result = await repository.getToolsGroupsForWorkspace('ws-1');
 
@@ -70,9 +69,8 @@ void main() {
     });
 
     test('getToolsGroupsForWorkspace returns empty list', () async {
-      when(
-        () => mockDao.getToolsGroupsForWorkspace('ws-1'),
-      ).thenAnswer((_) async => []);
+      when(() => mockDao.getToolsGroupsForWorkspace('ws-1'))
+          .thenAnswer((_) async => []);
 
       final result = await repository.getToolsGroupsForWorkspace('ws-1');
 
@@ -93,9 +91,8 @@ void main() {
     });
 
     test('getToolsGroupById returns null when not found', () async {
-      when(
-        () => mockDao.getToolsGroupById('nonexistent'),
-      ).thenAnswer((_) async => null);
+      when(() => mockDao.getToolsGroupById('nonexistent'))
+          .thenAnswer((_) async => null);
 
       final result = await repository.getToolsGroupById('nonexistent');
 
@@ -104,9 +101,8 @@ void main() {
 
     test('getToolsGroupByMcpServerId returns entity when found', () async {
       final row = createGroupRow(id: 'g1', mcpServerId: 'mcp-1');
-      when(
-        () => mockDao.getToolsGroupByMcpServerId('mcp-1'),
-      ).thenAnswer((_) async => row);
+      when(() => mockDao.getToolsGroupByMcpServerId('mcp-1'))
+          .thenAnswer((_) async => row);
 
       final result = await repository.getToolsGroupByMcpServerId('mcp-1');
 
@@ -116,9 +112,8 @@ void main() {
     });
 
     test('getToolsGroupByMcpServerId returns null when not found', () async {
-      when(
-        () => mockDao.getToolsGroupByMcpServerId('nonexistent'),
-      ).thenAnswer((_) async => null);
+      when(() => mockDao.getToolsGroupByMcpServerId('nonexistent'))
+          .thenAnswer((_) async => null);
 
       final result = await repository.getToolsGroupByMcpServerId('nonexistent');
 
@@ -126,9 +121,8 @@ void main() {
     });
 
     test('setToolsGroupEnabled delegates to dao', () async {
-      when(
-        () => mockDao.setToolsGroupEnabled('g1', isEnabled: true),
-      ).thenAnswer((_) async => true);
+      when(() => mockDao.setToolsGroupEnabled('g1', isEnabled: true))
+          .thenAnswer((_) async => true);
 
       final result = await repository.setToolsGroupEnabled(
         'g1',
@@ -136,15 +130,13 @@ void main() {
       );
 
       expect(result, true);
-      verify(
-        () => mockDao.setToolsGroupEnabled('g1', isEnabled: true),
-      ).called(1);
+      verify(() => mockDao.setToolsGroupEnabled('g1', isEnabled: true))
+          .called(1);
     });
 
     test('setToolsGroupEnabled returns false when dao fails', () async {
-      when(
-        () => mockDao.setToolsGroupEnabled('g1', isEnabled: false),
-      ).thenAnswer((_) async => false);
+      when(() => mockDao.setToolsGroupEnabled('g1', isEnabled: false))
+          .thenAnswer((_) async => false);
 
       final result = await repository.setToolsGroupEnabled(
         'g1',
@@ -155,9 +147,8 @@ void main() {
     });
 
     test('deleteToolsGroup delegates to dao', () async {
-      when(
-        () => mockDao.deleteToolsGroupById('g1'),
-      ).thenAnswer((_) async => true);
+      when(() => mockDao.deleteToolsGroupById('g1'))
+          .thenAnswer((_) async => true);
 
       final result = await repository.deleteToolsGroup('g1');
 
@@ -166,9 +157,8 @@ void main() {
     });
 
     test('deleteToolsGroup returns false when not found', () async {
-      when(
-        () => mockDao.deleteToolsGroupById('nonexistent'),
-      ).thenAnswer((_) async => false);
+      when(() => mockDao.deleteToolsGroupById('nonexistent'))
+          .thenAnswer((_) async => false);
 
       final result = await repository.deleteToolsGroup('nonexistent');
 
@@ -201,10 +191,9 @@ void main() {
   });
 }
 
-class _TestAppDatabase extends AppDatabase {
-  _TestAppDatabase(this._toolsGroupsDao)
-    : super(connection: DatabaseConnection(NativeDatabase.memory()));
-  final ToolsGroupsDao _toolsGroupsDao;
+class _TestAppDatabase(final ToolsGroupsDao _toolsGroupsDao)
+    extends AppDatabase {
+  this : super(connection: DatabaseConnection(NativeDatabase.memory()));
 
   @override
   ToolsGroupsDao get toolsGroupsDao => _toolsGroupsDao;

@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class StartTurnResult implements _i1.SerializableModel {
+abstract class StartTurnResult
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   StartTurnResult._({
     required this.turnId,
     required this.userMessageId,
@@ -56,7 +57,7 @@ abstract class StartTurnResult implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [StartTurnResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   StartTurnResult copyWith({
     String? turnId,
     String? userMessageId,
@@ -79,8 +80,21 @@ abstract class StartTurnResult implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'StartTurnResult',
+      'turnId': turnId,
+      'userMessageId': userMessageId,
+      'assistantMessageId': assistantMessageId,
+      'acceptedSequence': acceptedSequence,
+      'turnRevision': turnRevision,
+      'status': status,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -103,7 +117,7 @@ class _StartTurnResultImpl extends StartTurnResult {
 
   /// Returns a shallow copy of this [StartTurnResult]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   StartTurnResult copyWith({
     String? turnId,

@@ -1,4 +1,4 @@
-import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
@@ -37,9 +37,7 @@ void main() {
     });
 
     test('merges output metadata before concatenating chunks', () {
-      final first = ChatResult<ChatMessage>(
-        output: ChatMessage.model('Hello'),
-      );
+      final first = ChatResult<ChatMessage>(output: ChatMessage.model('Hello'));
       final second = ChatResult<ChatMessage>(
         output: ChatMessage.model(
           ' world',

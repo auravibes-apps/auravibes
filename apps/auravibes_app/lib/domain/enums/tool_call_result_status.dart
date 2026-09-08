@@ -112,10 +112,8 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
 /// JSON converter for [ToolCallResultStatus].
 ///
 /// Converts the enum to/from snake_case strings for JSON serialization.
-class ToolCallResultStatusConverter
+class const ToolCallResultStatusConverter()
     implements JsonConverter<ToolCallResultStatus?, String?> {
-  const ToolCallResultStatusConverter();
-
   @override
   ToolCallResultStatus? fromJson(String? json) {
     if (json == null) return null;

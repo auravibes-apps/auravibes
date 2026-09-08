@@ -4,15 +4,19 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-class MarkdownEditorToolbar extends StatelessWidget {
-  const MarkdownEditorToolbar({
-    required this.controller,
-    required this.focusNode,
-    super.key,
-  });
+class const MarkdownEditorToolbar({
+  required final TextEditingController controller,
+  required final FocusNode focusNode,
+  super.key,
+}) extends StatelessWidget {
+  TextSelection get _safeSelection {
+    final selection = controller.selection;
+    if (selection.isValid) return selection;
 
-  final TextEditingController controller;
-  final FocusNode focusNode;
+    final length = controller.text.length;
+
+    return TextSelection.collapsed(offset: length);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +26,7 @@ class MarkdownEditorToolbar extends StatelessWidget {
         children: [
           _ToolbarButton(
             icon: Icons.format_bold,
-            label: LocaleKeys.markdown_editor_toolbar_bold.tr(
-              context: context,
-            ),
+            label: LocaleKeys.markdown_editor_toolbar_bold.tr(context: context),
             onPressed: () => _wrapSelection('**', '**'),
           ),
           _ToolbarButton(
@@ -50,9 +52,7 @@ class MarkdownEditorToolbar extends StatelessWidget {
           ),
           _ToolbarButton(
             icon: Icons.code,
-            label: LocaleKeys.markdown_editor_toolbar_code.tr(
-              context: context,
-            ),
+            label: LocaleKeys.markdown_editor_toolbar_code.tr(context: context),
             onPressed: _formatCode,
           ),
           _ToolbarButton(
@@ -131,28 +131,13 @@ class MarkdownEditorToolbar extends StatelessWidget {
       focusNode.requestFocus();
     }
   }
-
-  TextSelection get _safeSelection {
-    final selection = controller.selection;
-    if (selection.isValid) return selection;
-
-    final length = controller.text.length;
-
-    return TextSelection.collapsed(offset: length);
-  }
 }
 
-class _ToolbarButton extends StatelessWidget {
-  const _ToolbarButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-
+class const _ToolbarButton({
+  required final IconData icon,
+  required final String label,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExcludeFocus(

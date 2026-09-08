@@ -9,9 +9,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraText(child: Text(testText)),
-          ),
+          home: Scaffold(body: AuraText(child: Text(testText))),
         ),
       );
 

@@ -1,28 +1,23 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/agent_tools_repository.dart';
-import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_tool_override_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
 typedef ReadCloudAgentTools = Future<List<WorkspaceResource>> Function();
-typedef PatchCloudAgentTools =
-    Future<PatchWorkspaceStateResponse> Function({
-      required String requestId,
-      required List<WorkspacePatchOperation> operations,
-    });
+typedef PatchCloudAgentTools = Future<PatchWorkspaceStateResponse> Function({
+  required String requestId,
+  required List<WorkspacePatchOperation> operations,
+});
 
-class CloudAgentToolsRepository implements AgentToolsRepositoryContract {
-  const CloudAgentToolsRepository({required this.read, required this.patch});
-
-  final ReadCloudAgentTools read;
-  final PatchCloudAgentTools patch;
-
-  Map<String, dynamic> _data(WorkspaceResource resource) =>
-      CloudResourceMapper.decode(resource);
-
+class const CloudAgentToolsRepository({
+  required final ReadCloudAgentTools read,
+  required final PatchCloudAgentTools patch,
+}) implements AgentToolsRepositoryContract {
   @override
   Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId) async =>
       (await read())
@@ -111,4 +106,30 @@ class CloudAgentToolsRepository implements AgentToolsRepositoryContract {
 
     return true;
   }
+
+  Map<String, dynamic> _data(WorkspaceResource resource) =>
+      CloudResourceMapper.decode(resource);
+}
+
+CloudAgentToolsRepository cloudAgentToolsRepositoryFromStore({
+  required CloudWorkspaceResourceStore store,
+}) => CloudAgentToolsRepository(
+  patch: store.patch,
+  read: () => _readCloudAgentTools(store),
+);
+
+Future<List<WorkspaceResource>> _readCloudAgentTools(
+  CloudWorkspaceResourceStore store,
+) async {
+  final response = await store.read(
+    pages: [
+      WorkspaceResourcePageRequest(
+        resourceKind: WorkspaceResourceKind.agentAssociation,
+        limit: 100,
+      ),
+    ],
+  );
+  if (response.pages.isEmpty) return [];
+
+  return response.pages.single.resources;
 }

@@ -141,11 +141,7 @@ CancelableOperation<Object?> _search(
     stringListInput(input, 'excludeDomains'),
   );
   putIfPresent(body, 'after_date', stringInput(input, 'afterDate'));
-  putIfPresent(
-    body,
-    'max_age_seconds',
-    _maxAgeSecondsInput(input),
-  );
+  putIfPresent(body, 'max_age_seconds', _maxAgeSecondsInput(input));
   putIfPresent(
     body,
     'timeout_seconds',
@@ -199,10 +195,7 @@ CancelableOperation<Object?> _post(
   String tool,
   Map<String, Object?> body,
 ) {
-  return postJson(
-    context,
-    'https://api.parallel.ai/v1/$tool',
-    {'x-api-key': apiKey(input)},
-    body,
-  );
+  return postJson(context, 'https://api.parallel.ai/v1/$tool', {
+    'x-api-key': apiKey(input),
+  }, body);
 }

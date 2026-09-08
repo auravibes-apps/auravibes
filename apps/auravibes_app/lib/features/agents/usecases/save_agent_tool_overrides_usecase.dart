@@ -1,14 +1,12 @@
 // ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/agent_tools_repository.dart';
-import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_tool_override_entity.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class SaveAgentToolOverridesUsecase {
-  const SaveAgentToolOverridesUsecase(this._repository);
-
-  final AgentToolsRepositoryContract _repository;
-
+class const SaveAgentToolOverridesUsecase(
+  final AgentToolsRepositoryContract _repository,
+) {
   Future<void> call({
     required String agentId,
     required Map<String, AgentToolPermissionMode> permissionsByToolId,
@@ -44,10 +42,8 @@ class SaveAgentToolOverridesUsecase {
 
 final ProviderFamily<SaveAgentToolOverridesUsecase, String>
 saveAgentToolOverridesUsecaseProvider =
-    Provider.family<SaveAgentToolOverridesUsecase, String>(
-      (ref, workspaceId) {
-        return SaveAgentToolOverridesUsecase(
-          ref.watch(agentToolsRepositoryProvider(workspaceId)),
-        );
-      },
-    );
+    Provider.family<SaveAgentToolOverridesUsecase, String>((ref, workspaceId) {
+      return SaveAgentToolOverridesUsecase(
+        ref.watch(agentToolsRepositoryProvider(workspaceId)),
+      );
+    });

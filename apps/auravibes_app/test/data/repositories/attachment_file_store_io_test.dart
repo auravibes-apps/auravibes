@@ -44,7 +44,7 @@ void main() {
   });
 
   test('persistDraftFile copies draft file into support storage', () async {
-    final store = AttachmentFileStore();
+    const store = AttachmentFileStore();
     final draftDirectory = Directory(
       p.join(tempDirectory.path, 'chat_attachments_draft'),
     );
@@ -60,8 +60,40 @@ void main() {
     expect(draftFile.existsSync(), isTrue);
   });
 
+  test('persists namespaced drafts into namespaced support storage', () async {
+    const namespace = 'auravibes_app_0123456789abcdef';
+    const store = AttachmentFileStore(storageNamespace: namespace);
+    final draftDirectory = Directory(
+      p.join(tempDirectory.path, namespace, 'chat_attachments_draft'),
+    );
+    final _ = await draftDirectory.create(recursive: true);
+    final draftFile = File(p.join(draftDirectory.path, 'image.png'));
+    final _ = await draftFile.writeAsBytes([1, 2, 3]);
+
+    final persistedPath = await store.persistDraftFile(draftFile.path);
+
+    expect(
+      persistedPath,
+      startsWith(p.join(supportDirectory.path, namespace, 'chat_attachments')),
+    );
+  });
+
+  test('does not delete legacy files from namespaced storage', () async {
+    const namespace = 'auravibes_app_0123456789abcdef';
+    const store = AttachmentFileStore(storageNamespace: namespace);
+    final legacyDraft = File(
+      p.join(tempDirectory.path, 'chat_attachments_draft', 'legacy.png'),
+    );
+    final _ = await legacyDraft.parent.create(recursive: true);
+    final _ = await legacyDraft.writeAsBytes([1]);
+
+    await store.deleteFile(legacyDraft.path);
+
+    expect(legacyDraft.existsSync(), isTrue);
+  });
+
   test('persistDraftFile ignores files outside draft storage', () async {
-    final store = AttachmentFileStore();
+    const store = AttachmentFileStore();
     final outsideFile = File(p.join(tempDirectory.path, 'outside.png'));
     final _ = await outsideFile.writeAsBytes([1, 2, 3]);
 
@@ -75,7 +107,7 @@ void main() {
   });
 
   test('deleteFile removes only draft and support attachments', () async {
-    final store = AttachmentFileStore();
+    const store = AttachmentFileStore();
     final draftDirectory = Directory(
       p.join(tempDirectory.path, 'chat_attachments_draft'),
     );

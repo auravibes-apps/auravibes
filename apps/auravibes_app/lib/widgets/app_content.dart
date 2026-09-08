@@ -1,11 +1,8 @@
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 
-class AppContent extends StatelessWidget {
-  const AppContent({required this.child, super.key});
-
-  final Widget child;
-
+class const AppContent({required final Widget child, super.key})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(

@@ -6,21 +6,13 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 
-class EncryptedWorkspaceSecret {
-  const EncryptedWorkspaceSecret({
-    required this.ciphertext,
-    required this.nonce,
-    required this.authenticationTag,
-  });
+class const EncryptedWorkspaceSecret({
+  required final ByteData ciphertext,
+  required final ByteData nonce,
+  required final ByteData authenticationTag,
+});
 
-  final ByteData ciphertext;
-  final ByteData nonce;
-  final ByteData authenticationTag;
-}
-
-class WorkspaceSecretCipher {
-  const WorkspaceSecretCipher();
-
+class const WorkspaceSecretCipher() {
   Future<EncryptedWorkspaceSecret> encrypt(
     Session session,
     String value, {

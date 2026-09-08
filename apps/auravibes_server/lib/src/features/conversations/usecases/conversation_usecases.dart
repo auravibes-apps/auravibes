@@ -1,6 +1,11 @@
 import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show
+        A2uiChatContract,
+        a2uiChatFormSubmitActionName,
+        a2uiChatFormSubmitComponentId;
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -9,14 +14,14 @@ import '../../sync/stream/sync_wakeups.dart';
 import '../conversation_event_writer.dart';
 import '../domain/conversation_values.dart';
 import '../engine/conversation_host_effects.dart';
+import '../engine/a2ui_protocol.dart';
 
 import '../repositories/conversation_repository.dart' as conversation_repo;
 
-typedef ConversationJobPublisher =
-    Future<void> Function(
-      Session session,
-      ConversationJob job,
-    );
+typedef ConversationJobPublisher = Future<void> Function(
+  Session session,
+  ConversationJob job,
+);
 
 class ConversationUseCases {
   ConversationUseCases(
@@ -195,7 +200,14 @@ class ConversationUseCases {
         kind: message.kind,
         status: message.status,
         content: message.content,
-        metadataJson: message.metadataJson,
+        metadataJson: cloudA2uiMetadataForClient(
+          message.metadataJson,
+          cloudA2uiComponentsForClient(
+            request.a2uiSupportedComponents,
+            isChildConversation:
+                conversation.parentConversationStableId != null,
+          ),
+        ),
         toolCalls: [
           for (final call in calls[message.id] ?? const [])
             _toolCallView(call, turn!, messages),
@@ -546,8 +558,16 @@ class ConversationUseCases {
       turn: _turnView(turn, conversation.stableId, messages),
       messages: messages
           .map(
-            (message) =>
-                _messageView(message, conversation.stableId, turn.requestId),
+            (message) => _messageView(
+              message,
+              conversation.stableId,
+              turn.requestId,
+              a2uiSupportedComponents: cloudA2uiComponentsForClient(
+                request.a2uiSupportedComponents,
+                isChildConversation:
+                    conversation.parentConversationStableId != null,
+              ),
+            ),
           )
           .toList(),
       toolCalls: toolCalls
@@ -576,6 +596,7 @@ class ConversationUseCases {
       session,
       userId: userId,
       request: ListConversationMessagesRequest(
+        a2uiSupportedComponents: request.a2uiSupportedComponents,
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
         limit: 500,
@@ -676,6 +697,13 @@ class ConversationUseCases {
         request.attachmentIds.length > _maxAttachmentsPerTurn) {
       _fail(ConversationErrorCode.validationFailed);
     }
+    if (request.metadataJson != null &&
+        !isValidA2uiActionPayload(
+          request.metadataJson!,
+          conversationId: request.conversationId,
+        )) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
     final attachmentIds = request.attachmentIds.map(_parseObjectId).toSet();
     await ConversationEventWriter().write(
       session,
@@ -696,6 +724,18 @@ class ConversationUseCases {
             request.expectedProjectionRevision) {
           _fail(ConversationErrorCode.staleRevision);
         }
+        if (conversation.parentConversationStableId != null &&
+            request.metadataJson != null) {
+          _fail(ConversationErrorCode.validationFailed);
+        }
+        if (request.metadataJson case final metadata?) {
+          await _validateA2uiActionAssociation(
+            session,
+            transaction: transaction,
+            conversation: conversation,
+            metadataJson: metadata,
+          );
+        }
         final attachmentBytes = await _repository.attachmentBytes(
           session,
           workspaceId: request.workspaceId,
@@ -713,6 +753,7 @@ class ConversationUseCases {
           clientMessageId: request.clientMessageId,
           content: content,
           attachmentIds: attachmentIds.toList(),
+          metadataJson: request.metadataJson,
           now: now,
           transaction: transaction,
         );
@@ -723,6 +764,7 @@ class ConversationUseCases {
       session,
       userId: userId,
       request: GetConversationRequest(
+        a2uiSupportedComponents: request.a2uiSupportedComponents,
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
       ),
@@ -781,6 +823,7 @@ class ConversationUseCases {
       session,
       userId: userId,
       request: GetConversationRequest(
+        a2uiSupportedComponents: request.a2uiSupportedComponents,
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
       ),
@@ -858,6 +901,7 @@ class ConversationUseCases {
       session,
       userId: userId,
       request: GetConversationRequest(
+        a2uiSupportedComponents: request.a2uiSupportedComponents,
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
       ),
@@ -910,6 +954,7 @@ class ConversationUseCases {
         session,
         userId: userId,
         request: GetConversationRequest(
+          a2uiSupportedComponents: request.a2uiSupportedComponents,
           workspaceId: request.workspaceId,
           conversationId: request.conversationId,
         ),
@@ -980,7 +1025,9 @@ class ConversationUseCases {
             _fail(ConversationErrorCode.staleRevision);
           }
           if (conversation.executionState != 'idle' &&
-              conversation.executionState != ConversationStatuses.failed) {
+              conversation.executionState != ConversationStatuses.failed &&
+              conversation.executionState !=
+                  ConversationStatuses.awaitingUserAction) {
             _fail(ConversationErrorCode.turnConflict);
           }
           final pendingMessages = await _repository.listPendingMessages(
@@ -1096,6 +1143,7 @@ class ConversationUseCases {
                 userId,
                 executionId: execution.stableId,
                 parentTurnId: parentTurnId,
+                a2uiSupportedComponents: request.a2uiSupportedComponents,
               ),
               attempt: 0,
               maxAttempts: 3,
@@ -1116,6 +1164,7 @@ class ConversationUseCases {
         session,
         userId: userId,
         request: GetConversationRequest(
+          a2uiSupportedComponents: request.a2uiSupportedComponents,
           workspaceId: request.workspaceId,
           conversationId: request.conversationId,
         ),
@@ -1126,6 +1175,7 @@ class ConversationUseCases {
       session,
       userId: userId,
       request: GetConversationRequest(
+        a2uiSupportedComponents: request.a2uiSupportedComponents,
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
       ),
@@ -1241,6 +1291,7 @@ class ConversationUseCases {
       session,
       userId: userId,
       request: GetConversationRequest(
+        a2uiSupportedComponents: request.a2uiSupportedComponents,
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
       ),
@@ -1294,6 +1345,7 @@ class ConversationUseCases {
       session,
       userId: userId,
       request: GetConversationRequest(
+        a2uiSupportedComponents: request.a2uiSupportedComponents,
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
       ),
@@ -1347,6 +1399,7 @@ class ConversationUseCases {
       session,
       userId: userId,
       request: GetConversationRequest(
+        a2uiSupportedComponents: request.a2uiSupportedComponents,
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
       ),
@@ -1596,6 +1649,7 @@ class ConversationUseCases {
             payloadJson: conversation_repo.conversationTurnJobPayload(
               turn.initiatorUserId,
               executionId: execution?.stableId,
+              a2uiSupportedComponents: request.a2uiSupportedComponents,
               parentTurnId: execution == null
                   ? null
                   : conversation_repo
@@ -2240,8 +2294,9 @@ class ConversationUseCases {
   ConversationMessageView _messageView(
     ConversationMessage message,
     String conversationId,
-    String? turnId,
-  ) => ConversationMessageView(
+    String? turnId, {
+    required Set<String> a2uiSupportedComponents,
+  }) => ConversationMessageView(
     id: message.stableId,
     conversationId: conversationId,
     turnId: turnId,
@@ -2249,7 +2304,10 @@ class ConversationUseCases {
     kind: message.kind,
     status: message.status,
     content: message.content,
-    metadataJson: message.metadataJson,
+    metadataJson: cloudA2uiMetadataForClient(
+      message.metadataJson,
+      a2uiSupportedComponents,
+    ),
     toolCalls: const [],
     revision: message.revision,
     createdAt: message.createdAt,
@@ -2318,6 +2376,170 @@ class ConversationUseCases {
     if (agentId != null) _requireId(agentId);
   }
 
+  Future<void> _validateA2uiActionAssociation(
+    Session session, {
+    required Transaction transaction,
+    required Conversation conversation,
+    required String metadataJson,
+  }) async {
+    if (conversation.parentConversationStableId != null) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final decoded = _tryDecodeJson(metadataJson);
+    if (!A2uiChatContract.isValidAction(
+      decoded,
+      conversationId: conversation.stableId,
+    )) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final action = Map<String, Object?>.from(decoded as Map);
+    final turnId = action['turnId']! as String;
+    final assistantMessageId =
+        action['assistantMessageId'] as String? ?? turnId;
+    final surfaceId = action['surfaceId']! as String;
+    final assistant = await ConversationMessage.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(conversation.workspaceId) &
+          table.conversationId.equals(conversation.id) &
+          table.stableId.equals(assistantMessageId) &
+          table.role.equals('assistant'),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (assistant == null ||
+        assistant.status != ConversationStatuses.awaitingUserAction ||
+        assistant.stableId != assistantMessageId ||
+        assistant.stableId != turnId) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final existingUserMessages = await ConversationMessage.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(conversation.workspaceId) &
+          table.conversationId.equals(conversation.id) &
+          table.role.equals('user'),
+      transaction: transaction,
+    );
+    if (existingUserMessages.any(
+      (message) => _sameA2uiAction(
+        message.metadataJson == null
+            ? null
+            : _tryDecodeJson(message.metadataJson!),
+        action,
+      ),
+    )) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    if (!surfaceId.startsWith('$turnId:') ||
+        !_assistantOwnsA2uiComponent(assistant, action)) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+  }
+
+  bool _assistantOwnsA2uiComponent(
+    ConversationMessage assistant,
+    Map<String, Object?> action,
+  ) {
+    final metadata = assistant.metadataJson;
+    if (metadata == null) return false;
+    final decoded = jsonDecode(metadata);
+    if (decoded is! Map || decoded['a2uiMessages'] is! List) return false;
+    final surfaceId = action['surfaceId']! as String;
+    final prefix = '${assistant.stableId}:';
+    if (!surfaceId.startsWith(prefix)) return false;
+    final derivedWireSurfaceId = surfaceId.substring(prefix.length);
+    if (derivedWireSurfaceId.isEmpty) return false;
+    final suppliedWireSurfaceId = action['wireSurfaceId'] as String?;
+    if (suppliedWireSurfaceId != null &&
+        suppliedWireSurfaceId != derivedWireSurfaceId) {
+      return false;
+    }
+    final wireSurfaceId = suppliedWireSurfaceId ?? derivedWireSurfaceId;
+    final componentId = action['componentId']! as String;
+    var ownsRequiredFormSurface = false;
+    final formComponents = <String, Map<String, Object?>>{};
+    final issueMap = decoded['a2uiIssuesBySurface'];
+    if (issueMap is Map && issueMap[wireSurfaceId] is List) return false;
+    for (final payload
+        in (decoded['a2uiMessages'] as List).whereType<String>()) {
+      final value = _tryDecodeJson(payload);
+      if (value is! Map) continue;
+      final message = value['message'];
+      if (message is! Map) continue;
+      final interactionMode = value['interactionMode'];
+      for (final key in const [
+        'createSurface',
+        'updateComponents',
+        'updateDataModel',
+        'deleteSurface',
+      ]) {
+        final body = message[key];
+        if (body is! Map || body['surfaceId'] != wireSurfaceId) continue;
+        if (key == 'deleteSurface') return false;
+        if (key == 'createSurface' &&
+            body['catalogId'] == a2uiChatFormCatalogId &&
+            interactionMode == 'requiresUserAction') {
+          ownsRequiredFormSurface = true;
+        }
+        if (key == 'updateComponents') {
+          final components = body['components'];
+          if (components is! List) return false;
+          for (final component in components) {
+            if (component is! Map || component['id'] is! String) return false;
+            formComponents[component['id']! as String] =
+                Map<String, Object?>.from(component);
+          }
+        }
+      }
+    }
+    if (!ownsRequiredFormSurface ||
+        componentId != a2uiChatFormSubmitComponentId ||
+        action['actionName'] != a2uiChatFormSubmitActionName ||
+        action['answers'] is! Map) {
+      return false;
+    }
+    final answers = Map<String, Object?>.from(action['answers']! as Map);
+    final touchedPaths =
+        (action['touchedPaths'] as List?)?.whereType<String>().toList() ??
+        const <String>[];
+    if (touchedPaths.any((path) => !path.startsWith('/'))) return false;
+    final validation = A2uiChatContract.validateFormValues(
+      components: formComponents.values,
+      values: answers,
+      touchedPaths: touchedPaths,
+    );
+    final unanswered =
+        (action['unansweredPaths'] as List?)?.whereType<String>().toSet() ??
+        const <String>{};
+    return validation.isValid &&
+        unanswered.length == validation.unansweredPaths.length &&
+        unanswered.containsAll(validation.unansweredPaths);
+  }
+
+  bool _sameA2uiAction(Object? value, Map<String, Object?> action) {
+    if (value is! Map) return false;
+    const keys = [
+      'protocolVersion',
+      'conversationId',
+      'turnId',
+      'surfaceId',
+      'componentId',
+      'actionName',
+    ];
+    if (!keys.every((key) => value[key] == action[key])) return false;
+    return (value['assistantMessageId'] ?? value['turnId']) ==
+        (action['assistantMessageId'] ?? action['turnId']);
+  }
+
+  Object? _tryDecodeJson(String source) {
+    try {
+      return jsonDecode(source);
+    } on Object catch (_) {
+      return null;
+    }
+  }
+
   void _requireId(String value) {
     if (value.trim().isEmpty || value.length > 200) {
       _fail(ConversationErrorCode.validationFailed);
@@ -2344,21 +2566,15 @@ class ConversationUseCases {
       throw ConversationException(code: code);
 }
 
-class _ContinueConversationReplay {
-  const _ContinueConversationReplay();
-}
+class const _ContinueConversationReplay();
 
-class _ConversationCursor {
-  const _ConversationCursor(this.updatedAt, this.stableId);
+class const _ConversationCursor(
+  final DateTime updatedAt,
+  final String stableId,
+);
 
-  final DateTime updatedAt;
-  final String stableId;
-}
-
-class _Mutation<T> {
-  const _Mutation(this.value, this.operation, this.resourceId);
-
-  final T? value;
-  final String operation;
-  final String resourceId;
-}
+class const _Mutation<T>(
+  final T? value,
+  final String operation,
+  final String resourceId,
+);

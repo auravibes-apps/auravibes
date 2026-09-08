@@ -4,7 +4,7 @@
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
-import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -217,10 +217,7 @@ void main() {
 
       notifier.markSuccess('conv-1');
 
-      expect(
-        () => container.dispose(),
-        returnsNormally,
-      );
+      expect(() => container.dispose(), returnsNormally);
     });
 
     test('markSuccessCleanup removes entry when status is success', () {

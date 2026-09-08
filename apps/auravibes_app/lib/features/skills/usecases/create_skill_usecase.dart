@@ -8,14 +8,12 @@ import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usec
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class CreateSkillUsecase {
-  const CreateSkillUsecase(this._skillsRepository, {this.cloudStore});
-
-  final SkillsRepository? _skillsRepository;
-  final CloudSkillStore? cloudStore;
-
+class const CreateSkillUsecase(
+  final SkillsRepository? _skillsRepository, {
+  final CloudSkillStore? cloudStore,
+}) {
   Future<SkillEntity> call(String workspaceId, SkillToCreate skill) async {
-    validateSkillTitle(skill.title);
+    ValidateSkillTitleUsecase.call(skill.title);
     final cloud = cloudStore;
     final cloudSkills = cloud == null ? null : await cloud.skills();
     final existingTitle =
@@ -42,22 +40,20 @@ class CreateSkillUsecase {
       );
     }
 
-    if (cloud != null) return cloud.createSkill(skill);
+    if (cloud != null) return await cloud.createSkill(skill);
     final repository = _skillsRepository;
     if (repository == null) throw StateError('Skill store is unavailable');
 
-    return repository.createSkill(workspaceId, skill);
+    return await repository.createSkill(workspaceId, skill);
   }
 }
 
 final ProviderFamily<CreateSkillUsecase, String> createSkillUsecaseProvider =
-    Provider.family<CreateSkillUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<CreateSkillUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return CreateSkillUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloudStore: cloud,
-        );
-      },
-    );
+      return CreateSkillUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloudStore: cloud,
+      );
+    });

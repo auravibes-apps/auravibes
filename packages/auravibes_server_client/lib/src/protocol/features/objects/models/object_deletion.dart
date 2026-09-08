@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class ObjectDeletion implements _i1.SerializableModel {
+abstract class ObjectDeletion
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ObjectDeletion._({
     this.id,
     required this.workspaceId,
@@ -49,16 +50,16 @@ abstract class ObjectDeletion implements _i1.SerializableModel {
       objectKey: jsonSerialization['objectKey'] as String,
       requestId: jsonSerialization['requestId'] as String,
       expectedRevision: jsonSerialization['expectedRevision'] as int,
-      requestedAt: _i1.DateTimeJsonExtension.fromJson(
+      requestedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['requestedAt'],
       ),
       completedAt: jsonSerialization['completedAt'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _isc.DateTimeJsonExtension.fromJson(
               jsonSerialization['completedAt'],
             ),
       attempts: jsonSerialization['attempts'] as int,
-      availableAt: _i1.DateTimeJsonExtension.fromJson(
+      availableAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['availableAt'],
       ),
       lastError: jsonSerialization['lastError'] as String?,
@@ -92,7 +93,7 @@ abstract class ObjectDeletion implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ObjectDeletion]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ObjectDeletion copyWith({
     int? id,
     int? workspaceId,
@@ -125,8 +126,26 @@ abstract class ObjectDeletion implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ObjectDeletion',
+      if (id != null) 'id': id,
+      'workspaceId': workspaceId,
+      'objectId': objectId,
+      'objectKey': objectKey,
+      'requestId': requestId,
+      'expectedRevision': expectedRevision,
+      'requestedAt': requestedAt.toJson(),
+      if (completedAt != null) 'completedAt': completedAt?.toJson(),
+      'attempts': attempts,
+      'availableAt': availableAt.toJson(),
+      if (lastError != null) 'lastError': lastError,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -161,7 +180,7 @@ class _ObjectDeletionImpl extends ObjectDeletion {
 
   /// Returns a shallow copy of this [ObjectDeletion]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ObjectDeletion copyWith({
     Object? id = _Undefined,

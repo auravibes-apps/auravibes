@@ -14,10 +14,7 @@ void main() {
     });
 
     test('does not accept delivered in domain status parser', () {
-      expect(
-        () => MessageStatus.fromString('delivered'),
-        throwsArgumentError,
-      );
+      expect(() => MessageStatus.fromString('delivered'), throwsArgumentError);
     });
 
     test('does not accept delivered in table status parser', () {

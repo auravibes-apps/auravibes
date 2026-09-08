@@ -17,11 +17,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class CloudAccountsScreen extends ConsumerWidget {
-  const CloudAccountsScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const CloudAccountsScreen({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accountsAsync = ref.watch(cloudAccountsProvider);
@@ -54,20 +51,16 @@ class CloudAccountsScreen extends ConsumerWidget {
   }
 }
 
-class _AccountList extends ConsumerWidget {
-  const _AccountList({required this.accounts, required this.workspaceId});
-
-  final List<CloudAccountSession> accounts;
-  final String workspaceId;
-
+class const _AccountList({
+  required final List<CloudAccountSession> accounts,
+  required final String workspaceId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraColumn(
       children: [
         if (accounts.isEmpty)
-          const AuraText(
-            child: TextLocale(LocaleKeys.cloud_accounts_empty),
-          ),
+          const AuraText(child: TextLocale(LocaleKeys.cloud_accounts_empty)),
         AuraButton(
           onPressed: () => context.go(
             CloudAccountAddRoute(workspaceId: workspaceId).location,
@@ -109,7 +102,7 @@ class _AccountList extends ConsumerWidget {
     WidgetRef ref,
     CloudAccountSession account,
   ) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.cloud_accounts_remove_title),
       message: Column(
@@ -138,20 +131,17 @@ class _AccountList extends ConsumerWidget {
         .read(workspaceRepositoryProvider)
         .getWorkspaceById(workspaceId);
 
-    await cloudAccountMutation.run(ref, (_) async {
+    await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
       await ref
           .read(cloudAccountUseCasesProvider)
-          .remove(
-            serverUrl: account.serverUrl,
-            userId: account.userId,
-          );
+          .remove(serverUrl: account.serverUrl, userId: account.userId);
       ref
         ..invalidate(cloudAccountsProvider)
         ..invalidate(allWorkspacesProvider);
     });
     if (!context.mounted ||
         activeWorkspace?.cloudAccountId != account.userId ||
-        ref.read(cloudAccountMutation) is MutationError) {
+        ref.read(WorkspaceManagementMutations.cloudAccount) is MutationError) {
       return;
     }
 

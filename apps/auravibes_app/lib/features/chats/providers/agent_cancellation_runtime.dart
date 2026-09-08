@@ -4,7 +4,10 @@ import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
-extension AgentCancellationRuntimeSubscriptions on AgentCancellationRuntime {
+class AgentCancellationRuntime implements AgentCancellationEffects {
+  final _entries = <String, AgentCancellationScope>{};
+  final _pendingStops = <String>{};
+
   void registerStreamSubscription<T>(
     String conversationId,
     StreamSubscription<T> subscription,
@@ -18,11 +21,6 @@ extension AgentCancellationRuntimeSubscriptions on AgentCancellationRuntime {
   ) {
     current(conversationId)?.registerCleanup(operation.cancel);
   }
-}
-
-class AgentCancellationRuntime implements AgentCancellationEffects {
-  final _entries = <String, AgentCancellationScope>{};
-  final _pendingStops = <String>{};
 
   @override
   AgentCancellationScope start(String conversationId) {
@@ -142,9 +140,8 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
   }
 
   @override
-  Set<String> childrenOf(String parentId) => Set.unmodifiable(
-    state[parentId] ?? const <String>{},
-  );
+  Set<String> childrenOf(String parentId) =>
+      Set.unmodifiable(state[parentId] ?? const <String>{});
 
   @override
   String? parentOf(String childId) {
@@ -169,13 +166,11 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
 }
 
-class _AppSubAgentRequestHandle implements SubAgentRequestHandle {
-  const _AppSubAgentRequestHandle(this._runtime, this._parentId, this._childId);
-
-  final ActiveSubAgentRuntime _runtime;
-  final String _parentId;
-  final String _childId;
-
+class const _AppSubAgentRequestHandle(
+  final ActiveSubAgentRuntime _runtime,
+  final String _parentId,
+  final String _childId,
+) implements SubAgentRequestHandle {
   @override
   Future<SubAgentCompletionStatus> get completion =>
       _runtime.waitForCompletion(_childId);

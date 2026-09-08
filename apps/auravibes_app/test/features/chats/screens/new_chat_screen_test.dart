@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
+import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -27,9 +27,7 @@ Future<void> _pumpNewChatWithinPausedBranch(
           enabled: tickerEnabled,
           child: Theme(
             data: ThemeData(extensions: [AuraTheme.light]),
-            child: const Portal(
-              child: NewChatScreen(workspaceId: 'test-ws'),
-            ),
+            child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
           ),
         ),
         overrides: overrides,
@@ -142,9 +140,7 @@ void main() {
 
     testWidgets(
       'renders unavailable New Chat for an unauthenticated workspace',
-      (
-        tester,
-      ) async {
+      (tester) async {
         await _pumpNewChatWithinPausedBranch(
           tester,
           overrides: [
@@ -187,9 +183,7 @@ void main() {
           TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
-              child: const Portal(
-                child: NewChatScreen(workspaceId: 'test-ws'),
-              ),
+              child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
             ),
             overrides: _newChatOverrides(),
             workspaceId: 'test-ws',
@@ -216,9 +210,7 @@ void main() {
           TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
-              child: const Portal(
-                child: NewChatScreen(workspaceId: 'test-ws'),
-              ),
+              child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
             ),
             overrides: _newChatOverrides(
               state: const NewChatState(isLoading: true),

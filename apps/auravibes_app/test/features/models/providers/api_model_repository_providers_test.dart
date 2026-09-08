@@ -4,20 +4,19 @@ import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/models/services/model_sync_service.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
-import 'package:auravibes_app/services/model_sync_service.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _FakeApiModelRepository implements ApiModelRepository {
-  _FakeApiModelRepository({this.providers = const [], this.models = const []});
-  final List<ApiModelProviderEntity> providers;
-  final List<ApiModelEntity> models;
-
+class _FakeApiModelRepository({
+  final List<ApiModelProviderEntity> providers = const [],
+  final List<ApiModelEntity> models = const [],
+}) implements ApiModelRepository {
   @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async => providers;
 
@@ -35,9 +34,7 @@ class _FakeApiModelRepository implements ApiModelRepository {
     String modelId,
   ) async {
     return models
-        .where(
-          (m) => m.modelProvider == providerId && m.id == modelId,
-        )
+        .where((m) => m.modelProvider == providerId && m.id == modelId)
         .firstOrNull;
   }
 
@@ -95,9 +92,7 @@ void main() {
     test('returns ApiModelRepository from container', () {
       final repo = _FakeApiModelRepository();
       final container = ProviderContainer(
-        overrides: [
-          apiModelRepositoryProvider.overrideWithValue(repo),
-        ],
+        overrides: [apiModelRepositoryProvider.overrideWithValue(repo)],
       );
       addTearDown(container.dispose);
 
@@ -112,9 +107,7 @@ void main() {
       addTearDown(database.close);
 
       final container = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(database),
-        ],
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
       );
       addTearDown(container.dispose);
 
@@ -158,7 +151,7 @@ void main() {
         apiModelProvidersProvider(workspaceId: 'workspace').future,
       );
       expect(result.map((provider) => provider.id), [
-        if (openAICodexClientId.isNotEmpty) 'openai-codex',
+        if (ModelProviderOAuthProfiles.clientId.isNotEmpty) 'openai-codex',
         'openai',
       ]);
     });

@@ -8,10 +8,9 @@ part 'skill_credentials_dao.g.dart';
 final _logger = Logger('dao:skill_credentials');
 
 @DriftAccessor(tables: [ServiceConnections])
-class SkillCredentialsDao extends DatabaseAccessor<AppDatabase>
+class SkillCredentialsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$SkillCredentialsDaoMixin {
-  SkillCredentialsDao(super.attachedDatabase);
-
   Future<List<ServiceConnectionTable>> getCredentialsForDefinition({
     required String workspaceId,
     required String credentialDefinitionId,

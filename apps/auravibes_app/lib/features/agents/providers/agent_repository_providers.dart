@@ -1,12 +1,13 @@
 // ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/agent_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/agents_repository.dart';
+import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_repository.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_tools_repository.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/providers/provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -19,89 +20,42 @@ AgentsRepository agentsRepository(Ref ref) {
 }
 
 final ProviderFamily<AgentRepository, String> agentRepositoryProvider =
-    Provider.family<AgentRepository, String>(
-      (ref, workspaceId) {
-        final session = ref
-            .watch(
-              workspaceSessionForRouteProvider(workspaceId),
-            )
-            .requireValue;
-        if (session.cloud == null) {
-          return ref.watch(agentsRepositoryProvider);
-        }
-        final gateway = ref.watch(
-          cloudWorkspaceStateGatewayProvider(session).future,
-        );
+    Provider.family<AgentRepository, String>((ref, workspaceId) {
+      final session = ref
+          .watch(workspaceSessionForRouteProvider(workspaceId))
+          .requireValue;
+      if (session.cloud == null) {
+        return ref.watch(agentsRepositoryProvider);
+      }
+      final store = CloudWorkspaceResourceStore.deferred(
+        ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
+      );
 
-        return CloudAgentRepository(
-          workspaceId: session.workspace.localWorkspaceId,
-          read: () async {
-            final cloud = await gateway;
-            if (cloud == null) return const [];
-            final response = await cloud.read(
-              pages: [
-                WorkspaceResourcePageRequest(
-                  resourceKind: WorkspaceResourceKind.agent,
-                  limit: 100,
-                ),
-                WorkspaceResourcePageRequest(
-                  resourceKind: WorkspaceResourceKind.agentAssociation,
-                  limit: 100,
-                ),
-              ],
-            );
-
-            return response.pages.expand((page) => page.resources).toList();
-          },
-          patch: ({required requestId, required operations}) async {
-            final cloud = await gateway;
-            if (cloud == null) {
-              throw StateError('Cloud workspace gateway unavailable');
-            }
-
-            return cloud.patch(requestId: requestId, operations: operations);
-          },
-        );
-      },
-    );
+      return cloudAgentRepositoryFromStore(
+        workspaceId: session.workspace.localWorkspaceId,
+        store: store,
+      );
+    });
 
 @riverpod
 AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
   final session = ref
-      .watch(
-        workspaceSessionForRouteProvider(workspaceId),
-      )
+      .watch(workspaceSessionForRouteProvider(workspaceId))
       .requireValue;
   if (session.cloud != null) {
-    return CloudAgentToolsRepository(
-      read: () async {
-        final cloud = await ref.read(
-          cloudWorkspaceStateGatewayProvider(session).future,
-        );
-        if (cloud == null) return const [];
-        final response = await cloud.read(
-          pages: [
-            WorkspaceResourcePageRequest(
-              resourceKind: .agentAssociation,
-              limit: 100,
-            ),
-          ],
-        );
-
-        return response.pages.single.resources;
-      },
-      patch: ({required requestId, required operations}) async {
-        final cloud = await ref.read(
-          cloudWorkspaceStateGatewayProvider(session).future,
-        );
-        if (cloud == null) {
-          throw StateError('Cloud workspace gateway unavailable');
-        }
-
-        return cloud.patch(requestId: requestId, operations: operations);
-      },
+    final store = CloudWorkspaceResourceStore.deferred(
+      ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
     );
+
+    return cloudAgentToolsRepositoryFromStore(store: store);
   }
 
   return AgentToolsRepository(ref.watch(appDatabaseProvider));
 }
+
+// ignore: specify_nonobvious_property_types - Riverpod family type is verbose.
+final agentsProvider = StreamProvider.family<List<AgentEntity>, String>(
+  (ref, workspaceId) => ref
+      .watch(agentRepositoryProvider(workspaceId))
+      .watchAgentsByWorkspace(workspaceId),
+);

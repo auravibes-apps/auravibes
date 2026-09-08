@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+
 import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -9,25 +10,22 @@ import '../../workspaces/domain/workspace_roles.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../repositories/codex_oauth_repository.dart';
 
-typedef CodexTokenExchange =
-    Future<Map<String, Object?>> Function(
-      String code,
-      String redirectUri,
-      String verifier,
-    );
+typedef CodexTokenExchange = Future<Map<String, Object?>> Function(
+  String code,
+  String redirectUri,
+  String verifier,
+);
 
-class CodexOAuthUseCases {
-  CodexOAuthUseCases(this._repository, {this._exchange});
-
+class CodexOAuthUseCases(
+  final CodexOAuthRepository _repository, {
+  final CodexTokenExchange? _exchange,
+}) {
   static const authorizationEndpoint =
       'https://auth.openai.com/oauth/authorize';
   static const tokenEndpoint = 'https://auth.openai.com/oauth/token';
   static const scopes =
       'openid profile email offline_access api.connectors.read api.connectors.invoke';
   static const lifetime = Duration(minutes: 10);
-  final CodexOAuthRepository _repository;
-  final CodexTokenExchange? _exchange;
-
   Future<StartCodexOAuthResult> start(
     Session session, {
     required String userId,

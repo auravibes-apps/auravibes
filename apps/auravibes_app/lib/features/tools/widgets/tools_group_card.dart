@@ -21,28 +21,20 @@ const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
 
 /// A collapsible card widget that displays a tools group.
 ///
-/// Shows:
-/// - Group header with icon, name, status, toggle, and expand chevron
-/// - Expandable list of tools belonging to this group
-/// - MCP status indicators and reconnect/delete actions for MCP groups
-class ToolsGroupCard extends HookConsumerWidget {
-  const ToolsGroupCard({
-    required this.groupWithTools,
-    required this.workspaceId,
-    super.key,
-  });
-
-  final ToolsGroupWithTools groupWithTools;
-  final String workspaceId;
-
+/// Shows a group header with icon, name, status, toggle, and expand chevron;
+/// an expandable list of tools; and MCP status indicators with reconnect and
+/// delete actions for MCP groups.
+class const ToolsGroupCard({
+  required final ToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpanded = useState(false);
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: context.auraTheme.fromSpacing(.md),
-      ),
+      padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.md)),
       child: AuraCard(
         child: AuraColumn(
           children: [
@@ -92,10 +84,7 @@ class ToolsGroupCard extends HookConsumerWidget {
 
     ref
         .read(groupedToolsProvider(workspaceId).notifier)
-        .setMcpGroupEnabled(
-          group.id,
-          isEnabled: enabled,
-        );
+        .setMcpGroupEnabled(group.id, isEnabled: enabled);
   }
 
   Future<void> _handleReconnect(WidgetRef ref) async {
@@ -104,16 +93,14 @@ class ToolsGroupCard extends HookConsumerWidget {
 
     await ref
         .read(groupedToolsProvider(workspaceId).notifier)
-        .reconnectMcp(
-          mcpServerId,
-        );
+        .reconnectMcp(mcpServerId);
   }
 
   Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
     final group = groupWithTools.group;
     if (group == null) return;
 
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: Text(_kDeleteMcpTitle.tr()),
       message: Text(_kDeleteMcpConfirm.tr()),
@@ -127,14 +114,12 @@ class ToolsGroupCard extends HookConsumerWidget {
     if (confirmed ?? false) {
       await ref
           .read(groupedToolsProvider(workspaceId).notifier)
-          .deleteMcpGroup(
-            group.id,
-          );
+          .deleteMcpGroup(group.id);
     }
   }
 
   void _showErrorDetails(BuildContext context) {
-    showAuraAlertDialog(
+    AuraDialogs.alert(
       context: context,
       title: Text(_kDeleteMcpTitle.tr()),
       message: AuraSelectableText(
@@ -146,12 +131,10 @@ class ToolsGroupCard extends HookConsumerWidget {
 }
 
 /// List of tools within a group.
-class _ToolsList extends StatelessWidget {
-  const _ToolsList({required this.groupWithTools, required this.workspaceId});
-
-  final ToolsGroupWithTools groupWithTools;
-  final String workspaceId;
-
+class const _ToolsList({
+  required final ToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groupWithTools.tools.isEmpty) {

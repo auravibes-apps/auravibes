@@ -11,9 +11,7 @@ import 'package:riverpod/riverpod.dart';
 
 QueryExecutor _testConnection() => DatabaseConnection.delayed(
   Future(
-    () => DatabaseConnection(
-      LazyDatabase(() async => NativeDatabase.memory()),
-    ),
+    () => DatabaseConnection(LazyDatabase(() async => NativeDatabase.memory())),
   ),
 );
 
@@ -41,9 +39,7 @@ void main() {
               ),
             ),
           ),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
+          encryptionServiceProvider.overrideWithValue(_FakeEncryptionService()),
         ],
       );
       addTearDown(container.dispose);
@@ -64,9 +60,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final result = container.read(
-        workspaceModelSelectionRepositoryProvider,
-      );
+      final result = container.read(workspaceModelSelectionRepositoryProvider);
       expect(result, isA<WorkspaceModelSelectionRepository>());
     });
   });

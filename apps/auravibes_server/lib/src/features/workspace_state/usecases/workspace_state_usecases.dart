@@ -10,16 +10,12 @@ import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
 
-class WorkspaceStateUseCases {
-  WorkspaceStateUseCases(this._repository);
-
+class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
   static const _maxPageSize = 100;
   static const _maxOperations = 50;
   static const _endpointPatch = 'workspaceState.patch';
   static const _endpointSecret = 'workspaceSecret.put';
   static const _endpointCredentialMutation = 'workspaceState.mutateCredential';
-  final WorkspaceStateRepository _repository;
-
   Future<ReadWorkspaceStateResponse> read(
     Session session, {
     required String userId,
@@ -885,12 +881,11 @@ class WorkspaceStateUseCases {
         ? <String, String>{}
         : Map<String, String>.from(
             jsonDecode(
-                  await const WorkspaceSecretCipher().decrypt(
-                    session,
-                    existing,
-                  ),
-                )
-                as Map,
+              await const WorkspaceSecretCipher().decrypt(
+                session,
+                existing,
+              ),
+            ) as Map,
           );
     merged.addAll(decoded.set);
     for (final key in decoded.clear) {

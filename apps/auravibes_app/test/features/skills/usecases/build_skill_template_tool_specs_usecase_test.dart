@@ -6,10 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _TemplateToolsRepository extends Mock
-    implements SkillTemplateToolsRepository {}
+    implements SkillTemplateToolsRepository;
 
-class _CredentialsRepository extends Mock
-    implements SkillCredentialsRepository {}
+class _CredentialsRepository extends Mock implements SkillCredentialsRepository;
 
 void main() {
   test('cloud template specs never load local skills', () async {

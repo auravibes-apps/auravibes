@@ -1,16 +1,10 @@
 import 'dart:convert';
 
-class SkillTemplateInputDefinition {
-  const SkillTemplateInputDefinition({
-    required this.description,
-    this.type = 'string',
-    this.optional = false,
-  });
-
-  final String description;
-  final String type;
-  final bool optional;
-
+class const SkillTemplateInputDefinition({
+  required final String description,
+  final String type = 'string',
+  final bool optional = false,
+}) {
   static Map<String, SkillTemplateInputDefinition> parseMap(String value) {
     final decoded = jsonDecode(value);
     if (decoded is! Map) {

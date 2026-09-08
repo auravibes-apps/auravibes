@@ -39,7 +39,7 @@ Important columns:
 
 Secret payloads are represented by
 `ServiceConnectionSecret` in
-`apps/auravibes_app/lib/domain/entities/service_connection_auth.dart`.
+`apps/auravibes_app/lib/domain/entities/service_connection_auth_status.dart`.
 
 Current secret variants:
 
