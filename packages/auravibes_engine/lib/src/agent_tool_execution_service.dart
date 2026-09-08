@@ -273,7 +273,7 @@ class const AgentToolExecutionService<TTool extends Object>({
         responseRaw: result.responseRaw,
       );
     } on Object catch (error, stackTrace) {
-      _logExecutionError(
+      provider.logToolExecutionError(
         conversationId: conversationId,
         toolCallId: toolToCall.id,
         tool: toolToCall.tool,
@@ -290,19 +290,4 @@ class const AgentToolExecutionService<TTool extends Object>({
     }
   }
 
-  void _logExecutionError({
-    required String conversationId,
-    required String toolCallId,
-    required TTool tool,
-    required Object error,
-    required StackTrace stackTrace,
-  }) {
-    provider.logToolExecutionError(
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      tool: tool,
-      error: error,
-      stackTrace: stackTrace,
-    );
-  }
 }
