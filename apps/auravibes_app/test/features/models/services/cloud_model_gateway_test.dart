@@ -1,11 +1,12 @@
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
+import 'package:auravibes_app/features/models/usecases/cloud_model_connection_usecases.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('uses the feature-local create callback', () async {
+  test('merges provider secret state after create', () async {
     final gateway = CloudModelGateway.forTesting(
       stateGateway: _stateGateway(),
       create: (request) async => ModelConnectionView(
@@ -19,13 +20,13 @@ void main() {
       ),
     );
 
-    final connection = await gateway.createModelConnection(
-      connectionId: 'connection',
+    final connection = await CloudModelConnectionUsecases(gateway).create(
+      id: 'connection',
       name: 'OpenAI',
       providerId: 'openai',
+      secret: 'secret',
     );
-
-    expect(connection.id, 'connection');
+    expect(connection.hasSecret, isTrue);
   });
 }
 
@@ -39,4 +40,9 @@ CloudWorkspaceStateGateway _stateGateway() =>
       ),
       readState: (_) => throw UnimplementedError(),
       subscribe: (_) => const Stream.empty(),
+      putSecret: (_) async => PutWorkspaceSecretResponse(
+        configured: true,
+        revision: 1,
+        sequence: 1,
+      ),
     );

@@ -17,14 +17,14 @@ class const CloudModelConnectionUsecases(final CloudModelGateway _gateway) {
     String? secret,
     String? url,
   }) => _withSecret(
-    connection: _gateway.createModelConnection(
+    _gateway.createModelConnection(
       connectionId: id,
       name: name,
       providerId: providerId,
       url: url,
     ),
-    resourceId: id,
-    secret: secret,
+    id,
+    secret,
   );
 
   Future<ModelSyncResult> testAndSync(String connectionId) =>
@@ -36,14 +36,14 @@ class const CloudModelConnectionUsecases(final CloudModelGateway _gateway) {
     required String? url,
     String? secret,
   }) => _withSecret(
-    connection: _gateway.updateModelConnection(
+    _gateway.updateModelConnection(
       connectionId: connection.id,
       expectedRevision: connection.revision,
       name: name,
       url: url,
     ),
-    resourceId: connection.id,
-    secret: secret,
+    connection.id,
+    secret,
   );
 
   Future<void> delete(CloudModelConnection connection) =>
@@ -52,27 +52,24 @@ class const CloudModelConnectionUsecases(final CloudModelGateway _gateway) {
         expectedRevision: connection.revision,
       );
 
-  Future<ModelConnectionView> _withSecret({
-    required Future<ModelConnectionView> connection,
-    required String resourceId,
-    required String? secret,
-  }) async {
+  Future<ModelConnectionView> _withSecret(
+    Future<ModelConnectionView> connection,
+    String resourceId,
+    String? secret,
+  ) async {
     final resolvedConnection = await connection;
-    if (secret case final value?) {
-      final secretState = await _gateway.putSecret(
-        requestId: const Uuid().v4(),
-        secretKind: WorkspaceSecretKind.provider,
-        scope: WorkspaceSecretScope.workspace,
-        resourceId: resourceId,
-        secret: value,
-      );
+    if (secret == null) return resolvedConnection;
+    final secretState = await _gateway.putSecret(
+      requestId: const Uuid().v4(),
+      secretKind: WorkspaceSecretKind.provider,
+      scope: WorkspaceSecretScope.workspace,
+      resourceId: resourceId,
+      secret: secret,
+    );
 
-      return resolvedConnection.copyWith(
-        hasSecret: secretState.configured,
-        keySuffix: secretState.displaySuffix,
-      );
-    }
-
-    return resolvedConnection;
+    return resolvedConnection.copyWith(
+      hasSecret: secretState.configured,
+      keySuffix: secretState.displaySuffix,
+    );
   }
 }
