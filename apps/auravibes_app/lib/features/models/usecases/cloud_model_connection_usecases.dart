@@ -16,30 +16,16 @@ class const CloudModelConnectionUsecases(final CloudModelGateway _gateway) {
     required String providerId,
     String? secret,
     String? url,
-  }) async {
-    final connection = await _gateway.createModelConnection(
+  }) => _withSecret(
+    connection: _gateway.createModelConnection(
       connectionId: id,
       name: name,
       providerId: providerId,
       url: url,
-    );
-    if (secret case final value?) {
-      final secretState = await _gateway.putSecret(
-        requestId: const Uuid().v4(),
-        secretKind: WorkspaceSecretKind.provider,
-        scope: WorkspaceSecretScope.workspace,
-        resourceId: id,
-        secret: value,
-      );
-
-      return connection.copyWith(
-        hasSecret: secretState.configured,
-        keySuffix: secretState.displaySuffix,
-      );
-    }
-
-    return connection;
-  }
+    ),
+    resourceId: id,
+    secret: secret,
+  );
 
   Future<ModelSyncResult> testAndSync(String connectionId) =>
       _gateway.testAndSyncModelConnection(connectionId: connectionId);
@@ -49,34 +35,44 @@ class const CloudModelConnectionUsecases(final CloudModelGateway _gateway) {
     required String name,
     required String? url,
     String? secret,
-  }) async {
-    final updated = await _gateway.updateModelConnection(
+  }) => _withSecret(
+    connection: _gateway.updateModelConnection(
       connectionId: connection.id,
       expectedRevision: connection.revision,
       name: name,
       url: url,
-    );
-    if (secret case final value?) {
-      final secretState = await _gateway.putSecret(
-        requestId: const Uuid().v4(),
-        secretKind: WorkspaceSecretKind.provider,
-        scope: WorkspaceSecretScope.workspace,
-        resourceId: connection.id,
-        secret: value,
-      );
-
-      return updated.copyWith(
-        hasSecret: secretState.configured,
-        keySuffix: secretState.displaySuffix,
-      );
-    }
-
-    return updated;
-  }
+    ),
+    resourceId: connection.id,
+    secret: secret,
+  );
 
   Future<void> delete(CloudModelConnection connection) =>
       _gateway.deleteModelConnection(
         connectionId: connection.id,
         expectedRevision: connection.revision,
       );
+
+  Future<ModelConnectionView> _withSecret({
+    required Future<ModelConnectionView> connection,
+    required String resourceId,
+    required String? secret,
+  }) async {
+    final resolvedConnection = await connection;
+    if (secret case final value?) {
+      final secretState = await _gateway.putSecret(
+        requestId: const Uuid().v4(),
+        secretKind: WorkspaceSecretKind.provider,
+        scope: WorkspaceSecretScope.workspace,
+        resourceId: resourceId,
+        secret: value,
+      );
+
+      return resolvedConnection.copyWith(
+        hasSecret: secretState.configured,
+        keySuffix: secretState.displaySuffix,
+      );
+    }
+
+    return resolvedConnection;
+  }
 }
