@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/services/codex_input_modalities.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
+import 'package:auravibes_app/utils/stream_provider_value.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -161,32 +162,11 @@ WorkspaceModelSelectionWithConnectionEntity _withCodexProjection(
 /// Returns a map where keys are credential-backed connection ids.
 @riverpod
 Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>
-listModelsGroupedByProvider(Ref ref, {required String workspaceId}) {
-  final controller =
-      StreamController<
-        Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-      >();
-  final subscription = ref.listen(
-    listWorkspaceModelSelectionsProvider(workspaceId: workspaceId),
-    (_, next) {
-      switch (next) {
-        case AsyncData(:final value):
-          controller.add(_groupModelsByProvider(value));
-        case AsyncError(:final error, :final stackTrace):
-          controller.addError(error, stackTrace);
-        case AsyncLoading():
-      }
-    },
-    fireImmediately: true,
-  );
-
-  final _ = ref.onDispose(() {
-    subscription.close();
-    unawaited(controller.close());
-  });
-
-  return controller.stream;
-}
+listModelsGroupedByProvider(Ref ref, {required String workspaceId}) =>
+    streamProviderValue(
+      ref,
+      listWorkspaceModelSelectionsProvider(workspaceId: workspaceId),
+    ).map(_groupModelsByProvider);
 
 Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
 _groupModelsByProvider(

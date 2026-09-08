@@ -20,6 +20,7 @@ import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_spe
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
+import 'package:auravibes_app/utils/stream_provider_value.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -69,40 +70,13 @@ Stream<List<MessageEntity>> _cloudMessages(
   Ref ref,
   String workspaceId,
   String conversationId,
-) => _streamProviderValue(
+) => streamProviderValue(
   ref,
   cloudConversationStateProvider((
     workspaceId: workspaceId,
     conversationId: conversationId,
   )),
 ).map(_readCloudConversationMessages);
-
-Stream<T> _streamProviderValue<T>(
-  Ref ref,
-  ProviderListenable<AsyncValue<T>> provider,
-) {
-  final controller = StreamController<T>();
-  void emit(AsyncValue<T> next) {
-    switch (next) {
-      case AsyncData(:final value):
-        controller.add(value);
-      case AsyncError(:final error, :final stackTrace):
-        controller.addError(error, stackTrace);
-      case AsyncLoading():
-    }
-  }
-
-  final subscription = ref.listen(
-    provider,
-    (_, next) => emit(next),
-    fireImmediately: true,
-  );
-  ref
-    ..onDispose(subscription.close)
-    ..onDispose(() => unawaited(controller.close()));
-
-  return controller.stream;
-}
 
 @visibleForTesting
 List<MessageEntity> readCloudConversationMessagesForTesting(
@@ -222,7 +196,7 @@ Stream<List<MessageEntity>> chatMessages(
   Ref ref,
   String workspaceId,
   String conversationId,
-) => _streamProviderValue(
+) => streamProviderValue(
   ref,
   chatMessagesByConversationProvider(workspaceId, conversationId),
 );
