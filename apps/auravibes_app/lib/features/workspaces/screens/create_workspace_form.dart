@@ -117,7 +117,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
       AsyncError() => const Center(
         child: TextLocale(LocaleKeys.cloud_accounts_load_error),
       ),
-      _ => const SizedBox.shrink(),
+      AsyncData() => const SizedBox.shrink(),
     };
   }
 

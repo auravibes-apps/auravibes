@@ -399,7 +399,7 @@ class const _CredentialForm({
           onDefinitionChanged: onDefinitionChanged,
           onSave: onSave,
         ),
-      _ => const Center(child: AuraSpinner()),
+      AsyncLoading() || AsyncError() => const Center(child: AuraSpinner()),
     };
   }
 }

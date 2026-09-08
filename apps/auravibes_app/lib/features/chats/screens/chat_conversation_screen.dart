@@ -98,7 +98,8 @@ class const _ChatConversationScreen({
               .tr(),
         ConversationNotFound() =>
           LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
-        _ => LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
+        null || ConversationFound() =>
+          LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
       };
 
       return AuraScreen(
@@ -516,7 +517,7 @@ ConversationBusyState? _conversationBusyStateValue(
   return switch (state) {
     AsyncData(:final value) => value,
     AsyncLoading(:final value?, hasValue: true) => value,
-    _ => null,
+    AsyncLoading() || AsyncError() => null,
   };
 }
 

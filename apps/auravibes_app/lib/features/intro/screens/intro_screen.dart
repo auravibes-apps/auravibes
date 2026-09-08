@@ -42,7 +42,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
     if (_slide == _IntroSlide.workspaceChoice) {
       final existing = switch (ref.watch(allWorkspacesProvider)) {
         AsyncData(:final value) => value.firstOrNull,
-        _ => null,
+        AsyncLoading() || AsyncError() => null,
       };
       if (existing != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {

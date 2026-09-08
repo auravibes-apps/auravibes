@@ -153,7 +153,7 @@ class const _WorkspaceList({
     return switch (accounts) {
       AsyncData(:final value) =>
         value.firstWhereOrNull((account) => account.userId == accountId)?.email,
-      _ => null,
+      AsyncLoading() || AsyncError() => null,
     };
   }
 
@@ -176,7 +176,7 @@ class const _WorkspaceList({
         ref.read(workspaceManagementModeProvider.notifier).clearEditing();
       case MutationError(:final error):
         _showError(context, error);
-      case _:
+      case MutationIdle() || MutationPending():
         break;
     }
   }

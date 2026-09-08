@@ -373,7 +373,7 @@ class const _ErrorBanner() extends ConsumerWidget {
 
     final error = switch (addCredentialsModelMutation) {
       MutationError<void>(:final error) => _mapErrorMessage(error),
-      _ => null,
+      MutationIdle() || MutationPending() || MutationSuccess() => null,
     };
 
     if (error == null) {
