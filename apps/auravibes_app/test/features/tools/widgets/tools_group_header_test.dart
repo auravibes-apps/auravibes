@@ -3,7 +3,9 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
+import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
+import 'package:auravibes_app/features/tools/widgets/conversation_group_header.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_header.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -71,6 +73,84 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
 }
 
 void main() {
+  testWidgets('both headers preserve MCP states and actions', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1600, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var reconnects = 0;
+    var errorsViewed = 0;
+    final mcpGroup = _group().copyWith(mcpServerId: 'mcp-1');
+    final states = <McpConnectionState?>[
+      null,
+      for (final status in McpConnectionStatus.values)
+        McpConnectionState(
+          server: _mcpServer(),
+          status: status,
+          errorMessage: 'Connection failed',
+        ),
+      McpConnectionState(server: _mcpServer(), status: .error),
+    ];
+    await tester.pumpWidget(
+      _Subject(
+        child: RepaintBoundary(
+          key: const Key('headers'),
+          child: Column(
+            children: [
+              for (final state in states)
+                Row(
+                  children: [
+                    Expanded(
+                      child: ToolsGroupHeader(
+                        groupWithTools: ToolsGroupWithTools(
+                          group: mcpGroup,
+                          tools: const [],
+                          mcpConnectionState: state,
+                        ),
+                        isExpanded: false,
+                        onToggleExpand: () => reconnects += 0,
+                        onReconnect: () => reconnects++,
+                        onViewError: () => errorsViewed++,
+                      ),
+                    ),
+                    Expanded(
+                      child: ConversationGroupHeader(
+                        groupWithTools: ConversationToolsGroupWithTools(
+                          group: mcpGroup,
+                          tools: const [],
+                          mcpConnectionState: state,
+                        ),
+                        isExpanded: false,
+                        onToggleExpand: () => reconnects += 0,
+                        onReconnect: () => reconnects++,
+                        onViewError: () => errorsViewed++,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(AuraSpinner), findsNWidgets(2));
+    expect(find.byIcon(Icons.refresh), findsNWidgets(6));
+    expect(find.byIcon(Icons.visibility_outlined), findsNWidgets(2));
+    await expectLater(
+      find.byKey(const Key('headers')),
+      matchesGoldenFile('goldens/mcp_headers.png'),
+    );
+    for (final button in find.byIcon(Icons.refresh).evaluate().toList()) {
+      await tester.tap(find.byWidget(button.widget));
+    }
+    for (final button
+        in find.byIcon(Icons.visibility_outlined).evaluate().toList()) {
+      await tester.tap(find.byWidget(button.widget));
+    }
+    expect(reconnects, 6);
+    expect(errorsViewed, 2);
+  });
+
   testWidgets('renders group name for named group', (tester) async {
     final groupWithTools = ToolsGroupWithTools(
       group: _group(name: 'My MCP Server'),
