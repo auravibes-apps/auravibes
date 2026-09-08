@@ -349,15 +349,17 @@ class const _TypeSelector({
         ),
       ],
       value: [value],
-      onChanged: (values) {
-        final selected = values.firstOrNull;
-        if (selected == null) return;
-        onChanged(selected);
-      },
+      onChanged: _handleChanged,
       label: Text(
         LocaleKeys.service_connections_create_type_label.tr(context: context),
       ),
     );
+  }
+
+  void _handleChanged(List<ServiceConnectionCreateType> values) {
+    final selected = values.firstOrNull;
+    if (selected == null) return;
+    onChanged(selected);
   }
 }
 

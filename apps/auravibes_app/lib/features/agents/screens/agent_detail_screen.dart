@@ -502,11 +502,7 @@ class const _PromptCard({
               ),
             ],
             value: [visibility],
-            onChanged: (values) {
-              final selected = values.firstOrNull;
-              if (selected == null) return;
-              onVisibilityChanged(selected);
-            },
+            onChanged: _handleVisibilityChanged,
             label: const AuraText(
               child: TextLocale(LocaleKeys.agents_visibility_label),
             ),
@@ -530,6 +526,12 @@ class const _PromptCard({
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
+  }
+
+  void _handleVisibilityChanged(List<AgentVisibility> values) {
+    final selected = values.firstOrNull;
+    if (selected == null) return;
+    onVisibilityChanged(selected);
   }
 }
 

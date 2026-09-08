@@ -513,11 +513,7 @@ class const _SkillToolForm({
                   ),
                 ],
                 value: [bodyFormat],
-                onChanged: (values) {
-                  final selected = values.firstOrNull;
-                  if (selected == null) return;
-                  onBodyFormatChanged(selected);
-                },
+                onChanged: _handleBodyFormatChanged,
                 label: Text(
                   LocaleKeys.skills_tool_body_format_label.tr(context: context),
                 ),
@@ -576,6 +572,12 @@ class const _SkillToolForm({
         ),
       ],
     );
+  }
+
+  void _handleBodyFormatChanged(List<SkillUrlTemplateBodyFormat> values) {
+    final selected = values.firstOrNull;
+    if (selected == null) return;
+    onBodyFormatChanged(selected);
   }
 }
 

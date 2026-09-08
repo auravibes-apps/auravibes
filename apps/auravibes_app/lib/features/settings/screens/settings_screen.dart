@@ -129,13 +129,18 @@ class const SettingsScreen({required final String workspaceId, super.key})
           ),
         ],
         value: [currentTheme],
-        onChanged: (values) {
-          final selected = values.firstOrNull;
-          if (selected == null) return;
-          onThemeChanged(selected);
-        },
+        onChanged: (values) => _handleThemeChanged(values, onThemeChanged),
       ),
       dismissLabel: const TextLocale(LocaleKeys.settings_screen_actions_cancel),
     );
+  }
+
+  void _handleThemeChanged(
+    List<AppTheme> values,
+    ValueChanged<AppTheme> onThemeChanged,
+  ) {
+    final selected = values.firstOrNull;
+    if (selected == null) return;
+    onThemeChanged(selected);
   }
 }
