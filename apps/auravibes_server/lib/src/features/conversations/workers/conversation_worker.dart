@@ -811,27 +811,12 @@ class const ConversationWorker({
                 lockMode: LockMode.forUpdate,
               )
               .then((message) => message?.id);
-    final assistant = phaseAssistantId == null
-        ? null
-        : await ConversationMessage.db.findById(
-            session,
-            phaseAssistantId,
-            transaction: transaction,
-            lockMode: LockMode.forUpdate,
-          );
-    if (assistant != null) {
-      await ConversationMessage.db.updateRow(
-        session,
-        assistant.copyWith(
-          content: '',
-          status: ConversationStatuses.cancelled,
-          metadataJson: '{"errorCode":"cancelled"}',
-          revision: assistant.revision + 1,
-          updatedAt: now,
-        ),
-        transaction: transaction,
-      );
-    }
+    await conversation_repo.updateTerminalConversationMessageById(
+      session,
+      phaseAssistantId,
+      transaction,
+      now,
+    );
     await ConversationTurn.db.updateRow(
       session,
       turn.copyWith(

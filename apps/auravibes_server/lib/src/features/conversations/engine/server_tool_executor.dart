@@ -1042,28 +1042,13 @@ class const ServerToolExecutorService({
       return;
     }
     final now = DateTime.now().toUtc();
-    if (execution.assistantMessageId case final assistantMessageId?) {
-      final assistant = await ConversationMessage.db.findById(
-        session,
-        assistantMessageId,
-        transaction: transaction,
-        lockMode: LockMode.forUpdate,
-      );
-      if (assistant != null &&
-          assistant.status != ConversationStatuses.cancelled) {
-        await ConversationMessage.db.updateRow(
-          session,
-          assistant.copyWith(
-            content: '',
-            status: ConversationStatuses.cancelled,
-            metadataJson: '{"errorCode":"cancelled"}',
-            revision: assistant.revision + 1,
-            updatedAt: now,
-          ),
-          transaction: transaction,
-        );
-      }
-    }
+    await conversation_repo.updateTerminalConversationMessageById(
+      session,
+      execution.assistantMessageId,
+      transaction,
+      now,
+      skipCancelled: true,
+    );
     await ConversationExecution.db.updateRow(
       session,
       execution.copyWith(

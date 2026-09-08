@@ -55,6 +55,60 @@ int? conversationParentTurnIdForExecutionSettings(String settingsJson) {
       : null;
 }
 
+Future<void> updateTerminalConversationMessage(
+  Session session,
+  ConversationMessage message,
+  Transaction transaction,
+  DateTime now, {
+  String status = ConversationStatuses.cancelled,
+  String? errorCode = 'cancelled',
+  bool clearContent = true,
+}) => ConversationMessage.db.updateRow(
+  session,
+  message.copyWith(
+    content: clearContent ? '' : message.content,
+    status: status,
+    metadataJson: errorCode == null
+        ? message.metadataJson
+        : '{"errorCode":"$errorCode"}',
+    revision: message.revision + 1,
+    updatedAt: now,
+  ),
+  transaction: transaction,
+);
+
+Future<void> updateTerminalConversationMessageById(
+  Session session,
+  int? messageId,
+  Transaction transaction,
+  DateTime now, {
+  String status = ConversationStatuses.cancelled,
+  String? errorCode = 'cancelled',
+  bool clearContent = true,
+  bool skipCancelled = false,
+}) async {
+  if (messageId == null) return;
+  final message = await ConversationMessage.db.findById(
+    session,
+    messageId,
+    transaction: transaction,
+    lockMode: LockMode.forUpdate,
+  );
+  if (message == null ||
+      skipCancelled && message.status == ConversationStatuses.cancelled) {
+    return;
+  }
+  await updateTerminalConversationMessage(
+    session,
+    message,
+    transaction,
+    now,
+    status: status,
+    errorCode: errorCode,
+    clearContent: clearContent,
+  );
+}
+
 class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
   final ObjectReferenceService _objectReferenceService =
       objectReferenceService ?? ObjectReferenceService();

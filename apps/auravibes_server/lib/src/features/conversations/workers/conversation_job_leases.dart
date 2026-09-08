@@ -2,6 +2,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../domain/conversation_values.dart';
+import '../repositories/conversation_repository.dart' as conversation_repo;
 
 final class const ConversationJobLeaseLostException(final int jobId)
     implements Exception;
@@ -204,27 +205,14 @@ class const ConversationJobLeases() {
       lockMode: LockMode.forUpdate,
     );
     if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
-    final assistant = turn.assistantMessageId == null
-        ? null
-        : await ConversationMessage.db.findById(
-            session,
-            turn.assistantMessageId!,
-            transaction: transaction,
-            lockMode: LockMode.forUpdate,
-          );
-    if (assistant != null) {
-      await ConversationMessage.db.updateRow(
-        session,
-        assistant.copyWith(
-          content: '',
-          status: ConversationStatuses.failed,
-          metadataJson: '{"errorCode":"$errorCode"}',
-          revision: assistant.revision + 1,
-          updatedAt: now,
-        ),
-        transaction: transaction,
-      );
-    }
+    await conversation_repo.updateTerminalConversationMessageById(
+      session,
+      turn.assistantMessageId,
+      transaction,
+      now,
+      status: ConversationStatuses.failed,
+      errorCode: errorCode,
+    );
     await ConversationTurn.db.updateRow(
       session,
       turn.copyWith(

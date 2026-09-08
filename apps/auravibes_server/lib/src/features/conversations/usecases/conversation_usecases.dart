@@ -1262,25 +1262,14 @@ class ConversationUseCases {
           ),
           transaction: transaction,
         );
-        if (execution.assistantMessageId case final assistantMessageId?) {
-          final assistant = await ConversationMessage.db.findById(
-            session,
-            assistantMessageId,
-            transaction: transaction,
-            lockMode: LockMode.forUpdate,
-          );
-          if (assistant != null) {
-            await ConversationMessage.db.updateRow(
-              session,
-              assistant.copyWith(
-                status: ConversationStatuses.cancelled,
-                revision: assistant.revision + 1,
-                updatedAt: now,
-              ),
-              transaction: transaction,
-            );
-          }
-        }
+        await conversation_repo.updateTerminalConversationMessageById(
+          session,
+          execution.assistantMessageId,
+          transaction,
+          now,
+          clearContent: false,
+          errorCode: null,
+        );
       },
       updateProjection: (conversation) => conversation.copyWith(
         executionState: 'idle',
@@ -1605,16 +1594,11 @@ class ConversationUseCases {
             lockMode: LockMode.forUpdate,
           );
           for (final assistant in awaitingApprovalAssistants) {
-            await ConversationMessage.db.updateRow(
+            await conversation_repo.updateTerminalConversationMessage(
               session,
-              assistant.copyWith(
-                content: '',
-                status: ConversationStatuses.cancelled,
-                metadataJson: '{"errorCode":"cancelled"}',
-                revision: assistant.revision + 1,
-                updatedAt: now,
-              ),
-              transaction: transaction,
+              assistant,
+              transaction,
+              now,
             );
           }
         }
@@ -1738,27 +1722,12 @@ class ConversationUseCases {
         lockMode: LockMode.forUpdate,
       );
       if (leasedJob != null) return _mutationResult(session, updated);
-      final assistant = turn.assistantMessageId == null
-          ? null
-          : await ConversationMessage.db.findById(
-              session,
-              turn.assistantMessageId!,
-              transaction: transaction,
-              lockMode: LockMode.forUpdate,
-            );
-      if (assistant != null) {
-        await ConversationMessage.db.updateRow(
-          session,
-          assistant.copyWith(
-            content: '',
-            status: ConversationStatuses.cancelled,
-            metadataJson: '{"errorCode":"cancelled"}',
-            revision: assistant.revision + 1,
-            updatedAt: now,
-          ),
-          transaction: transaction,
-        );
-      }
+      await conversation_repo.updateTerminalConversationMessageById(
+        session,
+        turn.assistantMessageId,
+        transaction,
+        now,
+      );
       final cancelled = await ConversationTurn.db.updateRow(
         session,
         updated.copyWith(

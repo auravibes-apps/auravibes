@@ -1175,6 +1175,22 @@ void main() {
               conversationId: fixture.conversationId,
             ),
           );
+          final runningTurn = (await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.requestId.equals(snapshot.activeExecution!.id),
+          ))!;
+          final runningAssistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            runningTurn.assistantMessageId!,
+          ))!;
+          await ConversationMessage.db.updateRow(
+            fixture.database,
+            runningAssistant.copyWith(
+              content: 'partial response',
+              metadataJson: '{"model":"test"}',
+            ),
+          );
           await endpoints.conversation.stopConversation(
             fixture.session,
             StopConversationRequest(
@@ -1208,6 +1224,8 @@ void main() {
           ))!;
           expect(turn.status, ConversationStatuses.cancelled);
           expect(assistant.status, ConversationStatuses.cancelled);
+          expect(assistant.content, 'partial response');
+          expect(assistant.metadataJson, '{"model":"test"}');
           expect(execution.status, ConversationStatuses.cancelled);
           expect(conversation.executionState, 'idle');
           expect(conversation.activeExecutionId, isNull);
