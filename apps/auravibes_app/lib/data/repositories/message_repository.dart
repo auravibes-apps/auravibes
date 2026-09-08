@@ -315,9 +315,10 @@ class MessageRepository(
     Iterable<MessageAttachmentToCreate> attachments,
   ) async {
     final _ = await Future.wait(
-      attachments.map((attachment) {
-        return _deleteAttachmentFile(attachment.localPath);
-      }),
+      attachments.map(
+        (attachment) =>
+            _attachmentFileStore.deleteFileSafely(attachment.localPath),
+      ),
     );
   }
 
@@ -325,18 +326,11 @@ class MessageRepository(
     Iterable<MessageAttachmentEntity> attachments,
   ) async {
     final _ = await Future.wait(
-      attachments.map((attachment) {
-        return _deleteAttachmentFile(attachment.localPath);
-      }),
+      attachments.map(
+        (attachment) =>
+            _attachmentFileStore.deleteFileSafely(attachment.localPath),
+      ),
     );
-  }
-
-  Future<void> _deleteAttachmentFile(String localPath) async {
-    try {
-      await _attachmentFileStore.deleteFile(localPath);
-    } on Object {
-      return;
-    }
   }
 
   void _validateMessagePatch(MessagePatch message) {
