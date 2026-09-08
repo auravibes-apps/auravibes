@@ -146,7 +146,10 @@ class const AppResolvedToolProvider({
   agent.AgentResolvedToolExecution<ResolvedTool> toExecution(
     ResolvedTool tool,
   ) {
-    return _toExecution(tool);
+    return agent.AgentResolvedToolExecution(
+      descriptor: _toAgentDescriptor(tool),
+      tool: tool,
+    );
   }
 
   @override
@@ -157,10 +160,7 @@ class const AppResolvedToolProvider({
   }) {
     return _runCancelableInputTool(
       conversationId: conversationId,
-      input: input,
-      toolIdentifier: tool.toolIdentifier,
       operation: _builtInOperation(tool, input),
-      agentCancellationRuntime: agentCancellationRuntime,
     );
   }
 
@@ -172,10 +172,7 @@ class const AppResolvedToolProvider({
   }) {
     return _runCancelableInputTool(
       conversationId: conversationId,
-      input: input,
-      toolIdentifier: tool.toolIdentifier,
       operation: _nativeOperation(tool, input),
-      agentCancellationRuntime: agentCancellationRuntime,
     );
   }
 
@@ -193,11 +190,17 @@ class const AppResolvedToolProvider({
   }
 
   @override
-  Future<String> getConversationWorkspaceId(String conversationId) {
-    return _workspaceIdFor(
-      conversationRepository: conversationRepository,
-      conversationId: conversationId,
-    );
+  Future<String> getConversationWorkspaceId(String conversationId) async {
+    final repository = conversationRepository;
+    if (repository == null) {
+      throw StateError(_conversationRepositoryNotConfigured);
+    }
+    final conversation = await repository.getConversationById(conversationId);
+    if (conversation == null) {
+      throw StateError('Conversation not found: $conversationId');
+    }
+
+    return conversation.workspaceId;
   }
 
   @override
@@ -242,11 +245,6 @@ class const AppResolvedToolProvider({
                 workspaceId: workspaceId,
                 conversationId: conversationId,
                 arguments: arguments,
-                listAvailableSkillsUsecase: listAvailableSkillsUsecase,
-                listAppSkillCredentialCandidatesUsecase:
-                    listAppSkillCredentialCandidatesUsecase,
-                appSkillRegistry: appSkillRegistry,
-                skillCredentialsRepository: skillCredentialsRepository,
               );
 
               return Map<String, Object?>.from(result as Map);
@@ -264,15 +262,6 @@ class const AppResolvedToolProvider({
       workspaceId: workspaceId,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
-      dependencies: _SkillControlToolDependencies(
-        loadConversationSkillUsecase: loadConversationSkillUsecase,
-        unloadConversationSkillUsecase: unloadConversationSkillUsecase,
-        listAvailableSkillsUsecase: listAvailableSkillsUsecase,
-        listAppSkillCredentialCandidatesUsecase:
-            listAppSkillCredentialCandidatesUsecase,
-        appSkillRegistry: appSkillRegistry,
-        skillCredentialsRepository: skillCredentialsRepository,
-      ),
     );
   }
 
@@ -364,13 +353,129 @@ class const AppResolvedToolProvider({
 
     return result;
   }
-}
 
-agent.AgentResolvedToolExecution<ResolvedTool> _toExecution(ResolvedTool tool) {
-  return agent.AgentResolvedToolExecution(
-    descriptor: _toAgentDescriptor(tool),
-    tool: tool,
-  );
+  Future<Object?> _runSkillControlTool({
+    required String conversationId,
+    required String workspaceId,
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) async {
+    if (toolIdentifier == SkillToolNames.listCredentials) {
+      return await _listSkillCredentials(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        arguments: arguments,
+      );
+    }
+
+    final slug = arguments['slug'];
+    if (slug is! String || slug.isEmpty) {
+      throw const FormatException('Skill control tools require a slug.');
+    }
+
+    if (toolIdentifier == agent.loadSkillToolName) {
+      final usecase = loadConversationSkillUsecase?.call(workspaceId);
+      if (usecase == null) {
+        throw StateError('LoadConversationSkillUsecase is not configured.');
+      }
+      await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        slug: slug,
+      );
+
+      return 'Skill "$slug" loaded.';
+    }
+
+    final usecase = unloadConversationSkillUsecase?.call(workspaceId);
+    if (usecase == null) {
+      throw StateError('UnloadConversationSkillUsecase is not configured.');
+    }
+    await usecase.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      slug: slug,
+    );
+
+    return 'Skill "$slug" unloaded.';
+  }
+
+  Future<Object> _listSkillCredentials({
+    required String workspaceId,
+    required String conversationId,
+    required Map<String, dynamic> arguments,
+  }) async {
+    final skillSlug = arguments['skillSlug'];
+    if (skillSlug is! String || skillSlug.isEmpty) {
+      throw const FormatException(
+        'Skill credential listing requires a skillSlug.',
+      );
+    }
+    final listSkills = listAvailableSkillsUsecase?.call(workspaceId);
+    final appCandidates = listAppSkillCredentialCandidatesUsecase;
+    final registry = appSkillRegistry;
+    final credentialsRepository = skillCredentialsRepository;
+    if (listSkills == null || credentialsRepository == null) {
+      throw StateError('Skill credential listing is not configured.');
+    }
+    final loadedSkills = await listSkills.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      filter: SkillLoadFilter.loaded,
+    );
+    final skill = loadedSkills
+        .where((skill) => skill.slug == skillSlug)
+        .firstOrNull;
+    if (skill?.source == SkillSource.app) {
+      if (appCandidates == null || registry == null) {
+        throw StateError('App skill credential listing is not configured.');
+      }
+      final appSkill = registry.getBySlug(skillSlug);
+      if (appSkill == null) {
+        throw StateError('Loaded skill with credentials not found: $skillSlug');
+      }
+      final credentials = await appCandidates.call(
+        workspaceId: workspaceId,
+        skill: appSkill,
+      );
+
+      return {
+        'skillSlug': skillSlug,
+        'credentials': [
+          for (final credential in credentials)
+            {'id': credential.id, 'name': credential.name},
+        ],
+      };
+    }
+    final credentialDefinitionId = skill?.credentialDefinitionId;
+    if (skill == null || credentialDefinitionId == null) {
+      throw StateError('Loaded skill with credentials not found: $skillSlug');
+    }
+    final credentials = await credentialsRepository.getCredentialsForDefinition(
+      workspaceId: workspaceId,
+      credentialDefinitionId: credentialDefinitionId,
+    );
+
+    return {
+      'skillSlug': skill.slug,
+      'credentials': [
+        for (final credential in credentials)
+          {'id': credential.id, 'name': credential.name},
+      ],
+    };
+  }
+
+  Future<Object?> _runCancelableInputTool({
+    required String conversationId,
+    required CancelableOperation<Object?> operation,
+  }) {
+    agentCancellationRuntime.registerCancelableOperation(
+      conversationId,
+      operation,
+    );
+
+    return operation.valueOrCancellation();
+  }
 }
 
 agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
@@ -441,107 +546,6 @@ CancelableOperation<Object?> _nativeOperation(ResolvedTool tool, Object input) {
   return toolService.runner(input);
 }
 
-Future<Object?> _runCancelableInputTool({
-  required String conversationId,
-  required Object input,
-  required String toolIdentifier,
-  required CancelableOperation<Object?> operation,
-  required AgentCancellationRuntime agentCancellationRuntime,
-}) {
-  final _ = (input: input, toolIdentifier: toolIdentifier);
-  agentCancellationRuntime.registerCancelableOperation(
-    conversationId,
-    operation,
-  );
-
-  return operation.valueOrCancellation();
-}
-
-Future<String> _workspaceIdFor({
-  required ConversationRepository? conversationRepository,
-  required String conversationId,
-}) async {
-  final repository = conversationRepository;
-  if (repository == null) {
-    throw StateError(_conversationRepositoryNotConfigured);
-  }
-  final conversation = await repository.getConversationById(conversationId);
-  if (conversation == null) {
-    throw StateError('Conversation not found: $conversationId');
-  }
-
-  return conversation.workspaceId;
-}
-
-Future<Object?> _runSkillControlTool({
-  required String conversationId,
-  required String workspaceId,
-  required String toolIdentifier,
-  required Map<String, dynamic> arguments,
-  required _SkillControlToolDependencies dependencies,
-}) async {
-  if (toolIdentifier == SkillToolNames.listCredentials) {
-    return await _listSkillCredentials(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      arguments: arguments,
-      listAvailableSkillsUsecase: dependencies.listAvailableSkillsUsecase,
-      listAppSkillCredentialCandidatesUsecase:
-          dependencies.listAppSkillCredentialCandidatesUsecase,
-      appSkillRegistry: dependencies.appSkillRegistry,
-      skillCredentialsRepository: dependencies.skillCredentialsRepository,
-    );
-  }
-
-  final slug = arguments['slug'];
-  if (slug is! String || slug.isEmpty) {
-    throw const FormatException('Skill control tools require a slug.');
-  }
-
-  if (toolIdentifier == agent.loadSkillToolName) {
-    final usecase = dependencies.loadConversationSkillUsecase?.call(
-      workspaceId,
-    );
-    if (usecase == null) {
-      throw StateError('LoadConversationSkillUsecase is not configured.');
-    }
-    await usecase.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-      slug: slug,
-    );
-
-    return 'Skill "$slug" loaded.';
-  }
-
-  final usecase = dependencies.unloadConversationSkillUsecase?.call(
-    workspaceId,
-  );
-  if (usecase == null) {
-    throw StateError('UnloadConversationSkillUsecase is not configured.');
-  }
-  await usecase.call(
-    conversationId: conversationId,
-    workspaceId: workspaceId,
-    slug: slug,
-  );
-
-  return 'Skill "$slug" unloaded.';
-}
-
-class const _SkillControlToolDependencies({
-  required final LoadConversationSkillUsecase Function(String workspaceId)?
-  loadConversationSkillUsecase,
-  required final UnloadConversationSkillUsecase Function(String workspaceId)?
-  unloadConversationSkillUsecase,
-  required final ListAvailableSkillsUsecase Function(String workspaceId)?
-  listAvailableSkillsUsecase,
-  required final ListAppSkillCredentialCandidatesUsecase?
-  listAppSkillCredentialCandidatesUsecase,
-  required final AppSkillRegistry? appSkillRegistry,
-  required final SkillCredentialsRepository? skillCredentialsRepository,
-});
-
 Future<Object?> _runSubAgentTool({
   required agent.SubAgentRunner runner,
   required String conversationId,
@@ -560,77 +564,6 @@ Future<Object?> _runSubAgentTool({
       arguments: arguments,
     ),
     _ => throw StateError('Unknown sub-agent tool: $toolSlug'),
-  };
-}
-
-Future<Object> _listSkillCredentials({
-  required String workspaceId,
-  required String conversationId,
-  required Map<String, dynamic> arguments,
-  required ListAvailableSkillsUsecase Function(String workspaceId)?
-  listAvailableSkillsUsecase,
-  required ListAppSkillCredentialCandidatesUsecase?
-  listAppSkillCredentialCandidatesUsecase,
-  required AppSkillRegistry? appSkillRegistry,
-  required SkillCredentialsRepository? skillCredentialsRepository,
-}) async {
-  final skillSlug = arguments['skillSlug'];
-  if (skillSlug is! String || skillSlug.isEmpty) {
-    throw const FormatException(
-      'Skill credential listing requires a skillSlug.',
-    );
-  }
-  final listSkills = listAvailableSkillsUsecase?.call(workspaceId);
-  final appCandidates = listAppSkillCredentialCandidatesUsecase;
-  final registry = appSkillRegistry;
-  final credentialsRepository = skillCredentialsRepository;
-  if (listSkills == null || credentialsRepository == null) {
-    throw StateError('Skill credential listing is not configured.');
-  }
-  final loadedSkills = await listSkills.call(
-    conversationId: conversationId,
-    workspaceId: workspaceId,
-    filter: SkillLoadFilter.loaded,
-  );
-  final skill = loadedSkills
-      .where((skill) => skill.slug == skillSlug)
-      .firstOrNull;
-  if (skill?.source == SkillSource.app) {
-    if (appCandidates == null || registry == null) {
-      throw StateError('App skill credential listing is not configured.');
-    }
-    final appSkill = registry.getBySlug(skillSlug);
-    if (appSkill == null) {
-      throw StateError('Loaded skill with credentials not found: $skillSlug');
-    }
-    final credentials = await appCandidates.call(
-      workspaceId: workspaceId,
-      skill: appSkill,
-    );
-
-    return {
-      'skillSlug': skillSlug,
-      'credentials': [
-        for (final credential in credentials)
-          {'id': credential.id, 'name': credential.name},
-      ],
-    };
-  }
-  final credentialDefinitionId = skill?.credentialDefinitionId;
-  if (skill == null || credentialDefinitionId == null) {
-    throw StateError('Loaded skill with credentials not found: $skillSlug');
-  }
-  final credentials = await credentialsRepository.getCredentialsForDefinition(
-    workspaceId: workspaceId,
-    credentialDefinitionId: credentialDefinitionId,
-  );
-
-  return {
-    'skillSlug': skill.slug,
-    'credentials': [
-      for (final credential in credentials)
-        {'id': credential.id, 'name': credential.name},
-    ],
   };
 }
 
