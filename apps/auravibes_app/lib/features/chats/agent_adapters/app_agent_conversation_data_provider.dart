@@ -4,7 +4,6 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -13,6 +12,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/stop_pending_tool_calls_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -89,23 +89,12 @@ class const AppAgentConversationDataProvider({
     final latestAssistantMessage = _latestAssistantMessage(messages);
     if (latestAssistantMessage == null) return;
 
-    final metadata =
-        latestAssistantMessage.metadata ?? const MessageMetadataEntity();
-    var didUpdate = false;
-    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
-      if (!toolCall.isPending) return toolCall;
-
-      didUpdate = true;
-
-      return toolCall.copyWith(
-        resultStatus: ToolCallResultStatus.stoppedByUser,
-      );
-    }).toList();
-    if (!didUpdate) return;
+    final metadata = stopPendingToolMetadata(latestAssistantMessage.metadata);
+    if (identical(metadata, latestAssistantMessage.metadata)) return;
 
     final _ = await messageRepository.patchMessage(
       latestAssistantMessage.id,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      MessagePatch(metadata: metadata),
     );
   }
 }
