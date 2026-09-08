@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:auravibes_app/features/chats/agent_adapters/provider_http_transport.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
@@ -82,30 +83,11 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
             ...?headers,
           })
           ..body = jsonEncode(body);
-    final client = httpClient ?? http.Client();
-    try {
-      final response = await client.send(request).timeout(requestTimeout);
 
-      return ProviderTransportResponse(
-        statusCode: response.statusCode,
-        body: httpClient == null
-            ? _closeAfter(response.stream, client)
-            : response.stream,
-      );
-    } on Object {
-      if (httpClient == null) client.close();
-      rethrow;
-    }
-  }
-}
-
-Stream<List<int>> _closeAfter(
-  Stream<List<int>> stream,
-  http.Client client,
-) async* {
-  try {
-    yield* stream;
-  } finally {
-    client.close();
+    return await sendProviderRequest(
+      request,
+      requestTimeout: requestTimeout,
+      httpClient: httpClient,
+    );
   }
 }
