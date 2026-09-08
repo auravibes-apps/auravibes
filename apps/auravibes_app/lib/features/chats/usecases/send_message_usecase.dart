@@ -56,9 +56,7 @@ class SendMessageUsecase {
   }) async {
     if (draft.isEmpty) return;
     if (cloudSend case final send?) {
-      final _ = await send(conversationId, draft);
-
-      return;
+      return await send(conversationId, draft);
     }
 
     final getBusyState = getConversationBusyStateUsecase;
@@ -73,7 +71,14 @@ class SendMessageUsecase {
       return;
     }
 
-    await _sendNow(conversationId: conversationId, draft: draft);
+    final createdMessage = await createUserMessage(
+      conversationId: conversationId,
+      draft: draft,
+    );
+    await continueFromUserMessage(
+      conversationId: conversationId,
+      messageId: createdMessage.id,
+    );
   }
 
   Future<MessageEntity> createUserMessage({
@@ -106,20 +111,6 @@ class SendMessageUsecase {
       ),
     );
   }
-
-  Future<void> _sendNow({
-    required String conversationId,
-    required ChatDraft draft,
-  }) async {
-    final createdMessage = await createUserMessage(
-      conversationId: conversationId,
-      draft: draft,
-    );
-    await continueFromUserMessage(
-      conversationId: conversationId,
-      messageId: createdMessage.id,
-    );
-  }
 }
 
 extension SendMessageUsecaseNewConversation on SendMessageUsecase {
@@ -130,9 +121,7 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
   }) async {
     if (draft.isEmpty) return;
     if (cloudSend case final send?) {
-      final _ = await send(conversationId, draft);
-
-      return;
+      return await send(conversationId, draft);
     }
 
     final createdMessage = await createUserMessage(
