@@ -199,32 +199,29 @@ class const CompactConversationUsecase({
       compactionCreatedAt: DateTime.now(),
     );
 
-    final repository = messageRepository;
-    if (repository == null) {
-      throw StateError('Local message repository unavailable');
-    }
-    final created = await repository.createMessage(
-      MessageToCreate(
-        conversationId: conversationId,
-        content: summaryText,
-        messageType: MessageType.system,
-        isUser: false,
-        status: MessageStatus.sending,
-        metadata: jsonEncode(metadata.toJson()),
-      ),
+    await _persistSystemMessage(
+      conversationId: conversationId,
+      content: summaryText,
+      metadata: jsonEncode(metadata.toJson()),
+      status: MessageStatus.sent,
     );
-
-    switch (await repository.patchMessage(
-      created.id,
-      const MessagePatch(status: MessageStatus.sent),
-    )) {
-      case _:
-        return;
-    }
   }
 
   Future<void> _persistRequiredFailureMessage({
     required String conversationId,
+  }) async {
+    await _persistSystemMessage(
+      conversationId: conversationId,
+      content: _failureMessageKey,
+      status: MessageStatus.error,
+    );
+  }
+
+  Future<void> _persistSystemMessage({
+    required String conversationId,
+    required String content,
+    required MessageStatus status,
+    String? metadata,
   }) async {
     final repository = messageRepository;
     if (repository == null) {
@@ -233,16 +230,17 @@ class const CompactConversationUsecase({
     final created = await repository.createMessage(
       MessageToCreate(
         conversationId: conversationId,
-        content: _failureMessageKey,
+        content: content,
         messageType: MessageType.system,
         isUser: false,
         status: MessageStatus.sending,
+        metadata: metadata,
       ),
     );
 
     switch (await repository.patchMessage(
       created.id,
-      const MessagePatch(status: MessageStatus.error),
+      MessagePatch(status: status),
     )) {
       case _:
         return;

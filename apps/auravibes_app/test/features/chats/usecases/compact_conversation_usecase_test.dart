@@ -527,6 +527,13 @@ void main() {
               as MessageToCreate;
       final meta = MessageMetadataEntity.fromJsonString(captured.metadata);
       expect(meta?.isCompactionSummary, isNot(equals(true)));
+
+      final patch =
+          verify(
+                () => fixture.mockMessageRepo.patchMessage(any(), captureAny()),
+              ).captured.single
+              as MessagePatch;
+      expect(patch.status, MessageStatus.error);
     });
 
     test('uses active conversation provider and model', () async {
