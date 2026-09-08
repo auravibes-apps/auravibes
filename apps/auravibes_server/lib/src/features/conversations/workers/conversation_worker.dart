@@ -281,27 +281,16 @@ class const ConversationWorker({
       await _publishConversation(session, job);
       return;
     }
-    if (result.requiresUserAction) {
-      await _commitResult(
-        session,
-        job,
-        phaseTurn,
-        leaseToken,
-        result,
-        status: ConversationStatuses.awaitingUserAction,
-      );
-      await SyncWakeups.publishWorkspace(session, job.workspaceId);
-      await _publishConversation(session, job);
-      return;
-    }
     await _commitResult(
       session,
       job,
       phaseTurn,
       leaseToken,
       result,
+      status: result.requiresUserAction
+          ? ConversationStatuses.awaitingUserAction
+          : ConversationStatuses.completed,
     );
-
     await SyncWakeups.publishWorkspace(session, job.workspaceId);
     await _publishConversation(session, job);
   }
