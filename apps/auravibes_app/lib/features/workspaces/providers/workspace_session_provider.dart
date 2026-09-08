@@ -127,6 +127,17 @@ CloudWorkspaceResourceStore cloudWorkspaceResourceStoreForSession(
   ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
 );
 
+Future<CloudWorkspaceResourceStore?> cloudWorkspaceResourceStoreForWorkspace(
+  Ref ref,
+  String workspaceId,
+) async {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
+  );
+
+  return gateway == null ? null : CloudWorkspaceResourceStore(gateway);
+}
+
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)
 Stream<List<WorkspaceResource>> cloudWorkspaceConfiguration(
