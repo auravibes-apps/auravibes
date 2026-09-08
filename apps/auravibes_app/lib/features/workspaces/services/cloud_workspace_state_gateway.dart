@@ -218,11 +218,11 @@ class CloudWorkspaceStateGateway {
           yield snapshot.value;
         }
       } on CloudWorkspaceException catch (error) {
-        if (_isTerminal(error.code)) {
+        if (_isTerminal(error.code.name)) {
           CloudAppErrors.translateException(error, CloudOperationContext.state);
         }
       } on CloudAppException catch (error) {
-        if (_isTerminalCode(error.code)) {
+        if (_isTerminal(error.code)) {
           rethrow;
         }
       } on Object catch (_) {
@@ -241,7 +241,7 @@ class CloudWorkspaceStateGateway {
     }
   }
 
-  static bool _isTerminalCode(String? code) =>
+  static bool _isTerminal(String? code) =>
       code == CloudWorkspaceErrorCode.authenticationRequired.name ||
       code == CloudWorkspaceErrorCode.membershipRequired.name ||
       code == CloudWorkspaceErrorCode.workspaceNotFound.name;
@@ -319,11 +319,6 @@ class CloudWorkspaceStateGateway {
     context: CloudOperationContext.resource,
     code: code,
   );
-
-  static bool _isTerminal(CloudWorkspaceErrorCode code) =>
-      code == CloudWorkspaceErrorCode.authenticationRequired ||
-      code == CloudWorkspaceErrorCode.membershipRequired ||
-      code == CloudWorkspaceErrorCode.workspaceNotFound;
 
   static Future<void> _defaultDelay(Duration duration) =>
       Future<void>.delayed(duration);
