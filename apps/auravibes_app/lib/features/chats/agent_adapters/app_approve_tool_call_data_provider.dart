@@ -202,12 +202,14 @@ class const AppApproveToolCallDataProvider({
     required Object error,
     required StackTrace stackTrace,
   }) {
-    _logToolExecutionError(
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      tool: tool,
-      error: error,
-      stackTrace: stackTrace,
+    _logger.severe(
+      'Approved tool execution failed '
+      'conversationId=$conversationId '
+      'toolCallId=$toolCallId '
+      'toolType=${tool.type.name} '
+      'toolIdentifier=${tool.toolIdentifier}',
+      error,
+      stackTrace,
     );
   }
 
@@ -230,22 +232,4 @@ class const AppApproveToolCallDataProvider({
     if (patched == null) return;
     onToolCallChanged();
   }
-}
-
-void _logToolExecutionError({
-  required String conversationId,
-  required String toolCallId,
-  required ResolvedTool tool,
-  required Object error,
-  required StackTrace stackTrace,
-}) {
-  _logger.severe(
-    'Approved tool execution failed '
-    'conversationId=$conversationId '
-    'toolCallId=$toolCallId '
-    'toolType=${tool.type.name} '
-    'toolIdentifier=${tool.toolIdentifier}',
-    error,
-    stackTrace,
-  );
 }

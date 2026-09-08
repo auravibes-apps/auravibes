@@ -189,12 +189,14 @@ class const AppAllowedToolsDataProvider({
     required Object error,
     required StackTrace stackTrace,
   }) {
-    _logToolExecutionError(
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      tool: tool,
-      error: error,
-      stackTrace: stackTrace,
+    _logger.severe(
+      'Tool execution failed '
+      'conversationId=$conversationId '
+      'toolCallId=$toolCallId '
+      'toolType=${tool.type.name} '
+      'toolIdentifier=${tool.toolIdentifier}',
+      error,
+      stackTrace,
     );
   }
 
@@ -226,24 +228,6 @@ class const AppAllowedToolsDataProvider({
       }),
     );
   }
-}
-
-void _logToolExecutionError({
-  required String conversationId,
-  required String toolCallId,
-  required ResolvedTool tool,
-  required Object error,
-  required StackTrace stackTrace,
-}) {
-  _logger.severe(
-    'Tool execution failed '
-    'conversationId=$conversationId '
-    'toolCallId=$toolCallId '
-    'toolType=${tool.type.name} '
-    'toolIdentifier=${tool.toolIdentifier}',
-    error,
-    stackTrace,
-  );
 }
 
 final Provider<AgentToolExecutionService>
