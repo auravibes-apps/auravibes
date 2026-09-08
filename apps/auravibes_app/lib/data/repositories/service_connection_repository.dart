@@ -65,7 +65,7 @@ class const ServiceConnectionRepository(
             ),
           ),
         ),
-        keySuffix: Value(_suffix(secret)),
+        keySuffix: Value(secret.lastCharacters(6)),
       );
     }
     final _ =
@@ -147,7 +147,7 @@ class const ServiceConnectionRepository(
                 ServiceConnectionAuthCodec.encodeSecret(secret),
               ),
             ),
-            keySuffix: Value(_suffix(apiKey)),
+            keySuffix: Value(apiKey.lastCharacters(6)),
             workspaceId: workspaceId,
           ),
         );
@@ -217,7 +217,7 @@ class const ServiceConnectionRepository(
                 ServiceConnectionAuthCodec.encodeSecret(secret),
               ),
             ),
-            keySuffix: Value(_suffix(token.accessToken)),
+            keySuffix: Value(token.accessToken.lastCharacters(6)),
             authStatus: const Value(ServiceConnectionAuthStatus.connected),
             expiresAt: Value(token.expiresAt),
             lastRefreshedAt: Value(token.issuedAt),
@@ -268,7 +268,7 @@ class const ServiceConnectionRepository(
             kind: kind,
             authenticationType: ServiceAuthenticationTypeTable.bearerToken,
             encryptedAuthValue: Value(encrypted),
-            keySuffix: Value(_suffix(bearerToken)),
+            keySuffix: Value(bearerToken.lastCharacters(6)),
             workspaceId: workspaceId,
           ),
         );
@@ -309,7 +309,7 @@ class const ServiceConnectionRepository(
                 ServiceConnectionAuthCodec.encodeSecret(secret),
               ),
             ),
-            keySuffix: Value(_suffix(token.accessToken)),
+            keySuffix: Value(token.accessToken.lastCharacters(6)),
             metadataJson: Value(
               ServiceConnectionAuthCodec.encodeMetadata(metadata),
             ),
@@ -320,10 +320,6 @@ class const ServiceConnectionRepository(
         );
 
     return row.id;
-  }
-
-  String _suffix(String value) {
-    return value.lastCharacters(6);
   }
 
   Future<ServiceConnectionTable?> _getRowById(String id) {

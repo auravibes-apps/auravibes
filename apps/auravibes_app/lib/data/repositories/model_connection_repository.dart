@@ -232,7 +232,7 @@ class ModelConnectionRepository({
           authenticationType: ServiceAuthenticationTypeTable.oauth2,
           url: .absentIfNull(modelConnection.url),
           encryptedAuthValue: Value(encryptedToken),
-          keySuffix: Value(_keySuffix(token.accessToken)),
+          keySuffix: Value(token.accessToken.lastCharacters(6)),
           metadataJson: Value(
             ServiceConnectionAuthCodec.encodeMetadata(metadata),
           ),
@@ -331,7 +331,7 @@ class ModelConnectionRepository({
       key,
       existing.encryptedAuthValue,
     );
-    final keySuffix = key == null ? existing.keySuffix : _keySuffix(key);
+    final keySuffix = key == null ? existing.keySuffix : key.lastCharacters(6);
 
     return (
       encryptedKey: encryptedKey,
@@ -426,12 +426,6 @@ class ModelConnectionRepository({
       keySuffix: .new(keySuffix),
       workspaceId: .new(modelConnection.workspaceId),
     );
-  }
-
-  String _keySuffix(String key) {
-    const keySuffixLength = 6;
-
-    return key.lastCharacters(keySuffixLength);
   }
 
   String _decodeApiKey(String decrypted) {
