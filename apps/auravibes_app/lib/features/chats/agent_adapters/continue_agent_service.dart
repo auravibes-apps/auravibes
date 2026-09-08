@@ -200,15 +200,11 @@ class ContinueAgentService({
   }
 
   @override
-  Future<void> markPendingUsersSent(List<String> pendingUserMessageIds) async {
-    await _markPendingUsers(pendingUserMessageIds, .sent);
-  }
+  Future<void> markPendingUsersSent(List<String> pendingUserMessageIds) =>
+      _markPendingUsers(pendingUserMessageIds, .sent);
 
-  Future<void> _markPendingUsers(
-    List<String> messageIds,
-    MessageStatus status,
-  ) async {
-    for (final messageId in messageIds) {
+  Future<void> _markPendingUsers(List<String> ids, MessageStatus status) async {
+    for (final messageId in ids) {
       final _ = await messageRepository.patchMessage(
         messageId,
         MessagePatch(status: status),
