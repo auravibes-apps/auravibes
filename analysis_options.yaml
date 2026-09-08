@@ -6,6 +6,7 @@ plugins:
     diagnostics:
       always-remove-listener: true
       arguments-ordering: true
+      avoid-banned-imports: true
       avoid-cascade-after-if-null: true
       avoid-collection-methods-with-unrelated-types: true
       avoid-creating-vector-in-update: true
@@ -32,6 +33,7 @@ plugins:
       avoid-unrelated-type-assertions: true
       avoid-unused-parameters: true
       avoid-wrapping-in-padding: true
+      ban-name: true
       check-for-equals-in-render-object-setters: true
       consistent-update-render-object: true
       list-all-equatable-fields: true
@@ -105,6 +107,25 @@ plugins:
 
 dart_code_linter:
   rules:
+    avoid-banned-imports:
+      entries:
+        - paths:
+            - packages/auravibes_engine/lib/.*\.dart$
+          deny:
+            - package:flutter/.*
+            - package:auravibes_app/.*
+            - package:auravibes_server_client/.*
+          message: Keep the engine package independent of app and platform code.
+        - paths:
+            - packages/auravibes_ui/lib/.*\.dart$
+          deny:
+            - package:auravibes_app/.*
+            - package:auravibes_engine/.*
+          message: Keep the UI package independent of app and engine code.
+    ban-name:
+      entries:
+        - ident: print
+          description: Use the application logger instead.
     avoid-returning-widgets:
       ignored-annotations:
         # Widgetbook generator requires annotated top-level widget factories.
