@@ -8,7 +8,6 @@ import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -18,6 +17,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
+import 'package:auravibes_app/features/chats/usecases/stop_pending_tool_calls_usecase.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
@@ -134,24 +134,6 @@ class ContinueAgentService({
     return messagesStreamingRuntime.remove(messageId);
   }
 
-  MessageMetadataEntity? _markPendingToolsStopped(
-    MessageMetadataEntity? metadata,
-  ) {
-    if (metadata == null || metadata.toolCalls.isEmpty) {
-      return metadata;
-    }
-
-    return metadata.copyWith(
-      toolCalls: metadata.toolCalls.map((toolCall) {
-        if (!toolCall.isPending) return toolCall;
-
-        return toolCall.copyWith(
-          resultStatus: ToolCallResultStatus.stoppedByUser,
-        );
-      }).toList(),
-    );
-  }
-
   @override
   Future<void> markPendingUsersErrored(
     List<String> pendingUserMessageIds,
@@ -184,7 +166,7 @@ class ContinueAgentService({
     final runtime = _a2uiRuntimesByMessageId[messageId];
     runtime?.commitMessage(messageId);
     final a2uiMessages = runtime?.messagesFor(messageId);
-    final stoppedMetadata = _markPendingToolsStopped(result?.entityMetadata);
+    final stoppedMetadata = stopPendingToolMetadata(result?.entityMetadata);
     final _ = await messageRepository.patchMessage(
       messageId,
       MessagePatch(

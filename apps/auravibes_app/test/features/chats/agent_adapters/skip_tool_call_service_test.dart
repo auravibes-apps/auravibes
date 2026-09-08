@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/skip_tool_call_service.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../../../test_mocks.dart';
 
@@ -143,6 +147,54 @@ void main() {
 
       verifyNever(() => messageRepository.patchMessage(any(), any())).called(0);
     });
+
+    for (final fails in [true, false]) {
+      test('stop effects wait for persistence (fails: $fails)', () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+        final request = runtime.start(
+          parentId: 'parent',
+          childId: message.conversationId,
+        );
+        final started = Completer<void>();
+        final persisted = Completer<MessageEntity>();
+        var notifications = 0;
+        final actions = AppToolCallActionsDataProvider(
+          messageRepository: messageRepository,
+          agentToolResumeService: agentToolResumeService,
+          onToolCallChanged: () => notifications++,
+          activeSubAgents: runtime,
+        );
+        when(() => messageRepository.getMessageById(messageId))
+            .thenAnswer((_) async => message);
+        when(() => messageRepository.patchMessage(messageId, any()))
+            .thenAnswer((_) {
+              started.complete();
+
+              return persisted.future;
+            });
+        final result = expectLater(
+          actions.stopPendingToolCalls(messageId: messageId),
+          fails ? throwsStateError : completes,
+        );
+        await started.future;
+        expect(notifications, 0);
+        expect(runtime.parentOf(message.conversationId), 'parent');
+        if (fails) {
+          persisted.completeError(StateError('write failed'));
+        } else {
+          persisted.complete(message);
+        }
+        await result;
+        expect(notifications, fails ? 0 : 1);
+        expect(request.isStopped, !fails);
+        expect(
+          runtime.parentOf(message.conversationId),
+          fails ? 'parent' : isNull,
+        );
+      });
+    }
 
     test('resumes conversation through resume service', () async {
       when(() => agentToolResumeService.call(messageId: messageId))

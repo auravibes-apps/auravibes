@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/usecases/stop_pending_tool_calls_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 
 class const AppToolCallActionsDataProvider({
@@ -45,32 +46,15 @@ class const AppToolCallActionsDataProvider({
 
   @override
   Future<void> stopPendingToolCalls({required String messageId}) async {
-    final message = await messageRepository.getMessageById(messageId);
-    if (message == null) return;
-
-    final metadata = message.metadata ?? const MessageMetadataEntity();
-    var didUpdate = false;
-    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
-      if (!toolCall.isPending) return toolCall;
-
-      didUpdate = true;
-
-      return toolCall.copyWith(
-        resultStatus: ToolCallResultStatus.stoppedByUser,
-      );
-    }).toList();
-    if (!didUpdate) return;
-
-    final _ = await messageRepository.patchMessage(
-      messageId,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
-    );
+    final conversationId = await StopPendingToolCallsUsecase(messageRepository)
+        .call(messageId: messageId);
+    if (conversationId == null) return;
     onToolCallChanged();
-    final parentId = activeSubAgents?.parentOf(message.conversationId);
+    final parentId = activeSubAgents?.parentOf(conversationId);
     if (parentId != null) {
       activeSubAgents?.finish(
         parentId: parentId,
-        childId: message.conversationId,
+        childId: conversationId,
         status: agent.SubAgentCompletionStatus.stopped,
       );
     }

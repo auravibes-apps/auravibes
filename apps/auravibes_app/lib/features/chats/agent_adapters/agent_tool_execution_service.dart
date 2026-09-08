@@ -7,13 +7,13 @@ import 'dart:convert';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
     hide ToolToCall;
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_decision_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/stop_pending_tool_calls_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
@@ -202,26 +202,8 @@ class const AppAllowedToolsDataProvider({
 
   @override
   Future<void> stopPendingTools({required String messageId}) async {
-    final message = await messageRepository.getMessageById(messageId);
-    if (message == null) return;
-
-    final metadata = message.metadata ?? const MessageMetadataEntity();
-    var didUpdate = false;
-    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
-      if (!toolCall.isPending) return toolCall;
-
-      didUpdate = true;
-
-      return toolCall.copyWith(
-        resultStatus: ToolCallResultStatus.stoppedByUser,
-      );
-    }).toList();
-    if (!didUpdate) return;
-
-    final _ = await messageRepository.patchMessage(
-      messageId,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
-    );
+    final _ = await StopPendingToolCallsUsecase(messageRepository)
+        .call(messageId: messageId);
   }
 
   @override
