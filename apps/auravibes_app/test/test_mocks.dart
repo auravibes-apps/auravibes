@@ -77,7 +77,7 @@ void registerTestFallbackValues() {
   registerFallbackValue(_FakeToolsGroupToCreate());
   registerFallbackValue(_FakeWorkspaceModelSelectionFilter());
   registerFallbackValue(_FakeWorkspaceModelSelectionToCreate());
-  registerFallbackValue(_FakeWorkspaceModelSelectionWithConnectionEntity());
+  registerFallbackValue(_FakeWorkspaceModelSelectionEntity());
   registerFallbackValue(_FakeWorkspaceToolToCreate());
   registerFallbackValue(<WorkspaceModelSelectionsCompanion>[]);
 }
@@ -124,7 +124,7 @@ class _FakeWorkspaceModelSelectionFilter extends Fake
 class _FakeWorkspaceModelSelectionToCreate extends Fake
     implements WorkspaceModelSelectionToCreate;
 
-class _FakeWorkspaceModelSelectionWithConnectionEntity extends Fake
+class _FakeWorkspaceModelSelectionEntity extends Fake
     implements WorkspaceModelSelectionWithConnectionEntity;
 
 class _FakeWorkspaceToolToCreate extends Fake implements WorkspaceToolToCreate;

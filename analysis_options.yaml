@@ -71,6 +71,7 @@ plugins:
       prefer-named-record-fields: true
       prefer-provide-intl-description: true
       prefer-correct-test-file-name: true
+      prefer-correct-type-name: true
       prefer-single-quotes: true
       prefer-using-list-view: true
       provide-correct-intl-args: true
