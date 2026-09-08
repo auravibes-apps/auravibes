@@ -88,6 +88,13 @@ abstract class const OAuthTokenEntity._() with _$OAuthTokenEntity {
   factory fromJson(Map<String, dynamic> json) =>
       _$OAuthTokenEntityFromJson(json);
 
+  DateTime? get expiresAt {
+    final expiresIn = this.expiresIn;
+    if (expiresIn == null) return null;
+
+    return issuedAt.add(Duration(seconds: expiresIn));
+  }
+
   /// Returns true if the stored OAuth token is expired or unavailable.
   bool get isOAuthTokenExpired {
     final expiresIn = this.expiresIn;

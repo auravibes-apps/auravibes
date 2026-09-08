@@ -219,7 +219,7 @@ class const ServiceConnectionRepository(
             ),
             keySuffix: Value(_suffix(token.accessToken)),
             authStatus: const Value(ServiceConnectionAuthStatus.connected),
-            expiresAt: Value(_expiresAt(token)),
+            expiresAt: Value(token.expiresAt),
             lastRefreshedAt: Value(token.issuedAt),
             lastAuthError: const Value(null),
           ),
@@ -313,20 +313,13 @@ class const ServiceConnectionRepository(
             metadataJson: Value(
               ServiceConnectionAuthCodec.encodeMetadata(metadata),
             ),
-            expiresAt: Value(_expiresAt(token)),
+            expiresAt: Value(token.expiresAt),
             lastRefreshedAt: Value(token.issuedAt),
             workspaceId: workspaceId,
           ),
         );
 
     return row.id;
-  }
-
-  DateTime? _expiresAt(OAuthTokenEntity token) {
-    final expiresIn = token.expiresIn;
-    if (expiresIn == null) return null;
-
-    return token.issuedAt.add(Duration(seconds: expiresIn));
   }
 
   String _suffix(String value) {

@@ -1,7 +1,6 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -238,7 +237,7 @@ class ModelConnectionRepository({
             ServiceConnectionAuthCodec.encodeMetadata(metadata),
           ),
           authStatus: const Value(ServiceConnectionAuthStatus.connected),
-          expiresAt: Value(_expiresAt(token)),
+          expiresAt: Value(token.expiresAt),
           lastRefreshedAt: Value(token.issuedAt),
           workspaceId: modelConnection.workspaceId,
         ),
@@ -465,13 +464,6 @@ class ModelConnectionRepository({
       url: modelConnection.url,
       keySuffix: modelConnection.keySuffix,
     );
-  }
-
-  DateTime? _expiresAt(OAuthTokenEntity token) {
-    final expiresIn = token.expiresIn;
-    if (expiresIn == null) return null;
-
-    return token.issuedAt.add(Duration(seconds: expiresIn));
   }
 
   ModelProviderAuthMode _authMode(ServiceAuthenticationTypeTable type) {
