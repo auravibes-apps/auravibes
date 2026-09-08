@@ -8,10 +8,10 @@ description: Use when moving business logic out of Flutter widgets/providers int
 ## Overview
 Use controllers as application orchestrators: widgets dispatch intent, controllers coordinate use cases, and domain logic stays in use cases.
 
-In this repo, `ToolExecutionController` is the reference pattern:
-- state holder + query API + intent API in `apps/auravibes_app/lib/providers/tool_execution_controller.dart`
-- stream/message manager delegates tool lifecycle to controller in `apps/auravibes_app/lib/providers/messages_manager_provider.dart`
-- widgets render state and call intent methods in chat widgets.
+In this repo, the reference pattern is:
+- a state holder exposes query and intent APIs
+- stream/message orchestration delegates tool lifecycle to that state holder
+- widgets render state and call intent methods.
 
 ## When to Use
 - A provider/notifier is mixing state + business rules + side effects.

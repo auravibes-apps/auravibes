@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
+import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as engine;
 import 'package:flutter_test/flutter_test.dart';

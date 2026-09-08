@@ -7,7 +7,7 @@ import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/utils/encode.dart';
+import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:drift/drift.dart';
 
 const _messageContentCannotBeEmpty = 'Message content cannot be empty';

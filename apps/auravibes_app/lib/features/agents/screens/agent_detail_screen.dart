@@ -2,15 +2,14 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
-import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_tool_override_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/usecases/list_agent_tool_overrides_usecase.dart';
-import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_tool_overrides_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
-import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
+import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';

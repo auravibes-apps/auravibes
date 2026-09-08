@@ -1,4 +1,4 @@
-import 'package:auravibes_app/utils/encode.dart';
+import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

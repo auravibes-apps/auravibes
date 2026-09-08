@@ -1,0 +1,1576 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/genkit.dart' hide FinishReason;
+import 'package:logging/logging.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../../test_mocks.dart';
+
+void main() {
+  setUpAll(registerTestFallbackValues);
+
+  group('ContinueAgentService', () {
+    var chatbotService = MockChatbotService();
+    var messageRepository = MockMessageRepository();
+    var workspaceModelSelectionsRepository =
+        MockWorkspaceModelSelectionRepository();
+    var conversationRepository = MockConversationRepository();
+    var loadConversationToolSpecsUsecase =
+        MockLoadConversationToolSpecsUsecase();
+    var monitoringService = MockMonitoringService();
+    var apiModelRepository = MockApiModelRepository();
+    var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+    var removedMessageIds = <String>[];
+    var startedConversationIds = <String>[];
+    var removedConversationIds = <String>[];
+    var updatedMessageIds = <String>[];
+    var updatedResults = <ChatResult<ChatMessage>>[];
+    var startedSubscriptionMessageIds = <String>[];
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = ContinueAgentService(
+      chatbotService: chatbotService,
+      messageRepository: messageRepository,
+      agentContinuationProvider: _appAgentContinuationAdapter(
+        conversationRepository: conversationRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+        apiModelRepository: apiModelRepository,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesService([]),
+      ),
+      messagesStreamingRuntime: MessagesStreamingRuntime(
+        startSubscription: (_, messageId) {
+          startedSubscriptionMessageIds.add(messageId);
+        },
+        updateResult: (result, messageId) {
+          updatedResults.add(result);
+          updatedMessageIds.add(messageId);
+        },
+        remove: (messageId) {
+          removedMessageIds.add(messageId);
+
+          return Future<void>.value();
+        },
+      ),
+      conversationStreamingRuntime: ConversationStreamingRuntime(
+        start: startedConversationIds.add,
+        isStreaming: (_) => false,
+        remove: removedConversationIds.add,
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+      monitoringService: monitoringService,
+    );
+
+    setUp(() {
+      chatbotService = MockChatbotService();
+      messageRepository = MockMessageRepository();
+      workspaceModelSelectionsRepository =
+          MockWorkspaceModelSelectionRepository();
+      conversationRepository = MockConversationRepository();
+      loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
+      monitoringService = MockMonitoringService();
+      apiModelRepository = MockApiModelRepository();
+      selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+      removedMessageIds = [];
+      startedConversationIds = [];
+      removedConversationIds = [];
+      updatedMessageIds = [];
+      updatedResults = [];
+      startedSubscriptionMessageIds = [];
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
+
+      usecase = ContinueAgentService(
+        chatbotService: chatbotService,
+        messageRepository: messageRepository,
+        agentContinuationProvider: _appAgentContinuationAdapter(
+          conversationRepository: conversationRepository,
+          workspaceModelSelectionsRepository:
+              workspaceModelSelectionsRepository,
+          apiModelRepository: apiModelRepository,
+          selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+          loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+          buildSkillContextMessagesUsecase:
+              const _FakeBuildSkillContextMessagesService([]),
+        ),
+        messagesStreamingRuntime: MessagesStreamingRuntime(
+          startSubscription: (_, messageId) {
+            startedSubscriptionMessageIds.add(messageId);
+          },
+          updateResult: (result, messageId) {
+            updatedResults.add(result);
+            updatedMessageIds.add(messageId);
+          },
+          remove: (messageId) {
+            removedMessageIds.add(messageId);
+
+            return Future<void>.value();
+          },
+        ),
+        conversationStreamingRuntime: ConversationStreamingRuntime(
+          start: startedConversationIds.add,
+          isStreaming: (_) => false,
+          remove: removedConversationIds.add,
+        ),
+        agentCancellationRuntime: agentCancellationRuntime,
+        monitoringService: monitoringService,
+      );
+
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => [_userMessage]);
+      when(() => selectPromptMessagesUsecase.call('conversation-1'))
+          .thenAnswer((_) async => [_userMessage]);
+      when(
+        () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
+      ).thenAnswer((_) async => _model);
+      when(
+        () => loadConversationToolSpecsUsecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer((_) async => const []);
+      when(() => messageRepository.createMessage(any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.patchMessage(any(), any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+    });
+
+    test('uses model stream as lastResult', () async {
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Working'),
+            usage: const LanguageModelUsage(
+              promptTokens: 10,
+              responseTokens: 5,
+            ),
+          ),
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model(
+              '',
+              parts: [
+                ToolRequestPart(
+                  toolRequest: ToolRequest(
+                    ref: 'tool-1',
+                    name: 'calculator',
+                    input: const {'input': '2+2'},
+                  ),
+                ),
+              ],
+            ),
+            finishReason: ChatFinishReason.toolCalls,
+            usage: const LanguageModelUsage(responseTokens: 7),
+          ),
+        ]),
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.messageId, 'assistant-1');
+      expect(result.hasToolCalls, isTrue);
+
+      expect(startedConversationIds, ['conversation-1']);
+      expect(startedSubscriptionMessageIds, ['assistant-1']);
+      expect(updatedMessageIds, isNotEmpty);
+      expect(removedMessageIds, ['assistant-1']);
+      expect(removedConversationIds, ['conversation-1']);
+
+      final updates = verify(
+        () => messageRepository.patchMessage('assistant-1', captureAny()),
+      ).captured;
+
+      final streamingUpdate = updates.cast<MessagePatch>().firstWhere(
+        (update) => update.metadata?.toolCalls.isNotEmpty ?? false,
+      );
+
+      expect(streamingUpdate.metadata?.toolCalls, hasLength(1));
+      expect(streamingUpdate.metadata?.toolCalls.single.id, 'tool-1');
+      expect(streamingUpdate.metadata?.promptTokens, 10);
+      expect(streamingUpdate.metadata?.completionTokens, 12);
+      expect(streamingUpdate.metadata?.totalTokens, isNull);
+      expect(streamingUpdate.metadata?.usedTokens, 22);
+    });
+
+    test(
+      'sends loaded skill context as user XML before prompt messages',
+      () async {
+        usecase = ContinueAgentService(
+          chatbotService: chatbotService,
+          messageRepository: messageRepository,
+          agentContinuationProvider: _appAgentContinuationAdapter(
+            conversationRepository: conversationRepository,
+            workspaceModelSelectionsRepository:
+                workspaceModelSelectionsRepository,
+            apiModelRepository: apiModelRepository,
+            selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+            loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+            buildSkillContextMessagesUsecase:
+                const _FakeBuildSkillContextMessagesService([
+                  ChatMessage(
+                    role: ChatMessageRole.user,
+                    content: _skillContextXml,
+                    metadata: {'kind': skillContextMetadataKind},
+                  ),
+                ]),
+          ),
+          messagesStreamingRuntime: MessagesStreamingRuntime(
+            startSubscription: (_, messageId) {
+              startedSubscriptionMessageIds.add(messageId);
+            },
+            updateResult: (result, messageId) {
+              updatedResults.add(result);
+              updatedMessageIds.add(messageId);
+            },
+            remove: (messageId) {
+              removedMessageIds.add(messageId);
+
+              return Future<void>.value();
+            },
+          ),
+          conversationStreamingRuntime: ConversationStreamingRuntime(
+            start: startedConversationIds.add,
+            isStreaming: (_) => false,
+            remove: removedConversationIds.add,
+          ),
+          agentCancellationRuntime: agentCancellationRuntime,
+          monitoringService: monitoringService,
+        );
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer((invocation) {
+          final history =
+              invocation.positionalArguments[1] as List<ChatMessage>;
+          expect(history.firstOrNull?.role, ChatMessageRole.user);
+          expect(
+            history.firstOrNull?.metadata['kind'],
+            skillContextMetadataKind,
+          );
+          expect(history.firstOrNull?.text, contains('<skill>'));
+
+          return Stream.fromIterable([
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Done'),
+              finishReason: ChatFinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ]);
+        });
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result.hasToolCalls, isFalse);
+      },
+    );
+
+    test(
+      'keeps fixed skill tools while refreshed context adds manifest',
+      () async {
+        final tools = buildSkillCommandToolSpecs();
+        final contexts = _QueuedBuildSkillContextMessagesService([
+          const [],
+          const [
+            ChatMessage(
+              role: ChatMessageRole.user,
+              content: '<skill><name>Research</name><skill_manifest>{&quot;revision&quot;:&quot;r1&quot;}</skill_manifest></skill>',
+              metadata: {'kind': skillContextMetadataKind},
+            ),
+          ],
+        ]);
+        usecase = ContinueAgentService(
+          chatbotService: chatbotService,
+          messageRepository: messageRepository,
+          agentContinuationProvider: _appAgentContinuationAdapter(
+            conversationRepository: conversationRepository,
+            workspaceModelSelectionsRepository:
+                workspaceModelSelectionsRepository,
+            apiModelRepository: apiModelRepository,
+            selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+            loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+            buildSkillContextMessagesUsecase: contexts,
+          ),
+          messagesStreamingRuntime: MessagesStreamingRuntime(
+            startSubscription: (_, messageId) {
+              startedSubscriptionMessageIds.add(messageId);
+            },
+            updateResult: (result, messageId) {
+              updatedResults.add(result);
+              updatedMessageIds.add(messageId);
+            },
+            remove: (messageId) async => removedMessageIds.add(messageId),
+          ),
+          conversationStreamingRuntime: ConversationStreamingRuntime(
+            start: startedConversationIds.add,
+            isStreaming: (_) => false,
+            remove: removedConversationIds.add,
+          ),
+          agentCancellationRuntime: agentCancellationRuntime,
+          monitoringService: monitoringService,
+        );
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => tools);
+        final sentTools = <List<ToolSpec>>[];
+        final sentMessages = <List<ChatMessage>>[];
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: tools,
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer((invocation) {
+          sentMessages.add(
+            List<ChatMessage>.from(invocation.positionalArguments[1] as List),
+          );
+          sentTools.add(
+            List<ToolSpec>.from(invocation.namedArguments[#tools] as List),
+          );
+
+          return Stream.value(
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Done'),
+              finishReason: ChatFinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          );
+        });
+
+        final _ = await usecase.call(conversationId: 'conversation-1');
+        final _ = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.toolResume,
+          ),
+        );
+
+        expect(sentTools, hasLength(2));
+        final firstTools = sentTools.firstOrNull;
+        final lastTools = sentTools.lastOrNull;
+        expect(firstTools, isNotNull);
+        expect(lastTools, isNotNull);
+        expect(firstTools, orderedEquals(lastTools ?? const <ToolSpec>[]));
+        expect(
+          sentTools.last.any((tool) => tool.name.startsWith('skill__')),
+          isFalse,
+        );
+        expect(
+          sentMessages.last.map((message) => message.text).join(),
+          contains('<skill_manifest>'),
+        );
+      },
+    );
+
+    test('ignores empty chunks until text is available', () async {
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model(''),
+            usage: const LanguageModelUsage(),
+          ),
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Done'),
+            finishReason: ChatFinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        ]),
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.messageId, 'assistant-1');
+      expect(result.hasToolCalls, isFalse);
+      expect(startedSubscriptionMessageIds, ['assistant-1']);
+      expect(updatedResults, hasLength(1));
+      expect(updatedResults.single.entityText, 'Done');
+
+      final created =
+          verify(() => messageRepository.createMessage(captureAny()))
+                  .captured
+                  .single
+              as MessageToCreate;
+      expect(created.content, 'Done');
+      expect(created.metadata, isNull);
+    });
+
+    test('persists metadata-only tool call as assistant message', () async {
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model(
+              '',
+              parts: [
+                ToolRequestPart(
+                  toolRequest: ToolRequest(
+                    ref: 'tool-1',
+                    name: 'calculator',
+                    input: const {'input': '2+2'},
+                  ),
+                ),
+              ],
+            ),
+            finishReason: ChatFinishReason.toolCalls,
+            usage: const LanguageModelUsage(),
+          ),
+        ]),
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.messageId, 'assistant-1');
+      expect(result.hasToolCalls, isTrue);
+
+      final created =
+          verify(() => messageRepository.createMessage(captureAny()))
+                  .captured
+                  .single
+              as MessageToCreate;
+      expect(created.content, isEmpty);
+      expect(created.metadata, isNotNull);
+
+      final rawMetadata = created.metadata;
+      final metadata = jsonDecode(
+        rawMetadata ?? fail('Expected tool call metadata'),
+      ) as Map<String, dynamic>;
+      final toolCalls = metadata['toolCalls'] as List<dynamic>;
+      expect(toolCalls, hasLength(1));
+      expect(toolCalls.single, containsPair('id', 'tool-1'));
+      expect(toolCalls.single, containsPair('name', 'calculator'));
+    });
+
+    test('skips empty chunks with non-encodable metadata', () async {
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('', metadata: {'bad': Object()}),
+            usage: const LanguageModelUsage(),
+          ),
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Done'),
+            finishReason: ChatFinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        ]),
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.messageId, 'assistant-1');
+      expect(startedSubscriptionMessageIds, ['assistant-1']);
+      expect(updatedResults, hasLength(1));
+      expect(updatedResults.single.entityText, 'Done');
+
+      final created =
+          verify(() => messageRepository.createMessage(captureAny()))
+                  .captured
+                  .single
+              as MessageToCreate;
+      expect(created.content, 'Done');
+      expect(created.metadata, isNull);
+    });
+
+    test(
+      'does not send tools when selected model does not support them',
+      () async {
+        final codexModel = _model.copyWith(
+          modelConnection: _model.modelConnection.copyWith(
+            modelId: 'openai-codex',
+          ),
+        );
+        final tools = [
+          ToolSpec(
+            name: 'calculator',
+            description: 'Math',
+            inputJsonSchema: {},
+          ),
+        ];
+        when(
+          () => workspaceModelSelectionsRepository
+              .getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => codexModel);
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => tools);
+        when(
+          () => apiModelRepository.getModelByProviderAndModelId(
+            'openai',
+            'gpt-4',
+          ),
+        ).thenAnswer(
+          (_) async => const ApiModelEntity(
+            modelProvider: 'openai',
+            id: 'gpt-4',
+            name: 'GPT-4',
+            limitContext: 128000,
+            limitOutput: 16384,
+            modalitiesInput: ['text'],
+            modalitiesOutput: ['text'],
+            supportsPriorityMode: true,
+          ),
+        );
+        when(
+          () => chatbotService.sendMessage(
+            any(),
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Done'),
+              finishReason: ChatFinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ]),
+        );
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result.hasToolCalls, isFalse);
+        verify(
+          () => chatbotService.sendMessage(
+            any(),
+            any(),
+            tools: const [],
+            sessionId: 'conversation-1',
+          ),
+        ).called(1);
+      },
+    );
+
+    test(
+      'sends tools for Codex selections when model supports tool calls',
+      () async {
+        final codexModel = _model.copyWith(
+          modelConnection: _model.modelConnection.copyWith(
+            modelId: 'openai-codex',
+          ),
+        );
+        final tools = [
+          ToolSpec(
+            name: 'load_skill',
+            description: 'Load a skill',
+            inputJsonSchema: {},
+          ),
+          ToolSpec(name: 'url', description: 'Open a URL', inputJsonSchema: {}),
+        ];
+        when(
+          () => workspaceModelSelectionsRepository
+              .getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => codexModel);
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => tools);
+        when(
+          () => apiModelRepository.getModelByProviderAndModelId(
+            'openai',
+            'gpt-4',
+          ),
+        ).thenAnswer(
+          (_) async => const ApiModelEntity(
+            modelProvider: 'openai',
+            id: 'gpt-4',
+            name: 'GPT Codex Spark',
+            limitContext: 128000,
+            limitOutput: 16384,
+            modalitiesInput: ['text'],
+            modalitiesOutput: ['text'],
+            family: 'gpt-codex-spark',
+            supportsToolCalls: true,
+          ),
+        );
+        when(
+          () => chatbotService.sendMessage(
+            any(),
+            any(),
+            tools: tools,
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Done'),
+              finishReason: ChatFinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ]),
+        );
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result.hasToolCalls, isFalse);
+        verify(
+          () => chatbotService.sendMessage(
+            any(),
+            any(),
+            tools: tools,
+            sessionId: 'conversation-1',
+          ),
+        ).called(1);
+      },
+    );
+
+    test('rejects unsupported Codex selections before streaming', () async {
+      final codexModel = _model.copyWith(
+        modelConnection: _model.modelConnection.copyWith(
+          modelId: 'openai-codex',
+        ),
+        workspaceModelSelection: _model.workspaceModelSelection.copyWith(
+          modelId: 'gpt-3.5-turbo',
+        ),
+      );
+      when(
+        () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
+      ).thenAnswer((_) async => codexModel);
+      when(
+        () => apiModelRepository.getModelByProviderAndModelId(
+          'openai',
+          'gpt-3.5-turbo',
+        ),
+      ).thenAnswer(
+        (_) async => const ApiModelEntity(
+          modelProvider: 'openai',
+          id: 'gpt-3.5-turbo',
+          name: 'GPT-3.5 Turbo',
+          limitContext: 16385,
+          limitOutput: 4096,
+          modalitiesInput: ['text'],
+          modalitiesOutput: ['text'],
+        ),
+      );
+
+      await expectLater(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(
+          isA<Exception>().having(
+            (error) => error.toString(),
+            'message',
+            contains('Selected Codex model is not supported'),
+          ),
+        ),
+      );
+      final _ = verifyNever(
+        () => chatbotService.sendMessage(
+          any(),
+          any(),
+          tools: any(named: 'tools'),
+          sessionId: any(named: 'sessionId'),
+        ),
+      );
+    });
+
+    test(
+      'marks the pending user message as sent on first model chunk',
+      () async {
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Working'),
+              finishReason: ChatFinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ]),
+        );
+
+        final _ = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
+
+        verify(
+          () => messageRepository.patchMessage(
+            'user-1',
+            const MessagePatch(status: MessageStatus.sent),
+          ),
+        ).called(1);
+
+        expect(startedConversationIds, ['conversation-1']);
+        expect(startedSubscriptionMessageIds, ['assistant-1']);
+        expect(removedMessageIds, ['assistant-1']);
+        expect(removedConversationIds, ['conversation-1']);
+      },
+    );
+
+    test(
+      'marks all pending user messages as sent on first model chunk',
+      () async {
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Working'),
+              finishReason: ChatFinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ]),
+        );
+
+        final _ = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1', 'user-2'],
+          ),
+        );
+
+        verify(
+          () => messageRepository.patchMessage(
+            'user-1',
+            const MessagePatch(status: MessageStatus.sent),
+          ),
+        ).called(1);
+        verify(
+          () => messageRepository.patchMessage(
+            'user-2',
+            const MessagePatch(status: MessageStatus.sent),
+          ),
+        ).called(1);
+
+        expect(startedConversationIds, ['conversation-1']);
+        expect(startedSubscriptionMessageIds, ['assistant-1']);
+        expect(removedMessageIds, ['assistant-1']);
+        expect(removedConversationIds, ['conversation-1']);
+      },
+    );
+
+    test(
+      'stops before the first chunk without creating an assistant error',
+      () async {
+        final controller = StreamController<ChatResult<ChatMessage>>();
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer((_) => controller.stream);
+
+        final future = usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        agentCancellationRuntime.requestStop('conversation-1');
+
+        final result = await future;
+        final _ = await controller.close();
+
+        expect(result.hasToolCalls, isFalse);
+        final _ = verifyNever(() => messageRepository.createMessage(any()));
+        verify(
+          () => messageRepository.patchMessage(
+            'user-1',
+            const MessagePatch(status: MessageStatus.sent),
+          ),
+        ).called(1);
+        final _ = verifyNever(
+          () => messageRepository.patchMessage(
+            'assistant-1',
+            const MessagePatch(status: MessageStatus.error),
+          ),
+        );
+      },
+    );
+
+    test(
+      'preserves partial assistant text as sent when stopped during stream',
+      () async {
+        final controller = StreamController<ChatResult<ChatMessage>>();
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer((_) => controller.stream);
+
+        final future = usecase.call(conversationId: 'conversation-1');
+        controller.add(
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Partial answer'),
+            finishReason: ChatFinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        );
+
+        while (startedSubscriptionMessageIds.isEmpty) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        agentCancellationRuntime.requestStop('conversation-1');
+
+        final result = await future;
+        final _ = await controller.close();
+
+        expect(result.messageId, 'assistant-1');
+        expect(result.hasToolCalls, isFalse);
+        final patches = verify(
+          () => messageRepository.patchMessage('assistant-1', captureAny()),
+        ).captured.cast<MessagePatch>();
+        expect(
+          patches.any(
+            (patch) =>
+                patch.content == 'Partial answer' &&
+                patch.status == MessageStatus.sent,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test('marks streamed pending tool calls as stopped when stopped', () async {
+      final controller = StreamController<ChatResult<ChatMessage>>();
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
+      ).thenAnswer((_) => controller.stream);
+
+      final future = usecase.call(conversationId: 'conversation-1');
+      controller.add(
+        ChatResult<ChatMessage>(
+          output: ChatMessage.model(
+            '',
+            parts: [
+              ToolRequestPart(
+                toolRequest: ToolRequest(
+                  ref: 'tool-1',
+                  name: 'calculator',
+                  input: const {'input': '2+2'},
+                ),
+              ),
+            ],
+          ),
+          finishReason: ChatFinishReason.toolCalls,
+          usage: const LanguageModelUsage(),
+        ),
+      );
+
+      while (startedSubscriptionMessageIds.isEmpty) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      agentCancellationRuntime.requestStop('conversation-1');
+
+      final result = await future;
+      final _ = await controller.close();
+
+      expect(result.hasToolCalls, isFalse);
+      final patches = verify(
+        () => messageRepository.patchMessage('assistant-1', captureAny()),
+      ).captured.cast<MessagePatch>();
+      final stoppedPatch = patches.lastWhere(
+        (patch) => patch.status == MessageStatus.sent,
+      );
+      expect(
+        stoppedPatch.metadata?.toolCalls.single.resultStatus,
+        ToolCallResultStatus.stoppedByUser,
+      );
+    });
+
+    test(
+      'waits for in-flight chunk persistence before completing stop',
+      () async {
+        final controller = StreamController<ChatResult<ChatMessage>>();
+        final createStarted = Completer<void>();
+        final createCompleter = Completer<MessageEntity>();
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer((_) => controller.stream);
+        when(() => messageRepository.createMessage(any())).thenAnswer((_) {
+          if (!createStarted.isCompleted) {
+            createStarted.complete();
+          }
+
+          return createCompleter.future;
+        });
+
+        final future = usecase.call(conversationId: 'conversation-1');
+        controller.add(
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Partial answer'),
+            finishReason: ChatFinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        );
+        await createStarted.future;
+
+        var didComplete = false;
+        Future<void> markComplete() async {
+          final _ = await future;
+          didComplete = true;
+        }
+
+        unawaited(markComplete());
+        agentCancellationRuntime.requestStop('conversation-1');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(didComplete, isFalse);
+
+        createCompleter.complete(_unfinishedAssistantMessage);
+        final result = await future;
+        final _ = await controller.close();
+
+        expect(result.messageId, 'assistant-1');
+        final patches = verify(
+          () => messageRepository.patchMessage('assistant-1', captureAny()),
+        ).captured.cast<MessagePatch>();
+        expect(
+          patches.any(
+            (patch) =>
+                patch.content == 'Partial answer' &&
+                patch.status == MessageStatus.sent,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test('allows empty stream after tool resume', () async {
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation);
+      when(
+        () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
+      ).thenAnswer((_) async => _model);
+      when(
+        () => loadConversationToolSpecsUsecase(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer((_) async => []);
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
+      ).thenAnswer((_) => const Stream.empty());
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: AgentIterationOrigin.toolResume,
+        ),
+      );
+
+      expect(result.messageId, isEmpty);
+      expect(result.hasToolCalls, isFalse);
+    });
+  });
+
+  group('ContinueAgentService error paths', () {
+    var chatbotService = MockChatbotService();
+    var messageRepository = MockMessageRepository();
+    var workspaceModelSelectionsRepository =
+        MockWorkspaceModelSelectionRepository();
+    var conversationRepository = MockConversationRepository();
+    var loadConversationToolSpecsUsecase =
+        MockLoadConversationToolSpecsUsecase();
+    var monitoringService = MockMonitoringService();
+    var apiModelRepository = MockApiModelRepository();
+    var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = ContinueAgentService(
+      chatbotService: chatbotService,
+      messageRepository: messageRepository,
+      agentContinuationProvider: _appAgentContinuationAdapter(
+        conversationRepository: conversationRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+        apiModelRepository: apiModelRepository,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesService([]),
+      ),
+      messagesStreamingRuntime: MessagesStreamingRuntime(
+        startSubscription: (_, _) {
+          final _ = Object();
+        },
+        updateResult: (_, _) {
+          final _ = Object();
+        },
+        remove: (_) {
+          return Future<void>.value();
+        },
+      ),
+      conversationStreamingRuntime: ConversationStreamingRuntime(
+        start: (_) {
+          final _ = Object();
+        },
+        isStreaming: (_) => false,
+        remove: (_) {
+          final _ = Object();
+        },
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+      monitoringService: monitoringService,
+    );
+
+    setUp(() {
+      chatbotService = MockChatbotService();
+      messageRepository = MockMessageRepository();
+      workspaceModelSelectionsRepository =
+          MockWorkspaceModelSelectionRepository();
+      conversationRepository = MockConversationRepository();
+      loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
+      monitoringService = MockMonitoringService();
+      apiModelRepository = MockApiModelRepository();
+      selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
+
+      usecase = ContinueAgentService(
+        chatbotService: chatbotService,
+        messageRepository: messageRepository,
+        agentContinuationProvider: _appAgentContinuationAdapter(
+          conversationRepository: conversationRepository,
+          workspaceModelSelectionsRepository:
+              workspaceModelSelectionsRepository,
+          apiModelRepository: apiModelRepository,
+          selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+          loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+          buildSkillContextMessagesUsecase:
+              const _FakeBuildSkillContextMessagesService([]),
+        ),
+        messagesStreamingRuntime: MessagesStreamingRuntime(
+          startSubscription: (_, _) {
+            final _ = Object();
+          },
+          updateResult: (_, _) {
+            final _ = Object();
+          },
+          remove: (_) {
+            return Future<void>.value();
+          },
+        ),
+        conversationStreamingRuntime: ConversationStreamingRuntime(
+          start: (_) {
+            final _ = Object();
+          },
+          isStreaming: (_) => false,
+          remove: (_) {
+            final _ = Object();
+          },
+        ),
+        agentCancellationRuntime: agentCancellationRuntime,
+        monitoringService: monitoringService,
+      );
+
+      when(() => selectPromptMessagesUsecase.call('conversation-1'))
+          .thenAnswer((_) async => [_userMessage]);
+    });
+
+    test('throws when conversation not found', () {
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => null);
+
+      expect(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('throws when conversation has no model id', () {
+      final noModelConversation = ConversationEntity(
+        id: 'conversation-1',
+        title: 'No Model',
+        workspaceId: 'workspace-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+      );
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => noModelConversation);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => []);
+
+      expect(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('throws when model not found', () {
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => []);
+      when(
+        () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
+      ).thenAnswer((_) async => null);
+
+      expect(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('logs and rethrows when stream errors before any chunk', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => []);
+      when(
+        () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
+      ).thenAnswer((_) async => _model);
+      when(
+        () => loadConversationToolSpecsUsecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer((_) async => const []);
+      when(() => messageRepository.createMessage(any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.patchMessage(any(), any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
+      ).thenAnswer((_) => Stream.error(StateError('model error')));
+
+      try {
+        final _ = await usecase.call(conversationId: 'conversation-1');
+        fail('Should have thrown');
+        // ignore: avoid_catching_errors - Required to assert propagated StateError.
+      } on StateError {
+        final _ = verifyNever(
+          () => messageRepository.patchMessage(any(), any()),
+        );
+      }
+
+      verify(
+        () => monitoringService.trackError(
+          'Error in continue agent stream',
+          error: any(named: 'error'),
+          stackTrace: any(named: 'stackTrace'),
+        ),
+      ).called(1);
+      expect(
+        records,
+        contains(
+          isA<LogRecord>()
+              .having(
+                (record) => record.loggerName,
+                'logger name',
+                'continue_agent_service',
+              )
+              .having((record) => record.level, 'level', Level.SEVERE)
+              .having(
+                (record) => record.message,
+                'message',
+                'Generation stream failed',
+              ),
+        ),
+      );
+    });
+    test(
+      'throws StateError when stream completes empty without cancellation',
+      () async {
+        when(() => conversationRepository.getConversationById('conversation-1'))
+            .thenAnswer((_) async => _conversation);
+        when(
+          () => workspaceModelSelectionsRepository
+              .getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => _model);
+        when(
+          () => loadConversationToolSpecsUsecase(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => []);
+        when(() => messageRepository.createMessage(any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
+        when(() => messageRepository.patchMessage(any(), any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer((_) => const Stream.empty());
+
+        await expectLater(
+          usecase.call(conversationId: 'conversation-1'),
+          throwsA(
+            predicate<StateError>((e) => '$e'.contains('without any result')),
+          ),
+        );
+      },
+    );
+  });
+
+  group('ContinueAgentService prompt selection', () {
+    var chatbotService = MockChatbotService();
+    var messageRepository = MockMessageRepository();
+    var workspaceModelSelectionsRepository =
+        MockWorkspaceModelSelectionRepository();
+    var conversationRepository = MockConversationRepository();
+    var loadConversationToolSpecsUsecase =
+        MockLoadConversationToolSpecsUsecase();
+    var monitoringService = MockMonitoringService();
+    var apiModelRepository = MockApiModelRepository();
+    var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = ContinueAgentService(
+      chatbotService: chatbotService,
+      messageRepository: messageRepository,
+      agentContinuationProvider: _appAgentContinuationAdapter(
+        conversationRepository: conversationRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+        apiModelRepository: apiModelRepository,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesService([]),
+      ),
+      messagesStreamingRuntime: MessagesStreamingRuntime(
+        startSubscription: (_, _) {
+          final _ = Object();
+        },
+        updateResult: (_, _) {
+          final _ = Object();
+        },
+        remove: (_) {
+          return Future<void>.value();
+        },
+      ),
+      conversationStreamingRuntime: ConversationStreamingRuntime(
+        start: (_) {
+          final _ = Object();
+        },
+        isStreaming: (_) => false,
+        remove: (_) {
+          final _ = Object();
+        },
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+      monitoringService: monitoringService,
+    );
+
+    setUp(() {
+      chatbotService = MockChatbotService();
+      messageRepository = MockMessageRepository();
+      workspaceModelSelectionsRepository =
+          MockWorkspaceModelSelectionRepository();
+      conversationRepository = MockConversationRepository();
+      loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
+      monitoringService = MockMonitoringService();
+      apiModelRepository = MockApiModelRepository();
+      selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
+
+      usecase = ContinueAgentService(
+        chatbotService: chatbotService,
+        messageRepository: messageRepository,
+        agentContinuationProvider: _appAgentContinuationAdapter(
+          conversationRepository: conversationRepository,
+          workspaceModelSelectionsRepository:
+              workspaceModelSelectionsRepository,
+          apiModelRepository: apiModelRepository,
+          selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+          loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+          buildSkillContextMessagesUsecase:
+              const _FakeBuildSkillContextMessagesService([]),
+        ),
+        messagesStreamingRuntime: MessagesStreamingRuntime(
+          startSubscription: (_, _) {
+            final _ = Object();
+          },
+          updateResult: (_, _) {
+            final _ = Object();
+          },
+          remove: (_) {
+            return Future<void>.value();
+          },
+        ),
+        conversationStreamingRuntime: ConversationStreamingRuntime(
+          start: (_) {
+            final _ = Object();
+          },
+          isStreaming: (_) => false,
+          remove: (_) {
+            final _ = Object();
+          },
+        ),
+        agentCancellationRuntime: agentCancellationRuntime,
+        monitoringService: monitoringService,
+      );
+
+      when(() => conversationRepository.getConversationById(any()))
+          .thenAnswer((_) async => _conversation);
+      when(
+        () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          any(),
+        ),
+      ).thenAnswer((_) async => _model);
+      when(
+        () => loadConversationToolSpecsUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
+        ),
+      ).thenAnswer((_) async => const []);
+      when(() => selectPromptMessagesUsecase.call(any()))
+          .thenAnswer((_) async => [_userMessage]);
+      when(() => messageRepository.createMessage(any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.patchMessage(any(), any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.getMessagesByConversation(any()))
+          .thenAnswer((_) async => [_userMessage]);
+    });
+
+    test('uses selectPromptMessages for prompt construction', () async {
+      when(() => selectPromptMessagesUsecase.call(any()))
+          .thenAnswer((_) async => [_userMessage]);
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Done'),
+            finishReason: ChatFinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        ]),
+      );
+
+      final _ = await usecase.call(conversationId: 'conversation-1');
+
+      expect(
+        () =>
+            verify(() => selectPromptMessagesUsecase.call('conversation-1'))
+                .called(1),
+        returnsNormally,
+      );
+      expect(
+        () => verifyNever(
+          () => messageRepository.getMessagesByConversation('conversation-1'),
+        ),
+        returnsNormally,
+      );
+    });
+  });
+}
+
+final _conversation = ConversationEntity(
+  id: 'conversation-1',
+  title: 'Conversation 1',
+  workspaceId: 'workspace-1',
+  isPinned: false,
+  createdAt: DateTime(2025),
+  updatedAt: DateTime(2025),
+  modelId: 'model-1',
+);
+
+final _userMessage = MessageEntity(
+  id: 'user-1',
+  conversationId: 'conversation-1',
+  content: 'What is 2 + 2?',
+  messageType: MessageType.text,
+  isUser: true,
+  status: MessageStatus.sent,
+  createdAt: DateTime(2025),
+  updatedAt: DateTime(2025),
+);
+
+final _unfinishedAssistantMessage = MessageEntity(
+  id: 'assistant-1',
+  conversationId: 'conversation-1',
+  content: 'Working',
+  messageType: MessageType.text,
+  isUser: false,
+  status: MessageStatus.unfinished,
+  createdAt: DateTime(2025),
+  updatedAt: DateTime(2025),
+);
+
+const _skillContextXml =
+    '<skill><name>Skills Manager</name><content>Manage skills.</content></skill>';
+
+AppAgentContinuationAdapter _appAgentContinuationAdapter({
+  required MockConversationRepository conversationRepository,
+  required MockWorkspaceModelSelectionRepository
+  workspaceModelSelectionsRepository,
+  required MockApiModelRepository apiModelRepository,
+  required MockSelectPromptMessagesUsecase selectPromptMessagesUsecase,
+  required MockLoadConversationToolSpecsUsecase
+  loadConversationToolSpecsUsecase,
+  required BuildSkillContextMessagesService buildSkillContextMessagesUsecase,
+}) {
+  return AppAgentContinuationAdapter(
+    conversationRepository: conversationRepository,
+    modelSelectionStore: (_) async => workspaceModelSelectionsRepository,
+    apiModelRepository: apiModelRepository,
+    selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+    buildSkillContextMessagesUsecase: buildSkillContextMessagesUsecase,
+    loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+  );
+}
+
+final _model = WorkspaceModelSelectionWithConnectionEntity(
+  workspaceModelSelection: WorkspaceModelSelectionEntity(
+    id: 'model-1',
+    modelId: 'gpt-4',
+    createdAt: DateTime(2025),
+    updatedAt: DateTime(2025),
+    modelConnectionId: 'credential-1',
+  ),
+  modelConnection: ModelConnectionEntity(
+    id: 'credential-1',
+    name: 'Main credential',
+    modelId: 'model-1',
+    createdAt: DateTime(2025),
+    updatedAt: DateTime(2025),
+    workspaceId: 'workspace-1',
+    hasKey: true,
+  ),
+  modelsProvider: const ApiModelProviderEntity(
+    id: 'provider-1',
+    name: 'OpenAI',
+    type: ModelProvidersType.openai,
+  ),
+);
+
+class _QueuedBuildSkillContextMessagesService(
+  final List<List<ChatMessage>> responses,
+) implements BuildSkillContextMessagesService {
+  int calls = 0;
+
+  @override
+  Future<List<ChatMessage>> call({
+    required String conversationId,
+    required String workspaceId,
+  }) async => responses[calls++];
+}
+
+class const _FakeBuildSkillContextMessagesService(
+  final List<ChatMessage> messages,
+) implements BuildSkillContextMessagesService {
+  @override
+  Future<List<ChatMessage>> call({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
+    return messages;
+  }
+}

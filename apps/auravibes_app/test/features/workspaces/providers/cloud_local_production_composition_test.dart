@@ -12,7 +12,7 @@ import 'package:auravibes_app/features/chats/providers/aura_agent_service_provid
 import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_chat_attachment_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -26,7 +26,7 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_operations_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';

@@ -3,18 +3,16 @@ import 'package:auravibes_app/data/repositories/service_connection_repository.da
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
+import 'package:auravibes_app/features/skills/models/app_skill_credential_candidate.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
+export '../models/app_skill_credential_candidate.dart';
+
 typedef CloudServiceConnectionsReader =
     Future<List<CloudServiceConnection>?> Function(String workspaceId);
-
-class const AppSkillCredentialCandidate({
-  required final String id,
-  required final String name,
-});
 
 class const ListAppSkillCredentialCandidatesUsecase(
   final ServiceConnectionRepository Function() _serviceConnectionRepository, {

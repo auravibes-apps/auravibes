@@ -5,7 +5,7 @@ import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/features/agents/usecases/run_sub_agent_tool_usecase.dart';
+import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

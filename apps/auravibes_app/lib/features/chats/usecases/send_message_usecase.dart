@@ -14,17 +14,13 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+import 'package:auravibes_app/features/chats/services/cloud_chat_message_sender.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 
-import 'package:logging/logging.dart';
 import 'package:riverpod/src/providers/provider.dart';
-import 'package:uuid/v7.dart';
-
-final _logger = Logger('cloud_conversation_send');
 
 typedef ContinueAgentTurn = Future<AgentIterationDecision> Function({
   required String conversationId,
@@ -174,89 +170,23 @@ sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
       supported: session.capabilities.agentExecution,
     );
     if (session.cloud != null) {
-      return SendMessageUsecase.cloud((conversationId, draft) async {
-        session.capabilities.require(
-          supported:
-              draft.attachments.isEmpty || session.capabilities.attachments,
-        );
-        final gateway = await ref.read(
-          cloudWorkspaceStateGatewayProvider(session).future,
-        );
-        final attachments = await ref.read(
-          cloudChatAttachmentUsecaseProvider(workspaceId).future,
-        );
-        if (gateway == null) {
-          throw const UnsupportedWorkspaceCapabilityException();
-        }
-        final chat = CloudChatGateway(gateway);
-        final projection = await chat.getConversationSnapshot(conversationId);
-        _logger.info(
-          'Cloud send snapshot: conversationId=$conversationId, '
-          'sequence=${projection.sequence}, '
-          'projectionRevision=${projection.conversation.projectionRevision}, '
-          'executionState=${projection.conversation.executionState}.',
-        );
-        final requestId = const UuidV7().generate();
-        final uploadedObjects =
-            await attachments?.uploadDraftResults(
-              attachments: draft.attachments,
-            ) ??
-            const [];
-        final snapshot = await (() async {
-          try {
-            final queued = await chat.queueConversationMessage(
-              requestId: requestId,
-              conversationId: conversationId,
-              expectedProjectionRevision:
-                  projection.conversation.projectionRevision,
-              clientMessageId: const UuidV7().generate(),
-              content: draft.text,
-              attachmentIds: uploadedObjects
-                  .map((object) => '${object.objectId}')
-                  .toList(growable: false),
-              metadataJson: draft.metadataJson,
-            );
-            _logger.info(
-              'Cloud message queued: conversationId=$conversationId, '
-              'sequence=${queued.sequence}, '
-              'projectionRevision='
-              '${queued.conversation.projectionRevision}, '
-              'executionState=${queued.conversation.executionState}, '
-              'attachmentCount=${uploadedObjects.length}.',
-            );
+      final sender = CloudChatMessageSender(
+        gateway: () async {
+          final stateGateway = await ref.read(
+            cloudWorkspaceStateGatewayProvider(session).future,
+          );
 
-            return queued;
-          } on Object catch (error, stackTrace) {
-            await attachments?.deleteUploaded(uploadedObjects);
-            Error.throwWithStackTrace(error, stackTrace);
-          }
-        })();
-        if (snapshot.conversation.executionState == 'idle' ||
-            snapshot.conversation.executionState == 'awaitingUserAction') {
-          _logger.info(
-            'Cloud execution start requested: '
-            'conversationId=$conversationId, '
-            'projectionRevision=${snapshot.conversation.projectionRevision}.',
-          );
-          final execution = await chat.continueConversation(
-            requestId: const UuidV7().generate(),
-            conversationId: conversationId,
-            expectedProjectionRevision:
-                snapshot.conversation.projectionRevision,
-          );
-          _logger.info(
-            'Cloud execution start acknowledged: '
-            'conversationId=$conversationId, sequence=${execution.sequence}, '
-            'executionState=${execution.conversation.executionState}, '
-            'activeExecutionId=${execution.activeExecution?.id}.',
-          );
-        }
-        ref.invalidate(
+          return stateGateway == null ? null : CloudChatGateway(stateGateway);
+        },
+        attachments: () =>
+            ref.read(cloudChatAttachmentUsecaseProvider(workspaceId).future),
+        capabilities: session.capabilities,
+        invalidateMessages: (conversationId) => ref.invalidate(
           chatMessagesByConversationProvider(workspaceId, conversationId),
-        );
+        ),
+      );
 
-        return;
-      });
+      return SendMessageUsecase.cloud(sender.call);
     }
     final agentService = ref.watch(auraAgentServiceProvider);
 

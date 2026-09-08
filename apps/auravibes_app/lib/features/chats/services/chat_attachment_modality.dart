@@ -3,7 +3,7 @@ import 'package:auravibes_engine/auravibes_engine.dart' as engine;
 
 abstract final class ChatAttachmentModality {
   static const int maxChatAttachmentBytes = 25 * 1024 * 1024;
-  static const int maxChatPromptAttachmentBytes = 25 * 1024 * 1024;
+  static const int maxChatPromptAttachmentBytes = maxChatAttachmentBytes;
   static const _documentExtensions = ['pdf', 'txt', 'md', 'csv', 'json'];
 
   static MessageAttachmentModality forMimeType(String mimeType) {

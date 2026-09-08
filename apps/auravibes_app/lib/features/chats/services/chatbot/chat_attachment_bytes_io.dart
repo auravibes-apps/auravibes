@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
+import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 
 abstract final class ChatAttachmentBytesIo {
   static Future<List<int>?> read(String localPath) async {

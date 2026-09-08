@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
+import 'package:auravibes_app/features/tools/models/tool_approval_decision.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
@@ -13,14 +14,7 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/src/providers/provider.dart';
 
-class const ToolApprovalDecision({
-  required final String toolCallId,
-  required final ToolPermissionResult permissionResult,
-  final String? permissionTableId,
-}) {
-  bool get needsConfirmation =>
-      permissionResult == ToolPermissionResult.needsConfirmation;
-}
+export '../models/tool_approval_decision.dart';
 
 class const ResolveToolApprovalDecisionUsecase({
   required final ConversationToolsRepository conversationToolsRepository,
