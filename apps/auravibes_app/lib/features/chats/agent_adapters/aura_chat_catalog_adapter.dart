@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/agent_adapters/aura_dashboard_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/aura_extended_catalog_adapter.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_children.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_catalog_text_field.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -338,48 +339,6 @@ AuraTint? _tone(Object? value) {
   return name == null ? null : AuraTint.values.byName(name);
 }
 
-Widget _children(
-  CatalogItemContext context,
-  Object? children,
-  Widget Function(List<Widget>) build, {
-  Widget Function(String id, Widget child)? decorate,
-}) => ComponentChildrenBuilder(
-  childrenData: children,
-  dataContext: context.dataContext,
-  buildChild: context.buildChild,
-  getComponent: context.getComponent,
-  explicitListBuilder: (ids, buildChild, _, dataContext) => build([
-    for (final id in ids)
-      decorate?.call(id, buildChild(id, dataContext)) ??
-          buildChild(id, dataContext),
-  ]),
-  templateListWidgetBuilder: (buildContext, data, componentId, binding) {
-    final list = data is List ? data : null;
-    final map = data is Map<Object?, Object?> ? data : null;
-    if (list == null && map == null) {
-      return const SizedBox.shrink();
-    }
-    final values = list ?? map!.values.toList();
-    final keys = list != null
-        ? List.generate(values.length, (index) => '$index')
-        : map!.keys.map((key) => '$key').toList();
-
-    return build([
-      for (var index = 0; index < values.length; index++)
-        KeyedSubtree(
-          key: ValueKey(keys[index]),
-          child: (decorate ?? (_, child) => child)(
-            componentId,
-            context.buildChild(
-              componentId,
-              context.dataContext.nested(DataPath('$binding/${keys[index]}')),
-            ),
-          ),
-        ),
-    ]);
-  },
-);
-
 Widget _text(CatalogItemContext context) {
   final data = _data(context);
 
@@ -522,7 +481,7 @@ Widget _row(CatalogItemContext context) {
       false;
 
   return LayoutBuilder(
-    builder: (_, constraints) => _children(
+    builder: (_, constraints) => buildChatCatalogChildren(
       context,
       data['children'],
       (children) {
@@ -581,7 +540,7 @@ WrapAlignment _wrapAlignment(String? value) => switch (value) {
 Widget _column(CatalogItemContext context) {
   final data = _data(context);
 
-  return _children(
+  return buildChatCatalogChildren(
     context,
     data['children'],
     (children) => AuraColumn(
@@ -596,7 +555,7 @@ Widget _column(CatalogItemContext context) {
 Widget _list(CatalogItemContext context) {
   final data = _data(context);
 
-  return _children(
+  return buildChatCatalogChildren(
     context,
     data['children'],
     (children) => AuraList(

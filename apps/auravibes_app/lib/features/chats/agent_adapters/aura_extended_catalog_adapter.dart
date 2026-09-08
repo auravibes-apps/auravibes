@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_children.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
@@ -118,7 +119,7 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
     circular: data['shape'] == 'circle',
     semanticLabel: _nullableString(data['label']),
   ),
-  'Grid': (context, data) => _children(
+  'Grid': (context, data) => buildChatCatalogChildren(
     context,
     data['children'],
     (children) => AuraGrid(
@@ -127,7 +128,7 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
       children: children,
     ),
   ),
-  'Wrap': (context, data) => _children(
+  'Wrap': (context, data) => buildChatCatalogChildren(
     context,
     data['children'],
     (children) =>
@@ -254,35 +255,3 @@ double? _gap(CatalogItemContext context, Object? value) => switch (value) {
   'xl' => context.buildContext.auraTheme.spacing.xl,
   _ => null,
 };
-
-Widget _children(
-  CatalogItemContext context,
-  Object? children,
-  Widget Function(List<Widget>) build,
-) => ComponentChildrenBuilder(
-  childrenData: children,
-  dataContext: context.dataContext,
-  buildChild: context.buildChild,
-  getComponent: context.getComponent,
-  explicitListBuilder: (ids, buildChild, _, dataContext) =>
-      build([for (final id in ids) buildChild(id, dataContext)]),
-  templateListWidgetBuilder: (buildContext, data, componentId, binding) {
-    final list = data is List ? data : null;
-    final map = data is Map<Object?, Object?> ? data : null;
-    if (list == null && map == null) return const SizedBox.shrink();
-    final values = list ?? map!.values.toList();
-    final keys = list == null
-        ? map!.keys.map((key) => '$key').toList()
-        : List.generate(values.length, (index) => '$index');
-    return build([
-      for (var index = 0; index < values.length; index++)
-        KeyedSubtree(
-          key: ValueKey(keys[index]),
-          child: context.buildChild(
-            componentId,
-            context.dataContext.nested(DataPath('$binding/${keys[index]}')),
-          ),
-        ),
-    ]);
-  },
-);
