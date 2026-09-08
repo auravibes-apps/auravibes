@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/skills/providers/skill_detail_provider.da
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/load_skill_credential_definitions_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -91,9 +92,12 @@ void main() {
         createSkillTemplateToolUsecaseProvider(workspace.id).overrideWithValue(
           CreateSkillTemplateToolUsecase(
             skillTemplateToolsRepository,
-            skillsRepository: skillsRepository,
-            skillCredentialDefinitionsRepository:
-                skillCredentialDefinitionsRepository,
+            loadSkillCredentialDefinitions:
+                LoadSkillCredentialDefinitionsUsecase(
+                  skillsRepository: skillsRepository,
+                  skillCredentialDefinitionsRepository:
+                      skillCredentialDefinitionsRepository,
+                ),
           ),
         ),
       ],

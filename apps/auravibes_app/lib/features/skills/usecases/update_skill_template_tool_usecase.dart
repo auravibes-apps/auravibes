@@ -1,20 +1,18 @@
 // ignore_for_file: implementation_imports
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
-import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
+import 'package:auravibes_app/features/skills/usecases/load_skill_credential_definitions_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
 class const UpdateSkillTemplateToolUsecase(
   final SkillTemplateToolsRepository? _skillTemplateToolsRepository, {
+  required final LoadSkillCredentialDefinitionsUsecase
+  loadSkillCredentialDefinitions,
   final CloudSkillStore? cloudStore,
-  final SkillsRepository? skillsRepository,
-  final SkillCredentialDefinitionsRepository?
-  skillCredentialDefinitionsRepository,
 }) {
   Future<SkillTemplateToolEntity> call(
     String toolId,
@@ -30,7 +28,7 @@ class const UpdateSkillTemplateToolUsecase(
       if (existing == null) {
         throw StateError('Skill template tool not found: $toolId');
       }
-      final credentialDefinitions = await _credentialDefinitions(
+      final credentialDefinitions = await loadSkillCredentialDefinitions(
         existing.skillId,
       );
       validateSkillTemplateTool(
@@ -56,39 +54,6 @@ class const UpdateSkillTemplateToolUsecase(
 
     return await repository.updateTool(toolId, toolToUpdate);
   }
-
-  Future<Map<String, SkillCredentialAttributeDefinition>>
-  _credentialDefinitions(String skillId) async {
-    final cloud = cloudStore;
-    if (cloud != null) {
-      final skill = await cloud.skill(skillId);
-      final credentialDefinitionId = skill?.credentialDefinitionId;
-      if (credentialDefinitionId == null) return const {};
-      final definition = await cloud.definition(credentialDefinitionId);
-      if (definition == null) return const {};
-
-      return SkillCredentialAttributeDefinition.parseMap(
-        definition.attributesJson,
-      );
-    }
-    final skillsRepository = this.skillsRepository;
-    final credentialDefinitionsRepository =
-        skillCredentialDefinitionsRepository;
-    if (skillsRepository == null || credentialDefinitionsRepository == null) {
-      return const {};
-    }
-    final skill = await skillsRepository.getSkillById(skillId);
-    final credentialDefinitionId = skill?.credentialDefinitionId;
-    if (credentialDefinitionId == null) return const {};
-    final definition = await credentialDefinitionsRepository.getDefinitionById(
-      credentialDefinitionId,
-    );
-    if (definition == null) return const {};
-
-    return SkillCredentialAttributeDefinition.parseMap(
-      definition.attributesJson,
-    );
-  }
 }
 
 final ProviderFamily<UpdateSkillTemplateToolUsecase, String>
@@ -98,12 +63,9 @@ updateSkillTemplateToolUsecaseProvider =
 
       return UpdateSkillTemplateToolUsecase(
         cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
+        loadSkillCredentialDefinitions: ref.watch(
+          loadSkillCredentialDefinitionsUsecaseProvider(workspaceId),
+        ),
         cloudStore: cloud,
-        skillsRepository: cloud == null
-            ? ref.watch(skillsRepositoryProvider)
-            : null,
-        skillCredentialDefinitionsRepository: cloud == null
-            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-            : null,
       );
     });
