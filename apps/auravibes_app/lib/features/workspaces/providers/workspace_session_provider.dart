@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_availability.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -118,6 +119,13 @@ Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGatewayForWorkspace(
 
   return await ref.watch(cloudWorkspaceStateGatewayProvider(session).future);
 }
+
+CloudWorkspaceResourceStore cloudWorkspaceResourceStoreForSession(
+  Ref ref,
+  WorkspaceSession session,
+) => CloudWorkspaceResourceStore.deferred(
+  ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
+);
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)

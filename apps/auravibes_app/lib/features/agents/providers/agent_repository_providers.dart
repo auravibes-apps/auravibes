@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.da
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_repository.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_tools_repository.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/providers/provider.dart';
@@ -27,9 +26,7 @@ final ProviderFamily<AgentRepository, String> agentRepositoryProvider =
       if (session.cloud == null) {
         return ref.watch(agentsRepositoryProvider);
       }
-      final store = CloudWorkspaceResourceStore.deferred(
-        ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
-      );
+      final store = cloudWorkspaceResourceStoreForSession(ref, session);
 
       return cloudAgentRepositoryFromStore(
         workspaceId: session.workspace.localWorkspaceId,
@@ -43,9 +40,7 @@ AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
       .watch(workspaceSessionForRouteProvider(workspaceId))
       .requireValue;
   if (session.cloud != null) {
-    final store = CloudWorkspaceResourceStore.deferred(
-      ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
-    );
+    final store = cloudWorkspaceResourceStoreForSession(ref, session);
 
     return cloudAgentToolsRepositoryFromStore(store: store);
   }
