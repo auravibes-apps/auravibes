@@ -4,21 +4,16 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
-import 'dart:async';
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_options_menu.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -186,24 +181,9 @@ class const _SidebarConversationTile({
   required final ConversationEntity chat,
   required final String workspaceId,
   required final bool isActive,
-}) extends ConsumerStatefulWidget {
+}) extends ConsumerWidget {
   @override
-  ConsumerState<_SidebarConversationTile> createState() =>
-      _SidebarConversationTileState();
-}
-
-class _SidebarConversationTileState
-    extends ConsumerState<_SidebarConversationTile> {
-  final _menuController = AuraPopupMenuController();
-
-  @override
-  void dispose() {
-    _menuController.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: EdgeInsets.symmetric(
         vertical: context.auraTheme.fromSpacing(.xs),
@@ -212,65 +192,27 @@ class _SidebarConversationTileState
       child: AuraTile(
         child: AuraText(
           child: Text(
-            ref.watch(streamingTitleProvider(widget.chat.id)) ??
-                widget.chat.title,
+            ref.watch(streamingTitleProvider(chat.id)) ?? chat.title,
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),
           style: AuraTextStyle.bodySmall,
-          tint: widget.isActive ? AuraTint.primary : null,
+          tint: isActive ? AuraTint.primary : null,
         ),
         onTap: () => ConversationRoute(
-          workspaceId: widget.workspaceId,
-          chatId: widget.chat.id,
+          workspaceId: workspaceId,
+          chatId: chat.id,
         ).go(context),
-        variant: widget.isActive
-            ? AuraTileVariant.selected
-            : AuraTileVariant.ghost,
+        variant: isActive ? AuraTileVariant.selected : AuraTileVariant.ghost,
         size: AuraTileSize.small,
         leading: AuraIcon(
           Icons.chat_bubble_outline,
           size: AuraIconSize.small,
-          tint: widget.isActive ? AuraTint.primary : null,
+          tint: isActive ? AuraTint.primary : null,
         ),
-        trailing: AuraPopupMenu(
-          child: AuraIconButton(
-            icon: Icons.more_vert,
-            onPressed: _menuController.toggle,
-            size: AuraIconSize.small,
-            tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
-                .tr(),
-          ),
-          items: [
-            AuraPopupMenuItem(
-              title: const TextLocale(LocaleKeys.common_delete),
-              onTap: () => unawaited(_handleDelete(context)),
-              leading: const AuraIcon(Icons.delete_outline),
-              variant: AuraTileVariant.error,
-            ),
-          ],
-          controller: _menuController,
-        ),
+        trailing: ConversationOptionsMenu(conversation: chat),
       ),
     );
-  }
-
-  Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await DeleteConversationConfirmDialog.show(context);
-    if (!confirmed) return;
-
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
-    );
-    if (cloud != null) {
-      await cloud.delete(widget.chat);
-
-      return;
-    }
-
-    final _ = await ref
-        .read(conversationRepositoryProvider)
-        .deleteConversation(widget.chat.id);
   }
 }
 

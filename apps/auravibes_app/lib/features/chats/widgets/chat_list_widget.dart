@@ -2,17 +2,14 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_options_menu.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -96,32 +93,18 @@ class const _ChatListEmptyState({required final String workspaceId})
 class const _ChatTile({
   required final ConversationEntity chat,
   required final String workspaceId,
-}) extends ConsumerStatefulWidget {
+}) extends ConsumerWidget {
   @override
-  ConsumerState<_ChatTile> createState() => _ChatTileState();
-}
-
-class _ChatTileState extends ConsumerState<_ChatTile> {
-  final _menuController = AuraPopupMenuController();
-
-  @override
-  void dispose() {
-    _menuController.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final workspaceModelSelectionsAsync = ref.watch(
-      listWorkspaceModelSelectionsProvider(workspaceId: widget.workspaceId),
+      listWorkspaceModelSelectionsProvider(workspaceId: workspaceId),
     );
     final modelDisplayName = workspaceModelSelectionsAsync.asData?.value
-        .where((cm) => cm.workspaceModelSelection.id == widget.chat.modelId)
+        .where((cm) => cm.workspaceModelSelection.id == chat.modelId)
         .firstOrNull
         ?.workspaceModelSelection
         .modelId;
-    final title =
-        ref.watch(streamingTitleProvider(widget.chat.id)) ?? widget.chat.title;
+    final title = ref.watch(streamingTitleProvider(chat.id)) ?? chat.title;
 
     return AuraCard(
       child: Row(
@@ -133,7 +116,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
               children: [
                 Row(
                   children: [
-                    if (widget.chat.isPinned) ...[
+                    if (chat.isPinned) ...[
                       const AuraIcon(
                         Icons.push_pin_outlined,
                         size: AuraIconSize.small,
@@ -152,7 +135,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                 const SizedBox(height: 4),
                 AuraText(
                   child: Text(
-                    RelativeTimeFormatter.format(widget.chat.updatedAt),
+                    RelativeTimeFormatter.format(chat.updatedAt),
                     overflow: TextOverflow.ellipsis,
                   ),
                   style: AuraTextStyle.bodySmall,
@@ -168,25 +151,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
             ),
           ],
           const SizedBox(width: 8),
-          AuraPopupMenu(
-            child: AuraIconButton(
-              icon: Icons.more_vert,
-              onPressed: _menuController.toggle,
-              size: AuraIconSize.small,
-              tooltip: LocaleKeys
-                  .chats_screens_chat_conversation_options_tooltip
-                  .tr(),
-            ),
-            items: [
-              AuraPopupMenuItem(
-                title: const TextLocale(LocaleKeys.common_delete),
-                onTap: () => _handleDelete(context),
-                leading: const AuraIcon(Icons.delete_outline),
-                variant: AuraTileVariant.error,
-              ),
-            ],
-            controller: _menuController,
-          ),
+          ConversationOptionsMenu(conversation: chat),
         ],
       ),
       onTap: () => _openConversation(context),
@@ -194,30 +159,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
     );
   }
 
-  Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await DeleteConversationConfirmDialog.show(context);
-    if (!confirmed) return;
-
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
-    );
-    if (cloud != null) {
-      await cloud.delete(widget.chat);
-
-      return;
-    }
-
-    final _ = await ref
-        .read(conversationRepositoryProvider)
-        .deleteConversation(widget.chat.id);
-
-    return;
-  }
-
   void _openConversation(BuildContext context) {
-    ConversationRoute(
-      workspaceId: widget.workspaceId,
-      chatId: widget.chat.id,
-    ).go(context);
+    ConversationRoute(workspaceId: workspaceId, chatId: chat.id).go(context);
   }
 }
