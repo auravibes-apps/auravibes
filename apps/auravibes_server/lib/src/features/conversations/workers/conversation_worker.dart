@@ -278,14 +278,7 @@ class const ConversationWorker({
         a2uiIssuesBySurface: result.a2uiIssuesBySurface,
         a2uiMessageIssues: result.a2uiMessageIssues,
       );
-      await SyncWakeups.publishConversation(
-        session,
-        workspaceId: job.workspaceId,
-        conversationId: (await Conversation.db.findById(
-          session,
-          job.conversationId,
-        ))!.stableId,
-      );
+      await _publishConversation(session, job);
       return;
     }
     if (result.requiresUserAction) {
@@ -298,14 +291,7 @@ class const ConversationWorker({
         status: ConversationStatuses.awaitingUserAction,
       );
       await SyncWakeups.publishWorkspace(session, job.workspaceId);
-      await SyncWakeups.publishConversation(
-        session,
-        workspaceId: job.workspaceId,
-        conversationId: (await Conversation.db.findById(
-          session,
-          job.conversationId,
-        ))!.stableId,
-      );
+      await _publishConversation(session, job);
       return;
     }
     await _commitResult(
@@ -317,13 +303,21 @@ class const ConversationWorker({
     );
 
     await SyncWakeups.publishWorkspace(session, job.workspaceId);
+    await _publishConversation(session, job);
+  }
+
+  Future<void> _publishConversation(
+    Session session,
+    ConversationJob job,
+  ) async {
+    final conversation = await Conversation.db.findById(
+      session,
+      job.conversationId,
+    );
     await SyncWakeups.publishConversation(
       session,
       workspaceId: job.workspaceId,
-      conversationId: (await Conversation.db.findById(
-        session,
-        job.conversationId,
-      ))!.stableId,
+      conversationId: conversation!.stableId,
     );
   }
 
