@@ -1,6 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/data/repositories/tool_permission_mapper.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository_contract.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
@@ -161,7 +161,7 @@ class WorkspaceToolsRepository(final AppDatabase _database)
   }) async {
     final table = await _dao.setWorkspaceToolPermission(
       id,
-      permission: _mapPermissionMode(permissionMode),
+      permission: mapPermissionMode(permissionMode),
     );
 
     return _tableToEntity(table);
@@ -210,7 +210,7 @@ class WorkspaceToolsRepository(final AppDatabase _database)
       workspaceId: table.workspaceId,
       toolId: table.toolId,
       isEnabled: table.isEnabled,
-      permissionMode: _mapPermissionAccess(table.permissions),
+      permissionMode: mapPermissionAccess(table.permissions),
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
       config: table.config,
@@ -218,22 +218,6 @@ class WorkspaceToolsRepository(final AppDatabase _database)
       inputSchema: table.inputSchema,
       workspaceToolsGroupId: table.workspaceToolsGroupId,
     );
-  }
-
-  ToolPermissionMode _mapPermissionAccess(PermissionAccess access) {
-    return switch (access) {
-      PermissionAccess.ask => ToolPermissionMode.alwaysAsk,
-      PermissionAccess.granted => ToolPermissionMode.alwaysAllow,
-      PermissionAccess.denied => ToolPermissionMode.alwaysDeny,
-    };
-  }
-
-  PermissionAccess _mapPermissionMode(ToolPermissionMode mode) {
-    return switch (mode) {
-      ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
-      ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
-      ToolPermissionMode.alwaysDeny => PermissionAccess.denied,
-    };
   }
 }
 

@@ -2,7 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/data/repositories/tool_permission_mapper.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -94,7 +94,7 @@ class ConversationToolsRepository(
     final _ = await _dao.setConversationToolPermission(
       conversationId,
       toolId,
-      permission: _mapPermissionMode(permissionMode),
+      permission: mapPermissionMode(permissionMode),
     );
 
     return true;
@@ -315,26 +315,10 @@ class ConversationToolsRepository(
       conversationId: table.conversationId,
       toolId: table.toolId,
       isEnabled: table.isEnabled,
-      permissionMode: _mapPermissionAccess(table.permissions),
+      permissionMode: mapPermissionAccess(table.permissions),
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
     );
-  }
-
-  ToolPermissionMode _mapPermissionAccess(PermissionAccess access) {
-    return switch (access) {
-      PermissionAccess.ask => ToolPermissionMode.alwaysAsk,
-      PermissionAccess.granted => ToolPermissionMode.alwaysAllow,
-      PermissionAccess.denied => ToolPermissionMode.alwaysDeny,
-    };
-  }
-
-  PermissionAccess _mapPermissionMode(ToolPermissionMode mode) {
-    return switch (mode) {
-      ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
-      ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
-      ToolPermissionMode.alwaysDeny => PermissionAccess.denied,
-    };
   }
 
   Future<ToolPermissionResult> _childConversationToolPermissionResult({
@@ -417,7 +401,7 @@ class ConversationToolsRepository(
     }
 
     return _permissionModeResult(
-      _mapPermissionAccess(agentTool.permissions),
+      mapPermissionAccess(agentTool.permissions),
       denyResult: ToolPermissionResult.disabledByAgent,
     );
   }
