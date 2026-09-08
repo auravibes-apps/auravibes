@@ -132,6 +132,17 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
     return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
   }
 
+  MessageMetadataEntity mapToolCalls(
+    MessageToolCallEntity Function(MessageToolCallEntity) transform,
+  ) => copyWith(toolCalls: toolCalls.map(transform).toList());
+
+  MessageMetadataEntity mapToolCall(
+    String toolCallId,
+    MessageToolCallEntity Function(MessageToolCallEntity) transform,
+  ) => mapToolCalls(
+    (toolCall) => toolCall.id == toolCallId ? transform(toolCall) : toolCall,
+  );
+
   static MessageMetadataEntity? fromJsonString(String? metadata) {
     if (metadata == null) return null;
     try {

@@ -523,6 +523,21 @@ class MessageRepository(
   }
 }
 
+extension MessageRepositoryMetadataUpdates on MessageRepository {
+  Future<MessageEntity?> patchMetadata(
+    String messageId,
+    MessageMetadataEntity? Function(MessageMetadataEntity) update,
+  ) async {
+    final message = await getMessageById(messageId);
+    if (message == null) return null;
+
+    final metadata = update(message.metadata ?? const MessageMetadataEntity());
+    if (metadata == null) return null;
+
+    return await patchMessage(messageId, MessagePatch(metadata: metadata));
+  }
+}
+
 /// Base exception for message-related operations.
 class MessageException implements Exception {
   // Cause is optional because not all domain failures wrap an exception.

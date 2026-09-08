@@ -5,18 +5,13 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 class const StopPendingToolCallsUsecase(final MessageRepository _repository) {
   /// Returns the affected conversation ID, or null when nothing changed.
   Future<String?> call({required String messageId}) async {
-    final message = await _repository.getMessageById(messageId);
-    if (message == null) return null;
+    final patched = await _repository.patchMetadata(messageId, (metadata) {
+      final updated = stopPendingToolMetadata(metadata);
 
-    final metadata = stopPendingToolMetadata(message.metadata);
-    if (identical(metadata, message.metadata)) return null;
+      return identical(updated, metadata) ? null : updated;
+    });
 
-    final _ = await _repository.patchMessage(
-      messageId,
-      MessagePatch(metadata: metadata),
-    );
-
-    return message.conversationId;
+    return patched?.conversationId;
   }
 }
 
@@ -27,13 +22,9 @@ MessageMetadataEntity? stopPendingToolMetadata(
     return metadata;
   }
 
-  return metadata.copyWith(
-    toolCalls: metadata.toolCalls.map((toolCall) {
-      if (!toolCall.isPending) return toolCall;
-
-      return toolCall.copyWith(
-        resultStatus: ToolCallResultStatus.stoppedByUser,
-      );
-    }).toList(),
+  return metadata.mapToolCalls(
+    (toolCall) => toolCall.isPending
+        ? toolCall.copyWith(resultStatus: ToolCallResultStatus.stoppedByUser)
+        : toolCall,
   );
 }

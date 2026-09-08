@@ -5,7 +5,6 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_service.dart';
@@ -218,23 +217,17 @@ class const AppApproveToolCallDataProvider({
     required ToolCallResultStatus resultStatus,
     String? responseRaw,
   }) async {
-    final message = await messageRepository.getMessageById(messageId);
-    if (message == null) return;
-
-    final metadata = message.metadata ?? const MessageMetadataEntity();
-    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
-      if (toolCall.id != toolCallId) return toolCall;
-
-      return toolCall.copyWith(
-        resultStatus: resultStatus,
-        responseRaw: responseRaw,
-      );
-    }).toList();
-
-    final _ = await messageRepository.patchMessage(
+    final patched = await messageRepository.patchMetadata(
       messageId,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      (metadata) => metadata.mapToolCall(
+        toolCallId,
+        (toolCall) => toolCall.copyWith(
+          resultStatus: resultStatus,
+          responseRaw: responseRaw,
+        ),
+      ),
     );
+    if (patched == null) return;
     onToolCallChanged();
   }
 }
