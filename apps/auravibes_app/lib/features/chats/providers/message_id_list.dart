@@ -69,22 +69,32 @@ Stream<List<MessageEntity>> _cloudMessages(
   Ref ref,
   String workspaceId,
   String conversationId,
+) => _streamProviderValue(
+  ref,
+  cloudConversationStateProvider((
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+  )),
+).map(_readCloudConversationMessages);
+
+Stream<T> _streamProviderValue<T>(
+  Ref ref,
+  ProviderListenable<AsyncValue<T>> provider,
 ) {
-  final controller = StreamController<List<MessageEntity>>();
+  final controller = StreamController<T>();
+  void emit(AsyncValue<T> next) {
+    switch (next) {
+      case AsyncData(:final value):
+        controller.add(value);
+      case AsyncError(:final error, :final stackTrace):
+        controller.addError(error, stackTrace);
+      case AsyncLoading():
+    }
+  }
+
   final subscription = ref.listen(
-    cloudConversationStateProvider((
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-    )),
-    (_, next) {
-      switch (next) {
-        case AsyncData(:final value):
-          controller.add(_readCloudConversationMessages(value));
-        case AsyncError(:final error, :final stackTrace):
-          controller.addError(error, stackTrace);
-        case AsyncLoading():
-      }
-    },
+    provider,
+    (_, next) => emit(next),
     fireImmediately: true,
   );
   ref
@@ -212,29 +222,10 @@ Stream<List<MessageEntity>> chatMessages(
   Ref ref,
   String workspaceId,
   String conversationId,
-) {
-  final controller = StreamController<List<MessageEntity>>();
-  final subscription = ref.listen(
-    chatMessagesByConversationProvider(workspaceId, conversationId),
-    (_, next) {
-      switch (next) {
-        case AsyncData(:final value):
-          controller.add(value);
-        case AsyncError(:final error, :final stackTrace):
-          controller.addError(error, stackTrace);
-        case AsyncLoading():
-      }
-    },
-    fireImmediately: true,
-  );
-  ref
-    // Disposal callbacks must stay synchronous; cleanup is intentionally
-    // scheduled without blocking provider disposal.
-    ..onDispose(subscription.close)
-    ..onDispose(() => unawaited(controller.close()));
-
-  return controller.stream;
-}
+) => _streamProviderValue(
+  ref,
+  chatMessagesByConversationProvider(workspaceId, conversationId),
+);
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)
