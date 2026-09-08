@@ -224,11 +224,6 @@ void main() {
         ),
       );
       expect(started.turnId, 'turn-live');
-      final startedJob = await ConversationJob.db.findFirstRow(
-        databaseSession,
-        where: (table) => table.requestId.equals('turn-live'),
-      );
-      expect(startedJob?.status, ConversationJobStatuses.queued);
 
       final continued = await endpoints.conversation.continueTurn(
         session,

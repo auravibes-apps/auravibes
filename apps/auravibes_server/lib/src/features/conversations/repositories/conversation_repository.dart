@@ -407,7 +407,6 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
       turn: turn,
       assistantMessage: assistantMessage,
       a2uiSupportedComponents: request.a2uiSupportedComponents,
-      now: now,
       transaction: transaction,
     );
     return StartTurnResult(
@@ -468,7 +467,6 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
       turn: turn,
       assistantMessage: assistantMessage,
       a2uiSupportedComponents: request.a2uiSupportedComponents,
-      now: now,
       transaction: transaction,
     );
     return turn;
@@ -480,7 +478,6 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     required ConversationTurn turn,
     required ConversationMessage assistantMessage,
     required List<String>? a2uiSupportedComponents,
-    required DateTime now,
     required Transaction transaction,
   }) async {
     await ConversationMessage.db.updateRow(
@@ -503,9 +500,9 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         ),
         attempt: 0,
         maxAttempts: 3,
-        availableAt: now,
-        createdAt: now,
-        updatedAt: now,
+        availableAt: turn.createdAt,
+        createdAt: turn.createdAt,
+        updatedAt: turn.createdAt,
       ),
       transaction: transaction,
     );
@@ -513,7 +510,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
       session,
       conversation.copyWith(
         revision: conversation.revision + 1,
-        updatedAt: now,
+        updatedAt: turn.createdAt,
       ),
       transaction: transaction,
     );
