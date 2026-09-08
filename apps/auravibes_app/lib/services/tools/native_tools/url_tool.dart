@@ -59,7 +59,7 @@ final class UrlTool({final UrlService? _urlService})
     return completer.operation;
   }
 
-  Future<({UrlRequest request, List<String> addresses})> _buildRequest(
+  Future<({UrlRequest request, List<String>? addresses})> _buildRequest(
     String toolInput,
   ) async {
     final request = parseUrlToolInput(toolInput);

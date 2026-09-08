@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 typedef PublicUrlLookup = Future<List<InternetAddress>> Function(String host);
-typedef PublicUrlResolution = ({Uri uri, List<String> addresses});
+typedef PublicUrlResolution = ({Uri uri, List<String>? addresses});
 
 abstract final class PublicUrlGuard {
   static Future<PublicUrlResolution> resolvePublicUri(
@@ -14,12 +14,11 @@ abstract final class PublicUrlGuard {
     final uri = requirePublicUriSyntax(url, requireHttps: requireHttps);
     final addresses = await _resolveAddresses(uri.host, lookup: lookup);
 
-    return (
-      uri: uri,
-      addresses: addresses
-          .map((address) => address.address)
-          .toList(growable: false),
-    );
+    final addressesForPinning = InternetAddress.tryParse(uri.host) == null
+        ? addresses.map((address) => address.address).toList(growable: false)
+        : null;
+
+    return (uri: uri, addresses: addressesForPinning);
   }
 
   static Future<PublicUrlResolution> resolveHttpsUri(String url) =>
