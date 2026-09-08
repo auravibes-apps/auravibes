@@ -6,6 +6,8 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -13,6 +15,7 @@ import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../../../test_mocks.dart';
 
@@ -72,6 +75,75 @@ void main() {
       expect(tool?.type, ResolvedToolType.skillNative);
       expect(tool?.skillSlug, agent.agentsSkillSlug);
       expect(tool?.fullName, 'skill__app__agents__list_agents');
+    });
+
+    test('uses an empty catalog when conversation is missing', () async {
+      when(() => conversationRepository.getConversationById('missing'))
+          .thenAnswer((_) async => null);
+      final provider = AppAgentToolCallProvider(
+        messageRepository: messageRepository,
+        conversationRepository: conversationRepository,
+        loadConversationToolSpecsUsecaseForWorkspace: (_) => loadToolSpecs,
+        toolResolverService: const ToolResolverService(),
+      );
+
+      expect(
+        await provider.resolveTool(
+          conversationId: 'missing',
+          toolName: 'unknown-tool',
+        ),
+        isNull,
+      );
+      expect(
+        verifyNever(
+          () => loadToolSpecs.buildCatalog(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
+          ),
+        ),
+        isNotNull,
+      );
+    });
+
+    test('provider wires repository dependencies', () async {
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer(
+            (_) async => [
+              _message(
+                id: 'assistant-1',
+                metadata: const MessageMetadataEntity(
+                  toolCalls: [
+                    MessageToolCallEntity(
+                      id: 'unknown-tool',
+                      name: 'unknown-tool',
+                      argumentsRaw: '{}',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+      final container = ProviderContainer(
+        overrides: [
+          messageRepositoryProvider.overrideWithValue(messageRepository),
+          conversationRepositoryProvider.overrideWithValue(
+            conversationRepository,
+          ),
+          loadConversationToolSpecsUsecaseProvider('workspace-1')
+              .overrideWithValue(loadToolSpecs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await container
+          .read(agentToolCallLoaderProvider)
+          .call(conversationId: 'conversation-1');
+
+      expect(result.notFoundToolCallIds, ['unknown-tool']);
+      expect(
+        container.read(agentToolCallLoaderProvider),
+        isA<AgentToolCallLoader>(),
+      );
     });
 
     test('resolves generated names to exact catalog targets', () {

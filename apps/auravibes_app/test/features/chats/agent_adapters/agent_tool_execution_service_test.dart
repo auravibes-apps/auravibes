@@ -169,6 +169,81 @@ void main() {
         );
       }
 
+      test('throws when no approval resolver is configured', () async {
+        final provider = AppAllowedToolsDataProvider(
+          messageRepository: messageRepository,
+          loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+          resolvedToolService: ResolvedToolService(
+            agentCancellationRuntime: agentCancellationRuntime,
+            mcpToolCaller: ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async => 'unused',
+          ),
+          toolDecisionService: getAgentIterationDecisionUsecase,
+          agentCancellationRuntime: agentCancellationRuntime,
+        );
+
+        await expectLater(
+          provider.resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: ResolvedTool.mcp(
+              tableId: 'tool-1',
+              toolIdentifier: 'sum',
+              mcpServerId: 'server-1',
+              mcpSlug: 'server-1',
+            ),
+          ),
+          throwsA(isA<StateError>()),
+        );
+      });
+
+      test('returns notConfigured for malformed skill arguments', () async {
+        final provider = providerWith(null);
+
+        final decision = await provider.resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: ResolvedTool.skillCommand(
+            commandName: callSkillToolName,
+          ),
+          argumentsRaw: '{not-json',
+        );
+
+        expect(
+          decision.permissionResult,
+          AgentToolPermissionResult.notConfigured,
+        );
+      });
+
+      test(
+        'returns notConfigured when skill target resolver is absent',
+        () async {
+          final provider = providerWith(null);
+
+          final decision = await provider.resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: ResolvedTool.skillCommand(
+              commandName: callSkillToolName,
+            ),
+            argumentsRaw:
+                '{"skill":"duckduckgo","tool":"search",'
+                '"args":{},"revision":"rev-1"}',
+          );
+
+          expect(
+            decision.permissionResult,
+            AgentToolPermissionResult.notConfigured,
+          );
+        },
+      );
+
       test(
         'passes exact resolved call_skill_tool target to approval',
         () async {
