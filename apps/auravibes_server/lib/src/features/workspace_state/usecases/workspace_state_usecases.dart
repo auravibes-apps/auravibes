@@ -262,43 +262,19 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         existing: existing,
       );
       final revision = (existing?.revision ?? 0) + 1;
-      final box = secret == null
-          ? null
-          : await const WorkspaceSecretCipher().encrypt(
-              session,
-              secret,
-              workspaceId: request.workspaceId,
-              resourceId: request.resourceId,
-            );
-      final row = WorkspaceSecret(
-        id: existing?.id,
+      final saved = await _saveSecret(
+        session,
+        existing: existing,
         workspaceId: request.workspaceId,
         secretKind: request.secretKind,
         scope: request.scope,
         ownerUserId: owner,
         resourceId: request.resourceId,
-        ciphertext: box?.ciphertext ?? ByteData(0),
-        nonce: box?.nonce ?? ByteData(0),
-        authenticationTag: box?.authenticationTag ?? ByteData(0),
-        algorithm: 'AES-256-GCM',
-        keyVersion: 1,
-        displaySuffix: secret == null ? null : _suffix(secret),
+        secret: secret,
         revision: revision,
-        createdAt: existing?.createdAt ?? now,
-        updatedAt: now,
-        deletedAt: secret == null ? now : null,
+        now: now,
+        transaction: transaction,
       );
-      final saved = existing == null
-          ? await WorkspaceSecret.db.insertRow(
-              session,
-              row,
-              transaction: transaction,
-            )
-          : await WorkspaceSecret.db.updateRow(
-              session,
-              row,
-              transaction: transaction,
-            );
       final sequence = workspace.sequence + 1;
       await CloudWorkspace.db.updateRow(
         session,
@@ -490,43 +466,19 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
         return response;
       }
-      final box = secret == null
-          ? null
-          : await const WorkspaceSecretCipher().encrypt(
-              session,
-              secret,
-              workspaceId: request.workspaceId,
-              resourceId: operation.resourceId,
-            );
-      final savedSecret = WorkspaceSecret(
-        id: existing?.id,
+      final storedSecret = await _saveSecret(
+        session,
+        existing: existing,
         workspaceId: request.workspaceId,
         secretKind: request.secretKind,
         scope: request.scope,
         ownerUserId: owner,
         resourceId: operation.resourceId,
-        ciphertext: box?.ciphertext ?? ByteData(0),
-        nonce: box?.nonce ?? ByteData(0),
-        authenticationTag: box?.authenticationTag ?? ByteData(0),
-        algorithm: 'AES-256-GCM',
-        keyVersion: 1,
-        displaySuffix: secret == null ? null : _suffix(secret),
+        secret: secret,
         revision: secretRevision!,
-        createdAt: existing?.createdAt ?? now,
-        updatedAt: now,
-        deletedAt: secret == null ? now : null,
+        now: now,
+        transaction: transaction,
       );
-      final storedSecret = existing == null
-          ? await WorkspaceSecret.db.insertRow(
-              session,
-              savedSecret,
-              transaction: transaction,
-            )
-          : await WorkspaceSecret.db.updateRow(
-              session,
-              savedSecret,
-              transaction: transaction,
-            );
       final resourceEvent = WorkspaceResourceValidation.eventFor(resource);
       final sequence = workspace.sequence + 1;
       await _recordEvent(
@@ -862,6 +814,50 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       ),
       transaction: transaction,
     );
+  }
+
+  Future<WorkspaceSecret> _saveSecret(
+    Session session, {
+    required WorkspaceSecret? existing,
+    required int workspaceId,
+    required WorkspaceSecretKind secretKind,
+    required WorkspaceSecretScope scope,
+    required String ownerUserId,
+    required String resourceId,
+    required String? secret,
+    required int revision,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final box = secret == null
+        ? null
+        : await const WorkspaceSecretCipher().encrypt(
+            session,
+            secret,
+            workspaceId: workspaceId,
+            resourceId: resourceId,
+          );
+    final row = WorkspaceSecret(
+      id: existing?.id,
+      workspaceId: workspaceId,
+      secretKind: secretKind,
+      scope: scope,
+      ownerUserId: ownerUserId,
+      resourceId: resourceId,
+      ciphertext: box?.ciphertext ?? ByteData(0),
+      nonce: box?.nonce ?? ByteData(0),
+      authenticationTag: box?.authenticationTag ?? ByteData(0),
+      algorithm: 'AES-256-GCM',
+      keyVersion: 1,
+      displaySuffix: secret == null ? null : _suffix(secret),
+      revision: revision,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+      deletedAt: secret == null ? now : null,
+    );
+    return existing == null
+        ? WorkspaceSecret.db.insertRow(session, row, transaction: transaction)
+        : WorkspaceSecret.db.updateRow(session, row, transaction: transaction);
   }
 
   String _suffix(String secret) =>
