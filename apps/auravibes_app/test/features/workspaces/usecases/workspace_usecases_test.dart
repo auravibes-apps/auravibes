@@ -1,6 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-// Required: test expectations use chaining on matchers which triggers.
+// Required: Test expectations use chaining on matchers which triggers.
 // Cascade_invocations lint. Not applicable in test assertions.
 
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';

@@ -1,5 +1,5 @@
 // ignore_for_file: type=lint, type=warning
-// Required: widget tests override scoped providers directly.
+// Required: Widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';

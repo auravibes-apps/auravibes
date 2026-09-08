@@ -1,5 +1,5 @@
 // ignore_for_file: scoped_providers_should_specify_dependencies
-// Required: widget tests override scoped providers directly.
+// Required: Widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';

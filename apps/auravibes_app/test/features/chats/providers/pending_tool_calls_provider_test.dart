@@ -1,6 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-// Required: provider unit tests read scoped providers directly.
+// Required: Provider unit tests read scoped providers directly.
 
 import 'dart:async';
 

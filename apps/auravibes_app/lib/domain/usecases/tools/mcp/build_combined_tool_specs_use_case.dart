@@ -101,7 +101,7 @@ class const BuildCombinedToolSpecsUseCase({
     final legacyTarget = const AgentToolNameResolver().resolve(
       originalSpec.name,
     );
-    // ponytail: Legacy spec names carry slug; server ID is safe fallback.
+    // Ponytail: Legacy spec names carry slug; server ID is safe fallback.
     final mcpSlug = legacyTarget?.mcpSlug ?? mcpServerId;
 
     return ToolCatalogCandidate.external(

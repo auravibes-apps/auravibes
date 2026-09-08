@@ -1,6 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-// Required: widget tests override scoped providers directly.
+// Required: Widget tests override scoped providers directly.
 
 import 'dart:async';
 

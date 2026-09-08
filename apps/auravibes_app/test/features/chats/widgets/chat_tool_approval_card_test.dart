@@ -1,4 +1,4 @@
-// Required: widget tests override scoped providers directly.
+// Required: Widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
