@@ -10,6 +10,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../workspaces/domain/workspace_roles.dart';
+import '../../workspaces/repositories/workspace_member_lookup.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../conversation_event_writer.dart';
 import '../domain/conversation_values.dart';
@@ -1889,12 +1890,10 @@ class ConversationUseCases {
     required String userId,
     Transaction? transaction,
   }) async {
-    final member = await WorkspaceMember.db.findFirstRow(
+    final member = await findActiveWorkspaceMember(
       session,
-      where: (table) =>
-          table.workspaceId.equals(workspaceId) &
-          table.userId.equals(userId) &
-          table.removedAt.equals(null),
+      workspaceId: workspaceId,
+      userId: userId,
       transaction: transaction,
     );
     if (member == null) _fail(ConversationErrorCode.permissionDenied);
