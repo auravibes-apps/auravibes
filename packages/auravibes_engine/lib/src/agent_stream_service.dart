@@ -189,9 +189,7 @@ class const AgentStreamService<TChunk>({
     final currentResult = state.accumulatedResult == null
         ? chunk
         : provider.concatChunks(state.accumulatedResult as TChunk, chunk);
-    state
-      ..chunkCount += 1
-      ..accumulatedResult = currentResult;
+    state.accumulatedResult = currentResult;
 
     final pendingUserMessageIds = state.pendingUserMessageIds;
     final alreadyAcknowledged = state.hasAcknowledgedPendingUsers;
@@ -346,6 +344,5 @@ class _ContinueAgentStreamState<TChunk>({
   AgentChunkSink<TChunk>? uiStreamingSink;
   StreamSubscription<TChunk>? responseSubscription;
   Future<void>? activeChunkProcessing;
-  int chunkCount = 0;
   bool streamingRuntimeRemoved = false;
 }
