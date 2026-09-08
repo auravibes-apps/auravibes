@@ -153,7 +153,7 @@ class _CloudAccountForgotPasswordFormState
       widget.onFinished();
     } on Object catch (error) {
       if (!mounted) return;
-      setState(() => _errorKey = _passwordResetErrorKey(error));
+      setState(() => _errorKey = cloudAccountCodeErrorKey(error));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -181,27 +181,9 @@ class _CloudAccountForgotPasswordFormState
       });
     } on Object catch (error) {
       if (!mounted) return;
-      setState(() => _errorKey = _passwordResetErrorKey(error));
+      setState(() => _errorKey = cloudAccountCodeErrorKey(error));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
-  }
-
-  String _passwordResetErrorKey(Object error) {
-    final message = error.toString();
-    if (message.contains('policyViolation')) {
-      return LocaleKeys.cloud_accounts_password_policy_error;
-    }
-    if (message.contains('expired')) {
-      return LocaleKeys.cloud_accounts_code_expired_error;
-    }
-    if (message.contains('tooManyAttempts')) {
-      return LocaleKeys.cloud_accounts_too_many_attempts_error;
-    }
-    if (message.contains('invalid')) {
-      return LocaleKeys.cloud_accounts_code_invalid_error;
-    }
-
-    return cloudAccountErrorKey(error);
   }
 }

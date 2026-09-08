@@ -108,3 +108,21 @@ String cloudAccountErrorKey(Object error) {
 
   return LocaleKeys.cloud_accounts_request_failed;
 }
+
+String cloudAccountCodeErrorKey(Object error) {
+  final message = error.toString();
+  if (message.contains('policyViolation')) {
+    return LocaleKeys.cloud_accounts_password_policy_error;
+  }
+  if (message.contains('expired')) {
+    return LocaleKeys.cloud_accounts_code_expired_error;
+  }
+  if (message.contains('tooManyAttempts')) {
+    return LocaleKeys.cloud_accounts_too_many_attempts_error;
+  }
+  if (message.contains('invalid')) {
+    return LocaleKeys.cloud_accounts_code_invalid_error;
+  }
+
+  return cloudAccountErrorKey(error);
+}

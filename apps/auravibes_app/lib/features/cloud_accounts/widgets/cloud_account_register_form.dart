@@ -155,7 +155,7 @@ class _CloudAccountRegisterFormState
       });
     } on Object catch (error) {
       if (!mounted) return;
-      setState(() => _errorKey = _registrationErrorKey(error));
+      setState(() => _errorKey = cloudAccountCodeErrorKey(error));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -182,33 +182,9 @@ class _CloudAccountRegisterFormState
       });
     } on Object catch (error) {
       if (!mounted) return;
-      setState(() => _errorKey = _registrationErrorKey(error));
+      setState(() => _errorKey = cloudAccountCodeErrorKey(error));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
-  }
-
-  String _registrationErrorKey(Object error) {
-    final message = error.toString();
-    if (message.contains('policyViolation')) {
-      return LocaleKeys.cloud_accounts_password_policy_error;
-    }
-    if (message.contains('expired')) {
-      return LocaleKeys.cloud_accounts_code_expired_error;
-    }
-    if (message.contains('tooManyAttempts')) {
-      return LocaleKeys.cloud_accounts_too_many_attempts_error;
-    }
-    if (message.contains('invalid')) {
-      return LocaleKeys.cloud_accounts_code_invalid_error;
-    }
-    if (message.contains('SocketException') ||
-        message.contains('Connection refused') ||
-        message.contains('Failed host lookup') ||
-        message.contains('server is not configured')) {
-      return LocaleKeys.cloud_accounts_server_unreachable_error;
-    }
-
-    return cloudAccountErrorKey(error);
   }
 }
