@@ -36,22 +36,16 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
   Future<ConversationSummary> updateModel(
     ConversationEntity conversation,
     String modelId,
-  ) async {
+  ) {
     final patch = ConversationPatch(modelId: modelId);
-    try {
-      return await update(conversation, patch);
-    } on CloudAppException catch (error) {
-      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
-      final latest = await _gateway.getConversation(conversation.id);
 
-      return await _gateway.updateConversation(
-        _updateRequest(
-          conversationId: conversation.id,
-          revision: latest.revision,
-          patch: patch,
-        ),
-      );
-    }
+    return CloudAppErrors.retryStaleRevision(
+      revision: conversation.revision,
+      action: (revision) =>
+          update(conversation.copyWith(revision: revision), patch),
+      latestRevision: () async =>
+          (await _gateway.getConversation(conversation.id)).revision,
+    );
   }
 
   Future<void> delete(ConversationEntity conversation) =>

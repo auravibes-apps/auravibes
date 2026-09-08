@@ -61,6 +61,52 @@ void main() {
     ).called(1);
   });
 
+  test(
+    'retries continuation with a refreshed cloud conversation revision',
+    () async {
+      final gateway = _Gateway();
+      final result = MockConversationMutationResult();
+      final now = DateTime(2026);
+      var attempts = 0;
+      when(() => gateway.getConversation('conversation-1')).thenAnswer(
+        (_) async => ConversationSummary(
+          id: 'conversation-1',
+          title: 'Conversation',
+          isPinned: false,
+          revision: attempts++ == 0 ? 3 : 4,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      when(
+        () => gateway.continueTurn(
+          requestId: any(named: 'requestId'),
+          conversationId: 'conversation-1',
+          expectedConversationRevision: 3,
+        ),
+      ).thenThrow(
+        const CloudAppException(
+          localizationKey: 'unused',
+          context: CloudOperationContext.conversation,
+          code: 'staleRevision',
+        ),
+      );
+      when(
+        () => gateway.continueTurn(
+          requestId: any(named: 'requestId'),
+          conversationId: 'conversation-1',
+          expectedConversationRevision: 4,
+        ),
+      ).thenAnswer((_) async => result);
+
+      final actual = await CloudTurnUsecase(gateway)
+          .continueConversation('conversation-1');
+
+      expect(actual, same(result));
+      verify(() => gateway.getConversation('conversation-1')).called(2);
+    },
+  );
+
   test('decide forwards client-observed arguments digest', () async {
     final gateway = _Gateway();
     final result = MockConversationMutationResult();

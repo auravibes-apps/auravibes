@@ -51,22 +51,17 @@ class const CloudTurnUsecase(final CloudChatGateway _gateway) {
     String conversationId,
   ) async {
     final conversation = await _gateway.getConversation(conversationId);
-    try {
-      return await _gateway.continueTurn(
-        requestId: DateTime.now().microsecondsSinceEpoch.toString(),
-        conversationId: conversationId,
-        expectedConversationRevision: conversation.revision,
-      );
-    } on CloudAppException catch (error) {
-      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
-      final latest = await _gateway.getConversation(conversationId);
 
-      return await _gateway.continueTurn(
+    return await CloudAppErrors.retryStaleRevision(
+      revision: conversation.revision,
+      action: (revision) => _gateway.continueTurn(
         requestId: DateTime.now().microsecondsSinceEpoch.toString(),
         conversationId: conversationId,
-        expectedConversationRevision: latest.revision,
-      );
-    }
+        expectedConversationRevision: revision,
+      ),
+      latestRevision: () async =>
+          (await _gateway.getConversation(conversationId)).revision,
+    );
   }
 
   Future<ConversationSnapshot> continueSharedConversation({
@@ -116,14 +111,9 @@ class const CloudTurnUsecase(final CloudChatGateway _gateway) {
     String turnId,
     int revision,
     Future<ConversationMutationResult> Function(int revision) action,
-  ) async {
-    try {
-      return await action(revision);
-    } on CloudAppException catch (error) {
-      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
-      final snapshot = await get(turnId);
-
-      return await action(snapshot.turn.revision);
-    }
-  }
+  ) => CloudAppErrors.retryStaleRevision(
+    revision: revision,
+    action: action,
+    latestRevision: () async => (await get(turnId)).turn.revision,
+  );
 }

@@ -18,6 +18,20 @@ final class const CloudAppException({
 }
 
 abstract final class CloudAppErrors {
+  static Future<T> retryStaleRevision<T>({
+    required int revision,
+    required Future<T> Function(int revision) action,
+    required Future<int> Function() latestRevision,
+  }) async {
+    try {
+      return await action(revision);
+    } on CloudAppException catch (error) {
+      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
+
+      return await action(await latestRevision());
+    }
+  }
+
   static Future<T> guardCall<T>(
     CloudOperationContext context,
     Future<T> Function() call,
