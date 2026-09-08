@@ -14,7 +14,7 @@ void main() {
   testWidgets('shows loading placeholder', (tester) async {
     final _ = await tester.runAsync(() async {
       await tester.pumpWidget(
-        _buildSubject(groupedModelsStream: const Stream.empty()),
+        _SubjectBuilder.build(groupedModelsStream: const Stream.empty()),
       );
     });
     await tester.pump();
@@ -25,7 +25,7 @@ void main() {
   testWidgets('shows error fallback', (tester) async {
     await _pumpSubject(
       tester,
-      _buildSubject(
+      _SubjectBuilder.build(
         groupedModelsStream: Stream.error(
           StateError('model error'),
           StackTrace.current,
@@ -39,7 +39,7 @@ void main() {
   testWidgets('shows selected model name', (tester) async {
     await _pumpSubject(
       tester,
-      _buildSubject(
+      _SubjectBuilder.build(
         groupedModels: {
           'anthropic-work': [
             _makeSelection(
@@ -62,7 +62,7 @@ void main() {
   testWidgets('compact mode shows selected model chip', (tester) async {
     await _pumpSubject(
       tester,
-      _buildSubject(
+      _SubjectBuilder.build(
         groupedModels: {
           'anthropic-work': [
             _makeSelection(
@@ -85,7 +85,7 @@ void main() {
   });
 
   testWidgets('shows empty provider placeholder', (tester) async {
-    await _pumpSubject(tester, _buildSubject(groupedModels: {}));
+    await _pumpSubject(tester, _SubjectBuilder.build(groupedModels: {}));
 
     expect(find.text('Model'), findsOneWidget);
   });
@@ -93,7 +93,7 @@ void main() {
   testWidgets('filters models by search text', (tester) async {
     await _pumpSubject(
       tester,
-      _buildSubject(
+      _SubjectBuilder.build(
         groupedModels: {
           'anthropic-work': [
             _makeSelection(
@@ -139,7 +139,7 @@ void main() {
     String? selected;
     await _pumpSubject(
       tester,
-      _buildSubject(
+      _SubjectBuilder.build(
         groupedModels: {
           'anthropic-work': [
             _makeSelection(
@@ -191,42 +191,46 @@ Future<void> _pumpSubject(WidgetTester tester, Widget subject) async {
   final _ = await tester.pumpAndSettle();
 }
 
-Widget _buildSubject({
-  Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>? groupedModels,
-  Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>?
-  groupedModelsStream,
-  String? selectedId,
-  ValueChanged<String?>? onChanged,
-  bool compactMode = false,
-  bool sheetMode = false,
-}) {
-  assert(
-    groupedModels != null || groupedModelsStream != null,
-    'Provide groupedModels or groupedModelsStream.',
-  );
-  final stream = groupedModelsStream ?? Stream.value(groupedModels ?? const {});
+abstract final class _SubjectBuilder {
+  static Widget build({
+    Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>?
+    groupedModels,
+    Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>?
+    groupedModelsStream,
+    String? selectedId,
+    ValueChanged<String?>? onChanged,
+    bool compactMode = false,
+    bool sheetMode = false,
+  }) {
+    assert(
+      groupedModels != null || groupedModelsStream != null,
+      'Provide groupedModels or groupedModelsStream.',
+    );
+    final stream =
+        groupedModelsStream ?? Stream.value(groupedModels ?? const {});
 
-  return TestableApp(
-    child: Theme(
-      data: ThemeData(extensions: [AuraTheme.light]),
-      child: Scaffold(
-        body: Portal(
-          child: CompactWorkspaceModelSelector(
-            workspaceId: 'ws-1',
-            workspaceModelSelectionId: selectedId,
-            onChanged: onChanged ?? (_) => fail('Unexpected model change'),
-            compactMode: compactMode,
-            sheetMode: sheetMode,
+    return TestableApp(
+      child: Theme(
+        data: ThemeData(extensions: [AuraTheme.light]),
+        child: Scaffold(
+          body: Portal(
+            child: CompactWorkspaceModelSelector(
+              workspaceId: 'ws-1',
+              workspaceModelSelectionId: selectedId,
+              onChanged: onChanged ?? (_) => fail('Unexpected model change'),
+              compactMode: compactMode,
+              sheetMode: sheetMode,
+            ),
           ),
         ),
       ),
-    ),
-    overrides: [
-      listModelsGroupedByProviderProvider.overrideWith(
-        (ref, workspaceId) => stream,
-      ),
-    ],
-  );
+      overrides: [
+        listModelsGroupedByProviderProvider.overrideWith(
+          (ref, workspaceId) => stream,
+        ),
+      ],
+    );
+  }
 }
 
 WorkspaceModelSelectionWithConnectionEntity _makeSelection(
