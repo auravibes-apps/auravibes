@@ -154,7 +154,7 @@ class WorkspaceRepository(
 
     if (existing == null) {
       return await createWorkspace(
-        WorkspaceToCreate(
+        .new(
           name: name,
           type: WorkspaceType.remote,
           url: serverUrl,
@@ -166,7 +166,7 @@ class WorkspaceRepository(
 
     return await patchWorkspace(
       existing.id,
-      WorkspacePatch(
+      .new(
         name: name,
         type: WorkspaceType.remote,
         url: serverUrl,
@@ -300,11 +300,11 @@ class WorkspaceRepository(
   /// Returns the corresponding [WorkspacesCompanion].
   WorkspacesCompanion _mapToWorkspacesCompanion(WorkspaceToCreate workspace) {
     return WorkspacesCompanion(
-      name: Value(workspace.name),
-      type: Value(workspace.type),
-      url: Value(workspace.url),
-      cloudWorkspaceId: Value(workspace.cloudWorkspaceId),
-      cloudAccountId: Value(workspace.cloudAccountId),
+      name: .new(workspace.name),
+      type: .new(workspace.type),
+      url: .new(workspace.url),
+      cloudWorkspaceId: .new(workspace.cloudWorkspaceId),
+      cloudAccountId: .new(workspace.cloudAccountId),
     );
   }
 
@@ -320,11 +320,11 @@ class WorkspaceRepository(
 
   WorkspacesCompanion _mapPatchToWorkspacesCompanion(WorkspacePatch workspace) {
     return WorkspacesCompanion(
-      name: Value.absentIfNull(workspace.name),
-      type: Value.absentIfNull(workspace.type),
-      url: Value.absentIfNull(workspace.url),
-      cloudWorkspaceId: Value.absentIfNull(workspace.cloudWorkspaceId),
-      cloudAccountId: Value.absentIfNull(workspace.cloudAccountId),
+      name: .absentIfNull(workspace.name),
+      type: .absentIfNull(workspace.type),
+      url: .absentIfNull(workspace.url),
+      cloudWorkspaceId: .absentIfNull(workspace.cloudWorkspaceId),
+      cloudAccountId: .absentIfNull(workspace.cloudAccountId),
     );
   }
 

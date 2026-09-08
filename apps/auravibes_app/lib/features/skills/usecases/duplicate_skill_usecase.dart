@@ -30,7 +30,7 @@ class const DuplicateSkillUsecase(
     );
     final duplicate = await _createSkillUsecase.call(
       skill.workspaceId,
-      SkillToCreate(
+      .new(
         kind: skill.kind,
         title: title,
         description: skill.description,

@@ -30,7 +30,7 @@ class const ConversationContextUsagePill({
               children: [
                 AuraIcon(
                   data.level.icon,
-                  size: AuraIconSize.extraSmall,
+                  size: .extraSmall,
                   tint: data.level.iconTint,
                 ),
                 SizedBox(
@@ -41,28 +41,23 @@ class const ConversationContextUsagePill({
                     backgroundAlpha: 0.25,
                   ),
                 ),
-                AuraText(
-                  child: Text(data.usageLabel),
-                  style: AuraTextStyle.caption,
-                ),
+                AuraText(child: Text(data.usageLabel), style: .caption),
                 AuraBadge.text(
                   child: Text(data.percentLabel),
                   variant: data.level.badgeVariant,
-                  size: AuraBadgeSize.small,
+                  size: .small,
                 ),
               ],
               spacing: .xs,
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
             ),
             padding: const AuraEdgeInsetsGeometry.symmetric(
               horizontal: .sm,
               vertical: .xs,
             ),
-            variant: AuraContainerVariant.surfaceVariant,
+            variant: .surfaceVariant,
             borderRadius: context.auraTheme.fromBorderRadius(.full),
-            border: Border.fromBorderSide(
-              BorderSide(color: auraColors.outlineVariant),
-            ),
+            border: .fromBorderSide(.new(color: auraColors.outlineVariant)),
           ),
           container: true,
           excludeSemantics: true,
@@ -84,21 +79,21 @@ String _tooltip(ContextUsageData data) {
   final tooltipArgs = data.tooltipArgs();
 
   return switch (data.level) {
-    ContextUsageLevel.normal =>
+    .normal =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_normal
           .tr(namedArgs: tooltipArgs),
-    ContextUsageLevel.elevated =>
+    .elevated =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_elevated
           .tr(namedArgs: tooltipArgs),
-    ContextUsageLevel.warning =>
+    .warning =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_warning
           .tr(namedArgs: tooltipArgs),
-    ContextUsageLevel.overflow =>
+    .overflow =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_overflow
           .tr(
             namedArgs: {...tooltipArgs, 'overflow': '${data.overflowTokens}'},
           ),
-    ContextUsageLevel.unknown =>
+    .unknown =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_limit_unavailable
           .tr(),
   };
@@ -113,22 +108,22 @@ String _semanticValue(ContextUsageData data) {
   }
 
   return switch (data.level) {
-    ContextUsageLevel.normal =>
+    .normal =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_normal
           .tr(
             namedArgs: {'usage': data.usageLabel, 'percent': '${data.percent}'},
           ),
-    ContextUsageLevel.elevated =>
+    .elevated =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_elevated
           .tr(
             namedArgs: {'usage': data.usageLabel, 'percent': '${data.percent}'},
           ),
-    ContextUsageLevel.warning =>
+    .warning =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_warning
           .tr(
             namedArgs: {'usage': data.usageLabel, 'percent': '${data.percent}'},
           ),
-    ContextUsageLevel.overflow =>
+    .overflow =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_overflow
           .tr(
             namedArgs: {
@@ -137,7 +132,7 @@ String _semanticValue(ContextUsageData data) {
               'overflow': '${data.overflowTokens}',
             },
           ),
-    ContextUsageLevel.unknown => semanticLimitUnavailable.tr(
+    .unknown => semanticLimitUnavailable.tr(
       namedArgs: {'usage': data.usageLabel},
     ),
   };

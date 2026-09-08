@@ -95,8 +95,8 @@ class _StubMessageRepository implements MessageRepository {
       messageType: message.messageType,
       isUser: message.isUser,
       status: message.status,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
+      createdAt: .new(2024),
+      updatedAt: .new(2024),
     );
     created.add(entity);
 
@@ -109,11 +109,11 @@ class _StubMessageRepository implements MessageRepository {
       id: id,
       conversationId: 'conv-1',
       content: message.content ?? 'patched',
-      messageType: MessageType.text,
+      messageType: .text,
       isUser: true,
       status: message.status ?? MessageStatus.sent,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
+      createdAt: .new(2024),
+      updatedAt: .new(2024),
     );
     patched.add(entity);
 
@@ -163,11 +163,11 @@ void main() {
           id: 'm-1',
           conversationId: 'c-1',
           content: 'hello',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2024),
-          updatedAt: DateTime(2024),
+          status: .sent,
+          createdAt: .new(2024),
+          updatedAt: .new(2024),
         ),
       ];
 
@@ -200,7 +200,7 @@ void main() {
     test('getMessagesByType returns filtered list', () async {
       final repo = _StubMessageRepository();
 
-      final result = await repo.getMessagesByType('c-1', MessageType.system);
+      final result = await repo.getMessagesByType('c-1', .system);
 
       expect(result, isEmpty);
     });
@@ -234,9 +234,9 @@ void main() {
       const toCreate = MessageToCreate(
         conversationId: 'c-1',
         content: 'hi',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sent,
+        status: .sent,
       );
 
       final result = await repo.createMessage(toCreate);
@@ -276,7 +276,7 @@ void main() {
     test('getMessagesByStatus returns list', () async {
       final repo = _StubMessageRepository();
 
-      final result = await repo.getMessagesByStatus('c-1', MessageStatus.error);
+      final result = await repo.getMessagesByStatus('c-1', .error);
 
       expect(result, isEmpty);
     });
@@ -295,9 +295,9 @@ void main() {
       const toCreate = MessageToCreate(
         conversationId: 'c-1',
         content: 'valid',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sent,
+        status: .sent,
       );
 
       expect(await repo.validateMessage(toCreate), true);

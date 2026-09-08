@@ -88,7 +88,7 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
       state: this,
       child: Stack(
         alignment: Alignment.topLeft,
-        fit: StackFit.passthrough,
+        fit: .passthrough,
         children: [widget.child, ?activeSnackBar],
       ),
     );
@@ -253,7 +253,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     final _ = animationController.forward();
 
     // Set up auto-dismiss timer.
-    _dismissTimer = Timer(widget.duration, dismiss);
+    _dismissTimer = .new(widget.duration, dismiss);
   }
 
   @override
@@ -302,7 +302,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
               child: Container(
                 decoration: BoxDecoration(
                   color: widget.backgroundColor,
-                  borderRadius: const BorderRadius.all(Radius.circular(12)),
+                  borderRadius: const BorderRadius.all(.circular(12)),
                   boxShadow: [
                     BoxShadow(
                       color: context.auraColors.shadow.withValues(alpha: 0.15),
@@ -323,7 +323,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                         // Content.
                         Expanded(
                           child: DefaultTextStyle(
-                            style: TextStyle(
+                            style: .new(
                               color: widget.foregroundColor,
                               fontSize: _contentFontSize,
                               fontWeight: FontWeight.w500,
@@ -342,7 +342,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                               ),
                               child: Text(
                                 actionLabel,
-                                style: TextStyle(
+                                style: .new(
                                   color: widget.foregroundColor,
                                   fontSize: _contentFontSize,
                                   fontWeight: FontWeight.w600,
@@ -388,22 +388,22 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
 /// Gets the background color for a snackbar variant.
 Color _getBackgroundColor(AuraSnackBarVariant variant, AuraColorScheme colors) {
   return switch (variant) {
-    AuraSnackBarVariant.default_ => colors.surfaceVariant,
-    AuraSnackBarVariant.success => colors.success,
-    AuraSnackBarVariant.error => colors.error,
-    AuraSnackBarVariant.warning => colors.warning,
-    AuraSnackBarVariant.info => colors.info,
+    .default_ => colors.surfaceVariant,
+    .success => colors.success,
+    .error => colors.error,
+    .warning => colors.warning,
+    .info => colors.info,
   };
 }
 
 /// Gets the foreground (text) color for a snackbar variant.
 Color _getForegroundColor(AuraSnackBarVariant variant, AuraColorScheme colors) {
   return switch (variant) {
-    AuraSnackBarVariant.default_ => colors.onSurfaceVariant,
-    AuraSnackBarVariant.success => colors.onSuccess,
-    AuraSnackBarVariant.error => colors.onError,
-    AuraSnackBarVariant.warning => colors.onWarning,
-    AuraSnackBarVariant.info => colors.onInfo,
+    .default_ => colors.onSurfaceVariant,
+    .success => colors.onSuccess,
+    .error => colors.onError,
+    .warning => colors.onWarning,
+    .info => colors.onInfo,
   };
 }
 // Public convenience API intentionally remains top-level.

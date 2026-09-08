@@ -57,7 +57,7 @@ class CloudWorkspaceStateGateway {
   final WorkspaceReconnectDelay _delay;
 
   final Client? _client;
-  Future<void> _readTail = Future.value();
+  Future<void> _readTail = .value();
   bool _disposed = false;
   final _disposedSignal = Completer<bool>();
 
@@ -104,7 +104,7 @@ class CloudWorkspaceStateGateway {
   }) => CloudAppErrors.guardCall(
     .state,
     () => _requiredClient.workspaceState.patch(
-      PatchWorkspaceStateRequest(
+      .new(
         workspaceId: _workspace.cloudWorkspaceId,
         requestId: requestId,
         operations: operations,
@@ -193,7 +193,7 @@ class CloudWorkspaceStateGateway {
     while (!_disposed) {
       final events = StreamIterator(
         _subscribe(
-          WorkspaceSubscribeRequest(
+          .new(
             workspaceId: _workspace.cloudWorkspaceId,
             afterSequence: lastSequence,
             activeTurnIds: const [],
@@ -219,7 +219,7 @@ class CloudWorkspaceStateGateway {
         }
       } on CloudWorkspaceException catch (error) {
         if (_isTerminal(error.code)) {
-          CloudAppErrors.translateException(error, CloudOperationContext.state);
+          CloudAppErrors.translateException(error, .state);
         }
       } on CloudAppException catch (error) {
         if (_isTerminalCode(error.code)) {
@@ -316,7 +316,7 @@ class CloudWorkspaceStateGateway {
 
   Never _malformedSnapshot(String code) => throw CloudAppException(
     localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-    context: CloudOperationContext.resource,
+    context: .resource,
     code: code,
   );
 

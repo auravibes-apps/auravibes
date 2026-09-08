@@ -25,7 +25,7 @@ final $CheckboxListTile = _Story(
       name: 'Compact Phone',
       modes: [ViewportMode(compactPhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
     _Scenario(
       name: 'Toggles Checkbox',

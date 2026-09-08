@@ -89,7 +89,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   void initState() {
     super.initState();
     _initFocusNode(widget.focusNode);
-    _menuFocusScopeNode = FocusScopeNode(
+    _menuFocusScopeNode = .new(
       debugLabel: 'AuraPopupMenu menu',
       onKeyEvent: _handleMenuKeyEvent,
     );
@@ -174,7 +174,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
               child: _AuraPopupMenuCloseScope(
                 close: close,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   crossAxisAlignment: .start,
                   children: widget.items
                       .map((e) => Builder(builder: e.build))
@@ -182,7 +182,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
                 ),
               ),
               padding: .none,
-              style: AuraCardStyle.border,
+              style: .border,
             ),
           ),
         ),

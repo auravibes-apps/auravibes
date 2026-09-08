@@ -18,7 +18,7 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate toCreate,
   ) async {
-    created = ModelConnectionEntity(
+    created = .new(
       id: 'new-id',
       name: toCreate.name,
       modelId: toCreate.modelId,

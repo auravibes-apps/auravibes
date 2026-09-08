@@ -10,12 +10,12 @@ final $Example = _Story(
   name: 'AuraAvatarGroup',
   setup: (context, child, args) => SizedBox(width: 320, child: child),
   args: _Args(
-    children: Arg.fixed(const [
+    children: .fixed(const [
       AuraAvatar(child: Text('AL'), semanticLabel: 'Alex Lee'),
       AuraAvatar(child: Text('SR'), semanticLabel: 'Sam Rivera'),
       AuraAvatar(child: Text('JT'), semanticLabel: 'Jamie Taylor'),
     ]),
-    maxVisible: Arg.fixed(2),
+    maxVisible: .fixed(2),
     overflowSemanticLabel: NullableStringArg('1 more person'),
   ),
 );

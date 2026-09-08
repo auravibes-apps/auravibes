@@ -24,9 +24,9 @@ WorkspaceToolEntity _tool({
     workspaceId: 'ws1',
     toolId: toolId,
     isEnabled: isEnabled,
-    permissionMode: ToolPermissionMode.alwaysAsk,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    permissionMode: .alwaysAsk,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }
 
@@ -64,7 +64,7 @@ void main() {
           ],
           child: MaterialApp(
             home: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: const Scaffold(
                 body: ToolCountEnabledWidget(workspaceId: workspaceId),
               ),
@@ -104,7 +104,7 @@ void main() {
               ],
               child: MaterialApp(
                 home: Theme(
-                  data: ThemeData(extensions: [AuraTheme.light]),
+                  data: .new(extensions: [AuraTheme.light]),
                   child: const Scaffold(
                     body: ToolCountEnabledWidget(workspaceId: workspaceId),
                   ),
@@ -140,7 +140,7 @@ void main() {
         ],
         child: MaterialApp(
           home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
+            data: .new(extensions: [AuraTheme.light]),
             child: const Scaffold(
               body: ToolCountEnabledWidget(workspaceId: workspaceId),
             ),

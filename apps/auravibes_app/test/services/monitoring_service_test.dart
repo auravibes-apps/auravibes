@@ -10,7 +10,7 @@ void main() {
         () => service.trackError(
           'test_concept',
           error: Exception('test error'),
-          stackTrace: StackTrace.current,
+          stackTrace: .current,
         ),
         returnsNormally,
       );
@@ -23,7 +23,7 @@ void main() {
         () => service.trackError(
           'test_concept',
           error: Exception('test'),
-          stackTrace: StackTrace.current,
+          stackTrace: .current,
         ),
         returnsNormally,
       );
@@ -37,7 +37,7 @@ void main() {
       ).trackError(
         'test_concept',
         error: Exception('secret token'),
-        stackTrace: StackTrace.current,
+        stackTrace: .current,
       );
 
       expect(messages, isEmpty);
@@ -49,7 +49,7 @@ void main() {
       MonitoringService(debugLogger: messages.add).trackError(
         'stream_failure',
         error: error,
-        stackTrace: StackTrace.fromString('frame 1\nframe 2'),
+        stackTrace: .fromString('frame 1\nframe 2'),
       );
 
       expect(
@@ -69,7 +69,7 @@ void main() {
         error: Exception(
           'Authorization: Bearer secret-token refresh_token=abc123',
         ),
-        stackTrace: StackTrace.fromString('api_key=key123'),
+        stackTrace: .fromString('api_key=key123'),
       );
 
       final joined = messages.join('\n');

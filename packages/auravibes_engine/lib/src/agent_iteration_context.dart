@@ -14,7 +14,7 @@ class const AgentIterationContext({
   }
 
   @override
-  int get hashCode => Object.hash(origin, Object.hashAll(ackMessageIds));
+  int get hashCode => Object.hash(origin, .hashAll(ackMessageIds));
 }
 
 enum AgentIterationOrigin { userMessage, toolResume, manualContinue }

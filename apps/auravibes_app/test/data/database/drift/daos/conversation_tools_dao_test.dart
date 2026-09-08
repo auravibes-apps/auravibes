@@ -24,7 +24,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -42,10 +42,10 @@ void main() {
     setUp(() async {
       fixture.reset();
       final ws = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       final conv = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(workspaceId: ws.id, title: 'Conv'),
+        .insert(workspaceId: ws.id, title: 'Conv'),
       );
       conversationId = conv.id;
       await fixture.database.workspaceToolsDao.insertToolsBatch([
@@ -68,7 +68,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       expect(result.isEnabled, isTrue);
       expect(result.permissions, equals(PermissionAccess.ask));
@@ -80,14 +80,14 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final updated = await fixture.database.conversationToolsDao
           .upsertConversationTool(
             conversationId,
             toolId,
             isEnabled: false,
-            permission: PermissionAccess.granted,
+            permission: .granted,
           );
       expect(updated.isEnabled, isFalse);
       expect(updated.permissions, equals(PermissionAccess.granted));
@@ -99,7 +99,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final found = await fixture.database.conversationToolsDao
           .getConversationTool(conversationId, toolId);
@@ -118,7 +118,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final tools = await fixture.database.conversationToolsDao
           .getConversationTools(conversationId);
@@ -137,7 +137,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final result = await fixture.database.conversationToolsDao
           .setConversationToolEnabled(conversationId, toolId, isEnabled: false);
@@ -149,7 +149,7 @@ void main() {
           .setConversationToolPermission(
             conversationId,
             toolId,
-            permission: PermissionAccess.granted,
+            permission: .granted,
           );
       expect(result.permissions, equals(PermissionAccess.granted));
     });
@@ -160,13 +160,13 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final result = await fixture.database.conversationToolsDao
           .setConversationToolPermission(
             conversationId,
             toolId,
-            permission: PermissionAccess.granted,
+            permission: .granted,
           );
       expect(result.permissions, equals(PermissionAccess.granted));
     });
@@ -177,7 +177,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final deleted = await fixture.database.conversationToolsDao
           .deleteConversationTool(conversationId, toolId);
@@ -209,7 +209,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: false,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final enabled = await fixture.database.conversationToolsDao
           .isConversationToolEnabled(conversationId, toolId);
@@ -228,7 +228,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       expect(
         await fixture.database.conversationToolsDao.getConversationToolsCount(
@@ -244,7 +244,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       await fixture.database.conversationToolsDao.removeToolsForConversation(
         conversationId,
@@ -260,7 +260,7 @@ void main() {
     test('copyConversationTools copies tools between conversations', () async {
       final ws = await fixture.database.workspaceDao.getAllWorkspaces();
       final conv2 = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(
+        .insert(
           workspaceId:
               (ws.firstOrNull ?? fail('Expected ws.firstOrNull to be non-null'))
                   .id,
@@ -272,7 +272,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: false,
-            permission: PermissionAccess.granted,
+            permission: .granted,
           );
       await fixture.database.conversationToolsDao.copyConversationTools(
         conversationId,
@@ -294,7 +294,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final _ = await fixture.database.conversationToolsDao
           .toggleConversationTool(conversationId, toolId);
@@ -316,7 +316,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: false,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       expect(
         await fixture.database.conversationToolsDao.isConversationToolDisabled(
@@ -333,7 +333,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: false,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final disabled = await fixture.database.conversationToolsDao
           .getDisabledConversationTools(conversationId);
@@ -346,7 +346,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: false,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       expect(
         await fixture.database.conversationToolsDao
@@ -383,7 +383,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: false,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final enabled = await fixture.database.conversationToolsDao
           .enableConversationTool(conversationId, toolId);
@@ -396,7 +396,7 @@ void main() {
             conversationId,
             toolId,
             isEnabled: false,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       await fixture.database.conversationToolsDao
           .removeDisabledToolsForConversation(conversationId);

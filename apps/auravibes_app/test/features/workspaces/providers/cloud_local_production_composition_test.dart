@@ -124,7 +124,7 @@ void main() {
         ),
         cloudConversationStateProvider.overrideWith((_, _) async* {
           yield CloudConversationState(
-            conversation: ConversationProjectionView(
+            conversation: .new(
               id: 'conversation-a',
               workspaceId: 11,
               executionState: 'idle',
@@ -140,7 +140,7 @@ void main() {
           );
         }),
         toolsGroupsRepositoryProvider(cloud)
-            .overrideWithValue(CloudToolsRepository(Future.value(gateway))),
+            .overrideWithValue(CloudToolsRepository(.value(gateway))),
         workspaceSkillsProvider('mirror-a').overrideWith((_) async => const []),
         appDatabaseProvider.overrideWith((_) => _local('Drift database')),
         conversationRepositoryProvider.overrideWith(

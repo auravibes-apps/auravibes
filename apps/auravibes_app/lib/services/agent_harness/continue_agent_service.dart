@@ -145,10 +145,7 @@ class ContinueAgentService({
 
   @override
   Future<void> startMessageStreaming(String messageId) async {
-    messagesStreamingRuntime.startSubscription(
-      CompositeSubscription(),
-      messageId,
-    );
+    messagesStreamingRuntime.startSubscription(.new(), messageId);
   }
 
   @override
@@ -214,7 +211,7 @@ class ContinueAgentService({
       for (final pendingUserMessageId in pendingUserMessageIds) {
         final _ = await messageRepository.patchMessage(
           pendingUserMessageId,
-          const MessagePatch(status: MessageStatus.error),
+          const MessagePatch(status: .error),
         );
       }
     } on Object catch (cleanupError, cleanupStackTrace) {
@@ -238,7 +235,7 @@ class ContinueAgentService({
     final stoppedMetadata = _markPendingToolsStopped(result?.entityMetadata);
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(
+      .new(
         content: result?.entityText.isEmpty ?? true ? null : result?.entityText,
         metadata: _withA2uiState(
           stoppedMetadata,
@@ -276,7 +273,7 @@ class ContinueAgentService({
     for (final pendingUserMessageId in pendingUserMessageIds) {
       final _ = await messageRepository.patchMessage(
         pendingUserMessageId,
-        const MessagePatch(status: MessageStatus.sent),
+        const MessagePatch(status: .sent),
       );
     }
   }
@@ -316,7 +313,7 @@ class ContinueAgentService({
     final future = uiStreamingController.stream
         .coalescingSave(
           store: (result) async {
-            await Future<void>.delayed(Duration.zero);
+            await Future<void>.delayed(.zero);
             messagesStreamingRuntime.updateResult(result, messageId);
           },
         )

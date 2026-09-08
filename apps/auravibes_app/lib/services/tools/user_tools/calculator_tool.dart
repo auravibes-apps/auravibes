@@ -38,7 +38,7 @@ final class const CalculatorTool()
     final evaluator = RealEvaluator();
 
     return CancelableOperation.fromFuture(
-      Future(() {
+      .new(() {
         try {
           final exp = parser.parse(toolInput);
 

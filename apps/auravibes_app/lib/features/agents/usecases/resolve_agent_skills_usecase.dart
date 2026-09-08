@@ -64,7 +64,7 @@ class const ResolveAgentSkillsUsecase(
               title: skill.title,
               description: skill.description,
               content: skill.content,
-              kind: SkillKind.native,
+              kind: .native,
             ),
           );
       }

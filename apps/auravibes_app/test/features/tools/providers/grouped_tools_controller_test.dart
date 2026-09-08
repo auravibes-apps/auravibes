@@ -1,11 +1,9 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -188,7 +186,7 @@ class _GroupedToolsControllerFixture {
 
     _toolsGroupsRepository = toolsGroupsRepository;
     _mcpNotifier = mcpNotifier;
-    _container = ProviderContainer(
+    _container = .new(
       overrides: [
         toolsGroupsRepositoryProvider(
           const WorkspaceSession(
@@ -225,9 +223,9 @@ class _GroupedToolsControllerFixture {
 final _workspace = WorkspaceEntity(
   id: 'workspace-1',
   name: 'Workspace',
-  type: WorkspaceType.local,
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  type: .local,
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
 );
 
 final _mcpGroup = ToolsGroupEntity(
@@ -235,9 +233,9 @@ final _mcpGroup = ToolsGroupEntity(
   workspaceId: 'workspace-1',
   name: 'Group',
   isEnabled: true,
-  permissions: PermissionAccess.ask,
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  permissions: .ask,
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
   mcpServerId: 'server-1',
 );
 

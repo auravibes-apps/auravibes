@@ -10,9 +10,7 @@ void main() {
 
     final decision = await service.agent.continueTurn(
       conversationId: 'conversation-1',
-      context: const AgentIterationContext(
-        origin: AgentIterationOrigin.userMessage,
-      ),
+      context: const AgentIterationContext(origin: .userMessage),
     );
     final message = await service.conversations.create(
       conversationId: 'conversation-1',
@@ -30,12 +28,12 @@ void main() {
 
   test('exposes tools module actions', () async {
     final tools = _FakeToolProvider();
-    final service = _service(_FakeAgentProvider(), tools: tools);
+    final service = _service(.new(), tools: tools);
 
     await service.tools.approve(
       messageId: 'message-1',
       toolCallId: 'tool-1',
-      level: AgentToolGrantLevel.conversation,
+      level: .conversation,
     );
     await service.tools.skip(messageId: 'message-1', toolCallId: 'tool-2');
     await service.tools.stopPending(messageId: 'message-1');
@@ -69,10 +67,7 @@ AuraAgentService<String> _service(
     resume: tools ?? _FakeToolProvider(),
     sendQueueRuntime: const _EmptySendQueueRuntime(),
     cancellationEffects: FakeCancellationEffects(),
-    rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-      start: (_, _) {},
-      clear: (_) {},
-    ),
+    rateLimitRetryRuntime: .new(start: (_, _) {}, clear: (_) {}),
   );
 }
 
@@ -121,8 +116,8 @@ class _FakeAgentProvider implements AgentDataProvider, AgentModelProvider {
         type: 'text',
         status: 'sent',
         isUser: true,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       ),
     ];
   }
@@ -172,9 +167,7 @@ class _FakeToolProvider
     required String resolvedTool,
     required String argumentsRaw,
   }) async {
-    return const AgentToolApprovalDecision(
-      permissionResult: AgentToolPermissionResult.granted,
-    );
+    return const AgentToolApprovalDecision(permissionResult: .granted);
   }
 
   @override

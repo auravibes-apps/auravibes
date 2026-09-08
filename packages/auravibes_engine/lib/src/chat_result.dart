@@ -40,17 +40,17 @@ abstract class const ChatMessage._() with _$ChatMessage {
   }) = _ChatMessage;
 
   factory user(String content, {List<Part> parts = const []}) =>
-      ChatMessage(role: ChatMessageRole.user, content: content, parts: parts);
+      ChatMessage(role: .user, content: content, parts: parts);
 
   factory system(String content, {List<Part> parts = const []}) =>
-      ChatMessage(role: ChatMessageRole.system, content: content, parts: parts);
+      ChatMessage(role: .system, content: content, parts: parts);
 
   factory model(
     String content, {
     List<Part> parts = const [],
     Map<String, dynamic> metadata = const {},
   }) => ChatMessage(
-    role: ChatMessageRole.model,
+    role: .model,
     content: content,
     parts: parts,
     metadata: metadata,

@@ -51,20 +51,15 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
       ToolCallResultStatus.running ||
       ToolCallResultStatus.skippedByUser ||
       ToolCallResultStatus.stoppedByUser => agentLifecycle.modelFallback,
-      ToolCallResultStatus.success =>
-        AgentToolResultStatus.success.modelFallback,
-      ToolCallResultStatus.toolNotFound =>
-        AgentToolResultStatus.toolNotFound.modelFallback,
-      ToolCallResultStatus.disabledInWorkspace =>
+      .success => AgentToolResultStatus.success.modelFallback,
+      .toolNotFound => AgentToolResultStatus.toolNotFound.modelFallback,
+      .disabledInWorkspace =>
         AgentToolResultStatus.disabledInWorkspace.modelFallback,
-      ToolCallResultStatus.disabledInConversation =>
+      .disabledInConversation =>
         AgentToolResultStatus.disabledInConversation.modelFallback,
-      ToolCallResultStatus.disabledByAgent =>
-        AgentToolResultStatus.disabledByAgent.modelFallback,
-      ToolCallResultStatus.notConfigured =>
-        AgentToolResultStatus.notConfigured.modelFallback,
-      ToolCallResultStatus.executionError =>
-        AgentToolResultStatus.executionError.modelFallback,
+      .disabledByAgent => AgentToolResultStatus.disabledByAgent.modelFallback,
+      .notConfigured => AgentToolResultStatus.notConfigured.modelFallback,
+      .executionError => AgentToolResultStatus.executionError.modelFallback,
     };
   }
 
@@ -75,10 +70,10 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
   bool get stopsAgentLoop => agentLifecycle.stopsAgentLoop;
 
   AgentToolCallLifecycle get agentLifecycle => switch (this) {
-    ToolCallResultStatus.running => AgentToolCallLifecycle.pending,
-    ToolCallResultStatus.success => AgentToolCallLifecycle.success,
-    ToolCallResultStatus.skippedByUser => AgentToolCallLifecycle.skippedByUser,
-    ToolCallResultStatus.stoppedByUser => AgentToolCallLifecycle.stoppedByUser,
+    .running => AgentToolCallLifecycle.pending,
+    .success => AgentToolCallLifecycle.success,
+    .skippedByUser => AgentToolCallLifecycle.skippedByUser,
+    .stoppedByUser => AgentToolCallLifecycle.stoppedByUser,
     _ => AgentToolCallLifecycle.failed,
   };
 
@@ -87,24 +82,17 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
   /// Use with `.tr()` to get the translated string.
   String get localeKey {
     return switch (this) {
-      ToolCallResultStatus.running => LocaleKeys.tool_call_status_running,
-      ToolCallResultStatus.success => LocaleKeys.tool_call_status_success,
-      ToolCallResultStatus.skippedByUser =>
-        LocaleKeys.tool_call_status_skipped_by_user,
-      ToolCallResultStatus.stoppedByUser =>
-        LocaleKeys.tool_call_status_stopped_by_user,
-      ToolCallResultStatus.toolNotFound =>
-        LocaleKeys.tool_call_status_tool_not_found,
-      ToolCallResultStatus.disabledInWorkspace =>
-        LocaleKeys.tool_call_status_disabled_in_workspace,
-      ToolCallResultStatus.disabledInConversation =>
+      .running => LocaleKeys.tool_call_status_running,
+      .success => LocaleKeys.tool_call_status_success,
+      .skippedByUser => LocaleKeys.tool_call_status_skipped_by_user,
+      .stoppedByUser => LocaleKeys.tool_call_status_stopped_by_user,
+      .toolNotFound => LocaleKeys.tool_call_status_tool_not_found,
+      .disabledInWorkspace => LocaleKeys.tool_call_status_disabled_in_workspace,
+      .disabledInConversation =>
         LocaleKeys.tool_call_status_disabled_in_conversation,
-      ToolCallResultStatus.disabledByAgent =>
-        LocaleKeys.tool_call_status_disabled_by_agent,
-      ToolCallResultStatus.notConfigured =>
-        LocaleKeys.tool_call_status_not_configured,
-      ToolCallResultStatus.executionError =>
-        LocaleKeys.tool_call_status_execution_error,
+      .disabledByAgent => LocaleKeys.tool_call_status_disabled_by_agent,
+      .notConfigured => LocaleKeys.tool_call_status_not_configured,
+      .executionError => LocaleKeys.tool_call_status_execution_error,
     };
   }
 }
@@ -138,16 +126,16 @@ class const ToolCallResultStatusConverter()
     if (object == null) return null;
 
     return switch (object) {
-      ToolCallResultStatus.running => 'running',
-      ToolCallResultStatus.success => 'success',
-      ToolCallResultStatus.skippedByUser => 'skipped_by_user',
-      ToolCallResultStatus.stoppedByUser => 'stopped_by_user',
-      ToolCallResultStatus.toolNotFound => 'tool_not_found',
-      ToolCallResultStatus.disabledInWorkspace => 'disabled_in_workspace',
-      ToolCallResultStatus.disabledInConversation => 'disabled_in_conversation',
-      ToolCallResultStatus.disabledByAgent => 'disabled_by_agent',
-      ToolCallResultStatus.notConfigured => 'not_configured',
-      ToolCallResultStatus.executionError => 'execution_error',
+      .running => 'running',
+      .success => 'success',
+      .skippedByUser => 'skipped_by_user',
+      .stoppedByUser => 'stopped_by_user',
+      .toolNotFound => 'tool_not_found',
+      .disabledInWorkspace => 'disabled_in_workspace',
+      .disabledInConversation => 'disabled_in_conversation',
+      .disabledByAgent => 'disabled_by_agent',
+      .notConfigured => 'not_configured',
+      .executionError => 'execution_error',
     };
   }
 }

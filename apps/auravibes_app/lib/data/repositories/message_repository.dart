@@ -358,12 +358,12 @@ class MessageRepository(
       id: messageTable.id,
       conversationId: messageTable.conversationId,
       content: messageTable.content,
-      messageType: MessageType.fromString(messageTable.messageType.value),
+      messageType: .fromString(messageTable.messageType.value),
       isUser: messageTable.isUser,
       status: _messageTableStatusToEntityStatus(messageTable.status),
       createdAt: messageTable.createdAt,
       updatedAt: messageTable.updatedAt,
-      metadata: MessageMetadataEntity.fromJsonString(messageTable.metadata),
+      metadata: .fromJsonString(messageTable.metadata),
       attachments: attachments,
     );
   }
@@ -425,12 +425,12 @@ class MessageRepository(
   /// Returns a corresponding [MessagesCompanion].
   MessagesCompanion _mapToMessagesCompanion(MessageToCreate message) {
     return MessagesCompanion(
-      conversationId: Value(message.conversationId),
-      content: Value(message.content),
-      messageType: Value(_messageTypeToTableType(message.messageType)),
-      isUser: Value(message.isUser),
-      status: Value.absentIfNull(_messageStatusToTableStatus(message.status)),
-      metadata: Value(message.metadata),
+      conversationId: .new(message.conversationId),
+      content: .new(message.content),
+      messageType: .new(_messageTypeToTableType(message.messageType)),
+      isUser: .new(message.isUser),
+      status: .absentIfNull(_messageStatusToTableStatus(message.status)),
+      metadata: .new(message.metadata),
     );
   }
 
@@ -439,23 +439,21 @@ class MessageRepository(
     MessageAttachmentToCreate attachment,
   ) {
     return MessageAttachmentsCompanion(
-      messageId: Value(messageId),
-      localPath: Value(attachment.localPath),
-      fileName: Value(attachment.fileName),
-      displayName: Value(attachment.displayName),
-      mimeType: Value(attachment.mimeType),
-      modality: Value(attachment.modality.name),
-      sizeBytes: Value(attachment.sizeBytes),
+      messageId: .new(messageId),
+      localPath: .new(attachment.localPath),
+      fileName: .new(attachment.fileName),
+      displayName: .new(attachment.displayName),
+      mimeType: .new(attachment.mimeType),
+      modality: .new(attachment.modality.name),
+      sizeBytes: .new(attachment.sizeBytes),
     );
   }
 
   MessagesCompanion _mapPatchToMessagesCompanion(MessagePatch message) {
     return MessagesCompanion(
-      content: Value.absentIfNull(message.content),
-      status: Value.absentIfNull(_messageStatusToTableStatus(message.status)),
-      metadata: Value.absentIfNull(
-        JsonCodec.encode(message.metadata?.toJson()),
-      ),
+      content: .absentIfNull(message.content),
+      status: .absentIfNull(_messageStatusToTableStatus(message.status)),
+      metadata: .absentIfNull(JsonCodec.encode(message.metadata?.toJson())),
     );
   }
 
@@ -495,10 +493,10 @@ class MessageRepository(
 
   MessageStatus _messageTableStatusToEntityStatus(MessageTableStatus status) {
     return switch (status) {
-      MessageTableStatus.sent => MessageStatus.sent,
-      MessageTableStatus.sending => MessageStatus.sending,
-      MessageTableStatus.unfinished => MessageStatus.unfinished,
-      MessageTableStatus.error => MessageStatus.error,
+      .sent => MessageStatus.sent,
+      .sending => MessageStatus.sending,
+      .unfinished => MessageStatus.unfinished,
+      .error => MessageStatus.error,
     };
   }
 
@@ -506,19 +504,19 @@ class MessageRepository(
     if (status == null) return null;
 
     return switch (status) {
-      MessageStatus.sent => MessageTableStatus.sent,
-      MessageStatus.sending => MessageTableStatus.sending,
-      MessageStatus.unfinished => MessageTableStatus.unfinished,
-      MessageStatus.error => MessageTableStatus.error,
+      .sent => MessageTableStatus.sent,
+      .sending => MessageTableStatus.sending,
+      .unfinished => MessageTableStatus.unfinished,
+      .error => MessageTableStatus.error,
     };
   }
 
   MessagesTableType _messageTypeToTableType(MessageType messageType) {
     return switch (messageType) {
-      MessageType.text => MessagesTableType.text,
-      MessageType.image => MessagesTableType.image,
-      MessageType.toolCall => MessagesTableType.toolCall,
-      MessageType.system => MessagesTableType.system,
+      .text => MessagesTableType.text,
+      .image => MessagesTableType.image,
+      .toolCall => MessagesTableType.toolCall,
+      .system => MessagesTableType.system,
     };
   }
 }

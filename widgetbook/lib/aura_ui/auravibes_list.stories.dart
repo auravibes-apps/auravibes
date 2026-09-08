@@ -23,7 +23,7 @@ final _Defaults listDefaults = _Defaults(
           child: Center(
             child: Text(
               'Item ${index + 1}',
-              style: TextStyle(color: context.auraColors.onSurface),
+              style: .new(color: context.auraColors.onSurface),
             ),
           ),
         ),
@@ -56,6 +56,6 @@ final $AuraList = _Story(
       name: 'Landscape Phone',
       modes: [ViewportMode(landscapePhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
   ],
 );

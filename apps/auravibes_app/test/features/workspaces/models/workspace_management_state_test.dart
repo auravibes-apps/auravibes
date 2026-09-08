@@ -1,5 +1,4 @@
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/models/management_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -7,9 +6,9 @@ WorkspaceEntity _workspace({required String id, required String name}) {
   return WorkspaceEntity(
     id: id,
     name: name,
-    type: WorkspaceType.local,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    type: .local,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }
 
@@ -37,7 +36,7 @@ void main() {
     });
 
     test('can be constructed with create mode', () {
-      const state = WorkspaceManagementState(mode: ManagementMode.create);
+      const state = WorkspaceManagementState(mode: .create);
 
       expect(state.mode, ManagementMode.create);
       expect(state.editingWorkspace, isNull);
@@ -46,7 +45,7 @@ void main() {
     test('can be constructed with edit mode and workspace', () {
       final workspace = _workspace(id: 'ws-1', name: 'Test');
       final state = WorkspaceManagementState(
-        mode: ManagementMode.edit,
+        mode: .edit,
         editingWorkspace: workspace,
       );
 
@@ -57,11 +56,11 @@ void main() {
     test('equality works for identical states', () {
       final workspace = _workspace(id: 'ws-1', name: 'Test');
       final state1 = WorkspaceManagementState(
-        mode: ManagementMode.edit,
+        mode: .edit,
         editingWorkspace: workspace,
       );
       final state2 = WorkspaceManagementState(
-        mode: ManagementMode.edit,
+        mode: .edit,
         editingWorkspace: workspace,
       );
 
@@ -70,7 +69,7 @@ void main() {
 
     test('equality fails for different modes', () {
       const state1 = WorkspaceManagementState();
-      const state2 = WorkspaceManagementState(mode: ManagementMode.create);
+      const state2 = WorkspaceManagementState(mode: .create);
 
       expect(state1, isNot(equals(state2)));
     });
@@ -96,7 +95,7 @@ void main() {
     test('copyWith can clear editingWorkspace', () {
       final workspace = _workspace(id: 'ws-1', name: 'Test');
       final state = WorkspaceManagementState(
-        mode: ManagementMode.edit,
+        mode: .edit,
         editingWorkspace: workspace,
       );
       final copied = state.copyWith(editingWorkspace: null);

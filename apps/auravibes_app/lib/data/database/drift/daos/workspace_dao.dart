@@ -132,7 +132,7 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
   Future<bool> patchWorkspaceTimestamp(String id) async {
     final rowsAffected =
         await (update(workspaces)..where((t) => t.id.equals(id))).write(
-          WorkspacesCompanion(updatedAt: Value(DateTime.now())),
+          WorkspacesCompanion(updatedAt: .new(DateTime.now())),
         );
 
     return rowsAffected > 0;

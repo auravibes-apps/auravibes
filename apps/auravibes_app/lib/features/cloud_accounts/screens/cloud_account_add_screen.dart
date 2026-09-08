@@ -27,7 +27,7 @@ class const CloudAccountAddScreen({
           const AuraText(child: TextLocale(LocaleKeys.cloud_accounts_add_body)),
           const AuraText(
             child: TextLocale(LocaleKeys.cloud_accounts_return_hint),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
           const SizedBox(height: 16),
           AuraButton(
@@ -48,7 +48,7 @@ class const CloudAccountAddScreen({
               ).location,
             ),
             child: const TextLocale(LocaleKeys.cloud_accounts_create_new),
-            variant: AuraButtonVariant.outlined,
+            variant: .outlined,
           ),
         ],
       ),

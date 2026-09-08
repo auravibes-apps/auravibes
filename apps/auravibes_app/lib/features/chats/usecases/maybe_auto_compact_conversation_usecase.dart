@@ -86,7 +86,7 @@ class const MaybeAutoCompactConversationUsecase({
 final maybeAutoCompactConversationUsecaseProvider =
     Provider<MaybeAutoCompactConversationUsecase>((ref) {
       return MaybeAutoCompactConversationUsecase(
-        compactConversationUsecase: CompactConversationUsecase(
+        compactConversationUsecase: .new(
           compactionExecution: ref.watch(compactionExecutionRuntimeProvider),
           messageRepository: ref.watch(messageRepositoryProvider),
           conversationRepository: ref.watch(conversationRepositoryProvider),

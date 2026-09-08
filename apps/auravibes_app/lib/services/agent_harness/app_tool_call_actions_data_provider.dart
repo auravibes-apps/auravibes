@@ -31,7 +31,7 @@ class const AppToolCallActionsDataProvider({
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
     onToolCallChanged();
 
@@ -63,7 +63,7 @@ class const AppToolCallActionsDataProvider({
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
     onToolCallChanged();
     final parentId = activeSubAgents?.parentOf(message.conversationId);

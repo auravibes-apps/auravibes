@@ -9,10 +9,7 @@ void main() {
 
   group('ModelProvider', () {
     test('stores type, key, and optional url', () {
-      const provider = ModelProvider(
-        type: CredentialsModelType.openai,
-        key: 'sk-test',
-      );
+      const provider = ModelProvider(type: .openai, key: 'sk-test');
 
       expect(provider.type, CredentialsModelType.openai);
       expect(provider.key, 'sk-test');
@@ -21,7 +18,7 @@ void main() {
 
     test('stores custom url', () {
       const provider = ModelProvider(
-        type: CredentialsModelType.anthropic,
+        type: .anthropic,
         key: 'sk-ant-test',
         url: 'https://custom.api.com/v1',
       );
@@ -30,35 +27,26 @@ void main() {
     });
 
     test('openai type has correct value', () {
-      const provider = ModelProvider(
-        type: CredentialsModelType.openai,
-        key: 'key',
-      );
+      const provider = ModelProvider(type: .openai, key: 'key');
 
       expect(provider.type.value, 'openai');
     });
 
     test('anthropic type has correct value', () {
-      const provider = ModelProvider(
-        type: CredentialsModelType.anthropic,
-        key: 'key',
-      );
+      const provider = ModelProvider(type: .anthropic, key: 'key');
 
       expect(provider.type.value, 'anthropic');
     });
 
     test('openrouter type has correct value', () {
-      const provider = ModelProvider(
-        type: CredentialsModelType.openrouter,
-        key: 'key',
-      );
+      const provider = ModelProvider(type: .openrouter, key: 'key');
 
       expect(provider.type.value, 'openrouter');
     });
 
     test('is const constructable', () {
       const provider = ModelProvider(
-        type: CredentialsModelType.openai,
+        type: .openai,
         key: 'sk-test',
         url: 'https://custom.api.com',
       );
@@ -143,10 +131,7 @@ void main() {
         final services = ModelProviderServices();
 
         final result = await services.getWorkspaceModelSelections(
-          const ModelProvider(
-            type: CredentialsModelType.google,
-            key: 'test-key',
-          ),
+          const ModelProvider(type: .google, key: 'test-key'),
         );
         expect(result, isNull);
       },
@@ -171,10 +156,7 @@ void main() {
 
       final service = ModelProviderServices();
       final result = await service.getWorkspaceModelSelections(
-        const ModelProvider(
-          type: CredentialsModelType.anthropic,
-          key: 'test-key',
-        ),
+        const ModelProvider(type: .anthropic, key: 'test-key'),
       );
       expect(result, isNotNull);
       expect((result ?? fail('Expected result to be non-null')).length, 1);
@@ -196,7 +178,7 @@ void main() {
 
       final service = ModelProviderServices();
       final result = await service.getWorkspaceModelSelections(
-        const ModelProvider(type: CredentialsModelType.openai, key: 'test-key'),
+        const ModelProvider(type: .openai, key: 'test-key'),
       );
       expect(result, isNotNull);
       expect((result ?? fail('Expected result to be non-null')).length, 1);
@@ -222,10 +204,7 @@ void main() {
 
         final service = ModelProviderServices();
         final result = await service.getWorkspaceModelSelections(
-          const ModelProvider(
-            type: CredentialsModelType.openrouter,
-            key: 'test-key',
-          ),
+          const ModelProvider(type: .openrouter, key: 'test-key'),
         );
         expect(result, isNotNull);
         expect((result ?? fail('Expected result to be non-null')).length, 1);
@@ -242,10 +221,7 @@ void main() {
 
         final service = ModelProviderServices();
         final result = await service.getWorkspaceModelSelections(
-          const ModelProvider(
-            type: CredentialsModelType.openrouter,
-            key: 'bad-key',
-          ),
+          const ModelProvider(type: .openrouter, key: 'bad-key'),
         );
 
         expect(result, isNull);
@@ -265,10 +241,7 @@ void main() {
 
         final service = ModelProviderServices();
         final result = await service.getWorkspaceModelSelections(
-          const ModelProvider(
-            type: CredentialsModelType.openrouter,
-            key: 'test-key',
-          ),
+          const ModelProvider(type: .openrouter, key: 'test-key'),
         );
 
         expect(result, isNull);
@@ -289,10 +262,7 @@ void main() {
 
         final service = ModelProviderServices();
         final result = await service.getWorkspaceModelSelections(
-          const ModelProvider(
-            type: CredentialsModelType.openrouter,
-            key: 'test-key',
-          ),
+          const ModelProvider(type: .openrouter, key: 'test-key'),
         );
 
         expect(result, isNull);
@@ -334,10 +304,7 @@ void main() {
 
       final service = ModelProviderServices();
       final result = await service.getWorkspaceModelSelections(
-        const ModelProvider(
-          type: CredentialsModelType.anthropic,
-          key: 'test-key',
-        ),
+        const ModelProvider(type: .anthropic, key: 'test-key'),
       );
       expect(result, isNotNull);
       expect((result ?? fail('Expected result to be non-null')).length, 2);

@@ -298,20 +298,20 @@ enum OKLCHShades {
     OKLCHShades.s200 || OKLCHShades.s800 => 0.05,
     OKLCHShades.s300 || OKLCHShades.s700 => _lowValue,
     OKLCHShades.s400 || OKLCHShades.s600 => 0.19,
-    OKLCHShades.s500 => 0.27,
+    .s500 => 0.27,
   };
 
   /// The lightness value for this shade.
   double get lightness => switch (this) {
-    OKLCHShades.s100 => 0.97,
-    OKLCHShades.s200 => 0.89,
-    OKLCHShades.s300 => 0.8,
-    OKLCHShades.s400 => 0.71,
-    OKLCHShades.s500 => 0.6,
-    OKLCHShades.s600 => 0.49,
-    OKLCHShades.s700 => 0.38,
-    OKLCHShades.s800 => 0.25,
-    OKLCHShades.s900 => _lowValue,
+    .s100 => 0.97,
+    .s200 => 0.89,
+    .s300 => 0.8,
+    .s400 => 0.71,
+    .s500 => 0.6,
+    .s600 => 0.49,
+    .s700 => 0.38,
+    .s800 => 0.25,
+    .s900 => _lowValue,
   };
 }
 

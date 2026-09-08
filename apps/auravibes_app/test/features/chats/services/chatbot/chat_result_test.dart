@@ -41,12 +41,12 @@ void main() {
 
     test('concatenate appends content and parts', () {
       final msg1 = ChatMessage(
-        role: ChatMessageRole.model,
+        role: .model,
         content: 'hello',
         parts: [TextPart(text: 'hello')],
       );
       final msg2 = ChatMessage(
-        role: ChatMessageRole.model,
+        role: .model,
         content: ' world',
         parts: [TextPart(text: ' world')],
       );
@@ -87,17 +87,14 @@ void main() {
   group('ChatResultEntities', () {
     test('extracts tool calls correctly', () {
       final toolRequestPart = ToolRequestPart(
-        toolRequest: ToolRequest(
+        toolRequest: .new(
           ref: 'call-1',
           name: 'getWeather',
           input: const {'city': 'Boston'},
         ),
       );
       final res = ChatResult<ChatMessage>(
-        output: ChatMessage(
-          role: ChatMessageRole.model,
-          parts: [toolRequestPart],
-        ),
+        output: ChatMessage(role: .model, parts: [toolRequestPart]),
       );
 
       expect(res.entityTools.length, 1);
@@ -108,17 +105,14 @@ void main() {
 
     test('extracts map tool call arguments as JSON', () {
       final toolRequestPart = ToolRequestPart(
-        toolRequest: ToolRequest(
+        toolRequest: .new(
           ref: 'call-1',
           name: 'getWeather',
           input: const {'city': 'Boston'},
         ),
       );
       final res = ChatResult<ChatMessage>(
-        output: ChatMessage(
-          role: ChatMessageRole.model,
-          parts: [toolRequestPart],
-        ),
+        output: ChatMessage(role: .model, parts: [toolRequestPart]),
       );
 
       expect(res.entityTools.firstOrNull?.argumentsRaw, '{"city":"Boston"}');

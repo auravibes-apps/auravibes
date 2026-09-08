@@ -5,7 +5,6 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -317,7 +316,7 @@ void main() {
                 createdAt: now,
                 updatedAt: now,
                 name: 'Test',
-                type: WorkspaceType.local,
+                type: .local,
               ),
             );
 
@@ -350,7 +349,7 @@ void main() {
                 createdAt: now,
                 updatedAt: now,
                 name: 'Test',
-                type: WorkspaceType.local,
+                type: .local,
               ),
             );
 
@@ -440,30 +439,30 @@ void main() {
         when(
           () => fixture.mockToolsDao.setWorkspaceToolPermission(
             'tool-1',
-            permission: PermissionAccess.ask,
+            permission: .ask,
           ),
         ).thenAnswer((_) async => updatedRow);
 
         final result = await fixture.repository.setToolPermissionMode(
           'tool-1',
-          permissionMode: ToolPermissionMode.alwaysAsk,
+          permissionMode: .alwaysAsk,
         );
 
         expect(result.permissionMode, ToolPermissionMode.alwaysAsk);
       });
 
       test('sets alwaysAllow permission', () async {
-        final updatedRow = createToolRow(permissions: PermissionAccess.granted);
+        final updatedRow = createToolRow(permissions: .granted);
         when(
           () => fixture.mockToolsDao.setWorkspaceToolPermission(
             'tool-1',
-            permission: PermissionAccess.granted,
+            permission: .granted,
           ),
         ).thenAnswer((_) async => updatedRow);
 
         final result = await fixture.repository.setToolPermissionMode(
           'tool-1',
-          permissionMode: ToolPermissionMode.alwaysAllow,
+          permissionMode: .alwaysAllow,
         );
 
         expect(result.permissionMode, ToolPermissionMode.alwaysAllow);
@@ -537,7 +536,7 @@ void main() {
       test(
         'maps PermissionAccess.granted to ToolPermissionMode.alwaysAllow',
         () async {
-          final row = createToolRow(permissions: PermissionAccess.granted);
+          final row = createToolRow(permissions: .granted);
           when(
             () => fixture.mockToolsDao.getWorkspaceToolByToolId('ws-1', 'tool'),
           ).thenAnswer((_) async => row);
@@ -581,7 +580,7 @@ class _WorkspaceToolsRepositoryFixture {
     _mockToolsDao = toolsDao;
     _mockWorkspaceDao = workspaceDao;
     _database = database;
-    _repository = WorkspaceToolsRepository(database);
+    _repository = .new(database);
 
     when(() => toolsDao.getWorkspaceTools(any())).thenAnswer((_) async => []);
     when(
@@ -593,12 +592,12 @@ class _WorkspaceToolsRepositoryFixture {
     ).thenAnswer(
       (invocation) async => ToolsTable(
         id: 'native-tool',
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         workspaceId: invocation.positionalArguments.first as String,
         toolId: invocation.positionalArguments.skip(1).first as String,
         isEnabled: invocation.namedArguments[#isEnabled] as bool,
-        permissions: PermissionAccess.ask,
+        permissions: .ask,
       ),
     );
   }

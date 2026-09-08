@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,7 +33,7 @@ void main() {
     );
     addTearDown(client.close);
     final gateway = CloudChatGateway(
-      CloudWorkspaceStateGateway(client: client, workspace: _workspace),
+      .new(client: client, workspace: _workspace),
     );
     final operations = <String, Future<Object?> Function()>{
       'startTurn': () => gateway.startTurn(
@@ -99,7 +98,7 @@ void main() {
 
   test('cloud subscriptions advertise supported components', () async {
     final gateway = CloudChatGateway.forConversationTesting(
-      stateGateway: CloudWorkspaceStateGateway.forTesting(
+      stateGateway: .forTesting(
         workspace: _workspace,
         readState: (_) => throw UnimplementedError(),
         subscribe: (_) => const Stream.empty(),

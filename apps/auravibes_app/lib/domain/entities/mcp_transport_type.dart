@@ -63,7 +63,7 @@ abstract class const OAuthTokenModel._() with _$OAuthTokenModel {
   OAuthTokenEntity toEntity() {
     return OAuthTokenEntity(
       accessToken: accessToken,
-      issuedAt: DateTime.now(),
+      issuedAt: .now(),
       refreshToken: refreshToken,
       idToken: idToken,
       expiresIn: expiresIn,
@@ -93,7 +93,7 @@ abstract class const OAuthTokenEntity._() with _$OAuthTokenEntity {
     final expiresIn = this.expiresIn;
     if (expiresIn == null) return true;
 
-    final expiresAt = issuedAt.add(Duration(seconds: expiresIn));
+    final expiresAt = issuedAt.add(.new(seconds: expiresIn));
 
     // Consider expired if within 5 minutes of expiry (buffer for refresh).
     return DateTime.now().isAfter(
@@ -263,12 +263,12 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
     }
 
     switch (authenticationType) {
-      case McpAuthenticationTypeOptions.none:
+      case .none:
         return true;
-      case McpAuthenticationTypeOptions.oauth:
+      case .oauth:
         // OAuth requires no additional fields here.
         return true;
-      case McpAuthenticationTypeOptions.bearerToken:
+      case .bearerToken:
         return bearerToken?.isNotEmpty ?? false;
     }
   }
@@ -284,12 +284,12 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
     }
 
     switch (authenticationType) {
-      case McpAuthenticationTypeOptions.none:
+      case .none:
         break;
-      case McpAuthenticationTypeOptions.oauth:
+      case .oauth:
         // No additional fields to validate here.
         break;
-      case McpAuthenticationTypeOptions.bearerToken:
+      case .bearerToken:
         final bearerToken = this.bearerToken;
         if (bearerToken == null || bearerToken.isEmpty) {
           errors.add(

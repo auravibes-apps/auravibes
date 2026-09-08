@@ -1,6 +1,5 @@
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
@@ -28,7 +27,7 @@ void main() {
     final repository = _MockWorkspaceRepository();
     when(
       () => repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Project', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'Project', type: .local),
       ),
     ).thenThrow(StateError('token=workspace-secret'));
 
@@ -36,7 +35,7 @@ void main() {
     final subscription = Logger.root.onRecord.listen(records.add);
     addTearDown(subscription.cancel);
     final previousLevel = Logger.root.level;
-    Logger.root.level = Level.ALL;
+    Logger.root.level = .ALL;
     addTearDown(() => Logger.root.level = previousLevel);
 
     await tester.pumpWidget(

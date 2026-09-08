@@ -36,7 +36,7 @@ class OAuthAuthenticate({
 
   Future<OAuthDiscoveryResult?> discover(String url) {
     return OAuthDiscoveryService.discoverOAuth(
-      OAuthConnector(
+      .new(
         clientName: clientName,
         serverUrl: url,
         redirectUrl: '$callbackUrlScheme:/',
@@ -141,7 +141,7 @@ class OAuthAuthenticate({
         if (oAuthResult.clientId case final clientId? when clientId.isNotEmpty)
           'client_id': clientId,
       },
-      options: Options(
+      options: .new(
         headers: const {'Accept': 'application/json'},
         responseType: ResponseType.json,
         contentType: Headers.formUrlEncodedContentType,
@@ -193,10 +193,7 @@ class OAuthAuthenticate({
   /// Generates a random string for PKCE code verifier.
   static String _generateRandomString(int length) {
     return String.fromCharCodes(
-      Iterable.generate(
-        length,
-        (_) => _chars.codeUnitAt(_rng.nextInt(_chars.length)),
-      ),
+      .generate(length, (_) => _chars.codeUnitAt(_rng.nextInt(_chars.length))),
     );
   }
 

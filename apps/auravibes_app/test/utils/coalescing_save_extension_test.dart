@@ -47,7 +47,7 @@ void main() {
         ..add(3);
 
       // Wait a bit then add more.
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
       controller
         ..add(4)
         ..add(5)

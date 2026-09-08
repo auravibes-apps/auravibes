@@ -50,7 +50,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .object,
     () => _client.object.beginUpload(
-      BeginUploadRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         purpose: purpose,
@@ -65,14 +65,14 @@ class CloudChatGateway {
       CloudAppErrors.guardCall(
         .object,
         () => _client.object.completeUpload(
-          CompleteUploadRequest(workspaceId: _workspaceId, objectId: objectId),
+          .new(workspaceId: _workspaceId, objectId: objectId),
         ),
       );
   Future<GetDownloadResult> getDownload({required int objectId}) =>
       CloudAppErrors.guardCall(
         .object,
         () => _client.object.getDownload(
-          GetDownloadRequest(workspaceId: _workspaceId, objectId: objectId),
+          .new(workspaceId: _workspaceId, objectId: objectId),
         ),
       );
   Future<void> deleteObject({
@@ -82,7 +82,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .object,
     () => _client.object.delete(
-      DeleteObjectRequest(
+      .new(
         workspaceId: _workspaceId,
         objectId: objectId,
         requestId: requestId,
@@ -103,7 +103,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.startTurn(
-      StartTurnRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         conversationId: conversationId,
@@ -124,7 +124,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueTurn(
-      ContinueTurnRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         conversationId: conversationId,
@@ -137,7 +137,7 @@ class CloudChatGateway {
       CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.getTurn(
-          GetTurnRequest(
+          .new(
             workspaceId: _workspaceId,
             turnId: turnId,
             a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
@@ -150,7 +150,7 @@ class CloudChatGateway {
       CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.getConversationSnapshot(
-          GetConversationRequest(
+          .new(
             workspaceId: _workspaceId,
             conversationId: conversationId,
             a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
@@ -181,7 +181,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueConversation(
-      ContinueConversationRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         conversationId: conversationId,
@@ -202,7 +202,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.queueConversationMessage(
-      QueueConversationMessageRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         conversationId: conversationId,
@@ -223,7 +223,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.stopConversation(
-      StopConversationRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         conversationId: conversationId,
@@ -245,7 +245,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.submitToolDecision(
-      SubmitToolDecisionRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         turnId: turnId,
@@ -266,7 +266,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.cancelTurn(
-      CancelTurnRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         turnId: turnId,
@@ -281,7 +281,7 @@ class CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.compact(
-      CompactConversationRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         conversationId: conversationId,
@@ -301,17 +301,14 @@ class CloudChatGateway {
       CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.list(
-          ListConversationsRequest(workspaceId: _workspaceId, limit: limit),
+          .new(workspaceId: _workspaceId, limit: limit),
         ),
       );
   Future<ConversationSummary> getConversation(String conversationId) =>
       CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.get(
-          GetConversationRequest(
-            workspaceId: _workspaceId,
-            conversationId: conversationId,
-          ),
+          .new(workspaceId: _workspaceId, conversationId: conversationId),
         ),
       );
   Future<List<ConversationMessageView>> listConversationMessages(
@@ -319,7 +316,7 @@ class CloudChatGateway {
   ) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.listMessages(
-      ListConversationMessagesRequest(
+      .new(
         workspaceId: _workspaceId,
         conversationId: conversationId,
         limit: 500,

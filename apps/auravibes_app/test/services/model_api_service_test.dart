@@ -1,6 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,13 +11,13 @@ Dio _createDioWithEndpointResponses({
   int modelsStatusCode = 200,
   bool failModels = false,
 }) {
-  final dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
+  final dio = Dio(.new(baseUrl: 'https://models.dev'));
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) {
         if (options.path == '/api.json') {
           handler.resolve(
-            Response(
+            .new(
               data: apiData,
               requestOptions: options,
               statusCode: apiStatusCode,
@@ -30,7 +29,7 @@ Dio _createDioWithEndpointResponses({
         if (options.path == '/models.json') {
           if (failModels) {
             handler.reject(
-              DioException(
+              .new(
                 requestOptions: options,
                 response: Response(
                   requestOptions: options,
@@ -43,7 +42,7 @@ Dio _createDioWithEndpointResponses({
             return;
           }
           handler.resolve(
-            Response(
+            .new(
               data: modelsData,
               requestOptions: options,
               statusCode: modelsStatusCode,
@@ -61,14 +60,11 @@ Dio _createDioWithEndpointResponses({
 }
 
 Dio _createDioWithNullData({int statusCode = 200}) {
-  final dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
+  final dio = Dio(.new(baseUrl: 'https://models.dev'));
   dio.interceptors.add(
     InterceptorsWrapper(
       onResponse: (options, handler) => handler.resolve(
-        Response(
-          requestOptions: options.requestOptions,
-          statusCode: statusCode,
-        ),
+        .new(requestOptions: options.requestOptions, statusCode: statusCode),
       ),
     ),
   );
@@ -77,11 +73,11 @@ Dio _createDioWithNullData({int statusCode = 200}) {
 }
 
 Dio _createDioWithNon200({int statusCode = 500}) {
-  final dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
+  final dio = Dio(.new(baseUrl: 'https://models.dev'));
   dio.interceptors.add(
     InterceptorsWrapper(
       onResponse: (options, handler) => handler.resolve(
-        Response(
+        .new(
           data: {'error': 'fail'},
           requestOptions: options.requestOptions,
           statusCode: statusCode,
@@ -94,19 +90,16 @@ Dio _createDioWithNon200({int statusCode = 500}) {
 }
 
 ApiProviderDto _providerDtoFromJson(Map<String, dynamic> json) {
-  return ApiProviderDto.fromJson(
-    json,
-    modelProvider: ApiModelProviderEntity.fromJson(json),
-  );
+  return ApiProviderDto.fromJson(json, modelProvider: .fromJson(json));
 }
 
 void main() {
   group('ModelApiService', () {
-    var dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
+    var dio = Dio(.new(baseUrl: 'https://models.dev'));
     var service = ModelApiService(dio: dio);
 
     setUp(() {
-      dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
+      dio = Dio(.new(baseUrl: 'https://models.dev'));
       service = ModelApiService(dio: dio);
     });
 
@@ -121,7 +114,7 @@ void main() {
     });
 
     test('creates with custom Dio', () {
-      final customDio = Dio(BaseOptions(baseUrl: 'https://custom.api'));
+      final customDio = Dio(.new(baseUrl: 'https://custom.api'));
       final customService = ModelApiService(dio: customDio);
       expect(customService, isNotNull);
       customService.dispose();

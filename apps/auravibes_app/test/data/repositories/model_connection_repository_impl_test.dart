@@ -2,7 +2,6 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
-import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -87,7 +86,7 @@ void main() {
     const providerRow = ApiModelProvidersTable(
       id: 'openai',
       name: 'OpenAI',
-      type: ModelProvidersTableType.openai,
+      type: .openai,
       url: 'https://api.openai.com',
     );
 
@@ -97,8 +96,8 @@ void main() {
       updatedAt: now,
       name: 'My Connection',
       serviceId: 'openai',
-      kind: ServiceConnectionKindTable.modelProvider,
-      authenticationType: ServiceAuthenticationTypeTable.apiKey,
+      kind: .modelProvider,
+      authenticationType: .apiKey,
       encryptedAuthValue: 'encrypted-key',
       keySuffix: 'abc123',
       workspaceId: 'ws-1',
@@ -222,8 +221,8 @@ void main() {
           updatedAt: now,
           name: 'Codex',
           serviceId: ModelProviderOAuthProfiles.providerId,
-          kind: ServiceConnectionKindTable.modelProvider,
-          authenticationType: ServiceAuthenticationTypeTable.oauth2,
+          kind: .modelProvider,
+          authenticationType: .oauth2,
           encryptedAuthValue: 'encrypted-token',
           keySuffix: 'access',
           metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
@@ -242,7 +241,7 @@ void main() {
             });
 
         final result = await repository.createModelConnection(
-          ModelConnectionToCreate(
+          .new(
             name: 'Codex',
             workspaceId: 'ws-1',
             modelId: ModelProviderOAuthProfiles.providerId,
@@ -296,7 +295,7 @@ void main() {
           const openRouterProvider = ApiModelProvidersTable(
             id: 'openrouter',
             name: 'OpenRouter',
-            type: ModelProvidersTableType.openrouter,
+            type: .openrouter,
             url: 'https://openrouter.ai/api/v1',
           );
           final openRouterConnectionRow = ServiceConnectionTable(
@@ -305,8 +304,8 @@ void main() {
             updatedAt: now,
             name: 'OpenRouter Connection',
             serviceId: 'openrouter',
-            kind: ServiceConnectionKindTable.modelProvider,
-            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            kind: .modelProvider,
+            authenticationType: .apiKey,
             encryptedAuthValue: 'encrypted-key',
             keySuffix: '123456',
             workspaceId: 'ws-1',

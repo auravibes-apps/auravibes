@@ -34,7 +34,7 @@ class AuraLink extends StatelessWidget {
           child: AuraText(
             child: Text(
               label,
-              style: TextStyle(
+              style: .new(
                 color: context.auraColors.primary,
                 decoration: TextDecoration.underline,
               ),

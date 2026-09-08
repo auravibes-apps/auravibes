@@ -53,8 +53,8 @@ class _StubConversationRepository implements ConversationRepository {
       title: conversation.title,
       workspaceId: conversation.workspaceId,
       isPinned: conversation.isPinned ?? false,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
+      createdAt: .new(2024),
+      updatedAt: .new(2024),
       modelId: conversation.modelId,
     );
     created.add(entity);
@@ -72,8 +72,8 @@ class _StubConversationRepository implements ConversationRepository {
       title: conversation.title ?? 'patched',
       workspaceId: 'ws-1',
       isPinned: conversation.isPinned ?? false,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
+      createdAt: .new(2024),
+      updatedAt: .new(2024),
       modelId: conversation.modelId,
     );
     patched.add(entity);
@@ -97,8 +97,8 @@ void main() {
           title: 'Test',
           workspaceId: 'ws-1',
           isPinned: false,
-          createdAt: DateTime(2024),
-          updatedAt: DateTime(2024),
+          createdAt: .new(2024),
+          updatedAt: .new(2024),
         ),
       ];
 
@@ -116,8 +116,8 @@ void main() {
           title: 'A',
           workspaceId: 'ws-1',
           isPinned: false,
-          createdAt: DateTime(2024),
-          updatedAt: DateTime(2024),
+          createdAt: .new(2024),
+          updatedAt: .new(2024),
         ),
       ];
 
@@ -130,7 +130,7 @@ void main() {
 
     test('watchConversationById emits entity', () async {
       final repo = _StubConversationRepository();
-      repo.conversationById = ConversationEntity(
+      repo.conversationById = .new(
         id: 'c-1',
         title: 'Test',
         workspaceId: 'ws-1',

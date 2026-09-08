@@ -29,7 +29,7 @@ const extendedMeta = Meta(AuraFloatingActionButton.extended);
 final $RegularFAB = _Story(
   name: 'Regular FAB',
   args: _Args(
-    onPressed: Arg.fixed(noopCallback),
+    onPressed: .fixed(noopCallback),
     icon: SingleArg(
       Icons.add,
       name: 'Icon',
@@ -54,7 +54,7 @@ final $RegularFAB = _Story(
 final $ExtendedFAB = _ExtendedStory(
   name: 'Extended FAB',
   args: _ExtendedArgs(
-    onPressed: Arg.fixed(noopCallback),
+    onPressed: .fixed(noopCallback),
     icon: SingleArg(
       Icons.add,
       name: 'Icon',

@@ -61,13 +61,13 @@ final $DotBadge = _DotStory(
 final $CustomContentBadge = _Story(
   name: 'Custom Content Badge',
   args: _Args(
-    child: Arg.fixed(
+    child: .fixed(
       const Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           Icon(Icons.star, size: 16),
           SizedBox(width: 4),
-          Text('Premium', style: TextStyle(fontSize: 12)),
+          Text('Premium', style: .new(fontSize: 12)),
         ],
       ),
     ),

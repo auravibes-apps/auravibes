@@ -53,7 +53,7 @@ class const CloudSkillSettingsAdapter(
           operation: expectedRevision == null
               ? WorkspacePatchOperationKind.create
               : WorkspacePatchOperationKind.update,
-          resourceKind: WorkspaceResourceKind.compactionSetting,
+          resourceKind: .compactionSetting,
           resourceId: 'workspace',
           data: jsonEncode(settings.toJson()),
           fieldMask: const [],
@@ -84,8 +84,8 @@ class const CloudSkillSettingsAdapter(
       requestId: const UuidV7().generate(),
       operations: [
         WorkspacePatchOperation(
-          operation: WorkspacePatchOperationKind.delete,
-          resourceKind: WorkspaceResourceKind.compactionSetting,
+          operation: .delete,
+          resourceKind: .compactionSetting,
           resourceId: 'workspace',
           fieldMask: const [],
           expectedRevision: revision,
@@ -115,7 +115,7 @@ class const CloudSkillSettingsAdapter(
       operations: [
         WorkspacePatchOperation(
           operation: operation,
-          resourceKind: WorkspaceResourceKind.conversationSkillSelection,
+          resourceKind: .conversationSkillSelection,
           resourceId: resourceId,
           data: selected
               ? jsonEncode({
@@ -139,8 +139,8 @@ class const CloudSkillSettingsAdapter(
   }) async {
     final _ = await _gateway.putSecret(
       requestId: const UuidV7().generate(),
-      secretKind: WorkspaceSecretKind.skillCredential,
-      scope: WorkspaceSecretScope.workspace,
+      secretKind: .skillCredential,
+      scope: .workspace,
       resourceId: credentialId,
       secret: secret,
       expectedRevision: expectedRevision,

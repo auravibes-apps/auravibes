@@ -37,18 +37,18 @@ class AuraTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: .start,
     spacing: context.auraTheme.spacing.md,
     children: [
       for (final entry in entries)
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           spacing: context.auraTheme.spacing.sm,
           children: [
             AuraIcon(Icons.circle, size: .extraSmall, tint: entry.tint),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 children: [
                   AuraText(child: Text(entry.title)),
                   if (entry.description case final value?)

@@ -73,8 +73,8 @@ void main() {
         url: 'https://example.com',
         transport: const McpTransportTypeSSE(),
         authenticationType: const McpAuthenticationTypeNone(),
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
 
       final container = createContainer({'srv1': server});
@@ -146,8 +146,8 @@ void main() {
         url: 'https://example.com',
         transport: const McpTransportTypeSSE(),
         authenticationType: const McpAuthenticationTypeNone(),
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
 
       final container = createContainer({'srv1': server});

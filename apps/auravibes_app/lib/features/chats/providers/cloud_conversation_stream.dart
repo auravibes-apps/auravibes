@@ -8,7 +8,7 @@ import 'package:riverpod/riverpod.dart';
 
 export 'cloud_conversation_key.dart';
 
-final Logger _logger = Logger('cloud_conversation');
+final Logger _logger = .new('cloud_conversation');
 
 // ignore: specify_nonobvious_property_types, Riverpod hides family types.
 final cloudConversationStateProvider = StreamProvider.autoDispose
@@ -27,7 +27,7 @@ Stream<CloudConversationState> _watchCloudConversation(
     cloudWorkspaceStateGatewayProvider(session).future,
   );
   if (gateway == null) return;
-  yield* CloudConversationStream.watch(CloudChatGateway(gateway), key);
+  yield* CloudConversationStream.watch(.new(gateway), key);
 }
 
 /// Reconciles the local view from the authoritative snapshot after a stream
@@ -101,7 +101,7 @@ abstract final class CloudConversationStream {
         await chat.getConversationSnapshot(key.conversationId),
       ).preserveTransientA2uiFrom(state);
       yield state;
-      await wait(Duration(seconds: retryCount.clamp(1, 8)));
+      await wait(.new(seconds: retryCount.clamp(1, 8)));
     }
   }
 }

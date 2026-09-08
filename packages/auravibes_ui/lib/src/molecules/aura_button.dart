@@ -68,7 +68,7 @@ class AuraButton extends StatelessWidget {
                   auraColors,
                   disabled: effectiveDisabled,
                 ),
-                shape: BoxShape.circle,
+                shape: .circle,
               ),
             ),
           )
@@ -97,7 +97,7 @@ class AuraButton extends StatelessWidget {
           color: _getBackgroundColor(auraColors, disabled: effectiveDisabled),
           border: _getBorder(auraColors, disabled: effectiveDisabled),
           borderRadius: BorderRadius.all(
-            Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+            .circular(context.auraTheme.fromBorderRadius(.xl)),
           ),
           boxShadow: _getBoxShadow(disabled: effectiveDisabled),
         ),
@@ -119,12 +119,12 @@ class AuraButton extends StatelessWidget {
     }
 
     return switch (variant) {
-      AuraButtonVariant.primary => colors.colorFor(tint ?? AuraTint.primary),
-      AuraButtonVariant.secondary => colors.secondary,
-      AuraButtonVariant.outlined => DesignColors.transparent,
-      AuraButtonVariant.ghost => DesignColors.transparent,
-      AuraButtonVariant.elevated => colors.colorFor(tint ?? AuraTint.primary),
-      AuraButtonVariant.text => DesignColors.transparent,
+      .primary => colors.colorFor(tint ?? AuraTint.primary),
+      .secondary => colors.secondary,
+      .outlined => DesignColors.transparent,
+      .ghost => DesignColors.transparent,
+      .elevated => colors.colorFor(tint ?? AuraTint.primary),
+      .text => DesignColors.transparent,
     };
   }
 
@@ -133,12 +133,12 @@ class AuraButton extends StatelessWidget {
     final primaryColor = colors.colorFor(tint ?? AuraTint.primary);
 
     return switch (variant) {
-      AuraButtonVariant.primary => colors.onTint(tint ?? AuraTint.primary),
-      AuraButtonVariant.secondary => colors.onTint(AuraTint.secondary),
-      AuraButtonVariant.outlined => primaryColor,
-      AuraButtonVariant.ghost => primaryColor,
-      AuraButtonVariant.elevated => colors.onTint(tint ?? AuraTint.primary),
-      AuraButtonVariant.text => primaryColor,
+      .primary => colors.onTint(tint ?? AuraTint.primary),
+      .secondary => colors.onTint(.secondary),
+      .outlined => primaryColor,
+      .ghost => primaryColor,
+      .elevated => colors.onTint(tint ?? AuraTint.primary),
+      .text => primaryColor,
     };
   }
 
@@ -155,15 +155,15 @@ class AuraButton extends StatelessWidget {
     }
 
     return switch (size) {
-      AuraButtonSize.small => const AuraEdgeInsetsGeometry.symmetric(
+      .small => const AuraEdgeInsetsGeometry.symmetric(
         horizontal: .sm,
         vertical: .xs,
       ),
-      AuraButtonSize.medium => const AuraEdgeInsetsGeometry.symmetric(
+      .medium => const AuraEdgeInsetsGeometry.symmetric(
         horizontal: .md,
         vertical: .sm,
       ),
-      AuraButtonSize.large => const AuraEdgeInsetsGeometry.symmetric(
+      .large => const AuraEdgeInsetsGeometry.symmetric(
         horizontal: .lg,
         vertical: .md,
       ),
@@ -197,15 +197,15 @@ class AuraButton extends StatelessWidget {
     required bool disabled,
   }) {
     final fontSize = switch (size) {
-      AuraButtonSize.small => typography.fontSizeSm,
-      AuraButtonSize.medium => typography.fontSizeBase,
-      AuraButtonSize.large => typography.fontSizeLg,
+      .small => typography.fontSizeSm,
+      .medium => typography.fontSizeBase,
+      .large => typography.fontSizeLg,
     };
 
     final fontWeight = switch (size) {
-      AuraButtonSize.small => typography.fontWeightMedium,
-      AuraButtonSize.medium => typography.fontWeightMedium,
-      AuraButtonSize.large => typography.fontWeightSemibold,
+      .small => typography.fontWeightMedium,
+      .medium => typography.fontWeightMedium,
+      .large => typography.fontWeightSemibold,
     };
 
     return TextStyle(

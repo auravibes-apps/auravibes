@@ -19,9 +19,7 @@ Future<void> seedProvider(
   AppDatabase db, {
   required String id,
   required String name,
-}) => db.apiModelProvidersDao.upsertProvider(
-  ApiModelProvidersCompanion.insert(id: id, name: name),
-);
+}) => db.apiModelProvidersDao.upsertProvider(.insert(id: id, name: name));
 
 final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
@@ -30,7 +28,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -57,7 +55,7 @@ void main() {
     test('upsertModel inserts and retrieves model', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final inserted = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -73,7 +71,7 @@ void main() {
     test('upsertModel updates on conflict', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -82,7 +80,7 @@ void main() {
         ),
       );
       final updated = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4 Turbo',
@@ -96,7 +94,7 @@ void main() {
     test('getModelByProviderAndModelId returns model', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -123,7 +121,7 @@ void main() {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       await seedProvider(fixture.database, id: 'anthropic', name: 'Anthropic');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -132,7 +130,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'anthropic',
           id: 'claude-3',
           name: 'Claude 3',
@@ -149,7 +147,7 @@ void main() {
     test('deleteModel removes model and returns true', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -171,7 +169,7 @@ void main() {
     test('deleteModelsByProvider removes all models for provider', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -180,7 +178,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
           name: 'GPT-3.5',
@@ -197,7 +195,7 @@ void main() {
     test('modelExists returns correct values', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -215,7 +213,7 @@ void main() {
     test('searchModelsByName returns matching models', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4 Turbo',
@@ -224,7 +222,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
           name: 'GPT-3.5',
@@ -243,7 +241,7 @@ void main() {
       expect(await fixture.database.apiModelsDao.getModelCount(), equals(0));
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -258,7 +256,7 @@ void main() {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       await seedProvider(fixture.database, id: 'anthropic', name: 'Anthropic');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -323,7 +321,7 @@ void main() {
     test('getModelsByCostRange filters by cost', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -333,7 +331,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
           name: 'GPT-3.5',
@@ -353,7 +351,7 @@ void main() {
     test('getModelsByMinContextLimit filters by context', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -362,7 +360,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
           name: 'GPT-3.5',
@@ -379,7 +377,7 @@ void main() {
     test('getOpenWeightsModels returns only open weights', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -389,7 +387,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-oss',
           name: 'GPT-OSS',
@@ -407,7 +405,7 @@ void main() {
     test('getModelsByCostEfficiency sorts by cost ascending', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
@@ -417,7 +415,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
           name: 'GPT-3.5',
@@ -435,7 +433,7 @@ void main() {
     test('deleteAllModels removes all models', () async {
       await seedProvider(fixture.database, id: 'openai', name: 'OpenAI');
       final _ = await fixture.database.apiModelsDao.upsertModel(
-        ApiModelsCompanion.insert(
+        .insert(
           modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',

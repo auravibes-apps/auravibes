@@ -39,7 +39,7 @@ void main() {
     });
 
     test('lerp returns interpolated theme', () {
-      final result = AuraTheme.light.lerp(AuraTheme.dark, 0.5);
+      final result = AuraTheme.light.lerp(.dark, 0.5);
       expect(result, isA<AuraTheme>());
       expect(result.colors, isA<AuraColorScheme>());
     });
@@ -214,13 +214,13 @@ void main() {
 
     test('colorFor returns correct color for tint', () {
       final colors = AuraTheme.light.colors;
-      expect(colors.colorFor(AuraTint.primary), colors.primary);
-      expect(colors.colorFor(AuraTint.secondary), colors.secondary);
-      expect(colors.colorFor(AuraTint.tertiary), colors.tertiary);
-      expect(colors.colorFor(AuraTint.error), colors.error);
-      expect(colors.colorFor(AuraTint.success), colors.success);
-      expect(colors.colorFor(AuraTint.warning), colors.warning);
-      expect(colors.colorFor(AuraTint.info), colors.info);
+      expect(colors.colorFor(.primary), colors.primary);
+      expect(colors.colorFor(.secondary), colors.secondary);
+      expect(colors.colorFor(.tertiary), colors.tertiary);
+      expect(colors.colorFor(.error), colors.error);
+      expect(colors.colorFor(.success), colors.success);
+      expect(colors.colorFor(.warning), colors.warning);
+      expect(colors.colorFor(.info), colors.info);
     });
 
     test('onTint returns foreground for tint', () {
@@ -271,7 +271,7 @@ void main() {
               return const SizedBox();
             },
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
     });
@@ -286,7 +286,7 @@ void main() {
               return const SizedBox();
             },
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
     });

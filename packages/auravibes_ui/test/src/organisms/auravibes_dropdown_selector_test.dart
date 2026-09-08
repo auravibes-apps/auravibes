@@ -145,7 +145,7 @@ void main() {
       await tester.pump();
       expect(find.text('Option 1'), findsOneWidget);
 
-      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      final _ = await tester.sendKeyEvent(.escape);
       await tester.pump();
 
       expect(find.text('Option 1'), findsNothing);
@@ -173,15 +173,15 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
       expect(find.text('Option 1'), findsNothing);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
       expect(find.text('Option 1'), findsOneWidget);
 
-      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      final _ = await tester.sendKeyEvent(.escape);
       await tester.pump();
       expect(find.text('Option 1'), findsNothing);
     });
@@ -221,15 +221,15 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
       expect(find.text('Option 1'), findsNothing);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
       expect(find.text('Option 1'), findsNothing);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
       expect(buttonPressed, isTrue);
     });
@@ -272,22 +272,22 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
       await tester.pump();
       expect(find.text('Option 1'), findsOneWidget);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
 
       expect(selectedValue, isNotNull);

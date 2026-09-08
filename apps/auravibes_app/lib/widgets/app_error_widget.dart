@@ -30,15 +30,11 @@ class _AppErrorWidgetState<T extends Object> extends State<AppErrorWidget<T>> {
     return Center(
       child: AuraColumn(
         children: [
-          const AuraIcon(
-            Icons.error_outline,
-            size: AuraIconSize.large,
-            tint: AuraTint.error,
-          ),
+          const AuraIcon(Icons.error_outline, size: .large, tint: .error),
           const AuraText(
             child: _AppErrorText(LocaleKeys.common_error_title),
-            style: AuraTextStyle.heading6,
-            textAlign: TextAlign.center,
+            style: .heading6,
+            textAlign: .center,
           ),
           AuraText(
             child: _AppErrorText(switch (widget.error) {
@@ -47,13 +43,13 @@ class _AppErrorWidgetState<T extends Object> extends State<AppErrorWidget<T>> {
               CloudAppException(:final localizationKey) => localizationKey,
               _ => LocaleKeys.common_error_message,
             }),
-            textAlign: TextAlign.center,
+            textAlign: .center,
           ),
           ?widget.action,
         ],
-        spacing: AuraSpacing.sm,
-        mainAxisSize: MainAxisSize.min,
-        padding: AuraEdgeInsetsGeometry.base,
+        spacing: .sm,
+        mainAxisSize: .min,
+        padding: .base,
       ),
     );
   }
@@ -62,11 +58,7 @@ class _AppErrorWidgetState<T extends Object> extends State<AppErrorWidget<T>> {
 class const _AppErrorText(final String localeKey) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Text(
-      _translate(context),
-      overflow: TextOverflow.ellipsis,
-      maxLines: 2,
-    );
+    return Text(_translate(context), overflow: .ellipsis, maxLines: 2);
   }
 
   String _translate(BuildContext context) {

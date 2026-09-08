@@ -19,6 +19,6 @@ final $BasicImage = _Story(
     ),
     fit: EnumArg(BoxFit.cover, name: 'Fit', values: BoxFit.values),
     semanticLabel: NullableStringArg(null, name: 'Semantic Label'),
-    imageProvider: Arg.fixed(auraSampleImageProvider()),
+    imageProvider: .fixed(auraSampleImageProvider()),
   ),
 );

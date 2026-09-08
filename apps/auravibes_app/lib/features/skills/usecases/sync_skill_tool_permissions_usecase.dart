@@ -87,10 +87,10 @@ class const SyncSkillToolPermissionsUsecase({
           await database.workspaceToolsDao.insertToolsBatch([
             ToolsCompanion.insert(
               workspaceId: workspaceId,
-              workspaceToolsGroupId: Value(group.id),
+              workspaceToolsGroupId: .new(group.id),
               toolId: spec.name,
-              description: Value(spec.description),
-              inputSchema: Value(inputSchema),
+              description: .new(spec.description),
+              inputSchema: .new(inputSchema),
               isEnabled: const Value(true),
               permissions: const Value(PermissionAccess.ask),
             ),
@@ -127,7 +127,7 @@ class const SyncSkillToolPermissionsUsecase({
     if (existing != null) return existing;
 
     return await database.toolsGroupsDao.insertToolsGroup(
-      ToolsGroupsCompanion.insert(
+      .insert(
         workspaceId: workspaceId,
         name: SkillToolPermissionConstants.skillToolsGroupName,
         permissions: PermissionAccess.ask,

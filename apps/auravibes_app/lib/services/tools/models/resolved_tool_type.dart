@@ -40,7 +40,7 @@ class const ResolvedTool._({
     required UserToolType tooltype,
   }) {
     return ResolvedTool._(
-      type: ResolvedToolType.builtIn,
+      type: .builtIn,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
       builtInTool: tooltype,
@@ -55,7 +55,7 @@ class const ResolvedTool._({
     required String mcpSlug,
   }) {
     return ResolvedTool._(
-      type: ResolvedToolType.mcp,
+      type: .mcp,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
       mcpServerId: mcpServerId,
@@ -68,7 +68,7 @@ class const ResolvedTool._({
     required NativeToolType nativeToolType,
   }) {
     return ResolvedTool._(
-      type: ResolvedToolType.native,
+      type: .native,
       tableId: tableId,
       toolIdentifier: nativeToolType.value,
       nativeTool: nativeToolType,
@@ -77,7 +77,7 @@ class const ResolvedTool._({
 
   factory skillControl({required String toolIdentifier}) {
     return ResolvedTool._(
-      type: ResolvedToolType.skillControl,
+      type: .skillControl,
       tableId: toolIdentifier,
       toolIdentifier: toolIdentifier,
     );
@@ -88,7 +88,7 @@ class const ResolvedTool._({
     AgentResolvedToolName? target,
   }) {
     return ResolvedTool._(
-      type: ResolvedToolType.skillCommand,
+      type: .skillCommand,
       tableId: commandName,
       toolIdentifier: commandName,
       target: target,
@@ -101,7 +101,7 @@ class const ResolvedTool._({
     required String toolIdentifier,
   }) {
     return ResolvedTool._(
-      type: ResolvedToolType.skillTemplate,
+      type: .skillTemplate,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
       skillSlug: skillSlug,
@@ -114,7 +114,7 @@ class const ResolvedTool._({
     required String toolIdentifier,
   }) {
     return ResolvedTool._(
-      type: ResolvedToolType.skillNative,
+      type: .skillNative,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
       skillSlug: skillSlug,

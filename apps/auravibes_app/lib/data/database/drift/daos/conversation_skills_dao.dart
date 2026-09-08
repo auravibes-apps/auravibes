@@ -50,9 +50,9 @@ class ConversationSkillsDao(super.attachedDatabase)
     if (existing == null) {
       return await into(conversationSkills).insertReturning(
         ConversationSkillsCompanion(
-          conversationId: Value(conversationId),
-          workspaceSkillId: Value(workspaceSkillId),
-          isLoaded: Value(isLoaded),
+          conversationId: .new(conversationId),
+          workspaceSkillId: .new(workspaceSkillId),
+          isLoaded: .new(isLoaded),
         ),
       );
     }
@@ -62,8 +62,8 @@ class ConversationSkillsDao(super.attachedDatabase)
           conversationSkills,
         )..where((tbl) => tbl.id.equals(existing.id))).write(
           ConversationSkillsCompanion(
-            updatedAt: Value(DateTime.now()),
-            isLoaded: Value(isLoaded),
+            updatedAt: .new(DateTime.now()),
+            isLoaded: .new(isLoaded),
           ),
         );
     final updated = await getConversationWorkspaceSkill(
@@ -89,9 +89,9 @@ class ConversationSkillsDao(super.attachedDatabase)
     if (existing == null) {
       return await into(conversationSkills).insertReturning(
         ConversationSkillsCompanion(
-          conversationId: Value(conversationId),
-          appSkillIdentifier: Value(appSkillIdentifier),
-          isLoaded: Value(isLoaded),
+          conversationId: .new(conversationId),
+          appSkillIdentifier: .new(appSkillIdentifier),
+          isLoaded: .new(isLoaded),
         ),
       );
     }
@@ -101,8 +101,8 @@ class ConversationSkillsDao(super.attachedDatabase)
           conversationSkills,
         )..where((tbl) => tbl.id.equals(existing.id))).write(
           ConversationSkillsCompanion(
-            updatedAt: Value(DateTime.now()),
-            isLoaded: Value(isLoaded),
+            updatedAt: .new(DateTime.now()),
+            isLoaded: .new(isLoaded),
           ),
         );
     final updated = await getConversationAppSkill(

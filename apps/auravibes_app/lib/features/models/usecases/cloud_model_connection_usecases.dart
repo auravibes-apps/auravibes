@@ -26,8 +26,8 @@ class const CloudModelConnectionUsecases(final CloudModelGateway _gateway) {
     if (secret case final value?) {
       final secretState = await _gateway.putSecret(
         requestId: const Uuid().v4(),
-        secretKind: WorkspaceSecretKind.provider,
-        scope: WorkspaceSecretScope.workspace,
+        secretKind: .provider,
+        scope: .workspace,
         resourceId: id,
         secret: value,
       );
@@ -59,8 +59,8 @@ class const CloudModelConnectionUsecases(final CloudModelGateway _gateway) {
     if (secret case final value?) {
       final secretState = await _gateway.putSecret(
         requestId: const Uuid().v4(),
-        secretKind: WorkspaceSecretKind.provider,
-        scope: WorkspaceSecretScope.workspace,
+        secretKind: .provider,
+        scope: .workspace,
         resourceId: connection.id,
         secret: value,
       );

@@ -42,7 +42,7 @@ final $Sidebar = _Story(
       modes: [ViewportMode(compactPhoneViewport)],
     ),
     _Scenario(name: 'Tablet', modes: [ViewportMode(tabletViewport)]),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Arabic', modes: [AuraArabicLocaleMode()]),
     _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
   ],

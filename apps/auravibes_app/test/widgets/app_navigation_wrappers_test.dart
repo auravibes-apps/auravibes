@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
@@ -532,7 +531,7 @@ void main() {
                   final workspaceId = state.pathParameters['workspaceId'] ?? '';
 
                   return Theme(
-                    data: ThemeData(extensions: [AuraTheme.light]),
+                    data: .new(extensions: [AuraTheme.light]),
                     child: Material(
                       child: Portal(
                         child: AuraSidebarWrapper(
@@ -561,9 +560,9 @@ void main() {
                     WorkspaceEntity(
                       id: 'ws-test',
                       name: 'Test workspace',
-                      type: WorkspaceType.local,
-                      createdAt: DateTime(2020),
-                      updatedAt: DateTime(2020),
+                      type: .local,
+                      createdAt: .new(2020),
+                      updatedAt: .new(2020),
                     ),
                   ]),
                 ),

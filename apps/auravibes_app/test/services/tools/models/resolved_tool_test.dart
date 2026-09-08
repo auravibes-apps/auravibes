@@ -22,7 +22,7 @@ void main() {
       final tool = ResolvedTool.builtIn(
         tableId: 'tool_1',
         toolIdentifier: 'calculator',
-        tooltype: UserToolType.calculator,
+        tooltype: .calculator,
       );
       expect(tool.type, ResolvedToolType.builtIn);
       expect(tool.tableId, 'tool_1');
@@ -36,7 +36,7 @@ void main() {
       final tool = ResolvedTool.builtIn(
         tableId: 'tool_1',
         toolIdentifier: 'calculator',
-        tooltype: UserToolType.calculator,
+        tooltype: .calculator,
       );
       expect(tool.isBuiltIn, isTrue);
       expect(tool.isMcp, isFalse);
@@ -75,10 +75,7 @@ void main() {
 
   group('ResolvedTool.native', () {
     test('creates native resolved tool', () {
-      final tool = ResolvedTool.native(
-        tableId: 'tool_3',
-        nativeToolType: NativeToolType.url,
-      );
+      final tool = ResolvedTool.native(tableId: 'tool_3', nativeToolType: .url);
       expect(tool.type, ResolvedToolType.native);
       expect(tool.tableId, 'tool_3');
       expect(tool.toolIdentifier, 'url');
@@ -88,10 +85,7 @@ void main() {
     });
 
     test('isNative is true', () {
-      final tool = ResolvedTool.native(
-        tableId: 'tool_3',
-        nativeToolType: NativeToolType.url,
-      );
+      final tool = ResolvedTool.native(tableId: 'tool_3', nativeToolType: .url);
       expect(tool.isNative, isTrue);
       expect(tool.isBuiltIn, isFalse);
       expect(tool.isMcp, isFalse);

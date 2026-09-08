@@ -66,7 +66,7 @@ void main() {
                 final _ = Object();
               },
               icon: Icons.add,
-              size: AuraFABSize.mini,
+              size: .mini,
             ),
           ),
         ),
@@ -113,7 +113,7 @@ void main() {
                 final _ = Object();
               },
               icon: Icons.add,
-              size: AuraFABSize.large,
+              size: .large,
             ),
           ),
         ),

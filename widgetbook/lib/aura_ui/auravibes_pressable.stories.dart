@@ -27,7 +27,7 @@ final $Pressable = _Story(
     enabled: BoolArg(true, name: 'Enabled'),
   ),
   scenarios: [
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Pressed',
       run: (tester, args) async {
@@ -56,13 +56,13 @@ class _PressableDemoState extends State<PressableDemo> {
     return AuraPressable(
       child: Text(
         _pressed ? 'Pressed' : widget.label,
-        style: TextStyle(color: context.auraColors.onSurface),
+        style: .new(color: context.auraColors.onSurface),
       ),
       color: context.auraColors.primary,
       decoration: BoxDecoration(
         color: context.auraColors.surface,
         border: Border.all(color: context.auraColors.outline),
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        borderRadius: const BorderRadius.all(.circular(12)),
       ),
       onPressed: widget.enabled ? () => setState(() => _pressed = true) : null,
       padding: const AuraEdgeInsetsGeometry.symmetric(

@@ -12,15 +12,15 @@ void main() {
       name: 'resolve-test',
       baseUrl: 'https://example.test',
       apiKey: 'key',
-      codec: ChatCompletionsCodec(
+      codec: .new(
         errorLabel: 'ResolveTest',
         customize: (modelName, config) =>
             (model: modelName, extraBody: const <String, dynamic>{}),
       ),
     );
 
-    expect(plugin.resolve(ActionType.model, 'm'), isA<Model<dynamic>>());
-    expect(plugin.resolve(ActionType.tool, 'm'), isNull);
+    expect(plugin.resolve(.model, 'm'), isA<Model<dynamic>>());
+    expect(plugin.resolve(.tool, 'm'), isNull);
   });
   for (final testCase in [
     (
@@ -56,7 +56,7 @@ void main() {
             name: 'uri-test',
             baseUrl: testCase.base,
             apiKey: 'key',
-            codec: ChatCompletionsCodec(
+            codec: .new(
               errorLabel: 'UriTest',
               customize: (modelName, config) =>
                   (model: modelName, extraBody: const <String, dynamic>{}),
@@ -71,7 +71,7 @@ void main() {
         model: modelRef<Object?>('uri-test/m'),
         messages: [
           Message(
-            role: Role.user,
+            role: .user,
             content: [TextPart(text: 'Hi')],
           ),
         ],
@@ -85,7 +85,7 @@ void main() {
 
 http.StreamedResponse _jsonResponse(Map<String, Object?> body) {
   return http.StreamedResponse(
-    Stream.value(utf8.encode(jsonEncode(body))),
+    .value(utf8.encode(jsonEncode(body))),
     200,
     headers: {'content-type': 'application/json'},
   );

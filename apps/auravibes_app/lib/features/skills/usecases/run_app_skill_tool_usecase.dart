@@ -216,8 +216,8 @@ final runAppSkillToolUsecaseProvider = Provider<RunAppSkillToolUsecase>((ref) {
     ref.watch(serviceConnectionRepositoryProvider),
     ref.watch(skillCredentialsRepositoryProvider),
     ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
-    AppSkillExecutor(
-      RunSkillUrlTemplate(const ResolveSkillUrlTemplate(), httpClient.execute),
+    .new(
+      .new(const ResolveSkillUrlTemplate(), httpClient.execute),
       httpClient.execute,
     ),
     ref.watch(oauthCredentialServiceProvider),

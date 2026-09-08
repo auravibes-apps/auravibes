@@ -70,7 +70,7 @@ class _ChatCatalogTextFieldState extends State<ChatCatalogTextField> {
     final text = widget.value ?? '';
     if (_controller.text == text) return;
 
-    _controller.value = TextEditingValue(
+    _controller.value = .new(
       text: text,
       selection: TextSelection.collapsed(offset: text.length),
     );

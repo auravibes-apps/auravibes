@@ -11,10 +11,10 @@ void main() {
             title: 'Heads up',
             description: 'This needs attention.',
             icon: Icons.info,
-            tint: AuraTint.warning,
+            tint: .warning,
           ),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

@@ -1,11 +1,9 @@
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: Widget tests override scoped providers directly.
 
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
-import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
@@ -27,9 +25,9 @@ WorkspaceToolEntity _tool({String id = 't1', bool isEnabled = true}) {
     workspaceId: _workspaceId,
     toolId: 'custom_tool',
     isEnabled: isEnabled,
-    permissionMode: ToolPermissionMode.alwaysAsk,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    permissionMode: .alwaysAsk,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }
 
@@ -44,9 +42,9 @@ ToolsGroupEntity _group({
     workspaceId: _workspaceId,
     name: name,
     isEnabled: isEnabled,
-    permissions: PermissionAccess.ask,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    permissions: .ask,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
     mcpServerId: mcpServerId,
   );
 }
@@ -92,7 +90,7 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
         ],
         child: MaterialApp(
           home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
+            data: .new(extensions: [AuraTheme.light]),
             child: Material(child: child),
           ),
         ),
@@ -284,7 +282,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: null,
       tools: [_tool()],
-      defaultGroupType: DefaultToolGroupType.builtIn,
+      defaultGroupType: .builtIn,
     );
 
     await tester.pumpWidget(
@@ -305,7 +303,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: McpServerEntity(
           id: 'srv-1',
           workspaceId: _workspaceId,
@@ -313,8 +311,8 @@ void main() {
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
         status: McpConnectionStatus.error,
         errorMessage: 'Connection failed',
@@ -365,7 +363,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: McpServerEntity(
           id: 'srv-2',
           workspaceId: _workspaceId,
@@ -373,8 +371,8 @@ void main() {
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
         status: McpConnectionStatus.disconnected,
       ),
@@ -400,7 +398,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: McpServerEntity(
           id: 'srv-3',
           workspaceId: _workspaceId,
@@ -408,8 +406,8 @@ void main() {
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
         status: McpConnectionStatus.connected,
       ),
@@ -432,7 +430,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: null,
       tools: [_tool()],
-      defaultGroupType: DefaultToolGroupType.builtIn,
+      defaultGroupType: .builtIn,
     );
 
     await tester.pumpWidget(
@@ -454,7 +452,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: McpServerEntity(
           id: 'srv-4',
           workspaceId: _workspaceId,
@@ -462,8 +460,8 @@ void main() {
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
         status: McpConnectionStatus.connecting,
       ),
@@ -489,7 +487,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: McpServerEntity(
           id: 'srv-5',
           workspaceId: _workspaceId,
@@ -497,8 +495,8 @@ void main() {
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
         status: McpConnectionStatus.connected,
       ),
@@ -597,7 +595,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: McpServerEntity(
           id: 'srv-err',
           workspaceId: _workspaceId,
@@ -605,8 +603,8 @@ void main() {
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
         status: McpConnectionStatus.error,
         errorMessage: 'Connection failed',
@@ -641,7 +639,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: McpServerEntity(
           id: 'srv-del',
           workspaceId: _workspaceId,
@@ -649,8 +647,8 @@ void main() {
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
         status: McpConnectionStatus.connected,
       ),
@@ -678,7 +676,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: McpServerEntity(
           id: 'srv-disc',
           workspaceId: _workspaceId,
@@ -686,8 +684,8 @@ void main() {
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
         status: McpConnectionStatus.disconnected,
       ),

@@ -215,8 +215,8 @@ class _ImageStatus extends StatelessWidget {
                 ? FittedBox(child: AuraIcon(icon))
                 : Text(
                     text,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
+                    textAlign: .center,
+                    overflow: .ellipsis,
                     maxLines: 2,
                   ),
           ),

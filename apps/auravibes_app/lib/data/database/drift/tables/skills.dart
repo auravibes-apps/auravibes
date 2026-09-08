@@ -9,7 +9,7 @@ import 'package:drift/drift.dart';
 @DataClassName('SkillsTable')
 class Skills extends Table with TableMixin {
   TextColumn get workspaceId =>
-      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
   TextColumn get source => textEnum<SkillSourceTable>()();
 
@@ -26,7 +26,7 @@ class Skills extends Table with TableMixin {
   TextColumn get credentialDefinitionId => text().nullable().references(
     SkillCredentialDefinitions,
     #id,
-    onDelete: KeyAction.setNull,
+    onDelete: .setNull,
   )();
 
   BoolColumn get isCredentialOptional =>

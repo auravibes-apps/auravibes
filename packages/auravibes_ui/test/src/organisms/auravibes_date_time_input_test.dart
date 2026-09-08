@@ -87,7 +87,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraDateTimeInput(
-              value: DateTime(2024, 1, 15),
+              value: .new(2024, 1, 15),
               onChanged: (value) => changedValue = value,
             ),
           ),
@@ -131,7 +131,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: AuraDateTimeInput(value: DateTime(2024, 1, 15))),
+          home: Scaffold(body: AuraDateTimeInput(value: .new(2024, 1, 15))),
         ),
       );
 
@@ -149,8 +149,8 @@ void main() {
     testWidgets('picker inherits the active Aura theme', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: AuraDateTimeInput(value: DateTime(2024, 1, 15))),
-          theme: ThemeData(extensions: [AuraTheme.dark]),
+          home: Scaffold(body: AuraDateTimeInput(value: .new(2024, 1, 15))),
+          theme: .new(extensions: [AuraTheme.dark]),
         ),
       );
 
@@ -176,10 +176,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: MediaQuery(
-            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-            child: Scaffold(
-              body: AuraDateTimeInput(value: DateTime(2024, 1, 15)),
-            ),
+            data: const MediaQueryData(textScaler: .linear(2)),
+            child: Scaffold(body: AuraDateTimeInput(value: .new(2024, 1, 15))),
           ),
         ),
       );
@@ -203,9 +201,8 @@ void main() {
           home: Navigator(
             key: nestedNavigatorKey,
             onGenerateRoute: (_) => MaterialPageRoute<void>(
-              builder: (_) => Scaffold(
-                body: AuraDateTimeInput(value: DateTime(2024, 1, 15)),
-              ),
+              builder: (_) =>
+                  Scaffold(body: AuraDateTimeInput(value: .new(2024, 1, 15))),
             ),
           ),
         ),
@@ -221,7 +218,7 @@ void main() {
     testWidgets('picker controls expose hover feedback', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: AuraDateTimeInput(value: DateTime(2024, 1, 15))),
+          home: Scaffold(body: AuraDateTimeInput(value: .new(2024, 1, 15))),
         ),
       );
 

@@ -5,7 +5,7 @@ void main() {
   test('copyCryptor encrypts optional OAuth tokens', () async {
     final token = OAuthTokenEntity(
       accessToken: 'access',
-      issuedAt: DateTime(2026),
+      issuedAt: .new(2026),
       refreshToken: 'refresh',
       idToken: 'id',
       expiresIn: 3600,

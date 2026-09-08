@@ -39,9 +39,7 @@ class _StubRepository implements WorkspaceModelSelectionRepository {
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
     String workspaceId,
-  ) => watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
-  );
+  ) => watchWorkspaceModelSelections(.new(workspaces: [workspaceId]));
 }
 
 void main() {

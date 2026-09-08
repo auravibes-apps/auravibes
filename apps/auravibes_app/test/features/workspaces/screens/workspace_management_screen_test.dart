@@ -47,8 +47,8 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
       id: 'ws-${_nextId++}',
       name: workspace.name,
       type: workspace.type,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     _workspaces.add(entity);
     _emit();
@@ -145,9 +145,9 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     final entity = WorkspaceEntity(
       id: 'ws-${_nextId++}',
       name: name,
-      type: WorkspaceType.remote,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      type: .remote,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       url: serverUrl,
       cloudWorkspaceId: cloudWorkspaceId,
       cloudAccountId: cloudAccountId,
@@ -297,10 +297,10 @@ void main() {
 
     testWidgets('renders workspace list after loading', (tester) async {
       final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
       );
       final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace B', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'Workspace B', type: .local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
@@ -338,7 +338,7 @@ void main() {
       tester,
     ) async {
       final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));

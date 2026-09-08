@@ -46,7 +46,7 @@ class const BuildAppSkillNativeToolSpecsUsecase(
     final loadedSkills = await _listAvailableSkillsUsecase(workspaceId).call(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      filter: SkillLoadFilter.loaded,
+      filter: .loaded,
     );
     final conversation = await _conversationRepository?.getConversationById(
       conversationId,
@@ -108,7 +108,7 @@ ToolSpec? _appSkillToolSpec(
   List<AppSkillCredentialCandidate> candidates,
 ) {
   return materializeSkillTool(
-    SkillToolMaterializationInput(
+    .new(
       name: AgentResolvedToolName.skillNative(
         tableId: tool.slug,
         skillSlug: skill.slug,

@@ -1,4 +1,4 @@
-import 'dart:ui' show PointerDeviceKind, SemanticsRole, Tristate;
+import 'dart:ui' show SemanticsRole, Tristate;
 
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
@@ -243,9 +243,9 @@ void main() {
       expect(firstTab.role, SemanticsRole.tab);
       expect(firstTab.flagsCollection.isSelected, Tristate.isTrue);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       final _ = await tester.pumpAndSettle();
 
       expect(selectedIndex, 1);
@@ -311,8 +311,7 @@ void main() {
 
     testWidgets('keeps selection when another tab is hovered', (tester) async {
       final previousStrategy = FocusManager.instance.highlightStrategy;
-      FocusManager.instance.highlightStrategy =
-          FocusHighlightStrategy.alwaysTraditional;
+      FocusManager.instance.highlightStrategy = .alwaysTraditional;
       addTearDown(
         () => FocusManager.instance.highlightStrategy = previousStrategy,
       );
@@ -321,7 +320,7 @@ void main() {
         _host(const AuraTabs<void>(items: _items, initialIndex: 1)),
       );
 
-      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      final gesture = await tester.createGesture(kind: .mouse);
       addTearDown(gesture.removePointer);
       await gesture.addPointer();
       await gesture.moveTo(tester.getCenter(find.text('First')));
@@ -385,7 +384,7 @@ const _items = [
 Widget _host(Widget child) {
   return MaterialApp(
     home: Scaffold(body: SizedBox(height: 240, child: child)),
-    theme: ThemeData(extensions: [AuraTheme.light]),
+    theme: .new(extensions: [AuraTheme.light]),
   );
 }
 

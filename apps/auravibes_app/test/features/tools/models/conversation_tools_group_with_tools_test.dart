@@ -1,8 +1,6 @@
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
-import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -14,7 +12,7 @@ ConversationToolState _toolState({
   bool isEnabled = true,
 }) {
   return ConversationToolState(
-    tool: WorkspaceToolEntity(
+    tool: .new(
       id: id,
       workspaceId: 'ws1',
       toolId: toolId,
@@ -24,7 +22,7 @@ ConversationToolState _toolState({
       updatedAt: DateTime(2026),
     ),
     isEnabled: isEnabled,
-    permissionMode: ToolPermissionMode.alwaysAsk,
+    permissionMode: .alwaysAsk,
     isWorkspaceEnabled: true,
   );
 }
@@ -39,7 +37,7 @@ void main() {
           _toolState(id: 't2', isEnabled: false),
           _toolState(id: 't3'),
         ],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(group.enabledToolsCount, 2);
     });
@@ -48,7 +46,7 @@ void main() {
       final group = ConversationToolsGroupWithTools(
         group: null,
         tools: [_toolState(isEnabled: false)],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(group.enabledToolsCount, 0);
     });
@@ -61,7 +59,7 @@ void main() {
           _toolState(id: 't2'),
           _toolState(id: 't3'),
         ],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(group.totalToolsCount, 3);
     });
@@ -73,7 +71,7 @@ void main() {
           _toolState(),
           _toolState(id: 't2'),
         ],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(group.areAllToolsEnabled, isTrue);
     });
@@ -85,7 +83,7 @@ void main() {
           _toolState(),
           _toolState(id: 't2', isEnabled: false),
         ],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(group.areAllToolsEnabled, isFalse);
     });
@@ -94,7 +92,7 @@ void main() {
       const group = ConversationToolsGroupWithTools(
         group: null,
         tools: [],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(group.areAllToolsEnabled, isFalse);
     });
@@ -106,7 +104,7 @@ void main() {
           _toolState(isEnabled: false),
           _toolState(id: 't2'),
         ],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(group.areAnyToolsEnabled, isTrue);
     });
@@ -115,7 +113,7 @@ void main() {
       final group = ConversationToolsGroupWithTools(
         group: null,
         tools: [_toolState(isEnabled: false)],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(group.areAnyToolsEnabled, isFalse);
     });
@@ -130,7 +128,7 @@ void main() {
     test('assertion fails when both group and defaultGroupType are set', () {
       expect(
         () => ConversationToolsGroupWithTools(
-          group: ToolsGroupEntity(
+          group: .new(
             id: 'g1',
             workspaceId: 'ws1',
             name: 'Group',
@@ -140,7 +138,7 @@ void main() {
             updatedAt: DateTime(2026),
           ),
           tools: [],
-          defaultGroupType: DefaultToolGroupType.builtIn,
+          defaultGroupType: .builtIn,
         ),
         throwsA(isA<AssertionError>()),
       );
@@ -154,11 +152,11 @@ void main() {
         url: 'https://example.com',
         transport: const McpTransportTypeSSE(),
         authenticationType: const McpAuthenticationTypeNone(),
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
       final group = ConversationToolsGroupWithTools(
-        group: ToolsGroupEntity(
+        group: .new(
           id: 'g1',
           workspaceId: 'ws1',
           name: 'MCP Group',
@@ -169,7 +167,7 @@ void main() {
           mcpServerId: 'srv1',
         ),
         tools: [],
-        mcpConnectionState: McpConnectionState(
+        mcpConnectionState: .new(
           server: server,
           status: McpConnectionStatus.connected,
         ),

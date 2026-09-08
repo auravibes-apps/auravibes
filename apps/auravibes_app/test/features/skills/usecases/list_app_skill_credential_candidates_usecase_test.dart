@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -82,7 +81,7 @@ void main() {
           name: 'Example Search credential',
           serviceId: 'example-search',
           hasSecret: true,
-          scope: WorkspaceSecretScope.workspace,
+          scope: .workspace,
           kind: 'appSkillCredential',
         ),
         CloudServiceConnection(
@@ -91,7 +90,7 @@ void main() {
           name: 'Other skill credential',
           serviceId: 'other-skill',
           hasSecret: true,
-          scope: WorkspaceSecretScope.workspace,
+          scope: .workspace,
           kind: 'appSkillCredential',
         ),
         CloudServiceConnection(
@@ -100,7 +99,7 @@ void main() {
           name: 'Missing secret',
           serviceId: 'example-search',
           hasSecret: false,
-          scope: WorkspaceSecretScope.workspace,
+          scope: .workspace,
           kind: 'appSkillCredential',
         ),
         CloudServiceConnection(
@@ -109,7 +108,7 @@ void main() {
           name: 'Disabled credential',
           serviceId: 'example-search',
           hasSecret: true,
-          scope: WorkspaceSecretScope.workspace,
+          scope: .workspace,
           kind: 'appSkillCredential',
           isEnabled: false,
         ),
@@ -119,7 +118,7 @@ void main() {
           name: 'Model provider',
           serviceId: 'example-search',
           hasSecret: true,
-          scope: WorkspaceSecretScope.workspace,
+          scope: .workspace,
           kind: 'modelProvider',
         ),
       ],

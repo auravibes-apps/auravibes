@@ -14,7 +14,7 @@ class OAuthCredentialService {
     : _dio =
           dio ??
           Dio(
-            BaseOptions(
+            .new(
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 20),
               sendTimeout: const Duration(seconds: 10),
@@ -38,11 +38,11 @@ class OAuthCredentialService {
     }
 
     switch (row.authenticationType) {
-      case ServiceConnectionAuthenticationType.none:
+      case .none:
         return const McpAuthenticationType.none();
-      case ServiceConnectionAuthenticationType.apiKey:
+      case .apiKey:
         return const McpAuthenticationType.none();
-      case ServiceConnectionAuthenticationType.bearerToken:
+      case .bearerToken:
         final secret = await _serviceConnectionRepository.readSecret(row.id);
         if (secret is! ServiceConnectionSecretBearerToken) {
           throw const FormatException('Invalid bearer credential payload.');
@@ -51,7 +51,7 @@ class OAuthCredentialService {
         return McpAuthenticationType.bearerToken(
           bearerToken: secret.bearerToken,
         );
-      case ServiceConnectionAuthenticationType.oauth2:
+      case .oauth2:
         final token = await refreshIfNeeded(serviceConnectionId);
         final metadata = ServiceConnectionAuthCodec.decodeMetadata(
           row.metadataJson,
@@ -164,7 +164,7 @@ class OAuthCredentialService {
               when clientSecret.isNotEmpty)
             'client_secret': clientSecret,
         },
-        options: Options(
+        options: .new(
           responseType: ResponseType.json,
           contentType: Headers.formUrlEncodedContentType,
         ),
@@ -213,7 +213,7 @@ class OAuthCredentialService {
 
     return OAuthTokenEntity(
       accessToken: accessToken,
-      issuedAt: DateTime.now(),
+      issuedAt: .now(),
       refreshToken: data['refresh_token'] as String? ?? previousRefreshToken,
       idToken: data['id_token'] as String?,
       expiresIn: data['expires_in'] as int?,

@@ -70,7 +70,7 @@ class ModelConnectionRepository({
 
     // Validate API key with model provider.
     final models = await _modelProviderServices.getWorkspaceModelSelections(
-      ModelProvider(
+      .new(
         type: .fromString(modelType.value),
         key: key,
         url: modelConnection.url ?? modelProvider.url,
@@ -226,7 +226,7 @@ class ModelConnectionRepository({
 
     final createdModelConnection = await _database.transaction(() async {
       final created = await _database.modelConnectionsDao.insertModelConnection(
-        ServiceConnectionsCompanion.insert(
+        .insert(
           name: modelConnection.name,
           serviceId: modelConnection.modelId,
           kind: ServiceConnectionKindTable.modelProvider,
@@ -249,8 +249,8 @@ class ModelConnectionRepository({
             modelIds
                 .map(
                   (modelId) => WorkspaceModelSelectionsCompanion(
-                    modelId: Value(modelId),
-                    modelConnectionId: Value(created.id),
+                    modelId: .new(modelId),
+                    modelConnectionId: .new(created.id),
                   ),
                 )
                 .toList(),
@@ -318,7 +318,7 @@ class ModelConnectionRepository({
         ? _nextConnectionUrl(modelConnection.url)
         : existing.url;
     final models = await _modelProviderServices.getWorkspaceModelSelections(
-      ModelProvider(
+      .new(
         type: .fromString(modelType.value),
         key: keyForValidation,
         url: nextUrl ?? modelProvider.url,
@@ -364,7 +364,7 @@ class ModelConnectionRepository({
     final updatedConnection = await _database.modelConnectionsDao
         .updateModelConnection(
           modelConnectionId,
-          ServiceConnectionsCompanion(
+          .new(
             name: .absentIfNull(modelConnection.name),
             url: payload.hasUrlUpdate
                 ? Value(payload.nextUrl)
@@ -471,12 +471,12 @@ class ModelConnectionRepository({
     final expiresIn = token.expiresIn;
     if (expiresIn == null) return null;
 
-    return token.issuedAt.add(Duration(seconds: expiresIn));
+    return token.issuedAt.add(.new(seconds: expiresIn));
   }
 
   ModelProviderAuthMode _authMode(ServiceAuthenticationTypeTable type) {
     return switch (type) {
-      ServiceAuthenticationTypeTable.oauth2 => ModelProviderAuthMode.oauth2,
+      .oauth2 => ModelProviderAuthMode.oauth2,
       _ => ModelProviderAuthMode.apiKey,
     };
   }
@@ -485,8 +485,8 @@ class ModelConnectionRepository({
     WorkspaceModelSelectionToCreate workspaceModelSelection,
   ) {
     return WorkspaceModelSelectionsCompanion(
-      modelId: Value(workspaceModelSelection.modelId),
-      modelConnectionId: Value(workspaceModelSelection.modelConnectionId),
+      modelId: .new(workspaceModelSelection.modelId),
+      modelConnectionId: .new(workspaceModelSelection.modelConnectionId),
     );
   }
 }

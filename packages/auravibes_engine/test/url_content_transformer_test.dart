@@ -291,7 +291,7 @@ void main() {
         final response = _htmlResponse('<h1>Hello</h1>');
         final result = transformer.transform(
           response,
-          requestedFormat: UrlResponseFormat.markdown,
+          requestedFormat: .markdown,
         );
 
         expect(result.format, UrlContentFormat.markdown);
@@ -304,10 +304,7 @@ void main() {
           '<a href="https://example.com">link</a> and '
           '<strong>bold</strong> text.</p>',
         );
-        final result = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.text,
-        );
+        final result = transformer.transform(response, requestedFormat: .text);
 
         expect(result.format, UrlContentFormat.text);
         expect(result.body, contains('Title'));
@@ -322,10 +319,7 @@ void main() {
       test('html format returns raw HTML body', () {
         const html = '<h1>Raw</h1><p>Content</p>';
         final response = _htmlResponse(html);
-        final result = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.html,
-        );
+        final result = transformer.transform(response, requestedFormat: .html);
 
         expect(result.format, UrlContentFormat.html);
         expect(result.body, contains('<h1>Raw</h1>'));
@@ -336,10 +330,7 @@ void main() {
         const html =
             '<html><script>alert(1)</script><body><p>Safe</p></body></html>';
         final response = _htmlResponse(html);
-        final result = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.html,
-        );
+        final result = transformer.transform(response, requestedFormat: .html);
 
         expect(result.format, UrlContentFormat.html);
         expect(result.body, contains('<p>Safe</p>'));
@@ -350,10 +341,7 @@ void main() {
         final response = _htmlResponse(
           '<html><script>alert(1)</script><body><p>Safe</p></body></html>',
         );
-        final result = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.text,
-        );
+        final result = transformer.transform(response, requestedFormat: .text);
 
         expect(result.format, UrlContentFormat.text);
         expect(result.body, contains('Safe'));
@@ -363,24 +351,15 @@ void main() {
       test('json content stays json regardless of requested format', () {
         final response = _jsonResponse('{"key": "value"}');
 
-        final md = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.markdown,
-        );
+        final md = transformer.transform(response, requestedFormat: .markdown);
         expect(md.format, UrlContentFormat.json);
         expect(md.body, '{"key": "value"}');
 
-        final txt = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.text,
-        );
+        final txt = transformer.transform(response, requestedFormat: .text);
         expect(txt.format, UrlContentFormat.json);
         expect(txt.body, '{"key": "value"}');
 
-        final html = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.html,
-        );
+        final html = transformer.transform(response, requestedFormat: .html);
         expect(html.format, UrlContentFormat.json);
         expect(html.body, '{"key": "value"}');
 
@@ -392,24 +371,15 @@ void main() {
       test('plain text stays text regardless of requested format', () {
         final response = _plainTextResponse('Hello world');
 
-        final md = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.markdown,
-        );
+        final md = transformer.transform(response, requestedFormat: .markdown);
         expect(md.format, UrlContentFormat.text);
         expect(md.body, 'Hello world');
 
-        final txt = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.text,
-        );
+        final txt = transformer.transform(response, requestedFormat: .text);
         expect(txt.format, UrlContentFormat.text);
         expect(txt.body, 'Hello world');
 
-        final html = transformer.transform(
-          response,
-          requestedFormat: UrlResponseFormat.html,
-        );
+        final html = transformer.transform(response, requestedFormat: .html);
         expect(html.format, UrlContentFormat.text);
         expect(html.body, 'Hello world');
       });

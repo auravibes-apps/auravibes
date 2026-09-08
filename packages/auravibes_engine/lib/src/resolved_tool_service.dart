@@ -64,32 +64,32 @@ class const ResolvedToolService<TTool>({
     final descriptor = execution.descriptor;
 
     return await switch (descriptor.kind) {
-      AgentResolvedToolKind.builtIn => _runInputTool(
+      .builtIn => _runInputTool(
         conversationId: conversationId,
         tool: execution.tool,
         arguments: arguments,
         runner: provider.runBuiltInTool,
         missingInputMessage: 'Built-in tools require an input argument.',
       ),
-      AgentResolvedToolKind.native => _runInputTool(
+      .native => _runInputTool(
         conversationId: conversationId,
         tool: execution.tool,
         arguments: arguments,
         runner: provider.runNativeTool,
         missingInputMessage: 'Native tools require an input argument.',
       ),
-      AgentResolvedToolKind.mcp => _runMcpTool(descriptor, arguments),
-      AgentResolvedToolKind.skillControl => _runSkillControlTool(
+      .mcp => _runMcpTool(descriptor, arguments),
+      .skillControl => _runSkillControlTool(
         conversationId,
         descriptor,
         arguments,
       ),
-      AgentResolvedToolKind.skillTemplate => _runSkillTemplateTool(
+      .skillTemplate => _runSkillTemplateTool(
         conversationId,
         descriptor,
         arguments,
       ),
-      AgentResolvedToolKind.skillNative => _runSkillNativeTool(
+      .skillNative => _runSkillNativeTool(
         conversationId,
         descriptor,
         arguments,

@@ -13,10 +13,7 @@ void main() {
     );
     addTearDown(database.close);
     final workspace = await database.workspaceDao.insertWorkspace(
-      WorkspacesCompanion.insert(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      ),
+      .insert(name: 'Test Workspace', type: WorkspaceType.local),
     );
     final stream = StreamQueue(
       database.modelConnectionsDao.watchAllModelConnectionsByWorkspace(
@@ -27,7 +24,7 @@ void main() {
 
     expect(await stream.next, isEmpty);
     final connection = await database.modelConnectionsDao.insertModelConnection(
-      ServiceConnectionsCompanion(
+      .new(
         name: const Value('OpenAI'),
         serviceId: const Value('openai'),
         kind: const Value(ServiceConnectionKindTable.modelProvider),

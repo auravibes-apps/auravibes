@@ -163,7 +163,7 @@ void main() {
         ],
         child: MaterialApp(
           home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
+            data: .new(extensions: [AuraTheme.light]),
             child: const Material(
               child: SizedBox(
                 width: 300,
@@ -205,7 +205,7 @@ void main() {
   test('SidebarConversationsWidget accepts optional key', () {
     const widget = SidebarConversationsWidget(
       workspaceId: 'ws-1',
-      key: Key('test-key'),
+      key: .new('test-key'),
     );
     expect(widget.key, const Key('test-key'));
   });
@@ -228,7 +228,7 @@ void main() {
         ],
         child: MaterialApp(
           home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
+            data: .new(extensions: [AuraTheme.light]),
             child: const Material(
               child: SizedBox(
                 width: 300,
@@ -262,7 +262,7 @@ void main() {
         ],
         child: MaterialApp(
           home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
+            data: .new(extensions: [AuraTheme.light]),
             child: const Material(
               child: SizedBox(
                 width: 300,
@@ -301,7 +301,7 @@ void main() {
                 ],
                 child: MaterialApp(
                   home: Theme(
-                    data: ThemeData(extensions: [AuraTheme.light]),
+                    data: .new(extensions: [AuraTheme.light]),
                     child: const Material(
                       child: SizedBox(
                         width: 300,
@@ -345,8 +345,8 @@ void main() {
           title: 'Test Chat',
           workspaceId: 'workspace-1',
           isPinned: false,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
         ),
       ];
 
@@ -373,16 +373,16 @@ void main() {
                         return _TestCompactionExecution({
                           'conv-1': CompactionExecutionState(
                             conversationId: 'conv-1',
-                            trigger: CompactionTrigger.auto,
-                            startedAt: DateTime(2025),
-                            status: CompactionExecutionStatus.running,
+                            trigger: .auto,
+                            startedAt: .new(2025),
+                            status: .running,
                           ),
                         });
                       }),
                     ],
                     child: MaterialApp(
                       home: Theme(
-                        data: ThemeData(extensions: [AuraTheme.light]),
+                        data: .new(extensions: [AuraTheme.light]),
                         child: const Material(
                           child: SizedBox(
                             width: 300,
@@ -472,7 +472,7 @@ class _SidebarWorkspaceHostState extends State<_SidebarWorkspaceHost> {
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: ThemeData(extensions: [AuraTheme.light]),
+      data: .new(extensions: [AuraTheme.light]),
       child: Material(
         child: Column(
           children: [

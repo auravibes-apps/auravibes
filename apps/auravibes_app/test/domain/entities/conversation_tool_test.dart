@@ -10,7 +10,7 @@ void main() {
       conversationId: 'conv_1',
       toolId: 'tool_1',
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       createdAt: now,
       updatedAt: now,
     );
@@ -22,7 +22,7 @@ void main() {
         conversationId: 'conv_2',
         toolId: 'tool_2',
         isEnabled: false,
-        permissionMode: ToolPermissionMode.alwaysAsk,
+        permissionMode: .alwaysAsk,
         createdAt: now,
         updatedAt: now,
       );
@@ -38,7 +38,7 @@ void main() {
         conversationId: 'conv_3',
         toolId: 'tool_3',
         isEnabled: true,
-        permissionMode: ToolPermissionMode.alwaysAllow,
+        permissionMode: .alwaysAllow,
         createdAt: now,
         updatedAt: now,
       );
@@ -78,7 +78,7 @@ void main() {
     test('defaultPermissionMode returns specified mode', () {
       const create = ConversationToolToCreate(
         toolId: 'tool_1',
-        permissionMode: ToolPermissionMode.alwaysAllow,
+        permissionMode: .alwaysAllow,
       );
       expect(create.defaultPermissionMode, ToolPermissionMode.alwaysAllow);
     });

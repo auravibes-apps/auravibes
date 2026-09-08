@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
@@ -34,14 +33,14 @@ void main() {
     );
 
     final modelSelection = WorkspaceModelSelectionWithConnectionEntity(
-      workspaceModelSelection: WorkspaceModelSelectionEntity(
+      workspaceModelSelection: .new(
         id: 'model-sel-1',
         modelId: 'gpt-4',
         createdAt: DateTime(2026),
         updatedAt: DateTime(2026),
         modelConnectionId: 'conn-1',
       ),
-      modelConnection: ModelConnectionEntity(
+      modelConnection: .new(
         id: 'conn-1',
         name: 'OpenAI',
         modelId: 'gpt-4',
@@ -82,8 +81,8 @@ void main() {
           title: 'Patched',
           workspaceId: 'ws-1',
           isPinned: false,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
       );
       monitoringService = MockMonitoringService();

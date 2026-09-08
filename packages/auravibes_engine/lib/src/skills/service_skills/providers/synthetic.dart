@@ -1,8 +1,6 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
-import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 const syntheticSkill = AppSkillDefinition(
@@ -23,10 +21,10 @@ service or model-provider credentials.
       description: 'Search web results for a query.',
       inputJsonSchema: searchInputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://api.synthetic.new/v2/search',
-          method: UrlRequestMethod.post,
+          method: .post,
           headers: {
             'authorization': 'Bearer {{ credential.apiKey }}',
             'content-type': 'application/json',

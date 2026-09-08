@@ -29,7 +29,7 @@ class const ToolCallResponsePreview({
 
 class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
   bool _exceedsMaxLines = false;
-  final GlobalKey _textKey = GlobalKey();
+  final GlobalKey _textKey = .new();
 
   @override
   void initState() {
@@ -54,18 +54,18 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         // Preview text with max 3 lines.
         Text(
           widget.content,
           key: _textKey,
-          style: TextStyle(
+          style: .new(
             color: context.auraColors.onSurface.withValues(alpha: 0.8),
             fontSize: 13,
             height: 1.4,
           ),
-          overflow: TextOverflow.ellipsis,
+          overflow: .ellipsis,
           maxLines: ToolCallResponsePreview.maxPreviewLines,
         ),
 
@@ -78,17 +78,13 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
               child: const AuraRow(
                 children: [
                   TextLocale(LocaleKeys.common_show_more),
-                  AuraIcon(
-                    Icons.open_in_new,
-                    size: AuraIconSize.small,
-                    tint: AuraTint.primary,
-                  ),
+                  AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
                 ],
                 spacing: .xs,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
               ),
-              variant: AuraButtonVariant.ghost,
-              size: AuraButtonSize.small,
+              variant: .ghost,
+              size: .small,
             ),
           ),
       ],
@@ -107,7 +103,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
     final textSpan = TextSpan(text: widget.content, style: textStyle);
     final textPainter = TextPainter(
       text: textSpan,
-      textDirection: TextDirection.ltr,
+      textDirection: .ltr,
       maxLines: ToolCallResponsePreview.maxPreviewLines,
     )..layout(maxWidth: renderObject.constraints.maxWidth);
 

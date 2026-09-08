@@ -126,7 +126,7 @@ class const _WorkspaceList({
             'workspace_management.cloud_add_hint',
           ),
           AsyncData(:final value) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: .stretch,
             children: [
               for (final account in value)
                 _AvailableCloudAccountGroup(
@@ -292,9 +292,9 @@ class const _AvailableCloudAccountGroup({
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: .stretch,
         children: [
-          AuraText(child: Text(account.email), style: AuraTextStyle.heading6),
+          AuraText(child: Text(account.email), style: .heading6),
           const SizedBox(height: 8),
           switch (state) {
             AsyncData(value: final value?) when value.authenticationRequired =>
@@ -328,20 +328,20 @@ class const _CloudAccountDisconnected({required final String workspaceId})
         children: [
           AuraText(
             child: TextLocale(LocaleKeys.cloud_accounts_status_needs_sign_in),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
           TextLocale(LocaleKeys.cloud_accounts_session_expired),
         ],
         spacing: .xs,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
-      variant: AuraTileVariant.ghost,
+      variant: .ghost,
       trailing: AuraButton(
         onPressed: () => context.go(
           CloudAccountLoginRoute(workspaceId: workspaceId).location,
         ),
         child: const TextLocale(LocaleKeys.cloud_accounts_sign_in_again),
-        variant: AuraButtonVariant.outlined,
+        variant: .outlined,
       ),
     );
   }
@@ -428,7 +428,7 @@ class const _LocalWorkspaceTile({
     return AuraTile(
       child: _WorkspaceName(name: workspace.name, isActive: isActive),
       onTap: onTap,
-      variant: AuraTileVariant.ghost,
+      variant: .ghost,
       trailing: AuraPopupMenuButton(
         items: [
           AuraPopupMenuItem(
@@ -438,7 +438,7 @@ class const _LocalWorkspaceTile({
           AuraPopupMenuItem(
             title: const TextLocale(LocaleKeys.common_delete),
             onTap: onDelete,
-            variant: AuraTileVariant.error,
+            variant: .error,
           ),
         ],
         tooltip: LocaleKeys.common_show_more.tr(),
@@ -467,10 +467,10 @@ class const _ConnectedWorkspaceTile({
           ),
         ],
         spacing: .xs,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
       onTap: onTap,
-      variant: AuraTileVariant.ghost,
+      variant: .ghost,
       trailing: AuraPopupMenuButton(
         items: [
           AuraPopupMenuItem(
@@ -482,7 +482,7 @@ class const _ConnectedWorkspaceTile({
               LocaleKeys.workspace_management_cloud_detach,
             ),
             onTap: onRemove,
-            variant: AuraTileVariant.error,
+            variant: .error,
           ),
         ],
         tooltip: LocaleKeys.common_show_more.tr(),
@@ -513,9 +513,9 @@ class const _AvailableWorkspaceTile({
             ),
         ],
         spacing: .xs,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
-      variant: AuraTileVariant.ghost,
+      variant: .ghost,
       trailing: AuraPopupMenuButton(
         items: [
           AuraPopupMenuItem(
@@ -547,11 +547,11 @@ class const _WorkspaceName({
         if (isActive)
           const AuraText(
             child: TextLocale(LocaleKeys.workspace_management_active_label),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
       ],
       spacing: .xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
     );
   }
 }
@@ -561,10 +561,7 @@ class const _SectionTitle(final String keyName) extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: AuraText(
-        child: TextLocale(keyName),
-        style: AuraTextStyle.heading6,
-      ),
+      child: AuraText(child: TextLocale(keyName), style: .heading6),
     );
   }
 }
@@ -603,7 +600,7 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
             placeholder: Text(
               LocaleKeys.workspace_management_name_placeholder.tr(),
             ),
-            textInputAction: TextInputAction.done,
+            textInputAction: .done,
             autofocus: true,
             onSubmitted: (value) => widget.onSave(value.trim()),
           ),
@@ -654,6 +651,6 @@ void _showError(BuildContext context, Object error, [StackTrace? stackTrace]) {
   final _ = AuraSnackBars.show(
     context: context,
     content: Text(message),
-    variant: AuraSnackBarVariant.error,
+    variant: .error,
   );
 }

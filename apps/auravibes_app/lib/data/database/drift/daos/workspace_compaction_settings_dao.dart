@@ -47,7 +47,7 @@ class WorkspaceCompactionSettingsDao(super.attachedDatabase)
     }
 
     return await into(workspaceCompactionSettings)
-        .insertReturning(companion.copyWith(workspaceId: Value(workspaceId)));
+        .insertReturning(companion.copyWith(workspaceId: .new(workspaceId)));
   }
 
   Future<void> deleteByWorkspaceId(String workspaceId) async {

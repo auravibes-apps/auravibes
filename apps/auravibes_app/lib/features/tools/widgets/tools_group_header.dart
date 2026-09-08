@@ -3,7 +3,6 @@
 
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -59,9 +58,9 @@ class const ToolsGroupHeader({
                   groupWithTools.localizedDisplayNameKey?.tr() ??
                       group?.name ??
                       '',
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
-                style: AuraTextStyle.heading6,
+                style: .heading6,
               ),
 
               if (groupWithTools.isMcpGroup)
@@ -80,11 +79,11 @@ class const ToolsGroupHeader({
                     },
                   ),
                 ),
-                style: AuraTextStyle.bodySmall,
+                style: .bodySmall,
               ),
             ],
             spacing: .xs,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
           ),
         ),
 
@@ -95,15 +94,15 @@ class const ToolsGroupHeader({
               AuraIconButton(
                 icon: Icons.delete_outline,
                 onPressed: onDelete,
-                size: AuraIconSize.small,
-                tint: AuraTint.error,
+                size: .small,
+                tint: .error,
                 tooltip: LocaleKeys.common_delete.tr(),
               ),
             if (!groupWithTools.isDefaultGroup && onToggleEnabled != null)
               AuraSwitch(
                 value: groupWithTools.isEnabled,
                 onChanged: onToggleEnabled,
-                size: AuraSwitchSize.sm,
+                size: .sm,
               ),
             AuraIconButton.custom(
               child: AnimatedRotation(
@@ -136,7 +135,7 @@ class const _GroupIcon({required final ToolsGroupWithTools groupWithTools})
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
+          .circular(context.auraTheme.fromBorderRadius(.md)),
         ),
       ),
       width: iconSize,
@@ -164,24 +163,22 @@ class const _McpStatusBadge({
     if (status == null) return const SizedBox.shrink();
 
     return switch (status) {
-      McpConnectionStatus.connecting => const SizedBox(
+      .connecting => const SizedBox(
         width: 16,
         height: 16,
-        child: AuraSpinner(size: AuraSpinnerSize.small),
+        child: AuraSpinner(size: .small),
       ),
-      McpConnectionStatus.connected => AuraBadge.text(
+      .connected => AuraBadge.text(
         child: Text(LocaleKeys.tools_screen_mcp_connected.tr()),
-        variant: AuraBadgeVariant.success,
-        size: AuraBadgeSize.small,
+        variant: .success,
+        size: .small,
       ),
-      McpConnectionStatus.error => _ErrorBadge(
+      .error => _ErrorBadge(
         groupWithTools: groupWithTools,
         onReconnect: onReconnect,
         onViewError: onViewError,
       ),
-      McpConnectionStatus.disconnected => _DisconnectedBadge(
-        onReconnect: onReconnect,
-      ),
+      .disconnected => _DisconnectedBadge(onReconnect: onReconnect),
     };
   }
 }
@@ -201,17 +198,14 @@ class const _ErrorBadge({
           child: AuraBadge.text(
             child: AuraRow(
               children: [
-                const AuraIcon(
-                  Icons.error_outline,
-                  size: AuraIconSize.extraSmall,
-                ),
+                const AuraIcon(Icons.error_outline, size: .extraSmall),
                 Text(LocaleKeys.tools_screen_mcp_error.tr()),
               ],
               spacing: .xs,
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
             ),
             variant: .error,
-            size: AuraBadgeSize.small,
+            size: .small,
           ),
         ),
         if (onViewError != null && groupWithTools.mcpErrorMessage != null)
@@ -230,7 +224,7 @@ class const _ErrorBadge({
           ),
       ],
       spacing: .xs,
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
     );
   }
 }
@@ -244,19 +238,19 @@ class const _DisconnectedBadge({final VoidCallback? onReconnect})
       children: [
         AuraBadge.text(
           child: Text(LocaleKeys.tools_screen_mcp_disconnected.tr()),
-          variant: AuraBadgeVariant.warning,
-          size: AuraBadgeSize.small,
+          variant: .warning,
+          size: .small,
         ),
         if (onReconnect != null)
           AuraIconButton(
             icon: Icons.refresh,
             onPressed: onReconnect,
-            size: AuraIconSize.small,
+            size: .small,
             tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
           ),
       ],
       spacing: .xs,
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
     );
   }
 }

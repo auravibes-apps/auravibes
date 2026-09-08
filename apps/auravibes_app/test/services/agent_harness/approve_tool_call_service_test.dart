@@ -1,14 +1,10 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/services/agent_harness/approve_tool_call_service.dart';
-import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
-import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -33,7 +29,7 @@ void main() {
       loadConversationToolSpecsUsecase: loadToolSpecs,
       toolResolverService: const ToolResolverService(),
       agentToolResumeService: agentToolResumeService,
-      runResolvedToolUsecase: ResolvedToolService(
+      runResolvedToolUsecase: .new(
         agentCancellationRuntime: AgentCancellationRuntime(),
         mcpToolCaller: ({
           required mcpServerId,
@@ -41,7 +37,7 @@ void main() {
           required arguments,
         }) => Future.value(''),
       ),
-      agentCancellationRuntime: AgentCancellationRuntime(),
+      agentCancellationRuntime: .new(),
       onToolCallChanged: _noop,
     );
 
@@ -52,25 +48,25 @@ void main() {
     final tool = ResolvedTool.builtIn(
       tableId: 'calculator',
       toolIdentifier: 'calculator',
-      tooltype: UserToolType.calculator,
+      tooltype: .calculator,
     );
     final conversation = ConversationEntity(
       id: conversationId,
       title: 'Conversation',
       workspaceId: workspaceId,
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     final message = MessageEntity(
       id: messageId,
       conversationId: conversationId,
       content: 'assistant',
-      messageType: MessageType.text,
+      messageType: .text,
       isUser: false,
-      status: MessageStatus.sent,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      status: .sent,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       metadata: const MessageMetadataEntity(
         toolCalls: [
           MessageToolCallEntity(
@@ -97,7 +93,7 @@ void main() {
         loadConversationToolSpecsUsecase: loadToolSpecs,
         toolResolverService: const ToolResolverService(),
         agentToolResumeService: agentToolResumeService,
-        runResolvedToolUsecase: ResolvedToolService(
+        runResolvedToolUsecase: .new(
           agentCancellationRuntime: AgentCancellationRuntime(),
           mcpToolCaller: ({
             required mcpServerId,
@@ -105,7 +101,7 @@ void main() {
             required arguments,
           }) => Future.value(''),
         ),
-        agentCancellationRuntime: AgentCancellationRuntime(),
+        agentCancellationRuntime: .new(),
         onToolCallChanged: _noop,
       );
     });
@@ -133,11 +129,7 @@ void main() {
       );
       final catalog = agent.buildToolCatalog<ResolvedTool>([
         agent.ToolCatalogCandidate.external(
-          spec: agent.ToolSpec(
-            name: 'search',
-            description: '',
-            inputJsonSchema: {},
-          ),
+          spec: .new(name: 'search', description: '', inputJsonSchema: {}),
           target: target,
           sourceId: 'github-server',
         ),
@@ -207,8 +199,8 @@ void main() {
               title: 'Conversation',
               workspaceId: workspaceId,
               isPinned: false,
-              createdAt: DateTime(2026),
-              updatedAt: DateTime(2026),
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
             ),
           );
       when(
@@ -222,7 +214,7 @@ void main() {
         () => conversationToolsRepository.setConversationToolPermission(
           conversationId,
           'permission-table-1',
-          permissionMode: ToolPermissionMode.alwaysAllow,
+          permissionMode: .alwaysAllow,
         ),
       ).thenAnswer((_) async => true);
 
@@ -238,7 +230,7 @@ void main() {
         () => conversationToolsRepository.setConversationToolPermission(
           conversationId,
           'permission-table-1',
-          permissionMode: ToolPermissionMode.alwaysAllow,
+          permissionMode: .alwaysAllow,
         ),
       ).called(1);
     });
@@ -259,7 +251,7 @@ void main() {
         () => conversationToolsRepository.setConversationToolPermission(
           conversationId,
           'permission-table-1',
-          permissionMode: ToolPermissionMode.alwaysAllow,
+          permissionMode: .alwaysAllow,
         ),
       ).called(0);
     });

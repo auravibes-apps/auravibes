@@ -2,7 +2,6 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -22,7 +21,7 @@ void main() {
               value: values,
               onChanged: (next) => setState(() => values = next),
               variant: variant,
-              presentation: AuraChoicePickerPresentation.chips,
+              presentation: .chips,
             ),
           ),
         ),
@@ -35,8 +34,8 @@ void main() {
             ? ['first', 'second']
             : ['second'],
       );
-      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      final _ = await tester.sendKeyEvent(.tab);
+      final _ = await tester.sendKeyEvent(.enter);
       final _ = await tester.pumpAndSettle();
       expect(
         values,
@@ -72,8 +71,8 @@ void main() {
               ],
               value: const ['first'],
               onChanged: (next) => changed = next,
-              variant: AuraChoicePickerVariant.multipleSelection,
-              presentation: AuraChoicePickerPresentation.chips,
+              variant: .multipleSelection,
+              presentation: .chips,
               maxAllowedSelections: 1,
             ),
           ),
@@ -104,7 +103,7 @@ void main() {
           ],
           value: ['first'],
           onChanged: _noopChanged,
-          presentation: AuraChoicePickerPresentation.chips,
+          presentation: .chips,
         ),
       ),
     );
@@ -214,7 +213,7 @@ void main() {
               ],
               value: selectedValues,
               onChanged: (value) => setState(() => selectedValues = value),
-              variant: AuraChoicePickerVariant.multipleSelection,
+              variant: .multipleSelection,
             ),
           ),
         ),
@@ -245,7 +244,7 @@ void main() {
             ],
             value: const ['first'],
             onChanged: (value) => changedValues = value,
-            variant: AuraChoicePickerVariant.multipleSelection,
+            variant: .multipleSelection,
             maxAllowedSelections: 1,
           ),
         ),
@@ -390,7 +389,7 @@ void main() {
 Widget _buildApp(Widget child) {
   return MaterialApp(
     home: Scaffold(body: child),
-    theme: ThemeData(extensions: [AuraTheme.light]),
+    theme: .new(extensions: [AuraTheme.light]),
   );
 }
 

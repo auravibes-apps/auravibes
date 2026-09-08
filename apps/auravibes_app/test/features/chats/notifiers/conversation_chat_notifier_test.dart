@@ -22,8 +22,8 @@ void main() {
         title: 'Test',
         workspaceId: 'ws-1',
         isPinned: false,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
       final result = ConversationFound(conversation);
       expect(result.conversation.id, 'conv-1');
@@ -46,8 +46,8 @@ void main() {
       title: 'Test',
       workspaceId: 'ws-1',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
 
     test(
@@ -189,8 +189,8 @@ void main() {
         title: 'Test',
         workspaceId: 'ws-1',
         isPinned: false,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         modelId: 'model-1',
       );
 

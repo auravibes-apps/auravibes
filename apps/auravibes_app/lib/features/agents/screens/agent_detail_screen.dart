@@ -3,7 +3,6 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/usecases/list_agent_tool_overrides_usecase.dart';
@@ -44,7 +43,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   final _selectedSkills = <AgentSkillRef>{};
   final _toolPermissionModes = <String, AgentToolPermissionMode>{};
   bool _isEnabled = true;
-  AgentVisibility _visibility = AgentVisibility.both;
+  AgentVisibility _visibility = .both;
   bool _loaded = false;
   bool _toolOverridesLoaded = false;
   bool _saving = false;
@@ -322,7 +321,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.cloud_errors_validation),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
 
       return;
@@ -336,7 +335,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
           ? await usecase.create(widget.workspaceId, draft)
           : await usecase.update(
               agentId,
-              AgentToUpdate(
+              .new(
                 name: _nameController.text,
                 description: _descriptionController.text,
                 content: _contentController.text,
@@ -456,11 +455,11 @@ class const _PromptCard({
         children: [
           const AuraText(
             child: TextLocale(LocaleKeys.agents_profile_prompt_title),
-            style: AuraTextStyle.heading5,
+            style: .heading5,
           ),
           const AuraText(
             child: TextLocale(LocaleKeys.agents_profile_prompt_description),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
           AuraInput(
             controller: nameController,
@@ -476,11 +475,11 @@ class const _PromptCard({
                     ),
                     AuraText(
                       child: TextLocale(LocaleKeys.agents_enabled_description),
-                      style: AuraTextStyle.bodySmall,
+                      style: .bodySmall,
                     ),
                   ],
                   spacing: .xs,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                 ),
               ),
               AuraSwitch(value: isEnabled, onChanged: onEnabledChanged),
@@ -523,7 +522,7 @@ class const _PromptCard({
           ),
         ],
         spacing: .md,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -564,7 +563,7 @@ class const _SkillsSummaryCard({
                 context: context,
               ),
             ),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
           if (hasWarning)
             _WarningTile(
@@ -579,7 +578,7 @@ class const _SkillsSummaryCard({
             ),
         ],
         spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -613,7 +612,7 @@ class const _ToolPermissionsSummaryCard({
                       context: context,
                     ),
             ),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
           if (missingOverrideCount > 0)
             _WarningTile(
@@ -625,7 +624,7 @@ class const _ToolPermissionsSummaryCard({
             ),
         ],
         spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -641,13 +640,9 @@ class const _CardHeader({
     return AuraRow(
       children: [
         Expanded(
-          child: AuraText(child: title, style: AuraTextStyle.heading5),
+          child: AuraText(child: title, style: .heading5),
         ),
-        AuraButton(
-          onPressed: onAction,
-          child: actionLabel,
-          variant: AuraButtonVariant.text,
-        ),
+        AuraButton(onPressed: onAction, child: actionLabel, variant: .text),
       ],
       spacing: .sm,
     );
@@ -667,9 +662,7 @@ class const _SaveBar({
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: context.auraColors.surface,
-          border: Border(
-            top: BorderSide(color: context.auraColors.outlineVariant),
-          ),
+          border: Border(top: .new(color: context.auraColors.outlineVariant)),
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -703,7 +696,7 @@ class const _WarningTile({
     return AuraTile(
       child: Text(label),
       onTap: onTap,
-      variant: AuraTileVariant.surface,
+      variant: .surface,
       leading: const AuraIcon(Icons.warning_amber_outlined),
       trailing: const AuraIcon(Icons.arrow_forward_ios),
     );
@@ -976,8 +969,8 @@ class _AgentToolPermissionsDialogState
   WorkspaceSkill? _findSkill(String source, String slug) {
     for (final skill in widget.skills) {
       final expectedSource = switch (skill.source) {
-        SkillSource.user => 'user',
-        SkillSource.app => 'app',
+        .user => 'user',
+        .app => 'app',
       };
       if (expectedSource == source && skill.slug == slug) return skill;
     }
@@ -1064,27 +1057,24 @@ class const _AgentManageDialog({
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+          .circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
-        constraints: BoxConstraints(
+        constraints: .new(
           maxWidth: 620,
           maxHeight: MediaQuery.sizeOf(context).height * 0.82,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             Padding(
               padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
               child: AuraRow(
                 children: [
                   Expanded(
-                    child: AuraText(
-                      child: title,
-                      style: AuraTextStyle.heading5,
-                    ),
+                    child: AuraText(child: title, style: .heading5),
                   ),
                   AuraIconButton(
                     icon: Icons.close,
@@ -1141,7 +1131,7 @@ class const _UnavailableSkillSection({
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.agents_disabled_skills_warning),
-          style: AuraTextStyle.bodySmall,
+          style: .bodySmall,
         ),
         for (final ref in refs)
           Padding(
@@ -1152,10 +1142,10 @@ class const _UnavailableSkillSection({
                   const TextLocale(LocaleKeys.agents_disabled_skill_label),
                   Text(ref.label),
                 ],
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
               ),
               onTap: () => onRemove(ref),
-              variant: AuraTileVariant.surface,
+              variant: .surface,
               leading: const AuraIcon(Icons.warning_amber_outlined),
               trailing: const AuraIcon(Icons.close),
             ),
@@ -1211,17 +1201,17 @@ class const _CollapsibleToolSection({
           AuraTile(
             child: AuraColumn(
               children: [Text(title)],
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
             ),
             onTap: onToggle,
-            variant: AuraTileVariant.surface,
+            variant: .surface,
             leading: AuraIcon(
               isExpanded ? Icons.expand_less : Icons.expand_more,
             ),
           ),
           if (isExpanded)
             if (tools.isEmpty)
-              AuraText(child: empty, style: AuraTextStyle.bodySmall)
+              AuraText(child: empty, style: .bodySmall)
             else
               for (final tool in tools)
                 _AgentToolPermissionTile(
@@ -1231,7 +1221,7 @@ class const _CollapsibleToolSection({
                 ),
         ],
         spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -1249,14 +1239,14 @@ class const _DialogSection({
       padding: const EdgeInsets.only(bottom: 16),
       child: AuraColumn(
         children: [
-          AuraText(child: title, style: AuraTextStyle.heading6),
+          AuraText(child: title, style: .heading6),
           if (isEmpty)
-            AuraText(child: empty, style: AuraTextStyle.bodySmall)
+            AuraText(child: empty, style: .bodySmall)
           else
             ...children,
         ],
         spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -1276,12 +1266,9 @@ class const _AgentSkillTile({
         child: AuraColumn(
           children: [
             _SkillTitle(skill: skill),
-            AuraText(
-              child: Text(skill.source.name),
-              style: AuraTextStyle.bodySmall,
-            ),
+            AuraText(child: Text(skill.source.name), style: .bodySmall),
           ],
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
         ),
         onTap: onTap,
         variant: selected ? AuraTileVariant.selected : AuraTileVariant.surface,
@@ -1321,14 +1308,14 @@ class const _AgentToolPermissionTile({
             AuraText(child: tool.getNameWidget()),
             AuraText(
               child: DefaultTextStyle.merge(
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
                 maxLines: 1,
                 child: tool.getDescriptionWidget(),
               ),
-              style: AuraTextStyle.bodySmall,
+              style: .bodySmall,
             ),
             SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+              scrollDirection: .horizontal,
               child: AuraButtonGroup<AgentToolPermissionMode>.single(
                 items: const [
                   AuraButtonGroupItem(
@@ -1356,14 +1343,14 @@ class const _AgentToolPermissionTile({
                 ],
                 selectedValue: value,
                 onChanged: onChanged,
-                size: AuraButtonGroupSize.sm,
+                size: .sm,
               ),
             ),
           ],
           spacing: .xs,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
         ),
-        variant: AuraTileVariant.surface,
+        variant: .surface,
         leading: AuraText(child: tool.getIconWidget()),
       ),
     );
@@ -1373,8 +1360,8 @@ class const _AgentToolPermissionTile({
 extension on WorkspaceSkill {
   AgentSkillRef get ref {
     return switch (source) {
-      SkillSource.user => AgentSkillRef.user(id),
-      SkillSource.app => AgentSkillRef.app(id),
+      .user => AgentSkillRef.user(id),
+      .app => AgentSkillRef.app(id),
     };
   }
 

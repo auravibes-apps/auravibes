@@ -7,7 +7,7 @@ void main() {
   group('AuraComputedColor', () {
     test('brightness preset resolves to OKLCH lightness', () {
       final light = AuraComputedColor(hue: 180);
-      final dark = AuraComputedColor(hue: 180, brightness: AuraBrightness.dark);
+      final dark = AuraComputedColor(hue: 180, brightness: .dark);
       expect(light.lightness, AuraBrightness.light.lightness);
       expect(dark.lightness, AuraBrightness.dark.lightness);
     });
@@ -19,7 +19,7 @@ void main() {
     });
 
     test('inherits OKLCHColor.toColor round-trip', () {
-      final c = AuraComputedColor(hue: 180, brightness: AuraBrightness.dark);
+      final c = AuraComputedColor(hue: 180, brightness: .dark);
       expect(c.toColor(), isA<Color>());
     });
 
@@ -43,10 +43,7 @@ void main() {
     test(
       'onColor returns light foreground for dark surface meeting targetLc',
       () {
-        final surface = AuraComputedColor(
-          hue: 210,
-          brightness: AuraBrightness.dark,
-        );
+        final surface = AuraComputedColor(hue: 210, brightness: .dark);
         final on = surface.onColor();
         final lc = ColorContrast.apcaLc(
           foreground: on,
@@ -61,10 +58,7 @@ void main() {
     );
 
     test('onColor higher target yields higher-magnitude Lc', () {
-      final surface = AuraComputedColor(
-        hue: 270,
-        brightness: AuraBrightness.dark,
-      );
+      final surface = AuraComputedColor(hue: 270, brightness: .dark);
       final on60 = surface.onColor();
       final on90 = surface.onColor(targetLc: 90);
       final lc60 = ColorContrast.apcaLc(

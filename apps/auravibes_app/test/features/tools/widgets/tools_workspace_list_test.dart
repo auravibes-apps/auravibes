@@ -4,7 +4,6 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
@@ -25,9 +24,9 @@ WorkspaceToolEntity _tool({String id = 't1', bool isEnabled = true}) {
     workspaceId: _workspaceId,
     toolId: 'custom_tool',
     isEnabled: isEnabled,
-    permissionMode: ToolPermissionMode.alwaysAsk,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    permissionMode: .alwaysAsk,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }
 
@@ -35,7 +34,7 @@ ToolsGroupWithTools _defaultGroup(List<WorkspaceToolEntity> tools) {
   return ToolsGroupWithTools(
     group: null,
     tools: tools,
-    defaultGroupType: DefaultToolGroupType.builtIn,
+    defaultGroupType: .builtIn,
   );
 }
 
@@ -71,7 +70,7 @@ void main() {
           ],
           child: MaterialApp(
             home: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: const Scaffold(
                 body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
               ),
@@ -106,7 +105,7 @@ void main() {
           ],
           child: MaterialApp(
             home: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: const Scaffold(
                 body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
               ),
@@ -134,7 +133,7 @@ void main() {
         ],
         child: MaterialApp(
           home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
+            data: .new(extensions: [AuraTheme.light]),
             child: const Scaffold(
               body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
             ),

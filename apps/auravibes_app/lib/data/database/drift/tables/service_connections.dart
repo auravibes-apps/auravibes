@@ -41,7 +41,7 @@ class ServiceConnections extends Table with TableMixin {
   TextColumn get lastAuthError => text().nullable()();
 
   TextColumn get workspaceId =>
-      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 }

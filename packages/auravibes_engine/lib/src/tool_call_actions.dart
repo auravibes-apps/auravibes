@@ -90,7 +90,7 @@ class const ApproveToolCallService<TTool extends Object>({
       await provider.updateToolCallResult(
         messageId: messageId,
         toolCallId: toolCallId,
-        resultStatus: AgentToolResultStatus.toolNotFound,
+        resultStatus: .toolNotFound,
       );
       await provider.resumeConversationIfReady(messageId: messageId);
 

@@ -365,10 +365,8 @@ void main() {
           final adapter = FakeHttpClientAdapter(
             fetchCallback: (_, _, _) async {
               throw DioException(
-                requestOptions: RequestOptions(
-                  path: 'https://example.com/token',
-                ),
-                type: DioExceptionType.connectionError,
+                requestOptions: .new(path: 'https://example.com/token'),
+                type: .connectionError,
                 error: 'network down',
               );
             },

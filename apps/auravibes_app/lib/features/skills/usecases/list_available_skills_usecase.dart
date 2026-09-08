@@ -116,7 +116,7 @@ class const ListAvailableSkillsUsecase(
           title: skill.title,
           description: skill.description,
           content: skill.content,
-          kind: SkillKind.native,
+          kind: .native,
         ),
       );
     }
@@ -183,8 +183,8 @@ enum SkillLoadFilter {
 
   bool matches({required bool isLoaded}) {
     return switch (this) {
-      SkillLoadFilter.loadable => !isLoaded,
-      SkillLoadFilter.loaded => isLoaded,
+      .loadable => !isLoaded,
+      .loaded => isLoaded,
     };
   }
 }

@@ -222,17 +222,17 @@ class WorkspaceToolsRepository(final AppDatabase _database)
 
   ToolPermissionMode _mapPermissionAccess(PermissionAccess access) {
     return switch (access) {
-      PermissionAccess.ask => ToolPermissionMode.alwaysAsk,
-      PermissionAccess.granted => ToolPermissionMode.alwaysAllow,
-      PermissionAccess.denied => ToolPermissionMode.alwaysDeny,
+      .ask => ToolPermissionMode.alwaysAsk,
+      .granted => ToolPermissionMode.alwaysAllow,
+      .denied => ToolPermissionMode.alwaysDeny,
     };
   }
 
   PermissionAccess _mapPermissionMode(ToolPermissionMode mode) {
     return switch (mode) {
-      ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
-      ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
-      ToolPermissionMode.alwaysDeny => PermissionAccess.denied,
+      .alwaysAsk => PermissionAccess.ask,
+      .alwaysAllow => PermissionAccess.granted,
+      .alwaysDeny => PermissionAccess.denied,
     };
   }
 }

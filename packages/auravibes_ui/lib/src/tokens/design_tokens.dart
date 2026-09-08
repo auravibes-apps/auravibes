@@ -43,81 +43,81 @@ class DesignColors._() {
   // Primary colors.
 
   /// Main primary color for primary actions and branding.
-  static const Color primaryBase = Color(0xFF0F766E);
+  static const Color primaryBase = .new(0xFF0F766E);
 
   /// Lighter shade of primary color for hover states and highlights.
-  static const Color primaryLight = Color(0xFF5EEAD4);
+  static const Color primaryLight = .new(0xFF5EEAD4);
 
   /// Darker shade of primary color for pressed states and emphasis.
-  static const Color primaryDark = Color(0xFF134E4A);
+  static const Color primaryDark = .new(0xFF134E4A);
 
   /// Contrast color for text and icons on primary backgrounds.
-  static const Color primaryContrast = Color(0xFFFFFFFF);
+  static const Color primaryContrast = .new(0xFFFFFFFF);
 
   // Secondary colors.
 
   /// Main secondary color for secondary actions and accents.
-  static const Color secondaryBase = Color(0xFFBE123C);
+  static const Color secondaryBase = .new(0xFFBE123C);
 
   /// Lighter shade of secondary color for hover states.
-  static const Color secondaryLight = Color(0xFFFDA4AF);
+  static const Color secondaryLight = .new(0xFFFDA4AF);
 
   /// Darker shade of secondary color for pressed states.
-  static const Color secondaryDark = Color(0xFF881337);
+  static const Color secondaryDark = .new(0xFF881337);
 
   /// Contrast color for text and icons on secondary backgrounds.
-  static const Color secondaryContrast = Color(0xFFFFFFFF);
+  static const Color secondaryContrast = .new(0xFFFFFFFF);
 
   // Accent colors.
 
   /// Main accent color for special highlights and features.
-  static const Color accentBase = Color(0xFFB45309);
+  static const Color accentBase = .new(0xFFB45309);
 
   /// Lighter shade of accent color for hover states.
-  static const Color accentLight = Color(0xFFFBBF24);
+  static const Color accentLight = .new(0xFFFBBF24);
 
   /// Darker shade of accent color for pressed states.
-  static const Color accentDark = Color(0xFF78350F);
+  static const Color accentDark = .new(0xFF78350F);
 
   /// Contrast color for text and icons on accent backgrounds.
-  static const Color accentContrast = Color(0xFFFFFFFF);
+  static const Color accentContrast = .new(0xFFFFFFFF);
 
   // Neutral colors.
 
   /// Very light neutral color for backgrounds and subtle dividers.
-  static const Color neutral50 = Color(0xFFF8FAFC);
+  static const Color neutral50 = .new(0xFFF8FAFC);
 
   /// Light neutral color for card backgrounds and subtle borders.
-  static const Color neutral100 = Color(0xFFF1F5F9);
+  static const Color neutral100 = .new(0xFFF1F5F9);
 
   /// Light-medium neutral for disabled states and subtle fills.
-  static const Color neutral200 = Color(0xFFE2E8F0);
+  static const Color neutral200 = .new(0xFFE2E8F0);
 
   /// Medium-light neutral for borders and subtle text.
-  static const Color neutral300 = Color(0xFFCBD5E1);
+  static const Color neutral300 = .new(0xFFCBD5E1);
 
   /// Medium neutral for placeholder text and subtle icons.
-  static const Color neutral400 = Color(0xFF94A3B8);
+  static const Color neutral400 = .new(0xFF94A3B8);
 
   /// Medium-dark neutral for secondary text and icons.
-  static const Color neutral500 = Color(0xFF64748B);
+  static const Color neutral500 = .new(0xFF64748B);
 
   /// Dark neutral for tertiary text and muted elements.
-  static const Color neutral600 = Color(0xFF475569);
+  static const Color neutral600 = .new(0xFF475569);
 
   /// Darker neutral for inactive states and subtle backgrounds.
-  static const Color neutral700 = Color(0xFF334155);
+  static const Color neutral700 = .new(0xFF334155);
 
   /// Very dark neutral for dark mode backgrounds and heavy text.
-  static const Color neutral800 = Color(0xFF1E293B);
+  static const Color neutral800 = .new(0xFF1E293B);
 
   /// Darkest neutral for primary text in dark mode.
-  static const Color neutral900 = Color(0xFF0F172A);
+  static const Color neutral900 = .new(0xFF0F172A);
 
   // Semantic colors.
 
   /// Transparent color.
-  static const Color transparent = Color(0x00000000);
+  static const Color transparent = .new(0x00000000);
 }
 
 /// Border width tokens for consistent border styling.
@@ -161,15 +161,15 @@ class DesignElevation._() {
 class DesignDuration._() {
   /// Fast animation duration (150ms) for quick transitions and
   /// micro-interactions.
-  static const Duration fast = Duration(milliseconds: 150);
+  static const Duration fast = .new(milliseconds: 150);
 
   /// Normal animation duration (200ms) for standard transitions and
   /// state changes.
-  static const Duration normal = Duration(milliseconds: 200);
+  static const Duration normal = .new(milliseconds: 200);
 
   /// Slow animation duration (300ms) for deliberate animations and
   /// page transitions.
-  static const Duration slow = Duration(milliseconds: 300);
+  static const Duration slow = .new(milliseconds: 300);
 }
 
 /// Breakpoint tokens for responsive design.
@@ -207,22 +207,13 @@ class DesignInputSizes._() {
   static const double heightLg = 48;
 
   /// Small input padding for compact input fields.
-  static const EdgeInsets paddingSm = EdgeInsets.symmetric(
-    vertical: 6,
-    horizontal: 8,
-  );
+  static const EdgeInsets paddingSm = .symmetric(vertical: 6, horizontal: 8);
 
   /// Medium input padding for standard input fields.
-  static const EdgeInsets paddingMd = EdgeInsets.symmetric(
-    vertical: 8,
-    horizontal: 12,
-  );
+  static const EdgeInsets paddingMd = .symmetric(vertical: 8, horizontal: 12);
 
   /// Large input padding for prominent input fields.
-  static const EdgeInsets paddingLg = EdgeInsets.symmetric(
-    vertical: 12,
-    horizontal: 16,
-  );
+  static const EdgeInsets paddingLg = .symmetric(vertical: 12, horizontal: 16);
 }
 
 /// Shadow tokens for consistent elevation and depth effects.
@@ -231,14 +222,14 @@ class DesignInputSizes._() {
 /// and visual effects.
 class DesignShadows._() {
   /// Small shadow for subtle elevation and hover states.
-  static const BoxShadow sm = BoxShadow(
+  static const BoxShadow sm = .new(
     color: Color(0x0D000000),
     offset: Offset(0, 1),
     blurRadius: 2,
   );
 
   /// Medium shadow for cards and standard components.
-  static const BoxShadow md = BoxShadow(
+  static const BoxShadow md = .new(
     color: Color(0x1A000000),
     offset: Offset(0, 4),
     blurRadius: 6,
@@ -246,7 +237,7 @@ class DesignShadows._() {
   );
 
   /// Large shadow for floating elements and dropdowns.
-  static const BoxShadow lg = BoxShadow(
+  static const BoxShadow lg = .new(
     color: Color(0x1A000000),
     offset: Offset(0, 10),
     blurRadius: 15,
@@ -254,7 +245,7 @@ class DesignShadows._() {
   );
 
   /// Extra large shadow for modals and prominent overlays.
-  static const BoxShadow xl = BoxShadow(
+  static const BoxShadow xl = .new(
     color: Color(0x1A000000),
     offset: Offset(0, 20),
     blurRadius: 25,
@@ -262,14 +253,14 @@ class DesignShadows._() {
   );
 
   /// Inner shadow for inset effects and depth.
-  static const BoxShadow inner = BoxShadow(
+  static const BoxShadow inner = .new(
     color: Color(0x0F000000),
     offset: Offset(0, 2),
     blurRadius: 4,
   );
 
   /// Glass shadow for glassmorphism effects and translucent elements.
-  static const BoxShadow glass = BoxShadow(
+  static const BoxShadow glass = .new(
     color: Color(0x5F1F2687),
     offset: Offset(0, 8),
     blurRadius: 32,

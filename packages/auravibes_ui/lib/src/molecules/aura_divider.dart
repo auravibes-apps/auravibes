@@ -68,7 +68,7 @@ class AuraDivider extends StatelessWidget {
     final label = this.label;
     if (label != null) {
       return Container(
-        constraints: BoxConstraints(minHeight: dividerThickness),
+        constraints: .new(minHeight: dividerThickness),
         margin: EdgeInsetsDirectional.only(start: indent, end: endIndent),
         child: Row(
           children: [
@@ -79,7 +79,7 @@ class AuraDivider extends StatelessWidget {
               padding: EdgeInsets.symmetric(
                 horizontal: context.auraTheme.fromSpacing(.md),
               ),
-              child: AuraText(child: label, style: AuraTextStyle.caption),
+              child: AuraText(child: label, style: .caption),
             ),
             Expanded(
               child: Container(color: dividerColor, height: dividerThickness),

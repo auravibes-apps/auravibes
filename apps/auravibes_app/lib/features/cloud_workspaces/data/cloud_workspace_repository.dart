@@ -12,7 +12,7 @@ class const CloudWorkspaceRepository(final Client _client) {
 
   Future<CloudWorkspaceDetail> getWorkspaceDetail(int workspaceId) {
     return _client.cloudWorkspace.getWorkspaceDetail(
-      GetCloudWorkspaceDetailRequest(workspaceId: workspaceId),
+      .new(workspaceId: workspaceId),
     );
   }
 
@@ -20,16 +20,13 @@ class const CloudWorkspaceRepository(final Client _client) {
     int workspaceId,
   ) {
     return _client.cloudWorkspace.listWorkspaceInvites(
-      ListCloudWorkspaceInvitesRequest(workspaceId: workspaceId),
+      .new(workspaceId: workspaceId),
     );
   }
 
   Future<CloudWorkspaceSummary> createWorkspace(String name) {
     return _client.cloudWorkspace.createWorkspace(
-      CreateCloudWorkspaceRequest(
-        name: name,
-        requestId: const UuidV7().generate(),
-      ),
+      .new(name: name, requestId: const UuidV7().generate()),
     );
   }
 
@@ -40,7 +37,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedWorkspaceRevision,
   }) {
     return _client.cloudWorkspace.inviteMember(
-      InviteWorkspaceMemberRequest(
+      .new(
         workspaceId: workspaceId,
         email: email,
         role: role,
@@ -51,9 +48,7 @@ class const CloudWorkspaceRepository(final Client _client) {
   }
 
   Future<List<CloudWorkspaceMemberSummary>> listMembers(int workspaceId) {
-    return _client.cloudWorkspace.listMembers(
-      ListWorkspaceMembersRequest(workspaceId: workspaceId),
-    );
+    return _client.cloudWorkspace.listMembers(.new(workspaceId: workspaceId));
   }
 
   Future<void> updateMemberRole({
@@ -63,7 +58,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedMemberRevision,
   }) {
     return _client.cloudWorkspace.updateMemberRole(
-      UpdateWorkspaceMemberRoleRequest(
+      .new(
         workspaceId: workspaceId,
         userId: userId,
         role: role,
@@ -79,7 +74,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedMemberRevision,
   }) {
     return _client.cloudWorkspace.removeMember(
-      RemoveWorkspaceMemberRequest(
+      .new(
         workspaceId: workspaceId,
         userId: userId,
         requestId: const UuidV7().generate(),
@@ -94,7 +89,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedInviteRevision,
   }) {
     return _client.cloudWorkspace.renewInvite(
-      RenewWorkspaceInviteRequest(
+      .new(
         workspaceId: workspaceId,
         inviteId: inviteId,
         requestId: const UuidV7().generate(),
@@ -109,7 +104,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedInviteRevision,
   }) {
     return _client.cloudWorkspace.revokeInvite(
-      RevokeWorkspaceInviteRequest(
+      .new(
         workspaceId: workspaceId,
         inviteId: inviteId,
         requestId: const UuidV7().generate(),
@@ -123,7 +118,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedInviteRevision,
   }) {
     return _client.cloudWorkspace.acceptInvite(
-      AcceptWorkspaceInviteRequest(
+      .new(
         inviteId: inviteId,
         requestId: const UuidV7().generate(),
         expectedInviteRevision: expectedInviteRevision,
@@ -136,7 +131,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedInviteRevision,
   }) {
     return _client.cloudWorkspace.declineInvite(
-      DeclineWorkspaceInviteRequest(
+      .new(
         inviteId: inviteId,
         requestId: const UuidV7().generate(),
         expectedInviteRevision: expectedInviteRevision,
@@ -150,7 +145,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedWorkspaceRevision,
   }) {
     return _client.cloudWorkspace.renameWorkspace(
-      RenameCloudWorkspaceRequest(
+      .new(
         workspaceId: workspaceId,
         name: name,
         requestId: const UuidV7().generate(),
@@ -164,7 +159,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedWorkspaceRevision,
   }) {
     return _client.cloudWorkspace.leaveWorkspace(
-      LeaveCloudWorkspaceRequest(
+      .new(
         workspaceId: workspaceId,
         requestId: const UuidV7().generate(),
         expectedWorkspaceRevision: expectedWorkspaceRevision,
@@ -178,7 +173,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedWorkspaceRevision,
   }) {
     return _client.cloudWorkspace.transferOwnership(
-      TransferCloudWorkspaceOwnershipRequest(
+      .new(
         workspaceId: workspaceId,
         newOwnerUserId: newOwnerUserId,
         requestId: const UuidV7().generate(),
@@ -193,7 +188,7 @@ class const CloudWorkspaceRepository(final Client _client) {
     required int expectedWorkspaceRevision,
   }) {
     return _client.cloudWorkspace.deleteWorkspace(
-      DeleteCloudWorkspaceRequest(
+      .new(
         workspaceId: workspaceId,
         confirmationName: confirmationName,
         requestId: const UuidV7().generate(),

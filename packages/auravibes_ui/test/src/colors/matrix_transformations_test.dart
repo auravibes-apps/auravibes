@@ -47,9 +47,9 @@ void main() {
     test('transform applies matrix transformation', () {
       const v = Vector(1, 0, 0);
       const m = MatrixTransformation(
-        Vector(2, 0, 0),
-        Vector(0, 3, 0),
-        Vector(0, 0, 4),
+        .new(2, 0, 0),
+        .new(0, 3, 0),
+        .new(0, 0, 4),
       );
       final result = v.transform(m);
       expect(result.x, 2);
@@ -60,9 +60,9 @@ void main() {
     test('transform with full matrix', () {
       const v = Vector(1, 2, 3);
       const m = MatrixTransformation(
-        Vector(1, 0, 0),
-        Vector(0, 1, 0),
-        Vector(0, 0, 1),
+        .new(1, 0, 0),
+        .new(0, 1, 0),
+        .new(0, 0, 1),
       );
       final result = v.transform(m);
       expect(result.x, 1);
@@ -74,9 +74,9 @@ void main() {
   group('MatrixTransformation', () {
     test('creates from three row vectors', () {
       const m = MatrixTransformation(
-        Vector(1, 2, 3),
-        Vector(4, 5, 6),
-        Vector(7, 8, 9),
+        .new(1, 2, 3),
+        .new(4, 5, 6),
+        .new(7, 8, 9),
       );
       expect(m.first.x, 1);
       expect(m.second.y, 5);
@@ -85,9 +85,9 @@ void main() {
 
     test('transforms vector correctly', () {
       const m = MatrixTransformation(
-        Vector(1, 2, 3),
-        Vector(4, 5, 6),
-        Vector(7, 8, 9),
+        .new(1, 2, 3),
+        .new(4, 5, 6),
+        .new(7, 8, 9),
       );
       const v = Vector(1, 0, 0);
       final result = m.transform(v);
@@ -98,14 +98,14 @@ void main() {
 
     test('multiply factory creates product of two matrices', () {
       const a = MatrixTransformation(
-        Vector(1, 0, 0),
-        Vector(0, 1, 0),
-        Vector(0, 0, 1),
+        .new(1, 0, 0),
+        .new(0, 1, 0),
+        .new(0, 0, 1),
       );
       const b = MatrixTransformation(
-        Vector(2, 0, 0),
-        Vector(0, 3, 0),
-        Vector(0, 0, 4),
+        .new(2, 0, 0),
+        .new(0, 3, 0),
+        .new(0, 0, 4),
       );
       final result = MatrixTransformation.multiply(a, b);
       expect(result.first.x, 2);
@@ -115,14 +115,14 @@ void main() {
 
     test('operator * multiplies matrices', () {
       const a = MatrixTransformation(
-        Vector(1, 0, 0),
-        Vector(0, 1, 0),
-        Vector(0, 0, 1),
+        .new(1, 0, 0),
+        .new(0, 1, 0),
+        .new(0, 0, 1),
       );
       const b = MatrixTransformation(
-        Vector(2, 0, 0),
-        Vector(0, 3, 0),
-        Vector(0, 0, 4),
+        .new(2, 0, 0),
+        .new(0, 3, 0),
+        .new(0, 0, 4),
       );
       final result = a * b;
       expect(result.first.x, 2);

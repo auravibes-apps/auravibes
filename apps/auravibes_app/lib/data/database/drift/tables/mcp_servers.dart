@@ -34,7 +34,7 @@ McpTransportType _transportTypeFromJson(Object? json) {
 class McpServers extends Table with TableMixin {
   /// Reference to the workspace this MCP server belongs to.
   TextColumn get workspaceId =>
-      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
   /// User-friendly name for the MCP server.
   TextColumn get name => text()();
@@ -49,7 +49,7 @@ class McpServers extends Table with TableMixin {
   TextColumn get serviceConnectionId => text().nullable().references(
     ServiceConnections,
     #id,
-    onDelete: KeyAction.setNull,
+    onDelete: .setNull,
   )();
 
   /// Optional description of what this MCP server provides.

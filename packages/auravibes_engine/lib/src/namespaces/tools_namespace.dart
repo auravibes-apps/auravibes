@@ -7,13 +7,9 @@ class ToolsNamespace<TTool extends Object>({
   required final StopPendingToolCallsProvider _stopPending,
   required AgentToolResumeProvider resume,
 }) {
-  final ApproveToolCallService<TTool> _approve = ApproveToolCallService(
-    provider: approvals,
-  );
-  final SkipToolCallService _skip = SkipToolCallService(provider: skips);
-  final AgentToolResumeService _resume = AgentToolResumeService(
-    provider: resume,
-  );
+  final ApproveToolCallService<TTool> _approve = .new(provider: approvals);
+  final SkipToolCallService _skip = .new(provider: skips);
+  final AgentToolResumeService _resume = .new(provider: resume);
 
   Future<void> approve({
     required String toolCallId,

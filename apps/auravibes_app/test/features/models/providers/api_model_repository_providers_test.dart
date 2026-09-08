@@ -132,7 +132,7 @@ void main() {
         const ApiModelProviderEntity(
           id: 'openai',
           name: 'OpenAI',
-          type: ModelProvidersType.openai,
+          type: .openai,
         ),
       ];
       final container = ProviderContainer(
@@ -257,7 +257,7 @@ void main() {
           apiModelRepositoryProvider.overrideWithValue(
             _FakeApiModelRepository(),
           ),
-          modelApiServiceProvider.overrideWithValue(ModelApiService()),
+          modelApiServiceProvider.overrideWithValue(.new()),
         ],
       );
       addTearDown(container.dispose);
@@ -281,7 +281,7 @@ void main() {
       addTearDown(container.dispose);
 
       final _ = container.read(modelSyncServiceProvider);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(apiService.fetchCount, 0);
     });

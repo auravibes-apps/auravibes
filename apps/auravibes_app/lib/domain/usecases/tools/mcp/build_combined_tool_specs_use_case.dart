@@ -105,7 +105,7 @@ class const BuildCombinedToolSpecsUseCase({
     final mcpSlug = legacyTarget?.mcpSlug ?? mcpServerId;
 
     return ToolCatalogCandidate.external(
-      spec: ToolSpec(
+      spec: .new(
         name: 'mcp_${workspaceTool.toolId}',
         description: originalSpec.description,
         inputJsonSchema: originalSpec.inputJsonSchema,

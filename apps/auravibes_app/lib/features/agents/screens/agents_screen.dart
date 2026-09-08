@@ -68,7 +68,7 @@ class const _AgentsList({
             const Icon(Icons.smart_toy_outlined, size: 48),
             const AuraText(
               child: TextLocale(LocaleKeys.agents_empty_title),
-              style: AuraTextStyle.heading4,
+              style: .heading4,
             ),
             const AuraText(child: TextLocale(LocaleKeys.agents_empty_subtitle)),
             AuraButton(
@@ -76,7 +76,7 @@ class const _AgentsList({
               child: const TextLocale(LocaleKeys.agents_create),
             ),
           ],
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
         ),
       );
     }
@@ -95,7 +95,7 @@ class const _AgentsList({
                   if (!agent.isEnabled)
                     AuraBadge.text(
                       child: const TextLocale(LocaleKeys.agents_disabled_label),
-                      variant: AuraBadgeVariant.neutral,
+                      variant: .neutral,
                     ),
                 ],
               ),
@@ -106,18 +106,18 @@ class const _AgentsList({
                     context: context,
                   ),
                 ),
-                style: AuraTextStyle.bodySmall,
+                style: .bodySmall,
               ),
               AuraText(
                 child: Text(agent.visibility.localizedLabel(context)),
-                style: AuraTextStyle.bodySmall,
+                style: .bodySmall,
               ),
             ],
             spacing: .xs,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
           ),
           onTap: () => _openAgent(context, agent.id),
-          variant: AuraTileVariant.ghost,
+          variant: .ghost,
           leading: const AuraIcon(Icons.smart_toy_outlined),
           trailing: PopupMenuButton<String>(
             itemBuilder: (context) => [
@@ -189,13 +189,13 @@ class const _AgentsList({
 extension _AgentVisibilityLabel on AgentVisibility {
   String localizedLabel(BuildContext context) {
     return switch (this) {
-      AgentVisibility.chatSelector =>
-        LocaleKeys.agents_visibility_chat_selector.tr(context: context),
-      AgentVisibility.subAgentList =>
-        LocaleKeys.agents_visibility_sub_agent_list.tr(context: context),
-      AgentVisibility.both => LocaleKeys.agents_visibility_both.tr(
+      .chatSelector => LocaleKeys.agents_visibility_chat_selector.tr(
         context: context,
       ),
+      .subAgentList => LocaleKeys.agents_visibility_sub_agent_list.tr(
+        context: context,
+      ),
+      .both => LocaleKeys.agents_visibility_both.tr(context: context),
     };
   }
 }

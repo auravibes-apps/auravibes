@@ -17,7 +17,7 @@ void main() {
       id: 'resolved',
       name: 'tool',
       argumentsRaw: '{}',
-      lifecycle: AgentToolCallLifecycle.success,
+      lifecycle: .success,
     );
 
     expect(pending.isPending, isTrue);
@@ -55,7 +55,7 @@ void main() {
                 id: 'old-failed',
                 name: 'fail_once',
                 argumentsRaw: '{}',
-                lifecycle: AgentToolCallLifecycle.failed,
+                lifecycle: .failed,
               ),
             ],
           ),
@@ -107,7 +107,7 @@ void main() {
                 id: 'old-failed',
                 name: 'fail_once',
                 argumentsRaw: '{}',
-                lifecycle: AgentToolCallLifecycle.failed,
+                lifecycle: .failed,
               ),
             ],
           ),

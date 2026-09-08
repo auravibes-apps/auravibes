@@ -5,7 +5,6 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
@@ -30,10 +29,7 @@ void main() {
     );
     addTearDown(database.close);
     final workspace = await WorkspaceRepository(database).createWorkspace(
-      const WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      ),
+      const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
     final session = WorkspaceSession(
       LocalWorkspaceRef(localWorkspaceId: workspace.id),

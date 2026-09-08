@@ -106,7 +106,7 @@ class SkillCredentialsRepository({
         : await _encryptionService.encrypt(jsonEncode(split.secret));
     final keySuffix = _keySuffix(split.secret.values);
     final row = await _dao.createCredential(
-      ServiceConnectionsCompanion(
+      .new(
         name: Value(credential.name),
         serviceId: Value(credential.credentialDefinitionId),
         kind: const Value(ServiceConnectionKindTable.skillCredential),
@@ -153,7 +153,7 @@ class SkillCredentialsRepository({
         : await _encryptionService.encrypt(jsonEncode(nextSecrets));
     final updated = await _dao.updateCredential(
       credentialId,
-      ServiceConnectionsCompanion(
+      .new(
         name: Value.absentIfNull(credential.name),
         encryptedAuthValue: Value(encryptedAttributes),
         keySuffix: Value(_keySuffix(nextSecrets.values)),

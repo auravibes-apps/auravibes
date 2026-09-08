@@ -11,7 +11,7 @@ void main() {
     });
 
     test('getTool returns tool for url type', () {
-      final tool = NativeToolService.getTool(NativeToolType.url);
+      final tool = NativeToolService.getTool(.url);
       expect(tool, isNotNull);
       expect(
         (tool ?? fail('Expected tool to be non-null')).type,

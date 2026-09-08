@@ -77,10 +77,9 @@ class AuraContainer extends StatelessWidget {
       alignment: alignment,
       decoration: BoxDecoration(
         color: switch (variant) {
-          AuraContainerVariant.surface => auraTheme.colors.surface,
-          AuraContainerVariant.surfaceVariant =>
-            auraTheme.colors.surfaceVariant,
-          AuraContainerVariant.transparent => DesignColors.transparent,
+          .surface => auraTheme.colors.surface,
+          .surfaceVariant => auraTheme.colors.surfaceVariant,
+          .transparent => DesignColors.transparent,
         },
         border: border,
         borderRadius: borderRadius != null
@@ -110,13 +109,13 @@ class AuraContainer extends StatelessWidget {
 
   List<BoxShadow> _getBoxShadow() {
     return switch (shadow) {
-      AuraContainerShadow.none => [],
-      AuraContainerShadow.sm => [DesignShadows.sm],
-      AuraContainerShadow.md => [DesignShadows.md],
-      AuraContainerShadow.lg => [DesignShadows.lg],
-      AuraContainerShadow.xl => [DesignShadows.xl],
-      AuraContainerShadow.inner => [DesignShadows.inner],
-      AuraContainerShadow.glass => [DesignShadows.glass],
+      .none => [],
+      .sm => [DesignShadows.sm],
+      .md => [DesignShadows.md],
+      .lg => [DesignShadows.lg],
+      .xl => [DesignShadows.xl],
+      .inner => [DesignShadows.inner],
+      .glass => [DesignShadows.glass],
     };
   }
 }

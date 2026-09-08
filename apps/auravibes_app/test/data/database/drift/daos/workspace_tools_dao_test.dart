@@ -24,7 +24,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -41,7 +41,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       final ws = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
@@ -63,7 +63,7 @@ void main() {
             : const Value.absent(),
         toolId: toolId,
         config: config != null ? Value(config) : const Value.absent(),
-        isEnabled: Value(isEnabled),
+        isEnabled: .new(isEnabled),
       );
 
       await fixture.database.workspaceToolsDao.insertToolsBatch([companion]);
@@ -190,7 +190,7 @@ void main() {
 
     test('getEnabledToolByToolName returns enabled tool in group', () async {
       final group = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'G',
           permissions: PermissionAccess.ask,
@@ -199,7 +199,7 @@ void main() {
       await fixture.database.workspaceToolsDao.insertToolsBatch([
         ToolsCompanion.insert(
           workspaceId: workspaceId,
-          workspaceToolsGroupId: Value(group.id),
+          workspaceToolsGroupId: .new(group.id),
           toolId: 'mcp_tool',
           isEnabled: const Value(true),
         ),
@@ -297,10 +297,7 @@ void main() {
     test('setWorkspaceToolPermission updates permission', () async {
       final created = await seedTool(toolId: 'perm');
       final updated = await fixture.database.workspaceToolsDao
-          .setWorkspaceToolPermission(
-            created.id,
-            permission: PermissionAccess.granted,
-          );
+          .setWorkspaceToolPermission(created.id, permission: .granted);
       expect(updated.permissions, equals(PermissionAccess.granted));
     });
 
@@ -333,7 +330,7 @@ void main() {
 
     test('deleteToolsByGroupId removes tools in group', () async {
       final group = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'G',
           permissions: PermissionAccess.ask,
@@ -342,12 +339,12 @@ void main() {
       await fixture.database.workspaceToolsDao.insertToolsBatch([
         ToolsCompanion.insert(
           workspaceId: workspaceId,
-          workspaceToolsGroupId: Value(group.id),
+          workspaceToolsGroupId: .new(group.id),
           toolId: 'gt1',
         ),
         ToolsCompanion.insert(
           workspaceId: workspaceId,
-          workspaceToolsGroupId: Value(group.id),
+          workspaceToolsGroupId: .new(group.id),
           toolId: 'gt2',
         ),
       ]);
@@ -358,7 +355,7 @@ void main() {
 
     test('getToolsByGroupId returns tools in group', () async {
       final group = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'G',
           permissions: PermissionAccess.ask,
@@ -367,7 +364,7 @@ void main() {
       await fixture.database.workspaceToolsDao.insertToolsBatch([
         ToolsCompanion.insert(
           workspaceId: workspaceId,
-          workspaceToolsGroupId: Value(group.id),
+          workspaceToolsGroupId: .new(group.id),
           toolId: 'gt1',
         ),
       ]);

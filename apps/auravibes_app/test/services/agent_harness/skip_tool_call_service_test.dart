@@ -1,5 +1,4 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/agent_harness/skip_tool_call_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,11 +24,11 @@ void main() {
       id: messageId,
       conversationId: 'conversation-1',
       content: 'assistant',
-      messageType: MessageType.text,
+      messageType: .text,
       isUser: false,
-      status: MessageStatus.sent,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      status: .sent,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       metadata: const MessageMetadataEntity(
         toolCalls: [
           MessageToolCallEntity(
@@ -41,7 +40,7 @@ void main() {
             id: 'tool-2',
             name: 'url',
             argumentsRaw: '{}',
-            resultStatus: ToolCallResultStatus.success,
+            resultStatus: .success,
           ),
         ],
       ),
@@ -129,7 +128,7 @@ void main() {
                 id: 'tool-1',
                 name: 'calculator',
                 argumentsRaw: '{}',
-                resultStatus: ToolCallResultStatus.success,
+                resultStatus: .success,
               ),
             ],
           ),

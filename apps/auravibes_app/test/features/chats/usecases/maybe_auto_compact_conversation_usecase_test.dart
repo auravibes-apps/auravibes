@@ -82,7 +82,7 @@ class MaybeAutoCompactFixture {
     _mockApiModelRepo = mockApiModelRepo;
     _mockShouldCompact = mockShouldCompact;
     _mockCompact = mockCompact;
-    _usecase = MaybeAutoCompactConversationUsecase(
+    _usecase = .new(
       compactConversationUsecase: mockCompact,
       conversationRepository: mockConvRepo,
       modelSelectionStore: (_) async => mockModelRepo,
@@ -95,23 +95,23 @@ class MaybeAutoCompactFixture {
 final _modelSelection = WorkspaceModelSelectionEntity(
   id: 'sel-1',
   modelId: 'model-1',
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
   modelConnectionId: 'conn-1',
 );
 
 const _provider = ApiModelProviderEntity(
   id: 'provider-1',
   name: 'Test Provider',
-  type: ModelProvidersType.openai,
+  type: .openai,
 );
 
 final _connection = ModelConnectionEntity(
   id: 'conn-1',
   name: 'Test Conn',
   modelId: 'model-1',
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
   workspaceId: 'ws-1',
   hasKey: true,
 );
@@ -134,9 +134,9 @@ ApiModelEntity _makeModel() => const ApiModelEntity(
 
 CompactionExecutionState _makeExecState(String id) => CompactionExecutionState(
   conversationId: id,
-  trigger: CompactionTrigger.auto,
-  startedAt: DateTime(2026),
-  status: CompactionExecutionStatus.success,
+  trigger: .auto,
+  startedAt: .new(2026),
+  status: .success,
 );
 
 ConversationEntity _makeConv({
@@ -149,8 +149,8 @@ ConversationEntity _makeConv({
     title: 'Test',
     workspaceId: workspaceId,
     isPinned: false,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
     modelId: modelId,
   );
 }
@@ -215,8 +215,8 @@ void main() {
   test('triggers compaction when decision says shouldCompact', () async {
     const decision = CompactionDecision(
       shouldCompact: true,
-      reason: CompactionDecisionReason.eligible,
-      trigger: CompactionTrigger.auto,
+      reason: .eligible,
+      trigger: .auto,
     );
 
     when(() => fixture.mockConvRepo.getConversationById('conv-1'))
@@ -262,8 +262,8 @@ void main() {
   test('skips compaction when decision says shouldCompact is false', () async {
     const decision = CompactionDecision(
       shouldCompact: false,
-      reason: CompactionDecisionReason.disabled,
-      trigger: CompactionTrigger.auto,
+      reason: .disabled,
+      trigger: .auto,
     );
 
     when(() => fixture.mockConvRepo.getConversationById('conv-1'))
@@ -303,8 +303,8 @@ void main() {
   test('uses default 4096 maxOutputTokens when apiModel is null', () async {
     const decision = CompactionDecision(
       shouldCompact: false,
-      reason: CompactionDecisionReason.disabled,
-      trigger: CompactionTrigger.auto,
+      reason: .disabled,
+      trigger: .auto,
     );
 
     when(() => fixture.mockConvRepo.getConversationById('conv-1'))

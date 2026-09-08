@@ -127,7 +127,7 @@ Future<void> _createWorkspace(WidgetTester tester, String name) async {
 }
 
 class _IntroFixture {
-  new() : this._(AppDatabase(connection: NativeDatabase.memory()));
+  new() : this._(.new(connection: NativeDatabase.memory()));
 
   new _(this.database)
     : container = ProviderContainer(

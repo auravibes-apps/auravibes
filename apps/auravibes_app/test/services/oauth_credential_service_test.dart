@@ -5,7 +5,6 @@ import 'package:auravibes_app/data/database/drift/tables/service_connections.dar
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
@@ -42,15 +41,12 @@ void main() {
       final row = await database
           .into(database.workspaces)
           .insertReturning(
-            WorkspacesCompanion.insert(
-              name: 'Workspace',
-              type: WorkspaceType.local,
-            ),
+            WorkspacesCompanion.insert(name: 'Workspace', type: .local),
           );
 
       return _Fixture(
         database: database,
-        encryption: EncryptionService(_FakeSecretKeyManager()),
+        encryption: .new(_FakeSecretKeyManager()),
         workspaceId: row.id,
       );
     }
@@ -65,9 +61,7 @@ void main() {
           workspaceId: fixture.workspaceId,
           profile: const McpServiceConnectionProfile(
             name: 'Server',
-            authenticationType: McpAuthenticationType.bearerToken(
-              bearerToken: 'plain-bearer',
-            ),
+            authenticationType: .bearerToken(bearerToken: 'plain-bearer'),
           ),
         );
         if (credentialId == null) fail('Bearer credential was not created.');
@@ -122,10 +116,10 @@ void main() {
       final credentialId = await fixture.serviceConnectionRepository
           .createMcpServiceConnection(
             workspaceId: fixture.workspaceId,
-            profile: McpServiceConnectionProfile(
+            profile: .new(
               name: 'Server',
               authenticationType: McpAuthenticationType.oauth(
-                token: OAuthTokenEntity(
+                token: .new(
                   accessToken: 'old-access',
                   issuedAt: DateTime.now().subtract(const Duration(hours: 2)),
                   refreshToken: 'old-refresh',
@@ -173,10 +167,10 @@ void main() {
       final credentialId = await fixture.serviceConnectionRepository
           .createMcpServiceConnection(
             workspaceId: fixture.workspaceId,
-            profile: McpServiceConnectionProfile(
+            profile: .new(
               name: 'Server',
               authenticationType: McpAuthenticationType.oauth(
-                token: OAuthTokenEntity(
+                token: .new(
                   accessToken: 'old-access',
                   issuedAt: DateTime.now(),
                   refreshToken: 'stable-refresh',
@@ -192,7 +186,7 @@ void main() {
 
       await service.persistOAuthTokenUpdate(
         serviceConnectionId: credentialId,
-        token: OAuthTokenEntity(
+        token: .new(
           accessToken: 'updated-access',
           issuedAt: DateTime.now(),
           expiresIn: 3600,
@@ -229,9 +223,7 @@ void main() {
               workspaceId: fixture.workspaceId,
               profile: const McpServiceConnectionProfile(
                 name: 'Server',
-                authenticationType: McpAuthenticationType.bearerToken(
-                  bearerToken: 'plain-bearer',
-                ),
+                authenticationType: .bearerToken(bearerToken: 'plain-bearer'),
               ),
             );
         if (credentialId == null) fail('Bearer credential was not created.');
@@ -239,7 +231,7 @@ void main() {
             await (fixture.database.update(
               fixture.database.serviceConnections,
             )..where((tbl) => tbl.id.equals(credentialId))).write(
-              const ServiceConnectionsCompanion(isEnabled: Value(false)),
+              const ServiceConnectionsCompanion(isEnabled: .new(false)),
             );
 
         final empty = await service.resolveMcpAuthentication('');
@@ -261,9 +253,7 @@ void main() {
             workspaceId: fixture.workspaceId,
             profile: const McpServiceConnectionProfile(
               name: 'Server',
-              authenticationType: McpAuthenticationType.bearerToken(
-                bearerToken: 'plain-bearer',
-              ),
+              authenticationType: .bearerToken(bearerToken: 'plain-bearer'),
             ),
           );
       if (credentialId == null) fail('Bearer credential was not created.');
@@ -288,10 +278,10 @@ void main() {
         final credentialId = await fixture.serviceConnectionRepository
             .createMcpServiceConnection(
               workspaceId: fixture.workspaceId,
-              profile: McpServiceConnectionProfile(
+              profile: .new(
                 name: 'Server',
                 authenticationType: McpAuthenticationType.oauth(
-                  token: OAuthTokenEntity(
+                  token: .new(
                     accessToken: 'access-token',
                     issuedAt: DateTime.now(),
                     refreshToken: 'refresh-token',
@@ -325,10 +315,10 @@ void main() {
       final credentialId = await fixture.serviceConnectionRepository
           .createMcpServiceConnection(
             workspaceId: fixture.workspaceId,
-            profile: McpServiceConnectionProfile(
+            profile: .new(
               name: 'Server',
               authenticationType: McpAuthenticationType.oauth(
-                token: OAuthTokenEntity(
+                token: .new(
                   accessToken: 'access-token',
                   issuedAt: DateTime.now(),
                   refreshToken: 'refresh-token',
@@ -531,9 +521,7 @@ void main() {
             workspaceId: fixture.workspaceId,
             profile: const McpServiceConnectionProfile(
               name: 'Server',
-              authenticationType: McpAuthenticationType.bearerToken(
-                bearerToken: 'plain-bearer',
-              ),
+              authenticationType: .bearerToken(bearerToken: 'plain-bearer'),
             ),
           );
       if (mcpCredentialId == null) fail('Bearer credential was not created.');
@@ -543,8 +531,8 @@ void main() {
             ServiceConnectionsCompanion.insert(
               name: 'Model',
               serviceId: 'openai',
-              kind: ServiceConnectionKindTable.modelProvider,
-              authenticationType: ServiceAuthenticationTypeTable.apiKey,
+              kind: .modelProvider,
+              authenticationType: .apiKey,
               encryptedAuthValue: const Value('encrypted'),
               workspaceId: fixture.workspaceId,
             ),
@@ -581,13 +569,13 @@ Future<String> _insertOAuthCredential(
         ServiceConnectionsCompanion.insert(
           name: 'OAuth',
           serviceId: 'oauth',
-          kind: ServiceConnectionKindTable.mcpServer,
-          authenticationType: ServiceAuthenticationTypeTable.oauth2,
-          encryptedAuthValue: Value(encrypted),
-          metadataJson: Value(
+          kind: .mcpServer,
+          authenticationType: .oauth2,
+          encryptedAuthValue: .new(encrypted),
+          metadataJson: .new(
             ServiceConnectionAuthCodec.encodeMetadata(metadata),
           ),
-          expiresAt: Value(expiresAt),
+          expiresAt: .new(expiresAt),
           workspaceId: fixture.workspaceId,
         ),
       );

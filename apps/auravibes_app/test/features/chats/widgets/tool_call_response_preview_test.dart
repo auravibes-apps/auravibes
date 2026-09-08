@@ -12,7 +12,7 @@ void main() {
         builder: (context) {
           return MaterialApp(
             home: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: Scaffold(
                 body: ToolCallResponsePreview(
                   toolName: toolName,

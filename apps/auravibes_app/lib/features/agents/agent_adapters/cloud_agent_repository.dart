@@ -65,8 +65,8 @@ class CloudAgentRepository({
     final response = await patch(
       requestId: const UuidV7().generate(),
       operations: [
-        _operation(WorkspacePatchOperationKind.create, id, agent),
-        ..._associations(id, agent.skills, WorkspacePatchOperationKind.create),
+        _operation(.create, id, agent),
+        ..._associations(id, agent.skills, .create),
       ],
     );
 
@@ -89,17 +89,13 @@ class CloudAgentRepository({
       requestId: const UuidV7().generate(),
       operations: [
         _operation(
-          WorkspacePatchOperationKind.update,
+          .update,
           agentId,
           agent,
           expectedRevision: _revisions[agentId],
         ),
         ..._deleteAssociations(associations),
-        ..._associations(
-          agentId,
-          agent.skills,
-          WorkspacePatchOperationKind.create,
-        ),
+        ..._associations(agentId, agent.skills, .create),
       ],
     );
     final resource = response.resources.singleWhere(
@@ -122,8 +118,8 @@ class CloudAgentRepository({
       operations: [
         ..._deleteAssociations(associations),
         WorkspacePatchOperation(
-          operation: WorkspacePatchOperationKind.delete,
-          resourceKind: WorkspaceResourceKind.agent,
+          operation: .delete,
+          resourceKind: .agent,
           resourceId: agentId,
           fieldMask: const [],
           expectedRevision: _revisions[agentId],
@@ -162,7 +158,7 @@ class CloudAgentRepository({
 
     return WorkspacePatchOperation(
       operation: kind,
-      resourceKind: WorkspaceResourceKind.agent,
+      resourceKind: .agent,
       resourceId: id,
       data: jsonEncode({'id': id, ...data}),
       fieldMask: const [],
@@ -199,7 +195,7 @@ class CloudAgentRepository({
       };
       yield WorkspacePatchOperation(
         operation: operation,
-        resourceKind: WorkspaceResourceKind.agentAssociation,
+        resourceKind: .agentAssociation,
         resourceId: const UuidV7().generate(),
         data: jsonEncode({'agentId': agentId, ...data}),
         fieldMask: const [],
@@ -211,8 +207,8 @@ class CloudAgentRepository({
     Iterable<WorkspaceResource> associations,
   ) => associations.map(
     (resource) => WorkspacePatchOperation(
-      operation: WorkspacePatchOperationKind.delete,
-      resourceKind: WorkspaceResourceKind.agentAssociation,
+      operation: .delete,
+      resourceKind: .agentAssociation,
       resourceId: resource.resourceId,
       fieldMask: const [],
       expectedRevision: resource.revision,

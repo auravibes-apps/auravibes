@@ -56,10 +56,8 @@ class AuraScreen extends StatelessWidget {
     }
 
     content = switch (variant) {
-      AuraScreenVariation.standard => content,
-      AuraScreenVariation.aurora => Stack(
-        children: [const _AuroraBackground(), content],
-      ),
+      .standard => content,
+      .aurora => Stack(children: [const _AuroraBackground(), content]),
     };
 
     return Scaffold(
@@ -126,7 +124,7 @@ class const _AuroraBackground() extends StatelessWidget {
         ),
         // Blur Mesh.
         BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: _blurRadius, sigmaY: _blurRadius),
+          filter: .blur(sigmaX: _blurRadius, sigmaY: _blurRadius),
           child: Container(color: DesignColors.transparent),
         ),
       ],
@@ -144,7 +142,7 @@ class const _Blob({required final Color color, required final double size})
           colors: [color, color.withAlpha(0)],
           stops: const [0.0, 1.0],
         ),
-        shape: BoxShape.circle,
+        shape: .circle,
       ),
       width: size,
       height: size,

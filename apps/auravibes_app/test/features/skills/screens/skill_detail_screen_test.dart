@@ -4,10 +4,8 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
@@ -86,10 +84,7 @@ void main() {
     addTearDown(appSkillDatabase.close);
     final appSkillWorkspace = await WorkspaceRepository(appSkillDatabase)
         .createWorkspace(
-          const WorkspaceToCreate(
-            name: 'Test Workspace',
-            type: WorkspaceType.local,
-          ),
+          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
         );
     final appSkillSession = WorkspaceSession(
       LocalWorkspaceRef(localWorkspaceId: appSkillWorkspace.id),
@@ -113,10 +108,7 @@ void main() {
     );
     final selectedCredentialWorkspace =
         await WorkspaceRepository(selectedCredentialDatabase).createWorkspace(
-          const WorkspaceToCreate(
-            name: 'Test Workspace',
-            type: WorkspaceType.local,
-          ),
+          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
         );
     final selectedCredentialSession = WorkspaceSession(
       LocalWorkspaceRef(localWorkspaceId: selectedCredentialWorkspace.id),
@@ -145,7 +137,7 @@ void main() {
     final skillWithDefinition =
         await SkillsRepository(selectedCredentialDatabase).createSkill(
           selectedCredentialWorkspace.id,
-          SkillToCreate(
+          .new(
             kind: SkillKind.template,
             title: 'TheCatAPI',
             description: 'Fetch cat images.',
@@ -159,7 +151,7 @@ void main() {
           encryptionService: selectedEncryptionService,
         ).createCredential(
           selectedCredentialWorkspace.id,
-          SkillCredentialToCreate(
+          .new(
             credentialDefinitionId: definition.id,
             name: 'TheCatAPI Key',
             attributes: const {'apiKey': 'secret-value'},
@@ -177,7 +169,7 @@ void main() {
     final optionalSkill = await SkillsRepository(selectedCredentialDatabase)
         .createSkill(
           selectedCredentialWorkspace.id,
-          SkillToCreate(
+          .new(
             kind: SkillKind.template,
             title: 'Optional API Skill',
             description: 'Can run without credentials.',
@@ -192,10 +184,7 @@ void main() {
     addTearDown(staleCredentialDatabase.close);
     final staleCredentialWorkspace =
         await WorkspaceRepository(staleCredentialDatabase).createWorkspace(
-          const WorkspaceToCreate(
-            name: 'Test Workspace',
-            type: WorkspaceType.local,
-          ),
+          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
         );
     final staleCredentialSession = WorkspaceSession(
       LocalWorkspaceRef(localWorkspaceId: staleCredentialWorkspace.id),
@@ -215,7 +204,7 @@ void main() {
         await SkillsRepository(staleCredentialDatabase).createSkill(
           staleCredentialWorkspace.id,
           const SkillToCreate(
-            kind: SkillKind.template,
+            kind: .template,
             title: 'Broken Skill',
             description: 'Has a stale credential definition id.',
             content: 'Use credentials.',
@@ -281,7 +270,7 @@ void main() {
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {
-  final SecretKey _key = SecretKey(List<int>.filled(32, 7));
+  final SecretKey _key = .new(List<int>.filled(32, 7));
 
   @override
   Future<SecretKey> getOrCreateSecretKey() async => _key;

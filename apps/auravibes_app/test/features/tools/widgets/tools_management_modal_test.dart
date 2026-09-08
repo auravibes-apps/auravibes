@@ -55,7 +55,7 @@ void main() {
         await tester.pumpWidget(
           TestableApp(
             child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: const ToolsManagementModal(workspaceId: 'ws-1'),
             ),
             overrides: [

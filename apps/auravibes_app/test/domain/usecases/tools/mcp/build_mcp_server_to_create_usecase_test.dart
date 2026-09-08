@@ -15,7 +15,7 @@ void main() {
       name: 'Server',
       url: 'https://example.com',
       transport: McpTransportTypeSSE(),
-      authenticationType: McpAuthenticationTypeOptions.none,
+      authenticationType: .none,
       bearerToken: '',
     );
 
@@ -30,7 +30,7 @@ void main() {
       name: 'Server',
       url: 'https://example.com',
       transport: McpTransportTypeSSE(),
-      authenticationType: McpAuthenticationTypeOptions.bearerToken,
+      authenticationType: .bearerToken,
       bearerToken: 'secret',
     );
 
@@ -45,7 +45,7 @@ void main() {
       name: 'Server',
       url: 'https://example.com',
       transport: McpTransportTypeSSE(),
-      authenticationType: McpAuthenticationTypeOptions.bearerToken,
+      authenticationType: .bearerToken,
       bearerToken: null,
     );
 
@@ -58,7 +58,7 @@ void main() {
       name: 'Server',
       url: 'https://invalid-oauth.example.com',
       transport: McpTransportTypeSSE(),
-      authenticationType: McpAuthenticationTypeOptions.oauth,
+      authenticationType: .oauth,
       bearerToken: null,
     );
 

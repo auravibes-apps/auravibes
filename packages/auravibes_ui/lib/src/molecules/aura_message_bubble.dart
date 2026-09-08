@@ -79,7 +79,7 @@ class AuraMessageBubble extends StatelessWidget {
 
     final bubble = GestureDetector(
       child: Container(
-        constraints: BoxConstraints(
+        constraints: .new(
           maxWidth: maxWidth ?? MediaQuery.sizeOf(context).width * 0.75,
         ),
         margin: manageAlignment
@@ -101,7 +101,7 @@ class AuraMessageBubble extends StatelessWidget {
                 borderRadius: context.auraTheme.fromBorderRadius(.xl),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 children: [
                   _AuraMessageBubbleContent(
                     content: content,
@@ -149,12 +149,12 @@ class AuraMessageBubble extends StatelessWidget {
 
   EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
     return switch (contentType) {
-      AuraMessageContentType.text => EdgeInsets.symmetric(
+      .text => EdgeInsets.symmetric(
         vertical: spacing.sm,
         horizontal: spacing.md,
       ),
-      AuraMessageContentType.image => EdgeInsets.all(spacing.xs),
-      AuraMessageContentType.file => EdgeInsets.all(spacing.sm),
+      .image => EdgeInsets.all(spacing.xs),
+      .file => EdgeInsets.all(spacing.sm),
     };
   }
 
@@ -171,9 +171,9 @@ class AuraMessageBubble extends StatelessWidget {
     return BoxDecoration(
       color: errorColor ?? baseColor,
       border: status == AuraMessageDeliveryStatus.error
-          ? Border.fromBorderSide(BorderSide(color: auraColors.error))
+          ? Border.fromBorderSide(.new(color: auraColors.error))
           : null,
-      borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+      borderRadius: BorderRadius.all(.circular(borderRadius)),
       boxShadow: [
         if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
       ],
@@ -209,26 +209,26 @@ class const _AuraMessageBubbleContent({
     final typography = context.auraTheme.typography;
 
     return switch (contentType) {
-      AuraMessageContentType.text => GptMarkdown(
+      .text => GptMarkdown(
         content,
         key: ValueKey(content),
-        style: TextStyle(
+        style: .new(
           color: textColor,
           fontSize: typography.fontSizeBase,
           height: typography.lineHeightBase,
           fontFamily: typography.bodyFontFamily,
         ),
       ),
-      AuraMessageContentType.image => ClipRRect(
+      .image => ClipRRect(
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
+          .circular(context.auraTheme.fromBorderRadius(.md)),
         ),
         child: Image(
           image: imageProvider ?? NetworkImage(content),
           errorBuilder: (context, error, stackTrace) => Container(
             padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 Icon(
                   Icons.broken_image,
@@ -236,28 +236,28 @@ class const _AuraMessageBubbleContent({
                   color: textColor,
                 ),
                 const AuraSizedBox(width: .sm),
-                Text(imageErrorLabel, style: TextStyle(color: textColor)),
+                Text(imageErrorLabel, style: .new(color: textColor)),
               ],
             ),
           ),
           semanticLabel: imageSemanticLabel,
-          fit: BoxFit.cover,
+          fit: .cover,
         ),
       ),
-      AuraMessageContentType.file => Row(
-        mainAxisSize: MainAxisSize.min,
+      .file => Row(
+        mainAxisSize: .min,
         children: [
           Icon(Icons.attach_file, size: _attachmentIconSize, color: textColor),
           const AuraSizedBox(width: .sm),
           Flexible(
             child: Text(
               content,
-              style: TextStyle(
+              style: .new(
                 color: textColor,
                 fontSize: typography.fontSizeBase,
                 fontFamily: typography.bodyFontFamily,
               ),
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
             ),
           ),
         ],
@@ -277,7 +277,7 @@ class const _AuraMessageBubbleTimestamp({
 
     return Text(
       AuraMessageBubble._formatTimestamp(timestamp, now: now?.call()),
-      style: TextStyle(
+      style: .new(
         color: textColor,
         fontSize: typography.fontSizeXs,
         fontFamily: typography.bodyFontFamily,

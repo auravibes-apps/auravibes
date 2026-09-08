@@ -88,7 +88,7 @@ loadConversationToolSpecsUsecaseProvider =
         conversationToolsRepository: ref.watch(
           conversationToolsRepositoryProvider(workspaceId),
         ),
-        buildCombinedToolSpecsUseCase: BuildCombinedToolSpecsUseCase(
+        buildCombinedToolSpecsUseCase: .new(
           getToolsGroupById: ref
               .watch(toolsGroupsRepositoryProvider(session))
               .getToolsGroupById,

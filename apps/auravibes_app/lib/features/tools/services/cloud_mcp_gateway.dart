@@ -14,7 +14,7 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
   }) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.create(
-      CreateMcpServerRequest(
+      .new(
         workspaceId: _stateGateway.workspace.cloudWorkspaceId,
         requestId: requestId,
         name: name,
@@ -31,7 +31,7 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
       CloudAppErrors.guardCall(
         .mcp,
         () => _stateGateway.client.mcpServer.delete(
-          DeleteMcpServerRequest(
+          .new(
             workspaceId: _stateGateway.workspace.cloudWorkspaceId,
             mcpServerId: mcpServerId,
           ),
@@ -43,7 +43,7 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
   }) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.discoverAndCheck(
-      DiscoverMcpServerRequest(
+      .new(
         workspaceId: _stateGateway.workspace.cloudWorkspaceId,
         mcpServerId: mcpServerId,
       ),

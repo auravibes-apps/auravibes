@@ -70,7 +70,7 @@ class _AuraTagInputState extends State<AuraTagInput> {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       spacing: context.auraTheme.spacing.sm,
       children: [
         if (widget.label case final value?)
@@ -81,7 +81,7 @@ class _AuraTagInputState extends State<AuraTagInput> {
             for (final tag in widget.value)
               AuraBadge.text(
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   children: [
                     Text(tag),
                     IconButton(
@@ -103,7 +103,7 @@ class _AuraTagInputState extends State<AuraTagInput> {
         ),
         TextField(
           controller: _controller,
-          decoration: InputDecoration(hintText: widget.placeholder),
+          decoration: .new(hintText: widget.placeholder),
           onSubmitted: add,
           enabled: enabled,
         ),

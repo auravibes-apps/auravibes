@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,7 +7,7 @@ void main() {
     home: Scaffold(
       body: Center(child: SizedBox(width: 280, child: child)),
     ),
-    theme: ThemeData(extensions: [AuraTheme.light]),
+    theme: .new(extensions: [AuraTheme.light]),
   );
 
   testWidgets('avatar preserves labeled fallback when image fails', (
@@ -19,7 +17,7 @@ void main() {
       app(
         AuraAvatar(
           child: const Text('AL'),
-          imageProvider: MemoryImage(Uint8List.fromList([0])),
+          imageProvider: MemoryImage(.fromList([0])),
           semanticLabel: 'Alex Lee',
         ),
       ),
@@ -120,7 +118,7 @@ void main() {
         await tester.pumpWidget(
           app(
             AuraChart(
-              labels: List.generate(values.length, (index) => '$index'),
+              labels: .generate(values.length, (index) => '$index'),
               series: [AuraChartSeries(label: 'Samples', values: values)],
               semanticLabel: 'Sample summary',
               type: type,
@@ -183,7 +181,7 @@ void main() {
           await tester.pumpWidget(
             app(
               MediaQuery(
-                data: MediaQueryData(
+                data: .new(
                   accessibleNavigation: mode == 'navigation',
                   disableAnimations: mode == 'motion',
                 ),

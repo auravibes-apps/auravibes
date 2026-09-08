@@ -10,9 +10,6 @@ import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -22,15 +19,12 @@ import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dar
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
-import 'package:auravibes_app/services/tools/native_tool_type.dart';
-import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart' as hooks;
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/framework.dart' show Override;
-import 'package:rxdart/rxdart.dart';
 
 ProviderContainer _pendingToolContainer({List<Override> overrides = const []}) {
   return ProviderContainer(
@@ -65,7 +59,7 @@ class const _FakeLoadConversationToolSpecsUsecase()
   }) async {
     return buildToolCatalog([
       ToolCatalogCandidate.external(
-        spec: ToolSpec(
+        spec: .new(
           name: 'built_in_calc_calculator',
           description: 'Calculator',
           inputJsonSchema: {},
@@ -73,20 +67,17 @@ class const _FakeLoadConversationToolSpecsUsecase()
         target: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         sourceId: 'calc',
       ),
       ToolCatalogCandidate.external(
-        spec: ToolSpec(
+        spec: .new(
           name: 'native_ws-tool-url_url',
           description: 'URL',
           inputJsonSchema: {},
         ),
-        target: ResolvedTool.native(
-          tableId: 'url',
-          nativeToolType: NativeToolType.url,
-        ),
+        target: ResolvedTool.native(tableId: 'url', nativeToolType: .url),
         sourceId: 'url',
       ),
     ]);
@@ -111,9 +102,9 @@ MessageEntity _assistantMessage({
     id: id,
     conversationId: conversationId,
     content: 'assistant',
-    messageType: MessageType.text,
+    messageType: .text,
     isUser: false,
-    status: MessageStatus.sent,
+    status: .sent,
     createdAt: now,
     updatedAt: now,
     metadata: toolCalls != null
@@ -142,7 +133,7 @@ class _FakeResolveToolApprovalDecisionUsecase(
     return _decisions[toolCallId] ??
         ToolApprovalDecision(
           toolCallId: toolCallId,
-          permissionResult: ToolPermissionResult.notConfigured,
+          permissionResult: .notConfigured,
         );
   }
 }
@@ -272,7 +263,7 @@ void main() {
             );
 
             return Directionality(
-              textDirection: TextDirection.ltr,
+              textDirection: .ltr,
               child: Text('${pendingCalls.value?.length ?? 0}'),
             );
           },
@@ -339,10 +330,7 @@ void main() {
                       ?.content,
               ].nonNulls.join('|');
 
-              return Directionality(
-                textDirection: TextDirection.ltr,
-                child: Text(contents),
-              );
+              return Directionality(textDirection: .ltr, child: Text(contents));
             },
           ),
         ),
@@ -360,7 +348,7 @@ void main() {
 
       final widgetRef = await widgetRefCompleter.future;
       widgetRef.read(messagesStreamingProvider.notifier)
-        ..startSubscription(CompositeSubscription(), 'msg-1')
+        ..startSubscription(.new(), 'msg-1')
         ..updateResult(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('streaming response'),
@@ -427,8 +415,8 @@ void main() {
                 title: 'Test',
                 workspaceId: 'ws-1',
                 isPinned: false,
-                createdAt: DateTime(2026),
-                updatedAt: DateTime(2026),
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
               ),
             ),
           ),
@@ -436,12 +424,12 @@ void main() {
             _FakeResolveToolApprovalDecisionUsecase({
               'tc-granted': const ToolApprovalDecision(
                 toolCallId: 'tc-granted',
-                permissionResult: ToolPermissionResult.granted,
+                permissionResult: .granted,
                 permissionTableId: 'calculator',
               ),
               'tc-needs-confirm': const ToolApprovalDecision(
                 toolCallId: 'tc-needs-confirm',
-                permissionResult: ToolPermissionResult.needsConfirmation,
+                permissionResult: .needsConfirmation,
                 permissionTableId: 'url',
               ),
             }),
@@ -501,8 +489,8 @@ void main() {
                 title: 'Test',
                 workspaceId: 'ws-1',
                 isPinned: false,
-                createdAt: DateTime(2026),
-                updatedAt: DateTime(2026),
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
               ),
             ),
           ),
@@ -510,12 +498,12 @@ void main() {
             _FakeResolveToolApprovalDecisionUsecase({
               'tc-needs-confirm-1': const ToolApprovalDecision(
                 toolCallId: 'tc-needs-confirm-1',
-                permissionResult: ToolPermissionResult.needsConfirmation,
+                permissionResult: .needsConfirmation,
                 permissionTableId: 'url',
               ),
               'tc-needs-confirm-2': const ToolApprovalDecision(
                 toolCallId: 'tc-needs-confirm-2',
-                permissionResult: ToolPermissionResult.needsConfirmation,
+                permissionResult: .needsConfirmation,
                 permissionTableId: 'calculator',
               ),
             }),
@@ -552,8 +540,8 @@ void main() {
         title: 'Child agent',
         workspaceId: 'ws-1',
         isPinned: false,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         parentConversationId: 'conv-1',
       );
 
@@ -568,7 +556,7 @@ void main() {
           childConversationsStreamProvider(
             'ws-1',
             parentConversationId: 'conv-1',
-          ).overrideWithValue(AsyncValue.data([childConversation])),
+          ).overrideWithValue(.data([childConversation])),
           chatMessagesProvider(
             'ws-1',
             'conv-1',
@@ -576,11 +564,11 @@ void main() {
           chatMessagesByConversationProvider(
             'ws-1',
             'child-1',
-          ).overrideWithValue(AsyncValue.data(childMessages)),
+          ).overrideWithValue(.data(childMessages)),
           conversationByIdStreamProvider(
             'ws-1',
             conversationId: 'child-1',
-          ).overrideWithValue(AsyncValue.data(childConversation)),
+          ).overrideWithValue(.data(childConversation)),
           conversationByIdStreamProvider(
             'ws-1',
             conversationId: 'conv-1',
@@ -592,7 +580,7 @@ void main() {
             _FakeResolveToolApprovalDecisionUsecase({
               'child-tc-needs-confirm': const ToolApprovalDecision(
                 toolCallId: 'child-tc-needs-confirm',
-                permissionResult: ToolPermissionResult.needsConfirmation,
+                permissionResult: .needsConfirmation,
                 permissionTableId: 'url',
               ),
             }),
@@ -620,7 +608,7 @@ void main() {
               id: 'tc-skipped',
               name: 'built_in_calc_calculator',
               argumentsRaw: '{}',
-              resultStatus: ToolCallResultStatus.skippedByUser,
+              resultStatus: .skippedByUser,
             ),
             _pendingToolCall(
               id: 'tc-needs-confirm',
@@ -651,8 +639,8 @@ void main() {
                 title: 'Test',
                 workspaceId: 'ws-1',
                 isPinned: false,
-                createdAt: DateTime(2026),
-                updatedAt: DateTime(2026),
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
               ),
             ),
           ),
@@ -660,7 +648,7 @@ void main() {
             _FakeResolveToolApprovalDecisionUsecase({
               'tc-needs-confirm': const ToolApprovalDecision(
                 toolCallId: 'tc-needs-confirm',
-                permissionResult: ToolPermissionResult.needsConfirmation,
+                permissionResult: .needsConfirmation,
                 permissionTableId: 'url',
               ),
             }),
@@ -709,8 +697,8 @@ void main() {
                 title: 'Test',
                 workspaceId: 'ws-1',
                 isPinned: false,
-                createdAt: DateTime(2026),
-                updatedAt: DateTime(2026),
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
               ),
             ),
           ),
@@ -718,12 +706,12 @@ void main() {
             _FakeResolveToolApprovalDecisionUsecase({
               'tc-1': const ToolApprovalDecision(
                 toolCallId: 'tc-1',
-                permissionResult: ToolPermissionResult.granted,
+                permissionResult: .granted,
                 permissionTableId: 'calculator',
               ),
               'tc-2': const ToolApprovalDecision(
                 toolCallId: 'tc-2',
-                permissionResult: ToolPermissionResult.granted,
+                permissionResult: .granted,
                 permissionTableId: 'url',
               ),
             }),
@@ -752,7 +740,7 @@ void main() {
       final needsConfirmUseCase = _FakeResolveToolApprovalDecisionUsecase({
         'tc-1': const ToolApprovalDecision(
           toolCallId: 'tc-1',
-          permissionResult: ToolPermissionResult.needsConfirmation,
+          permissionResult: .needsConfirmation,
           permissionTableId: 'url',
         ),
       });
@@ -760,7 +748,7 @@ void main() {
       final grantedUseCase = _FakeResolveToolApprovalDecisionUsecase({
         'tc-1': const ToolApprovalDecision(
           toolCallId: 'tc-1',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
           permissionTableId: 'url',
         ),
       });
@@ -786,8 +774,8 @@ void main() {
                 title: 'Test',
                 workspaceId: 'ws-1',
                 isPinned: false,
-                createdAt: DateTime(2026),
-                updatedAt: DateTime(2026),
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
               ),
             ),
           ),
@@ -825,8 +813,8 @@ void main() {
                 title: 'Test',
                 workspaceId: 'ws-1',
                 isPinned: false,
-                createdAt: DateTime(2026),
-                updatedAt: DateTime(2026),
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
               ),
             ),
           ),
@@ -862,7 +850,7 @@ void main() {
             'tc-$i',
             ToolApprovalDecision(
               toolCallId: 'tc-$i',
-              permissionResult: ToolPermissionResult.granted,
+              permissionResult: .granted,
               permissionTableId: 'calculator',
             ),
           ),
@@ -890,8 +878,8 @@ void main() {
                 title: 'Test',
                 workspaceId: 'ws-1',
                 isPinned: false,
-                createdAt: DateTime(2026),
-                updatedAt: DateTime(2026),
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
               ),
             ),
           ),
@@ -917,19 +905,19 @@ void main() {
               id: 'tc-completed',
               name: 'built_in_calc_calculator',
               argumentsRaw: '{}',
-              resultStatus: ToolCallResultStatus.success,
+              resultStatus: .success,
             ),
             const MessageToolCallEntity(
               id: 'tc-skipped',
               name: 'built_in_calc_calculator',
               argumentsRaw: '{}',
-              resultStatus: ToolCallResultStatus.skippedByUser,
+              resultStatus: .skippedByUser,
             ),
             const MessageToolCallEntity(
               id: 'tc-stopped',
               name: 'built_in_calc_calculator',
               argumentsRaw: '{}',
-              resultStatus: ToolCallResultStatus.stoppedByUser,
+              resultStatus: .stoppedByUser,
             ),
             _pendingToolCall(
               id: 'tc-needs-confirm',
@@ -960,8 +948,8 @@ void main() {
                 title: 'Test',
                 workspaceId: 'ws-1',
                 isPinned: false,
-                createdAt: DateTime(2026),
-                updatedAt: DateTime(2026),
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
               ),
             ),
           ),
@@ -969,7 +957,7 @@ void main() {
             _FakeResolveToolApprovalDecisionUsecase({
               'tc-needs-confirm': const ToolApprovalDecision(
                 toolCallId: 'tc-needs-confirm',
-                permissionResult: ToolPermissionResult.needsConfirmation,
+                permissionResult: .needsConfirmation,
                 permissionTableId: 'url',
               ),
             }),

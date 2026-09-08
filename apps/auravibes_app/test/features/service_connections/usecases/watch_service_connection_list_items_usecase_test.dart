@@ -1,15 +1,11 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/usecases/watch_service_connection_list_items_usecase.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -39,7 +35,7 @@ void main() {
             encryptionService: fixture.encryptionService,
           ).createCredential(
             fixture.workspace.id,
-            SkillCredentialToCreate(
+            .new(
               credentialDefinitionId: definition.id,
               name: 'Main Token',
               attributes: const {'token': 'secret-value'},
@@ -51,8 +47,8 @@ void main() {
             ServiceConnectionsCompanion.insert(
               name: 'OpenAI Main',
               serviceId: 'openai',
-              kind: ServiceConnectionKindTable.modelProvider,
-              authenticationType: ServiceAuthenticationTypeTable.apiKey,
+              kind: .modelProvider,
+              authenticationType: .apiKey,
               encryptedAuthValue: const Value('encrypted-key'),
               keySuffix: const Value('et-key'),
               workspaceId: fixture.workspace.id,
@@ -126,7 +122,7 @@ void main() {
           metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
             const ServiceConnectionMetadata(clientId: 'client-id'),
           ),
-          expiresAt: DateTime(2026, 1, 1, 12, 4),
+          expiresAt: .new(2026, 1, 1, 12, 4),
         );
         final usecase = _createUsecase(
           fixture,
@@ -150,10 +146,10 @@ void main() {
         metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
           const ServiceConnectionMetadata(clientId: 'client-id'),
         ),
-        expiresAt: DateTime(2026, 1, 1, 12, 30),
-        lastRefreshedAt: DateTime(2026, 1, 1, 11),
+        expiresAt: .new(2026, 1, 1, 12, 30),
+        lastRefreshedAt: .new(2026, 1, 1, 11),
         lastAuthError: 'Refresh failed',
-        authStatus: ServiceConnectionAuthStatus.failed,
+        authStatus: .failed,
       );
       final usecase = _createUsecase(
         fixture,
@@ -180,13 +176,13 @@ Future<_Fixture> _createFixture() async {
   final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
-  final workspace = await WorkspaceRepository(database).createWorkspace(
-    const WorkspaceToCreate(name: 'Workspace', type: WorkspaceType.local),
-  );
+  final workspace = await WorkspaceRepository(
+    database,
+  ).createWorkspace(const WorkspaceToCreate(name: 'Workspace', type: .local));
 
   return _Fixture(
     database: database,
-    encryptionService: EncryptionService(_FakeSecretKeyManager()),
+    encryptionService: .new(_FakeSecretKeyManager()),
     workspace: workspace,
   );
 }
@@ -205,19 +201,19 @@ Future<void> _insertMcpCredential(
         ServiceConnectionsCompanion.insert(
           name: 'Notion OAuth',
           serviceId: 'notion-mcp',
-          kind: ServiceConnectionKindTable.mcpServer,
-          authenticationType: ServiceAuthenticationTypeTable.oauth2,
+          kind: .mcpServer,
+          authenticationType: .oauth2,
           encryptedAuthValue: const Value('encrypted-token'),
-          metadataJson: Value(metadataJson),
-          authStatus: Value(authStatus),
-          expiresAt: Value(expiresAt),
-          lastRefreshedAt: Value(lastRefreshedAt),
-          lastAuthError: Value(lastAuthError),
+          metadataJson: .new(metadataJson),
+          authStatus: .new(authStatus),
+          expiresAt: .new(expiresAt),
+          lastRefreshedAt: .new(lastRefreshedAt),
+          lastAuthError: .new(lastAuthError),
           workspaceId: fixture.workspace.id,
         ),
       );
   final _ = await fixture.database.mcpServersDao.insertMcpServer(
-    McpServersCompanion.insert(
+    .insert(
       workspaceId: fixture.workspace.id,
       name: 'Notion',
       url: 'https://mcp.notion.com/mcp',
@@ -233,12 +229,12 @@ WatchServiceConnectionListItemsUsecase _createUsecase(
 }) {
   return WatchServiceConnectionListItemsUsecase(
     fixture.database,
-    ModelConnectionRepository(
+    .new(
       database: fixture.database,
       encryptionService: fixture.encryptionService,
     ),
-    SkillCredentialDefinitionsRepository(fixture.database),
-    SkillCredentialsRepository(
+    .new(fixture.database),
+    .new(
       database: fixture.database,
       encryptionService: fixture.encryptionService,
     ),
@@ -257,7 +253,7 @@ class const _Fixture({
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {
-  final SecretKey _key = SecretKey(List<int>.filled(32, 7));
+  final SecretKey _key = .new(List<int>.filled(32, 7));
 
   @override
   Future<SecretKey> getOrCreateSecretKey() async => _key;

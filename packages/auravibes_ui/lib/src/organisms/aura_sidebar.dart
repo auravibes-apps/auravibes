@@ -68,9 +68,7 @@ class AuraSidebar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.auraColors.surface,
-        border: BorderDirectional(
-          end: BorderSide(color: context.auraColors.outline),
-        ),
+        border: BorderDirectional(end: .new(color: context.auraColors.outline)),
         boxShadow: [
           BoxShadow(
             color: context.auraColors.shadow.withValues(alpha: _shadowAlpha),
@@ -165,7 +163,7 @@ class const _AuraSidebarItem({
             ? colors.primary.withValues(alpha: _selectedAlpha)
             : null,
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+          .circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       onPressed: onTap,

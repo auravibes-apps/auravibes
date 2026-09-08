@@ -47,9 +47,9 @@ void main() {
       );
       final size = tester.getSize(find.byType(ChatCatalogImage));
       expect(size, switch (variant) {
-        ChatCatalogImageVariant.normal => const Size(240, 160),
-        ChatCatalogImageVariant.circle => const Size(240, 240),
-        ChatCatalogImageVariant.avatar => const Size(48, 48),
+        .normal => const Size(240, 160),
+        .circle => const Size(240, 240),
+        .avatar => const Size(48, 48),
       });
       expect(
         find.byType(ClipOval),
@@ -159,9 +159,9 @@ void main() {
   ) async {
     final model = InMemoryDataModel();
     addTearDown(model.dispose);
-    final dataContext = DataContext(model, DataPath('/'))
-      ..update(DataPath('/url'), 'https://8.8.8.8/image.png')
-      ..update(DataPath('/label'), 'Landscape');
+    final dataContext = DataContext(model, .new('/'))
+      ..update(.new('/url'), 'https://8.8.8.8/image.png')
+      ..update(.new('/label'), 'Landscape');
     final item = auraChatFormCatalog().items.singleWhere(
       (i) => i.name == 'Image',
     );
@@ -169,7 +169,7 @@ void main() {
       tester,
       Builder(
         builder: (context) => item.widgetBuilder(
-          CatalogItemContext(
+          .new(
             data: const {
               'url': {'path': '/url'},
               'label': {'path': '/label'},
@@ -198,13 +198,13 @@ void main() {
     expect(image.label, 'Landscape');
     expect(image.fit, BoxFit.contain);
     expect(tester.getSize(find.byType(ClipOval)), const Size(80, 80));
-    dataContext.update(DataPath('/label'), 'Updated landscape');
+    dataContext.update(.new('/label'), 'Updated landscape');
     final _ = await tester.pumpAndSettle();
     expect(
       tester.widget<ChatCatalogImage>(find.byType(ChatCatalogImage)).label,
       'Updated landscape',
     );
-    dataContext.update(DataPath('/url'), 'https://127.0.0.1/private.png');
+    dataContext.update(.new('/url'), 'https://127.0.0.1/private.png');
     final _ = await tester.pumpAndSettle();
     expect(find.byType(AuraImage), findsNothing);
     expect(find.bySemanticsLabel('Image unavailable'), findsOneWidget);
@@ -231,7 +231,7 @@ Future<void> _pump(
       supportedLocales: const [Locale('en'), Locale('es')],
       path: 'assets/i18n',
       fallbackLocale: const Locale('en'),
-      startLocale: Locale(locale),
+      startLocale: .new(locale),
       assetLoader: const _Translations(),
       saveLocale: false,
     ),

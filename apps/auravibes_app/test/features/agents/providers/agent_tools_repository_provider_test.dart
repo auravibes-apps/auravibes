@@ -89,14 +89,8 @@ void main() {
       workspace: workspace,
       readState: (_) async => ReadWorkspaceStateResponse(
         pages: [
-          WorkspaceResourcePage(
-            resourceKind: WorkspaceResourceKind.agentAssociation,
-            resources: [],
-          ),
-          WorkspaceResourcePage(
-            resourceKind: WorkspaceResourceKind.agentAssociation,
-            resources: [],
-          ),
+          WorkspaceResourcePage(resourceKind: .agentAssociation, resources: []),
+          WorkspaceResourcePage(resourceKind: .agentAssociation, resources: []),
         ],
         currentSequence: 1,
         events: [],

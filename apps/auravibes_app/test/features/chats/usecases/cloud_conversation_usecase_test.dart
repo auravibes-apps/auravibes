@@ -56,7 +56,7 @@ void main() {
           if (requests.length == 1) {
             throw CloudAppException(
               localizationKey: 'cloud_errors.conflict',
-              context: CloudOperationContext.conversation,
+              context: .conversation,
               code: ConversationErrorCode.staleRevision.name,
             );
           }

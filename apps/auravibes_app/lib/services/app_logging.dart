@@ -16,7 +16,7 @@ class AppLogging._() {
     if (_configured || !enabled) return;
     _configured = true;
 
-    Logger.root.level = Level.ALL;
+    Logger.root.level = .ALL;
     _subscription = Logger.root.onRecord.listen(_handleRecord);
 
     final previousFlutterError = FlutterError.onError;

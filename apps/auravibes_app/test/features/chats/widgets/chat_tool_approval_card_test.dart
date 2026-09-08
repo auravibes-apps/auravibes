@@ -19,7 +19,7 @@ void main() {
           builder: (context) {
             return MaterialApp(
               home: Theme(
-                data: ThemeData(extensions: [AuraTheme.light]),
+                data: .new(extensions: [AuraTheme.light]),
                 child: const Material(
                   child: ChatToolApprovalCard(
                     workspaceId: 'ws-1',
@@ -53,7 +53,7 @@ void main() {
     int? turnRevision,
   }) {
     return PendingToolCall(
-      toolCall: MessageToolCallEntity(
+      toolCall: .new(
         id: toolCallId,
         name: toolName,
         argumentsRaw: argumentsRaw,

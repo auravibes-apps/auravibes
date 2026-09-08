@@ -77,7 +77,7 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
 }
 
 class AuraSidebarWrapper extends HookConsumerWidget {
-  static final Logger _logger = Logger('AuraSidebarWrapper');
+  static final Logger _logger = .new('AuraSidebarWrapper');
 
   /// Creates a Aura sidebar widget.
   const new({

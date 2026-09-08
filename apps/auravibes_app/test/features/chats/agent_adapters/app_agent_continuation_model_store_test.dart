@@ -34,8 +34,8 @@ void main() {
           title: 'title',
           workspaceId: 'workspace',
           isPinned: false,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
           modelId: 'selection',
         ),
       );

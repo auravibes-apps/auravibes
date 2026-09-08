@@ -102,7 +102,7 @@ class LocalChatAttachmentServiceIo({
     }
 
     await _recorder.start(
-      RecordConfig(encoder: AudioEncoder.wav, device: device),
+      .new(encoder: AudioEncoder.wav, device: device),
       path: path,
     );
     _logger.fine('Started voice recording');
@@ -172,7 +172,7 @@ class LocalChatAttachmentServiceIo({
 
   Future<void> _startMacVoiceRecording(InputDevice? device) async {
     final stream = await _recorder.startStream(
-      RecordConfig(
+      .new(
         encoder: AudioEncoder.pcm16bits,
         numChannels: _macRecordingChannels,
         device: device,
@@ -292,15 +292,15 @@ abstract final class LocalChatAttachmentRecording {
       ..setAll(dataOffset, 'data'.codeUnits)
       ..setAll(wavHeaderSize, pcmBytes);
     data
-      ..setUint32(4, dataLength + dataChunkOffset, Endian.little)
-      ..setUint32(fmtChunkSizeOffset, fmtChunkSize, Endian.little)
-      ..setUint16(20, pcmFormat, Endian.little)
-      ..setUint16(22, channels, Endian.little)
-      ..setUint32(24, sampleRate, Endian.little)
-      ..setUint32(28, byteRate, Endian.little)
-      ..setUint16(32, blockAlign, Endian.little)
-      ..setUint16(34, bitsPerSample, Endian.little)
-      ..setUint32(40, dataLength, Endian.little);
+      ..setUint32(4, dataLength + dataChunkOffset, .little)
+      ..setUint32(fmtChunkSizeOffset, fmtChunkSize, .little)
+      ..setUint16(20, pcmFormat, .little)
+      ..setUint16(22, channels, .little)
+      ..setUint32(24, sampleRate, .little)
+      ..setUint32(28, byteRate, .little)
+      ..setUint16(32, blockAlign, .little)
+      ..setUint16(34, bitsPerSample, .little)
+      ..setUint32(40, dataLength, .little);
 
     return bytes;
   }

@@ -38,7 +38,7 @@ class const ResolveToolApprovalDecisionUsecase({
         resolvedTool.toolIdentifier == agent.listSkillsToolName) {
       return ToolApprovalDecision(
         toolCallId: toolCallId,
-        permissionResult: ToolPermissionResult.granted,
+        permissionResult: .granted,
       );
     }
 
@@ -50,7 +50,7 @@ class const ResolveToolApprovalDecisionUsecase({
     if (permissionTableId == null) {
       return ToolApprovalDecision(
         toolCallId: toolCallId,
-        permissionResult: ToolPermissionResult.notConfigured,
+        permissionResult: .notConfigured,
       );
     }
 

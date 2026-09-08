@@ -428,7 +428,7 @@ void main() {
 
       final state = GoRouterState(
         router.configuration,
-        uri: Uri.parse('/workspaces/ws-1'),
+        uri: .parse('/workspaces/ws-1'),
         matchedLocation: '/workspaces/ws-1',
         path: '/workspaces/:workspaceId',
         fullPath: '/workspaces/:workspaceId',
@@ -450,7 +450,7 @@ void main() {
 
       final state = GoRouterState(
         router.configuration,
-        uri: Uri.parse('/workspaces/ws-1/chats'),
+        uri: .parse('/workspaces/ws-1/chats'),
         matchedLocation: '/workspaces/ws-1/chats',
         path: '/workspaces/:workspaceId/chats',
         fullPath: '/workspaces/:workspaceId/chats',
@@ -472,7 +472,7 @@ void main() {
 
       final state = GoRouterState(
         router.configuration,
-        uri: Uri.parse('/workspaces/ws-abc'),
+        uri: .parse('/workspaces/ws-abc'),
         matchedLocation: '/workspaces/ws-abc',
         path: '/workspaces/:workspaceId',
         fullPath: '/workspaces/:workspaceId',

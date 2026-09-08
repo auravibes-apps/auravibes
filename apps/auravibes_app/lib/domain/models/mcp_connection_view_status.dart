@@ -26,8 +26,8 @@ class const GroupedToolsViewItem({
   int get sortPriority {
     if (group == null) {
       return switch (defaultGroupType) {
-        DefaultToolGroupType.builtIn => 0,
-        DefaultToolGroupType.native => 1,
+        .builtIn => 0,
+        .native => 1,
         null => 0,
       };
     }
@@ -38,10 +38,10 @@ class const GroupedToolsViewItem({
     const connectedIndex = 5;
 
     return switch (mcpConnection?.status) {
-      McpConnectionViewStatus.error => errorIndex,
-      McpConnectionViewStatus.disconnected => disconnectedIndex,
-      McpConnectionViewStatus.connecting => connectingIndex,
-      McpConnectionViewStatus.connected => connectedIndex,
+      .error => errorIndex,
+      .disconnected => disconnectedIndex,
+      .connecting => connectingIndex,
+      .connected => connectedIndex,
       null => connectedIndex,
     };
   }

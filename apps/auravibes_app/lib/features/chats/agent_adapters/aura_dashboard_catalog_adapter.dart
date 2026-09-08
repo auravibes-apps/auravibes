@@ -6,7 +6,6 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:genui/genui.dart';
-import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// Adds app-rendered dashboard items to either chat catalog.
 List<CatalogItem> auraDashboardCatalogItems({
@@ -26,7 +25,7 @@ List<CatalogItem> auraDashboardCatalogItems({
   }.entries)
     CatalogItem(
       name: entry.key,
-      dataSchema: Schema.fromMap({
+      dataSchema: .fromMap({
         ...a2uiChatComponentSchemas[entry.key]!,
         'required': [
           for (final property
@@ -129,7 +128,7 @@ abstract final class _AuraDashboardCatalogAdapter {
       children: [
         if (label != null || data['showValue'] == true)
           Wrap(
-            alignment: WrapAlignment.spaceBetween,
+            alignment: .spaceBetween,
             spacing: context.buildContext.auraTheme.spacing.base,
             runSpacing: context.buildContext.auraTheme.spacing.xs,
             children: [
@@ -258,7 +257,7 @@ abstract final class _AuraDashboardCatalogAdapter {
           indicator,
           AuraText(child: Text(label)),
         ],
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
       );
     }
 

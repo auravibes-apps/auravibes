@@ -27,12 +27,12 @@ class const ServiceConnectionListItem({
       workspaceId: connection.workspaceId,
       name: connection.name,
       serviceName: connection.modelId,
-      kind: ServiceConnectionListItemKind.modelProvider,
+      kind: .modelProvider,
       keySuffix: connection.keySuffix,
       credentialDefinitionId: null,
       mcpServerId: null,
       authenticationType: null,
-      displayStatus: ServiceConnectionDisplayStatus.unknown,
+      displayStatus: .unknown,
       expiresAt: null,
       lastRefreshedAt: null,
       lastAuthError: null,
@@ -51,12 +51,12 @@ class const ServiceConnectionListItem({
       workspaceId: credential.workspaceId,
       name: credential.name,
       serviceName: definition?.title,
-      kind: ServiceConnectionListItemKind.skillCredential,
+      kind: .skillCredential,
       keySuffix: credential.keySuffix,
       credentialDefinitionId: credential.credentialDefinitionId,
       mcpServerId: null,
       authenticationType: null,
-      displayStatus: ServiceConnectionDisplayStatus.unknown,
+      displayStatus: .unknown,
       expiresAt: null,
       lastRefreshedAt: null,
       lastAuthError: null,
@@ -88,7 +88,7 @@ class const ServiceConnectionListItem({
       workspaceId: workspaceId,
       name: name,
       serviceName: _hostFromUrl(url) ?? metadata.provider,
-      kind: ServiceConnectionListItemKind.mcpServer,
+      kind: .mcpServer,
       keySuffix: null,
       credentialDefinitionId: null,
       mcpServerId: mcpServerId,
@@ -153,9 +153,8 @@ ServiceConnectionDisplayStatus _displayStatus({
   required DateTime now,
 }) {
   return switch (authStatus) {
-    ServiceConnectionAuthStatus.needsReauth =>
-      ServiceConnectionDisplayStatus.needsReauth,
-    ServiceConnectionAuthStatus.failed => ServiceConnectionDisplayStatus.failed,
+    .needsReauth => ServiceConnectionDisplayStatus.needsReauth,
+    .failed => ServiceConnectionDisplayStatus.failed,
     _ when hasMetadataError => ServiceConnectionDisplayStatus.failed,
     _ when _expiresSoon(expiresAt, now) =>
       ServiceConnectionDisplayStatus.expiringSoon,
@@ -179,35 +178,26 @@ List<ServiceConnectionMetadataValue> _metadataValues({
 }) {
   return [
     if (metadata.issuer case final issuer?)
-      ServiceConnectionMetadataValue(
-        key: ServiceConnectionMetadataKey.issuer,
-        value: issuer,
-      ),
+      ServiceConnectionMetadataValue(key: .issuer, value: issuer),
     if (metadata.clientId case final clientId?)
-      ServiceConnectionMetadataValue(
-        key: ServiceConnectionMetadataKey.clientId,
-        value: clientId,
-      ),
+      ServiceConnectionMetadataValue(key: .clientId, value: clientId),
     if (metadata.scopes.isNotEmpty)
       ServiceConnectionMetadataValue(
-        key: ServiceConnectionMetadataKey.scopes,
+        key: .scopes,
         value: metadata.scopes.join(', '),
       ),
     if (expiresAt case final expiresAt?)
       ServiceConnectionMetadataValue(
-        key: ServiceConnectionMetadataKey.expiresAt,
+        key: .expiresAt,
         value: expiresAt.toIso8601String(),
       ),
     if (lastRefreshedAt case final lastRefreshedAt?)
       ServiceConnectionMetadataValue(
-        key: ServiceConnectionMetadataKey.lastRefreshedAt,
+        key: .lastRefreshedAt,
         value: lastRefreshedAt.toIso8601String(),
       ),
     if (lastAuthError case final lastAuthError? when lastAuthError.isNotEmpty)
-      ServiceConnectionMetadataValue(
-        key: ServiceConnectionMetadataKey.lastAuthError,
-        value: lastAuthError,
-      ),
+      ServiceConnectionMetadataValue(key: .lastAuthError, value: lastAuthError),
   ];
 }
 

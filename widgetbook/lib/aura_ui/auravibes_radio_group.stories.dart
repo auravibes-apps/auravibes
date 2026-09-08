@@ -36,7 +36,7 @@ final $RadioGroup = _Story(
       name: 'Landscape Phone',
       modes: [ViewportMode(landscapePhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
     _Scenario(
       name: 'Selects Radio',

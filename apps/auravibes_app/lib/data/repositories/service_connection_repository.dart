@@ -49,23 +49,23 @@ class const ServiceConnectionRepository(
     final ServiceConnectionsCompanion companion;
     if (clearSecret) {
       companion = ServiceConnectionsCompanion(
-        name: Value(name),
+        name: .new(name),
         encryptedAuthValue: const Value(null),
         keySuffix: const Value(null),
       );
     } else if (secret == null) {
-      companion = ServiceConnectionsCompanion(name: Value(name));
+      companion = ServiceConnectionsCompanion(name: .new(name));
     } else {
       companion = ServiceConnectionsCompanion(
-        name: Value(name),
-        encryptedAuthValue: Value(
+        name: .new(name),
+        encryptedAuthValue: .new(
           await _encryptionService.encrypt(
             ServiceConnectionAuthCodec.encodeSecret(
               ServiceConnectionSecretApiKey(apiKey: secret),
             ),
           ),
         ),
-        keySuffix: Value(_suffix(secret)),
+        keySuffix: .new(_suffix(secret)),
       );
     }
     final _ =
@@ -140,14 +140,14 @@ class const ServiceConnectionRepository(
           ServiceConnectionsCompanion.insert(
             name: name,
             serviceId: appSkillServiceId,
-            kind: ServiceConnectionKindTable.appSkillCredential,
-            authenticationType: ServiceAuthenticationTypeTable.apiKey,
-            encryptedAuthValue: Value(
+            kind: .appSkillCredential,
+            authenticationType: .apiKey,
+            encryptedAuthValue: .new(
               await _encryptionService.encrypt(
                 ServiceConnectionAuthCodec.encodeSecret(secret),
               ),
             ),
-            keySuffix: Value(_suffix(apiKey)),
+            keySuffix: .new(_suffix(apiKey)),
             workspaceId: workspaceId,
           ),
         );
@@ -178,7 +178,7 @@ class const ServiceConnectionRepository(
           workspaceId: workspaceId,
           name: profile.name,
           serviceId: profile.serviceId,
-          kind: ServiceConnectionKindTable.mcpServer,
+          kind: .mcpServer,
           bearerToken: bearerToken,
         );
       case final McpAuthenticationTypeOAuth authenticationType:
@@ -186,7 +186,7 @@ class const ServiceConnectionRepository(
           workspaceId: workspaceId,
           name: profile.name,
           serviceId: profile.serviceId,
-          kind: ServiceConnectionKindTable.mcpServer,
+          kind: .mcpServer,
           authenticationType: authenticationType,
           token: authenticationType.token,
         );
@@ -212,15 +212,15 @@ class const ServiceConnectionRepository(
           _database.serviceConnections,
         )..where((tbl) => tbl.id.equals(id))).write(
           ServiceConnectionsCompanion(
-            encryptedAuthValue: Value(
+            encryptedAuthValue: .new(
               await _encryptionService.encrypt(
                 ServiceConnectionAuthCodec.encodeSecret(secret),
               ),
             ),
-            keySuffix: Value(_suffix(token.accessToken)),
+            keySuffix: .new(_suffix(token.accessToken)),
             authStatus: const Value(ServiceConnectionAuthStatus.connected),
-            expiresAt: Value(_expiresAt(token)),
-            lastRefreshedAt: Value(token.issuedAt),
+            expiresAt: .new(_expiresAt(token)),
+            lastRefreshedAt: .new(token.issuedAt),
             lastAuthError: const Value(null),
           ),
         );
@@ -233,7 +233,7 @@ class const ServiceConnectionRepository(
         )..where((tbl) => tbl.id.equals(id))).write(
           ServiceConnectionsCompanion(
             authStatus: const Value(ServiceConnectionAuthStatus.needsReauth),
-            lastAuthError: Value(error),
+            lastAuthError: .new(error),
           ),
         );
   }
@@ -266,9 +266,9 @@ class const ServiceConnectionRepository(
             name: name,
             serviceId: serviceId,
             kind: kind,
-            authenticationType: ServiceAuthenticationTypeTable.bearerToken,
-            encryptedAuthValue: Value(encrypted),
-            keySuffix: Value(_suffix(bearerToken)),
+            authenticationType: .bearerToken,
+            encryptedAuthValue: .new(encrypted),
+            keySuffix: .new(_suffix(bearerToken)),
             workspaceId: workspaceId,
           ),
         );
@@ -303,18 +303,18 @@ class const ServiceConnectionRepository(
             name: name,
             serviceId: serviceId,
             kind: kind,
-            authenticationType: ServiceAuthenticationTypeTable.oauth2,
-            encryptedAuthValue: Value(
+            authenticationType: .oauth2,
+            encryptedAuthValue: .new(
               await _encryptionService.encrypt(
                 ServiceConnectionAuthCodec.encodeSecret(secret),
               ),
             ),
-            keySuffix: Value(_suffix(token.accessToken)),
-            metadataJson: Value(
+            keySuffix: .new(_suffix(token.accessToken)),
+            metadataJson: .new(
               ServiceConnectionAuthCodec.encodeMetadata(metadata),
             ),
-            expiresAt: Value(_expiresAt(token)),
-            lastRefreshedAt: Value(token.issuedAt),
+            expiresAt: .new(_expiresAt(token)),
+            lastRefreshedAt: .new(token.issuedAt),
             workspaceId: workspaceId,
           ),
         );
@@ -326,7 +326,7 @@ class const ServiceConnectionRepository(
     final expiresIn = token.expiresIn;
     if (expiresIn == null) return null;
 
-    return token.issuedAt.add(Duration(seconds: expiresIn));
+    return token.issuedAt.add(.new(seconds: expiresIn));
   }
 
   String _suffix(String value) {
@@ -353,14 +353,10 @@ class const ServiceConnectionRepository(
       id: row.id,
       workspaceId: row.workspaceId,
       authenticationType: switch (row.authenticationType) {
-        ServiceAuthenticationTypeTable.none =>
-          ServiceConnectionAuthenticationType.none,
-        ServiceAuthenticationTypeTable.apiKey =>
-          ServiceConnectionAuthenticationType.apiKey,
-        ServiceAuthenticationTypeTable.bearerToken =>
-          ServiceConnectionAuthenticationType.bearerToken,
-        ServiceAuthenticationTypeTable.oauth2 =>
-          ServiceConnectionAuthenticationType.oauth2,
+        .none => ServiceConnectionAuthenticationType.none,
+        .apiKey => ServiceConnectionAuthenticationType.apiKey,
+        .bearerToken => ServiceConnectionAuthenticationType.bearerToken,
+        .oauth2 => ServiceConnectionAuthenticationType.oauth2,
       },
       isEnabled: row.isEnabled,
       metadataJson: row.metadataJson,
@@ -374,12 +370,12 @@ class const ServiceConnectionRepository(
 
   String _candidateName(ServiceConnectionTable row) {
     final prefix = switch (row.kind) {
-      ServiceConnectionKindTable.modelProvider => _candidatePrefix(
+      .modelProvider => _candidatePrefix(
         LocaleKeys.service_connections_candidate_model_provider,
         'Model provider {serviceId}',
         row.serviceId,
       ),
-      ServiceConnectionKindTable.appSkillCredential => _candidatePrefix(
+      .appSkillCredential => _candidatePrefix(
         LocaleKeys.service_connections_candidate_app_skill,
         'Service skill {serviceId}',
         row.serviceId,

@@ -16,10 +16,7 @@ double hueDelta(double a, double b) {
 void main() {
   group('AuraComputedColorScheme', () {
     test('constructs AuraColorScheme and exposes key color roles', () {
-      final s = AuraComputedColorScheme(
-        primaryHue: 180,
-        brightness: AuraBrightness.light,
-      );
+      final s = AuraComputedColorScheme(primaryHue: 180, brightness: .light);
       expect(s, isA<AuraColorScheme>());
       expect(s.primary, isA<Color>());
       expect(s.surface, isA<Color>());
@@ -27,10 +24,7 @@ void main() {
     });
 
     test('light scheme: on* meet APCA Lc 60 against their surface', () {
-      final s = AuraComputedColorScheme(
-        primaryHue: 200,
-        brightness: AuraBrightness.light,
-      );
+      final s = AuraComputedColorScheme(primaryHue: 200, brightness: .light);
       // Polarity-agnostic: the on color must clear the perceptual target
       // regardless of whether it is light-on-dark or dark-on-light.
       expect(
@@ -61,10 +55,7 @@ void main() {
     });
 
     test('dark scheme: on* meet APCA Lc 60 against their surface', () {
-      final s = AuraComputedColorScheme(
-        primaryHue: 200,
-        brightness: AuraBrightness.dark,
-      );
+      final s = AuraComputedColorScheme(primaryHue: 200, brightness: .dark);
       expect(
         ColorContrast.apcaLc(
           foreground: s.onPrimary,
@@ -134,20 +125,14 @@ void main() {
 
     test('secondary hue is primary + 180 (complement)', () {
       const hue = 60.0;
-      final s = AuraComputedColorScheme(
-        primaryHue: hue,
-        brightness: AuraBrightness.light,
-      );
+      final s = AuraComputedColorScheme(primaryHue: hue, brightness: .light);
       final secondaryHue = OKLCHColor.fromColor(s.secondary).hue;
       // Allow sRGB round-trip drift, worst at blue hues (gamut clamping).
       expect(hueDelta(secondaryHue, hue + 180), lessThan(16));
     });
 
     test('semantic colors carry HueColorValues hues', () {
-      final s = AuraComputedColorScheme(
-        primaryHue: 0,
-        brightness: AuraBrightness.light,
-      );
+      final s = AuraComputedColorScheme(primaryHue: 0, brightness: .light);
       expect(
         hueDelta(OKLCHColor.fromColor(s.error).hue, HueColorValues.error),
         lessThan(8),
@@ -159,19 +144,13 @@ void main() {
     });
 
     test('surfaces stay achromatic', () {
-      final s = AuraComputedColorScheme(
-        primaryHue: 180,
-        brightness: AuraBrightness.light,
-      );
+      final s = AuraComputedColorScheme(primaryHue: 180, brightness: .light);
       expect(OKLCHColor.fromColor(s.surface).chroma, lessThan(0.001));
       expect(OKLCHColor.fromColor(s.background).chroma, lessThan(0.001));
     });
 
     test('light background is below surface elevation', () {
-      final s = AuraComputedColorScheme(
-        primaryHue: 180,
-        brightness: AuraBrightness.light,
-      );
+      final s = AuraComputedColorScheme(primaryHue: 180, brightness: .light);
       final background = OKLCHColor.fromColor(s.background);
       final surface = OKLCHColor.fromColor(s.surface);
 
@@ -179,10 +158,7 @@ void main() {
     });
 
     test('dark background is gray and below surface elevation', () {
-      final s = AuraComputedColorScheme(
-        primaryHue: 180,
-        brightness: AuraBrightness.dark,
-      );
+      final s = AuraComputedColorScheme(primaryHue: 180, brightness: .dark);
       final background = OKLCHColor.fromColor(s.background);
       final surface = OKLCHColor.fromColor(s.surface);
 
@@ -192,14 +168,8 @@ void main() {
     });
 
     test('lerp from base AuraColorScheme still works (subclass unchanged)', () {
-      final a = AuraComputedColorScheme(
-        primaryHue: 180,
-        brightness: AuraBrightness.light,
-      );
-      final b = AuraComputedColorScheme(
-        primaryHue: 270,
-        brightness: AuraBrightness.dark,
-      );
+      final a = AuraComputedColorScheme(primaryHue: 180, brightness: .light);
+      final b = AuraComputedColorScheme(primaryHue: 270, brightness: .dark);
       final mid = a.lerp(b, 0.5);
       expect(mid, isA<AuraColorScheme>());
       expect(mid.primary, isA<Color>());

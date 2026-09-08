@@ -196,31 +196,28 @@ class const _AuraModalSurface({
             decoration: BoxDecoration(
               color: context.auraColors.surface,
               borderRadius: BorderRadius.all(
-                Radius.circular(auraTheme.fromBorderRadius(.lg)),
+                .circular(auraTheme.fromBorderRadius(.lg)),
               ),
               boxShadow: const [DesignShadows.lg],
             ),
-            constraints: BoxConstraints(
-              maxWidth: size.maxWidth,
-              maxHeight: maxHeight,
-            ),
+            constraints: .new(maxWidth: size.maxWidth, maxHeight: maxHeight),
             margin: EdgeInsets.all(spacing),
             child: AuraInteractionScope(
               policy: policy,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: .min,
+                crossAxisAlignment: .stretch,
                 children: [
                   if (title != null || closeLabel != null)
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: .start,
                       children: [
                         if (title case final value?) Expanded(child: value),
                         if (closeLabel case final label?)
                           AuraButton(
                             onPressed: () => Navigator.of(context).pop(),
                             child: Text(label),
-                            variant: AuraButtonVariant.text,
+                            variant: .text,
                             semanticLabel: label,
                           ),
                       ],
@@ -255,8 +252,8 @@ enum AuraModalSize {
 
   /// Maximum dialog width in logical pixels.
   double get maxWidth => switch (this) {
-    AuraModalSize.small => 320,
-    AuraModalSize.medium => 400,
-    AuraModalSize.large => 720,
+    .small => 320,
+    .medium => 400,
+    .large => 720,
   };
 }

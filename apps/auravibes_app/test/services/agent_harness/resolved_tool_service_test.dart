@@ -60,7 +60,7 @@ AvailableSkill _appAvailableSkill(String slug) {
     title: slug,
     description: '',
     content: '',
-    kind: SkillKind.native,
+    kind: .native,
   );
 }
 
@@ -109,7 +109,7 @@ void main() {
       tool: ResolvedTool.builtIn(
         tableId: 'tool-1',
         toolIdentifier: 'calculator',
-        tooltype: UserToolType.calculator,
+        tooltype: .calculator,
       ),
       arguments: {'input': '2 + 3'},
     );
@@ -124,7 +124,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'tool-1',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         arguments: {},
       ),
@@ -136,10 +136,7 @@ void main() {
     expect(
       () => usecase(
         conversationId: 'conversation-1',
-        tool: ResolvedTool.native(
-          tableId: 'tool-1',
-          nativeToolType: NativeToolType.url,
-        ),
+        tool: ResolvedTool.native(tableId: 'tool-1', nativeToolType: .url),
         arguments: {},
       ),
       throwsA(isA<FormatException>()),
@@ -191,7 +188,7 @@ void main() {
     final descriptors = [
       provider
           .toExecution(
-            ResolvedTool.builtIn(
+            .builtIn(
               tableId: 'calc',
               toolIdentifier: 'calculator',
               tooltype: UserToolType.calculator,
@@ -200,20 +197,15 @@ void main() {
           .descriptor,
       provider
           .toExecution(
-            ResolvedTool.native(
-              tableId: 'url',
-              nativeToolType: NativeToolType.url,
-            ),
+            .native(tableId: 'url', nativeToolType: NativeToolType.url),
           )
           .descriptor,
       provider
-          .toExecution(
-            ResolvedTool.skillControl(toolIdentifier: loadSkillToolName),
-          )
+          .toExecution(.skillControl(toolIdentifier: loadSkillToolName))
           .descriptor,
       provider
           .toExecution(
-            ResolvedTool.skillTemplate(
+            .skillTemplate(
               tableId: 'template-1',
               skillSlug: 'skill-1',
               toolIdentifier: 'tool-1',
@@ -222,7 +214,7 @@ void main() {
           .descriptor,
       provider
           .toExecution(
-            ResolvedTool.skillNative(
+            .skillNative(
               tableId: 'native-1',
               skillSlug: 'app-skill',
               toolIdentifier: 'app-tool',
@@ -251,8 +243,8 @@ void main() {
             title: 'Conversation',
             workspaceId: 'workspace-1',
             isPinned: false,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
           ),
         );
     final provider = AppResolvedToolProvider(
@@ -380,7 +372,7 @@ void main() {
       () => listSkills.call(
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
-        filter: SkillLoadFilter.loaded,
+        filter: .loaded,
       ),
     ).thenAnswer((_) async => [_appAvailableSkill('openai')]);
     when(
@@ -445,9 +437,7 @@ void main() {
         toolSlug: 'search',
         arguments: {'query': 'dart'},
       ),
-    ).thenReturn(
-      CancelableOperation.fromFuture(Future.value('service result')),
-    );
+    ).thenReturn(CancelableOperation.fromFuture(.value('service result')));
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
       mcpToolCaller: ({

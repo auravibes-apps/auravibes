@@ -24,7 +24,7 @@ void main() {
 
   test('redacts headers and preserves output budgets', () {
     final output = formatUrlToolResponse(
-      UrlResponse(
+      .new(
         statusCode: 200,
         body: List.filled(3000, 'line').join('\n'),
         headers: const {
@@ -33,7 +33,7 @@ void main() {
         },
         elapsed: Duration.zero,
       ),
-      requestedFormat: UrlResponseFormat.text,
+      requestedFormat: .text,
     );
     expect(output, contains('X-Visible: yes'));
     expect(output, isNot(contains('secret')));

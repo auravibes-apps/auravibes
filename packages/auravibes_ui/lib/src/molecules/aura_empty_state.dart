@@ -32,20 +32,16 @@ class AuraEmptyState extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.all(spacing.lg),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         spacing: spacing.sm,
         children: [
           ?icon,
           Semantics(
-            child: AuraText(
-              child: title,
-              style: AuraTextStyle.heading6,
-              textAlign: TextAlign.center,
-            ),
+            child: AuraText(child: title, style: .heading6, textAlign: .center),
             header: true,
           ),
           if (description case final description?)
-            AuraText(child: description, textAlign: TextAlign.center),
+            AuraText(child: description, textAlign: .center),
           ?action,
         ],
       ),

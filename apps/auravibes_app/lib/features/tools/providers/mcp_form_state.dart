@@ -72,9 +72,9 @@ abstract class const McpFormState._() with _$McpFormState {
 
   McpTransportType _tranport() {
     switch (transport) {
-      case McpTransportTypeOptions.streamableHttp:
+      case .streamableHttp:
         return const McpTransportTypeStreamableHttp();
-      case McpTransportTypeOptions.sse:
+      case .sse:
         return const McpTransportTypeSSE();
     }
   }

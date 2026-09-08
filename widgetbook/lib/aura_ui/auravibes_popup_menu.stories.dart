@@ -47,6 +47,6 @@ final $BasicPopupMenu = _Story(
         await tester.pump(const Duration(milliseconds: 300));
       },
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
   ],
 );

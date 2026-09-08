@@ -14,13 +14,13 @@ void main() {
   });
 
   test('constructor stores style', () {
-    const style = TextStyle(fontSize: 20, fontWeight: FontWeight.bold);
+    const style = TextStyle(fontSize: 20, fontWeight: .bold);
     const widget = TextLocale('some.key', style: style);
     expect(widget.style, style);
   });
 
   test('constructor stores textAlign', () {
-    const widget = TextLocale('some.key', textAlign: TextAlign.center);
+    const widget = TextLocale('some.key', textAlign: .center);
     expect(widget.textAlign, TextAlign.center);
   });
 
@@ -30,7 +30,7 @@ void main() {
   });
 
   test('constructor stores overflow', () {
-    const widget = TextLocale('some.key', overflow: TextOverflow.ellipsis);
+    const widget = TextLocale('some.key', overflow: .ellipsis);
     expect(widget.overflow, TextOverflow.ellipsis);
   });
 

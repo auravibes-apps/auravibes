@@ -27,7 +27,7 @@ void main() {
 
     test('loading state has loading status and target', () {
       const state = WorkspaceSwitchState(
-        status: SwitchStatus.loading,
+        status: .loading,
         targetWorkspaceId: 'ws-1',
       );
 
@@ -38,7 +38,7 @@ void main() {
 
     test('error state has error status, target, and message', () {
       const state = WorkspaceSwitchState(
-        status: SwitchStatus.error,
+        status: .error,
         targetWorkspaceId: 'ws-1',
         errorLocalizationKey: 'Switch failed',
       );
@@ -50,11 +50,11 @@ void main() {
 
     test('equality works for identical states', () {
       const state1 = WorkspaceSwitchState(
-        status: SwitchStatus.loading,
+        status: .loading,
         targetWorkspaceId: 'ws-1',
       );
       const state2 = WorkspaceSwitchState(
-        status: SwitchStatus.loading,
+        status: .loading,
         targetWorkspaceId: 'ws-1',
       );
 
@@ -63,14 +63,14 @@ void main() {
 
     test('equality fails for different statuses', () {
       const state1 = WorkspaceSwitchState();
-      const state2 = WorkspaceSwitchState(status: SwitchStatus.loading);
+      const state2 = WorkspaceSwitchState(status: .loading);
 
       expect(state1, isNot(equals(state2)));
     });
 
     test('copyWith changes only specified fields', () {
       const state = WorkspaceSwitchState(
-        status: SwitchStatus.loading,
+        status: .loading,
         targetWorkspaceId: 'ws-1',
       );
       final copied = state.copyWith(status: SwitchStatus.error);

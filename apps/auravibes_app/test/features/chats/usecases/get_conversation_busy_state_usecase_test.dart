@@ -1,9 +1,6 @@
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -97,7 +94,7 @@ void main() {
                     id: 'tool-1',
                     name: 'weather.lookup',
                     argumentsRaw: '{}',
-                    resultStatus: ToolCallResultStatus.success,
+                    resultStatus: .success,
                   ),
                 ],
               ),
@@ -123,7 +120,7 @@ GetConversationBusyStateUsecase _createUsecase({
 
   return GetConversationBusyStateUsecase(
     messageRepository: messageRepository,
-    conversationStreamingRuntime: ConversationStreamingRuntime(
+    conversationStreamingRuntime: .new(
       start: notifier.start,
       isStreaming: notifier.isStreaming,
       remove: notifier.remove,
@@ -140,11 +137,11 @@ MessageEntity _message({
     id: id,
     conversationId: 'conversation-1',
     content: isUser ? 'Hi' : 'Hello',
-    messageType: MessageType.text,
+    messageType: .text,
     isUser: isUser,
-    status: MessageStatus.sent,
-    createdAt: DateTime(2025),
-    updatedAt: DateTime(2025),
+    status: .sent,
+    createdAt: .new(2025),
+    updatedAt: .new(2025),
     metadata: metadata,
   );
 }

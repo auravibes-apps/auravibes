@@ -66,10 +66,10 @@ class AppOpenAICodexPlugin({
     if (accessToken.trim().isEmpty) {
       throw GenkitException(
         '[openai_codex] OAuth access token is required.',
-        status: StatusCodes.INVALID_ARGUMENT,
+        status: .INVALID_ARGUMENT,
       );
     }
-    final request = http.Request('POST', Uri.parse(baseUrl))
+    final request = http.Request('POST', .parse(baseUrl))
       ..headers.addAll({
         'authorization': 'Bearer ${accessToken.trim()}',
         'content-type': 'application/json',

@@ -32,12 +32,12 @@ void main() {
           home: Scaffold(
             body: AuraFieldWrapper(
               child: const SizedBox(
-                key: Key('field-child'),
+                key: .new('field-child'),
                 width: 20,
                 height: 20,
               ),
               error: const Text('Required'),
-              state: AuraFieldState.error,
+              state: .error,
               onTap: () => taps++,
             ),
           ),
@@ -62,7 +62,7 @@ void main() {
           home: Scaffold(
             body: AuraFieldWrapper(
               child: const SizedBox(
-                key: Key('field-child'),
+                key: .new('field-child'),
                 width: 20,
                 height: 20,
               ),

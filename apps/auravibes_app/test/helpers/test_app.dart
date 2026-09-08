@@ -43,7 +43,7 @@ class _TestableAppState extends State<TestableApp> {
         WorkspaceSession(
           LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
         );
-    _container = ProviderContainer(
+    _container = .new(
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => session),

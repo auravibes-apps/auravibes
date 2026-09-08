@@ -20,7 +20,7 @@ class AuraAgentService<TTool extends Object>({
   required AgentCancellationEffects cancellationEffects,
   required AgentRateLimitRetryRuntime rateLimitRetryRuntime,
 }) {
-  final AgentNamespace agent = AgentNamespace(
+  final AgentNamespace agent = .new(
     data: data,
     models: models,
     tools: loopTools,
@@ -28,9 +28,7 @@ class AuraAgentService<TTool extends Object>({
     cancellationEffects: cancellationEffects,
     rateLimitRetryRuntime: rateLimitRetryRuntime,
   );
-  final ConversationsNamespace conversations = ConversationsNamespace(
-    data: data,
-  );
+  final ConversationsNamespace conversations = .new(data: data);
   final ToolsNamespace<TTool> tools = ToolsNamespace<TTool>(
     approvals: approvals,
     skips: skips,

@@ -49,24 +49,24 @@ class const ToolsManagementModal({
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+          .circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
-        constraints: BoxConstraints(
+        constraints: .new(
           maxWidth: 500,
           maxHeight: MediaQuery.sizeOf(context).height * 0.7,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             // Header with close button.
             Container(
               padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(
+                  bottom: .new(
                     color: context.auraColors.outline.withValues(alpha: 0.2),
                   ),
                 ),
@@ -75,7 +75,7 @@ class const ToolsManagementModal({
                 children: [
                   const AuraText(
                     child: TextLocale(LocaleKeys.tools_screen_manage_title),
-                    style: AuraTextStyle.heading6,
+                    style: .heading6,
                   ),
                   const Spacer(),
                   AuraIconButton(
@@ -99,7 +99,7 @@ class const ToolsManagementModal({
                 AsyncError(:final error) => Center(
                   child: AuraText(
                     child: TextLocale(CloudAppErrors.localizationKey(error)),
-                    tint: AuraTint.error,
+                    tint: .error,
                   ),
                 ),
               },

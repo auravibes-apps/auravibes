@@ -299,17 +299,17 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
       expect(controller.isShowing, isFalse);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
 
       expect(nextPressed, isTrue);
@@ -358,24 +358,24 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
       await tester.pump();
       expect(controller.isShowing, isTrue);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
 
       expect(selectedItem, isNotNull);

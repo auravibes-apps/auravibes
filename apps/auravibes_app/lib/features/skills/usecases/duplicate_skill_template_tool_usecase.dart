@@ -26,7 +26,7 @@ class const DuplicateSkillTemplateToolUsecase(
 
     return await createSkillTemplateToolUsecase.call(
       tool.skillId,
-      SkillTemplateToolToCreate(
+      .new(
         templateType: tool.templateType,
         title: title,
         description: tool.description,

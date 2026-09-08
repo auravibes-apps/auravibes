@@ -36,17 +36,17 @@ class const AddMcpModal({required final String workspaceId, super.key})
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+          .circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
-        constraints: BoxConstraints(
+        constraints: .new(
           maxWidth: 450,
           maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             // Header with close button.
             const _AddMcpModalHeader(),
@@ -87,7 +87,7 @@ class const AddMcpModal({required final String workspaceId, super.key})
                         ),
                       ],
                       spacing: .md,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: .stretch,
                     ),
                     _LoadingOverlay(workspaceId: workspaceId),
                   ],
@@ -111,7 +111,7 @@ class const _AddMcpModalHeader() extends StatelessWidget {
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
+          bottom: .new(
             color: context.auraColors.outline.withValues(
               alpha: AddMcpModal._dividerOpacity,
             ),
@@ -120,11 +120,11 @@ class const _AddMcpModalHeader() extends StatelessWidget {
       ),
       child: AuraRow(
         children: [
-          const AuraIcon(Icons.extension, tint: AuraTint.primary),
+          const AuraIcon(Icons.extension, tint: .primary),
           const Expanded(
             child: AuraText(
               child: TextLocale(LocaleKeys.mcp_modal_title),
-              style: AuraTextStyle.heading6,
+              style: .heading6,
             ),
           ),
           AuraIconButton(
@@ -182,16 +182,12 @@ class const _ErrorBanner({required final String workspaceId})
       color: context.auraColors.error.withValues(alpha: 0.1),
       child: Row(
         children: [
-          const AuraIcon(
-            Icons.error_outline,
-            size: AuraIconSize.small,
-            tint: AuraTint.error,
-          ),
+          const AuraIcon(Icons.error_outline, size: .small, tint: .error),
           const AuraSizedBox(width: .sm),
           Expanded(
             child: Text(
               displayErrorMessage,
-              style: TextStyle(color: context.auraColors.error),
+              style: .new(color: context.auraColors.error),
             ),
           ),
         ],
@@ -212,7 +208,7 @@ class const _Footer({required final String workspaceId})
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
+          top: .new(
             color: context.auraColors.outline.withValues(
               alpha: AddMcpModal._dividerOpacity,
             ),
@@ -225,7 +221,7 @@ class const _Footer({required final String workspaceId})
             child: AuraButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const TextLocale(LocaleKeys.common_cancel),
-              variant: AuraButtonVariant.outlined,
+              variant: .outlined,
             ),
           ),
           const AuraSizedBox(width: .sm),
@@ -254,7 +250,7 @@ class const _Footer({required final String workspaceId})
     final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.mcp_modal_save_success.tr()),
-      variant: AuraSnackBarVariant.success,
+      variant: .success,
     );
     Navigator.of(context).pop();
   }
@@ -287,7 +283,7 @@ class const _TransportSelector({required final String workspaceId})
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.mcp_modal_fields_transport_label),
-          style: AuraTextStyle.bodySmall,
+          style: .bodySmall,
         ),
         AuraDropdownSelector<McpTransportTypeOptions>(
           options: options,
@@ -301,7 +297,7 @@ class const _TransportSelector({required final String workspaceId})
         ),
       ],
       spacing: .xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
     );
   }
 }
@@ -319,12 +315,9 @@ class const _AuthenticationSelector({required final String workspaceId})
     final supportedTypes = McpAuthenticationTypeOptions.values
         .where(
           (type) => capabilities.mcpAuthentication.contains(switch (type) {
-            McpAuthenticationTypeOptions.none =>
-              WorkspaceMcpAuthentication.none,
-            McpAuthenticationTypeOptions.bearerToken =>
-              WorkspaceMcpAuthentication.bearerToken,
-            McpAuthenticationTypeOptions.oauth =>
-              WorkspaceMcpAuthentication.oauth,
+            .none => WorkspaceMcpAuthentication.none,
+            .bearerToken => WorkspaceMcpAuthentication.bearerToken,
+            .oauth => WorkspaceMcpAuthentication.oauth,
           }),
         )
         .toList();
@@ -333,7 +326,7 @@ class const _AuthenticationSelector({required final String workspaceId})
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.mcp_modal_fields_authentication_label),
-          style: AuraTextStyle.bodySmall,
+          style: .bodySmall,
         ),
         AuraButtonGroup<McpAuthenticationTypeOptions>.single(
           items: supportedTypes.map((type) {
@@ -353,7 +346,7 @@ class const _AuthenticationSelector({required final String workspaceId})
         ),
       ],
       spacing: .xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
     );
   }
 

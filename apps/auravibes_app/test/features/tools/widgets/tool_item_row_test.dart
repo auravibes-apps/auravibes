@@ -22,9 +22,9 @@ WorkspaceToolEntity _tool({String id = 't1', bool isEnabled = true}) {
     workspaceId: _workspaceId,
     toolId: 'custom_tool',
     isEnabled: isEnabled,
-    permissionMode: ToolPermissionMode.alwaysAsk,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    permissionMode: .alwaysAsk,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }
 
@@ -45,7 +45,7 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
   Widget build(BuildContext context) {
     return TestableApp(
       child: Theme(
-        data: ThemeData(extensions: [AuraTheme.light]),
+        data: .new(extensions: [AuraTheme.light]),
         child: Material(child: child),
       ),
       overrides: [

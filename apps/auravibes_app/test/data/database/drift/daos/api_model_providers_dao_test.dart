@@ -22,7 +22,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -49,30 +49,23 @@ void main() {
 
     test('upsertProvider inserts and retrieves provider', () async {
       final inserted = await fixture.database.apiModelProvidersDao
-          .upsertProvider(
-            ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
-          );
+          .upsertProvider(.insert(id: 'openai', name: 'OpenAI'));
       expect(inserted.id, equals('openai'));
       expect(inserted.name, equals('OpenAI'));
     });
 
     test('upsertProvider updates existing provider on conflict', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final updated = await fixture.database.apiModelProvidersDao
-          .upsertProvider(
-            ApiModelProvidersCompanion.insert(
-              id: 'openai',
-              name: 'OpenAI Updated',
-            ),
-          );
+          .upsertProvider(.insert(id: 'openai', name: 'OpenAI Updated'));
       expect(updated.name, equals('OpenAI Updated'));
     });
 
     test('getProviderById returns provider when exists', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final provider = await fixture.database.apiModelProvidersDao
           .getProviderById('openai');
@@ -91,10 +84,10 @@ void main() {
 
     test('getProvidersByType returns filtered providers', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'anthropic', name: 'Anthropic'),
+        .insert(id: 'anthropic', name: 'Anthropic'),
       );
       final providers = await fixture.database.apiModelProvidersDao
           .getProvidersByType('nonexistent');
@@ -103,7 +96,7 @@ void main() {
 
     test('deleteProvider removes provider and returns true', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final deleted = await fixture.database.apiModelProvidersDao
           .deleteProvider('openai');
@@ -121,7 +114,7 @@ void main() {
 
     test('providerExists returns true when provider exists', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final exists = await fixture.database.apiModelProvidersDao.providerExists(
         'openai',
@@ -138,10 +131,10 @@ void main() {
 
     test('searchProvidersByName returns matching providers', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'anthropic', name: 'Anthropic'),
+        .insert(id: 'anthropic', name: 'Anthropic'),
       );
       final results = await fixture.database.apiModelProvidersDao
           .searchProvidersByName('Open');
@@ -155,7 +148,7 @@ void main() {
         equals(0),
       );
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       expect(
         await fixture.database.apiModelProvidersDao.getProviderCount(),
@@ -165,13 +158,13 @@ void main() {
 
     test('getAllProviders sorts popular providers first', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'deepseek', name: 'DeepSeek'),
+        .insert(id: 'deepseek', name: 'DeepSeek'),
       );
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'zzz', name: 'ZZZ Provider'),
+        .insert(id: 'zzz', name: 'ZZZ Provider'),
       );
       final providers = await fixture.database.apiModelProvidersDao
           .getAllProviders();
@@ -198,10 +191,10 @@ void main() {
 
     test('deleteAllProviders removes all providers', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'anthropic', name: 'Anthropic'),
+        .insert(id: 'anthropic', name: 'Anthropic'),
       );
       final deleted = await fixture.database.apiModelProvidersDao
           .deleteAllProviders();

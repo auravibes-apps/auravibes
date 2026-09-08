@@ -48,12 +48,12 @@ class AuraStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: .start,
     spacing: context.auraTheme.spacing.sm,
     children: [
       for (final (index, step) in steps.indexed)
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           spacing: context.auraTheme.spacing.sm,
           children: [
             AuraIcon(
@@ -63,7 +63,7 @@ class AuraStepper extends StatelessWidget {
             ),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 children: [
                   AuraText(child: Text(step.title)),
                   if (step.description case final value?)

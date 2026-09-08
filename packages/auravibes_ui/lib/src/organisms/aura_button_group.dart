@@ -151,10 +151,10 @@ class AuraButtonGroup<T> extends StatelessWidget {
     }
 
     final content = orientation == Axis.horizontal
-        ? Row(mainAxisSize: MainAxisSize.min, children: children)
+        ? Row(mainAxisSize: .min, children: children)
         : Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: .min,
+            crossAxisAlignment: .stretch,
             children: children,
           );
 
@@ -167,17 +167,17 @@ class AuraButtonGroup<T> extends StatelessWidget {
 
   bool _isSelected(T value) {
     return switch (_mode) {
-      _ButtonGroupMode.single => selectedValue == value,
-      _ButtonGroupMode.multi => selectedValues?.contains(value) ?? false,
-      _ButtonGroupMode.action => false,
+      .single => selectedValue == value,
+      .multi => selectedValues?.contains(value) ?? false,
+      .action => false,
     };
   }
 
   void _onTap(AuraButtonGroupItem<T> item) {
     switch (_mode) {
-      case _ButtonGroupMode.single:
+      case .single:
         onChanged?.call(item.value);
-      case _ButtonGroupMode.multi:
+      case .multi:
         final currentSet = Set<T>.from(selectedValues ?? {});
         if (currentSet.contains(item.value)) {
           final _ = currentSet.remove(item.value);
@@ -185,7 +185,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
           final _ = currentSet.add(item.value);
         }
         onMultiChanged?.call(currentSet);
-      case _ButtonGroupMode.action:
+      case .action:
         onPressed?.call(item.value);
     }
   }
@@ -244,24 +244,24 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
                 ),
                 child: widget.isLoading
                     ? AuraLoadingCircle(
-                        tint: AuraTint.primary,
+                        tint: .primary,
                         size: _getLoadingSize(),
                         itemBuilder: (context, _) => DecoratedBox(
                           decoration: BoxDecoration(
                             color: _getForegroundColor(),
-                            shape: BoxShape.circle,
+                            shape: .circle,
                           ),
                         ),
                       )
                     : DefaultTextStyle(
-                        style: TextStyle(
+                        style: .new(
                           color: foregroundColor,
                           fontSize: _getFontSize(),
                           fontWeight:
                               widget.auraTheme.typography.fontWeightMedium,
                         ),
                         child: IconTheme(
-                          data: IconThemeData(
+                          data: .new(
                             size: _getIconSize(),
                             color: foregroundColor,
                           ),
@@ -293,18 +293,12 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     final spacing = widget.auraTheme.spacing;
 
     return switch (widget.size) {
-      AuraButtonGroupSize.sm => EdgeInsets.symmetric(
-        vertical: spacing.xs,
-        horizontal: spacing.sm,
-      ),
-      AuraButtonGroupSize.base => EdgeInsets.symmetric(
+      .sm => EdgeInsets.symmetric(vertical: spacing.xs, horizontal: spacing.sm),
+      .base => EdgeInsets.symmetric(
         vertical: spacing.sm,
         horizontal: spacing.md,
       ),
-      AuraButtonGroupSize.lg => EdgeInsets.symmetric(
-        vertical: spacing.md,
-        horizontal: spacing.lg,
-      ),
+      .lg => EdgeInsets.symmetric(vertical: spacing.md, horizontal: spacing.lg),
     };
   }
 
@@ -319,17 +313,17 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     final isHovered = _isHovering && !_isPressed;
 
     return switch (widget.variant) {
-      AuraButtonGroupVariant.filled => _getFilledBackgroundColor(
+      .filled => _getFilledBackgroundColor(
         colors,
         isActive: isActive,
         isHovered: isHovered,
       ),
-      AuraButtonGroupVariant.outlined => _getOutlinedBackgroundColor(
+      .outlined => _getOutlinedBackgroundColor(
         colors,
         isActive: isActive,
         isHovered: isHovered,
       ),
-      AuraButtonGroupVariant.ghost => _getGhostBackgroundColor(
+      .ghost => _getGhostBackgroundColor(
         colors,
         isActive: isActive,
         isHovered: isHovered,
@@ -380,10 +374,9 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     final isActive = widget.isSelected || _isPressed;
 
     return switch (widget.variant) {
-      AuraButtonGroupVariant.filled => colors.onTint(AuraTint.primary),
-      AuraButtonGroupVariant.outlined =>
-        isActive ? colors.onTint(AuraTint.primary) : colors.primary,
-      AuraButtonGroupVariant.ghost => colors.primary,
+      .filled => colors.onTint(.primary),
+      .outlined => isActive ? colors.onTint(.primary) : colors.primary,
+      .ghost => colors.primary,
     };
   }
 
@@ -408,25 +401,25 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     final typography = widget.auraTheme.typography;
 
     return switch (widget.size) {
-      AuraButtonGroupSize.sm => typography.fontSizeSm,
-      AuraButtonGroupSize.base => typography.fontSizeBase,
-      AuraButtonGroupSize.lg => typography.fontSizeLg,
+      .sm => typography.fontSizeSm,
+      .base => typography.fontSizeBase,
+      .lg => typography.fontSizeLg,
     };
   }
 
   double _getIconSize() {
     return switch (widget.size) {
-      AuraButtonGroupSize.sm => 16.0,
-      AuraButtonGroupSize.base => 20.0,
-      AuraButtonGroupSize.lg => 24.0,
+      .sm => 16.0,
+      .base => 20.0,
+      .lg => 24.0,
     };
   }
 
   double _getLoadingSize() {
     return switch (widget.size) {
-      AuraButtonGroupSize.sm => 14.0,
-      AuraButtonGroupSize.base => 18.0,
-      AuraButtonGroupSize.lg => 22.0,
+      .sm => 14.0,
+      .base => 18.0,
+      .lg => 22.0,
     };
   }
 }

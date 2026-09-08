@@ -37,27 +37,27 @@ class const ToolResolverService([
     if (resolved == null) return null;
 
     return switch (resolved.kind) {
-      AgentResolvedToolKind.skillControl => ResolvedTool.skillCommand(
+      .skillControl => ResolvedTool.skillCommand(
         commandName: resolved.toolIdentifier,
       ),
-      AgentResolvedToolKind.skillNative => ResolvedTool.skillNative(
+      .skillNative => ResolvedTool.skillNative(
         tableId: resolved.tableId,
         skillSlug: resolved.skillSlug ?? '',
         toolIdentifier: resolved.toolIdentifier,
       ),
-      AgentResolvedToolKind.skillTemplate => ResolvedTool.skillTemplate(
+      .skillTemplate => ResolvedTool.skillTemplate(
         tableId: resolved.tableId,
         skillSlug: resolved.skillSlug ?? '',
         toolIdentifier: resolved.toolIdentifier,
       ),
-      AgentResolvedToolKind.mcp => ResolvedTool.mcp(
+      .mcp => ResolvedTool.mcp(
         tableId: resolved.tableId,
         toolIdentifier: resolved.toolIdentifier,
         mcpServerId: resolved.mcpServerId ?? '',
         mcpSlug: resolved.mcpSlug ?? '',
       ),
-      AgentResolvedToolKind.builtIn => _resolveBuiltInTool(resolved),
-      AgentResolvedToolKind.native => _resolveNativeTool(resolved),
+      .builtIn => _resolveBuiltInTool(resolved),
+      .native => _resolveNativeTool(resolved),
     };
   }
 

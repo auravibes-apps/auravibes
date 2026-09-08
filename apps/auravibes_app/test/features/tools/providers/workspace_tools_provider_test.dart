@@ -31,8 +31,8 @@ WorkspaceToolEntity _tool({
     toolId: toolId,
     isEnabled: isEnabled,
     permissionMode: permissionMode,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
     config: config,
   );
 }
@@ -270,10 +270,7 @@ void main() {
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
-          .setToolPermissionMode(
-            't1',
-            permissionMode: ToolPermissionMode.alwaysAllow,
-          );
+          .setToolPermissionMode('t1', permissionMode: .alwaysAllow);
 
       expect(
         repository.updatedTools['t1']?.permissionMode,
@@ -295,7 +292,7 @@ void main() {
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
-          .addTool(UserToolType.calculator);
+          .addTool(.calculator);
 
       expect(repository.tools.first.isEnabled, isTrue);
     });
@@ -480,7 +477,7 @@ class _WorkspaceToolsProviderFixture({
   void setUp() {
     final repository = _FakeWorkspaceToolsRepository();
     _repository = repository;
-    _container = ProviderContainer(
+    _container = .new(
       overrides: [
         workspaceSessionForRouteProvider.overrideWith(
           (_, _) async => const WorkspaceSession(

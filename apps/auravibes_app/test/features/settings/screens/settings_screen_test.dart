@@ -34,7 +34,7 @@ void main() {
         await tester.pumpWidget(
           TestableApp(
             child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),
             ),
             overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
@@ -52,7 +52,7 @@ void main() {
         await tester.pumpWidget(
           TestableApp(
             child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),
             ),
             overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
@@ -128,8 +128,8 @@ class const _ThemeModeTestApp() extends ConsumerWidget {
           builder: (_) => const SettingsScreen(workspaceId: 'test-ws'),
         ),
       ),
-      theme: ThemeData(extensions: [AuraTheme.light]),
-      darkTheme: ThemeData(extensions: [AuraTheme.dark]),
+      theme: .new(extensions: [AuraTheme.light]),
+      darkTheme: .new(extensions: [AuraTheme.dark]),
       themeMode: themeMode,
       locale: context.locale,
       localizationsDelegates: context.localizationDelegates,

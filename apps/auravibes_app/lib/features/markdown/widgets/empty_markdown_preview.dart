@@ -12,12 +12,10 @@ class const EmptyMarkdownPreview({required final String label, super.key})
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant.withValues(alpha: 0.45),
-        border: Border.fromBorderSide(
-          BorderSide(color: auraColors.outlineVariant),
-        ),
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
+        border: Border.fromBorderSide(.new(color: auraColors.outlineVariant)),
+        borderRadius: const BorderRadius.all(.circular(8)),
       ),
-      child: AuraText(child: TextLocale(label), style: AuraTextStyle.caption),
+      child: AuraText(child: TextLocale(label), style: .caption),
     );
   }
 }

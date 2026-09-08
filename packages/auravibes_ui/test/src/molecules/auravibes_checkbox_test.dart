@@ -3,7 +3,6 @@
 import 'package:auravibes_ui/src/molecules/aura_checkbox.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -19,7 +18,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -41,7 +40,7 @@ void main() {
               onChanged: (value) => selectedValue = value,
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -64,7 +63,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -91,13 +90,13 @@ void main() {
                 onChanged: (value) => selectedValue = value,
               ),
             ),
-            theme: ThemeData(extensions: [AuraTheme.light]),
+            theme: .new(extensions: [AuraTheme.light]),
           ),
         );
 
-        expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+        expect(await tester.sendKeyEvent(.tab), isTrue);
         await tester.pump();
-        expect(await tester.sendKeyEvent(LogicalKeyboardKey.space), isTrue);
+        expect(await tester.sendKeyEvent(.space), isTrue);
         expect(await tester.pumpAndSettle(), greaterThanOrEqualTo(1));
 
         expect(selectedValue, isTrue);
@@ -116,7 +115,7 @@ void main() {
               disabled: true,
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -141,7 +140,7 @@ void main() {
               subtitle: const Text('Can be omitted'),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -162,7 +161,7 @@ void main() {
               title: const Text('Optional'),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -186,13 +185,13 @@ void main() {
               title: const Text('Optional'),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       expect(await tester.pumpAndSettle(), greaterThanOrEqualTo(1));
 
       expect(selectedValue, isTrue);

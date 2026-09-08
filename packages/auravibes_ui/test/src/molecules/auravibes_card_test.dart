@@ -2,7 +2,6 @@ import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -78,10 +77,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraCard(
-              child: Text('Border Card'),
-              style: AuraCardStyle.border,
-            ),
+            body: AuraCard(child: Text('Border Card'), style: .border),
           ),
         ),
       );
@@ -94,10 +90,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraCard(
-              child: Text('Glass Card'),
-              style: AuraCardStyle.glass,
-            ),
+            body: AuraCard(child: Text('Glass Card'), style: .glass),
           ),
         ),
       );
@@ -125,7 +118,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraCard(child: Text('Tinted Card'), tint: AuraTint.success),
+            body: AuraCard(child: Text('Tinted Card'), tint: .success),
           ),
         ),
       );
@@ -142,10 +135,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraCard(
-              child: Text('Small Padded Card'),
-              padding: AuraEdgeInsetsGeometry.small,
-            ),
+            body: AuraCard(child: Text('Small Padded Card'), padding: .small),
           ),
         ),
       );

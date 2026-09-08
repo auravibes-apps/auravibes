@@ -208,6 +208,7 @@ dart_code_linter:
         # Public Freezed domain API; rename would churn generated contract
         # and app-wide callers.
         - WorkspaceModelSelectionWithConnectionEntity
+    prefer-dot-shorthands: true
     prefer-extracting-callbacks:
       allowed-line-count: 2
     prefer-match-file-name:

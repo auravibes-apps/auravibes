@@ -41,7 +41,7 @@ void main() {
     testWidgets('applies large size correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: AuraIcon(Icons.star, size: AuraIconSize.large)),
+          home: Scaffold(body: AuraIcon(Icons.star, size: .large)),
         ),
       );
 
@@ -128,7 +128,7 @@ void main() {
               onPressed: () {
                 final _ = Object();
               },
-              variant: AuraIconButtonVariant.filled,
+              variant: .filled,
             ),
           ),
         ),
@@ -150,7 +150,7 @@ void main() {
               onPressed: () {
                 final _ = Object();
               },
-              variant: AuraIconButtonVariant.outlined,
+              variant: .outlined,
             ),
           ),
         ),
@@ -172,7 +172,7 @@ void main() {
               onPressed: () {
                 final _ = Object();
               },
-              variant: AuraIconButtonVariant.elevated,
+              variant: .elevated,
             ),
           ),
         ),
@@ -219,7 +219,7 @@ void main() {
                 final _ = Object();
               },
               tint: customTint,
-              variant: AuraIconButtonVariant.filled,
+              variant: .filled,
             ),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
@@ -310,7 +310,7 @@ void main() {
               child: const AnimatedRotation(
                 child: AuraIcon(Icons.keyboard_arrow_down),
                 turns: 0.5,
-                duration: Duration(milliseconds: 200),
+                duration: .new(milliseconds: 200),
               ),
               onPressed: () => wasPressed = true,
             ),

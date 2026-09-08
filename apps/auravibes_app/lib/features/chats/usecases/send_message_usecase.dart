@@ -18,7 +18,7 @@ import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.da
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
+    show AgentIterationContext, AgentIterationDecision;
 
 import 'package:logging/logging.dart';
 import 'package:riverpod/src/providers/provider.dart';
@@ -115,7 +115,7 @@ class SendMessageUsecase {
     final _ = await continueTurn(
       conversationId: conversationId,
       context: AgentIterationContext(
-        origin: AgentIterationOrigin.userMessage,
+        origin: .userMessage,
         ackMessageIds: [messageId],
       ),
     );

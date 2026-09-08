@@ -14,12 +14,12 @@ Future<ConversationSkillSelectorState> conversationSkillSelector(
   final loaded = await usecase.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
-    filter: SkillLoadFilter.loaded,
+    filter: .loaded,
   );
   final loadable = await usecase.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
-    filter: SkillLoadFilter.loadable,
+    filter: .loadable,
   );
 
   return ConversationSkillSelectorState(loaded: loaded, loadable: loadable);

@@ -32,7 +32,7 @@ void main() {
         workspaceId: 'workspace-1',
         name: 'SearXNG instance',
         serviceId: 'searxng',
-        kind: ServiceConnectionKindTable.appSkillCredential,
+        kind: .appSkillCredential,
         secretValue: 'https://search.example.com',
         keySuffix: 'e.com',
       );
@@ -42,7 +42,7 @@ void main() {
         workspaceId: 'workspace-1',
         name: 'OpenAI key',
         serviceId: 'openai',
-        kind: ServiceConnectionKindTable.modelProvider,
+        kind: .modelProvider,
         secretValue: 'sk-openai',
         keySuffix: 'enai',
       );
@@ -52,7 +52,7 @@ void main() {
         workspaceId: 'workspace-1',
         name: 'Anthropic key',
         serviceId: 'anthropic',
-        kind: ServiceConnectionKindTable.modelProvider,
+        kind: .modelProvider,
         secretValue: 'sk-anthropic',
       );
       final _ = await _insertConnection(
@@ -61,7 +61,7 @@ void main() {
         workspaceId: 'workspace-2',
         name: 'Other workspace',
         serviceId: 'openai',
-        kind: ServiceConnectionKindTable.modelProvider,
+        kind: .modelProvider,
         secretValue: 'sk-other',
       );
       final _ = await _insertConnection(
@@ -70,7 +70,7 @@ void main() {
         workspaceId: 'workspace-1',
         name: 'Disabled OpenAI',
         serviceId: 'openai',
-        kind: ServiceConnectionKindTable.modelProvider,
+        kind: .modelProvider,
         secretValue: 'sk-disabled',
         isEnabled: false,
       );
@@ -80,7 +80,7 @@ void main() {
         workspaceId: 'workspace-1',
         name: 'No secret',
         serviceId: 'openai',
-        kind: ServiceConnectionKindTable.modelProvider,
+        kind: .modelProvider,
       );
 
       final candidates = await repository.listAppSkillCredentialCandidates(
@@ -116,7 +116,7 @@ void main() {
         workspaceId: 'workspace-1',
         name: 'Old',
         serviceId: 'github',
-        kind: ServiceConnectionKindTable.appSkillCredential,
+        kind: .appSkillCredential,
         secretValue: 'old-secret',
       );
 
@@ -183,7 +183,7 @@ Future<String> _insertConnection(
           name: name,
           serviceId: serviceId,
           kind: kind,
-          authenticationType: ServiceAuthenticationTypeTable.apiKey,
+          authenticationType: .apiKey,
           encryptedAuthValue: secretValue == null
               ? const Value.absent()
               : Value(
@@ -193,9 +193,9 @@ Future<String> _insertConnection(
                     ),
                   ),
                 ),
-          keySuffix: Value(keySuffix),
+          keySuffix: .new(keySuffix),
           workspaceId: workspaceId,
-          isEnabled: Value(isEnabled),
+          isEnabled: .new(isEnabled),
         ),
       );
 

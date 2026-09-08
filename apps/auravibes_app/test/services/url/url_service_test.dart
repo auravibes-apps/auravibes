@@ -98,13 +98,13 @@ void main() {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
           throw DioException(
-            requestOptions: RequestOptions(path: options.path),
-            response: Response(
+            requestOptions: .new(path: options.path),
+            response: .new(
               data: 'Server Error',
               requestOptions: RequestOptions(),
               statusCode: 500,
             ),
-            type: DioExceptionType.badResponse,
+            type: .badResponse,
           );
         },
       );
@@ -123,13 +123,13 @@ void main() {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
           throw DioException(
-            requestOptions: RequestOptions(path: options.path),
-            response: Response(
+            requestOptions: .new(path: options.path),
+            response: .new(
               data: ResponseBody.fromString('Not Found', 404),
               requestOptions: RequestOptions(),
               statusCode: 404,
             ),
-            type: DioExceptionType.badResponse,
+            type: .badResponse,
           );
         },
       );
@@ -149,13 +149,13 @@ void main() {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
           throw DioException(
-            requestOptions: RequestOptions(path: options.path),
-            response: Response(
+            requestOptions: .new(path: options.path),
+            response: .new(
               data: 'Bad Request'.codeUnits,
               requestOptions: RequestOptions(),
               statusCode: 400,
             ),
-            type: DioExceptionType.badResponse,
+            type: .badResponse,
           );
         },
       );
@@ -176,13 +176,13 @@ void main() {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
           throw DioException(
-            requestOptions: RequestOptions(path: options.path),
-            response: Response(
+            requestOptions: .new(path: options.path),
+            response: .new(
               data: data,
               requestOptions: RequestOptions(),
               statusCode: 500,
             ),
-            type: DioExceptionType.badResponse,
+            type: .badResponse,
           );
         },
       );
@@ -203,8 +203,8 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             throw DioException(
-              requestOptions: RequestOptions(path: options.path),
-              response: Response(
+              requestOptions: .new(path: options.path),
+              response: .new(
                 data: ResponseBody(
                   Stream<Uint8List>.error(StateError('stream failed')),
                   502,
@@ -212,7 +212,7 @@ void main() {
                 requestOptions: RequestOptions(),
                 statusCode: 502,
               ),
-              type: DioExceptionType.badResponse,
+              type: .badResponse,
               message: 'Bad gateway',
             );
           },
@@ -234,13 +234,13 @@ void main() {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
           throw DioException(
-            requestOptions: RequestOptions(path: options.path),
-            response: Response(
+            requestOptions: .new(path: options.path),
+            response: .new(
               data: largeBody,
               requestOptions: RequestOptions(),
               statusCode: 500,
             ),
-            type: DioExceptionType.badResponse,
+            type: .badResponse,
           );
         },
       );
@@ -261,8 +261,8 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             throw DioException(
-              requestOptions: RequestOptions(path: options.path),
-              type: DioExceptionType.connectionError,
+              requestOptions: .new(path: options.path),
+              type: .connectionError,
               message: 'Connection refused',
             );
           },
@@ -283,8 +283,8 @@ void main() {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
           throw DioException(
-            requestOptions: RequestOptions(),
-            type: DioExceptionType.connectionError,
+            requestOptions: .new(),
+            type: .connectionError,
             message: 'Connection refused',
           );
         },
@@ -320,8 +320,8 @@ void main() {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
           throw DioException(
-            requestOptions: RequestOptions(path: options.path),
-            type: DioExceptionType.cancel,
+            requestOptions: .new(path: options.path),
+            type: .cancel,
           );
         },
       );
@@ -361,7 +361,7 @@ void main() {
           .execute(
             const UrlRequest(
               url: 'https://example.com',
-              method: UrlRequestMethod.post,
+              method: .post,
               body: 'plain body',
             ),
           )
@@ -524,10 +524,7 @@ void main() {
 
         final _ = await service
             .execute(
-              const UrlRequest(
-                url: 'https://example.com',
-                format: UrlResponseFormat.markdown,
-              ),
+              const UrlRequest(url: 'https://example.com', format: .markdown),
             )
             .value;
 
@@ -550,10 +547,7 @@ void main() {
 
         final _ = await service
             .execute(
-              const UrlRequest(
-                url: 'https://example.com',
-                format: UrlResponseFormat.html,
-              ),
+              const UrlRequest(url: 'https://example.com', format: .html),
             )
             .value;
 

@@ -26,7 +26,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   }
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -122,9 +122,7 @@ void main() {
           'VALUES (?, 0, 0, ?, ?, ?)',
           ['agent-1', 'ws-1', 'Agent', '  Prompt text  '],
         );
-      fixture.database = AppDatabase(
-        connection: NativeDatabase.opened(sqliteDb),
-      );
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
 
       final agent = await fixture.database
           .customSelect(
@@ -191,9 +189,7 @@ void main() {
             10,
           ],
         );
-      fixture.database = AppDatabase(
-        connection: NativeDatabase.opened(sqliteDb),
-      );
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
 
       final columns = await fixture.database
           .customSelect('PRAGMA table_info(message_attachments)')
@@ -262,9 +258,7 @@ void main() {
             'VALUES (?, 0, 0, ?, ?, ?)',
             ['agent-1', 'ws-1', 'Agent', '  Prompt text  '],
           );
-        fixture.database = AppDatabase(
-          connection: NativeDatabase.opened(sqliteDb),
-        );
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
 
         final agent = await fixture.database
             .customSelect(
@@ -291,10 +285,7 @@ void main() {
       final _ = await fixture.database
           .into(fixture.database.workspaces)
           .insert(
-            WorkspacesCompanion.insert(
-              name: 'Test Workspace',
-              type: WorkspaceType.local,
-            ),
+            WorkspacesCompanion.insert(name: 'Test Workspace', type: .local),
           );
 
       final workspaces = await fixture.database.workspaceDao.getAllWorkspaces();
@@ -307,18 +298,12 @@ void main() {
       final _ = await fixture.database
           .into(fixture.database.workspaces)
           .insert(
-            WorkspacesCompanion.insert(
-              name: 'Workspace 1',
-              type: WorkspaceType.local,
-            ),
+            WorkspacesCompanion.insert(name: 'Workspace 1', type: .local),
           );
       final _ = await fixture.database
           .into(fixture.database.workspaces)
           .insert(
-            WorkspacesCompanion.insert(
-              name: 'Workspace 2',
-              type: WorkspaceType.local,
-            ),
+            WorkspacesCompanion.insert(name: 'Workspace 2', type: .local),
           );
 
       final workspaces = await fixture.database.workspaceDao.getAllWorkspaces();

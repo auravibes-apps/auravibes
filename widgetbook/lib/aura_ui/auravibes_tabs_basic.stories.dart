@@ -16,7 +16,7 @@ final $BasicTabs = _Story<void>(
     child: constrainStoryWidth(child, maxWidth: 320),
   ),
   args: _Args<void>(
-    items: Arg.fixed(const [
+    items: .fixed(const [
       AuraTabItem(
         title: Text('Overview'),
         child: Center(child: AuraText(child: Text('Overview content'))),
@@ -48,7 +48,7 @@ final $BasicTabs = _Story<void>(
         await tester.pump(const Duration(milliseconds: 300));
       },
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Selects Details',
       run: (tester, args) async {

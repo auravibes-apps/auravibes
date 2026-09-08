@@ -40,8 +40,8 @@ void main() {
       AppLogging.configure(enabled: true);
 
       Logger('test.logger')
-          .severe('failed', StateError('opaque-secret'), StackTrace.current);
-      await Future<void>.delayed(Duration.zero);
+          .severe('failed', StateError('opaque-secret'), .current);
+      await Future<void>.delayed(.zero);
 
       expect(logs, anyElement(contains('[SEVERE] test.logger: failed')));
       expect(logs, anyElement(contains('Error: StateError')));
@@ -54,7 +54,7 @@ void main() {
 
       Logger('test.logger')
           .warning('Authorization: Bearer secret-token api_key=abc123');
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(logs.join('\n'), isNot(contains('secret-token')));
       expect(logs.join('\n'), isNot(contains('abc123')));
@@ -71,7 +71,7 @@ void main() {
         '{"id_token":"json-id-token","state":"json-state"} '
         'https://example.test/callback?code=oauth-code&state=oauth-state&nonce=oauth-nonce',
       );
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       final output = logs.join('\n');
       for (final secret in [
@@ -103,12 +103,9 @@ void main() {
       }
 
       flutterErrorHandler(
-        FlutterErrorDetails(
-          exception: Exception('boom'),
-          stack: StackTrace.current,
-        ),
+        .new(exception: Exception('boom'), stack: StackTrace.current),
       );
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(forwarded, isTrue);
       expect(logs, anyElement(contains('Flutter error')));
@@ -124,9 +121,9 @@ void main() {
 
       final handled = platformErrorHandler(
         Exception('platform boom'),
-        StackTrace.current,
+        .current,
       );
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(handled, isFalse);
       expect(logs, anyElement(contains('Uncaught platform error')));

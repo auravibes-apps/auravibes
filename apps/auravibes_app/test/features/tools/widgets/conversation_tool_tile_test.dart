@@ -15,9 +15,9 @@ WorkspaceToolEntity _tool({String id = 't1'}) {
     workspaceId: _workspaceId,
     toolId: 'custom_tool',
     isEnabled: true,
-    permissionMode: ToolPermissionMode.alwaysAsk,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    permissionMode: .alwaysAsk,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }
 
@@ -38,7 +38,7 @@ class const _Subject({
   Widget build(BuildContext context) {
     return TestableApp(
       child: Theme(
-        data: ThemeData(extensions: [AuraTheme.light]),
+        data: .new(extensions: [AuraTheme.light]),
         child: Material(
           child: SingleChildScrollView(
             child: ConversationToolTile(
@@ -79,7 +79,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: false,
     );
 
@@ -94,7 +94,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: false,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: true,
     );
 
@@ -107,7 +107,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: false,
     );
 
@@ -121,7 +121,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: false,
     );
 
@@ -136,7 +136,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: false,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: true,
     );
 
@@ -150,7 +150,7 @@ void main() {
   ) async {
     final tool = _tool();
     final toolState = ConversationToolState(
-      tool: WorkspaceToolEntity(
+      tool: .new(
         id: tool.id,
         workspaceId: tool.workspaceId,
         toolId: tool.toolId,
@@ -161,7 +161,7 @@ void main() {
         description: 'A test tool description',
       ),
       isEnabled: false,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: true,
     );
 
@@ -174,7 +174,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: false,
     );
 
@@ -190,7 +190,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: false,
     );
 
@@ -203,7 +203,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: true,
     );
 
@@ -222,7 +222,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: true,
     );
 
@@ -239,7 +239,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: true,
     );
 
@@ -257,7 +257,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: false,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       isWorkspaceEnabled: true,
     );
 
@@ -270,7 +270,7 @@ void main() {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAllow,
+      permissionMode: .alwaysAllow,
       isWorkspaceEnabled: true,
     );
 

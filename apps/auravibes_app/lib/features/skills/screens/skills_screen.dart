@@ -166,18 +166,18 @@ class const _SkillsScreenBody({
             const Icon(Icons.psychology_alt_outlined, size: 48),
             const AuraText(
               child: TextLocale(LocaleKeys.skills_screen_empty_title),
-              style: AuraTextStyle.heading4,
+              style: .heading4,
             ),
             const AuraText(
               child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
-              textAlign: TextAlign.center,
+              textAlign: .center,
             ),
             AuraButton(
               onPressed: () => unawaited(onCreateSkill(context)),
               child: const TextLocale(LocaleKeys.skills_screen_create),
             ),
           ],
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
         ),
       );
     }
@@ -209,8 +209,8 @@ class const _SkillTile({
 }) extends StatelessWidget {
   IconData get _icon {
     return switch (skill.source) {
-      SkillSource.user => Icons.psychology_alt_outlined,
-      SkillSource.app => Icons.auto_awesome_outlined,
+      .user => Icons.psychology_alt_outlined,
+      .app => Icons.auto_awesome_outlined,
     };
   }
 
@@ -230,18 +230,18 @@ class const _SkillTile({
                     null => Text(skill.title),
                     final titleKey => TextLocale(titleKey),
                   },
-                  style: AuraTextStyle.heading6,
+                  style: .heading6,
                 ),
                 if (_description(context) case final description?)
                   GptMarkdown(
                     description,
-                    style: TextStyle(
+                    style: .new(
                       color: context.auraColors.onSurfaceVariant,
                       fontWeight:
                           context.auraTheme.typography.fontWeightRegular,
                     ),
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                   ),
                 Wrap(
                   spacing: tagSpacing,
@@ -254,7 +254,7 @@ class const _SkillTile({
                 ),
               ],
               spacing: .xs,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
             ),
           ),
           AuraRow(
@@ -272,19 +272,19 @@ class const _SkillTile({
                         LocaleKeys.common_delete.tr(context: context),
                       ),
                       onTap: onDelete,
-                      variant: AuraTileVariant.error,
+                      variant: .error,
                     ),
                   ],
                   tooltip: LocaleKeys.common_show_more.tr(context: context),
                 ),
             ],
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
           ),
         ],
         spacing: .sm,
       ),
       onTap: onOpen,
-      style: AuraCardStyle.border,
+      style: .border,
     );
   }
 
@@ -301,23 +301,15 @@ class const _SkillTile({
 
   String _sourceLabel(BuildContext context) {
     return switch (skill.source) {
-      SkillSource.user => LocaleKeys.skills_screen_source_user.tr(
-        context: context,
-      ),
-      SkillSource.app => LocaleKeys.skills_screen_source_app.tr(
-        context: context,
-      ),
+      .user => LocaleKeys.skills_screen_source_user.tr(context: context),
+      .app => LocaleKeys.skills_screen_source_app.tr(context: context),
     };
   }
 
   String _kindLabel(BuildContext context) {
     return switch (skill.kind) {
-      SkillKind.template => LocaleKeys.skills_screen_kind_template.tr(
-        context: context,
-      ),
-      SkillKind.native => LocaleKeys.skills_screen_kind_native.tr(
-        context: context,
-      ),
+      .template => LocaleKeys.skills_screen_kind_template.tr(context: context),
+      .native => LocaleKeys.skills_screen_kind_native.tr(context: context),
     };
   }
 }
@@ -326,9 +318,9 @@ class const _SkillChip({required final String label}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraBadge(
-      child: AuraText(child: Text(label), style: AuraTextStyle.caption),
-      variant: AuraBadgeVariant.outlined,
-      size: AuraBadgeSize.small,
+      child: AuraText(child: Text(label), style: .caption),
+      variant: .outlined,
+      size: .small,
     );
   }
 }

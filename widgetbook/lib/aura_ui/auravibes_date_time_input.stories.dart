@@ -32,10 +32,10 @@ final $DateAndTime = _Story(
     enableTime: BoolArg(true, name: 'enableTime'),
     enabled: BoolArg(true, name: 'enabled'),
     initialValue: DateTimeArg(
-      DateTime(2026, 8, 28, 12),
+      .new(2026, 8, 28, 12),
       name: 'Initial Value',
-      start: DateTime(2026, 1),
-      end: DateTime(2026, 12, 31, 23, 59),
+      start: .new(2026, 1),
+      end: .new(2026, 12, 31, 23, 59),
     ),
   ),
   scenarios: [
@@ -43,7 +43,7 @@ final $DateAndTime = _Story(
       name: 'Compact Phone',
       modes: [ViewportMode(compactPhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
     _Scenario(
       name: 'Opens Picker',

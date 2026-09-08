@@ -79,8 +79,8 @@ class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
     final count = await (update(toolsGroups)..where((t) => t.id.equals(id)))
         .write(
           ToolsGroupsCompanion(
-            updatedAt: Value(DateTime.now()),
-            isEnabled: Value(isEnabled),
+            updatedAt: .new(DateTime.now()),
+            isEnabled: .new(isEnabled),
           ),
         );
 

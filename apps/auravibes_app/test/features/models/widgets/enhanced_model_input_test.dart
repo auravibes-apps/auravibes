@@ -32,10 +32,7 @@ void main() {
 
   group('EnhancedModelInput', () {
     test('constructor sets required properties', () {
-      const widget = EnhancedModelInput(
-        workspaceId: 'ws-1',
-        fieldType: ModelInputFieldType.name,
-      );
+      const widget = EnhancedModelInput(workspaceId: 'ws-1', fieldType: .name);
       expect(widget.workspaceId, 'ws-1');
       expect(widget.fieldType, ModelInputFieldType.name);
       expect(widget.focusNode, isNull);
@@ -57,7 +54,7 @@ void main() {
 
       final widget = EnhancedModelInput(
         workspaceId: 'ws-1',
-        fieldType: ModelInputFieldType.key,
+        fieldType: .key,
         focusNode: focusNode,
         onSubmitted: onSubmitted,
       );
@@ -68,25 +65,19 @@ void main() {
     test('constructor accepts key', () {
       const widget = EnhancedModelInput(
         workspaceId: 'ws-1',
-        fieldType: ModelInputFieldType.url,
-        key: Key('test'),
+        fieldType: .url,
+        key: .new('test'),
       );
       expect(widget.key, const Key('test'));
     });
 
     test('is a HookConsumerWidget', () {
-      const widget = EnhancedModelInput(
-        workspaceId: 'ws-1',
-        fieldType: ModelInputFieldType.name,
-      );
+      const widget = EnhancedModelInput(workspaceId: 'ws-1', fieldType: .name);
       expect(widget, isA<HookConsumerWidget>());
     });
 
     test('is const constructable', () {
-      const widget = EnhancedModelInput(
-        workspaceId: 'ws-1',
-        fieldType: ModelInputFieldType.name,
-      );
+      const widget = EnhancedModelInput(workspaceId: 'ws-1', fieldType: .name);
       expect(widget.workspaceId, 'ws-1');
     });
 
@@ -94,10 +85,7 @@ void main() {
       await tester.pumpWidget(
         const TestableApp(
           child: Scaffold(
-            body: EnhancedModelInput(
-              workspaceId: 'ws-1',
-              fieldType: ModelInputFieldType.name,
-            ),
+            body: EnhancedModelInput(workspaceId: 'ws-1', fieldType: .name),
           ),
         ),
       );

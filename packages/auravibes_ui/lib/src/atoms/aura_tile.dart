@@ -91,12 +91,12 @@ class _AuraTileState extends State<AuraTile> {
     if (widget.isLoading) {
       content = Center(
         child: AuraLoadingCircle(
-          tint: AuraTint.primary,
+          tint: .primary,
           size: 20,
           itemBuilder: (context, _) => DecoratedBox(
             decoration: BoxDecoration(
               color: _getTextColor(auraColors),
-              shape: BoxShape.circle,
+              shape: .circle,
             ),
           ),
         ),
@@ -126,11 +126,9 @@ class _AuraTileState extends State<AuraTile> {
       padding: _getPadding(spacing: context.auraTheme.spacing),
       decoration: BoxDecoration(
         color: _getBackgroundColor(auraColors),
-        border: Border.fromBorderSide(
-          BorderSide(color: _getBorderColor(auraColors)),
-        ),
+        border: Border.fromBorderSide(.new(color: _getBorderColor(auraColors))),
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
+          .circular(context.auraTheme.fromBorderRadius(.lg)),
         ),
         boxShadow: _getBoxShadow(),
       ),
@@ -160,13 +158,13 @@ class _AuraTileState extends State<AuraTile> {
         onTapUp: _canInteract ? (_) => _clearPressed() : null,
         onTap: _canInteract ? widget.onTap : null,
         onTapCancel: _clearPressed,
-        behavior: HitTestBehavior.opaque,
+        behavior: .opaque,
         excludeFromSemantics: true,
       ),
     );
 
     final sizedTile = widget.expand
-        ? SizedBox(width: double.infinity, child: tileContent)
+        ? SizedBox(width: .infinity, child: tileContent)
         : tileContent;
 
     if (!_canInteract) return sizedTile;
@@ -191,11 +189,11 @@ class _AuraTileState extends State<AuraTile> {
     if (!widget.enabled) return colors.outlineVariant;
 
     final baseColor = switch (widget.variant) {
-      AuraTileVariant.primary => colors.primary,
-      AuraTileVariant.surface => colors.surface,
-      AuraTileVariant.ghost => DesignColors.transparent,
-      AuraTileVariant.selected => colors.primary.withValues(alpha: 0.1),
-      AuraTileVariant.error => colors.error,
+      .primary => colors.primary,
+      .surface => colors.surface,
+      .ghost => DesignColors.transparent,
+      .selected => colors.primary.withValues(alpha: 0.1),
+      .error => colors.error,
     };
 
     if (!_canInteract) return baseColor;
@@ -229,15 +227,15 @@ class _AuraTileState extends State<AuraTile> {
     required AuraTypographyScale typography,
   }) {
     final fontSize = switch (widget.size) {
-      AuraTileSize.small => typography.fontSizeSm,
-      AuraTileSize.medium => typography.fontSizeBase,
-      AuraTileSize.large => typography.fontSizeLg,
+      .small => typography.fontSizeSm,
+      .medium => typography.fontSizeBase,
+      .large => typography.fontSizeLg,
     };
 
     final fontWeight = switch (widget.size) {
-      AuraTileSize.small => typography.fontWeightMedium,
-      AuraTileSize.medium => typography.fontWeightMedium,
-      AuraTileSize.large => typography.fontWeightSemibold,
+      .small => typography.fontWeightMedium,
+      .medium => typography.fontWeightMedium,
+      .large => typography.fontWeightSemibold,
     };
 
     return TextStyle(
@@ -252,25 +250,25 @@ class _AuraTileState extends State<AuraTile> {
     if (!widget.enabled) return colors.mutedForeground;
 
     return switch (widget.variant) {
-      AuraTileVariant.primary => colors.onTint(AuraTint.primary),
-      AuraTileVariant.surface => colors.foregroundOnSurface,
-      AuraTileVariant.ghost => colors.primary,
-      AuraTileVariant.selected => colors.primary,
-      AuraTileVariant.error => colors.onTint(AuraTint.error),
+      .primary => colors.onTint(.primary),
+      .surface => colors.foregroundOnSurface,
+      .ghost => colors.primary,
+      .selected => colors.primary,
+      .error => colors.onTint(.error),
     };
   }
 
   EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
     return switch (widget.size) {
-      AuraTileSize.small => EdgeInsets.symmetric(
+      .small => EdgeInsets.symmetric(
         vertical: spacing.sm,
         horizontal: spacing.md,
       ),
-      AuraTileSize.medium => EdgeInsets.symmetric(
+      .medium => EdgeInsets.symmetric(
         vertical: spacing.md,
         horizontal: spacing.lg,
       ),
-      AuraTileSize.large => EdgeInsets.symmetric(
+      .large => EdgeInsets.symmetric(
         vertical: spacing.lg,
         horizontal: spacing.xl,
       ),

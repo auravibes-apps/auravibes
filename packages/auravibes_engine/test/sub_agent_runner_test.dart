@@ -294,7 +294,7 @@ void main() {
               tracker.finish(
                 parentId: 'parent',
                 childId: 'child',
-                status: SubAgentCompletionStatus.stopped,
+                status: .stopped,
               );
             }),
           );
@@ -324,7 +324,7 @@ void main() {
             tracker.finish(
               parentId: 'parent',
               childId: 'child',
-              status: SubAgentCompletionStatus.error,
+              status: .error,
             );
           });
 
@@ -369,7 +369,7 @@ void main() {
           tracker.finish(
             parentId: 'parent',
             childId: 'child',
-            status: SubAgentCompletionStatus.stopped,
+            status: .stopped,
           );
 
           return AgentIterationDecision.done;

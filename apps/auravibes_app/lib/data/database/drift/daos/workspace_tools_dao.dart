@@ -46,8 +46,8 @@ class WorkspaceToolsDao(super.attachedDatabase)
               ))
               .write(
                 ToolsCompanion(
-                  updatedAt: Value(DateTime.now()),
-                  isEnabled: Value(isEnabled),
+                  updatedAt: .new(DateTime.now()),
+                  isEnabled: .new(isEnabled),
                 ),
               );
       // Return updated tool.
@@ -61,9 +61,9 @@ class WorkspaceToolsDao(super.attachedDatabase)
       // Insert new tool.
       return await into(tools).insertReturning(
         ToolsCompanion(
-          workspaceId: Value(workspaceId),
-          toolId: Value(toolId),
-          isEnabled: Value(isEnabled),
+          workspaceId: .new(workspaceId),
+          toolId: .new(toolId),
+          isEnabled: .new(isEnabled),
         ),
       );
     }
@@ -80,8 +80,8 @@ class WorkspaceToolsDao(super.attachedDatabase)
   }) async {
     final _ = await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
       ToolsCompanion(
-        updatedAt: Value(DateTime.now()),
-        isEnabled: Value(isEnabled),
+        updatedAt: .new(DateTime.now()),
+        isEnabled: .new(isEnabled),
       ),
     );
 
@@ -101,8 +101,8 @@ class WorkspaceToolsDao(super.attachedDatabase)
           ))
           .writeReturning(
             ToolsCompanion(
-              updatedAt: Value(DateTime.now()),
-              config: Value(config),
+              updatedAt: .new(DateTime.now()),
+              config: .new(config),
             ),
           );
 
@@ -178,9 +178,9 @@ class WorkspaceToolsDao(super.attachedDatabase)
     final updatedCount =
         await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
           ToolsCompanion(
-            updatedAt: Value(DateTime.now()),
-            description: Value(description),
-            inputSchema: Value(inputSchema),
+            updatedAt: .new(DateTime.now()),
+            description: .new(description),
+            inputSchema: .new(inputSchema),
           ),
         );
     if (updatedCount != 1) {
@@ -270,8 +270,8 @@ class WorkspaceToolsDao(super.attachedDatabase)
   }) async {
     final _ = await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
       ToolsCompanion(
-        updatedAt: Value(DateTime.now()),
-        permissions: Value(permission),
+        updatedAt: .new(DateTime.now()),
+        permissions: .new(permission),
       ),
     );
 

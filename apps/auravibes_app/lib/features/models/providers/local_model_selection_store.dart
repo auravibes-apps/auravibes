@@ -11,6 +11,6 @@ class const _LocalModelSelectionStore(
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
     String workspaceId,
   ) => _repository.watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
+    .new(workspaces: [workspaceId]),
   );
 }

@@ -1,9 +1,8 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
+    show AgentIterationContext, AgentIterationDecision;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -32,11 +31,11 @@ void main() {
       id: messageId,
       conversationId: conversationId,
       content: 'assistant',
-      messageType: MessageType.text,
+      messageType: .text,
       isUser: false,
-      status: MessageStatus.sent,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      status: .sent,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
 
     final conversation = ConversationEntity(
@@ -44,8 +43,8 @@ void main() {
       title: 'Test',
       workspaceId: workspaceId,
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
 
     setUp(() {
@@ -153,9 +152,7 @@ void main() {
         () => verify(
           () => agentService.call(
             conversationId: conversationId,
-            context: const AgentIterationContext(
-              origin: AgentIterationOrigin.toolResume,
-            ),
+            context: const AgentIterationContext(origin: .toolResume),
           ),
         ).called(1),
         returnsNormally,

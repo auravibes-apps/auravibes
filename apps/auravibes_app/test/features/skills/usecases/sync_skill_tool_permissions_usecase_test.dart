@@ -27,14 +27,11 @@ void main() {
     final fixture = _Fixture();
 
     setUp(() async {
-      fixture.database = AppDatabase(
+      fixture.database = .new(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       final workspace = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
-          name: 'Workspace',
-          type: WorkspaceType.local,
-        ),
+        .insert(name: 'Workspace', type: WorkspaceType.local),
       );
       final dynamicSpecs = _MockBuildDynamicSkillToolSpecsUsecase();
       final templateSpecs = _MockBuildSkillTemplateToolSpecsUsecase();
@@ -44,7 +41,7 @@ void main() {
         ..dynamicSpecs = dynamicSpecs
         ..templateSpecs = templateSpecs
         ..nativeSpecs = nativeSpecs
-        ..usecase = SyncSkillToolPermissionsUsecase(
+        ..usecase = .new(
           database: fixture.database,
           buildDynamicSkillToolSpecs: dynamicSpecs,
           buildSkillTemplateToolSpecs: templateSpecs,
@@ -134,10 +131,7 @@ void main() {
       final _ = await fixture.database.workspaceToolsDao
           .setWorkspaceToolEnabledById(created.id, isEnabled: false);
       final _ = await fixture.database.workspaceToolsDao
-          .setWorkspaceToolPermission(
-            created.id,
-            permission: PermissionAccess.granted,
-          );
+          .setWorkspaceToolPermission(created.id, permission: .granted);
 
       final updatedSpec = ToolSpec(
         name: 'skill__user__example__search',

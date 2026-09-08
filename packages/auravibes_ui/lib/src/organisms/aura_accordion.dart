@@ -48,17 +48,15 @@ class _AuraAccordionState extends State<AuraAccordion> {
     final navigable = AuraInteractionScope.of(context).allowsNavigation;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       children: [
         for (final (index, item) in widget.items.indexed)
           DecoratedBox(
             decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: context.auraColors.outline),
-              ),
+              border: Border(bottom: .new(color: context.auraColors.outline)),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: .stretch,
               children: [
                 Semantics(
                   child: InkWell(

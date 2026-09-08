@@ -32,33 +32,33 @@ class const SettingsScreen({required final String workspaceId, super.key})
                     child: TextLocale(
                       LocaleKeys.settings_screen_app_settings_title,
                     ),
-                    style: AuraTextStyle.heading6,
+                    style: .heading6,
                   ),
                   const AuraText(
                     child: TextLocale(
                       LocaleKeys.settings_screen_app_settings_subtitle,
                     ),
-                    style: AuraTextStyle.bodySmall,
+                    style: .bodySmall,
                   ),
                   AuraTile(
                     child: const AuraText(
                       child: TextLocale(LocaleKeys.settings_screen_theme_title),
-                      style: AuraTextStyle.bodyLarge,
+                      style: .bodyLarge,
                     ),
                     onTap: () {
                       _showThemeDialog(context, ref, currentTheme);
                     },
-                    variant: AuraTileVariant.ghost,
+                    variant: .ghost,
                     leading: Icon(
                       Icons.palette_outlined,
                       color: context.auraColors.secondary,
                     ),
                     trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: .min,
                       children: [
                         TextLocale(
                           _getThemeName(currentTheme),
-                          style: TextStyle(
+                          style: .new(
                             color: context.auraColors.onSurfaceVariant,
                             fontSize: 14,
                           ),
@@ -74,13 +74,13 @@ class const SettingsScreen({required final String workspaceId, super.key})
                   ),
                 ],
                 spacing: .none,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
               ),
             ),
             CompactionSettingsSection(workspaceId: workspaceId),
             const AccentColorSection(),
           ],
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
         ),
       ),
       appBar: const AuraAppBarWithDrawer(
@@ -91,11 +91,11 @@ class const SettingsScreen({required final String workspaceId, super.key})
 
   String _getThemeName(AppTheme theme) {
     switch (theme) {
-      case AppTheme.light:
+      case .light:
         return LocaleKeys.settings_screen_theme_light;
-      case AppTheme.dark:
+      case .dark:
         return LocaleKeys.settings_screen_theme_dark;
-      case AppTheme.system:
+      case .system:
         return LocaleKeys.settings_screen_theme_system;
     }
   }

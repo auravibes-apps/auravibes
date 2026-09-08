@@ -25,7 +25,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -42,7 +42,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       final ws = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'Test WS', type: WorkspaceType.local),
+        .insert(name: 'Test WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
@@ -59,8 +59,8 @@ void main() {
 
     test('upsert inserts new settings row', () async {
       const companion = WorkspaceCompactionSettingsCompanion(
-        autoCompactEnabled: Value(false),
-        usagePercentageThreshold: Value(50),
+        autoCompactEnabled: .new(false),
+        usagePercentageThreshold: .new(50),
       );
       final row = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
@@ -77,8 +77,8 @@ void main() {
           .upsert(
             workspaceId,
             const WorkspaceCompactionSettingsCompanion(
-              autoCompactEnabled: Value(false),
-              usagePercentageThreshold: Value(50),
+              autoCompactEnabled: .new(false),
+              usagePercentageThreshold: .new(50),
             ),
           );
 
@@ -86,9 +86,9 @@ void main() {
           .upsert(
             workspaceId,
             const WorkspaceCompactionSettingsCompanion(
-              autoCompactEnabled: Value(true),
-              usagePercentageThreshold: Value(75),
-              remainingTokenThreshold: Value(5000),
+              autoCompactEnabled: .new(true),
+              usagePercentageThreshold: .new(75),
+              remainingTokenThreshold: .new(5000),
             ),
           );
 
@@ -102,7 +102,7 @@ void main() {
       final _ = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
-          usagePercentageThreshold: Value(60),
+          usagePercentageThreshold: .new(60),
         ),
       );
 
@@ -136,7 +136,7 @@ void main() {
       final _ = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
-          usagePercentageThreshold: Value(40),
+          usagePercentageThreshold: .new(40),
         ),
       );
 
@@ -152,7 +152,7 @@ void main() {
       final _ = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
-          usagePercentageThreshold: Value(70),
+          usagePercentageThreshold: .new(70),
         ),
       );
 
@@ -180,7 +180,7 @@ void main() {
       final _ = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
-          usagePercentageThreshold: Value(80),
+          usagePercentageThreshold: .new(80),
         ),
       );
 

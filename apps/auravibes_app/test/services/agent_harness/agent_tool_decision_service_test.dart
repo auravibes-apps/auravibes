@@ -1,8 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_decision_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentIterationDecision;
@@ -59,7 +57,7 @@ void main() {
                   id: 'resolved-tool',
                   name: 'built_in_calc_calculator',
                   argumentsRaw: '{}',
-                  resultStatus: ToolCallResultStatus.executionError,
+                  resultStatus: .executionError,
                 ),
               ],
             ),
@@ -81,7 +79,7 @@ void main() {
                 id: 'running-tool',
                 name: 'built_in_calc_calculator',
                 argumentsRaw: '{}',
-                resultStatus: ToolCallResultStatus.running,
+                resultStatus: .running,
               ),
             ],
           ),
@@ -102,7 +100,7 @@ void main() {
                 id: 'stopped-tool',
                 name: 'built_in_calc_calculator',
                 argumentsRaw: '{}',
-                resultStatus: ToolCallResultStatus.stoppedByUser,
+                resultStatus: .stoppedByUser,
               ),
             ],
           ),
@@ -123,9 +121,9 @@ MessageEntity _message({MessageMetadataEntity? metadata}) {
     id: 'message-id',
     conversationId: 'conversation-id',
     content: 'content',
-    messageType: MessageType.text,
+    messageType: .text,
     isUser: false,
-    status: MessageStatus.sent,
+    status: .sent,
     createdAt: now,
     updatedAt: now,
     metadata: metadata,

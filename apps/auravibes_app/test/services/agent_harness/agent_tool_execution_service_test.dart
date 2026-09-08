@@ -2,17 +2,12 @@
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
     hide ToolToCall;
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
-import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
-import 'package:auravibes_app/services/tools/native_tool_type.dart';
-import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentIterationDecision,
@@ -43,7 +38,7 @@ void main() {
       loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
       messageRepository: messageRepository,
       resolveToolApprovalDecision: resolveToolApprovalDecision,
-      runResolvedToolUsecase: ResolvedToolService(
+      runResolvedToolUsecase: .new(
         agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
             ({
@@ -79,7 +74,7 @@ void main() {
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
         resolveToolApprovalDecision: resolveToolApprovalDecision,
-        runResolvedToolUsecase: ResolvedToolService(
+        runResolvedToolUsecase: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
               ({
@@ -106,7 +101,7 @@ void main() {
         loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
         resolveToolApprovalDecisionUsecaseForWorkspace: (_) =>
             workspaceResolver,
-        resolvedToolService: ResolvedToolService(
+        resolvedToolService: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller: ({
             required mcpServerId,
@@ -133,7 +128,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-call-1',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
         ),
       );
 
@@ -156,7 +151,7 @@ void main() {
           loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
           resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
           resolveSkillCommandTarget: resolveSkillTarget,
-          resolvedToolService: ResolvedToolService(
+          resolvedToolService: .new(
             agentCancellationRuntime: agentCancellationRuntime,
             mcpToolCaller: ({
               required mcpServerId,
@@ -199,7 +194,7 @@ void main() {
           ).thenAnswer(
             (_) async => const ToolApprovalDecision(
               toolCallId: 'tool-call-1',
-              permissionResult: ToolPermissionResult.granted,
+              permissionResult: .granted,
             ),
           );
 
@@ -250,9 +245,7 @@ void main() {
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
-          resolvedTool: ResolvedTool.skillCommand(
-            commandName: callSkillToolName,
-          ),
+          resolvedTool: .skillCommand(commandName: callSkillToolName),
           argumentsRaw: '{"skill":"duckduckgo"}',
         );
 
@@ -284,9 +277,7 @@ void main() {
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
-          resolvedTool: ResolvedTool.skillCommand(
-            commandName: callSkillToolName,
-          ),
+          resolvedTool: .skillCommand(commandName: callSkillToolName),
           argumentsRaw:
               '{"skill":"duckduckgo","tool":"search",'
               '"args":{},"revision":"rev-1"}',
@@ -323,7 +314,7 @@ void main() {
         ).thenAnswer(
           (_) async => const ToolApprovalDecision(
             toolCallId: 'tool-call-1',
-            permissionResult: ToolPermissionResult.granted,
+            permissionResult: .granted,
           ),
         );
 
@@ -395,7 +386,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-1',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
           permissionTableId: 'workspace-tool-1',
         ),
       );
@@ -453,7 +444,7 @@ void main() {
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
-            tooltype: UserToolType.calculator,
+            tooltype: .calculator,
           ),
           id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
@@ -482,7 +473,7 @@ void main() {
         ).thenAnswer(
           (_) async => const ToolApprovalDecision(
             toolCallId: 'tool-1',
-            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionResult: .needsConfirmation,
             permissionTableId: 'calculator',
           ),
         );
@@ -504,7 +495,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         id: 'tool-1',
         argumentsRaw: '{"input": "1+1"}',
@@ -535,7 +526,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-1',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
           permissionTableId: 'calculator',
         ),
       );
@@ -577,7 +568,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         id: 'tool-1',
         argumentsRaw: '{"input": "1+1"}',
@@ -586,7 +577,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         id: 'tool-2',
         argumentsRaw: '{"input": "2+2"}',
@@ -596,11 +587,11 @@ void main() {
         id: 'message-1',
         conversationId: 'conversation-1',
         content: 'assistant',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         metadata: const MessageMetadataEntity(
           toolCalls: [
             MessageToolCallEntity(
@@ -642,7 +633,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-1',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
           permissionTableId: 'calculator',
         ),
       );
@@ -656,7 +647,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-2',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
           permissionTableId: 'calculator',
         ),
       );
@@ -690,7 +681,7 @@ void main() {
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
-            tooltype: UserToolType.calculator,
+            tooltype: .calculator,
           ),
           id: 'tool-good',
           argumentsRaw: '{"input": "1+1"}',
@@ -699,7 +690,7 @@ void main() {
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
-            tooltype: UserToolType.calculator,
+            tooltype: .calculator,
           ),
           id: 'tool-bad',
           argumentsRaw: '{}',
@@ -709,11 +700,11 @@ void main() {
           id: 'message-1',
           conversationId: 'conversation-1',
           content: 'assistant',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          status: .sent,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
           metadata: const MessageMetadataEntity(
             toolCalls: [
               MessageToolCallEntity(
@@ -755,7 +746,7 @@ void main() {
         ).thenAnswer(
           (_) async => const ToolApprovalDecision(
             toolCallId: 'tool-good',
-            permissionResult: ToolPermissionResult.granted,
+            permissionResult: .granted,
             permissionTableId: 'calculator',
           ),
         );
@@ -769,7 +760,7 @@ void main() {
         ).thenAnswer(
           (_) async => const ToolApprovalDecision(
             toolCallId: 'tool-bad',
-            permissionResult: ToolPermissionResult.granted,
+            permissionResult: .granted,
             permissionTableId: 'calculator',
           ),
         );
@@ -807,7 +798,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         id: 'tool-granted',
         argumentsRaw: '{"input": "1+1"}',
@@ -816,7 +807,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'other',
           toolIdentifier: 'other_tool',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         id: 'tool-pending',
         argumentsRaw: '{"input": "test"}',
@@ -825,7 +816,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'disabled',
           toolIdentifier: 'disabled_tool',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         id: 'tool-disabled',
         argumentsRaw: '{"input": "test"}',
@@ -835,11 +826,11 @@ void main() {
         id: 'message-1',
         conversationId: 'conversation-1',
         content: 'assistant',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         metadata: const MessageMetadataEntity(
           toolCalls: [
             MessageToolCallEntity(
@@ -886,7 +877,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-granted',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
           permissionTableId: 'calculator',
         ),
       );
@@ -900,7 +891,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-pending',
-          permissionResult: ToolPermissionResult.needsConfirmation,
+          permissionResult: .needsConfirmation,
           permissionTableId: 'other_tool',
         ),
       );
@@ -914,7 +905,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-disabled',
-          permissionResult: ToolPermissionResult.disabledByAgent,
+          permissionResult: .disabledByAgent,
           permissionTableId: 'disabled_tool',
         ),
       );
@@ -956,7 +947,7 @@ void main() {
           tool: ResolvedTool.builtIn(
             tableId: 'tool-a',
             toolIdentifier: 'tool_a',
-            tooltype: UserToolType.calculator,
+            tooltype: .calculator,
           ),
           id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
@@ -965,7 +956,7 @@ void main() {
           tool: ResolvedTool.builtIn(
             tableId: 'tool-b',
             toolIdentifier: 'tool_b',
-            tooltype: UserToolType.calculator,
+            tooltype: .calculator,
           ),
           id: 'tool-2',
           argumentsRaw: '{"input": "2+2"}',
@@ -994,7 +985,7 @@ void main() {
         ).thenAnswer(
           (_) async => const ToolApprovalDecision(
             toolCallId: 'tool-1',
-            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionResult: .needsConfirmation,
             permissionTableId: 'tool_a',
           ),
         );
@@ -1008,7 +999,7 @@ void main() {
         ).thenAnswer(
           (_) async => const ToolApprovalDecision(
             toolCallId: 'tool-2',
-            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionResult: .needsConfirmation,
             permissionTableId: 'tool_b',
           ),
         );
@@ -1037,7 +1028,7 @@ void main() {
       loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
       messageRepository: messageRepository,
       resolveToolApprovalDecision: resolveToolApprovalDecision,
-      runResolvedToolUsecase: ResolvedToolService(
+      runResolvedToolUsecase: .new(
         agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
             ({
@@ -1064,7 +1055,7 @@ void main() {
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
         resolveToolApprovalDecision: resolveToolApprovalDecision,
-        runResolvedToolUsecase: ResolvedToolService(
+        runResolvedToolUsecase: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
               ({
@@ -1087,7 +1078,7 @@ void main() {
         final nativeTool = ToolToCall(
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
-            nativeToolType: NativeToolType.url,
+            nativeToolType: .url,
           ),
           id: 'native-tool-1',
           argumentsRaw: '{"input": "https://example.com"}',
@@ -1116,7 +1107,7 @@ void main() {
         ).thenAnswer(
           (_) async => const ToolApprovalDecision(
             toolCallId: 'native-tool-1',
-            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionResult: .needsConfirmation,
             permissionTableId: 'url',
           ),
         );
@@ -1145,7 +1136,7 @@ void main() {
       final nativeTool = ToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
-          nativeToolType: NativeToolType.url,
+          nativeToolType: .url,
         ),
         id: 'native-tool-1',
         argumentsRaw: '{"input": "https://example.com"}',
@@ -1155,11 +1146,11 @@ void main() {
         id: 'message-1',
         conversationId: 'conversation-1',
         content: 'assistant',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         metadata: const MessageMetadataEntity(
           toolCalls: [
             MessageToolCallEntity(
@@ -1194,7 +1185,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'native-tool-1',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
           permissionTableId: 'url',
         ),
       );
@@ -1225,7 +1216,7 @@ void main() {
       final nativeTool = ToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
-          nativeToolType: NativeToolType.url,
+          nativeToolType: .url,
         ),
         id: 'native-tool-1',
         argumentsRaw: '{"input": "https://example.com"}',
@@ -1235,11 +1226,11 @@ void main() {
         id: 'message-1',
         conversationId: 'conversation-1',
         content: 'assistant',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         metadata: const MessageMetadataEntity(
           toolCalls: [
             MessageToolCallEntity(
@@ -1274,7 +1265,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'native-tool-1',
-          permissionResult: ToolPermissionResult.notConfigured,
+          permissionResult: .notConfigured,
         ),
       );
       when(() => messageRepository.getMessageById('message-1'))
@@ -1304,7 +1295,7 @@ void main() {
       final nativeTool = ToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
-          nativeToolType: NativeToolType.url,
+          nativeToolType: .url,
         ),
         id: 'native-tool-1',
         argumentsRaw: '{"input": "https://example.com"}',
@@ -1314,11 +1305,11 @@ void main() {
         id: 'message-1',
         conversationId: 'conversation-1',
         content: 'assistant',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         metadata: const MessageMetadataEntity(
           toolCalls: [
             MessageToolCallEntity(
@@ -1353,7 +1344,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'native-tool-1',
-          permissionResult: ToolPermissionResult.notConfigured,
+          permissionResult: .notConfigured,
         ),
       );
       when(() => messageRepository.getMessageById('message-1'))
@@ -1386,7 +1377,7 @@ void main() {
         final nativeTool = ToolToCall(
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
-            nativeToolType: NativeToolType.url,
+            nativeToolType: .url,
           ),
           id: 'native-tool-1',
           argumentsRaw: '{"input": "https://example.com"}',
@@ -1396,11 +1387,11 @@ void main() {
           id: 'message-1',
           conversationId: 'conversation-1',
           content: 'assistant',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          status: .sent,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
           metadata: const MessageMetadataEntity(
             toolCalls: [
               MessageToolCallEntity(
@@ -1435,7 +1426,7 @@ void main() {
         ).thenAnswer(
           (_) async => const ToolApprovalDecision(
             toolCallId: 'native-tool-1',
-            permissionResult: ToolPermissionResult.disabledInWorkspace,
+            permissionResult: .disabledInWorkspace,
             permissionTableId: 'url',
           ),
         );
@@ -1477,7 +1468,7 @@ void main() {
       loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
       messageRepository: messageRepository,
       resolveToolApprovalDecision: resolveToolApprovalDecision,
-      runResolvedToolUsecase: ResolvedToolService(
+      runResolvedToolUsecase: .new(
         agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
             ({
@@ -1504,7 +1495,7 @@ void main() {
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
         resolveToolApprovalDecision: resolveToolApprovalDecision,
-        runResolvedToolUsecase: ResolvedToolService(
+        runResolvedToolUsecase: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
               ({
@@ -1525,7 +1516,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         id: 'tool-1',
         argumentsRaw: '{"input": "1+1"}',
@@ -1535,11 +1526,11 @@ void main() {
         id: 'message-1',
         conversationId: 'conversation-1',
         content: 'assistant',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         metadata: const MessageMetadataEntity(
           toolCalls: [
             MessageToolCallEntity(
@@ -1581,7 +1572,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-1',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
           permissionTableId: 'calculator',
         ),
       );
@@ -1616,7 +1607,7 @@ void main() {
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
-            tooltype: UserToolType.calculator,
+            tooltype: .calculator,
           ),
           id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
@@ -1626,11 +1617,11 @@ void main() {
           id: 'message-1',
           conversationId: 'conversation-1',
           content: 'assistant',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          status: .sent,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
           metadata: const MessageMetadataEntity(
             toolCalls: [
               MessageToolCallEntity(
@@ -1676,7 +1667,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         id: 'tool-1',
         argumentsRaw: '{"input": "1+1"}',
@@ -1686,11 +1677,11 @@ void main() {
         id: 'message-1',
         conversationId: 'conversation-1',
         content: 'assistant',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         metadata: const MessageMetadataEntity(
           toolCalls: [
             MessageToolCallEntity(
@@ -1727,7 +1718,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-1',
-          permissionResult: ToolPermissionResult.disabledInConversation,
+          permissionResult: .disabledInConversation,
           permissionTableId: 'calculator',
         ),
       );
@@ -1757,7 +1748,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         id: 'tool-1',
         argumentsRaw: '{"input": "1+1"}',
@@ -1788,7 +1779,7 @@ void main() {
       ).thenAnswer(
         (_) async => const ToolApprovalDecision(
           toolCallId: 'tool-1',
-          permissionResult: ToolPermissionResult.granted,
+          permissionResult: .granted,
           permissionTableId: 'calculator',
         ),
       );
@@ -1832,11 +1823,11 @@ MessageEntity _runAllowedToolsToolMessage() {
     id: 'message-1',
     conversationId: 'conversation-1',
     content: 'assistant',
-    messageType: MessageType.text,
+    messageType: .text,
     isUser: false,
-    status: MessageStatus.sent,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    status: .sent,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
     metadata: const MessageMetadataEntity(
       toolCalls: [
         MessageToolCallEntity(

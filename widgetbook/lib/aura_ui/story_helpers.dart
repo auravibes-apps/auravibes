@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:widgetbook/widgetbook.dart';
@@ -29,7 +27,7 @@ const compactPhoneViewport = ViewportData(
   width: 320,
   height: 568,
   pixelRatio: 1,
-  platform: TargetPlatform.iOS,
+  platform: .iOS,
 );
 
 const landscapePhoneViewport = ViewportData(
@@ -37,7 +35,7 @@ const landscapePhoneViewport = ViewportData(
   width: 812,
   height: 375,
   pixelRatio: 1,
-  platform: TargetPlatform.iOS,
+  platform: .iOS,
 );
 
 const tabletViewport = ViewportData(
@@ -45,7 +43,7 @@ const tabletViewport = ViewportData(
   width: 768,
   height: 1024,
   pixelRatio: 1,
-  platform: TargetPlatform.iOS,
+  platform: .iOS,
 );
 
 const auraLocalizationDelegates = <LocalizationsDelegate<dynamic>>[
@@ -56,7 +54,7 @@ const auraLocalizationDelegates = <LocalizationsDelegate<dynamic>>[
 
 ImageProvider<Object> auraSampleImageProvider() {
   return MemoryImage(
-    Uint8List.fromList(const [
+    .fromList(const [
       137,
       80,
       78,
@@ -165,7 +163,7 @@ class AuraDirectionalityAddon([TextDirection direction = TextDirection.ltr])
 
 Widget constrainStoryWidth(Widget child, {double maxWidth = 420}) {
   return ConstrainedBox(
-    constraints: BoxConstraints(maxWidth: maxWidth),
+    constraints: .new(maxWidth: maxWidth),
     child: child,
   );
 }

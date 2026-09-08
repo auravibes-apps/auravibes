@@ -47,8 +47,8 @@ A2uiFormValidationResult validateA2uiFormValues({
     if (error != null) errors[path] = error;
   }
   return A2uiFormValidationResult(
-    errorsByPath: Map.unmodifiable(errors),
-    unansweredPaths: List.unmodifiable(unanswered),
+    errorsByPath: .unmodifiable(errors),
+    unansweredPaths: .unmodifiable(unanswered),
   );
 }
 

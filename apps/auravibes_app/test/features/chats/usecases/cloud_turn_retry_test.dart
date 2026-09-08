@@ -136,7 +136,7 @@ void main() {
       ).thenThrow(
         const CloudAppException(
           localizationKey: 'unused',
-          context: CloudOperationContext.conversation,
+          context: .conversation,
           code: 'staleRevision',
         ),
       );
@@ -219,7 +219,7 @@ void main() {
       if (attempts++ == 0) {
         throw const CloudAppException(
           localizationKey: 'unused',
-          context: CloudOperationContext.conversation,
+          context: .conversation,
           code: 'staleRevision',
         );
       }

@@ -215,7 +215,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       final _ = AuraSnackBars.show(
         context: context,
         content: Text(LocaleKeys.skills_screen_save_error.tr(context: context)),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -230,7 +230,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       final usecase = ref.read(createSkillUsecaseProvider(widget.workspaceId));
       final _ = await usecase.call(
         widget.workspaceId,
-        SkillToCreate(
+        .new(
           kind: SkillKind.template,
           title: _titleController.text,
           description: _descriptionController.text,
@@ -249,7 +249,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
     final usecase = ref.read(updateSkillUsecaseProvider(widget.workspaceId));
     final _ = await usecase.call(
       skillId,
-      SkillToUpdate(
+      .new(
         title: _titleController.text,
         description: _descriptionController.text,
         content: _contentController.text,
@@ -288,7 +288,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       final _ = AuraSnackBars.show(
         context: context,
         content: Text(LocaleKeys.skills_screen_save_error.tr(context: context)),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -437,7 +437,7 @@ class const _SkillDetailForm({
                 ),
             ],
             spacing: .md,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
           ),
         ),
         if (detail != null &&
@@ -482,7 +482,7 @@ class const _SkillToolsCard({
               const Expanded(
                 child: AuraText(
                   child: TextLocale(LocaleKeys.skills_tool_section_title),
-                  style: AuraTextStyle.heading4,
+                  style: .heading4,
                 ),
               ),
               AuraIconButton(
@@ -510,10 +510,10 @@ class const _SkillToolsCard({
                                 AuraText(child: Text(tool.slug)),
                               ],
                               spacing: .xs,
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: .start,
                             ),
                             onTap: () => _openTool(context, tool.id),
-                            variant: AuraTileVariant.ghost,
+                            variant: .ghost,
                             leading: const AuraIcon(Icons.link_outlined),
                             trailing: AuraRow(
                               children: [
@@ -528,7 +528,7 @@ class const _SkillToolsCard({
                                 ),
                                 const AuraIcon(Icons.chevron_right),
                               ],
-                              mainAxisSize: MainAxisSize.min,
+                              mainAxisSize: .min,
                             ),
                           ),
                       ],
@@ -539,12 +539,12 @@ class const _SkillToolsCard({
             AsyncLoading() => const Center(child: AuraSpinner()),
             AsyncError() => const AuraText(
               child: TextLocale(LocaleKeys.skills_tool_load_error),
-              tint: AuraTint.error,
+              tint: .error,
             ),
           },
         ],
         spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -622,7 +622,7 @@ class const _AppSkillToolsCard({
         children: [
           const AuraText(
             child: TextLocale(LocaleKeys.skills_tool_section_title),
-            style: AuraTextStyle.heading4,
+            style: .heading4,
           ),
           for (final tool in tools)
             AuraTile(
@@ -637,12 +637,12 @@ class const _AppSkillToolsCard({
                   AuraBadge.text(
                     child: Text(
                       tool.slug,
-                      style: TextStyle(
+                      style: .new(
                         fontFamily: context.auraTheme.typography.monoFontFamily,
                       ),
                     ),
-                    variant: AuraBadgeVariant.outlined,
-                    size: AuraBadgeSize.small,
+                    variant: .outlined,
+                    size: .small,
                   ),
                   AuraText(
                     child: switch (tool.descriptionKey) {
@@ -652,14 +652,14 @@ class const _AppSkillToolsCard({
                   ),
                 ],
                 spacing: .xs,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
               ),
-              variant: AuraTileVariant.ghost,
+              variant: .ghost,
               leading: const AuraIcon(Icons.code_outlined),
             ),
         ],
         spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -682,10 +682,10 @@ class const _CredentialDefinitionSelector({
         value: this.value,
         onChanged: onChanged,
       ),
-      AsyncLoading() => const AuraSpinner(size: AuraSpinnerSize.small),
+      AsyncLoading() => const AuraSpinner(size: .small),
       AsyncError() => const AuraText(
         child: TextLocale(LocaleKeys.skill_credentials_definitions_error),
-        tint: AuraTint.error,
+        tint: .error,
       ),
     };
   }
@@ -733,11 +733,11 @@ class const _CredentialDefinitionSelectContent({
             child: TextLocale(
               LocaleKeys.skill_credentials_definitions_not_found,
             ),
-            tint: AuraTint.error,
+            tint: .error,
           ),
       ],
       spacing: .xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
     );
   }
 }
@@ -775,11 +775,11 @@ class const _SkillCredentialsHint({
       (
         definition: _,
         credentials: AsyncLoading(),
-      ) => const AuraSpinner(size: AuraSpinnerSize.small),
+      ) => const AuraSpinner(size: .small),
       (definition: AsyncError(), credentials: _) ||
       (definition: _, credentials: AsyncError()) => const AuraText(
         child: TextLocale(LocaleKeys.skill_credentials_load_error),
-        tint: AuraTint.error,
+        tint: .error,
       ),
     };
   }
@@ -843,7 +843,7 @@ class const _AppSkillCredentialsHint({
 
 class _AppSkillCredentialsHintState
     extends ConsumerState<_AppSkillCredentialsHint> {
-  Future<List<AppSkillCredentialCandidate>> _future = Future.value(const []);
+  Future<List<AppSkillCredentialCandidate>> _future = .value(const []);
 
   @override
   void initState() {
@@ -875,7 +875,7 @@ class _AppSkillCredentialsHintState
 
         final credentials = snapshot.data;
         if (credentials == null) {
-          return const AuraSpinner(size: AuraSpinnerSize.small);
+          return const AuraSpinner(size: .small);
         }
         if (credentials.isEmpty) {
           return _MissingCredentialHint(
@@ -977,7 +977,7 @@ class const _MissingCredentialHint({
         AuraButton(
           onPressed: onCreateCredential,
           child: const TextLocale(LocaleKeys.skill_credentials_add_title),
-          size: AuraButtonSize.small,
+          size: .small,
         ),
       ],
     );
@@ -996,7 +996,7 @@ class const _ReadOnlyField({
         AuraSelectableText(value),
       ],
       spacing: .xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
     );
   }
 }

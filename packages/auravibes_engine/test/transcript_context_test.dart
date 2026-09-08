@@ -6,7 +6,7 @@ void main() {
     final toolCalls = <AgentTranscriptToolCallSnapshot>[
       const AgentTranscriptToolCallSnapshot(
         id: 'tool-1',
-        lifecycle: AgentToolCallLifecycle.pending,
+        lifecycle: .pending,
         argumentCharacterCount: 2,
         resultCharacterCount: 0,
       ),
@@ -14,9 +14,9 @@ void main() {
     final excludedIds = <String>['message-1'];
     final message = AgentTranscriptMessageSnapshot(
       id: 'summary-1',
-      role: AgentTranscriptRole.system,
-      kind: AgentTranscriptKind.system,
-      status: AgentTranscriptStatus.sent,
+      role: .system,
+      kind: .system,
+      status: .sent,
       textCharacterCount: 7,
       toolCalls: toolCalls,
       latestCumulativeTokenCount: 12,

@@ -24,7 +24,7 @@ class AppSkillHttpClientAdapter {
         if (completer.isCanceled) return;
 
         final currentOperation = _urlService.execute(
-          UrlRequest(
+          .new(
             url: uri.toString(),
             method: request.method,
             headers: request.headers,

@@ -6,7 +6,6 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
@@ -141,7 +140,7 @@ class const AppApproveToolCallDataProvider({
     final _ = await toolsRepository.setConversationToolPermission(
       conversationId,
       permissionTableId,
-      permissionMode: ToolPermissionMode.alwaysAllow,
+      permissionMode: .alwaysAllow,
     );
   }
 
@@ -166,7 +165,7 @@ class const AppApproveToolCallDataProvider({
     await _patchToolCall(
       messageId: messageId,
       toolCallId: toolCallId,
-      resultStatus: ToolCallResultStatus.running,
+      resultStatus: .running,
     );
   }
 
@@ -233,7 +232,7 @@ class const AppApproveToolCallDataProvider({
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
     onToolCallChanged();
   }

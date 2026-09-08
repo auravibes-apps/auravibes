@@ -2,7 +2,6 @@ import 'package:auravibes_app/features/service_connections/models/cloud_service_
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/v7.dart';
@@ -22,9 +21,7 @@ Future<ServiceConnectionOperations> serviceConnectionOperations(
     cloudWorkspaceStateGatewayProvider(session).future,
   );
   if (gateway != null) {
-    final cloud = CloudServiceConnectionUsecases(
-      CloudWorkspaceResourceStore(gateway),
-    );
+    final cloud = CloudServiceConnectionUsecases(.new(gateway));
 
     return ServiceConnectionOperations(
       createAppSkillCredential:
@@ -37,8 +34,8 @@ Future<ServiceConnectionOperations> serviceConnectionOperations(
             id: const UuidV7().generate(),
             name: name,
             serviceId: appSkillServiceId,
-            secretKind: WorkspaceSecretKind.skillCredential,
-            scope: WorkspaceSecretScope.workspace,
+            secretKind: .skillCredential,
+            scope: .workspace,
             secret: apiKey,
           ),
       getGenericForEdit: (id) async {
@@ -55,7 +52,7 @@ Future<ServiceConnectionOperations> serviceConnectionOperations(
           throw StateError('Cloud service connection revision is missing');
         }
         await cloud.updateGeneric(
-          connection: CloudServiceConnection(
+          connection: .new(
             id: connection.id,
             revision: revision,
             name: connection.name,

@@ -21,8 +21,8 @@ class const ToolCatalogCandidate<T>._(
 }
 
 class ToolCatalog<T>._(List<ToolSpec> specs, Map<String, T> targets) {
-  final List<ToolSpec> specs = List.unmodifiable(specs);
-  final Map<String, T> _targets = Map.unmodifiable(targets);
+  final List<ToolSpec> specs = .unmodifiable(specs);
+  final Map<String, T> _targets = .unmodifiable(targets);
 
   T? resolve(String modelName) => _targets[modelName];
 }

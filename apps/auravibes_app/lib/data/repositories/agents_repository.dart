@@ -41,7 +41,7 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
     _validateAgentToCreate(agent);
 
     final created = await _database.agentsDao.createAgent(
-      AgentsCompanion(
+      .new(
         workspaceId: Value(workspaceId),
         name: Value(agent.name.trim()),
         description: Value(agent.description.trim()),
@@ -61,7 +61,7 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
 
     final updated = await _database.agentsDao.updateAgent(
       agentId,
-      AgentsCompanion(
+      .new(
         updatedAt: Value(DateTime.now()),
         name: Value(agent.name.trim()),
         description: Value(agent.description.trim()),
@@ -166,10 +166,10 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   AgentSkillsCompanion _mapSkillRefToCompanion(AgentSkillRef ref) {
     return switch (ref) {
       UserAgentSkillRef(:final skillId) => AgentSkillsCompanion(
-        workspaceSkillId: Value(skillId),
+        workspaceSkillId: .new(skillId),
       ),
       AppAgentSkillRef(:final identifier) => AgentSkillsCompanion(
-        appSkillIdentifier: Value(identifier),
+        appSkillIdentifier: .new(identifier),
       ),
     };
   }

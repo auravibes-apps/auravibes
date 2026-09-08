@@ -173,7 +173,7 @@ class AuraDateTimeInput extends StatelessWidget {
                 child: Text(
                   enableDate && enableTime ? labels.dateAndTime : _modeLabel(),
                 ),
-                style: AuraTextStyle.bodySmall,
+                style: .bodySmall,
               ),
             ],
           ),
@@ -299,9 +299,7 @@ class AuraDateTimeInput extends StatelessWidget {
     required VoidCallback onDone,
   }) {
     final colors = context.auraColors;
-    final borderRadius = context.auraTheme.fromBorderRadius(
-      AuraBorderRadius.lg,
-    );
+    final borderRadius = context.auraTheme.fromBorderRadius(.lg);
 
     return Semantics(
       key: const ValueKey<String>('auraDateTimeInputPicker'),
@@ -325,16 +323,13 @@ class AuraDateTimeInput extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(_pickerPadding),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: .min,
+                    crossAxisAlignment: .stretch,
                     children: [
-                      AuraText(
-                        child: Text(_pickerTitle()),
-                        style: AuraTextStyle.heading6,
-                      ),
+                      AuraText(child: Text(_pickerTitle()), style: .heading6),
                       const AuraSizedBox(height: .md),
                       Wrap(
-                        alignment: WrapAlignment.end,
+                        alignment: .end,
                         spacing: _pickerButtonSpacing,
                         children: [
                           _buildPickerButton(
@@ -344,7 +339,7 @@ class AuraDateTimeInput extends StatelessWidget {
                             width: _pickerActionWidth,
                             child: Text(
                               labels.cancel,
-                              style: TextStyle(
+                              style: .new(
                                 color: colors.primary,
                                 fontSize: _pickerActionFontSize,
                                 fontWeight: FontWeight.w600,
@@ -358,7 +353,7 @@ class AuraDateTimeInput extends StatelessWidget {
                             width: _pickerActionWidth,
                             child: Text(
                               labels.done,
-                              style: TextStyle(
+                              style: .new(
                                 color: colors.onPrimary,
                                 fontSize: _pickerActionFontSize,
                                 fontWeight: FontWeight.w600,
@@ -367,9 +362,7 @@ class AuraDateTimeInput extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: colors.primary,
                               borderRadius: BorderRadius.circular(
-                                context.auraTheme.fromBorderRadius(
-                                  AuraBorderRadius.md,
-                                ),
+                                context.auraTheme.fromBorderRadius(.md),
                               ),
                             ),
                           ),
@@ -437,7 +430,7 @@ class AuraDateTimeInput extends StatelessWidget {
           },
           child: Text(
             '$day',
-            style: TextStyle(
+            style: .new(
               color: day == value.day ? colors.onPrimary : colors.onSurface,
               fontSize: _pickerDayFontSize,
               fontWeight: FontWeight.w500,
@@ -447,10 +440,8 @@ class AuraDateTimeInput extends StatelessWidget {
             color: day == value.day ? colors.primary : null,
             border: day == value.day
                 ? null
-                : Border.fromBorderSide(
-                    BorderSide(color: colors.outlineVariant),
-                  ),
-            shape: BoxShape.circle,
+                : Border.fromBorderSide(.new(color: colors.outlineVariant)),
+            shape: .circle,
           ),
           selected: day == value.day,
         ),
@@ -466,7 +457,7 @@ class AuraDateTimeInput extends StatelessWidget {
               onPressed: () => onChanged(_changeMonth(value, -1)),
               child: Text(
                 '<',
-                style: TextStyle(
+                style: .new(
                   color: colors.primary,
                   fontSize: _pickerControlFontSize,
                   fontWeight: FontWeight.w600,
@@ -477,7 +468,7 @@ class AuraDateTimeInput extends StatelessWidget {
               child: Center(
                 child: AuraText(
                   child: Text(_formatMonth(value)),
-                  style: AuraTextStyle.heading6,
+                  style: .heading6,
                 ),
               ),
             ),
@@ -487,7 +478,7 @@ class AuraDateTimeInput extends StatelessWidget {
               onPressed: () => onChanged(_changeMonth(value, 1)),
               child: Text(
                 '>',
-                style: TextStyle(
+                style: .new(
                   color: colors.primary,
                   fontSize: _pickerControlFontSize,
                   fontWeight: FontWeight.w600,
@@ -498,14 +489,14 @@ class AuraDateTimeInput extends StatelessWidget {
         ),
         const AuraSizedBox(height: .sm),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          mainAxisAlignment: .spaceAround,
           children: [
             for (var weekday = 1; weekday <= _daysPerWeek; weekday++)
               Expanded(
                 child: Center(
                   child: Text(
                     labels.weekdayLabels[weekday - 1],
-                    style: TextStyle(
+                    style: .new(
                       color: colors.mutedForeground,
                       fontSize: _pickerActionFontSize,
                       fontWeight: FontWeight.w600,
@@ -539,19 +530,16 @@ class AuraDateTimeInput extends StatelessWidget {
       children: [
         Align(
           alignment: AlignmentDirectional.centerStart,
-          child: AuraText(
-            child: Text(labels.time),
-            style: AuraTextStyle.heading6,
-          ),
+          child: AuraText(child: Text(labels.time), style: .heading6),
         ),
         const AuraSizedBox(height: .xs),
         Wrap(
-          alignment: WrapAlignment.center,
+          alignment: .center,
           spacing: _pickerButtonSpacing,
           runSpacing: _pickerButtonSpacing,
           children: [
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 _buildPickerButton(
                   context: context,
@@ -559,7 +547,7 @@ class AuraDateTimeInput extends StatelessWidget {
                   onPressed: () => onChanged(_changeHour(value, -1)),
                   child: Text(
                     '-',
-                    style: TextStyle(
+                    style: .new(
                       color: colors.primary,
                       fontSize: _pickerControlFontSize,
                       fontWeight: FontWeight.w600,
@@ -571,7 +559,7 @@ class AuraDateTimeInput extends StatelessWidget {
                   child: Center(
                     child: Text(
                       _twoDigits(value.hour),
-                      style: TextStyle(
+                      style: .new(
                         color: colors.onSurface,
                         fontSize: _pickerControlFontSize,
                         fontWeight: FontWeight.w600,
@@ -585,7 +573,7 @@ class AuraDateTimeInput extends StatelessWidget {
                   onPressed: () => onChanged(_changeHour(value, 1)),
                   child: Text(
                     '+',
-                    style: TextStyle(
+                    style: .new(
                       color: colors.primary,
                       fontSize: _pickerControlFontSize,
                       fontWeight: FontWeight.w600,
@@ -596,13 +584,13 @@ class AuraDateTimeInput extends StatelessWidget {
             ),
             Text(
               ':',
-              style: TextStyle(
+              style: .new(
                 color: colors.onSurface,
                 fontSize: _pickerControlFontSize,
               ),
             ),
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 _buildPickerButton(
                   context: context,
@@ -610,7 +598,7 @@ class AuraDateTimeInput extends StatelessWidget {
                   onPressed: () => onChanged(_changeMinute(value, -1)),
                   child: Text(
                     '-',
-                    style: TextStyle(
+                    style: .new(
                       color: colors.primary,
                       fontSize: _pickerControlFontSize,
                       fontWeight: FontWeight.w600,
@@ -622,7 +610,7 @@ class AuraDateTimeInput extends StatelessWidget {
                   child: Center(
                     child: Text(
                       _twoDigits(value.minute),
-                      style: TextStyle(
+                      style: .new(
                         color: colors.onSurface,
                         fontSize: _pickerControlFontSize,
                         fontWeight: FontWeight.w600,
@@ -636,7 +624,7 @@ class AuraDateTimeInput extends StatelessWidget {
                   onPressed: () => onChanged(_changeMinute(value, 1)),
                   child: Text(
                     '+',
-                    style: TextStyle(
+                    style: .new(
                       color: colors.primary,
                       fontSize: _pickerControlFontSize,
                       fontWeight: FontWeight.w600,
@@ -661,9 +649,7 @@ class AuraDateTimeInput extends StatelessWidget {
     double width = _pickerControlHeight,
   }) {
     final colors = context.auraColors;
-    final controlRadius = context.auraTheme.fromBorderRadius(
-      AuraBorderRadius.md,
-    );
+    final controlRadius = context.auraTheme.fromBorderRadius(.md);
 
     return Semantics(
       child: AuraPressable(
@@ -676,9 +662,7 @@ class AuraDateTimeInput extends StatelessWidget {
         decoration:
             decoration ??
             BoxDecoration(
-              border: Border.fromBorderSide(
-                BorderSide(color: colors.outlineVariant),
-              ),
+              border: Border.fromBorderSide(.new(color: colors.outlineVariant)),
               borderRadius: BorderRadius.circular(controlRadius),
             ),
         onPressed: onPressed,
@@ -749,7 +733,7 @@ class _AuraDateTimeInputHostState extends State<_AuraDateTimeInputHost> {
     final nextEnvironment = _PickerEnvironment.from(context);
     final environment = _environment;
     if (environment == null) {
-      _environment = ValueNotifier(nextEnvironment);
+      _environment = .new(nextEnvironment);
     } else if (environment.value != nextEnvironment) {
       environment.value = nextEnvironment;
     }

@@ -39,7 +39,7 @@ class ModelApiService {
   /// Creates a default Dio instance with configuration.
   static Dio _createDefaultDio() {
     return Dio(
-      BaseOptions(
+      .new(
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 30),
         baseUrl: 'https://models.dev',
@@ -75,12 +75,7 @@ class ModelApiService {
       throw Exception('API request failed with status ${response.statusCode}');
     }
 
-    return _fromCatalog(
-      ModelsDevCatalogValue.parse(
-        jsonData,
-        canonicalModelIds: canonicalModelIds,
-      ),
-    );
+    return _fromCatalog(.parse(jsonData, canonicalModelIds: canonicalModelIds));
   }
 }
 
@@ -115,7 +110,7 @@ ModelApiResponse _fromCatalog(ModelsDevCatalogValue catalog) {
     providers: [
       for (final provider in catalog.providers)
         ApiProviderDto(
-          modelProvider: ApiModelProviderEntity.fromJson({
+          modelProvider: .fromJson({
             'id': provider.id,
             'name': provider.name,
             'npm': provider.type,

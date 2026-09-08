@@ -26,12 +26,12 @@ class const CompactWorkspaceModelSelector({
     return switch (groupedModelsAsync) {
       AsyncLoading() =>
         sheetMode
-            ? const Center(child: AuraSpinner(size: AuraSpinnerSize.small))
+            ? const Center(child: AuraSpinner(size: .small))
             : const SizedBox(
                 width: 180,
                 child: AuraDropdownSelector<String>(
                   options: [],
-                  placeholder: AuraSpinner(size: AuraSpinnerSize.small),
+                  placeholder: AuraSpinner(size: .small),
                   isEnabled: false,
                 ),
               ),
@@ -145,7 +145,7 @@ class const _ModelSheetSelector({
     }
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         AuraInput(
           controller: controller,
@@ -170,7 +170,7 @@ class const _ModelSheetSelector({
                     ? AuraTileVariant.selected
                     : AuraTileVariant.surface,
                 trailing: isSelected
-                    ? const AuraIcon(Icons.check, tint: AuraTint.primary)
+                    ? const AuraIcon(Icons.check, tint: .primary)
                     : null,
               );
             },
@@ -198,10 +198,10 @@ class const _CompactModelDropdown({
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final radius = BorderRadius.all(
-      Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+      .circular(context.auraTheme.fromBorderRadius(.xl)),
     );
     OutlineInputBorder outline(Color color) => OutlineInputBorder(
-      borderSide: BorderSide(color: color),
+      borderSide: .new(color: color),
       borderRadius: radius,
     );
 
@@ -213,7 +213,7 @@ class const _CompactModelDropdown({
           placeholder: TextLocale(
             LocaleKeys.models_screens_select_model,
             softWrap: false,
-            overflow: TextOverflow.ellipsis,
+            overflow: .ellipsis,
             maxLines: 1,
           ),
           isEnabled: false,
@@ -231,7 +231,7 @@ class const _CompactModelDropdown({
                 child: Text(
                   model.workspaceModelSelection.modelName ??
                       model.workspaceModelSelection.modelId,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                   maxLines: 1,
                 ),
                 trailing: _ModelOptionSubtitle(model: model),
@@ -243,13 +243,13 @@ class const _CompactModelDropdown({
         placeholder: const TextLocale(
           LocaleKeys.models_screens_select_model,
           softWrap: false,
-          overflow: TextOverflow.ellipsis,
+          overflow: .ellipsis,
           maxLines: 1,
         ),
         header: AuraPadding(
           child: TextField(
             controller: controller,
-            decoration: InputDecoration(
+            decoration: .new(
               isDense: true,
               contentPadding: EdgeInsets.symmetric(
                 vertical: context.auraTheme.fromSpacing(.sm),
@@ -259,10 +259,10 @@ class const _CompactModelDropdown({
               enabledBorder: outline(auraColors.outline),
               border: outline(auraColors.outline),
             ),
-            style: TextStyle(color: auraColors.onSurface),
+            style: .new(color: auraColors.onSurface),
             onChanged: onSearchChanged,
           ),
-          padding: AuraEdgeInsetsGeometry.small,
+          padding: .small,
         ),
       ),
     );
@@ -281,7 +281,7 @@ class const _ModelCompactChip({
         label: TextLocale(
           LocaleKeys.models_screens_select_model,
           softWrap: false,
-          overflow: TextOverflow.ellipsis,
+          overflow: .ellipsis,
           maxLines: 1,
         ),
       );
@@ -300,10 +300,10 @@ class const _ModelCompactChip({
           ? const TextLocale(
               LocaleKeys.models_screens_select_model,
               softWrap: false,
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
               maxLines: 1,
             )
-          : Text(selectedName, overflow: TextOverflow.ellipsis, maxLines: 1),
+          : Text(selectedName, overflow: .ellipsis, maxLines: 1),
     );
   }
 }
@@ -332,10 +332,10 @@ class const _ModelChip({required final Widget label}) extends StatelessWidget {
           context.auraTheme.fromBorderRadius(.xl),
         ),
       ),
-      width: double.infinity,
+      width: .infinity,
       child: Row(
         children: [
-          const AuraIcon(Icons.memory_outlined, size: AuraIconSize.small),
+          const AuraIcon(Icons.memory_outlined, size: .small),
           const AuraSizedBox(width: .xs),
           Flexible(child: label),
         ],
@@ -352,16 +352,16 @@ class const _ModelSheetOptionContent({
     final selection = model.workspaceModelSelection;
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
         AuraText(
           child: Text(
             selection.modelName ?? selection.modelId,
-            overflow: TextOverflow.ellipsis,
+            overflow: .ellipsis,
             maxLines: 1,
           ),
-          style: AuraTextStyle.bodyLarge,
+          style: .bodyLarge,
         ),
         const AuraSizedBox(height: .xs),
         Wrap(
@@ -369,17 +369,17 @@ class const _ModelSheetOptionContent({
           runSpacing: context.auraTheme.fromSpacing(.xs),
           children: [
             AuraBadge.text(
-              child: Text(selection.modelId, overflow: TextOverflow.ellipsis),
-              variant: AuraBadgeVariant.soft,
-              size: AuraBadgeSize.small,
+              child: Text(selection.modelId, overflow: .ellipsis),
+              variant: .soft,
+              size: .small,
             ),
             AuraBadge.text(
               child: Text(
                 '${model.modelsProvider.name} - ${model.modelConnection.name}',
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
-              variant: AuraBadgeVariant.soft,
-              size: AuraBadgeSize.small,
+              variant: .soft,
+              size: .small,
             ),
           ],
         ),
@@ -414,19 +414,19 @@ class const _ModelOptionSubtitle({
     return SizedBox(
       width: 120,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: .min,
+        crossAxisAlignment: .end,
         children: [
           AuraText(
-            child: Text(selection.modelId, overflow: TextOverflow.ellipsis),
-            style: AuraTextStyle.bodySmall,
+            child: Text(selection.modelId, overflow: .ellipsis),
+            style: .bodySmall,
           ),
           AuraText(
             child: Text(
               '${model.modelsProvider.name} - ${model.modelConnection.name}',
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
             ),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
         ],
       ),

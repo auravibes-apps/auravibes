@@ -3,7 +3,6 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_credential_definitions_provider.g.dart';
@@ -27,7 +26,7 @@ Future<CloudSkillStore?> _cloudSkillStore(Ref ref, String workspaceId) async {
   );
   if (gateway == null) return null;
 
-  return CloudSkillStore(CloudWorkspaceResourceStore(gateway), workspaceId);
+  return CloudSkillStore(.new(gateway), workspaceId);
 }
 
 @riverpod

@@ -5,7 +5,6 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
@@ -31,16 +30,13 @@ void main() {
     addTearDown(database.close);
 
     final workspace = await WorkspaceRepository(database).createWorkspace(
-      const WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      ),
+      const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
 
     final _ = await SkillsRepository(database).createSkill(
       workspace.id,
       const SkillToCreate(
-        kind: SkillKind.template,
+        kind: .template,
         title: 'Summarizer',
         description: 'Summarize things.',
         content: 'Summarize things.',
@@ -84,7 +80,7 @@ void main() {
                 slug: 'summarizer',
                 title: 'Summarizer',
                 description: 'Summarize things.',
-                kind: SkillKind.template,
+                kind: .template,
                 isEnabled: true,
               ),
             ],

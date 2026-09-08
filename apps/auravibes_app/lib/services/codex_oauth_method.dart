@@ -76,7 +76,7 @@ class CodexOAuthService {
     final response = await _dio.post<Object?>(
       '${ModelProviderOAuthProfiles.issuer}/api/accounts/deviceauth/usercode',
       data: {'client_id': ModelProviderOAuthProfiles.clientId},
-      options: Options(
+      options: .new(
         headers: const {'Content-Type': _jsonContentType},
         responseType: ResponseType.json,
       ),
@@ -86,7 +86,7 @@ class CodexOAuthService {
     final userCode = _requiredString(data, 'user_code');
     final interval = _interval(data['interval']);
     onDeviceCode?.call(
-      CodexDeviceCode(
+      .new(
         verificationUrl: '${ModelProviderOAuthProfiles.issuer}/codex/device',
         userCode: userCode,
       ),
@@ -139,7 +139,7 @@ class CodexOAuthService {
         'client_id': ModelProviderOAuthProfiles.clientId,
         'code_verifier': codeVerifier,
       },
-      options: Options(
+      options: .new(
         headers: const {'Accept': 'application/json'},
         responseType: ResponseType.json,
         contentType: Headers.formUrlEncodedContentType,
@@ -286,7 +286,7 @@ class CodexOAuthService {
       final response = await _dio.post<Object?>(
         '${ModelProviderOAuthProfiles.issuer}/api/accounts/deviceauth/token',
         data: {'device_auth_id': deviceAuthId, 'user_code': userCode},
-        options: Options(
+        options: .new(
           headers: const {'Content-Type': _jsonContentType},
           responseType: ResponseType.json,
           validateStatus: (_) => true,
@@ -306,7 +306,7 @@ class CodexOAuthService {
   }
 
   Future<void> _writeHtml(HttpRequest request, String html) async {
-    request.response.headers.contentType = ContentType.html;
+    request.response.headers.contentType = .html;
     request.response.write(html);
     final _ = await request.response.close();
   }
@@ -314,7 +314,7 @@ class CodexOAuthService {
   OAuthTokenEntity _tokenFromResponse(Map<String, Object?> data) {
     return OAuthTokenEntity(
       accessToken: _requiredString(data, 'access_token'),
-      issuedAt: DateTime.now(),
+      issuedAt: .now(),
       refreshToken: data['refresh_token'] as String?,
       idToken: data['id_token'] as String?,
       expiresIn: switch (data['expires_in']) {
@@ -366,7 +366,7 @@ class CodexOAuthService {
       if (isCancelled?.call() ?? false) {
         throw const CodexOAuthCanceledException();
       }
-      final remaining = deadline.difference(DateTime.now());
+      final remaining = deadline.difference(.now());
       await Future<void>.delayed(
         remaining < const Duration(milliseconds: 250)
             ? remaining

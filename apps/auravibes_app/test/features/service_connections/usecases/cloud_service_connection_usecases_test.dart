@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,7 +10,7 @@ void main() {
     Map<String, dynamic>? resourceWrite;
     String? submittedSecret;
     final usecases = CloudServiceConnectionUsecases(
-      CloudWorkspaceResourceStore.forTesting(
+      .forTesting(
         patch: ({required requestId, required operations}) async {
           return PatchWorkspaceStateResponse(resources: [], sequence: 1);
         },
@@ -50,7 +49,7 @@ void main() {
               submittedSecret = secret;
 
               return MutateWorkspaceCredentialResponse(
-                resource: WorkspaceResource(
+                resource: .new(
                   workspaceId: 1,
                   resourceKind: resourceOperation.resourceKind,
                   resourceId: resourceOperation.resourceId,
@@ -72,8 +71,8 @@ void main() {
       id: 'connection',
       name: 'GitHub',
       serviceId: 'github',
-      secretKind: WorkspaceSecretKind.skillCredential,
-      scope: WorkspaceSecretScope.user,
+      secretKind: .skillCredential,
+      scope: .user,
       secret: 'secret',
     );
 
@@ -87,7 +86,7 @@ void main() {
     int? secretRevision;
     Map<String, dynamic>? metadata;
     final usecases = CloudServiceConnectionUsecases(
-      CloudWorkspaceResourceStore.forTesting(
+      .forTesting(
         patch: ({required requestId, required operations}) async {
           final operation = operations.single;
           resourceRevision = operation.expectedRevision;
@@ -131,7 +130,7 @@ void main() {
               ) as Map<String, dynamic>;
 
               return MutateWorkspaceCredentialResponse(
-                resource: WorkspaceResource(
+                resource: .new(
                   workspaceId: 1,
                   resourceKind: resourceOperation.resourceKind,
                   resourceId: resourceOperation.resourceId,
@@ -156,13 +155,13 @@ void main() {
         name: 'Old',
         serviceId: 'github',
         hasSecret: true,
-        scope: WorkspaceSecretScope.workspace,
+        scope: .workspace,
         kind: 'appSkillCredential',
         secretRevision: 7,
       ),
       update: const GenericServiceConnectionUpdate(
         name: 'New',
-        secretEdit: ServiceConnectionSecretEdit.replace,
+        secretEdit: .replace,
         secret: 'new-secret',
       ),
     );
@@ -177,7 +176,7 @@ void main() {
   test('stale resource revision stops generic secret replacement', () async {
     var mutationTouched = false;
     final usecases = CloudServiceConnectionUsecases(
-      CloudWorkspaceResourceStore.forTesting(
+      .forTesting(
         patch: ({required requestId, required operations}) async {
           throw StateError('stale revision');
         },
@@ -217,13 +216,13 @@ void main() {
           name: 'Old',
           serviceId: 'github',
           hasSecret: true,
-          scope: WorkspaceSecretScope.workspace,
+          scope: .workspace,
           kind: 'appSkillCredential',
           secretRevision: 7,
         ),
         update: const GenericServiceConnectionUpdate(
           name: 'New',
-          secretEdit: ServiceConnectionSecretEdit.clear,
+          secretEdit: .clear,
         ),
       ),
       throwsStateError,
@@ -235,14 +234,14 @@ void main() {
     WorkspacePatchOperation? mutation;
     final now = DateTime(2026);
     final usecases = CloudServiceConnectionUsecases(
-      CloudWorkspaceResourceStore.forTesting(
+      .forTesting(
         patch: ({required requestId, required operations}) async {
           return PatchWorkspaceStateResponse(resources: [], sequence: 2);
         },
         watch: (_) => Stream.value([
           WorkspaceResource(
             workspaceId: 1,
-            resourceKind: WorkspaceResourceKind.serviceConnection,
+            resourceKind: .serviceConnection,
             resourceId: 'connection',
             data:
                 '{"name":"GitHub","serviceId":"github",'
@@ -284,7 +283,7 @@ void main() {
               expect(clearSecret, isTrue);
 
               return MutateWorkspaceCredentialResponse(
-                resource: WorkspaceResource(
+                resource: .new(
                   workspaceId: 1,
                   resourceKind: resourceOperation.resourceKind,
                   resourceId: resourceOperation.resourceId,

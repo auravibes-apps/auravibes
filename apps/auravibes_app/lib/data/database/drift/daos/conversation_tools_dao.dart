@@ -38,16 +38,16 @@ class ConversationToolsDao(super.attachedDatabase)
   }) {
     return into(conversationTools).insertReturning(
       ConversationToolsCompanion(
-        conversationId: Value(conversationId),
-        toolId: Value(toolId),
-        isEnabled: Value(isEnabled),
-        permissions: Value(permission),
+        conversationId: .new(conversationId),
+        toolId: .new(toolId),
+        isEnabled: .new(isEnabled),
+        permissions: .new(permission),
       ),
       onConflict: DoUpdate(
         (old) => ConversationToolsCompanion(
-          updatedAt: Value(DateTime.now()),
-          isEnabled: Value(isEnabled),
-          permissions: Value(permission),
+          updatedAt: .new(DateTime.now()),
+          isEnabled: .new(isEnabled),
+          permissions: .new(permission),
         ),
       ),
     );
@@ -72,8 +72,8 @@ class ConversationToolsDao(super.attachedDatabase)
               ))
               .write(
                 ConversationToolsCompanion(
-                  updatedAt: Value(DateTime.now()),
-                  isEnabled: Value(isEnabled),
+                  updatedAt: .new(DateTime.now()),
+                  isEnabled: .new(isEnabled),
                 ),
               );
       final updated = await getConversationTool(conversationId, toolId);
@@ -86,9 +86,9 @@ class ConversationToolsDao(super.attachedDatabase)
       // Insert new.
       return await into(conversationTools).insertReturning(
         ConversationToolsCompanion(
-          conversationId: Value(conversationId),
-          toolId: Value(toolId),
-          isEnabled: Value(isEnabled),
+          conversationId: .new(conversationId),
+          toolId: .new(toolId),
+          isEnabled: .new(isEnabled),
         ),
       );
     }
@@ -111,8 +111,8 @@ class ConversationToolsDao(super.attachedDatabase)
               ))
               .write(
                 ConversationToolsCompanion(
-                  updatedAt: Value(DateTime.now()),
-                  permissions: Value(permission),
+                  updatedAt: .new(DateTime.now()),
+                  permissions: .new(permission),
                 ),
               );
       final updated = await getConversationTool(conversationId, toolId);
@@ -124,10 +124,10 @@ class ConversationToolsDao(super.attachedDatabase)
     } else {
       return await into(conversationTools).insertReturning(
         ConversationToolsCompanion(
-          conversationId: Value(conversationId),
-          toolId: Value(toolId),
+          conversationId: .new(conversationId),
+          toolId: .new(toolId),
           isEnabled: const Value(true),
-          permissions: Value(permission),
+          permissions: .new(permission),
         ),
       );
     }
@@ -205,8 +205,8 @@ class ConversationToolsDao(super.attachedDatabase)
       batch.insertAllOnConflictUpdate(conversationTools, [
         for (final toolId in toolIds)
           ConversationToolsCompanion(
-            conversationId: Value(conversationId),
-            toolId: Value(toolId),
+            conversationId: .new(conversationId),
+            toolId: .new(toolId),
             isEnabled: const Value(false),
           ),
       ]);

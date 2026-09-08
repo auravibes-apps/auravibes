@@ -57,7 +57,7 @@ void main() {
       );
 
       await tester.enterText(find.byType(TextFormField), 'Submitted text');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.testTextInput.receiveAction(.done);
       expect(submittedValue, 'Submitted text');
     });
 

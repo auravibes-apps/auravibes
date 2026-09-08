@@ -7,17 +7,14 @@ abstract final class AgentToolStatusMapper {
     ToolPermissionResult result,
   ) {
     return switch (result) {
-      ToolPermissionResult.granted => agent.AgentToolPermissionResult.granted,
-      ToolPermissionResult.needsConfirmation =>
-        agent.AgentToolPermissionResult.needsConfirmation,
-      ToolPermissionResult.disabledInConversation =>
+      .granted => agent.AgentToolPermissionResult.granted,
+      .needsConfirmation => agent.AgentToolPermissionResult.needsConfirmation,
+      .disabledInConversation =>
         agent.AgentToolPermissionResult.disabledInConversation,
-      ToolPermissionResult.disabledByAgent =>
-        agent.AgentToolPermissionResult.disabledByAgent,
-      ToolPermissionResult.disabledInWorkspace =>
+      .disabledByAgent => agent.AgentToolPermissionResult.disabledByAgent,
+      .disabledInWorkspace =>
         agent.AgentToolPermissionResult.disabledInWorkspace,
-      ToolPermissionResult.notConfigured =>
-        agent.AgentToolPermissionResult.notConfigured,
+      .notConfigured => agent.AgentToolPermissionResult.notConfigured,
     };
   }
 

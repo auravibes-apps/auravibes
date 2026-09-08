@@ -53,21 +53,21 @@ class AuraSpinner extends StatelessWidget {
 
   double _getSpinnerSize() {
     return switch (size) {
-      AuraSpinnerSize.extraSmall => 12.0,
-      AuraSpinnerSize.small => 16.0,
-      AuraSpinnerSize.medium => 24.0,
-      AuraSpinnerSize.large => 32.0,
-      AuraSpinnerSize.extraLarge => 48.0,
+      .extraSmall => 12.0,
+      .small => 16.0,
+      .medium => 24.0,
+      .large => 32.0,
+      .extraLarge => 48.0,
     };
   }
 
   double _getDefaultStrokeWidth() {
     return switch (size) {
-      AuraSpinnerSize.extraSmall => 1.5,
-      AuraSpinnerSize.small => 2.0,
-      AuraSpinnerSize.medium => 2.5,
-      AuraSpinnerSize.large => 3.0,
-      AuraSpinnerSize.extraLarge => 4.0,
+      .extraSmall => 1.5,
+      .small => 2.0,
+      .medium => 2.5,
+      .large => 3.0,
+      .extraLarge => 4.0,
     };
   }
 }

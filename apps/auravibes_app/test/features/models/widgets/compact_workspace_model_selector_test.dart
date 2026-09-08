@@ -1,5 +1,3 @@
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
@@ -26,10 +24,7 @@ void main() {
     await _pumpSubject(
       tester,
       _SubjectBuilder.build(
-        groupedModelsStream: Stream.error(
-          StateError('model error'),
-          StackTrace.current,
-        ),
+        groupedModelsStream: .error(StateError('model error'), .current),
       ),
     );
 
@@ -211,7 +206,7 @@ abstract final class _SubjectBuilder {
 
     return TestableApp(
       child: Theme(
-        data: ThemeData(extensions: [AuraTheme.light]),
+        data: .new(extensions: [AuraTheme.light]),
         child: Scaffold(
           body: Portal(
             child: CompactWorkspaceModelSelector(
@@ -242,7 +237,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection(
   String? modelName,
 }) {
   return WorkspaceModelSelectionWithConnectionEntity(
-    workspaceModelSelection: WorkspaceModelSelectionEntity(
+    workspaceModelSelection: .new(
       id: id,
       modelId: modelId,
       createdAt: DateTime(2026),
@@ -250,7 +245,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection(
       modelConnectionId: connectionId,
       modelName: modelName,
     ),
-    modelConnection: ModelConnectionEntity(
+    modelConnection: .new(
       id: connectionId,
       name: connectionName,
       modelId: providerName.toLowerCase(),
@@ -259,7 +254,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection(
       workspaceId: 'ws-1',
       hasKey: true,
     ),
-    modelsProvider: ApiModelProviderEntity(
+    modelsProvider: .new(
       id: providerName.toLowerCase(),
       name: providerName,
       type: null,

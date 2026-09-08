@@ -18,21 +18,21 @@ class _A2uiCatalogShowcaseState extends State<A2uiCatalogShowcase> {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       spacing: context.auraTheme.spacing.md,
       children: [
         const AuraCallout(
           title: 'Review needed',
           description: 'Two items need attention before release.',
           icon: Icons.info_outline,
-          tint: AuraTint.info,
+          tint: .info,
         ),
         const AuraStat(
           value: '87%',
           label: 'Sprint completion',
           delta: '+4% this week',
           icon: Icons.trending_up,
-          tint: AuraTint.success,
+          tint: .success,
         ),
         const AuraLink(label: 'Read release notes', onPressed: noopCallback),
         const AuraTooltip(
@@ -54,8 +54,8 @@ class _A2uiCatalogShowcaseState extends State<A2uiCatalogShowcase> {
         ),
         const AuraStepper(
           steps: [
-            AuraStep(title: 'Draft', state: AuraStepState.complete),
-            AuraStep(title: 'Review', state: AuraStepState.current),
+            AuraStep(title: 'Draft', state: .complete),
+            AuraStep(title: 'Review', state: .current),
             AuraStep(title: 'Release'),
           ],
         ),
@@ -66,7 +66,7 @@ class _A2uiCatalogShowcaseState extends State<A2uiCatalogShowcase> {
               title: 'Reviewed',
               description: 'Approved by the release team',
               time: '10:15',
-              tint: AuraTint.success,
+              tint: .success,
             ),
           ],
         ),

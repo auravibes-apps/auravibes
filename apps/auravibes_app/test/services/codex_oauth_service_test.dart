@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/codex_oauth_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:dio/dio.dart';
@@ -240,7 +239,7 @@ void main() {
     test('returns null for invalid account token', () {
       expect(
         CodexOAuthService.accountIdFromToken(
-          OAuthTokenEntity(accessToken: 'access', issuedAt: DateTime(2026)),
+          .new(accessToken: 'access', issuedAt: DateTime(2026)),
         ),
         isNull,
       );

@@ -44,7 +44,7 @@ class const OpenAICodexCodec() {
       final event = _decodeStreamEvent(data);
       final parts = accumulator.addEvent(event);
       if (parts.isNotEmpty) {
-        sendChunk(ModelResponseChunk(index: 0, content: parts));
+        sendChunk(.new(index: 0, content: parts));
       }
     }
 
@@ -74,7 +74,7 @@ class const OpenAICodexCodec() {
 
     throw GenkitException(
       'OpenAI Codex API request failed (HTTP $statusCode).',
-      status: StatusCodes.fromHttpStatus(statusCode),
+      status: .fromHttpStatus(statusCode),
       details: _retryableErrorDetail(body),
     );
   }
@@ -87,7 +87,7 @@ Map<String, dynamic> _decodeStreamEvent(String data) {
     Error.throwWithStackTrace(
       GenkitException(
         'OpenAI Codex stream parse error.',
-        status: StatusCodes.INTERNAL,
+        status: .INTERNAL,
         stackTrace: stackTrace,
       ),
       stackTrace,
@@ -174,7 +174,7 @@ Map<String, dynamic> _mediaToInput(Part part, Media media) {
   if (data == null) {
     throw GenkitException(
       'OpenAI Responses media inputs require a data URL for files and audio.',
-      status: StatusCodes.INVALID_ARGUMENT,
+      status: .INVALID_ARGUMENT,
     );
   }
   if (contentType.startsWith('audio/')) {
@@ -216,7 +216,7 @@ String _audioFormat(String contentType, String providerName) {
 
   throw GenkitException(
     '$providerName audio input supports only mp3 and wav.',
-    status: StatusCodes.INVALID_ARGUMENT,
+    status: .INVALID_ARGUMENT,
   );
 }
 
@@ -235,7 +235,7 @@ ModelResponse _modelResponseFromJson(Map<String, dynamic> json) {
   final text = _responseText(json);
 
   return ModelResponse(
-    message: Message(
+    message: .new(
       role: Role.model,
       content: [
         if (text.isNotEmpty) TextPart(text: text),
@@ -272,7 +272,7 @@ List<ToolRequestPart> _toolRequestsFromResponse(Map<String, dynamic> json) {
     for (final item in output.cast<Map<String, dynamic>>())
       if (item['type'] == 'function_call')
         ToolRequestPart(
-          toolRequest: ToolRequest(
+          toolRequest: .new(
             ref: item['call_id'] as String? ?? item['id'] as String?,
             name: item['name'] as String? ?? '',
             input: _decodeArguments(item['arguments']),
@@ -307,9 +307,9 @@ FinishReason _finishReason(String? status) {
 }
 
 class _CodexStreamAccumulator {
-  final StringBuffer _text = StringBuffer();
+  final StringBuffer _text = .new();
   final List<ToolRequestPart> _tools = [];
-  FinishReason _finishReasonValue = FinishReason.unknown;
+  FinishReason _finishReasonValue = .unknown;
   GenerationUsage? _usage;
 
   List<Part> addEvent(Map<String, dynamic> event) {
@@ -318,10 +318,10 @@ class _CodexStreamAccumulator {
       _throwFailedEvent(event);
     }
     if (type == 'response.completed') {
-      return _finish(event, FinishReason.stop);
+      return _finish(event, .stop);
     }
     if (type == 'response.incomplete') {
-      return _finish(event, FinishReason.length);
+      return _finish(event, .length);
     }
     if (type == 'response.output_text.done') {
       return _reconcileText(event['text']);
@@ -337,9 +337,9 @@ class _CodexStreamAccumulator {
     final details = _failedEventDetails(event);
     throw GenkitException(
       'OpenAI Codex API request failed while streaming.',
-      status: StatusCodes.INTERNAL,
+      status: .INTERNAL,
       details: _retryableErrorDetail(jsonEncode(details['error'])),
-      stackTrace: StackTrace.current,
+      stackTrace: .current,
     );
   }
 
@@ -395,7 +395,7 @@ class _CodexStreamAccumulator {
 
   ModelResponse toResponse() {
     return ModelResponse(
-      message: Message(
+      message: .new(
         role: Role.model,
         content: [
           if (_text.isNotEmpty) TextPart(text: _text.toString()),

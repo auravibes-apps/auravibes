@@ -131,10 +131,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   void initState() {
     super.initState();
     _isOpen = false; // Initially closed.
-    _controller = AnimationController(
-      duration: _animationDuration,
-      vsync: this,
-    );
+    _controller = .new(duration: _animationDuration, vsync: this);
     _controller?.addListener(_handleControllerTick);
     widget.controller._state = this;
   }
@@ -196,7 +193,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
               final dx = -drawerWidth * (1 - _requiredController.value);
 
               return Transform.translate(
-                offset: Offset(dx, 0),
+                offset: .new(dx, 0),
                 child: GestureDetector(
                   child: SizedBox(
                     width: drawerWidth,
@@ -226,7 +223,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
               onHorizontalDragStart: _handleDragStart,
               onHorizontalDragUpdate: _handleDragUpdate,
               onHorizontalDragEnd: _handleDragEnd,
-              behavior: HitTestBehavior.opaque,
+              behavior: .opaque,
             ),
           ),
           if (drawerFullyOpen)
@@ -253,7 +250,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
                                   ? context.auraColors.primary
                                   : context.auraColors.outlineVariant,
                               width: _dividerVisibleWidth,
-                              height: double.infinity,
+                              height: .infinity,
                             ),
                           ),
                         ),
@@ -261,7 +258,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
                         onPanUpdate: _handleDividerPanUpdate,
                         onPanEnd: (_) => _setResizing(false),
                         onPanCancel: () => _setResizing(false),
-                        behavior: HitTestBehavior.opaque,
+                        behavior: .opaque,
                       ),
                       opacity:
                           (_isHoveringDivider ||
@@ -294,7 +291,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
             final dx = drawerWidth * _requiredController.value;
 
             return Transform.translate(
-              offset: Offset(dx, 0),
+              offset: .new(dx, 0),
               child: GestureDetector(
                 child: widget.body,
                 onTap: () => _closeIfFullyOpen(drawerFullyOpen),
@@ -318,7 +315,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
                 : _scrimColor;
 
             return Transform.translate(
-              offset: Offset(dx, 0),
+              offset: .new(dx, 0),
               child: IgnorePointer(
                 ignoring: _requiredController.value == 0,
                 child: GestureDetector(
@@ -381,7 +378,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
             final dx = -drawerWidth * (1 - _requiredController.value);
 
             return Transform.translate(
-              offset: Offset(dx, 0),
+              offset: .new(dx, 0),
               child: GestureDetector(
                 child: SizedBox(
                   width: drawerWidth,
@@ -542,9 +539,9 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
     if (_dragDirection == null) {
       if (_dragStartedWhenOpen == false && primaryDelta > 0) {
-        _dragDirection = _DrawerDragDirection.opening;
+        _dragDirection = .opening;
       } else if ((_dragStartedWhenOpen ?? false) && primaryDelta < 0) {
-        _dragDirection = _DrawerDragDirection.closing;
+        _dragDirection = .closing;
       } else {
         return;
       }

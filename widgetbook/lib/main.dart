@@ -55,7 +55,7 @@ Config createWidgetbookConfig() {
       AlignmentAddon(),
       ZoomAddon(),
     ],
-    scenarioConfig: ScenarioConfig(
+    scenarioConfig: .new(
       definitions: [
         ScenarioDefinition(
           name: 'Aura Light',
@@ -66,14 +66,14 @@ Config createWidgetbookConfig() {
               _applyTheme,
             ),
           ],
-          strategy: ScenarioStrategy.perStory,
+          strategy: .perStory,
         ),
         ScenarioDefinition(
           name: 'Aura Dark',
           modes: [
             ThemeMode<ThemeData>('Aura Dark', _createDarkTheme(), _applyTheme),
           ],
-          strategy: ScenarioStrategy.perStory,
+          strategy: .perStory,
         ),
       ],
     ),
@@ -88,8 +88,8 @@ ThemeData _createLightTheme() {
   return ThemeData(
     extensions: [AuraTheme.light],
     useMaterial3: true,
-    colorScheme: _createColorScheme(AuraTheme.light, Brightness.light),
-    textTheme: _createTextTheme(AuraTheme.light, ThemeData.light().textTheme),
+    colorScheme: _createColorScheme(.light, .light),
+    textTheme: _createTextTheme(.light, ThemeData.light().textTheme),
   );
 }
 
@@ -97,8 +97,8 @@ ThemeData _createDarkTheme() {
   return ThemeData(
     extensions: [AuraTheme.dark],
     useMaterial3: true,
-    colorScheme: _createColorScheme(AuraTheme.dark, Brightness.dark),
-    textTheme: _createTextTheme(AuraTheme.dark, ThemeData.dark().textTheme),
+    colorScheme: _createColorScheme(.dark, .dark),
+    textTheme: _createTextTheme(.dark, ThemeData.dark().textTheme),
   );
 }
 

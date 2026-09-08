@@ -20,9 +20,8 @@ class const CompactedMessageDetails({
     final metadata = message.metadata;
     final kind = metadata?.compactionKind;
     final originLabel = switch (kind) {
-      CompactionKind.manual =>
-        LocaleKeys.compaction_compacted_manual_origin.tr(),
-      CompactionKind.auto => LocaleKeys.compaction_compacted_auto_origin.tr(),
+      .manual => LocaleKeys.compaction_compacted_manual_origin.tr(),
+      .auto => LocaleKeys.compaction_compacted_auto_origin.tr(),
       _ => LocaleKeys.compaction_compacted_widget_label.tr(),
     };
 
@@ -31,7 +30,7 @@ class const CompactedMessageDetails({
         children: [
           const TextLocale(
             LocaleKeys.compaction_compacted_details_title,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: .new(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const AuraSizedBox(height: .md),
           _DetailRow(
@@ -61,16 +60,16 @@ class const CompactedMessageDetails({
           const AuraSizedBox(height: .md),
           TextLocale(
             LocaleKeys.compaction_compacted_details_content_label,
-            style: TextStyle(
+            style: .new(
               color: auraColors.onSurfaceVariant,
               fontSize: context.auraTheme.typography.fontSizeSm,
               fontWeight: FontWeight.bold,
             ),
           ),
           const AuraSizedBox(height: .xs),
-          AuraSelectableText(message.content, style: AuraTextStyle.bodySmall),
+          AuraSelectableText(message.content, style: .bodySmall),
         ],
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -85,13 +84,13 @@ class const _DetailRow({
     return Padding(
       padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.xs)),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           SizedBox(
             width: 120,
             child: Text(
               label,
-              style: TextStyle(
+              style: .new(
                 color: context.auraColors.onSurfaceVariant,
                 fontSize: context.auraTheme.typography.fontSizeSm,
                 fontWeight: FontWeight.w600,
@@ -101,9 +100,7 @@ class const _DetailRow({
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: context.auraTheme.typography.fontSizeSm,
-              ),
+              style: .new(fontSize: context.auraTheme.typography.fontSizeSm),
             ),
           ),
         ],

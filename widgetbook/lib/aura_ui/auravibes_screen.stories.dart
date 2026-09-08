@@ -20,15 +20,15 @@ final _Defaults screenDefaults = _Defaults(
             height: 300,
             child: AuraText(child: Text('Hello, Aura Screen!')),
           ),
-          style: AuraCardStyle.glass,
+          style: .glass,
         ),
-        padding: AuraEdgeInsetsGeometry.large,
+        padding: .large,
       ),
     ),
     appBar: AppBar(
       title: Text(
         'Aura Screen',
-        style: TextStyle(color: context.auraColors.onPrimary),
+        style: .new(color: context.auraColors.onPrimary),
       ),
       backgroundColor: context.auraColors.primary,
     ),
@@ -56,7 +56,7 @@ final $AuraScreen = _Story(
       name: 'Landscape Phone',
       modes: [ViewportMode(landscapePhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
   ],
 );

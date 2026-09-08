@@ -34,15 +34,15 @@ class AuraDialogShell extends StatelessWidget {
           decoration: BoxDecoration(
             color: auraColors.surface,
             borderRadius: BorderRadius.all(
-              Radius.circular(auraTheme.fromBorderRadius(.lg)),
+              .circular(auraTheme.fromBorderRadius(.lg)),
             ),
             boxShadow: const [DesignShadows.lg],
           ),
           constraints: const BoxConstraints(maxWidth: 400),
           margin: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: .min,
+            crossAxisAlignment: .stretch,
             children: [
               Padding(
                 padding: EdgeInsets.only(
@@ -51,7 +51,7 @@ class AuraDialogShell extends StatelessWidget {
                   right: mediumSpacing,
                 ),
                 child: DefaultTextStyle(
-                  style: TextStyle(
+                  style: .new(
                     color: auraColors.onSurface,
                     fontSize: auraTheme.typography.fontSizeLg,
                     fontWeight: auraTheme.typography.fontWeightSemibold,
@@ -66,7 +66,7 @@ class AuraDialogShell extends StatelessWidget {
                     horizontal: mediumSpacing,
                   ),
                   child: DefaultTextStyle(
-                    style: TextStyle(
+                    style: .new(
                       color: auraColors.onSurfaceVariant,
                       fontSize: auraTheme.typography.fontSizeBase,
                       fontWeight: auraTheme.typography.fontWeightRegular,
@@ -78,10 +78,7 @@ class AuraDialogShell extends StatelessWidget {
               ),
               Padding(
                 padding: EdgeInsets.all(mediumSpacing),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: actions,
-                ),
+                child: Row(mainAxisAlignment: .end, children: actions),
               ),
             ],
           ),

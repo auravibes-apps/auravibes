@@ -30,7 +30,7 @@ class AuraList extends StatelessWidget {
       primary: false,
       child: Flex(
         direction: direction,
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         crossAxisAlignment: alignment,
         children: children,
       ),

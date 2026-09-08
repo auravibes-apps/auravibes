@@ -11,7 +11,7 @@ void main() {
         home: const Scaffold(
           appBar: AuraAppBarWithDrawer(title: Text('Test AppBar')),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -25,7 +25,7 @@ void main() {
         home: const Scaffold(
           appBar: AuraAppBarWithDrawer(title: Text('Test Title')),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -41,7 +41,7 @@ void main() {
             actions: [Icon(Icons.settings)],
           ),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -52,7 +52,7 @@ void main() {
     const bar = AuraAppBarWithDrawer(
       title: Text('Test AppBar'),
       bottom: PreferredSize(
-        preferredSize: Size.fromHeight(48),
+        preferredSize: .fromHeight(48),
         child: SizedBox.shrink(),
       ),
     );
@@ -84,7 +84,7 @@ void main() {
             appBar: AuraAppBarWithDrawer(title: Text('Test AppBar')),
           ),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

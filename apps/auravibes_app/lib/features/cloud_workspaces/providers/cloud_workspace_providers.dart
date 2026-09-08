@@ -4,7 +4,6 @@
 
 import 'package:auravibes_app/app_env_config.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
-import 'package:auravibes_app/features/cloud_workspaces/data/cloud_workspace_repository.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -22,7 +21,7 @@ cloudWorkspaceUseCasesProvider =
       if (client == null) return null;
 
       return CloudWorkspaceUseCases(
-        cloudRepository: CloudWorkspaceRepository(client),
+        cloudRepository: .new(client),
         workspaceRepository: ref.watch(workspaceRepositoryProvider),
         cloudAccountId: userId,
         serverUrl: AppEnvConfig.auravibesServerUrl,

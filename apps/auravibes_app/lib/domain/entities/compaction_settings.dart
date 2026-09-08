@@ -11,7 +11,7 @@ abstract class const CompactionSettings._() with _$CompactionSettings {
   /// Static fallback used when no per-workspace overrides exist.
   /// The [remainingTokenThreshold] 2000 is a minimum guard; the effective
   /// decision-time default is computed by [defaultRemainingTokenThreshold].
-  static const CompactionSettings defaults = CompactionSettings();
+  static const CompactionSettings defaults = .new();
   const factory({
     @Default(true) bool autoCompactionEnabled,
     @Default(80) int usagePercentageThreshold,

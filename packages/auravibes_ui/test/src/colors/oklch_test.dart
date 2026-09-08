@@ -329,7 +329,7 @@ void main() {
 
     test('shade applies predefined shade', () {
       final color = OKLCHColor(hue: 240, lightness: 0.5, chroma: 0.2);
-      final shaded = color.shade(OKLCHShades.s100);
+      final shaded = color.shade(.s100);
       expect(shaded.lightness, OKLCHShades.s100.lightness);
       expect(shaded.chroma, OKLCHShades.s100.chroma);
       expect(shaded.hue, 240);

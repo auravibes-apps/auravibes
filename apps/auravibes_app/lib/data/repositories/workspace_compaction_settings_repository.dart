@@ -2,7 +2,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
-import 'package:drift/drift.dart';
 
 class WorkspaceCompactionSettingsRepository(
   final WorkspaceCompactionSettingsDao _dao,
@@ -22,9 +21,9 @@ class WorkspaceCompactionSettingsRepository(
     CompactionSettings overrides,
   ) async {
     final companion = WorkspaceCompactionSettingsCompanion(
-      autoCompactEnabled: Value(overrides.autoCompactionEnabled),
-      usagePercentageThreshold: Value(overrides.usagePercentageThreshold),
-      remainingTokenThreshold: Value(overrides.remainingTokenThreshold),
+      autoCompactEnabled: .new(overrides.autoCompactionEnabled),
+      usagePercentageThreshold: .new(overrides.usagePercentageThreshold),
+      remainingTokenThreshold: .new(overrides.remainingTokenThreshold),
     );
     final row = await _dao.upsert(workspaceId, companion);
 

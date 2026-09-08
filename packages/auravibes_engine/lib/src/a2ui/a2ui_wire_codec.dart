@@ -113,7 +113,7 @@ class A2uiV09Codec implements A2uiWireCodec {
     required bool allowLegacyBindings,
   }) {
     if (value is! Map) {
-      return const A2uiDecodeResult.invalid(A2uiIssueCode.malformedPayload);
+      return const A2uiDecodeResult.invalid(.malformedPayload);
     }
     final outer = Map<String, Object?>.from(value);
     final diagnosticPayloadJson = jsonEncode(outer);
@@ -130,7 +130,7 @@ class A2uiV09Codec implements A2uiWireCodec {
     final envelopeVersion = outer['protocolVersion'];
     if (envelopeVersion != null && envelopeVersion != a2uiChatProtocolVersion) {
       return A2uiDecodeResult.invalid(
-        A2uiIssueCode.unsupportedProtocol,
+        .unsupportedProtocol,
         wireSurfaceId: recoverSurfaceId(outer),
         diagnosticPayloadJson: diagnosticPayloadJson,
       );
@@ -138,7 +138,7 @@ class A2uiV09Codec implements A2uiWireCodec {
     final mode = outer['interactionMode'];
     if (mode != null && mode is! String) {
       return A2uiDecodeResult.invalid(
-        A2uiIssueCode.invalidInteractionMode,
+        .invalidInteractionMode,
         wireSurfaceId: recoverSurfaceId(raw),
         diagnosticPayloadJson: diagnosticPayloadJson,
       );
@@ -146,7 +146,7 @@ class A2uiV09Codec implements A2uiWireCodec {
     final interactionMode = mode is String ? mode : 'passive';
     if (!a2uiChatInteractionModes.contains(interactionMode)) {
       return A2uiDecodeResult.invalid(
-        A2uiIssueCode.invalidInteractionMode,
+        .invalidInteractionMode,
         wireSurfaceId: recoverSurfaceId(raw),
         diagnosticPayloadJson: diagnosticPayloadJson,
       );
@@ -179,7 +179,7 @@ class A2uiV09Codec implements A2uiWireCodec {
       'message': raw,
     });
     return A2uiDecodeResult.valid(
-      A2uiEnvelope(
+      .new(
         envelopeVersion: a2uiChatProtocolVersion,
         wireVersion: wireVersion,
         interactionMode: interactionMode,
@@ -199,7 +199,7 @@ class A2uiV09Codec implements A2uiWireCodec {
     if (outer['protocolVersion'] != a2uiChatProtocolVersion) {
       return [
         A2uiDecodeResult.invalid(
-          A2uiIssueCode.unsupportedProtocol,
+          .unsupportedProtocol,
           wireSurfaceId: recoverSurfaceId(outer),
           diagnosticPayloadJson: diagnosticPayloadJson,
         ),
@@ -208,7 +208,7 @@ class A2uiV09Codec implements A2uiWireCodec {
     if (mode is! String || !a2uiChatInteractionModes.contains(mode)) {
       return [
         A2uiDecodeResult.invalid(
-          A2uiIssueCode.invalidInteractionMode,
+          .invalidInteractionMode,
           wireSurfaceId: recoverSurfaceId(outer),
           diagnosticPayloadJson: diagnosticPayloadJson,
         ),
@@ -217,7 +217,7 @@ class A2uiV09Codec implements A2uiWireCodec {
     if (initialSurface is! Map) {
       return [
         A2uiDecodeResult.invalid(
-          A2uiIssueCode.malformedPayload,
+          .malformedPayload,
           diagnosticPayloadJson: diagnosticPayloadJson,
         ),
       ];

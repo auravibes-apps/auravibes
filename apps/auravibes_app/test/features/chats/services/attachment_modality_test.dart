@@ -1,4 +1,3 @@
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -8,7 +7,7 @@ void main() {
 
     expect(
       ChatAttachmentModality.supports(
-        MessageAttachmentModality.image,
+        .image,
         modalities,
         mimeType: 'image/png',
       ),
@@ -16,7 +15,7 @@ void main() {
     );
     expect(
       ChatAttachmentModality.supports(
-        MessageAttachmentModality.file,
+        .file,
         modalities,
         mimeType: 'application/pdf',
       ),
@@ -37,11 +36,7 @@ void main() {
     const modalities = ['text', 'pdf'];
 
     expect(
-      ChatAttachmentModality.supports(
-        MessageAttachmentModality.file,
-        modalities,
-        mimeType: 'text/csv',
-      ),
+      ChatAttachmentModality.supports(.file, modalities, mimeType: 'text/csv'),
       isFalse,
     );
   });
@@ -87,11 +82,7 @@ void main() {
       'webm',
     ]);
     expect(
-      ChatAttachmentModality.supports(
-        MessageAttachmentModality.file,
-        modalities,
-        mimeType: 'video/mp4',
-      ),
+      ChatAttachmentModality.supports(.file, modalities, mimeType: 'video/mp4'),
       isTrue,
     );
   });

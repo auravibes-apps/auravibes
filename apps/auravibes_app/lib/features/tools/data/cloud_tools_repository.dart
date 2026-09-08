@@ -87,7 +87,7 @@ class CloudToolsRepository
       await _gatewayFuture ??
       (throw const CloudAppException(
         localizationKey: LocaleKeys.cloud_errors_unavailable,
-        context: CloudOperationContext.state,
+        context: .state,
         code: 'gatewayUnavailable',
       ));
 
@@ -360,9 +360,7 @@ class CloudToolsRepository
       workspaceId: '${resource.workspaceId}',
       name: data['name'] as String,
       url: data['url'] as String,
-      transport: McpTransportType.fromJson(
-        Map<String, dynamic>.from(data['transport'] as Map),
-      ),
+      transport: .fromJson(Map<String, dynamic>.from(data['transport'] as Map)),
       authenticationType: const McpAuthenticationType.none(),
       createdAt: resource.createdAt,
       updatedAt: resource.updatedAt,

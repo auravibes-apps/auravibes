@@ -21,10 +21,10 @@ void main() {
 
     test('extracts tool calls from parts', () {
       final message = ChatMessage(
-        role: ChatMessageRole.model,
+        role: .model,
         parts: [
           ToolRequestPart(
-            toolRequest: ToolRequest(
+            toolRequest: .new(
               ref: 'call-1',
               name: 'getWeather',
               input: const {'city': 'Boston'},
@@ -55,7 +55,7 @@ void main() {
           ' world',
           metadata: const {'signature': 'value'},
         ),
-        finishReason: ChatFinishReason.stop,
+        finishReason: .stop,
         usage: const LanguageModelUsage(
           promptTokens: 2,
           responseTokens: 3,

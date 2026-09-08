@@ -72,8 +72,8 @@ void main() {
       final notifier = container.read(messagesStreamingProvider.notifier);
 
       notifier
-        ..startSubscription(CompositeSubscription(), 'msg-1')
-        ..startSubscription(CompositeSubscription(), 'msg-2');
+        ..startSubscription(.new(), 'msg-1')
+        ..startSubscription(.new(), 'msg-2');
 
       final state = container.read(messagesStreamingProvider);
       expect(state, contains('msg-1'));

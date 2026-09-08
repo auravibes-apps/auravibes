@@ -18,7 +18,7 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
     if (name.isEmpty || name.contains('/')) {
       throw GenkitException(
         'Plugin name must be non-empty and must not contain "/". Got: "$name"',
-        status: StatusCodes.INVALID_ARGUMENT,
+        status: .INVALID_ARGUMENT,
       );
     }
   }
@@ -70,7 +70,7 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
     if (apiKey.trim().isEmpty) {
       throw GenkitException(
         '[$name] API key is required.',
-        status: StatusCodes.INVALID_ARGUMENT,
+        status: .INVALID_ARGUMENT,
       );
     }
     final normalized = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';

@@ -4,8 +4,6 @@ import 'package:auravibes_app/features/models/data/cloud_model_stores.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
-import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
-import 'package:auravibes_app/features/models/usecases/cloud_model_connection_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -26,10 +24,7 @@ Future<ModelConnectionStore> modelConnectionStore(
       return await ref.watch(modelConnectionRepositoryProvider);
     }
 
-    return CloudModelStore(
-      workspaceId,
-      CloudModelConnectionUsecases(CloudModelGateway(gateway)),
-    );
+    return CloudModelStore(workspaceId, .new(.new(gateway)));
   } finally {
     keepAlive.close();
   }
@@ -52,10 +47,7 @@ Future<ModelSelectionStore> modelSelectionStore(
       );
     }
 
-    return CloudModelStore(
-      workspaceId,
-      CloudModelConnectionUsecases(CloudModelGateway(gateway)),
-    );
+    return CloudModelStore(workspaceId, .new(.new(gateway)));
   } finally {
     keepAlive.close();
   }
@@ -71,7 +63,7 @@ Future<ModelCatalogStore> modelCatalogStore(Ref ref, String workspaceId) async {
     );
     if (gateway == null) return await ref.watch(apiModelRepositoryProvider);
 
-    return CloudModelCatalogStore(CloudModelGateway(gateway));
+    return CloudModelCatalogStore(.new(gateway));
   } finally {
     keepAlive.close();
   }

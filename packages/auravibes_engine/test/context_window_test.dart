@@ -1,6 +1,5 @@
 import 'package:auravibes_engine/src/context_window.dart';
 import 'package:auravibes_engine/src/model_capabilities.dart';
-import 'package:auravibes_engine/src/tool_calls.dart';
 import 'package:auravibes_engine/src/transcript_context.dart';
 import 'package:test/test.dart';
 
@@ -25,7 +24,7 @@ void main() {
           toolCalls: [
             const AgentTranscriptToolCallSnapshot(
               id: 'tool',
-              lifecycle: AgentToolCallLifecycle.success,
+              lifecycle: .success,
               argumentCharacterCount: 6,
               resultCharacterCount: 6,
             ),
@@ -62,18 +61,13 @@ void main() {
 
   test('blocks in-flight messages and model tool calls', () {
     expect(
-      isContextSafeForCompaction(
-        _context([_message(status: AgentTranscriptStatus.sending)]),
-      ),
+      isContextSafeForCompaction(_context([_message(status: .sending)])),
       isFalse,
     );
     expect(
       isContextSafeForCompaction(
         _context([
-          _message(
-            role: AgentTranscriptRole.model,
-            toolCalls: [_pendingToolCall],
-          ),
+          _message(role: .model, toolCalls: [_pendingToolCall]),
         ]),
       ),
       isFalse,
@@ -125,7 +119,7 @@ void main() {
 
 const _pendingToolCall = AgentTranscriptToolCallSnapshot(
   id: 'tool',
-  lifecycle: AgentToolCallLifecycle.pending,
+  lifecycle: .pending,
   argumentCharacterCount: 0,
   resultCharacterCount: 0,
 );
@@ -142,7 +136,7 @@ AgentTranscriptMessageSnapshot _message({
 }) => AgentTranscriptMessageSnapshot(
   id: 'message',
   role: role,
-  kind: AgentTranscriptKind.text,
+  kind: .text,
   status: status,
   textCharacterCount: textCharacters,
   toolCalls: toolCalls,

@@ -97,12 +97,7 @@ class CloudWorkspaceResourceStore {
     required WorkspaceResourceKind kind,
     required String id,
     required Map<String, Object?> data,
-  }) => _write(
-    operation: WorkspacePatchOperationKind.create,
-    kind: kind,
-    id: id,
-    data: data,
-  );
+  }) => _write(operation: .create, kind: kind, id: id, data: data);
 
   Future<void> createAll(
     Iterable<
@@ -115,7 +110,7 @@ class CloudWorkspaceResourceStore {
       operations: [
         for (final resource in resources)
           WorkspacePatchOperation(
-            operation: WorkspacePatchOperationKind.create,
+            operation: .create,
             resourceKind: resource.kind,
             resourceId: resource.id,
             data: jsonEncode(resource.data),
@@ -131,7 +126,7 @@ class CloudWorkspaceResourceStore {
     required int revision,
     required Map<String, Object?> data,
   }) => _write(
-    operation: WorkspacePatchOperationKind.update,
+    operation: .update,
     kind: kind,
     id: id,
     data: data,
@@ -142,12 +137,7 @@ class CloudWorkspaceResourceStore {
     required WorkspaceResourceKind kind,
     required String id,
     required int revision,
-  }) => _write(
-    operation: WorkspacePatchOperationKind.delete,
-    kind: kind,
-    id: id,
-    revision: revision,
-  );
+  }) => _write(operation: .delete, kind: kind, id: id, revision: revision);
 
   Future<PutWorkspaceSecretResponse> putSecret({
     required WorkspaceSecretKind kind,
@@ -223,7 +213,7 @@ Future<CloudWorkspaceStateGateway> _requireGateway(
   return await gateway ??
       (throw const CloudAppException(
         localizationKey: LocaleKeys.cloud_errors_unavailable,
-        context: CloudOperationContext.state,
+        context: .state,
         code: 'gatewayUnavailable',
       ));
 }

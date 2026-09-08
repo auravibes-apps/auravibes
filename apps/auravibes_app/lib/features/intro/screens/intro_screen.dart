@@ -18,23 +18,21 @@ class const IntroScreen({super.key}) extends ConsumerStatefulWidget {
 
 class _IntroScreenState extends ConsumerState<IntroScreen> {
   static const _slideButtonSpacing = 8.0;
-  _IntroSlide _slide = _IntroSlide.welcome;
+  _IntroSlide _slide = .welcome;
   WorkspaceEntity? _createdWorkspace;
 
   String get _titleKey => switch (_slide) {
-    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_title,
-    _IntroSlide.workspaceContext =>
-      LocaleKeys.intro_flow_workspace_context_title,
-    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_title,
-    _IntroSlide.ready => LocaleKeys.intro_flow_ready_title,
+    .welcome => LocaleKeys.intro_flow_welcome_title,
+    .workspaceContext => LocaleKeys.intro_flow_workspace_context_title,
+    .workspaceChoice => LocaleKeys.intro_flow_choice_title,
+    .ready => LocaleKeys.intro_flow_ready_title,
   };
 
   String get _bodyKey => switch (_slide) {
-    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_body,
-    _IntroSlide.workspaceContext =>
-      LocaleKeys.intro_flow_workspace_context_body,
-    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_body,
-    _IntroSlide.ready => LocaleKeys.intro_flow_ready_body,
+    .welcome => LocaleKeys.intro_flow_welcome_body,
+    .workspaceContext => LocaleKeys.intro_flow_workspace_context_body,
+    .workspaceChoice => LocaleKeys.intro_flow_choice_body,
+    .ready => LocaleKeys.intro_flow_ready_body,
   };
 
   @override
@@ -79,7 +77,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
           ),
         ),
       ),
-      variant: AuraScreenVariation.aurora,
+      variant: .aurora,
     );
   }
 
@@ -96,7 +94,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
   void _workspaceCreated(WorkspaceEntity workspace) {
     setState(() {
       _createdWorkspace = workspace;
-      _slide = _IntroSlide.ready;
+      _slide = .ready;
     });
   }
 
@@ -155,7 +153,7 @@ class const _ProgressIndicator({required final _IntroSlide activeSlide})
                   color: index <= activeSlide.index
                       ? colors.primary
                       : colors.outlineVariant,
-                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                  borderRadius: const BorderRadius.all(.circular(4)),
                 ),
                 child: const SizedBox(height: 4),
               ),
@@ -173,11 +171,11 @@ class const _SlideContent({
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       children: [
-        AuraText(child: TextLocale(titleKey), style: AuraTextStyle.heading3),
+        AuraText(child: TextLocale(titleKey), style: .heading3),
         const SizedBox(height: 12),
-        AuraText(child: TextLocale(bodyKey), style: AuraTextStyle.bodyLarge),
+        AuraText(child: TextLocale(bodyKey), style: .bodyLarge),
       ],
     );
   }
@@ -202,7 +200,7 @@ class const _SlideActions({
               onPressed: onBack,
               child: const TextLocale(LocaleKeys.intro_flow_back),
               key: const Key('intro_back_button'),
-              variant: AuraButtonVariant.outlined,
+              variant: .outlined,
             ),
           ),
           const SizedBox(width: 8),
@@ -215,7 +213,7 @@ class const _SlideActions({
                   ? LocaleKeys.intro_flow_connect_primary
                   : LocaleKeys.intro_flow_continue,
             ),
-            key: Key(
+            key: .new(
               slide == _IntroSlide.ready
                   ? 'intro_connect_ai_button'
                   : 'intro_continue_button',
@@ -229,7 +227,7 @@ class const _SlideActions({
               onPressed: onSkipAi,
               child: const TextLocale(LocaleKeys.intro_flow_connect_skip),
               key: const Key('intro_skip_ai_button'),
-              variant: AuraButtonVariant.outlined,
+              variant: .outlined,
             ),
           ),
         ],

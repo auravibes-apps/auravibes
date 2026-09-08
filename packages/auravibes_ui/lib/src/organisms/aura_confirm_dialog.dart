@@ -64,7 +64,7 @@ class AuraConfirmDialog extends StatelessWidget {
             onCancel?.call();
           },
           child: cancelLabel,
-          variant: AuraButtonVariant.text,
+          variant: .text,
         ),
         const SizedBox(width: 8),
         AuraButton(
@@ -73,7 +73,7 @@ class AuraConfirmDialog extends StatelessWidget {
             onConfirm?.call();
           },
           child: confirmLabel,
-          variant: AuraButtonVariant.text,
+          variant: .text,
           tint: isDestructive ? AuraTint.error : tint ?? AuraTint.primary,
         ),
       ],

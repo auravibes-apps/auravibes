@@ -33,7 +33,7 @@ class CloudChatAttachmentAdapter({
     final response = await _dio.put<void>(
       upload.uploadUrl,
       data: Stream<List<int>>.value(bytes),
-      options: Options(headers: upload.headers),
+      options: .new(headers: upload.headers),
     );
     final status = response.statusCode ?? 0;
     if (status < 200 || status >= 300) {

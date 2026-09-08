@@ -111,7 +111,7 @@ class const RunSkillsManagerToolUsecase(
         : null;
     final updated = await _updateSkillUsecase.call(
       skill.id,
-      SkillToUpdate(
+      .new(
         title: _optionalString(arguments, 'title'),
         description: _optionalString(arguments, 'description'),
         content: _optionalString(arguments, 'content'),
@@ -148,7 +148,7 @@ class const RunSkillsManagerToolUsecase(
     );
     final skill = await _createSkillUsecase.call(
       workspaceId,
-      SkillToCreate(
+      .new(
         kind: SkillKind.template,
         title: _requiredString(arguments, 'title'),
         description: _requiredString(arguments, 'description'),
@@ -251,7 +251,7 @@ class const RunSkillsManagerToolUsecase(
     }
     final tool = await _createSkillTemplateToolUsecase.call(
       skill.id,
-      SkillTemplateToolToCreate(
+      .new(
         templateType: SkillTemplateToolType.url,
         title: title,
         description: _requiredString(arguments, 'description'),
@@ -283,7 +283,7 @@ class const RunSkillsManagerToolUsecase(
     }
     final updated = await _updateSkillTemplateToolUsecase.call(
       tool.id,
-      SkillTemplateToolToUpdate(
+      .new(
         title: _optionalString(arguments, 'title'),
         description: _optionalString(arguments, 'description'),
         templateJson: _optionalJsonObjectString(arguments, 'template'),
@@ -356,7 +356,7 @@ class const RunSkillsManagerToolUsecase(
     }
     final definition = await _createSkillCredentialDefinitionUsecase.call(
       workspaceId,
-      SkillCredentialDefinitionToCreate(
+      .new(
         title: title,
         attributesJson: _jsonObjectString(arguments, 'attributes'),
       ),
@@ -375,7 +375,7 @@ class const RunSkillsManagerToolUsecase(
     );
     final updated = await _updateSkillCredentialDefinitionUsecase.call(
       definition.id,
-      SkillCredentialDefinitionToUpdate(
+      .new(
         title: _optionalString(arguments, 'title'),
         attributesJson: _optionalJsonObjectString(arguments, 'attributes'),
       ),

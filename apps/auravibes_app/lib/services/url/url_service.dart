@@ -59,7 +59,7 @@ class UrlService({Dio? dio}) {
         request.url,
         data: requestBody,
         cancelToken: cancelToken,
-        options: Options(
+        options: .new(
           method: request.method.value,
           sendTimeout: request.timeout,
           receiveTimeout: request.timeout,

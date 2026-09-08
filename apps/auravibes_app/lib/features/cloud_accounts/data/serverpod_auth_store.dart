@@ -14,7 +14,7 @@ class ServerpodAuthStore {
   static const _authPrefix = 'serverpod_auth_success_v2_';
   static const _legacyAuthPrefix = 'serverpod_auth_success_v1_';
   static const _defaultStorage = FlutterSecureStorage(
-    iOptions: IOSOptions(
+    iOptions: .new(
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
   );
@@ -26,7 +26,7 @@ class ServerpodAuthStore {
   final String storageNamespace;
 
   final FlutterSecureStorage _secureStorage;
-  Future<void> _indexMutation = Future.value();
+  Future<void> _indexMutation = .value();
 
   bool get _usesLegacyKeys => storageNamespace == 'auravibes_app';
 

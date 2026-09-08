@@ -17,7 +17,7 @@ class const BuildSkillContextMessages() {
     return [
       for (final skill in loadedSkills)
         AgentChatMessage(
-          role: AgentChatMessageRole.user,
+          role: .user,
           content: _skillXml(skill),
           metadata: const {'kind': skillContextMetadataKind},
         ),
@@ -39,10 +39,7 @@ class const BuildSkillContextMessages() {
         .toList(growable: false);
     return [
       if (agentContent != null)
-        AgentChatMessage(
-          role: AgentChatMessageRole.system,
-          content: agentContent,
-        ),
+        AgentChatMessage(role: .system, content: agentContent),
       ...call(skills),
     ];
   }

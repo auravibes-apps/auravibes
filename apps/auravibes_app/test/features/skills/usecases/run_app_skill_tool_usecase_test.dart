@@ -320,7 +320,7 @@ void main() {
       var capturedRequest = const UrlRequest(url: '');
       when(() => serviceConnections.getById('codex-connection')).thenAnswer(
         (_) async => _serviceConnection(
-          authenticationType: ServiceConnectionAuthenticationType.oauth2,
+          authenticationType: .oauth2,
           metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
             const ServiceConnectionMetadata(
               accountId: 'account-1',
@@ -406,7 +406,7 @@ void main() {
       when(() => serviceConnections.getById('codex-annotation-connection'))
           .thenAnswer(
             (_) async => _serviceConnection(
-              authenticationType: ServiceConnectionAuthenticationType.oauth2,
+              authenticationType: .oauth2,
               metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
                 const ServiceConnectionMetadata(provider: 'openai-codex'),
               ),
@@ -461,7 +461,7 @@ data: [DONE]
       final oauthCredentials = _MockOAuthCredentialService();
       when(() => serviceConnections.getById('codex-sse-connection')).thenAnswer(
         (_) async => _serviceConnection(
-          authenticationType: ServiceConnectionAuthenticationType.oauth2,
+          authenticationType: .oauth2,
           metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
             const ServiceConnectionMetadata(provider: 'openai-codex'),
           ),
@@ -553,8 +553,8 @@ RunAppSkillToolUsecase _usecase({
     serviceConnections ?? _MockServiceConnectionRepository(),
     _MockSkillCredentialsRepository(),
     _FakeAppSkillCandidates(candidatesBySlug),
-    AppSkillExecutor(
-      RunSkillUrlTemplate(const ResolveSkillUrlTemplate(), httpClient.execute),
+    .new(
+      .new(const ResolveSkillUrlTemplate(), httpClient.execute),
       httpClient.execute,
     ),
     oauthCredentials,
@@ -607,7 +607,7 @@ UrlResponse _response(
     statusCode: statusCode,
     body: body,
     headers: headers,
-    elapsed: Duration.zero,
+    elapsed: .zero,
   );
 }
 
@@ -624,8 +624,8 @@ ServiceConnectionEntity _serviceConnection({
     metadataJson: metadataJson,
     expiresAt: null,
     lastRefreshedAt: null,
-    updatedAt: DateTime(2026),
-    authStatus: ServiceConnectionAuthStatus.connected,
+    updatedAt: .new(2026),
+    authStatus: .connected,
     lastAuthError: null,
   );
 }

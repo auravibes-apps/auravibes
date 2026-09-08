@@ -44,8 +44,8 @@ void main() {
     registerFallbackValue(WorkspaceSecretScope.workspace);
     registerFallbackValue(
       WorkspacePatchOperation(
-        operation: WorkspacePatchOperationKind.create,
-        resourceKind: WorkspaceResourceKind.skill,
+        operation: .create,
+        resourceKind: .skill,
         resourceId: 'fallback',
         fieldMask: const [],
       ),
@@ -203,7 +203,7 @@ void main() {
           await container.read(createSkillUsecaseProvider(workspaceId))(
             workspaceId,
             const SkillToCreate(
-              kind: SkillKind.template,
+              kind: .template,
               title: 'Weather',
               description: 'Forecast',
               content: 'Use weather',
@@ -262,7 +262,7 @@ void main() {
       final credentialSkill =
           await container.read(createSkillUsecaseProvider(workspaceId))(
             workspaceId,
-            SkillToCreate(
+            .new(
               kind: SkillKind.template,
               title: 'Protected Weather',
               description: 'Forecast',
@@ -276,7 +276,7 @@ void main() {
           )(
             credentialSkill.id,
             const SkillTemplateToolToCreate(
-              templateType: SkillTemplateToolType.url,
+              templateType: .url,
               title: 'Forecast',
               description: 'Get forecast',
               templateJson:
@@ -296,7 +296,7 @@ void main() {
           .read(skillCredentialOperationsProvider(workspaceId))
           .create(
             workspaceId,
-            SkillCredentialToCreate(
+            .new(
               credentialDefinitionId: definition.id,
               name: 'Primary',
               attributes: const {'token': 'secret'},
@@ -365,8 +365,8 @@ void main() {
         () => gateway.mutateCredential(
           requestId: any(named: 'requestId'),
           resourceOperation: any(named: 'resourceOperation'),
-          secretKind: WorkspaceSecretKind.skillCredential,
-          scope: WorkspaceSecretScope.workspace,
+          secretKind: .skillCredential,
+          scope: .workspace,
           secret: any(named: 'secret'),
           clearSecret: false,
           expectedSecretRevision: any(named: 'expectedSecretRevision'),

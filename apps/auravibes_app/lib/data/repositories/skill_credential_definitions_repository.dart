@@ -48,7 +48,7 @@ class SkillCredentialDefinitionsRepository(AppDatabase database) {
     SkillCredentialDefinitionToCreate definition,
   ) async {
     final table = await _dao.createDefinition(
-      SkillCredentialDefinitionsCompanion(
+      .new(
         workspaceId: Value(workspaceId),
         title: Value(definition.title.trim()),
         slug: Value(generateSkillSlug(definition.title)),
@@ -65,7 +65,7 @@ class SkillCredentialDefinitionsRepository(AppDatabase database) {
   ) async {
     final table = await _dao.updateDefinition(
       definitionId,
-      SkillCredentialDefinitionsCompanion(
+      .new(
         updatedAt: Value(DateTime.now()),
         title: switch (definition.title) {
           null => const Value.absent(),

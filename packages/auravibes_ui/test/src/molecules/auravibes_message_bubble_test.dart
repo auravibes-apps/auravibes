@@ -1,4 +1,3 @@
-import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/molecules/aura_message_bubble.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -85,7 +84,7 @@ void main() {
             body: AuraMessageBubble(
               content: 'Fixed timestamp',
               isUser: true,
-              timestamp: DateTime(2026, 8, 28, 11, 55),
+              timestamp: .new(2026, 8, 28, 11, 55),
               now: () => now,
             ),
           ),
@@ -101,7 +100,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Directionality(
-            textDirection: TextDirection.rtl,
+            textDirection: .rtl,
             child: Scaffold(
               body: AuraMessageBubble(content: 'RTL message', isUser: true),
             ),
@@ -120,7 +119,7 @@ void main() {
             body: AuraMessageBubble(
               content: 'User message',
               isUser: true,
-              status: AuraMessageDeliveryStatus.delivered,
+              status: .delivered,
             ),
           ),
         ),
@@ -136,7 +135,7 @@ void main() {
             body: AuraMessageBubble(
               content: 'Error message',
               isUser: true,
-              status: AuraMessageDeliveryStatus.error,
+              status: .error,
             ),
           ),
         ),
@@ -151,7 +150,7 @@ void main() {
             body: AuraMessageBubble(
               content: 'https://example.com/image.jpg',
               isUser: true,
-              contentType: AuraMessageContentType.image,
+              contentType: .image,
             ),
           ),
         ),
@@ -167,7 +166,7 @@ void main() {
             body: AuraMessageBubble(
               content: 'document.pdf',
               isUser: true,
-              contentType: AuraMessageContentType.file,
+              contentType: .file,
             ),
           ),
         ),

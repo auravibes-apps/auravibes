@@ -1,8 +1,6 @@
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
-import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_header.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -19,9 +17,9 @@ WorkspaceToolEntity _tool({String id = 't1', bool isEnabled = true}) {
     workspaceId: _workspaceId,
     toolId: 'custom_tool',
     isEnabled: isEnabled,
-    permissionMode: ToolPermissionMode.alwaysAsk,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    permissionMode: .alwaysAsk,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }
 
@@ -31,9 +29,9 @@ ToolsGroupEntity _group({String id = 'g1', String name = 'Test Group'}) {
     workspaceId: _workspaceId,
     name: name,
     isEnabled: true,
-    permissions: PermissionAccess.ask,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    permissions: .ask,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }
 
@@ -45,8 +43,8 @@ McpServerEntity _mcpServer({String id = 'mcp-1'}) {
     url: 'http://test.com',
     transport: const McpTransportTypeStreamableHttp(),
     authenticationType: const McpAuthenticationType.none(),
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }
 
@@ -56,7 +54,7 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
     return EasyLocalization(
       child: MaterialApp(
         home: Theme(
-          data: ThemeData(extensions: [AuraTheme.light]),
+          data: .new(extensions: [AuraTheme.light]),
           child: Material(child: child),
         ),
       ),
@@ -122,7 +120,7 @@ void main() {
     final groupWithTools = ToolsGroupWithTools(
       group: null,
       tools: [_tool()],
-      defaultGroupType: DefaultToolGroupType.builtIn,
+      defaultGroupType: .builtIn,
     );
 
     await tester.pumpWidget(
@@ -174,9 +172,9 @@ void main() {
       workspaceId: _workspaceId,
       name: 'MCP Group',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      permissions: .ask,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       mcpServerId: 'mcp-1',
     );
     final groupWithTools = ToolsGroupWithTools(
@@ -234,15 +232,15 @@ void main() {
       workspaceId: _workspaceId,
       name: 'MCP',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      permissions: .ask,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       mcpServerId: 'mcp-1',
     );
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: _mcpServer(),
         status: McpConnectionStatus.connecting,
       ),
@@ -270,15 +268,15 @@ void main() {
       workspaceId: _workspaceId,
       name: 'MCP',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      permissions: .ask,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       mcpServerId: 'mcp-1',
     );
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: _mcpServer(),
         status: McpConnectionStatus.connected,
       ),
@@ -306,15 +304,15 @@ void main() {
       workspaceId: _workspaceId,
       name: 'MCP',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      permissions: .ask,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       mcpServerId: 'mcp-1',
     );
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: _mcpServer(),
         status: McpConnectionStatus.error,
         errorMessage: 'Connection failed',
@@ -346,15 +344,15 @@ void main() {
       workspaceId: _workspaceId,
       name: 'MCP',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      permissions: .ask,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       mcpServerId: 'mcp-1',
     );
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
-      mcpConnectionState: McpConnectionState(
+      mcpConnectionState: .new(
         server: _mcpServer(),
         status: McpConnectionStatus.disconnected,
       ),
@@ -385,9 +383,9 @@ void main() {
       workspaceId: _workspaceId,
       name: 'MCP',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      permissions: .ask,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       mcpServerId: 'mcp-1',
     );
     final groupWithTools = ToolsGroupWithTools(

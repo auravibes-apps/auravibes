@@ -38,8 +38,8 @@ void main() {
     test('returns stored overrides with fallbacks for null columns', () async {
       final row = WorkspaceCompactionSettingsTable(
         id: 'row-1',
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026, 1, 2),
+        createdAt: .new(2026),
+        updatedAt: .new(2026, 1, 2),
         workspaceId: 'ws-1',
         autoCompactEnabled: false,
         usagePercentageThreshold: 50,
@@ -75,8 +75,8 @@ void main() {
     test('upserts and returns resolved settings', () async {
       final row = WorkspaceCompactionSettingsTable(
         id: 'row-2',
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026, 1, 2),
+        createdAt: .new(2026),
+        updatedAt: .new(2026, 1, 2),
         workspaceId: 'ws-1',
         autoCompactEnabled: false,
         usagePercentageThreshold: 90,

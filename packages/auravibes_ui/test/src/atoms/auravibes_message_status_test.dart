@@ -11,7 +11,7 @@ void main() {
         MaterialApp(
           home: const Scaffold(
             body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sending,
+              status: .sending,
               showAnimation: false, // Disable animation for stable testing.
             ),
           ),
@@ -32,7 +32,7 @@ void main() {
         MaterialApp(
           home: const Scaffold(
             body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sent,
+              status: .sent,
               showAnimation: false, // Disable animation for stable testing.
             ),
           ),
@@ -52,7 +52,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.delivered,
+              status: .delivered,
               showAnimation: false, // Disable animation for stable testing.
             ),
           ),
@@ -67,7 +67,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.read,
+              status: .read,
               showAnimation: false, // Disable animation for stable testing.
             ),
           ),
@@ -82,8 +82,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sent,
-              size: AuraMessageStatusSize.small,
+              status: .sent,
+              size: .small,
               showAnimation: false, // Disable animation for stable testing.
             ),
           ),
@@ -99,7 +99,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sent,
+              status: .sent,
               showAnimation: false, // Disable animation for stable testing.
             ),
           ),
@@ -115,8 +115,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sent,
-              size: AuraMessageStatusSize.large,
+              status: .sent,
+              size: .large,
               showAnimation: false, // Disable animation for stable testing.
             ),
           ),
@@ -134,7 +134,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sent,
+              status: .sent,
               color: customColor,
               showAnimation: false, // Disable animation for stable testing.
             ),
@@ -152,30 +152,12 @@ void main() {
           home: Scaffold(
             body: Column(
               children: [
-                AuraMessageStatus(
-                  status: AuraMessageDeliveryStatus.sending,
-                  showAnimation: false,
-                ),
-                AuraMessageStatus(
-                  status: AuraMessageDeliveryStatus.unfinished,
-                  showAnimation: false,
-                ),
-                AuraMessageStatus(
-                  status: AuraMessageDeliveryStatus.sent,
-                  showAnimation: false,
-                ),
-                AuraMessageStatus(
-                  status: AuraMessageDeliveryStatus.delivered,
-                  showAnimation: false,
-                ),
-                AuraMessageStatus(
-                  status: AuraMessageDeliveryStatus.read,
-                  showAnimation: false,
-                ),
-                AuraMessageStatus(
-                  status: AuraMessageDeliveryStatus.error,
-                  showAnimation: false,
-                ),
+                AuraMessageStatus(status: .sending, showAnimation: false),
+                AuraMessageStatus(status: .unfinished, showAnimation: false),
+                AuraMessageStatus(status: .sent, showAnimation: false),
+                AuraMessageStatus(status: .delivered, showAnimation: false),
+                AuraMessageStatus(status: .read, showAnimation: false),
+                AuraMessageStatus(status: .error, showAnimation: false),
               ],
             ),
           ),
@@ -202,9 +184,7 @@ void main() {
     testWidgets('shows animation when enabled', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraMessageStatus(status: AuraMessageDeliveryStatus.sent),
-          ),
+          home: Scaffold(body: AuraMessageStatus(status: .sent)),
         ),
       );
 
@@ -222,10 +202,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sent,
-              showAnimation: false,
-            ),
+            body: AuraMessageStatus(status: .sent, showAnimation: false),
           ),
         ),
       );
@@ -243,9 +220,7 @@ void main() {
     testWidgets('shows rotation animation for sending status', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraMessageStatus(status: AuraMessageDeliveryStatus.sending),
-          ),
+          home: Scaffold(body: AuraMessageStatus(status: .sending)),
         ),
       );
 
@@ -265,10 +240,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraMessageStatus(
-              status: AuraMessageDeliveryStatus.sending,
-              showAnimation: false,
-            ),
+            body: AuraMessageStatus(status: .sending, showAnimation: false),
           ),
         ),
       );
@@ -280,9 +252,7 @@ void main() {
     testWidgets('updates animation when status changes', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraMessageStatus(status: AuraMessageDeliveryStatus.sending),
-          ),
+          home: Scaffold(body: AuraMessageStatus(status: .sending)),
         ),
       );
 
@@ -296,9 +266,7 @@ void main() {
       // Change status to stop the repeating animation.
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraMessageStatus(status: AuraMessageDeliveryStatus.sent),
-          ),
+          home: Scaffold(body: AuraMessageStatus(status: .sent)),
         ),
       );
 
@@ -318,17 +286,14 @@ void main() {
             body: Column(
               children: [
                 AuraMessageStatus(
-                  status: AuraMessageDeliveryStatus.sent,
-                  size: AuraMessageStatusSize.small,
+                  status: .sent,
+                  size: .small,
                   showAnimation: false,
                 ),
+                AuraMessageStatus(status: .sent, showAnimation: false),
                 AuraMessageStatus(
-                  status: AuraMessageDeliveryStatus.sent,
-                  showAnimation: false,
-                ),
-                AuraMessageStatus(
-                  status: AuraMessageDeliveryStatus.sent,
-                  size: AuraMessageStatusSize.large,
+                  status: .sent,
+                  size: .large,
                   showAnimation: false,
                 ),
               ],

@@ -60,7 +60,7 @@ final $Progress = _Story(
     semanticValue: args.semanticValue,
   ),
   scenarios: [
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
   ],
 );

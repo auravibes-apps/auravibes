@@ -48,7 +48,7 @@ void main() {
     expect(
       providerModelCatalogUri(
         'anthropic',
-        Uri.parse('https://api.anthropic.com/v1/'),
+        .parse('https://api.anthropic.com/v1/'),
         maxModels: 5,
       ),
       Uri.parse('https://api.anthropic.com/v1/models?limit=5'),
@@ -56,7 +56,7 @@ void main() {
     expect(
       providerModelCatalogUri(
         'openai',
-        Uri.parse('https://api.openai.com/v1'),
+        .parse('https://api.openai.com/v1'),
         maxModels: 5,
       ),
       Uri.parse('https://api.openai.com/v1/models'),

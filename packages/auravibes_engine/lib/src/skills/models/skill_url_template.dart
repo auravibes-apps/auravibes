@@ -38,8 +38,8 @@ class const SkillUrlTemplate({
       query: _canonicalizeMap(_stringMap(decoded['query'])),
       body: body == null ? null : _canonicalizeBody(body),
       bodyFormat: _bodyFormatFromJson(decoded['bodyFormat']),
-      timeout: Duration(seconds: _positiveInt(decoded['timeoutSeconds']) ?? 30),
-      format: UrlResponseFormat.fromString('${decoded['format'] ?? ''}'),
+      timeout: .new(seconds: _positiveInt(decoded['timeoutSeconds']) ?? 30),
+      format: .fromString('${decoded['format'] ?? ''}'),
     );
   }
 

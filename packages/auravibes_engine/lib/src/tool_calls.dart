@@ -13,14 +13,13 @@ extension AgentToolCallLifecycleX on AgentToolCallLifecycle {
 
   String get modelFallback => switch (this) {
     AgentToolCallLifecycle.pending || AgentToolCallLifecycle.success => '',
-    AgentToolCallLifecycle.skippedByUser => 'Tool was skipped by the user.',
-    AgentToolCallLifecycle.stoppedByUser =>
-      'Tool execution was stopped by the user.',
-    AgentToolCallLifecycle.failed => 'Tool execution failed.',
+    .skippedByUser => 'Tool was skipped by the user.',
+    .stoppedByUser => 'Tool execution was stopped by the user.',
+    .failed => 'Tool execution failed.',
   };
 
   bool canTransitionTo(AgentToolCallLifecycle next) => switch (this) {
-    AgentToolCallLifecycle.pending => next != AgentToolCallLifecycle.pending,
+    .pending => next != AgentToolCallLifecycle.pending,
     _ => false,
   };
 }

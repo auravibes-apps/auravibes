@@ -48,12 +48,9 @@ final ProviderFamily<AgentRepository, String> agentRepositoryProvider =
           if (cloud == null) return const [];
           final response = await cloud.read(
             pages: [
+              WorkspaceResourcePageRequest(resourceKind: .agent, limit: 100),
               WorkspaceResourcePageRequest(
-                resourceKind: WorkspaceResourceKind.agent,
-                limit: 100,
-              ),
-              WorkspaceResourcePageRequest(
-                resourceKind: WorkspaceResourceKind.agentAssociation,
+                resourceKind: .agentAssociation,
                 limit: 100,
               ),
             ],

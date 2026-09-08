@@ -3,7 +3,6 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -39,7 +38,7 @@ class _ServiceConnectionCreateScreenState
     extends ConsumerState<ServiceConnectionCreateScreen> {
   final _nameController = TextEditingController();
   final _attributeControllers = <String, TextEditingController>{};
-  ServiceConnectionCreateType _type = ServiceConnectionCreateType.modelProvider;
+  ServiceConnectionCreateType _type = .modelProvider;
   String? _definitionId;
   String? _appSkillId;
   bool _isSaving = false;
@@ -75,7 +74,7 @@ class _ServiceConnectionCreateScreenState
           ),
           Expanded(
             child: switch (_type) {
-              ServiceConnectionCreateType.modelProvider => Padding(
+              .modelProvider => Padding(
                 padding: const EdgeInsets.all(12),
                 child: AddModelProviderWidget(
                   workspaceId: widget.workspaceId,
@@ -83,7 +82,7 @@ class _ServiceConnectionCreateScreenState
                   showHeader: false,
                 ),
               ),
-              ServiceConnectionCreateType.skillCredential => _CredentialForm(
+              .skillCredential => _CredentialForm(
                 workspaceId: widget.workspaceId,
                 selectedDefinitionId: _definitionId,
                 nameController: _nameController,
@@ -95,26 +94,25 @@ class _ServiceConnectionCreateScreenState
                 onDefinitionChanged: _onDefinitionChanged,
                 onSave: () => unawaited(_saveSkillCredential()),
               ),
-              ServiceConnectionCreateType.appSkillCredential =>
-                _AppSkillCredentialForm(
-                  selectedAppSkillId: _appSkillId,
-                  nameController: _nameController,
-                  apiKeyController: _attributeControllers.putIfAbsent(
-                    'apiKey',
-                    TextEditingController.new,
-                  ),
-                  isSaving: _isSaving,
-                  onNameChanged: (_) => setState(() {
-                    final _ = Object();
-                  }),
-                  onAppSkillChanged: (value) {
-                    setState(() => _appSkillId = value);
-                  },
-                  onApiKeyChanged: (_) => setState(() {
-                    final _ = Object();
-                  }),
-                  onSave: () => unawaited(_saveAppSkillCredential()),
+              .appSkillCredential => _AppSkillCredentialForm(
+                selectedAppSkillId: _appSkillId,
+                nameController: _nameController,
+                apiKeyController: _attributeControllers.putIfAbsent(
+                  'apiKey',
+                  TextEditingController.new,
                 ),
+                isSaving: _isSaving,
+                onNameChanged: (_) => setState(() {
+                  final _ = Object();
+                }),
+                onAppSkillChanged: (value) {
+                  setState(() => _appSkillId = value);
+                },
+                onApiKeyChanged: (_) => setState(() {
+                  final _ = Object();
+                }),
+                onSave: () => unawaited(_saveAppSkillCredential()),
+              ),
             },
           ),
         ],
@@ -167,7 +165,7 @@ class _ServiceConnectionCreateScreenState
         content: Text(
           LocaleKeys.skill_credentials_save_error.tr(context: context),
         ),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -207,7 +205,7 @@ class _ServiceConnectionCreateScreenState
           .read(skillCredentialOperationsProvider(widget.workspaceId))
           .create(
             widget.workspaceId,
-            SkillCredentialToCreate(
+            .new(
               credentialDefinitionId: definitionId,
               name: _nameController.text.trim(),
               attributes: attributes,
@@ -237,7 +235,7 @@ class _ServiceConnectionCreateScreenState
         content: Text(
           LocaleKeys.skill_credentials_save_error.tr(context: context),
         ),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -456,7 +454,7 @@ class const _AppSkillCredentialForm({
               AuraInput(
                 controller: apiKeyController,
                 label: Text(_credentialValueLabel(context, selectedAppSkillId)),
-                keyboardType: TextInputType.visiblePassword,
+                keyboardType: .visiblePassword,
                 obscureText: true,
                 onChanged: onApiKeyChanged,
               ),
@@ -470,8 +468,8 @@ class const _AppSkillCredentialForm({
                 ),
               ),
             ],
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: .md,
+            crossAxisAlignment: .start,
           ),
         ),
       ],
@@ -570,8 +568,8 @@ class const _CredentialFormContent({
                 ),
               ],
             ],
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: .md,
+            crossAxisAlignment: .start,
           ),
         ),
       ],
@@ -632,8 +630,8 @@ class const _CredentialAttributesFields({
             obscureText: entry.value.secret,
           ),
       ],
-      spacing: AuraSpacing.md,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: .md,
+      crossAxisAlignment: .start,
     );
   }
 }

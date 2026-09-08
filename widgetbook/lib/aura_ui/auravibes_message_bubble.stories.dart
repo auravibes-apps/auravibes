@@ -52,10 +52,10 @@ final $AuraMessageBubble = _Story(
       values: AuraMessageDeliveryStatus.values,
     ),
     timestamp: NullableDateTimeArg(
-      DateTime(2026, 8, 28, 12, 0),
+      .new(2026, 8, 28, 12, 0),
       name: 'Show Timestamp',
-      start: DateTime(2023),
-      end: DateTime(2030),
+      start: .new(2023),
+      end: .new(2030),
     ),
     contentType: EnumArg(
       AuraMessageContentType.values.first,
@@ -79,7 +79,7 @@ final $AuraMessageBubble = _Story(
       name: 'Landscape Phone',
       modes: [ViewportMode(landscapePhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
     _Scenario(
       name: 'Tapped',
@@ -122,8 +122,8 @@ class _MessageBubbleDemoState extends State<MessageBubbleDemo> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
       children: [
         AuraMessageBubble(
           content: widget.content,

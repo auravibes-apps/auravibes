@@ -9,7 +9,6 @@ import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -25,7 +24,6 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:rxdart/rxdart.dart';
 
 void _ignoreProviderUpdate(Object? _, Object? _) {
   final _ = Object();
@@ -111,7 +109,7 @@ void main() {
       repository.emit([
         _message(id: 'message-1', content: 'hello', isUser: true),
       ]);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(repository.watchedConversationIds, ['conversation-1']);
       expect(repository.getMessagesByConversationCallCount, 0);
@@ -163,10 +161,10 @@ void main() {
       repository.emit([
         _message(id: 'message-1', content: 'persisted', isUser: false),
       ]);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       container.read(messagesStreamingProvider.notifier)
-        ..startSubscription(CompositeSubscription(), 'message-1')
+        ..startSubscription(.new(), 'message-1')
         ..updateResult(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('streaming'),
@@ -174,7 +172,7 @@ void main() {
           ),
           'message-1',
         );
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(
         container
@@ -227,7 +225,7 @@ void main() {
             metadata: const MessageMetadataEntity(totalTokens: 500),
           ),
         ]);
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
 
         expect(
           container.read(
@@ -237,7 +235,7 @@ void main() {
         );
 
         container.read(messagesStreamingProvider.notifier)
-          ..startSubscription(CompositeSubscription(), 'message-2')
+          ..startSubscription(.new(), 'message-2')
           ..updateResult(
             ChatResult<ChatMessage>(
               output: ChatMessage.model('streaming'),
@@ -245,7 +243,7 @@ void main() {
             ),
             'message-2',
           );
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
 
         expect(
           container.read(
@@ -365,9 +363,9 @@ MessageEntity _message({
     id: id,
     conversationId: 'conversation-1',
     content: content,
-    messageType: MessageType.text,
+    messageType: .text,
     isUser: isUser,
-    status: MessageStatus.sent,
+    status: .sent,
     createdAt: now,
     updatedAt: now,
     metadata: metadata,
@@ -399,14 +397,14 @@ _workspaceModelSelectionWithProvider({
   final now = DateTime(2026);
 
   return WorkspaceModelSelectionWithConnectionEntity(
-    workspaceModelSelection: WorkspaceModelSelectionEntity(
+    workspaceModelSelection: .new(
       id: credentialModelId,
       modelId: modelId,
       createdAt: now,
       updatedAt: now,
       modelConnectionId: 'cred-1',
     ),
-    modelConnection: ModelConnectionEntity(
+    modelConnection: .new(
       id: 'cred-1',
       name: 'Test Provider',
       modelId: providerId,
@@ -415,7 +413,7 @@ _workspaceModelSelectionWithProvider({
       workspaceId: 'workspace-1',
       hasKey: true,
     ),
-    modelsProvider: ApiModelProviderEntity(
+    modelsProvider: .new(
       id: providerId,
       name: providerId,
       type: ModelProvidersType.openai,

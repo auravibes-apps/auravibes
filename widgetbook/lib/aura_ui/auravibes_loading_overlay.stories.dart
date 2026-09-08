@@ -51,7 +51,7 @@ class const LoadingOverlayDemo({
         child: Center(
           child: Text(
             'Workspace content',
-            style: TextStyle(color: context.auraColors.onSurface),
+            style: .new(color: context.auraColors.onSurface),
           ),
         ),
       ),

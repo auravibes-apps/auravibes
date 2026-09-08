@@ -73,7 +73,7 @@ class AuraTooltip extends StatelessWidget {
       preferBelow: preferBelow,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: const BorderRadius.all(Radius.circular(_cornerRadius)),
+        borderRadius: const BorderRadius.all(.circular(_cornerRadius)),
         boxShadow: [
           BoxShadow(
             color: auraColors.shadow.withValues(alpha: _shadowAlpha),
@@ -82,7 +82,7 @@ class AuraTooltip extends StatelessWidget {
           ),
         ],
       ),
-      textStyle: TextStyle(
+      textStyle: .new(
         color: textColor,
         fontSize: _fontSize,
         fontWeight: FontWeight.w500,

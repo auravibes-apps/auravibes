@@ -69,7 +69,7 @@ class ChatbotService({
           final runtime = a2uiRuntime;
           if (runtime == null || !runtime.enabled) continue;
           yield const ChatResult<ChatMessage>(
-            output: ChatMessage(role: ChatMessageRole.model),
+            output: ChatMessage(role: .model),
             metadata: {'a2uiPresent': true},
           );
           runtime.addProtocolMessage(message);
@@ -81,7 +81,7 @@ class ChatbotService({
           final runtime = a2uiRuntime;
           if (runtime == null || !runtime.enabled) continue;
           yield const ChatResult<ChatMessage>(
-            output: ChatMessage(role: ChatMessageRole.model),
+            output: ChatMessage(role: .model),
             metadata: {'a2uiPresent': true},
           );
           runtime.recordIssue(
@@ -96,7 +96,7 @@ class ChatbotService({
               : pendingThinking.toString();
           pendingThinking = StringBuffer();
           yield ChatResult<ChatMessage>(
-            output: ChatMessage(role: ChatMessageRole.model, content: text),
+            output: ChatMessage(role: .model, content: text),
             thinking: thinking,
           );
       }
@@ -104,7 +104,7 @@ class ChatbotService({
 
     if (pendingThinking.isNotEmpty) {
       yield ChatResult<ChatMessage>(
-        output: const ChatMessage(role: ChatMessageRole.model),
+        output: const ChatMessage(role: .model),
         thinking: pendingThinking.toString(),
       );
     }
@@ -140,7 +140,7 @@ class ChatbotService({
         prompt: conversationTitlePrompt(firstMessage),
         messages: [
           Message(
-            role: Role.system,
+            role: .system,
             content: [TextPart(text: conversationTitleSystemPrompt)],
           ),
         ],
@@ -187,10 +187,10 @@ class ChatbotService({
   Message _toGenkitMessage(ChatMessage message) {
     return Message(
       role: switch (message.role) {
-        ChatMessageRole.system => Role.system,
-        ChatMessageRole.user => Role.user,
-        ChatMessageRole.model => Role.model,
-        ChatMessageRole.tool => Role.tool,
+        .system => Role.system,
+        .user => Role.user,
+        .model => Role.model,
+        .tool => Role.tool,
       },
       content: message.parts.isEmpty
           ? [TextPart(text: message.content)]
@@ -201,14 +201,14 @@ class ChatbotService({
   Part _toProviderSafePart(Part part) {
     return switch (part) {
       ToolRequestPart(:final toolRequest) => ToolRequestPart(
-        toolRequest: ToolRequest(
+        toolRequest: .new(
           ref: providerSafeToolCallId(toolRequest.ref),
           name: toolRequest.name,
           input: toolRequest.input,
         ),
       ),
       ToolResponsePart(:final toolResponse) => ToolResponsePart(
-        toolResponse: ToolResponse(
+        toolResponse: .new(
           ref: providerSafeToolCallId(toolResponse.ref),
           name: toolResponse.name,
           output: toolResponse.output,
@@ -251,7 +251,7 @@ class ChatbotService({
     );
 
     return ChatResult<ChatMessage>(
-      output: ChatMessage(role: ChatMessageRole.model, parts: toolCallParts),
+      output: ChatMessage(role: .model, parts: toolCallParts),
       finishReason: normalized.finishReason,
       usage: normalized.usage,
       metadata: normalized.metadata,

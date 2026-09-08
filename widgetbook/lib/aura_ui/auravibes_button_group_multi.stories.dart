@@ -37,7 +37,7 @@ final $MultiSelectionToggle = _Story(
       name: 'Landscape Phone',
       modes: [ViewportMode(landscapePhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Toggles Option',
       run: (tester, args) async {
@@ -67,7 +67,7 @@ class _MultiSelectionDemoState extends State<MultiSelectionDemo> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         AuraButtonGroup<String>.multi(
           items: const [
@@ -98,7 +98,7 @@ class _MultiSelectionDemoState extends State<MultiSelectionDemo> {
         const SizedBox(height: 16),
         Text(
           'Selected: ${_selectedValues.join(', ')}',
-          style: TextStyle(color: context.auraColors.onSurface),
+          style: .new(color: context.auraColors.onSurface),
         ),
       ],
     );

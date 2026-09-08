@@ -52,7 +52,7 @@ class AuraCheckboxListTile extends StatelessWidget {
       child: Semantics(
         child: GestureDetector(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               AuraCheckbox(
                 value: value,
@@ -65,13 +65,13 @@ class AuraCheckboxListTile extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
                   children: [
                     AuraText(child: title),
                     if (subtitle != null) ...[
                       const SizedBox(height: 4),
-                      AuraText(child: subtitle, style: AuraTextStyle.bodySmall),
+                      AuraText(child: subtitle, style: .bodySmall),
                     ],
                   ],
                 ),
@@ -79,7 +79,7 @@ class AuraCheckboxListTile extends StatelessWidget {
             ],
           ),
           onTap: isDisabled ? null : () => onChanged?.call(!value),
-          behavior: HitTestBehavior.opaque,
+          behavior: .opaque,
         ),
         container: true,
         label: semanticLabel,

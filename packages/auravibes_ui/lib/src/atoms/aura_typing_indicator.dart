@@ -63,7 +63,7 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     _animationController = animationController;
 
     // Create staggered animations for each dot.
-    _dotAnimations = List.generate(
+    _dotAnimations = .generate(
       _dotCount,
       (index) => _buildDotAnimation(index, animationController),
     );
@@ -83,18 +83,15 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     final dotColor = widget.color ?? auraColors.onSurfaceVariant;
 
     final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(
+      mainAxisSize: .min,
+      children: .generate(
         3,
         (index) => AnimatedBuilder(
           animation: _dotAnimations[index],
           builder: (context, child) => Opacity(
             opacity: _dotAnimations[index].value,
             child: Container(
-              decoration: BoxDecoration(
-                color: dotColor,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: dotColor, shape: .circle),
               width: _getDotSize(),
               height: _getDotSize(),
               margin: EdgeInsets.symmetric(horizontal: _getDotSpacing() / 2),
@@ -114,11 +111,9 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
         color: auraColors.surfaceVariant,
         borderRadius:
             BorderRadius.all(
-              Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
+              .circular(context.auraTheme.fromBorderRadius(.lg)),
             ).copyWith(
-              bottomLeft: Radius.circular(
-                context.auraTheme.fromBorderRadius(.sm),
-              ),
+              bottomLeft: .circular(context.auraTheme.fromBorderRadius(.sm)),
             ),
         boxShadow: const [DesignShadows.sm],
       ),
@@ -154,31 +149,31 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
 
   double _getDotSize() {
     return switch (widget.size) {
-      AuraTypingIndicatorSize.small => _smallDot,
-      AuraTypingIndicatorSize.medium => _mediumDot,
-      AuraTypingIndicatorSize.large => _largeDot,
+      .small => _smallDot,
+      .medium => _mediumDot,
+      .large => _largeDot,
     };
   }
 
   double _getDotSpacing() {
     return switch (widget.size) {
-      AuraTypingIndicatorSize.small => _smallDot,
-      AuraTypingIndicatorSize.medium => _mediumDot,
-      AuraTypingIndicatorSize.large => _largeDot,
+      .small => _smallDot,
+      .medium => _mediumDot,
+      .large => _largeDot,
     };
   }
 
   EdgeInsets _getContainerPadding({required AuraSpacingScale spacing}) {
     return switch (widget.size) {
-      AuraTypingIndicatorSize.small => EdgeInsets.symmetric(
+      .small => EdgeInsets.symmetric(
         vertical: spacing.xs,
         horizontal: spacing.sm,
       ),
-      AuraTypingIndicatorSize.medium => EdgeInsets.symmetric(
+      .medium => EdgeInsets.symmetric(
         vertical: spacing.sm,
         horizontal: spacing.md,
       ),
-      AuraTypingIndicatorSize.large => EdgeInsets.symmetric(
+      .large => EdgeInsets.symmetric(
         vertical: spacing.md,
         horizontal: spacing.lg,
       ),

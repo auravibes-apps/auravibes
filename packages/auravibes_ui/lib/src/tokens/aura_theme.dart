@@ -791,26 +791,26 @@ class AuraColorScheme {
   /// Resolve a user-selectable tint.
   Color colorFor(AuraTint tint) {
     return switch (tint) {
-      AuraTint.primary => primary,
-      AuraTint.secondary => secondary,
-      AuraTint.tertiary => tertiary,
-      AuraTint.error => error,
-      AuraTint.warning => warning,
-      AuraTint.success => success,
-      AuraTint.info => info,
+      .primary => primary,
+      .secondary => secondary,
+      .tertiary => tertiary,
+      .error => error,
+      .warning => warning,
+      .success => success,
+      .info => info,
     };
   }
 
   /// Resolve readable foreground for a user-selectable tint.
   Color onTint(AuraTint tint) {
     return switch (tint) {
-      AuraTint.primary => onPrimary,
-      AuraTint.secondary => onSecondary,
-      AuraTint.tertiary => onTertiary,
-      AuraTint.error => onError,
-      AuraTint.warning => onWarning,
-      AuraTint.success => onSuccess,
-      AuraTint.info => onInfo,
+      .primary => onPrimary,
+      .secondary => onSecondary,
+      .tertiary => onTertiary,
+      .error => onError,
+      .warning => onWarning,
+      .success => onSuccess,
+      .info => onInfo,
     };
   }
 

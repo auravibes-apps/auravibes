@@ -9,7 +9,7 @@ void main() {
       testWidgets('renders single button group correctly', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -34,7 +34,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -59,7 +59,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -88,7 +88,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -112,7 +112,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -137,7 +137,7 @@ void main() {
       ) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -160,7 +160,7 @@ void main() {
       ) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -188,7 +188,7 @@ void main() {
       testWidgets('renders multi button group correctly', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.multi(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -213,7 +213,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.multi(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -238,7 +238,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.multi(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -261,7 +261,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.multi(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -285,7 +285,7 @@ void main() {
       testWidgets('renders action button group correctly', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.action(
               items: const [
                 AuraButtonGroupItem(value: 'edit', child: Text('Edit')),
@@ -307,7 +307,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.action(
               items: const [
                 AuraButtonGroupItem(value: 'edit', child: Text('Edit')),
@@ -329,7 +329,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.action(
               items: const [
                 AuraButtonGroupItem(value: 'edit', child: Text('Edit')),
@@ -352,7 +352,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.action(
               items: const [
                 AuraButtonGroupItem(value: 'edit', child: Text('Edit')),
@@ -383,14 +383,14 @@ void main() {
       testWidgets('renders with sm size', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
               },
-              size: AuraButtonGroupSize.sm,
+              size: .sm,
             ),
           ),
         );
@@ -404,7 +404,7 @@ void main() {
       testWidgets('renders with base size (default)', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
@@ -424,14 +424,14 @@ void main() {
       testWidgets('renders with lg size', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
               },
-              size: AuraButtonGroupSize.lg,
+              size: .lg,
             ),
           ),
         );
@@ -447,14 +447,14 @@ void main() {
       testWidgets('renders with filled variant', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
               },
-              variant: AuraButtonGroupVariant.filled,
+              variant: .filled,
             ),
           ),
         );
@@ -468,7 +468,7 @@ void main() {
       testWidgets('renders with outlined variant (default)', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
@@ -488,14 +488,14 @@ void main() {
       testWidgets('renders with ghost variant', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
               },
-              variant: AuraButtonGroupVariant.ghost,
+              variant: .ghost,
             ),
           ),
         );
@@ -513,7 +513,7 @@ void main() {
       ) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -540,7 +540,7 @@ void main() {
       testWidgets('renders with vertical orientation', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
@@ -550,7 +550,7 @@ void main() {
               onChanged: (_) {
                 final _ = Object();
               },
-              orientation: Axis.vertical,
+              orientation: .vertical,
             ),
           ),
         );
@@ -570,7 +570,7 @@ void main() {
       testWidgets('shows click cursor when enabled', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
@@ -593,7 +593,7 @@ void main() {
       testWidgets('shows basic cursor when disabled', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
@@ -617,7 +617,7 @@ void main() {
       testWidgets('shows basic cursor when loading', (tester) async {
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<String>.single(
               items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
@@ -703,7 +703,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<int>.single(
               items: const [
                 AuraButtonGroupItem(value: 1, child: Text('One')),
@@ -726,7 +726,7 @@ void main() {
 
         await tester.pumpWidget(
           Directionality(
-            textDirection: TextDirection.ltr,
+            textDirection: .ltr,
             child: AuraButtonGroup<_TestEnum>.single(
               items: const [
                 AuraButtonGroupItem(

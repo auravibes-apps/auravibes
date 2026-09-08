@@ -207,7 +207,7 @@ void main() {
                 onChanged: (_) {
                   final _ = Object();
                 },
-                size: AuraSwitchSize.sm,
+                size: .sm,
               ),
             ),
           ),
@@ -252,7 +252,7 @@ void main() {
                 onChanged: (_) {
                   final _ = Object();
                 },
-                size: AuraSwitchSize.lg,
+                size: .lg,
               ),
             ),
           ),
@@ -559,7 +559,7 @@ void main() {
                 onChanged: (_) {
                   final _ = Object();
                 },
-                size: AuraSwitchSize.sm,
+                size: .sm,
               ),
             ),
           ),

@@ -38,9 +38,7 @@ void main() {
     testWidgets('applies small size correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraTypingIndicator(size: AuraTypingIndicatorSize.small),
-          ),
+          home: Scaffold(body: AuraTypingIndicator(size: .small)),
         ),
       );
 
@@ -66,9 +64,7 @@ void main() {
     testWidgets('applies large size correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraTypingIndicator(size: AuraTypingIndicatorSize.large),
-          ),
+          home: Scaffold(body: AuraTypingIndicator(size: .large)),
         ),
       );
 

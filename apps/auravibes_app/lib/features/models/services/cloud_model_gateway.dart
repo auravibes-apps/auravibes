@@ -85,10 +85,7 @@ class CloudModelGateway {
     () =>
         _testAndSync?.call(connectionId) ??
         _client.modelConnection.testAndSync(
-          TestAndSyncModelConnectionRequest(
-            workspaceId: _workspaceId,
-            connectionId: connectionId,
-          ),
+          .new(workspaceId: _workspaceId, connectionId: connectionId),
         ),
   );
   Future<ModelConnectionView> createModelConnection({
@@ -198,10 +195,7 @@ class CloudModelGateway {
     () =>
         _startCodexOAuth?.call(connectionId) ??
         _client.codexOAuth.start(
-          StartCodexOAuthRequest(
-            workspaceId: _workspaceId,
-            connectionId: connectionId,
-          ),
+          .new(workspaceId: _workspaceId, connectionId: connectionId),
         ),
   );
   Future<CompleteCodexOAuthResult> completeCodexOAuth({
@@ -217,11 +211,7 @@ class CloudModelGateway {
           code: code,
         ) ??
         _client.codexOAuth.complete(
-          CompleteCodexOAuthRequest(
-            transactionId: transactionId,
-            state: state,
-            code: code,
-          ),
+          .new(transactionId: transactionId, state: state, code: code),
         ),
   );
 }

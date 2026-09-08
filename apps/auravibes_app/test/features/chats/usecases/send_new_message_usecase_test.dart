@@ -1,9 +1,7 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,7 +52,7 @@ class _SendNewMessageUsecaseFixture {
     _sendMessageUsecase = sendMessageUsecase;
     _generateTitleUsecase = generateTitleUsecase;
     _monitoringService = monitoringService;
-    _usecase = SendNewMessageUsecase(
+    _usecase = .new(
       conversationRepo: conversationRepo,
       sendMessageUsecase: sendMessageUsecase,
       modelSelectionStore: (_) async => workspaceModelSelectionRepo,
@@ -84,11 +82,11 @@ class _SendNewMessageUsecaseFixture {
         id: 'message-1',
         conversationId: 'conv-1',
         content: 'Hello',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sending,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        status: .sending,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       ),
     );
     when(
@@ -118,20 +116,20 @@ void main() {
       title: 'New Conversation',
       workspaceId: 'ws-1',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       modelId: 'model-sel-1',
     );
 
     final modelSelection = WorkspaceModelSelectionWithConnectionEntity(
-      workspaceModelSelection: WorkspaceModelSelectionEntity(
+      workspaceModelSelection: .new(
         id: 'model-sel-1',
         modelId: 'gpt-4',
         createdAt: DateTime(2026),
         updatedAt: DateTime(2026),
         modelConnectionId: 'conn-1',
       ),
-      modelConnection: ModelConnectionEntity(
+      modelConnection: .new(
         id: 'conn-1',
         name: 'OpenAI',
         modelId: 'gpt-4',

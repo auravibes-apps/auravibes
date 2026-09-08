@@ -2,7 +2,6 @@ import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -100,7 +99,7 @@ void main() {
                 final _ = Object();
               },
               child: const Text('Ghost'),
-              variant: AuraButtonVariant.ghost,
+              variant: .ghost,
             ),
           ),
         ),
@@ -172,15 +171,15 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
       expect(pressCount, 0);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
       expect(pressCount, 1);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.space), isTrue);
+      expect(await tester.sendKeyEvent(.space), isTrue);
       await tester.pump();
       expect(pressCount, 2);
     });
@@ -206,7 +205,7 @@ void main() {
       final beforeFocus = tester.widget<CustomPaint>(focusRing);
       expect(beforeFocus.foregroundPainter, isNull);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
       final afterFocus = tester.widget<CustomPaint>(focusRing);
@@ -249,7 +248,7 @@ void main() {
                 final _ = Object();
               },
               child: const Text('Large Button'),
-              size: AuraButtonSize.large,
+              size: .large,
             ),
           ),
         ),

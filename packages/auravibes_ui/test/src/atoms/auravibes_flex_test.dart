@@ -1,5 +1,4 @@
 import 'package:auravibes_ui/src/atoms/aura_column.dart';
-import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +28,7 @@ void main() {
           home: Scaffold(
             body: AuraColumn(
               children: [SizedBox.shrink()],
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
             ),
           ),
         ),
@@ -45,7 +44,7 @@ void main() {
           home: Scaffold(
             body: AuraColumn(
               children: [SizedBox.shrink()],
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: .end,
             ),
           ),
         ),
@@ -59,10 +58,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraColumn(
-              children: [SizedBox.shrink()],
-              mainAxisSize: MainAxisSize.min,
-            ),
+            body: AuraColumn(children: [SizedBox.shrink()], mainAxisSize: .min),
           ),
         ),
       );
@@ -75,12 +71,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraColumn(
-              children: [SizedBox.shrink()],
-              padding: AuraEdgeInsetsGeometry.medium,
-            ),
+            body: AuraColumn(children: [SizedBox.shrink()], padding: .medium),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -116,7 +109,7 @@ void main() {
           home: Scaffold(
             body: AuraRow(
               children: [SizedBox.shrink()],
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: .end,
             ),
           ),
         ),
@@ -132,7 +125,7 @@ void main() {
           home: Scaffold(
             body: AuraRow(
               children: [SizedBox.shrink()],
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: .spaceBetween,
             ),
           ),
         ),
@@ -146,10 +139,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraRow(
-              children: [SizedBox.shrink()],
-              mainAxisSize: MainAxisSize.min,
-            ),
+            body: AuraRow(children: [SizedBox.shrink()], mainAxisSize: .min),
           ),
         ),
       );
@@ -162,12 +152,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraRow(
-              children: [SizedBox.shrink()],
-              padding: AuraEdgeInsetsGeometry.small,
-            ),
+            body: AuraRow(children: [SizedBox.shrink()], padding: .small),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 

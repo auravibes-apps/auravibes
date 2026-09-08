@@ -26,7 +26,7 @@ class const BuildGroupedToolsViewUseCase() {
         GroupedToolsViewItem(
           group: null,
           tools: builtInTools,
-          defaultGroupType: DefaultToolGroupType.builtIn,
+          defaultGroupType: .builtIn,
         ),
       );
     }
@@ -35,7 +35,7 @@ class const BuildGroupedToolsViewUseCase() {
         GroupedToolsViewItem(
           group: null,
           tools: nativeTools,
-          defaultGroupType: DefaultToolGroupType.native,
+          defaultGroupType: .native,
         ),
       );
     }

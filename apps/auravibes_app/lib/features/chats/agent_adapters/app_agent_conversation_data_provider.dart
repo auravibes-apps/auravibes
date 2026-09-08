@@ -55,7 +55,7 @@ class const AppAgentConversationDataProvider({
   }) async {
     final draft = payload is ChatDraft ? payload : ChatDraft(text: content);
     final message = await messageRepository.createMessage(
-      MessageToCreate(
+      .new(
         conversationId: conversationId,
         content: draft.text,
         messageType: MessageType.text,
@@ -75,7 +75,7 @@ class const AppAgentConversationDataProvider({
       messageIds.map(
         (messageId) => messageRepository.patchMessage(
           messageId,
-          const MessagePatch(status: MessageStatus.sent),
+          const MessagePatch(status: .sent),
         ),
       ),
     );
@@ -105,7 +105,7 @@ class const AppAgentConversationDataProvider({
 
     final _ = await messageRepository.patchMessage(
       latestAssistantMessage.id,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
   }
 }

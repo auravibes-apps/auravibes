@@ -32,10 +32,7 @@ class const ModelLogo({
       placeholderBuilder: (context) {
         return const AuraSpinner();
       },
-      colorFilter: ColorFilter.mode(
-        context.auraColors.onBackground,
-        BlendMode.srcIn,
-      ),
+      colorFilter: .mode(context.auraColors.onBackground, .srcIn),
       errorBuilder: (context, error, stackTrace) {
         return const AuraText(
           child: TextLocale(

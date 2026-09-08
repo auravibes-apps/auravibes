@@ -63,9 +63,7 @@ class AuraCard extends StatelessWidget {
       shadows = [DesignShadows.glass];
     } else if (isBorder) {
       backgroundColor = _getDefaultBackgroundColor(auraColors);
-      border = Border.fromBorderSide(
-        BorderSide(color: auraColors.outlineVariant),
-      );
+      border = Border.fromBorderSide(.new(color: auraColors.outlineVariant));
       shadows = const [];
     } else {
       // Elevated / Default.
@@ -87,9 +85,9 @@ class AuraCard extends StatelessWidget {
 
     final Widget cardContent = AuraPadding(
       child: DefaultTextStyle.merge(
-        style: TextStyle(color: auraColors.foregroundOnSurface),
+        style: .new(color: auraColors.foregroundOnSurface),
         child: IconTheme(
-          data: IconThemeData(color: auraColors.foregroundOnSurface),
+          data: .new(color: auraColors.foregroundOnSurface),
           child: child,
         ),
       ),
@@ -101,10 +99,10 @@ class AuraCard extends StatelessWidget {
     // https://medium.com/@rohitsurage/build-beautiful-glassmorphism-ui-in-flutter-a-beginner-to-advanced-guide-023594a473b3.
     var card = isGlass
         ? ClipRRect(
-            borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
+            borderRadius: BorderRadius.all(.circular(cardRadius)),
             // ClipBehavior: Clip.hardEdge,.
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              filter: .blur(sigmaX: 18, sigmaY: 18),
               child: AuraPressable(
                 child: cardContent,
                 color: auraColors.onBackground,
@@ -116,7 +114,7 @@ class AuraCard extends StatelessWidget {
                     color: auraColors.background.withValues(alpha: 0.05),
                     width: _borderWidth,
                   ),
-                  borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
+                  borderRadius: BorderRadius.all(.circular(cardRadius)),
                   gradient: LinearGradient(
                     begin: .topLeft,
                     end: .bottomCenter,
@@ -136,7 +134,7 @@ class AuraCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: backgroundColor,
               border: border,
-              borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
+              borderRadius: BorderRadius.all(.circular(cardRadius)),
               boxShadow: shadows,
             ),
             onPressed: onTap,

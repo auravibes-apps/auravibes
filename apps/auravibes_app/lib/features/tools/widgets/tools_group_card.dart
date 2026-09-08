@@ -66,9 +66,9 @@ class const ToolsGroupCard({
               ),
             ],
           ],
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
         ),
-        style: AuraCardStyle.border,
+        style: .border,
       ),
     );
   }
@@ -146,7 +146,7 @@ class const _ToolsList({
         child: Center(
           child: AuraText(
             child: Text(_kNoToolsInGroup.tr()),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
         ),
       );

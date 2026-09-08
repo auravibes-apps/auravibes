@@ -87,7 +87,7 @@ class const SubAgentRunner({
       final decision = await continueAgentTurn(
         conversationId: child.id,
         context: AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
+          origin: .userMessage,
           ackMessageIds: [message.id],
         ),
       );
@@ -149,13 +149,13 @@ class const SubAgentRunner({
     final status = await requestHandle.completion;
     if (status == SubAgentCompletionStatus.stopped) {
       return _SubAgentWaitResult(
-        SubAgentCompletionStatus.stopped,
+        .stopped,
         await _result(conversationId, 'stopped', agentId: agentId),
       );
     }
     if (status == SubAgentCompletionStatus.error) {
       return _SubAgentWaitResult(
-        SubAgentCompletionStatus.error,
+        .error,
         _failedResult(conversationId, agentId),
       );
     }

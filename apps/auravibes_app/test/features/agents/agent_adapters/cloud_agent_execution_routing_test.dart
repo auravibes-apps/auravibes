@@ -33,11 +33,11 @@ void main() {
         (_) async => ReadWorkspaceStateResponse(
           pages: [
             WorkspaceResourcePage(
-              resourceKind: WorkspaceResourceKind.agent,
+              resourceKind: .agent,
               resources: [
                 WorkspaceResource(
                   workspaceId: 1,
-                  resourceKind: WorkspaceResourceKind.agent,
+                  resourceKind: .agent,
                   resourceId: 'agent-1',
                   data: jsonEncode({
                     'name': 'Agent',
@@ -51,7 +51,7 @@ void main() {
               ],
             ),
             WorkspaceResourcePage(
-              resourceKind: WorkspaceResourceKind.agentAssociation,
+              resourceKind: .agentAssociation,
               resources: const [],
             ),
           ],

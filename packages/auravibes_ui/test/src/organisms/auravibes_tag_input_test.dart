@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   Widget app(Widget child) => MaterialApp(
     home: Scaffold(body: child),
-    theme: ThemeData(extensions: [AuraTheme.light]),
+    theme: .new(extensions: [AuraTheme.light]),
   );
 
   testWidgets('removes a tag through an accessible local control', (

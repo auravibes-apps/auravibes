@@ -46,10 +46,10 @@ final $BasicCard = _Story(
         AuraEdgeInsetsGeometry.large,
       ],
       labelBuilder: (value) => switch (value) {
-        AuraEdgeInsetsGeometry.none => 'none',
-        AuraEdgeInsetsGeometry.small => 'Small',
-        AuraEdgeInsetsGeometry.medium => 'Medium',
-        AuraEdgeInsetsGeometry.large => 'Large',
+        .none => 'none',
+        .small => 'Small',
+        .medium => 'Medium',
+        .large => 'Large',
         _ => value.toString(),
       },
     ),
@@ -88,23 +88,17 @@ class _CardDemoState extends State<CardDemo> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
         AuraCard(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: .min,
+            crossAxisAlignment: .start,
             children: [
-              AuraText(
-                child: Text(widget.title),
-                style: AuraTextStyle.heading6,
-              ),
+              AuraText(child: Text(widget.title), style: .heading6),
               const SizedBox(height: 8),
-              AuraText(
-                child: Text(widget.description),
-                style: AuraTextStyle.body,
-              ),
+              AuraText(child: Text(widget.description), style: .body),
             ],
           ),
           padding: widget.padding,

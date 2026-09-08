@@ -18,8 +18,8 @@ final _Defaults modalDefaults = _Defaults(
     ),
     contentChild: Builder(
       builder: (modalContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
         children: [
           Text(
             'Modal content',
@@ -52,7 +52,7 @@ final $Modal = _Story(
       name: 'Compact Phone',
       modes: [ViewportMode(compactPhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Opens Modal',
       run: (tester, args) async {

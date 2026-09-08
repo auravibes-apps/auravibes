@@ -32,7 +32,7 @@ class const BuildSkillTemplateToolSpecsUsecase(
     final loadedSkills = await _listAvailableSkillsUsecase(workspaceId).call(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      filter: SkillLoadFilter.loaded,
+      filter: .loaded,
     );
     final skillKeys = <String>{};
     final runtimeSkills = [...loadedSkills, ...extraSkills]
@@ -85,7 +85,7 @@ class const BuildSkillTemplateToolSpecsUsecase(
     if (credentialIds == null) return null;
 
     return materializeSkillTool(
-      SkillToolMaterializationInput(
+      .new(
         name: AgentResolvedToolName.skillTemplate(
           tableId: tool.slug,
           skillSlug: skill.slug,

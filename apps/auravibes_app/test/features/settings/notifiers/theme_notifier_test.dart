@@ -103,14 +103,14 @@ void main() {
     });
 
     test('setTheme persists to SharedPreferences', () async {
-      await container.read(themeProvider.notifier).setTheme(AppTheme.dark);
+      await container.read(themeProvider.notifier).setTheme(.dark);
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getInt('app_theme'), AppTheme.dark.index);
     });
 
     test('setTheme round-trips through SharedPreferences', () async {
-      await container.read(themeProvider.notifier).setTheme(AppTheme.light);
+      await container.read(themeProvider.notifier).setTheme(.light);
       container.dispose();
 
       final container2 = ProviderContainer();

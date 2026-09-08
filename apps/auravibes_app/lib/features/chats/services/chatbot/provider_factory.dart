@@ -110,7 +110,7 @@ class const ProviderFactory({
     final usesAdaptiveThinking = runtime.usesAdaptiveThinking;
 
     return AnthropicOptions(
-      thinking: ThinkingConfig(
+      thinking: .new(
         type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
         budgetTokens: usesAdaptiveThinking ? null : _thinkingBudgetTokens,
       ),

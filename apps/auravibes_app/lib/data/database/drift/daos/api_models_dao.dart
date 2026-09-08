@@ -222,10 +222,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
     return (select(apiModels)
           ..where((t) => t.limitContext.isBiggerOrEqualValue(minContextLimit))
           ..orderBy([
-            (t) => OrderingTerm(
-              expression: t.limitContext,
-              mode: OrderingMode.desc,
-            ),
+            (t) => OrderingTerm(expression: t.limitContext, mode: .desc),
             (t) => OrderingTerm(expression: t.name),
           ]))
         .get();

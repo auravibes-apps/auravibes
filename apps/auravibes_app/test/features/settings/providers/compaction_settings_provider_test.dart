@@ -331,7 +331,7 @@ class _CompactionSettingsProviderFixture {
   void setUp() {
     final repository = MockCompactionSettingsRepository();
     _mockRepository = repository;
-    _container = ProviderContainer(
+    _container = .new(
       overrides: [
         workspaceCompactionSettingsRepositoryProvider.overrideWith(
           (ref) => repository,

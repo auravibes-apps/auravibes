@@ -22,7 +22,7 @@ void main() {
       child: EasyLocalization(
         child: MaterialApp(
           home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
+            data: .new(extensions: [AuraTheme.light]),
             child: const Material(
               child: ConversationContextUsagePill(
                 workspaceId: 'ws-1',

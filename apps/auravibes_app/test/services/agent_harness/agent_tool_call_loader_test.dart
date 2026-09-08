@@ -2,14 +2,11 @@
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
-import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -23,7 +20,7 @@ void main() {
       agent.AgentToolCallLifecycle.pending,
     );
     expect(
-      AgentToolStatusMapper.toLifecycle(ToolCallResultStatus.running),
+      AgentToolStatusMapper.toLifecycle(.running),
       agent.AgentToolCallLifecycle.pending,
     );
   });
@@ -78,12 +75,12 @@ void main() {
       final firstCalculator = ResolvedTool.builtIn(
         tableId: 'calculator-row-1',
         toolIdentifier: 'calculator',
-        tooltype: UserToolType.calculator,
+        tooltype: .calculator,
       );
       final secondCalculator = ResolvedTool.builtIn(
         tableId: 'calculator-row-2',
         toolIdentifier: 'calculator',
-        tooltype: UserToolType.calculator,
+        tooltype: .calculator,
       );
       final github = ResolvedTool.mcp(
         tableId: 'github-row',
@@ -153,7 +150,7 @@ void main() {
                       id: 'already-resolved',
                       name: 'built_in_calc_calculator',
                       argumentsRaw: '{}',
-                      resultStatus: ToolCallResultStatus.success,
+                      resultStatus: .success,
                     ),
                   ],
                 ),
@@ -189,7 +186,7 @@ void main() {
             (_) async => [
               _message(
                 id: 'assistant-1',
-                metadata: MessageMetadataEntity(
+                metadata: .new(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'generated-tool',
@@ -241,7 +238,7 @@ void main() {
                       id: 'running-tool',
                       name: 'built_in_calc_calculator',
                       argumentsRaw: '{}',
-                      resultStatus: ToolCallResultStatus.running,
+                      resultStatus: .running,
                     ),
                   ],
                 ),
@@ -299,7 +296,7 @@ void main() {
                       id: 'old-call-1',
                       name: 'native_ws-tool-123_url',
                       argumentsRaw: '{"input": "https://example.com"}',
-                      resultStatus: ToolCallResultStatus.notConfigured,
+                      resultStatus: .notConfigured,
                     ),
                   ],
                 ),
@@ -343,7 +340,7 @@ agent.ToolCatalogCandidate<ResolvedTool> _candidate(
   String sourceId,
   ResolvedTool target,
 ) => agent.ToolCatalogCandidate.external(
-  spec: agent.ToolSpec(name: name, description: '', inputJsonSchema: const {}),
+  spec: .new(name: name, description: '', inputJsonSchema: const {}),
   target: target,
   sourceId: sourceId,
 );
@@ -353,8 +350,8 @@ final _conversation = ConversationEntity(
   title: 'Conversation',
   workspaceId: 'workspace-1',
   isPinned: false,
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
 );
 
 MessageEntity _message({
@@ -368,9 +365,9 @@ MessageEntity _message({
     id: id,
     conversationId: 'conversation-1',
     content: 'content',
-    messageType: MessageType.text,
+    messageType: .text,
     isUser: isUser,
-    status: MessageStatus.sent,
+    status: .sent,
     createdAt: now,
     updatedAt: now,
     metadata: metadata,

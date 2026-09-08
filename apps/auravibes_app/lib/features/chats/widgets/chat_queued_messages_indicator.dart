@@ -24,15 +24,15 @@ class const ChatQueuedMessagesIndicator({
         horizontal: context.auraTheme.fromSpacing(.md),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
         children: [
           Row(
             children: [
               AuraBadge.count(
                 count: queuedDrafts.length,
-                variant: AuraBadgeVariant.neutral,
-                size: AuraBadgeSize.small,
+                variant: .neutral,
+                size: .small,
               ),
               const AuraSizedBox(width: .sm),
               AuraText(
@@ -41,7 +41,7 @@ class const ChatQueuedMessagesIndicator({
                       .chats_screens_chat_conversation_queued_messages_count
                       .plural(queuedDrafts.length),
                 ),
-                style: AuraTextStyle.caption,
+                style: .caption,
               ),
               const Spacer(),
               AuraButton(
@@ -50,16 +50,16 @@ class const ChatQueuedMessagesIndicator({
                   LocaleKeys.chats_screens_chat_conversation_queued_clear_all
                       .tr(),
                 ),
-                variant: AuraButtonVariant.text,
-                size: AuraButtonSize.small,
+                variant: .text,
+                size: .small,
               ),
             ],
           ),
           const AuraDivider(),
           for (final (index, draft) in queuedDrafts.indexed)
             Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: .min,
+              crossAxisAlignment: .start,
               children: [
                 Padding(
                   padding: EdgeInsets.symmetric(
@@ -71,10 +71,10 @@ class const ChatQueuedMessagesIndicator({
                         child: AuraText(
                           child: Text(
                             draft.content,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: .ellipsis,
                             maxLines: 1,
                           ),
-                          style: AuraTextStyle.caption,
+                          style: .caption,
                         ),
                       ),
                       const AuraSizedBox(width: .xs),
@@ -84,7 +84,7 @@ class const ChatQueuedMessagesIndicator({
                           conversationId: conversationId,
                           draftId: draft.id,
                         ),
-                        size: AuraIconSize.large,
+                        size: .large,
                         tooltip: LocaleKeys.common_remove.tr(),
                       ),
                     ],

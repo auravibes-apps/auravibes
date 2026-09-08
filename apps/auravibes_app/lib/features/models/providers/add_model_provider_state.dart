@@ -119,7 +119,7 @@ class AddModelProviderState extends _$AddModelProviderState {
           );
           if (gateway == null) throw StateError('Cloud workspace unavailable');
           final connection = await repo.createModelConnection(
-            ModelConnectionToCreate(
+            .new(
               name: name,
               workspaceId: _workspaceId,
               modelId: modelId,
@@ -130,7 +130,7 @@ class AddModelProviderState extends _$AddModelProviderState {
           final oauth = await CloudModelGateway(gateway)
               .startCodexOAuth(connectionId: connection.id);
           await ref.read(openCodexAuthorizationProvider)(
-            Uri.parse(oauth.authorizationUrl),
+            .parse(oauth.authorizationUrl),
           );
 
           return connection;
@@ -150,7 +150,7 @@ class AddModelProviderState extends _$AddModelProviderState {
       if (key == null || key.trim().isEmpty) return null;
 
       return await repo.createModelConnection(
-        ModelConnectionToCreate(
+        .new(
           name: name,
           workspaceId: _workspaceId,
           modelId: modelId,
@@ -190,11 +190,10 @@ class AddModelProviderState extends _$AddModelProviderState {
     final modelIds = await _codexRuntimeModelIds();
     final oauthService = ref.read(codexOAuthServiceProvider);
     final token = switch (codexOAuthMethod) {
-      CodexOAuthMethod.deviceCode =>
-        await oauthService.authenticateWithDeviceCode(
-          onDeviceCode: onCodexDeviceCode,
-          isCancelled: isCodexOAuthCancelled,
-        ),
+      .deviceCode => await oauthService.authenticateWithDeviceCode(
+        onDeviceCode: onCodexDeviceCode,
+        isCancelled: isCodexOAuthCancelled,
+      ),
       _ => await oauthService.authenticateWithBrowser(
         isCancelled: isCodexOAuthCancelled,
       ),
@@ -205,7 +204,7 @@ class AddModelProviderState extends _$AddModelProviderState {
     }
 
     return await repo.createModelConnection(
-      ModelConnectionToCreate(
+      .new(
         name: name,
         workspaceId: _workspaceId,
         modelId: modelId,

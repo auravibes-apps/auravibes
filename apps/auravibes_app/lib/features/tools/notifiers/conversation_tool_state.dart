@@ -222,9 +222,9 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     try {
-      state = AsyncValue.data(await _getContextAwareTools());
+      state = .data(await _getContextAwareTools());
     } on Exception catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      state = .error(error, stackTrace);
     }
   }
 
@@ -266,9 +266,9 @@ class ContextAwareToolEntitiesNotifier
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     try {
-      state = AsyncValue.data(await _getContextAwareToolEntities());
+      state = .data(await _getContextAwareToolEntities());
     } on Exception catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      state = .error(error, stackTrace);
     }
   }
 

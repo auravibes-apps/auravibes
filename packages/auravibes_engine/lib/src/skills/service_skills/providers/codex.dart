@@ -4,7 +4,6 @@ import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/url_request.dart';
 import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
@@ -91,7 +90,7 @@ CancelableOperation<Object?> _webSearch(
   SkillHttpClient context,
 ) {
   return context(
-    UrlRequest(
+    .new(
       url: 'https://chatgpt.com/backend-api/codex/responses',
       method: UrlRequestMethod.post,
       headers: {
@@ -120,7 +119,7 @@ CancelableOperation<Object?> _webSearch(
         ],
         'tools': [_webSearchTool(input)],
         'tool_choice': {'type': 'web_search'},
-        'max_output_tokens': ?positiveIntInput(input, 'maxOutputTokens'),
+        'max_output_tokens': positiveIntInput(input, 'maxOutputTokens'),
         'instructions':
             'Answer the question with current web information '
             'and cite sources.',

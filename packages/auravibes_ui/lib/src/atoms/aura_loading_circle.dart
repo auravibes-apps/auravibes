@@ -121,12 +121,12 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
     return Center(
       child: SizedBox.fromSize(
         child: Stack(
-          children: List.generate(
+          children: .generate(
             itemCount,
             (i) => _buildItem(context, i, itemCount, itemSize, itemBuilder),
           ),
         ),
-        size: Size.square(widget.size),
+        size: .square(widget.size),
       ),
     );
   }
@@ -144,7 +144,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
       left: position,
       top: position,
       child: Transform(
-        transform: Matrix4.rotationZ((360 / itemCount) * index * 0.0174533),
+        transform: .rotationZ((360 / itemCount) * index * 0.0174533),
         child: Align(
           child: FadeTransition(
             opacity: _DelayTween(
@@ -158,10 +158,10 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
                   DecoratedBox(
                     decoration: BoxDecoration(
                       color: context.auraColors.colorFor(widget.tint),
-                      shape: BoxShape.circle,
+                      shape: .circle,
                     ),
                   ),
-              size: Size.square(itemSize),
+              size: .square(itemSize),
             ),
           ),
         ),

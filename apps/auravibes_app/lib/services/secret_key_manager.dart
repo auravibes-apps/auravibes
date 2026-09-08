@@ -16,7 +16,7 @@ class SecretKeyManager {
   }) : _secureStorage =
            secureStorage ??
            const FlutterSecureStorage(
-             iOptions: IOSOptions(
+             iOptions: .new(
                accessibility: KeychainAccessibility.first_unlock_this_device,
              ),
            );

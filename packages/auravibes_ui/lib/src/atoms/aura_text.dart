@@ -63,7 +63,7 @@ abstract final class AuraTextStyles {
     final fontFamily = typography.bodyFontFamily;
 
     return switch (style) {
-      AuraTextStyle.heading1 => TextStyle(
+      .heading1 => TextStyle(
         color: colors.foreground,
         fontSize: typography.fontSize5Xl,
         fontWeight: typography.fontWeightBold,
@@ -71,7 +71,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeight5Xl,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.heading2 => TextStyle(
+      .heading2 => TextStyle(
         color: colors.foreground,
         fontSize: typography.fontSize4Xl,
         fontWeight: typography.fontWeightBold,
@@ -79,7 +79,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeight4Xl,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.heading3 => TextStyle(
+      .heading3 => TextStyle(
         color: colors.foreground,
         fontSize: typography.fontSize3Xl,
         fontWeight: typography.fontWeightSemibold,
@@ -87,7 +87,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeight3Xl,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.heading4 => TextStyle(
+      .heading4 => TextStyle(
         color: colors.foreground,
         fontSize: typography.fontSize2Xl,
         fontWeight: typography.fontWeightSemibold,
@@ -95,7 +95,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeight2Xl,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.heading5 => TextStyle(
+      .heading5 => TextStyle(
         color: colors.foreground,
         fontSize: typography.fontSizeXl,
         fontWeight: typography.fontWeightSemibold,
@@ -103,7 +103,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeightXl,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.heading6 => TextStyle(
+      .heading6 => TextStyle(
         color: colors.foreground,
         fontSize: typography.fontSizeLg,
         fontWeight: typography.fontWeightSemibold,
@@ -111,7 +111,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeightLg,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.bodyLarge => TextStyle(
+      .bodyLarge => TextStyle(
         color: colors.foregroundOnSurface,
         fontSize: typography.fontSizeLg,
         fontWeight: typography.fontWeightRegular,
@@ -119,7 +119,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeightLg,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.body => TextStyle(
+      .body => TextStyle(
         color: colors.foregroundOnSurface,
         fontSize: typography.fontSizeBase,
         fontWeight: typography.fontWeightRegular,
@@ -127,7 +127,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeightBase,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.bodySmall => TextStyle(
+      .bodySmall => TextStyle(
         color: colors.mutedForeground,
         fontSize: typography.fontSizeSm,
         fontWeight: typography.fontWeightRegular,
@@ -135,7 +135,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeightSm,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.caption => TextStyle(
+      .caption => TextStyle(
         color: colors.mutedForeground,
         fontSize: typography.fontSizeXs,
         fontWeight: typography.fontWeightRegular,
@@ -143,7 +143,7 @@ abstract final class AuraTextStyles {
         height: typography.lineHeightXs,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.overline => TextStyle(
+      .overline => TextStyle(
         color: colors.mutedForeground,
         fontSize: typography.fontSizeXs,
         fontWeight: typography.fontWeightMedium,
@@ -151,14 +151,14 @@ abstract final class AuraTextStyles {
         height: typography.lineHeightXs,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.button => TextStyle(
+      .button => TextStyle(
         fontSize: typography.fontSizeBase,
         fontWeight: typography.fontWeightMedium,
         letterSpacing: typography.letterSpacingWide,
         height: typography.lineHeightBase,
         fontFamily: fontFamily,
       ),
-      AuraTextStyle.code => TextStyle(
+      .code => TextStyle(
         color: colors.foregroundOnSurface,
         fontSize: typography.fontSizeSm,
         fontWeight: typography.fontWeightRegular,

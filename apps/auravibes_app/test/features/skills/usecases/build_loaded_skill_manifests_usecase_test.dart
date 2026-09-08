@@ -33,7 +33,7 @@ void main() {
         () => listSkills.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer(
         (_) async => const [
@@ -44,7 +44,7 @@ void main() {
             title: 'Research',
             description: 'Research sources.',
             content: 'Use primary sources.',
-            kind: SkillKind.template,
+            kind: .template,
           ),
         ],
       );

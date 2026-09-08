@@ -57,10 +57,10 @@ class AuraRadioGroup<T> extends StatelessWidget {
     final label = this.label;
     if (label != null) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           DefaultTextStyle.merge(
-            style: TextStyle(color: context.auraColors.onSurface),
+            style: .new(color: context.auraColors.onSurface),
             child: label,
           ),
           const AuraSizedBox(height: .sm),
@@ -83,8 +83,8 @@ class const _AuraRadioOptions<T>({
   @override
   Widget build(BuildContext context) {
     return switch (direction) {
-      Axis.vertical => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      .vertical => Column(
+        crossAxisAlignment: .start,
         children: [
           for (int i = 0; i < options.length; i++) ...[
             _AuraRadioOption<T>(
@@ -97,7 +97,7 @@ class const _AuraRadioOptions<T>({
           ],
         ],
       ),
-      Axis.horizontal => Wrap(
+      .horizontal => Wrap(
         spacing: context.auraTheme.fromSpacing(.md),
         runSpacing: context.auraTheme.fromSpacing(.sm),
         children: [
@@ -130,7 +130,7 @@ class const _AuraRadioOption<T>({
         ? null
         : () => onChanged(option.value);
     final labelWidget = DefaultTextStyle.merge(
-      style: TextStyle(color: context.auraColors.onSurface),
+      style: .new(color: context.auraColors.onSurface),
       child: option.label,
     );
     final row = Row(
@@ -155,7 +155,7 @@ class const _AuraRadioOption<T>({
       child: GestureDetector(
         child: row,
         onTap: onTap,
-        behavior: HitTestBehavior.opaque,
+        behavior: .opaque,
         excludeFromSemantics: true,
       ),
       excludeSemantics: true,
@@ -169,7 +169,7 @@ class const _AuraRadioOption<T>({
     if (shrinkWrap) return interactiveRow;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         interactiveRow,
         if (subtitle != null)
@@ -180,7 +180,7 @@ class const _AuraRadioOption<T>({
                   context.auraTheme.fromSpacing(.sm),
             ),
             child: DefaultTextStyle.merge(
-              style: TextStyle(color: context.auraColors.onSurfaceVariant),
+              style: .new(color: context.auraColors.onSurfaceVariant),
               child: subtitle,
             ),
           ),

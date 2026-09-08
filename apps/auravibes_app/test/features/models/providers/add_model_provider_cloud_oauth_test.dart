@@ -60,7 +60,7 @@ void main() {
             ApiModelProviderEntity(
               id: ModelProviderOAuthProfiles.providerId,
               name: ModelProviderOAuthProfiles.displayName,
-              type: ModelProvidersType.openai,
+              type: .openai,
             ),
           ],
         ),
@@ -79,7 +79,7 @@ void main() {
     notifier.setModel(ModelProviderOAuthProfiles.providerId);
 
     await expectLater(
-      notifier.addModelProvider(codexOAuthMethod: CodexOAuthMethod.deviceCode),
+      notifier.addModelProvider(codexOAuthMethod: .deviceCode),
       throwsA(isA<UnsupportedWorkspaceCapabilityException>()),
     );
   });

@@ -1,6 +1,5 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,8 +23,8 @@ void main() {
       messageType: messageType,
       isUser: isUser,
       status: status,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       metadata: metadata,
     );
   }
@@ -60,7 +59,7 @@ void main() {
 
     test('excludes error messages from compactable range', () {
       final messages = [
-        _makeMessage(status: MessageStatus.error),
+        _makeMessage(status: .error),
         _makeMessage(id: 'msg-2', isUser: false),
         _makeMessage(id: 'msg-3'),
         _makeMessage(id: 'msg-4', isUser: false),
@@ -76,7 +75,7 @@ void main() {
 
     test('excludes sending messages from compactable range', () {
       final messages = [
-        _makeMessage(status: MessageStatus.sending),
+        _makeMessage(status: .sending),
         _makeMessage(id: 'msg-2', isUser: false),
         _makeMessage(id: 'msg-3'),
         _makeMessage(id: 'msg-4', isUser: false),
@@ -98,7 +97,7 @@ void main() {
         _makeMessage(
           id: 'msg-4',
           isUser: false,
-          messageType: MessageType.system,
+          messageType: .system,
           metadata: const MessageMetadataEntity(isCompactionSummary: true),
         ),
       ];
@@ -183,7 +182,7 @@ void main() {
                 name: 'read_file',
                 argumentsRaw: '{}',
                 responseRaw: 'file content',
-                resultStatus: ToolCallResultStatus.success,
+                resultStatus: .success,
               ),
             ],
           ),

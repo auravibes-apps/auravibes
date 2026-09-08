@@ -78,9 +78,9 @@ class const _CheckboxMarkPainter({required final Color color})
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
+      ..style = .stroke
+      ..strokeCap = .round
+      ..strokeJoin = .round
       ..strokeWidth = 2;
     final path = Path()
       ..moveTo(size.width * 0.1, size.height * 0.5)
@@ -115,8 +115,8 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
 
     return Shortcuts(
       shortcuts: const <ShortcutActivator, Intent>{
-        SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
-        SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+        SingleActivator(.enter): ActivateIntent(),
+        SingleActivator(.space): ActivateIntent(),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
@@ -150,7 +150,7 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
             onTap: isInteractive
                 ? () => widget.onChanged?.call(!widget.value)
                 : null,
-            behavior: HitTestBehavior.opaque,
+            behavior: .opaque,
             excludeFromSemantics: true,
           ),
         ),
@@ -203,7 +203,7 @@ class const _CheckboxVisual({
       decoration: BoxDecoration(
         color: value ? activeColor : DesignColors.transparent,
         border: Border.all(color: borderColor, width: isFocused ? 3 : 2),
-        borderRadius: const BorderRadius.all(Radius.circular(4)),
+        borderRadius: const BorderRadius.all(.circular(4)),
       ),
       width: _boxSize,
       height: _boxSize,
