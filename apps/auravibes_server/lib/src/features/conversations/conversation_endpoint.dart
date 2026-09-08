@@ -15,7 +15,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     CreateConversationRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.create(session, userId: account.userId, request: request);
   }
 
@@ -23,7 +23,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     ListConversationsRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.list(session, userId: account.userId, request: request);
   }
 
@@ -31,7 +31,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     ListConversationsRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.listPage(
       session,
       userId: account.userId,
@@ -43,7 +43,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     GetConversationRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.get(session, userId: account.userId, request: request);
   }
 
@@ -51,7 +51,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     ListConversationMessagesRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.listMessages(
       session,
       userId: account.userId,
@@ -63,7 +63,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     UpdateConversationRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.update(session, userId: account.userId, request: request);
   }
 
@@ -71,7 +71,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     DeleteConversationRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.delete(session, userId: account.userId, request: request);
   }
 
@@ -79,7 +79,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     StartTurnRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.startTurn(
       session,
       userId: account.userId,
@@ -91,7 +91,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     ContinueTurnRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.continueTurn(
       session,
       userId: account.userId,
@@ -100,7 +100,7 @@ class ConversationEndpoint extends Endpoint {
   }
 
   Future<TurnSnapshot> getTurn(Session session, GetTurnRequest request) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.getTurn(session, userId: account.userId, request: request);
   }
 
@@ -108,7 +108,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     GetConversationRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.getConversationSnapshot(
       session,
       userId: account.userId,
@@ -120,7 +120,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     QueueConversationMessageRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.queueConversationMessage(
       session,
       userId: account.userId,
@@ -132,7 +132,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     ContinueConversationRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.continueConversation(
       session,
       userId: account.userId,
@@ -144,7 +144,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     StopConversationRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.stopConversation(
       session,
       userId: account.userId,
@@ -156,7 +156,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     ConversationSubscribeRequest request,
   ) async* {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     yield* const ConversationStreamService().subscribe(
       session,
       request: request,
@@ -168,7 +168,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     EditPendingConversationMessageRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.editPendingConversationMessage(
       session,
       userId: account.userId,
@@ -180,7 +180,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     ReorderPendingConversationMessageRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.reorderPendingConversationMessage(
       session,
       userId: account.userId,
@@ -192,7 +192,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     RemovePendingConversationMessageRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.removePendingConversationMessage(
       session,
       userId: account.userId,
@@ -204,7 +204,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     UpdateConversationSettingsRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.updateConversationSettings(
       session,
       userId: account.userId,
@@ -216,7 +216,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     SubmitToolDecisionRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.submitToolDecision(
       session,
       userId: account.userId,
@@ -228,7 +228,7 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     CancelTurnRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.cancelTurn(
       session,
       userId: account.userId,
@@ -240,7 +240,11 @@ class ConversationEndpoint extends Endpoint {
     Session session,
     CompactConversationRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
+    final account = await _requireAccount(session);
     return _useCases.compact(session, userId: account.userId, request: request);
+  }
+
+  Future<AccountSummary> _requireAccount(Session session) async {
+    return const AuthenticatedAccountResolver()(session);
   }
 }
