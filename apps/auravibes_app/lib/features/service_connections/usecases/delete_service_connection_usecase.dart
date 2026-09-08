@@ -1,10 +1,8 @@
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
-import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
+import 'package:auravibes_app/features/service_connections/providers/cloud_service_connection_usecases_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'delete_service_connection_usecase.g.dart';
@@ -38,21 +36,17 @@ Future<DeleteServiceConnectionUsecase> deleteServiceConnectionUsecase(
 ) async {
   final link = ref.keepAlive();
   try {
-    final session = await ref.watch(
-      workspaceSessionForRouteProvider(workspaceId).future,
-    );
-    final gateway = await ref.watch(
-      cloudWorkspaceStateGatewayProvider(session).future,
+    final cloud = await ref.watch(
+      cloudServiceConnectionUsecasesProvider(workspaceId).future,
     );
 
     return DeleteServiceConnectionUsecase(
       modelConnectionRepository: await ref.watch(
         modelConnectionStoreProvider(workspaceId).future,
       ),
-      deleteSkillCredential: gateway == null
-          ? ref.watch(skillCredentialsRepositoryProvider).deleteCredential
-          : CloudServiceConnectionUsecases(CloudWorkspaceResourceStore(gateway))
-                .deleteById,
+      deleteSkillCredential:
+          cloud?.deleteById ??
+          ref.watch(skillCredentialsRepositoryProvider).deleteCredential,
     );
   } finally {
     link.close();

@@ -1,8 +1,6 @@
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
+import 'package:auravibes_app/features/service_connections/providers/cloud_service_connection_usecases_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
-import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/v7.dart';
@@ -15,17 +13,10 @@ Future<ServiceConnectionOperations> serviceConnectionOperations(
   Ref ref,
   String workspaceId,
 ) async {
-  final session = await ref.watch(
-    workspaceSessionForRouteProvider(workspaceId).future,
+  final cloud = await ref.watch(
+    cloudServiceConnectionUsecasesProvider(workspaceId).future,
   );
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayProvider(session).future,
-  );
-  if (gateway != null) {
-    final cloud = CloudServiceConnectionUsecases(
-      CloudWorkspaceResourceStore(gateway),
-    );
-
+  if (cloud != null) {
     return ServiceConnectionOperations(
       createAppSkillCredential:
           ({

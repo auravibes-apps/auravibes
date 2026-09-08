@@ -3,11 +3,9 @@ import 'package:auravibes_app/features/models/providers/model_connection_reposit
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
-import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
+import 'package:auravibes_app/features/service_connections/providers/cloud_service_connection_usecases_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/watch_service_connection_list_items_usecase.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
@@ -19,18 +17,12 @@ Stream<List<ServiceConnectionListItem>> serviceConnections(
   Ref ref,
   String workspaceId,
 ) async* {
-  final session = await ref.watch(
-    workspaceSessionForRouteProvider(workspaceId).future,
+  final serviceUsecases = await ref.watch(
+    cloudServiceConnectionUsecasesProvider(workspaceId).future,
   );
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayProvider(session).future,
-  );
-  if (gateway != null) {
+  if (serviceUsecases != null) {
     final modelStore = await ref.watch(
       modelConnectionStoreProvider(workspaceId).future,
-    );
-    final serviceUsecases = CloudServiceConnectionUsecases(
-      CloudWorkspaceResourceStore(gateway),
     );
     yield* Rx.combineLatest2(
       modelStore.watchModelConnections(
