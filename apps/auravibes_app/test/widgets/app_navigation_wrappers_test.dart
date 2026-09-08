@@ -681,13 +681,6 @@ class _FakeConversationRepository implements ConversationRepository {
   final _controllers = <StreamController<List<ConversationEntity>>>[];
   final _pendingRemoval = <StreamController<List<ConversationEntity>>>{};
 
-  void _processPendingRemovals() {
-    if (_pendingRemoval.isNotEmpty) {
-      _controllers.removeWhere(_pendingRemoval.contains);
-      _pendingRemoval.clear();
-    }
-  }
-
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
@@ -757,5 +750,12 @@ class _FakeConversationRepository implements ConversationRepository {
   @override
   Stream<ConversationEntity?> watchConversationById(String id) {
     throw UnimplementedError();
+  }
+
+  void _processPendingRemovals() {
+    if (_pendingRemoval.isNotEmpty) {
+      _controllers.removeWhere(_pendingRemoval.contains);
+      _pendingRemoval.clear();
+    }
   }
 }

@@ -26,12 +26,10 @@ class _FakeGoRouter implements GoRouter {
 }
 
 class _FakeWorkspaceRepository implements WorkspaceRepository {
+  Exception? deleteError;
   final List<WorkspaceEntity> _workspaces = [];
   final _controller = StreamController<List<WorkspaceEntity>>.broadcast();
   var _nextId = 1;
-  Exception? deleteError;
-
-  void _emit() => _controller.add(List.unmodifiable(_workspaces));
 
   @override
   Future<List<WorkspaceEntity>> getAllWorkspaces() async =>
@@ -182,6 +180,8 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 
     return before - _workspaces.length;
   }
+
+  void _emit() => _controller.add(List.unmodifiable(_workspaces));
 }
 
 void main() {

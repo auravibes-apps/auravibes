@@ -21,12 +21,12 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase get database =>
       _database ?? fail('Database fixture not initialized');
 
-  void reset() {
-    _database = AppDatabase(connection: createConnection());
-  }
-
   set database(AppDatabase database) {
     _database = database;
+  }
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
   }
 
   Future<void> close() async {

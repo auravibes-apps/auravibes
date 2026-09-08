@@ -11,6 +11,9 @@ class _WorkspaceManagementModeFixture {
   ProviderContainer get container =>
       _container ?? fail('container not initialized');
 
+  WorkspaceManagementState get state =>
+      container.read(workspaceManagementModeProvider);
+
   void reset() {
     _container = ProviderContainer();
   }
@@ -19,9 +22,6 @@ class _WorkspaceManagementModeFixture {
     _container?.dispose();
     _container = null;
   }
-
-  WorkspaceManagementState get state =>
-      container.read(workspaceManagementModeProvider);
 
   void editWorkspace(WorkspaceEntity workspace) {
     container

@@ -500,14 +500,14 @@ class const _WorkspaceWatchCall({
   required final int? limit,
 }) {
   @override
+  int get hashCode => Object.hash(workspaceId, limit);
+
+  @override
   bool operator ==(Object other) {
     return other is _WorkspaceWatchCall &&
         other.workspaceId == workspaceId &&
         other.limit == limit;
   }
-
-  @override
-  int get hashCode => Object.hash(workspaceId, limit);
 
   @override
   String toString() {

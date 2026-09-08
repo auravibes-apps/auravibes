@@ -241,8 +241,8 @@ class _FakeRecordPlatform({
   String? startPath;
   bool startStreamCalled = false;
   bool stopCalled = false;
-  StreamController<Uint8List>? _streamController;
   void Function(RecordConfig config)? configChangedHandler;
+  StreamController<Uint8List>? _streamController;
 
   String? get outputPath => startPath;
 

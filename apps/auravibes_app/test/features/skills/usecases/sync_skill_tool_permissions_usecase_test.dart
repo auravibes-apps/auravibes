@@ -306,35 +306,25 @@ class _Fixture {
 
   AppDatabase get database =>
       _database ?? fail('Database fixture not initialized');
-
-  set database(AppDatabase value) => _database = value;
-
   String get workspaceId =>
       _workspaceId ?? fail('Workspace fixture not initialized');
-
-  set workspaceId(String value) => _workspaceId = value;
-
   _MockBuildDynamicSkillToolSpecsUsecase get dynamicSpecs =>
       _dynamicSpecs ?? fail('Dynamic specs fixture not initialized');
-
-  set dynamicSpecs(_MockBuildDynamicSkillToolSpecsUsecase value) =>
-      _dynamicSpecs = value;
-
   _MockBuildSkillTemplateToolSpecsUsecase get templateSpecs =>
       _templateSpecs ?? fail('Template specs fixture not initialized');
-
-  set templateSpecs(_MockBuildSkillTemplateToolSpecsUsecase value) =>
-      _templateSpecs = value;
-
   _MockBuildAppSkillNativeToolSpecsUsecase get nativeSpecs =>
       _nativeSpecs ?? fail('Native specs fixture not initialized');
-
-  set nativeSpecs(_MockBuildAppSkillNativeToolSpecsUsecase value) =>
-      _nativeSpecs = value;
-
   SyncSkillToolPermissionsUsecase get usecase =>
       _usecase ?? fail('Usecase fixture not initialized');
 
+  set database(AppDatabase value) => _database = value;
+  set workspaceId(String value) => _workspaceId = value;
+  set dynamicSpecs(_MockBuildDynamicSkillToolSpecsUsecase value) =>
+      _dynamicSpecs = value;
+  set templateSpecs(_MockBuildSkillTemplateToolSpecsUsecase value) =>
+      _templateSpecs = value;
+  set nativeSpecs(_MockBuildAppSkillNativeToolSpecsUsecase value) =>
+      _nativeSpecs = value;
   set usecase(SyncSkillToolPermissionsUsecase value) => _usecase = value;
 
   void reset() {

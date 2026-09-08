@@ -424,11 +424,10 @@ _workspaceModelSelectionWithProvider({
 }
 
 class _FakeMessageRepository implements MessageRepository {
-  final StreamController<List<MessageEntity>> _controller =
-      StreamController<List<MessageEntity>>.broadcast();
-
   final List<String> watchedConversationIds = [];
   int getMessagesByConversationCallCount = 0;
+  final StreamController<List<MessageEntity>> _controller =
+      StreamController<List<MessageEntity>>.broadcast();
 
   void emit(List<MessageEntity> messages) {
     _controller.add(messages);

@@ -795,9 +795,9 @@ class _FakeAttachmentFileStore extends AttachmentFileStore {
   new({Map<String, String>? persistedPaths})
     : _persistedPaths = persistedPaths ?? const {};
 
-  final Map<String, String> _persistedPaths;
   final persisted = <String>[];
   final deleted = <String>[];
+  final Map<String, String> _persistedPaths;
 
   @override
   Future<String> persistDraftFile(String localPath) async {

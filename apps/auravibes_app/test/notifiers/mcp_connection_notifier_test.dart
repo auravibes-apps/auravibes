@@ -969,9 +969,9 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   new({_FakeMcpManagerClient? client})
     : _client = client ?? _FakeMcpManagerClient();
 
-  final _FakeMcpManagerClient _client;
   final connectedServers = <McpServerToCreate>[];
   final calledToolIdentifiers = <String>[];
+  final _FakeMcpManagerClient _client;
 
   @override
   Future<McpManagerClient> connectMcp(McpServerToCreate serverInfo) async {

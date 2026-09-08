@@ -36,6 +36,7 @@ plugins:
       consistent-update-render-object: true
       list-all-equatable-fields: true
       missing-test-assertion: true
+      member-ordering: true
       no-blank-line-before-single-return: true
       no-empty-block: true
       no-equal-then-else: true

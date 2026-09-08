@@ -37,11 +37,6 @@ class _ChatCatalogAvatarState extends State<ChatCatalogAvatar> {
     if (oldWidget.url != widget.url) _load();
   }
 
-  void _load() {
-    final url = widget.url;
-    _image = url == null || url.isEmpty ? null : _loader.load(url);
-  }
-
   @override
   Widget build(BuildContext context) {
     final initials = widget.name
@@ -65,5 +60,10 @@ class _ChatCatalogAvatarState extends State<ChatCatalogAvatar> {
         size: widget.size,
       ),
     );
+  }
+
+  void _load() {
+    final url = widget.url;
+    _image = url == null || url.isEmpty ? null : _loader.load(url);
   }
 }
