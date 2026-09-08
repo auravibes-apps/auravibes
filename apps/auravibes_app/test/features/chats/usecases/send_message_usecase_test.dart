@@ -79,6 +79,28 @@ void main() {
       );
     });
 
+    test('persists draft as pending user message', () async {
+      await fixture.usecase.call(
+        conversationId: 'conversation-1',
+        draft: const ChatDraft(
+          text: 'Hello',
+          metadataJson: '{"source":"test"}',
+        ),
+      );
+
+      final message =
+          verify(() => fixture.messageRepository.createMessage(captureAny()))
+                  .captured
+                  .single
+              as MessageToCreate;
+      expect(message.conversationId, 'conversation-1');
+      expect(message.content, 'Hello');
+      expect(message.messageType, MessageType.text);
+      expect(message.isUser, isTrue);
+      expect(message.status, MessageStatus.sending);
+      expect(message.metadata, '{"source":"test"}');
+    });
+
     test(
       'queues the draft instead of persisting when the conversation is busy',
       () async {

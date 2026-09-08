@@ -6,4 +6,14 @@ class const ChatDraft({
   final String? metadataJson,
 }) {
   bool get isEmpty => text.trim().isEmpty && attachments.isEmpty;
+
+  MessageToCreate toMessage(String conversationId) => .new(
+    conversationId: conversationId,
+    content: text,
+    messageType: .text,
+    isUser: true,
+    status: .sending,
+    metadata: metadataJson,
+    attachments: attachments,
+  );
 }

@@ -55,15 +55,7 @@ class const AppAgentConversationDataProvider({
   }) async {
     final draft = payload is ChatDraft ? payload : ChatDraft(text: content);
     final message = await messageRepository.createMessage(
-      MessageToCreate(
-        conversationId: conversationId,
-        content: draft.text,
-        messageType: MessageType.text,
-        isUser: true,
-        status: MessageStatus.sending,
-        metadata: draft.metadataJson,
-        attachments: draft.attachments,
-      ),
+      draft.toMessage(conversationId),
     );
 
     return AgentCreatedMessage(id: message.id);

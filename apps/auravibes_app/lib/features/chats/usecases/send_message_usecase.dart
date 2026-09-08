@@ -87,17 +87,7 @@ class SendMessageUsecase {
       return Future.error(StateError('Local message repository unavailable'));
     }
 
-    return repository.createMessage(
-      .new(
-        conversationId: conversationId,
-        content: draft.text,
-        messageType: .text,
-        isUser: true,
-        status: .sending,
-        metadata: draft.metadataJson,
-        attachments: draft.attachments,
-      ),
-    );
+    return repository.createMessage(draft.toMessage(conversationId));
   }
 
   Future<void> continueFromUserMessage({
