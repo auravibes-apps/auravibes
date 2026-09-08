@@ -73,7 +73,8 @@ jobs:
 
       - name: 🏗️ Build Android APK
         if: ${{ matrix.platform == 'android' }}
-        run: flutter build apk --debug --flavor prod --no-pub
+        # Flutter 3.47.2 misidentifies AGP 9 built-in KGP 2.2.10; remove when validation supports it.
+        run: flutter build apk --debug --flavor prod --no-pub --android-skip-build-dependency-validation
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
       - name: 🏗️ Configure macOS Build
