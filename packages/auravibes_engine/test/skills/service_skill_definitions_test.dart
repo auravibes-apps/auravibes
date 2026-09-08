@@ -26,6 +26,27 @@ void main() {
       expect(missingExecutors, isEmpty);
     });
 
+    test('Tavily and Firecrawl retain all credentialed callback tools', () {
+      const expected = {
+        'tavily': ['search', 'extract', 'crawl', 'map', 'research'],
+        'firecrawl': ['search', 'scrape', 'crawl', 'map', 'extract'],
+      };
+      for (final entry in expected.entries) {
+        final skill = serviceSkillDefinitions.singleWhere(
+          (skill) => skill.slug == entry.key,
+        );
+        expect(skill.nativeTools.map((tool) => tool.slug), entry.value);
+        for (final tool in skill.nativeTools) {
+          expect(tool.requiresCredential, isTrue);
+          expect(tool.callback, isNotNull);
+          expect(tool.urlTemplate, isNull);
+          expect(tool.title, isNotEmpty);
+          expect(tool.description, isNotEmpty);
+          expect(tool.inputJsonSchema['type'], 'object');
+        }
+      }
+    });
+
     test('agent-facing text hides API internals', () {
       final leaks = <String>[];
       for (final skill in serviceSkillDefinitions) {

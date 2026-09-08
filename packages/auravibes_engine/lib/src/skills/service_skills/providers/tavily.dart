@@ -1,7 +1,6 @@
 import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 final tavilySkill = AppSkillDefinition(
@@ -15,17 +14,17 @@ crawling, and research workflows.
 ''',
   requiresCredential: true,
   nativeTools: [
-    _tool('search', 'Search', 'Search the web.', _searchInputSchema, _search),
-    _tool(
+    apiTool('search', 'Search', 'Search the web.', _searchInputSchema, _search),
+    apiTool(
       'extract',
       'Extract',
       'Extract content from URLs.',
       _extractInputSchema,
       _extract,
     ),
-    _tool('crawl', 'Crawl', 'Crawl a website.', fetchInputSchema, _crawl),
-    _tool('map', 'Map', 'Map a website.', _mapInputSchema, _map),
-    _tool(
+    apiTool('crawl', 'Crawl', 'Crawl a website.', fetchInputSchema, _crawl),
+    apiTool('map', 'Map', 'Map a website.', _mapInputSchema, _map),
+    apiTool(
       'research',
       'Research',
       'Research a query.',
@@ -34,23 +33,6 @@ crawling, and research workflows.
     ),
   ],
 );
-
-AppSkillToolDefinition _tool(
-  String slug,
-  String title,
-  String description,
-  Map<String, Object> schema,
-  AppSkillToolCallback callback,
-) {
-  return AppSkillToolDefinition(
-    slug: slug,
-    title: title,
-    description: description,
-    inputJsonSchema: schema,
-    requiresCredential: true,
-    callback: callback,
-  );
-}
 
 const Map<String, Object> _searchInputSchema = {
   'type': 'object',

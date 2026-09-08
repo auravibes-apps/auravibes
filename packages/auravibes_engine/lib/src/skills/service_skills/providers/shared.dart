@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:async/async.dart';
-import 'package:auravibes_engine/src/skills/execution/skill_http_client.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_credential_attribute_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
 import 'package:auravibes_engine/src/skills/models/url_request.dart';
@@ -55,6 +56,23 @@ const questionInputs = {
 const apiKeyCredentialDefinitions = {
   'apiKey': SkillCredentialAttributeDefinition(description: 'API key.'),
 };
+
+AppSkillToolDefinition apiTool(
+  String slug,
+  String title,
+  String description,
+  Map<String, Object> schema,
+  AppSkillToolCallback callback,
+) {
+  return AppSkillToolDefinition(
+    slug: slug,
+    title: title,
+    description: description,
+    inputJsonSchema: schema,
+    requiresCredential: true,
+    callback: callback,
+  );
+}
 
 CancelableOperation<Object?> postJson(
   SkillHttpClient request,

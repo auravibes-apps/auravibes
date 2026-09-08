@@ -1,7 +1,6 @@
 import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 final firecrawlSkill = AppSkillDefinition(
@@ -15,23 +14,23 @@ discovering URLs, or extracting structured data from public pages.
 ''',
   requiresCredential: true,
   nativeTools: [
-    _tool(
+    apiTool(
       'search',
       'Search',
       'Search web content.',
       _searchInputSchema,
       _search,
     ),
-    _tool(
+    apiTool(
       'scrape',
       'Scrape',
       'Scrape page content from a URL.',
       _scrapeInputSchema,
       _scrape,
     ),
-    _tool('crawl', 'Crawl', 'Crawl a website.', fetchInputSchema, _crawl),
-    _tool('map', 'Map', 'Map URLs from a website.', _mapInputSchema, _map),
-    _tool(
+    apiTool('crawl', 'Crawl', 'Crawl a website.', fetchInputSchema, _crawl),
+    apiTool('map', 'Map', 'Map URLs from a website.', _mapInputSchema, _map),
+    apiTool(
       'extract',
       'Extract',
       'Extract structured data from a URL.',
@@ -40,23 +39,6 @@ discovering URLs, or extracting structured data from public pages.
     ),
   ],
 );
-
-AppSkillToolDefinition _tool(
-  String slug,
-  String title,
-  String description,
-  Map<String, Object> schema,
-  AppSkillToolCallback callback,
-) {
-  return AppSkillToolDefinition(
-    slug: slug,
-    title: title,
-    description: description,
-    inputJsonSchema: schema,
-    requiresCredential: true,
-    callback: callback,
-  );
-}
 
 const Map<String, Object> _searchInputSchema = {
   'type': 'object',
