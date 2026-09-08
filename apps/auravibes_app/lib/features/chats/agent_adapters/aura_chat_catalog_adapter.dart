@@ -421,7 +421,7 @@ Widget _text(CatalogItemContext context) {
 }
 
 Widget _image(CatalogItemContext context) {
-  return ChatCatalogImageBuilder.build(context, resolveIcon: auraChatIconData);
+  return ChatCatalogImageAdapter.build(context, resolveIcon: auraChatIconData);
 }
 
 Widget _icon(CatalogItemContext context) {

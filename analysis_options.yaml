@@ -69,6 +69,7 @@ plugins:
       prefer-iterable-of: true
       prefer-last: true
       prefer-media-query-direct-access: true
+      prefer-match-file-name: true
       prefer-named-record-fields: true
       prefer-provide-intl-description: true
       prefer-correct-test-file-name: true

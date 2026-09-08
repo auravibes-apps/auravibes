@@ -34,7 +34,7 @@ String chatCatalogImageExample() => '''
 ''';
 
 /// Binds image content while keeping presentation separate from its label.
-abstract final class ChatCatalogImageBuilder {
+abstract final class ChatCatalogImageAdapter {
   static Widget build(
     CatalogItemContext context, {
     required IconData Function(String?) resolveIcon,

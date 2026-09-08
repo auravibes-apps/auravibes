@@ -13,7 +13,7 @@ List<CatalogItem> auraDashboardCatalogItems({
   required IconData Function(String?) resolveIcon,
 }) => [
   for (final entry in {
-    ..._DashboardBuilders._builders,
+    ..._AuraDashboardCatalogAdapter._builders,
     'EmptyState': (CatalogItemContext context, Map<String, Object?> data) =>
         AuraEmptyState(
           title: Text(data['title']! as String),
@@ -35,7 +35,7 @@ List<CatalogItem> auraDashboardCatalogItems({
         ],
       }),
       widgetBuilder: (context) =>
-          _DashboardBuilders._boundData(context, entry.value),
+          _AuraDashboardCatalogAdapter._boundData(context, entry.value),
       exampleData: [
         () => jsonEncode([a2uiChatComponentExamples[entry.key]]),
       ],
@@ -47,7 +47,7 @@ typedef _DashboardBuilder = Widget Function(
   Map<String, Object?> data,
 );
 
-abstract final class _DashboardBuilders {
+abstract final class _AuraDashboardCatalogAdapter {
   static final _builders = <String, _DashboardBuilder>{
     'Progress': _progress,
     'Badge': _badge,
