@@ -83,16 +83,7 @@ class const ConversationWorker({
       return true;
     } on ConversationEngineConfigurationException {
       if (isActive != null && !isActive()) return true;
-      final updated = await _retryOrFail(
-        session,
-        jobId: job.id!,
-        leaseToken: leaseToken,
-        errorCode: 'configuration',
-        now: DateTime.now().toUtc(),
-      );
-      if (updated.status == ConversationJobStatuses.failed) {
-        await _recordExecutionFailure(session, updated);
-      }
+      await _retryAfterFailure(session, job, leaseToken, 'configuration');
       session.log(
         'Conversation job configuration failed: job=${job.id}.',
         level: LogLevel.warning,
@@ -100,16 +91,7 @@ class const ConversationWorker({
       return true;
     } on ConversationResponseLimitException {
       if (isActive != null && !isActive()) return true;
-      final updated = await _retryOrFail(
-        session,
-        jobId: job.id!,
-        leaseToken: leaseToken,
-        errorCode: 'configuration',
-        now: DateTime.now().toUtc(),
-      );
-      if (updated.status == ConversationJobStatuses.failed) {
-        await _recordExecutionFailure(session, updated);
-      }
+      await _retryAfterFailure(session, job, leaseToken, 'configuration');
       session.log(
         'Conversation job response exceeded limit: job=${job.id}.',
         level: LogLevel.warning,
@@ -117,16 +99,12 @@ class const ConversationWorker({
       return true;
     } on Object catch (error, stackTrace) {
       if (isActive != null && !isActive()) return true;
-      final updated = await _retryOrFail(
+      await _retryAfterFailure(
         session,
-        jobId: job.id!,
-        leaseToken: leaseToken,
-        errorCode: 'provider_unavailable',
-        now: DateTime.now().toUtc(),
+        job,
+        leaseToken,
+        'provider_unavailable',
       );
-      if (updated.status == ConversationJobStatuses.failed) {
-        await _recordExecutionFailure(session, updated);
-      }
       session.log(
         'Conversation job provider execution failed: job=${job.id}, '
         'workspace=${job.workspaceId}, turn=${job.turnId}.',
@@ -135,6 +113,24 @@ class const ConversationWorker({
         stackTrace: stackTrace,
       );
       return true;
+    }
+  }
+
+  Future<void> _retryAfterFailure(
+    Session session,
+    ConversationJob job,
+    String leaseToken,
+    String errorCode,
+  ) async {
+    final updated = await _retryOrFail(
+      session,
+      jobId: job.id!,
+      leaseToken: leaseToken,
+      errorCode: errorCode,
+      now: DateTime.now().toUtc(),
+    );
+    if (updated.status == ConversationJobStatuses.failed) {
+      await _recordExecutionFailure(session, updated);
     }
   }
 
