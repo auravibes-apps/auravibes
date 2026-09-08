@@ -12,14 +12,14 @@ class CloudWorkspaceEndpoint extends Endpoint {
   Future<List<CloudWorkspaceSummary>> listAuthorizedWorkspaces(
     Session session,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.listAuthorizedWorkspaces(session, userId: account.userId);
   }
 
   Future<List<PendingWorkspaceInviteSummary>> listPendingInvites(
     Session session,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.listPendingInvites(session, email: account.email);
   }
 
@@ -27,7 +27,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     GetCloudWorkspaceDetailRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.getWorkspaceDetail(
       session,
       userId: account.userId,
@@ -39,7 +39,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     ListWorkspaceMembersRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.listMembers(
       session,
       userId: account.userId,
@@ -51,7 +51,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     ListCloudWorkspaceInvitesRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.listWorkspaceInvites(
       session,
       userId: account.userId,
@@ -63,7 +63,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     CreateCloudWorkspaceRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.createWorkspace(
       session,
       userId: account.userId,
@@ -75,7 +75,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     InviteWorkspaceMemberRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.inviteMember(
       session,
       userId: account.userId,
@@ -87,7 +87,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     RenewWorkspaceInviteRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.renewInvite(
       session,
       userId: account.userId,
@@ -99,7 +99,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     RevokeWorkspaceInviteRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     await _useCases.revokeInvite(
       session,
       userId: account.userId,
@@ -111,7 +111,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     AcceptWorkspaceInviteRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.acceptInvite(
       session,
       userId: account.userId,
@@ -124,7 +124,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     DeclineWorkspaceInviteRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     await _useCases.declineInvite(
       session,
       userId: account.userId,
@@ -137,7 +137,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     RenameCloudWorkspaceRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.renameWorkspace(
       session,
       userId: account.userId,
@@ -149,7 +149,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     LeaveCloudWorkspaceRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     await _useCases.leaveWorkspace(
       session,
       userId: account.userId,
@@ -161,7 +161,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     TransferCloudWorkspaceOwnershipRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     await _useCases.transferOwnership(
       session,
       userId: account.userId,
@@ -173,7 +173,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     UpdateWorkspaceMemberRoleRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     await _useCases.updateMemberRole(
       session,
       userId: account.userId,
@@ -185,7 +185,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     RemoveWorkspaceMemberRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     await _useCases.removeMember(
       session,
       userId: account.userId,
@@ -197,15 +197,11 @@ class CloudWorkspaceEndpoint extends Endpoint {
     Session session,
     DeleteCloudWorkspaceRequest request,
   ) async {
-    final account = await _requireAccount(session);
+    final account = await const AuthenticatedAccountResolver()(session);
     await _useCases.deleteWorkspace(
       session,
       userId: account.userId,
       request: request,
     );
-  }
-
-  Future<AccountSummary> _requireAccount(Session session) async {
-    return const AuthenticatedAccountResolver()(session);
   }
 }
