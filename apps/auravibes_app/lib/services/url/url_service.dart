@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:async/async.dart';
+import 'package:auravibes_app/services/url/pinned_http_client_adapter.dart';
 import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -14,7 +15,12 @@ class UrlService({Dio? dio}) {
   static const String _truncatedSuffix = '\n... [truncated]';
   final Dio _dio = dio ?? Dio();
 
-  CancelableOperation<UrlResponse> execute(UrlRequest request) {
+  // Null means use the existing Dio adapter.
+  // ignore: unnecessary-nullable
+  CancelableOperation<UrlResponse> execute(
+    UrlRequest request, {
+    List<String>? resolvedAddresses,
+  }) {
     final cancelToken = CancelToken();
     final completer = CancelableCompleter<UrlResponse>(
       onCancel: () {
@@ -31,9 +37,19 @@ class UrlService({Dio? dio}) {
             _hasHeader(request.headers, Headers.contentTypeHeader)
         ? rawBody
         : Stream<List<int>>.value(utf8.encode(rawBody));
+    final requestDio = _dioForAddresses(resolvedAddresses);
+    if (requestDio == null) {
+      completer.completeError(
+        UnsupportedError('HTTP adapter does not support address pinning'),
+        StackTrace.current,
+      );
+
+      return completer.operation;
+    }
 
     unawaited(
       _executeRequest(
+        requestDio,
         request,
         requestBody,
         effectiveHeaders,
@@ -46,7 +62,20 @@ class UrlService({Dio? dio}) {
     return completer.operation;
   }
 
+  Dio? _dioForAddresses(List<String>? addresses) {
+    if (addresses == null) return _dio;
+
+    final adapter = createPinnedHttpClientAdapter(
+      _dio.httpClientAdapter,
+      addresses,
+    );
+    if (adapter == null) return null;
+
+    return _dio.clone(httpClientAdapter: adapter);
+  }
+
   Future<void> _executeRequest(
+    Dio dio,
     UrlRequest request,
     Object? requestBody,
     Map<String, String> effectiveHeaders,
@@ -55,7 +84,7 @@ class UrlService({Dio? dio}) {
     Stopwatch stopwatch,
   ) async {
     try {
-      final response = await _dio.request<ResponseBody>(
+      final response = await dio.request<ResponseBody>(
         request.url,
         data: requestBody,
         cancelToken: cancelToken,
@@ -86,6 +115,8 @@ class UrlService({Dio? dio}) {
       );
     } on Object catch (error, stackTrace) {
       await _handleRequestError(error, stackTrace, completer, stopwatch);
+    } finally {
+      if (!identical(dio, _dio)) dio.close(force: true);
     }
   }
 
