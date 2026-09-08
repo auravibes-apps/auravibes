@@ -3,9 +3,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_children.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_field_bindings.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -143,29 +143,29 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
     fit: data['fit'] == 'tight' ? .tight : .loose,
     child: context.buildChild(_string(data['child'])),
   ),
-  'Rating': (context, data) => _fieldScope(
+  'Rating': (context, data) => scopeChatCatalogField(
     data,
     BoundNumber(
       dataContext: context.dataContext,
       value: data['value'],
       builder: (_, value) {
-        final path = _path(data['value'], '/${context.id}');
+        final path = chatCatalogFieldPath(data['value'], '/${context.id}');
         return AuraRating(
           value: (value ?? 0).toInt(),
           max: data['max'] as int? ?? 5,
           label: _nullableString(data['label']),
-          onChanged: (next) => _updateData(context, path, next),
+          onChanged: (next) => updateChatCatalogField(context, path, next),
         );
       },
     ),
   ),
-  'TagInput': (context, data) => _fieldScope(
+  'TagInput': (context, data) => scopeChatCatalogField(
     data,
     BoundObject(
       dataContext: context.dataContext,
       value: data['value'],
       builder: (_, value) {
-        final path = _path(data['value'], '/${context.id}');
+        final path = chatCatalogFieldPath(data['value'], '/${context.id}');
         return AuraTagInput(
           value: value is List ? value.whereType<String>().toList() : const [],
           removeLabel: (tag) => LocaleKeys
@@ -174,7 +174,7 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
           label: _nullableString(data['label']),
           placeholder: _nullableString(data['placeholder']),
           maxTags: data['maxSelections'] as int?,
-          onChanged: (next) => _updateData(context, path, next),
+          onChanged: (next) => updateChatCatalogField(context, path, next),
         );
       },
     ),
@@ -209,32 +209,6 @@ Map<String, Object?> _data(CatalogItemContext context) =>
 String _string(Object? value) => value is String ? value : '';
 
 String? _nullableString(Object? value) => value is String ? value : null;
-
-String _path(Object? value, String fallback) =>
-    value is Map<Object?, Object?> && value['path'] is String
-    ? value['path']! as String
-    : fallback;
-
-void _updateData(CatalogItemContext context, String path, Object value) {
-  ChatA2uiFormScope.markTouched(context.buildContext, path);
-  context.dataContext.update(DataPath(path), value);
-}
-
-Widget _fieldScope(Map<String, Object?> data, Widget child) {
-  if (data['disabled'] == true) {
-    return AuraInteractionScope(
-      policy: const AuraInteractionPolicy.disabled(),
-      child: child,
-    );
-  }
-  if (data['readOnly'] == true) {
-    return AuraInteractionScope(
-      policy: const AuraInteractionPolicy.readOnly(),
-      child: child,
-    );
-  }
-  return child;
-}
 
 AuraTint _tone(Object? value) =>
     AuraTint.values.byName(value as String? ?? 'primary');

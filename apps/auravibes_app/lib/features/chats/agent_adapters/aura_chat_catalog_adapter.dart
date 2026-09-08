@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:auravibes_app/features/chats/agent_adapters/aura_dashboard_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/aura_extended_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_children.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_field_bindings.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_catalog_text_field.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -244,11 +245,6 @@ Schema _schemaFor(CatalogItem source, {required bool allowLiteralValues}) {
 Map<String, Object?> _data(CatalogItemContext context) =>
     Map<String, Object?>.from(context.data as Map<Object?, Object?>);
 
-String _path(Object? reference, String fallback) =>
-    reference is Map<Object?, Object?> && reference['path'] is String
-    ? reference['path']! as String
-    : fallback;
-
 String _string(Object? value) => value is String ? value : '';
 
 String? _nullableString(Object? value) => value is String ? value : null;
@@ -295,27 +291,6 @@ String? _formatDateTimeValue(DateTime? value, String? variant) {
         '${value.minute.toString().padLeft(2, '0')}';
   }
   return value.toUtc().toIso8601String();
-}
-
-void _updateData(CatalogItemContext context, String path, Object? value) {
-  ChatA2uiFormScope.markTouched(context.buildContext, path);
-  context.dataContext.update(DataPath(path), value);
-}
-
-Widget _fieldScope(Map<String, Object?> data, Widget child) {
-  if (data['disabled'] == true) {
-    return AuraInteractionScope(
-      policy: const AuraInteractionPolicy.disabled(),
-      child: child,
-    );
-  }
-  if (data['readOnly'] == true) {
-    return AuraInteractionScope(
-      policy: const AuraInteractionPolicy.readOnly(),
-      child: child,
-    );
-  }
-  return child;
 }
 
 MainAxisAlignment _mainAxis(String? value) => switch (value) {
@@ -606,9 +581,9 @@ Widget _button(CatalogItemContext context) {
 
 Widget _checkBox(CatalogItemContext context) {
   final data = _data(context);
-  final path = _path(data['value'], '/${context.id}');
+  final path = chatCatalogFieldPath(data['value'], '/${context.id}');
 
-  return _fieldScope(
+  return scopeChatCatalogField(
     data,
     BoundString(
       dataContext: context.dataContext,
@@ -621,7 +596,7 @@ Widget _checkBox(CatalogItemContext context) {
           children: [
             AuraCheckbox(
               value: value ?? false,
-              onChanged: (next) => _updateData(context, path, next),
+              onChanged: (next) => updateChatCatalogField(context, path, next),
               disabled: data['disabled'] == true,
               semanticLabel: label,
             ),
@@ -636,13 +611,13 @@ Widget _checkBox(CatalogItemContext context) {
 Widget _slider(CatalogItemContext context) {
   final data = _data(context);
   final valueReference = data['value'];
-  final path = _path(valueReference, '/${context.id}');
+  final path = chatCatalogFieldPath(valueReference, '/${context.id}');
   final min = (data['min'] as num?)?.toDouble() ?? 0;
   final max = (data['max'] as num?)?.toDouble() ?? 1;
   final step = (data['step'] as num?)?.toDouble() ?? 1;
   final precision = (data['precision'] as num?)?.toInt() ?? 2;
 
-  return _fieldScope(
+  return scopeChatCatalogField(
     data,
     BoundNumber(
       dataContext: context.dataContext,
@@ -654,7 +629,7 @@ Widget _slider(CatalogItemContext context) {
           value: (value ?? (valueReference is num ? valueReference : min))
               .toDouble()
               .clamp(min, max),
-          onChanged: (next) => _updateData(context, path, next),
+          onChanged: (next) => updateChatCatalogField(context, path, next),
           min: min,
           max: max,
           step: step,
@@ -684,10 +659,10 @@ Widget _slider(CatalogItemContext context) {
 
 Widget _textField(CatalogItemContext context) {
   final data = _data(context);
-  final path = _path(data['value'], '/${context.id}');
+  final path = chatCatalogFieldPath(data['value'], '/${context.id}');
   final variant = data['variant'];
 
-  return _fieldScope(
+  return scopeChatCatalogField(
     data,
     BoundString(
       dataContext: context.dataContext,
@@ -706,7 +681,7 @@ Widget _textField(CatalogItemContext context) {
               _nullableString(data['errorText']),
           required: data['required'] == true,
           maxLength: data['maxLength'] as int?,
-          onChanged: (next) => _updateData(context, path, next),
+          onChanged: (next) => updateChatCatalogField(context, path, next),
         ),
       ),
     ),
@@ -715,10 +690,10 @@ Widget _textField(CatalogItemContext context) {
 
 Widget _dateTimeInput(CatalogItemContext context) {
   final data = _data(context);
-  final path = _path(data['value'], '/${context.id}');
+  final path = chatCatalogFieldPath(data['value'], '/${context.id}');
   final variant = data['variant'];
 
-  return _fieldScope(
+  return scopeChatCatalogField(
     data,
     BoundString(
       dataContext: context.dataContext,
@@ -744,7 +719,7 @@ Widget _dateTimeInput(CatalogItemContext context) {
                 variant as String?,
               ),
               semanticLabel: label,
-              onChanged: (next) => _updateData(
+              onChanged: (next) => updateChatCatalogField(
                 context,
                 path,
                 _formatDateTimeValue(next, variant as String?),
@@ -760,7 +735,7 @@ Widget _dateTimeInput(CatalogItemContext context) {
 Widget _choicePicker(CatalogItemContext context) {
   final data = _data(context);
   final options = data['options'];
-  final path = _path(data['value'], '/${context.id}');
+  final path = chatCatalogFieldPath(data['value'], '/${context.id}');
   final variant = data['variant'] == 'multiple'
       ? AuraChoicePickerVariant.multipleSelection
       : AuraChoicePickerVariant.mutuallyExclusive;
@@ -776,7 +751,7 @@ Widget _choicePicker(CatalogItemContext context) {
       ),
   ];
 
-  return _fieldScope(
+  return scopeChatCatalogField(
     data,
     BoundObject(
       dataContext: context.dataContext,
@@ -800,7 +775,7 @@ Widget _choicePicker(CatalogItemContext context) {
                 : AuraChoicePickerPresentation.list,
             label: label == null ? null : AuraText(child: Text(label)),
             maxAllowedSelections: data['maxSelections'] as int?,
-            onChanged: (next) => _updateData(
+            onChanged: (next) => updateChatCatalogField(
               context,
               path,
               variant == AuraChoicePickerVariant.mutuallyExclusive
@@ -843,7 +818,7 @@ Widget _tabs(CatalogItemContext context) {
           final keys = resolved is Map
               ? resolved.keys.map((key) => '$key').toList()
               : List.generate(values.length, (index) => '$index');
-          final path = _path(tabs, '');
+          final path = chatCatalogFieldPath(tabs, '');
           return AuraTabs<void>(
             selectedIndex: active?.toInt(),
             items: [
@@ -866,7 +841,11 @@ Widget _tabs(CatalogItemContext context) {
             ],
             onChanged: (next) {
               if (activeTab is Map<Object?, Object?>) {
-                _updateData(context, _path(activeTab, '/activeTab'), next);
+                updateChatCatalogField(
+                  context,
+                  chatCatalogFieldPath(activeTab, '/activeTab'),
+                  next,
+                );
               }
             },
           );
@@ -893,7 +872,7 @@ Widget _tabs(CatalogItemContext context) {
       initialIndex: (activeTab as num?)?.toInt() ?? 0,
     );
   }
-  final activePath = _path(activeTab, '/activeTab');
+  final activePath = chatCatalogFieldPath(activeTab, '/activeTab');
 
   return BoundNumber(
     dataContext: context.dataContext,
