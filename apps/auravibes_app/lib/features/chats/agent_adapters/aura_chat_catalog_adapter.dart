@@ -911,11 +911,3 @@ Widget _modal(CatalogItemContext context) {
     ),
   );
 }
-
-extension on Iterable<AvailableIcons> {
-  AvailableIcons? get firstOrNull => isEmpty ? null : first;
-}
-
-extension on Iterable<String> {
-  String? get firstOrNull => isEmpty ? null : first;
-}
