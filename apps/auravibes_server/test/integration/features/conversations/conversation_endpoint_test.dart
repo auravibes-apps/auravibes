@@ -1,3 +1,4 @@
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
@@ -209,6 +210,52 @@ void main() {
       expect(firstPage.nextCursor, isNotNull);
       expect(firstPage.conversations.single.id, laterConversation.id);
       expect(secondPage.conversations.single.id, liveConversation.id);
+
+      final started = await endpoints.conversation.startTurn(
+        session,
+        StartTurnRequest(
+          workspaceId: workspaceId,
+          requestId: 'turn-live',
+          conversationId: liveConversation.id,
+          expectedConversationRevision: liveConversation.revision,
+          clientMessageId: 'message-live',
+          content: 'Hello',
+          attachmentIds: const [],
+        ),
+      );
+      expect(started.turnId, 'turn-live');
+      final startedJob = await ConversationJob.db.findFirstRow(
+        databaseSession,
+        where: (table) => table.requestId.equals('turn-live'),
+      );
+      expect(startedJob?.status, ConversationJobStatuses.queued);
+
+      final continued = await endpoints.conversation.continueTurn(
+        session,
+        ContinueTurnRequest(
+          workspaceId: workspaceId,
+          requestId: 'continue-later',
+          conversationId: laterConversation.id,
+          expectedConversationRevision: laterConversation.revision,
+        ),
+      );
+      expect(continued.turnId, 'continue-later');
+      final continuedTurn = await ConversationTurn.db.findFirstRow(
+        databaseSession,
+        where: (table) => table.requestId.equals('continue-later'),
+      );
+      expect(continuedTurn?.assistantMessageId, isNotNull);
+      final continuedAssistant = await ConversationMessage.db.findById(
+        databaseSession,
+        continuedTurn!.assistantMessageId!,
+      );
+      expect(continuedAssistant?.turnId, continuedTurn.id);
+      final continuedJob = await ConversationJob.db.findFirstRow(
+        databaseSession,
+        where: (table) => table.requestId.equals('continue-later'),
+      );
+      expect(continuedJob?.status, ConversationJobStatuses.queued);
+
       await expectLater(
         endpoints.conversation.get(
           session,

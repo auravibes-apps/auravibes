@@ -401,38 +401,13 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         transaction: transaction,
       );
     }
-    await ConversationMessage.db.updateRow(
+    await _completeTurn(
       session,
-      assistantMessage.copyWith(turnId: turn.id),
-      transaction: transaction,
-    );
-    await ConversationJob.db.insertRow(
-      session,
-      ConversationJob(
-        workspaceId: request.workspaceId,
-        conversationId: conversation.id!,
-        turnId: turn.id,
-        requestId: request.requestId,
-        kind: ConversationJobKinds.turn,
-        status: ConversationJobStatuses.queued,
-        payloadJson: conversationTurnJobPayload(
-          actorUserId,
-          a2uiSupportedComponents: request.a2uiSupportedComponents,
-        ),
-        attempt: 0,
-        maxAttempts: 3,
-        availableAt: now,
-        createdAt: now,
-        updatedAt: now,
-      ),
-      transaction: transaction,
-    );
-    await Conversation.db.updateRow(
-      session,
-      conversation.copyWith(
-        revision: conversation.revision + 1,
-        updatedAt: now,
-      ),
+      conversation: conversation,
+      turn: turn,
+      assistantMessage: assistantMessage,
+      a2uiSupportedComponents: request.a2uiSupportedComponents,
+      now: now,
       transaction: transaction,
     );
     return StartTurnResult(
@@ -487,6 +462,27 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
       ),
       transaction: transaction,
     );
+    await _completeTurn(
+      session,
+      conversation: conversation,
+      turn: turn,
+      assistantMessage: assistantMessage,
+      a2uiSupportedComponents: request.a2uiSupportedComponents,
+      now: now,
+      transaction: transaction,
+    );
+    return turn;
+  }
+
+  Future<void> _completeTurn(
+    Session session, {
+    required Conversation conversation,
+    required ConversationTurn turn,
+    required ConversationMessage assistantMessage,
+    required List<String>? a2uiSupportedComponents,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
     await ConversationMessage.db.updateRow(
       session,
       assistantMessage.copyWith(turnId: turn.id),
@@ -495,15 +491,15 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     await ConversationJob.db.insertRow(
       session,
       ConversationJob(
-        workspaceId: request.workspaceId,
+        workspaceId: conversation.workspaceId,
         conversationId: conversation.id!,
         turnId: turn.id,
-        requestId: request.requestId,
+        requestId: turn.requestId,
         kind: ConversationJobKinds.turn,
         status: ConversationJobStatuses.queued,
         payloadJson: conversationTurnJobPayload(
-          actorUserId,
-          a2uiSupportedComponents: request.a2uiSupportedComponents,
+          turn.initiatorUserId,
+          a2uiSupportedComponents: a2uiSupportedComponents,
         ),
         attempt: 0,
         maxAttempts: 3,
@@ -521,7 +517,6 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
       ),
       transaction: transaction,
     );
-    return turn;
   }
 
   Future<ConversationMessage> insertPendingMessage(
