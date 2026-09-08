@@ -757,7 +757,10 @@ class ServerToolRuntime({
     );
     if (existing != null) {
       final persistedDescriptor = _resolver.resolve(existing.name);
-      final storedArguments = _jsonMap(existing.argumentsJson);
+      final storedArguments = switch (jsonDecode(existing.argumentsJson)) {
+        final Map<String, dynamic> value => value,
+        _ => throw const FormatException(),
+      };
       final storedCommand = _skillCommandOrNull(storedArguments);
       final isNestedSkillCall =
           (persistedDescriptor?.kind == AgentResolvedToolKind.skillTemplate ||
@@ -1232,12 +1235,6 @@ class ServerToolRuntime({
   Future<String> _digest(String value) async {
     final hash = await Sha256().hash(utf8.encode(value));
     return base64UrlEncode(hash.bytes);
-  }
-
-  Map<String, dynamic> _jsonMap(String value) {
-    final decoded = jsonDecode(value);
-    if (decoded is! Map<String, dynamic>) throw const FormatException();
-    return decoded;
   }
 
   SkillCommandTarget? _skillCommandOrNull(Map<String, dynamic> arguments) {
