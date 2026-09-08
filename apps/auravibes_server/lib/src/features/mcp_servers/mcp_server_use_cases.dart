@@ -359,8 +359,7 @@ class McpServerUseCases(
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
     }
-    if (member.role != WorkspaceRoles.owner &&
-        member.role != WorkspaceRoles.admin) {
+    if (!WorkspaceRoles.canViewRoster(member.role)) {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.permissionDenied,
       );
@@ -438,8 +437,7 @@ class McpServerUseCases(
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
     }
-    if (member.role != WorkspaceRoles.owner &&
-        member.role != WorkspaceRoles.admin) {
+    if (!WorkspaceRoles.canViewRoster(member.role)) {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.permissionDenied,
       );

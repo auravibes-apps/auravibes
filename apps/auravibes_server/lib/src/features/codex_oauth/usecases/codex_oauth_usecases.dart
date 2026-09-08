@@ -198,9 +198,7 @@ class CodexOAuthUseCases(
       workspaceId: workspaceId,
       userId: userId,
     );
-    if (member == null ||
-        (member.role != WorkspaceRoles.owner &&
-            member.role != WorkspaceRoles.admin)) {
+    if (member == null || !WorkspaceRoles.canViewRoster(member.role)) {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.permissionDenied,
       );

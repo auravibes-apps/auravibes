@@ -317,8 +317,7 @@ class ModelConnectionUseCases {
   }
 
   void _requireManager(WorkspaceMember member) {
-    if (member.role != WorkspaceRoles.owner &&
-        member.role != WorkspaceRoles.admin) {
+    if (!WorkspaceRoles.canViewRoster(member.role)) {
       _permissionDenied();
     }
   }
