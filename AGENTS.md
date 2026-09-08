@@ -23,6 +23,16 @@
 | Code generation         | `fvm dart run melos run generate`                                            |
 | Localization generation | `fvm dart run melos run generate:localization`                               |
 
+### Scoped database queries
+
+- From repo root, run `fvm dart run tool/db_query.dart "SELECT ..."` to query
+  the dev database scoped by the same `DB_HASH_SOURCE` used by VS Code.
+- The current repo path is the default hash source. Use
+  `--hash-source PATH` for another workspace or `--database-directory PATH`
+  when the platform documents directory needs an override.
+- Results print as JSON lines. A missing scoped database fails without creating
+  a new database file.
+
 ## Flutter MCP Control
 
 - Use `dev Debug` for manual testing; it preserves the native keyboard.
