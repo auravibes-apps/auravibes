@@ -760,16 +760,30 @@ class ConversationUseCases {
       },
       updateProjection: (conversation) => conversation,
     );
-    return getConversationSnapshot(
+    return _snapshotForRequest(
       session,
-      userId: userId,
-      request: GetConversationRequest(
-        a2uiSupportedComponents: request.a2uiSupportedComponents,
-        workspaceId: request.workspaceId,
-        conversationId: request.conversationId,
-      ),
+      userId,
+      request.workspaceId,
+      request.conversationId,
+      request.a2uiSupportedComponents,
     );
   }
+
+  Future<ConversationSnapshot> _snapshotForRequest(
+    Session session,
+    String userId,
+    int workspaceId,
+    String conversationId,
+    List<String>? a2uiSupportedComponents,
+  ) => getConversationSnapshot(
+    session,
+    userId: userId,
+    request: GetConversationRequest(
+      a2uiSupportedComponents: a2uiSupportedComponents,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+  );
 
   Future<ConversationSnapshot> editPendingConversationMessage(
     Session session, {
@@ -819,14 +833,12 @@ class ConversationUseCases {
       },
       updateProjection: (conversation) => conversation,
     );
-    return getConversationSnapshot(
+    return _snapshotForRequest(
       session,
-      userId: userId,
-      request: GetConversationRequest(
-        a2uiSupportedComponents: request.a2uiSupportedComponents,
-        workspaceId: request.workspaceId,
-        conversationId: request.conversationId,
-      ),
+      userId,
+      request.workspaceId,
+      request.conversationId,
+      request.a2uiSupportedComponents,
     );
   }
 
@@ -897,14 +909,12 @@ class ConversationUseCases {
       },
       updateProjection: (conversation) => conversation,
     );
-    return getConversationSnapshot(
+    return _snapshotForRequest(
       session,
-      userId: userId,
-      request: GetConversationRequest(
-        a2uiSupportedComponents: request.a2uiSupportedComponents,
-        workspaceId: request.workspaceId,
-        conversationId: request.conversationId,
-      ),
+      userId,
+      request.workspaceId,
+      request.conversationId,
+      request.a2uiSupportedComponents,
     );
   }
 
@@ -950,14 +960,12 @@ class ConversationUseCases {
           duplicateExecution.conversationId != conversation.id) {
         _fail(ConversationErrorCode.idempotencyConflict);
       }
-      return getConversationSnapshot(
+      return _snapshotForRequest(
         session,
-        userId: userId,
-        request: GetConversationRequest(
-          a2uiSupportedComponents: request.a2uiSupportedComponents,
-          workspaceId: request.workspaceId,
-          conversationId: request.conversationId,
-        ),
+        userId,
+        request.workspaceId,
+        request.conversationId,
+        request.a2uiSupportedComponents,
       );
     }
     final executionId = const Uuid().v7();
@@ -1160,25 +1168,21 @@ class ConversationUseCases {
         ),
       );
     } on _ContinueConversationReplay {
-      return getConversationSnapshot(
+      return _snapshotForRequest(
         session,
-        userId: userId,
-        request: GetConversationRequest(
-          a2uiSupportedComponents: request.a2uiSupportedComponents,
-          workspaceId: request.workspaceId,
-          conversationId: request.conversationId,
-        ),
+        userId,
+        request.workspaceId,
+        request.conversationId,
+        request.a2uiSupportedComponents,
       );
     }
     await _publishConversationJob(session, job);
-    return getConversationSnapshot(
+    return _snapshotForRequest(
       session,
-      userId: userId,
-      request: GetConversationRequest(
-        a2uiSupportedComponents: request.a2uiSupportedComponents,
-        workspaceId: request.workspaceId,
-        conversationId: request.conversationId,
-      ),
+      userId,
+      request.workspaceId,
+      request.conversationId,
+      request.a2uiSupportedComponents,
     );
   }
 
@@ -1276,14 +1280,12 @@ class ConversationUseCases {
         activeExecutionId: null,
       ),
     );
-    return getConversationSnapshot(
+    return _snapshotForRequest(
       session,
-      userId: userId,
-      request: GetConversationRequest(
-        a2uiSupportedComponents: request.a2uiSupportedComponents,
-        workspaceId: request.workspaceId,
-        conversationId: request.conversationId,
-      ),
+      userId,
+      request.workspaceId,
+      request.conversationId,
+      request.a2uiSupportedComponents,
     );
   }
 
@@ -1330,14 +1332,12 @@ class ConversationUseCases {
       },
       updateProjection: (conversation) => conversation,
     );
-    return getConversationSnapshot(
+    return _snapshotForRequest(
       session,
-      userId: userId,
-      request: GetConversationRequest(
-        a2uiSupportedComponents: request.a2uiSupportedComponents,
-        workspaceId: request.workspaceId,
-        conversationId: request.conversationId,
-      ),
+      userId,
+      request.workspaceId,
+      request.conversationId,
+      request.a2uiSupportedComponents,
     );
   }
 
@@ -1384,14 +1384,12 @@ class ConversationUseCases {
         agentId: request.agentId,
       ),
     );
-    return getConversationSnapshot(
+    return _snapshotForRequest(
       session,
-      userId: userId,
-      request: GetConversationRequest(
-        a2uiSupportedComponents: request.a2uiSupportedComponents,
-        workspaceId: request.workspaceId,
-        conversationId: request.conversationId,
-      ),
+      userId,
+      request.workspaceId,
+      request.conversationId,
+      request.a2uiSupportedComponents,
     );
   }
 
