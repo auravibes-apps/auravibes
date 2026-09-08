@@ -157,7 +157,7 @@ class const CloudWorkspaceUseCases({
       expectedInviteRevision: invite.revision,
     );
 
-    return attach(workspace);
+    return await attach(workspace);
   }
 
   Future<void> declineInvite(PendingWorkspaceInviteSummary invite) {

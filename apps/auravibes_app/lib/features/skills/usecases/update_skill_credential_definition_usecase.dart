@@ -56,14 +56,14 @@ class const UpdateSkillCredentialDefinitionUsecase(
 
     final cloud = cloudStore;
     if (cloud != null) {
-      return cloud.updateDefinition(definitionId, definition);
+      return await cloud.updateDefinition(definitionId, definition);
     }
     final repository = _skillCredentialDefinitionsRepository;
     if (repository == null) {
       throw StateError('Credential definition store is unavailable');
     }
 
-    return repository.updateDefinition(definitionId, definition);
+    return await repository.updateDefinition(definitionId, definition);
   }
 }
 

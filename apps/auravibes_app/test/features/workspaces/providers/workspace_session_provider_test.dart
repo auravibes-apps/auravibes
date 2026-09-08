@@ -118,6 +118,7 @@ void main() {
         ),
         cloudWorkspaceStateGatewayProvider.overrideWith((ref, session) async {
           capturedSession = session;
+
           return null;
         }),
       ],

@@ -31,13 +31,13 @@ class const CreateSkillTemplateToolUsecase(
       templateJson: canonicalSkillUrlTemplateJson(tool.templateJson),
     );
     final cloud = cloudStore;
-    if (cloud != null) return cloud.createTool(skillId, canonical);
+    if (cloud != null) return await cloud.createTool(skillId, canonical);
     final repository = _skillTemplateToolsRepository;
     if (repository == null) {
       throw StateError('Skill template tool store is unavailable');
     }
 
-    return repository.createTool(skillId, canonical);
+    return await repository.createTool(skillId, canonical);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>

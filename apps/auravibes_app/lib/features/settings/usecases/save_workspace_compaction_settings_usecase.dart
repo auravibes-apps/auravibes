@@ -35,7 +35,7 @@ class const SaveWorkspaceCompactionSettingsUsecase({
 
   Future<void> reset({required String workspaceId}) async {
     final cloud = cloudAdapter;
-    if (cloud != null) return cloud.resetCompactionSettings();
+    if (cloud != null) return await cloud.resetCompactionSettings();
     final localRepository = repository;
     if (localRepository == null) {
       throw StateError('Compaction settings store is unavailable');

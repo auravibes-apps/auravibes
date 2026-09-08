@@ -39,12 +39,12 @@ class const CreateSkillCredentialDefinitionUsecase(
       );
     }
 
-    if (cloud != null) return cloud.createDefinition(definition);
+    if (cloud != null) return await cloud.createDefinition(definition);
     if (repository == null) {
       throw StateError('Credential definition store is unavailable');
     }
 
-    return repository.createDefinition(workspaceId, definition);
+    return await repository.createDefinition(workspaceId, definition);
   }
 }
 

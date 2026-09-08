@@ -55,8 +55,7 @@ AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
 
 // ignore: specify_nonobvious_property_types - Riverpod family type is verbose.
 final agentsProvider = StreamProvider.family<List<AgentEntity>, String>(
-  (ref, workspaceId) =>
-      ref.watch(agentRepositoryProvider(workspaceId)).watchAgentsByWorkspace(
-        workspaceId,
-      ),
+  (ref, workspaceId) => ref
+      .watch(agentRepositoryProvider(workspaceId))
+      .watchAgentsByWorkspace(workspaceId),
 );

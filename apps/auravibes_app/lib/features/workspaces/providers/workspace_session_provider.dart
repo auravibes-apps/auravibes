@@ -116,11 +116,7 @@ Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGatewayForWorkspace(
   final cloud = session.cloud;
   if (cloud == null) return null;
 
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayProvider(session).future,
-  );
-
-  return gateway;
+  return await ref.watch(cloudWorkspaceStateGatewayProvider(session).future);
 }
 
 @riverpod

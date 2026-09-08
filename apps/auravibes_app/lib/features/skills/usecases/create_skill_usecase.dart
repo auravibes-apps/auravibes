@@ -40,11 +40,11 @@ class const CreateSkillUsecase(
       );
     }
 
-    if (cloud != null) return cloud.createSkill(skill);
+    if (cloud != null) return await cloud.createSkill(skill);
     final repository = _skillsRepository;
     if (repository == null) throw StateError('Skill store is unavailable');
 
-    return repository.createSkill(workspaceId, skill);
+    return await repository.createSkill(workspaceId, skill);
   }
 }
 
