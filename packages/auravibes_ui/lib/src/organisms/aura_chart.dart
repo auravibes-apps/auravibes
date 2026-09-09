@@ -92,23 +92,14 @@ class AuraChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fixedMinY = minY;
-    final fixedMaxY = maxY;
-    final valueUnit = unit;
-    if (semanticLabel.trim().isEmpty ||
-        (fixedMinY != null && fixedMaxY != null && fixedMinY > fixedMaxY) ||
-        series.any(
-          (item) =>
-              item.values.length != labels.length ||
-              item.values.any((value) => !value.isFinite),
-        ) ||
-        ((type == AuraChartType.pie || type == AuraChartType.donut) &&
-            (series.length != 1 ||
-                series.single.values.any((value) => value < 0)))) {
-      throw ArgumentError(
-        'Charts require matching labels, finite values and a summary.',
-      );
-    }
+    _validateChart(
+      semanticLabel: semanticLabel,
+      labels: labels,
+      series: series,
+      type: type,
+      minY: minY,
+      maxY: maxY,
+    );
 
     return Semantics(
       child: Column(
@@ -122,13 +113,7 @@ class AuraChart extends StatelessWidget {
             painter: _AuraChartPainter(
               series: series,
               type: type,
-              colors: [
-                for (final tint
-                    in palette.isEmpty
-                        ? series.map((item) => item.tint)
-                        : palette)
-                  context.auraColors.colorFor(tint),
-              ],
+              colors: _chartColors(context),
               axisColor: context.auraColors.outline,
               direction: Directionality.of(context),
               stacked: stacked,
@@ -156,11 +141,7 @@ class AuraChart extends StatelessWidget {
             children: [
               for (final item in series)
                 AuraText(
-                  child: Text(
-                    valueUnit == null || valueUnit.isEmpty
-                        ? item.label
-                        : '${item.label} ($valueUnit)',
-                  ),
+                  child: Text(_chartLegendLabel(item, unit)),
                   tint: item.tint,
                 ),
             ],
@@ -174,6 +155,101 @@ class AuraChart extends StatelessWidget {
       label: semanticLabel,
     );
   }
+
+  List<Color> _chartColors(BuildContext context) {
+    final tints = palette.isEmpty ? series.map((item) => item.tint) : palette;
+    return [for (final tint in tints) context.auraColors.colorFor(tint)];
+  }
+}
+
+void _validateChart({
+  required String semanticLabel,
+  required List<String> labels,
+  required List<AuraChartSeries> series,
+  required AuraChartType type,
+  required double? minY,
+  required double? maxY,
+}) {
+  if (_hasInvalidChart(
+    semanticLabel: semanticLabel,
+    labels: labels,
+    series: series,
+    type: type,
+    minY: minY,
+    maxY: maxY,
+  )) {
+    throw ArgumentError(
+      'Charts require matching labels, finite values and a summary.',
+    );
+  }
+}
+
+bool _hasInvalidChart({
+  required String semanticLabel,
+  required List<String> labels,
+  required List<AuraChartSeries> series,
+  required AuraChartType type,
+  required double? minY,
+  required double? maxY,
+}) {
+  if (semanticLabel.trim().isEmpty) return true;
+  if (minY != null && maxY != null && minY > maxY) return true;
+  if (series.any((item) => _hasInvalidSeries(item, labels.length))) {
+    return true;
+  }
+  return _hasInvalidPie(type, series);
+}
+
+bool _hasInvalidSeries(AuraChartSeries item, int labelCount) =>
+    item.values.length != labelCount ||
+    item.values.any((value) => !value.isFinite);
+
+bool _hasInvalidPie(AuraChartType type, List<AuraChartSeries> series) {
+  if (type != AuraChartType.pie && type != AuraChartType.donut) return false;
+  if (series.length != 1) return true;
+  return series.single.values.any((value) => value < 0);
+}
+
+String _chartLegendLabel(AuraChartSeries item, String? unit) {
+  if (unit == null || unit.isEmpty) return item.label;
+  return '${item.label} ($unit)';
+}
+
+bool _isPieChart(AuraChartType type) =>
+    type == AuraChartType.pie || type == AuraChartType.donut;
+
+typedef _CartesianLayout = ({
+  double scale,
+  double low,
+  double high,
+  double range,
+  double inset,
+  double plotHeight,
+  double baseline,
+});
+
+double _normalizeValue(double value, double scale) =>
+    scale == 0 ? 0.0 : value / scale;
+
+double _chartLow(
+  Iterable<double> normalized,
+  double? fixedMinY,
+  double divisor,
+) {
+  if (fixedMinY == null) return normalized.fold<double>(0, math.min);
+  return fixedMinY / divisor;
+}
+
+double _chartHigh(
+  Iterable<double> normalized,
+  Iterable<double> stackedValues,
+  double? fixedMaxY,
+  double divisor,
+) {
+  if (fixedMaxY == null) {
+    return [...normalized, ...stackedValues].fold<double>(0, math.max);
+  }
+  return fixedMaxY / divisor;
 }
 
 class _AuraChartPainter extends CustomPainter {
@@ -205,98 +281,179 @@ class _AuraChartPainter extends CustomPainter {
     if (size.width <= 0 || size.height <= 0) {
       return;
     }
-    if (type == AuraChartType.pie || type == AuraChartType.donut) {
+    if (_isPieChart(type)) {
       _paintPie(canvas, size);
 
       return;
     }
-    final values = series.expand((item) => item.values);
-    // Normalize first so even opposite finite double extremes do not overflow.
-    final scale = values.fold<double>(0, (a, b) => math.max(a, b.abs()));
-    final normalized = values.map((value) => scale == 0 ? 0.0 : value / scale);
-    final divisor = scale == 0 ? 1.0 : scale;
-    final fixedMinY = minY;
-    final fixedMaxY = maxY;
-    final low = fixedMinY == null
-        ? normalized.fold<double>(0, math.min)
-        : fixedMinY / divisor;
-    final categoryCount = series.firstOrNull?.values.length ?? 0;
-    double normalizedValue(double value) => scale == 0 ? 0.0 : value / scale;
-    final stackedValues = stacked && type == AuraChartType.bar
-        ? [
-            for (var index = 0; index < categoryCount; index++)
-              series.fold<double>(
-                0,
-                (sum, item) => sum + normalizedValue(item.values[index]),
-              ),
-          ]
-        : const <double>[];
-    final high = fixedMaxY == null
-        ? [...normalized, ...stackedValues].fold<double>(0, math.max)
-        : fixedMaxY / divisor;
-    final range = high == low ? 1.0 : high - low;
-    final inset = math.min(2, size.height / 2);
-    final plotHeight = size.height - inset * 2;
-    final baseline = inset + (high / range) * plotHeight;
+    _paintCartesian(canvas, size);
+  }
+
+  void _paintCartesian(Canvas canvas, Size size) {
+    final layout = _cartesianLayout(size);
     canvas.drawLine(
-      .new(0, baseline),
-      .new(size.width, baseline),
+      .new(0, layout.baseline),
+      .new(size.width, layout.baseline),
       Paint()..color = axisColor,
     );
     for (final (seriesIndex, item) in series.indexed) {
-      final paint = Paint()
-        ..color = colors[seriesIndex]
-        ..strokeWidth = 2
-        ..strokeCap = .round;
-      final path = Path();
-      final slot = size.width / item.values.length;
-      for (final (index, sample) in item.values.indexed) {
-        final value = normalizedValue(sample);
-        final position = (index + 0.5) * slot;
-        final x = direction == TextDirection.rtl
-            ? size.width - position
-            : position;
-        final y = inset + (high - value) / range * plotHeight;
-        if (type == AuraChartType.bar) {
-          final barWidth = stacked ? slot * 0.6 : slot * 0.6 / series.length;
-          final offset = stacked
-              ? 0.0
-              : (seriesIndex + 0.5) * barWidth - slot * 0.3;
-          final barX = x + (direction == TextDirection.rtl ? -offset : offset);
-          var stackOffset = 0.0;
-          if (stacked && scale != 0) {
-            stackOffset = series
-                .take(seriesIndex)
-                .fold<double>(
-                  0,
-                  (sum, item) => sum + normalizedValue(item.values[index]),
-                );
-          }
-          final stackedY =
-              inset + (high - (value + stackOffset)) / range * plotHeight;
-          final stackBaseY = inset + (high - stackOffset) / range * plotHeight;
-          canvas.drawRect(
-            .fromLTRB(
-              barX - barWidth / 2,
-              math.min(stacked ? stackedY : y, stacked ? stackBaseY : baseline),
-              barX + barWidth / 2,
-              math.max(stacked ? stackedY : y, stacked ? stackBaseY : baseline),
-            ),
-            paint,
-          );
-        } else {
-          if (index == 0) {
-            path.moveTo(x, y);
-          } else {
-            path.lineTo(x, y);
-          }
-          canvas.drawCircle(.new(x, y), 2, paint);
-        }
-      }
-      if (type == AuraChartType.line) {
-        canvas.drawPath(path, paint..style = .stroke);
-      }
+      _paintSeries(canvas, size, item, seriesIndex, layout);
     }
+  }
+
+  _CartesianLayout _cartesianLayout(Size size) {
+    // Normalize first so even opposite finite double extremes do not overflow.
+    final values = series.expand((item) => item.values);
+    final scale = values.fold<double>(0, (a, b) => math.max(a, b.abs()));
+    final normalized = values.map((value) => _normalizeValue(value, scale));
+    final divisor = scale == 0 ? 1.0 : scale;
+    final low = _chartLow(normalized, minY, divisor);
+    final stackedValues = _stackedValues(scale);
+    final high = _chartHigh(normalized, stackedValues, maxY, divisor);
+    final range = high == low ? 1.0 : high - low;
+    final inset = math.min(2.0, size.height / 2);
+    final plotHeight = size.height - inset * 2;
+    return (
+      scale: scale,
+      low: low,
+      high: high,
+      range: range,
+      inset: inset,
+      plotHeight: plotHeight,
+      baseline: inset + (high / range) * plotHeight,
+    );
+  }
+
+  Iterable<double> _stackedValues(double scale) {
+    if (!stacked || type != AuraChartType.bar) return const <double>[];
+    final categoryCount = series.first.values.length;
+    return [
+      for (var index = 0; index < categoryCount; index++)
+        series.fold<double>(
+          0,
+          (sum, item) => sum + _normalizeValue(item.values[index], scale),
+        ),
+    ];
+  }
+
+  void _paintSeries(
+    Canvas canvas,
+    Size size,
+    AuraChartSeries item,
+    int seriesIndex,
+    _CartesianLayout layout,
+  ) {
+    final paint = Paint()
+      ..color = colors[seriesIndex]
+      ..strokeWidth = 2
+      ..strokeCap = .round;
+    final path = Path();
+    final slot = size.width / item.values.length;
+    for (final (index, sample) in item.values.indexed) {
+      _paintSample(
+        canvas,
+        size,
+        seriesIndex,
+        index,
+        sample,
+        slot,
+        paint,
+        path,
+        layout,
+      );
+    }
+    if (type == AuraChartType.line) {
+      canvas.drawPath(path, paint..style = .stroke);
+    }
+  }
+
+  void _paintSample(
+    Canvas canvas,
+    Size size,
+    int seriesIndex,
+    int index,
+    double sample,
+    double slot,
+    Paint paint,
+    Path path,
+    _CartesianLayout layout,
+  ) {
+    final value = _normalizeValue(sample, layout.scale);
+    final position = (index + 0.5) * slot;
+    final x = _chartX(size.width, position);
+    final y =
+        layout.inset + (layout.high - value) / layout.range * layout.plotHeight;
+    if (type == AuraChartType.bar) {
+      _paintBar(canvas, seriesIndex, index, slot, x, y, value, paint, layout);
+      return;
+    }
+    _paintLinePoint(canvas, path, paint, index, x, y);
+  }
+
+  void _paintBar(
+    Canvas canvas,
+    int seriesIndex,
+    int index,
+    double slot,
+    double x,
+    double y,
+    double value,
+    Paint paint,
+    _CartesianLayout layout,
+  ) {
+    final barWidth = stacked ? slot * 0.6 : slot * 0.6 / series.length;
+    final offset = stacked ? 0.0 : (seriesIndex + 0.5) * barWidth - slot * 0.3;
+    final barX = x + (direction == TextDirection.rtl ? -offset : offset);
+    final stackOffset = _stackOffset(seriesIndex, index, layout.scale);
+    final stackedY =
+        layout.inset +
+        (layout.high - (value + stackOffset)) /
+            layout.range *
+            layout.plotHeight;
+    final stackBaseY =
+        layout.inset +
+        (layout.high - stackOffset) / layout.range * layout.plotHeight;
+    final top = stacked ? stackedY : y;
+    final bottom = stacked ? stackBaseY : layout.baseline;
+    canvas.drawRect(
+      .fromLTRB(
+        barX - barWidth / 2,
+        math.min(top, bottom),
+        barX + barWidth / 2,
+        math.max(top, bottom),
+      ),
+      paint,
+    );
+  }
+
+  double _stackOffset(int seriesIndex, int index, double scale) {
+    if (!stacked || scale == 0) return 0;
+    return series
+        .take(seriesIndex)
+        .fold<double>(
+          0,
+          (sum, previous) =>
+              sum + _normalizeValue(previous.values[index], scale),
+        );
+  }
+
+  double _chartX(double width, double position) =>
+      direction == TextDirection.rtl ? width - position : position;
+
+  void _paintLinePoint(
+    Canvas canvas,
+    Path path,
+    Paint paint,
+    int index,
+    double x,
+    double y,
+  ) {
+    if (index == 0) {
+      path.moveTo(x, y);
+    } else {
+      path.lineTo(x, y);
+    }
+    canvas.drawCircle(.new(x, y), 2, paint);
   }
 
   @override
