@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/skills/usecases/check_skill_credential_re
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show AppSkillDefinition;
 
 import 'package:riverpod/src/providers/provider.dart';
 
@@ -36,100 +37,150 @@ class const LoadConversationSkillUsecase(
     required String slug,
   }) async {
     final cloud = cloudStore;
-    final skillsRepository = _skillsRepository;
-    final userSkill = cloud == null
-        ? await (skillsRepository ??
-                  (throw StateError('Skill store is unavailable')))
-              .getSkillBySlug(workspaceId, slug)
-        : (await cloud.skills())
-              .where(
-                (item) => item.source == SkillSource.user && item.slug == slug,
-              )
-              .firstOrNull;
+    final userSkill = await _findUserSkill(workspaceId, slug, cloud);
     if (userSkill != null) {
-      final readinessUsecase = _checkSkillCredentialReadinessUsecase;
-      final ready = cloud == null
-          ? readinessUsecase == null ||
-                await readinessUsecase.call(
-                  workspaceId: workspaceId,
-                  skill: userSkill,
-                )
-          : await cloud.userSkillReady(userSkill);
-      if (!ready) {
-        throw const LoadConversationSkillException(
-          LocaleKeys.skills_screen_error_requires_credential,
-        );
-      }
-      if (cloud != null) {
-        return await cloud.setConversationSkill(
-          conversationId,
-          userSkill.id,
-          selected: true,
-          isAppSkill: false,
-        );
-      }
-      final conversationSkillsRepository = _conversationSkillsRepository;
-      if (conversationSkillsRepository == null) {
-        throw StateError('Conversation skill store is unavailable');
-      }
-
-      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
-        conversationId,
-        userSkill.id,
-        isLoaded: true,
-      );
+      await _loadUserSkill(conversationId, workspaceId, userSkill, cloud);
 
       return;
     }
 
     final appSkill = _appSkillRegistry.getBySlug(slug);
     if (appSkill != null) {
-      final appSkillSettingsRepository = _appSkillSettingsRepository;
-      final isEnabled = cloud == null
-          ? await (appSkillSettingsRepository ??
-                    (throw StateError(
-                      'App skill settings store is unavailable',
-                    )))
-                .isAppSkillEnabled(workspaceId, appSkill.identifier)
-          : await cloud.isAppSkillEnabled(appSkill.identifier);
-      if (!isEnabled) {
-        throw const LoadConversationSkillException(
-          LocaleKeys.skills_screen_error_app_skill_disabled,
-        );
-      }
-      final credentialUsecase = _listAppSkillCredentialCandidatesUsecase;
-      if (credentialUsecase != null &&
-          !await credentialUsecase.hasUsableNativeTool(
-            workspaceId: workspaceId,
-            skill: appSkill,
-          )) {
-        throw const LoadConversationSkillException(
-          LocaleKeys.skills_screen_error_requires_credential,
-        );
-      }
-      if (cloud != null) {
-        return await cloud.setConversationSkill(
-          conversationId,
-          appSkill.identifier,
-          selected: true,
-          isAppSkill: true,
-        );
-      }
-      final conversationSkillsRepository = _conversationSkillsRepository;
-      if (conversationSkillsRepository == null) {
-        throw StateError('Conversation skill store is unavailable');
-      }
-
-      final _ = await conversationSkillsRepository.setAppSkillLoaded(
-        conversationId,
-        appSkill.identifier,
-        isLoaded: true,
-      );
+      await _loadAppSkill(conversationId, workspaceId, appSkill, cloud);
 
       return;
     }
 
     throw StateError('Skill not found for slug: $slug');
+  }
+
+  Future<SkillEntity?> _findUserSkill(
+    String workspaceId,
+    String slug,
+    CloudSkillStore? cloud,
+  ) async {
+    if (cloud != null) {
+      return (await cloud.skills())
+          .where((item) => item.source == SkillSource.user && item.slug == slug)
+          .firstOrNull;
+    }
+
+    final repository =
+        _skillsRepository ?? (throw StateError('Skill store is unavailable'));
+
+    return await repository.getSkillBySlug(workspaceId, slug);
+  }
+
+  Future<void> _loadUserSkill(
+    String conversationId,
+    String workspaceId,
+    SkillEntity skill,
+    CloudSkillStore? cloud,
+  ) async {
+    if (!await _isUserSkillReady(workspaceId, skill, cloud)) {
+      throw const LoadConversationSkillException(
+        LocaleKeys.skills_screen_error_requires_credential,
+      );
+    }
+    if (cloud != null) {
+      final _ = await cloud.setConversationSkill(
+        conversationId,
+        skill.id,
+        selected: true,
+        isAppSkill: false,
+      );
+
+      return;
+    }
+
+    final repository = _conversationSkillsRepository;
+    if (repository == null) {
+      throw StateError('Conversation skill store is unavailable');
+    }
+    final _ = await repository.setWorkspaceSkillLoaded(
+      conversationId,
+      skill.id,
+      isLoaded: true,
+    );
+  }
+
+  Future<bool> _isUserSkillReady(
+    String workspaceId,
+    SkillEntity skill,
+    CloudSkillStore? cloud,
+  ) async {
+    if (cloud != null) return await cloud.userSkillReady(skill);
+
+    final readinessUsecase = _checkSkillCredentialReadinessUsecase;
+
+    return readinessUsecase == null ||
+        await readinessUsecase.call(workspaceId: workspaceId, skill: skill);
+  }
+
+  Future<void> _loadAppSkill(
+    String conversationId,
+    String workspaceId,
+    AppSkillDefinition skill,
+    CloudSkillStore? cloud,
+  ) async {
+    await _ensureAppSkillEnabled(workspaceId, skill, cloud);
+    await _ensureAppSkillCredentials(workspaceId, skill);
+    if (cloud != null) {
+      final _ = await cloud.setConversationSkill(
+        conversationId,
+        skill.identifier,
+        selected: true,
+        isAppSkill: true,
+      );
+
+      return;
+    }
+
+    final repository = _conversationSkillsRepository;
+    if (repository == null) {
+      throw StateError('Conversation skill store is unavailable');
+    }
+    final _ = await repository.setAppSkillLoaded(
+      conversationId,
+      skill.identifier,
+      isLoaded: true,
+    );
+  }
+
+  Future<void> _ensureAppSkillEnabled(
+    String workspaceId,
+    AppSkillDefinition skill,
+    CloudSkillStore? cloud,
+  ) async {
+    final repository = _appSkillSettingsRepository;
+    final isEnabled = cloud == null
+        ? await (repository ??
+                  (throw StateError('App skill settings store is unavailable')))
+              .isAppSkillEnabled(workspaceId, skill.identifier)
+        : await cloud.isAppSkillEnabled(skill.identifier);
+    if (!isEnabled) {
+      throw const LoadConversationSkillException(
+        LocaleKeys.skills_screen_error_app_skill_disabled,
+      );
+    }
+  }
+
+  Future<void> _ensureAppSkillCredentials(
+    String workspaceId,
+    AppSkillDefinition skill,
+  ) async {
+    final usecase = _listAppSkillCredentialCandidatesUsecase;
+    if (usecase == null) return;
+    if (await usecase.hasUsableNativeTool(
+      workspaceId: workspaceId,
+      skill: skill,
+    )) {
+      return;
+    }
+
+    throw const LoadConversationSkillException(
+      LocaleKeys.skills_screen_error_requires_credential,
+    );
   }
 }
 
