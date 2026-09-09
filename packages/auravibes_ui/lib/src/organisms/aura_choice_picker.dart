@@ -70,272 +70,513 @@ class AuraChoicePicker<T> extends StatelessWidget {
     final effectiveOnChanged =
         AuraInteractionScope.of(context).allowsValueChanges ? onChanged : null;
 
-    final optionWidgets = [
-      for (int i = 0; i < options.length; i++) ...[
-        _AuraChoicePickerOption<T>(
-          option: options[i],
-          selectedValues: value,
-          variant: variant,
-          presentation: presentation,
-          maxAllowedSelections: maxAllowedSelections,
-          onChanged: effectiveOnChanged,
-          tint: tint,
-        ),
-        if (presentation == AuraChoicePickerPresentation.list &&
-            i < options.length - 1)
-          const AuraSizedBox(height: .sm),
-      ],
-    ];
-    final Widget choices = presentation == AuraChoicePickerPresentation.chips
-        ? Wrap(
-            spacing: context.auraTheme.spacing.sm,
-            runSpacing: context.auraTheme.spacing.sm,
-            children: optionWidgets,
-          )
-        : Column(crossAxisAlignment: .start, children: optionWidgets);
-
-    final label = this.label;
-    final semanticLabel = this.semanticLabel;
-    final visibleLabel = label != null && semanticLabel != null
-        ? ExcludeSemantics(child: label)
-        : label;
-    var result = visibleLabel == null
-        ? choices
-        : Column(
-            crossAxisAlignment: .start,
-            children: [
-              visibleLabel,
-              const AuraSizedBox(height: .sm),
-              choices,
-            ],
-          );
-
-    result = DefaultTextStyle(
-      style: DefaultTextStyle.of(context).style
-          .copyWith(color: context.auraColors.onSurface),
-      child: result,
+    return _AuraChoicePickerSurface<T>(
+      picker: this,
+      onChanged: effectiveOnChanged,
     );
-
-    if (semanticLabel != null) {
-      result = Semantics(
-        child: result,
-        container: true,
-        explicitChildNodes: true,
-        label: semanticLabel,
-      );
-    }
-
-    return result;
   }
 }
 
-class const _AuraChoicePickerOption<T>({
-  required final AuraChoiceOption<T> option,
-  required final List<T> selectedValues,
-  required final AuraChoicePickerVariant variant,
-  required final AuraChoicePickerPresentation presentation,
-  required final int? maxAllowedSelections,
+class const _AuraChoicePickerSurface<T>({
+  required final AuraChoicePicker<T> picker,
   required final ValueChanged<List<T>>? onChanged,
-  required final AuraTint? tint,
 }) extends StatelessWidget {
-  T? get _mutuallyExclusiveValue => selectedValues.firstOrNull;
+  @override
+  Widget build(BuildContext context) => DefaultTextStyle(
+    style: DefaultTextStyle.of(context).style
+        .copyWith(color: context.auraColors.onSurface),
+    child: _AuraChoicePickerSemantics<T>(picker: picker, onChanged: onChanged),
+  );
+}
+
+class const _AuraChoicePickerSemantics<T>({
+  required final AuraChoicePicker<T> picker,
+  required final ValueChanged<List<T>>? onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final semanticLabel = picker.semanticLabel;
+    final content = _AuraChoicePickerLabeledContent<T>(
+      picker: picker,
+      onChanged: onChanged,
+    );
+    if (semanticLabel == null) return content;
+
+    return Semantics(
+      child: content,
+      container: true,
+      explicitChildNodes: true,
+      label: semanticLabel,
+    );
+  }
+}
+
+class const _AuraChoicePickerLabeledContent<T>({
+  required final AuraChoicePicker<T> picker,
+  required final ValueChanged<List<T>>? onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label = picker.label;
+    final choices = _AuraChoicePickerChoices<T>(
+      picker: picker,
+      onChanged: onChanged,
+    );
+    if (label == null) return choices;
+
+    return _AuraChoicePickerLabeledColumn(
+      label: label,
+      excludeSemantics: picker.semanticLabel != null,
+      choices: choices,
+    );
+  }
+}
+
+class const _AuraChoicePickerLabeledColumn({
+  required final Widget label,
+  required final bool excludeSemantics,
+  required final Widget choices,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      ExcludeSemantics(excluding: excludeSemantics, child: label),
+      const AuraSizedBox(height: .sm),
+      choices,
+    ],
+  );
+}
+
+class const _AuraChoicePickerChoices<T>({
+  required final AuraChoicePicker<T> picker,
+  required final ValueChanged<List<T>>? onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (picker.presentation) {
+    .chips => _AuraChoicePickerChipOptions<T>(
+      picker: picker,
+      onChanged: onChanged,
+    ),
+    .list => _AuraChoicePickerListOptions<T>(
+      picker: picker,
+      onChanged: onChanged,
+    ),
+  };
+}
+
+class const _AuraChoicePickerChipOptions<T>({
+  required final AuraChoicePicker<T> picker,
+  required final ValueChanged<List<T>>? onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: context.auraTheme.spacing.sm,
+    runSpacing: context.auraTheme.spacing.sm,
+    children: [
+      for (final option in picker.options)
+        _AuraChoicePickerOption<T>(
+          picker: picker,
+          option: option,
+          onChanged: onChanged,
+        ),
+    ],
+  );
+}
+
+class const _AuraChoicePickerListOptions<T>({
+  required final AuraChoicePicker<T> picker,
+  required final ValueChanged<List<T>>? onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _AuraChoicePickerListColumn<T>(picker: picker, onChanged: onChanged);
+}
+
+class _AuraChoicePickerListColumn<T> extends StatelessWidget {
+  new({required this.picker, required this.onChanged})
+    : _children = [
+        for (final (index, option) in picker.options.indexed) ...[
+          _AuraChoicePickerOption<T>(
+            picker: picker,
+            option: option,
+            onChanged: onChanged,
+          ),
+          if (index < picker.options.length - 1)
+            const AuraSizedBox(height: .sm),
+        ],
+      ];
+
+  final AuraChoicePicker<T> picker;
+  final ValueChanged<List<T>>? onChanged;
+  final List<Widget> _children;
+
+  @override
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: .start, children: _children);
+}
+
+class const _AuraChoicePickerOption<T>({
+  required final AuraChoicePicker<T> picker,
+  required final AuraChoiceOption<T> option,
+  required final ValueChanged<List<T>>? onChanged,
+}) extends StatelessWidget {
+  T? get _mutuallyExclusiveValue => picker.value.firstOrNull;
 
   bool get _isSelected {
-    if (variant == AuraChoicePickerVariant.mutuallyExclusive) {
-      return selectedValues.isNotEmpty &&
-          _mutuallyExclusiveValue == option.value;
+    if (picker.variant == AuraChoicePickerVariant.mutuallyExclusive) {
+      return picker.value.isNotEmpty && _mutuallyExclusiveValue == option.value;
     }
 
-    return selectedValues.contains(option.value);
+    return picker.value.contains(option.value);
   }
 
   bool get _isInteractive {
     if (option.disabled || onChanged == null) return false;
-    if (variant != AuraChoicePickerVariant.multipleSelection) return true;
+    if (picker.variant != AuraChoicePickerVariant.multipleSelection) {
+      return true;
+    }
     if (_isSelected) return true;
 
-    final maxAllowedSelections = this.maxAllowedSelections;
+    final maxAllowedSelections = picker.maxAllowedSelections;
 
     return maxAllowedSelections == null ||
-        selectedValues.length < maxAllowedSelections;
+        picker.value.length < maxAllowedSelections;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (presentation == AuraChoicePickerPresentation.chips) {
-      return _AuraChoicePickerChip<T>(
-        option: option,
-        variant: variant,
-        isSelected: _isSelected,
-        isInteractive: _isInteractive,
-        tint: tint,
-        onChanged: _handleChange,
-      );
-    }
-
-    return _AuraChoicePickerListOption<T>(
-      option: option,
-      mutuallyExclusiveValue: _mutuallyExclusiveValue,
-      variant: variant,
-      isSelected: _isSelected,
-      isInteractive: _isInteractive,
-      tint: tint,
-      onChanged: _handleChange,
-    );
+    return switch (picker.presentation) {
+      .chips => _AuraChoicePickerChip<T>(source: this),
+      .list => _AuraChoicePickerListOption<T>(source: this),
+    };
   }
 
   void _handleChange() {
     if (!_isInteractive) return;
 
-    final nextValues = [...selectedValues];
-    if (variant == AuraChoicePickerVariant.mutuallyExclusive) {
-      if (_isSelected) return;
+    final nextValues = _nextChoiceValues();
+    if (nextValues == null) return;
 
-      nextValues
-        ..clear()
-        ..add(option.value);
-    } else if (_isSelected) {
+    onChanged?.call(nextValues);
+  }
+
+  List<T>? _nextChoiceValues() {
+    if (picker.variant == AuraChoicePickerVariant.mutuallyExclusive) {
+      return _isSelected ? null : [option.value];
+    }
+
+    final nextValues = [...picker.value];
+    if (_isSelected) {
       final _ = nextValues.remove(option.value);
     } else {
       nextValues.add(option.value);
     }
 
-    onChanged?.call(nextValues);
+    return nextValues;
   }
 }
 
 class const _AuraChoicePickerChip<T>({
-  required final AuraChoiceOption<T> option,
-  required final AuraChoicePickerVariant variant,
-  required final bool isSelected,
-  required final bool isInteractive,
-  required final AuraTint? tint,
-  required final VoidCallback onChanged,
+  required final _AuraChoicePickerOption<T> source,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final theme = context.auraTheme;
-    final colors = context.auraColors;
-    final accent = colors.colorFor(tint ?? AuraTint.primary);
-
     return MergeSemantics(
       child: Semantics(
-        child: AuraPressable(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: _choicePickerTapTarget,
-              minHeight: _choicePickerTapTarget,
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: theme.spacing.sm,
-                horizontal: theme.spacing.md,
-              ),
-              child: Center(
-                widthFactor: 1,
-                heightFactor: 1,
-                child: ExcludeSemantics(
-                  excluding: option.semanticLabel != null,
-                  child: Opacity(
-                    opacity: isInteractive ? 1 : _disabledOpacity,
-                    child: option.label,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          color: accent,
-          decoration: BoxDecoration(
-            color: isSelected ? accent.withValues(alpha: 0.12) : null,
-            border: Border.all(color: isSelected ? accent : colors.outline),
-            borderRadius: BorderRadius.circular(theme.fromBorderRadius(.full)),
-          ),
-          onPressed: isInteractive ? onChanged : null,
-          semanticLabel: option.semanticLabel,
-          isButtonSemantics: true,
-        ),
-        enabled: isInteractive,
-        checked: isSelected,
+        child: _AuraChoicePickerChipPressable<T>(source: source),
+        enabled: source._isInteractive,
+        checked: source._isSelected,
         inMutuallyExclusiveGroup:
-            variant == AuraChoicePickerVariant.mutuallyExclusive,
+            source.picker.variant == AuraChoicePickerVariant.mutuallyExclusive,
       ),
     );
   }
 }
 
-class const _AuraChoicePickerListOption<T>({
-  required final AuraChoiceOption<T> option,
-  required final T? mutuallyExclusiveValue,
-  required final AuraChoicePickerVariant variant,
-  required final bool isSelected,
-  required final bool isInteractive,
-  required final AuraTint? tint,
-  required final VoidCallback onChanged,
+class const _AuraChoicePickerChipPressable<T>({
+  required final _AuraChoicePickerOption<T> source,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final label = option.semanticLabel == null
-        ? option.label
-        : ExcludeSemantics(child: option.label);
-    final control = switch (variant) {
-      .mutuallyExclusive => AuraRadio<T>(
-        value: option.value,
-        groupValue: mutuallyExclusiveValue,
-        onChanged: isInteractive ? (_) => onChanged() : null,
-        tint: tint,
-        disabled: option.disabled,
-        semanticLabel: option.semanticLabel ?? 'Choice',
-      ),
-      .multipleSelection => AuraCheckbox(
-        value: isSelected,
-        onChanged: isInteractive ? (_) => onChanged() : null,
-        tint: tint,
-        disabled: option.disabled,
-        semanticLabel: option.semanticLabel ?? 'Choice',
-      ),
-    };
-
-    return Semantics(
-      child: Row(
-        children: [
-          GestureDetector(
-            child: SizedBox(
-              width: _choicePickerTapTarget,
-              height: _choicePickerTapTarget,
-              child: Center(child: ExcludeSemantics(child: control)),
-            ),
-            onTap: isInteractive ? onChanged : null,
-            behavior: .opaque,
-            excludeFromSemantics: true,
-          ),
-          const AuraSizedBox(width: .sm),
-          Expanded(
-            child: GestureDetector(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minHeight: _choicePickerTapTarget,
-                ),
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Opacity(
-                    opacity: isInteractive ? 1 : _disabledOpacity,
-                    child: label,
-                  ),
-                ),
-              ),
-              onTap: isInteractive ? onChanged : null,
-              behavior: .opaque,
-              excludeFromSemantics: true,
-            ),
-          ),
-        ],
-      ),
-      enabled: isInteractive,
-      checked: isSelected,
-      inMutuallyExclusiveGroup:
-          variant == AuraChoicePickerVariant.mutuallyExclusive,
-      label: option.semanticLabel,
-      onTap: isInteractive ? onChanged : null,
+    return AuraPressable(
+      child: _AuraChoicePickerChipContent<T>(source: source),
+      color: _chipAccent(context, source),
+      decoration: _chipDecoration(context, source),
+      onPressed: source._isInteractive ? source._handleChange : null,
+      semanticLabel: source.option.semanticLabel,
+      isButtonSemantics: true,
     );
+  }
+}
+
+Color _chipAccent<T>(BuildContext context, _AuraChoicePickerOption<T> source) =>
+    context.auraColors.colorFor(source.picker.tint ?? AuraTint.primary);
+
+BoxDecoration _chipDecoration<T>(
+  BuildContext context,
+  _AuraChoicePickerOption<T> source,
+) {
+  final theme = context.auraTheme;
+  final accent = _chipAccent(context, source);
+  final isSelected = source._isSelected;
+  final outline = context.auraColors.outline;
+
+  return _chipDecorationValues((
+    theme: theme,
+    accent: accent,
+    outline: outline,
+    isSelected: isSelected,
+  ));
+}
+
+typedef _ChipDecorationRequest = ({
+  AuraTheme theme,
+  Color accent,
+  Color outline,
+  bool isSelected,
+});
+
+BoxDecoration _chipDecorationValues(_ChipDecorationRequest request) {
+  return BoxDecoration(
+    color: request.isSelected ? request.accent.withValues(alpha: 0.12) : null,
+    border: Border.all(
+      color: request.isSelected ? request.accent : request.outline,
+    ),
+    borderRadius: BorderRadius.circular(request.theme.fromBorderRadius(.full)),
+  );
+}
+
+typedef _ChoiceRadioData<T> = ({
+  T value,
+  T? groupValue,
+  ValueChanged<T?>? onChanged,
+  AuraTint? tint,
+  bool disabled,
+  String semanticLabel,
+});
+
+_ChoiceRadioData<T> _choiceRadioData<T>(_AuraChoicePickerOption<T> source) => (
+  value: source.option.value,
+  groupValue: source._mutuallyExclusiveValue,
+  onChanged: source._isInteractive ? (_) => source._handleChange() : null,
+  tint: source.picker.tint,
+  disabled: source.option.disabled,
+  semanticLabel: source.option.semanticLabel ?? 'Choice',
+);
+
+class const _AuraChoicePickerChipContent<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _AuraChoicePickerChipPadding<T>(context.auraTheme, source);
+}
+
+class _AuraChoicePickerChipPadding<T> extends StatelessWidget {
+  new(AuraTheme theme, _AuraChoicePickerOption<T> source)
+    : _child = ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: _choicePickerTapTarget,
+          minHeight: _choicePickerTapTarget,
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: theme.spacing.sm,
+            horizontal: theme.spacing.md,
+          ),
+          child: _AuraChoicePickerChipLabel<T>(source: source),
+        ),
+      );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AuraChoicePickerChipLabel<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    widthFactor: 1,
+    heightFactor: 1,
+    child: ExcludeSemantics(
+      excluding: source.option.semanticLabel != null,
+      child: Opacity(
+        opacity: source._isInteractive ? 1 : _disabledOpacity,
+        child: source.option.label,
+      ),
+    ),
+  );
+}
+
+class const _AuraChoicePickerListOption<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _AuraChoicePickerListSemantics<T>(data: _listOptionSemanticsData(source));
+}
+
+typedef _ListOptionSemanticsData<T> = ({
+  _AuraChoicePickerOption<T> source,
+  bool enabled,
+  bool checked,
+  bool inMutuallyExclusiveGroup,
+  String? label,
+  VoidCallback? onTap,
+});
+
+_ListOptionSemanticsData<T> _listOptionSemanticsData<T>(
+  _AuraChoicePickerOption<T> source,
+) => (
+  source: source,
+  enabled: source._isInteractive,
+  checked: source._isSelected,
+  inMutuallyExclusiveGroup:
+      source.picker.variant == AuraChoicePickerVariant.mutuallyExclusive,
+  label: source.option.semanticLabel,
+  onTap: source._isInteractive ? source._handleChange : null,
+);
+
+class const _AuraChoicePickerListSemantics<T>({
+  required final _ListOptionSemanticsData<T> data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: _AuraChoicePickerListRow<T>(source: data.source),
+    enabled: data.enabled,
+    checked: data.checked,
+    inMutuallyExclusiveGroup: data.inMutuallyExclusiveGroup,
+    label: data.label,
+    onTap: data.onTap,
+  );
+}
+
+class const _AuraChoicePickerListRow<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _AuraChoicePickerListControl<T>(source: source),
+        const AuraSizedBox(width: .sm),
+        Expanded(child: _AuraChoicePickerListLabel<T>(source: source)),
+      ],
+    );
+  }
+}
+
+class const _AuraChoicePickerListControl<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    child: _AuraChoicePickerControlTarget<T>(source: source),
+    onTap: source._isInteractive ? source._handleChange : null,
+    behavior: .opaque,
+    excludeFromSemantics: true,
+  );
+}
+
+class const _AuraChoicePickerControlTarget<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: _choicePickerTapTarget,
+    height: _choicePickerTapTarget,
+    child: Center(
+      child: ExcludeSemantics(
+        child: _AuraChoicePickerControl<T>(source: source),
+      ),
+    ),
+  );
+}
+
+class const _AuraChoicePickerControl<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (source.picker.variant) {
+    .mutuallyExclusive => _AuraChoicePickerRadio<T>(source: source),
+    .multipleSelection => _AuraChoicePickerCheckbox<T>(source: source),
+  };
+}
+
+class const _AuraChoicePickerRadio<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final data = _choiceRadioData(source);
+
+    return AuraRadio<T>(
+      value: data.value,
+      groupValue: data.groupValue,
+      onChanged: data.onChanged,
+      tint: data.tint,
+      disabled: data.disabled,
+      semanticLabel: data.semanticLabel,
+    );
+  }
+}
+
+class const _AuraChoicePickerCheckbox<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckbox(
+    value: source._isSelected,
+    onChanged: source._isInteractive ? (_) => source._handleChange() : null,
+    tint: source.picker.tint,
+    disabled: source.option.disabled,
+    semanticLabel: source.option.semanticLabel ?? 'Choice',
+  );
+}
+
+class const _AuraChoicePickerListLabel<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      child: _AuraChoicePickerListLabelContent<T>(source: source),
+      onTap: source._isInteractive ? source._handleChange : null,
+      behavior: .opaque,
+      excludeFromSemantics: true,
+    );
+  }
+}
+
+class const _AuraChoicePickerListLabelContent<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: _choicePickerTapTarget),
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Opacity(
+          opacity: source._isInteractive ? 1 : _disabledOpacity,
+          child: _AuraChoicePickerListLabelText<T>(source: source),
+        ),
+      ),
+    );
+  }
+}
+
+class const _AuraChoicePickerListLabelText<T>({
+  required final _AuraChoicePickerOption<T> source,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (source.option.semanticLabel == null) return source.option.label;
+
+    return ExcludeSemantics(child: source.option.label);
   }
 }

@@ -11,6 +11,11 @@ part 'aura_chart_series.dart';
 const _chartHalf = 2.0;
 const _pointRadius = 2.0;
 const _donutHoleFactor = 0.5;
+const _slotCenter = 0.5;
+const _barWidthFactor = 0.6;
+const _barOffsetFactor = 0.3;
+const _lineStrokeWidth = 2.0;
+const _fullCircleMultiplier = 2.0;
 
 /// A static chart rendered with Flutter drawing primitives and a text legend.
 class AuraChart extends StatelessWidget {
@@ -65,113 +70,181 @@ class AuraChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    _validateChart(
-      semanticLabel: semanticLabel,
-      labels: labels,
-      series: series,
-      type: type,
-      minY: minY,
-      maxY: maxY,
-    );
+    _validateChart(this);
 
-    return Semantics(
-      child: Column(
-        mainAxisSize: .min,
-        crossAxisAlignment: .stretch,
-        spacing: context.auraTheme.spacing.sm,
-        children: [
-          if (yAxisTitle case final title?)
-            AuraText(child: Text(title), style: .caption),
-          CustomPaint(
-            painter: _AuraChartPainter(
-              series: series,
-              type: type,
-              colors: _chartColors(context),
-              axisColor: context.auraColors.outline,
-              direction: Directionality.of(context),
-              stacked: stacked,
-              minY: minY,
-              maxY: maxY,
-            ),
-            size: const Size(320, 180),
-          ),
-          if (labels.isNotEmpty)
-            Row(
-              crossAxisAlignment: .start,
-              children: [
-                for (final label in labels)
-                  Expanded(
-                    child: AuraText(
-                      child: Text(label),
-                      style: .caption,
-                      textAlign: .center,
-                    ),
-                  ),
-              ],
-            ),
-          Wrap(
-            spacing: context.auraTheme.spacing.md,
-            children: [
-              for (final item in series)
-                AuraText(
-                  child: Text(_chartLegendLabel(item, unit)),
-                  tint: item.tint,
-                ),
-            ],
-          ),
-          if (xAxisTitle case final title?)
-            AuraText(child: Text(title), style: .caption, textAlign: .center),
-        ],
-      ),
-      excludeSemantics: true,
-      image: true,
-      label: semanticLabel,
-    );
-  }
-
-  List<Color> _chartColors(BuildContext context) {
-    final tints = palette.isEmpty ? series.map((item) => item.tint) : palette;
-    return [for (final tint in tints) context.auraColors.colorFor(tint)];
+    return _AuraChartContent(chart: this);
   }
 }
 
-void _validateChart({
-  required String semanticLabel,
-  required List<String> labels,
-  required List<AuraChartSeries> series,
-  required AuraChartType type,
-  required double? minY,
-  required double? maxY,
-}) {
-  if (_hasInvalidChart(
-    semanticLabel: semanticLabel,
-    labels: labels,
-    series: series,
-    type: type,
-    minY: minY,
-    maxY: maxY,
-  )) {
+class const _AuraChartContent({required final AuraChart chart})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final chart = this.chart;
+
+    return Semantics(
+      child: _AuraChartColumn(chart: chart),
+      excludeSemantics: true,
+      image: true,
+      label: chart.semanticLabel,
+    );
+  }
+}
+
+class const _AuraChartColumn({required final AuraChart chart})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    spacing: context.auraTheme.spacing.sm,
+    children: [
+      _AuraChartTop(chart: chart),
+      _AuraChartBottom(chart: chart),
+    ],
+  );
+}
+
+class const _AuraChartTop({required final AuraChart chart})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    spacing: context.auraTheme.spacing.sm,
+    children: [
+      if (chart.yAxisTitle case final title?) _AuraChartAxisTitle(title: title),
+      _AuraChartPlot(chart: chart),
+    ],
+  );
+}
+
+class const _AuraChartBottom({required final AuraChart chart})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraChartBottomColumn(chart: chart);
+}
+
+class _AuraChartBottomColumn extends StatelessWidget {
+  new({required this.chart})
+    : _children = [
+        if (chart.labels.isNotEmpty) _AuraChartLabels(labels: chart.labels),
+        _AuraChartLegend(series: chart.series, unit: chart.unit),
+        if (chart.xAxisTitle case final title?)
+          _AuraChartAxisTitle(title: title, centered: true),
+      ];
+
+  final AuraChart chart;
+  final List<Widget> _children;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    spacing: context.auraTheme.spacing.sm,
+    children: _children,
+  );
+}
+
+class const _AuraChartAxisTitle({
+  required final String title,
+  final bool centered = false,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(title),
+    style: .caption,
+    textAlign: centered ? TextAlign.center : null,
+  );
+}
+
+class const _AuraChartPlot({required final AuraChart chart})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+    painter: _chartPainter(context, chart),
+    size: const Size(320, 180),
+  );
+}
+
+_AuraChartPainter _chartPainter(BuildContext context, AuraChart chart) =>
+    _AuraChartPainter(
+      series: chart.series,
+      type: chart.type,
+      colors: _chartColors(context, chart),
+      axisColor: context.auraColors.outline,
+      direction: Directionality.of(context),
+      stacked: chart.stacked,
+      minY: chart.minY,
+      maxY: chart.maxY,
+    );
+
+class const _AuraChartLabels({required final List<String> labels})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: .start,
+    children: [
+      for (final label in labels)
+        Expanded(
+          child: AuraText(
+            child: Text(label),
+            style: .caption,
+            textAlign: .center,
+          ),
+        ),
+    ],
+  );
+}
+
+class const _AuraChartLegend({
+  required final List<AuraChartSeries> series,
+  required final String? unit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: context.auraTheme.spacing.md,
+    children: [
+      for (final item in series)
+        AuraText(child: Text(_chartLegendLabel(item, unit)), tint: item.tint),
+    ],
+  );
+}
+
+List<Color> _chartColors(BuildContext context, AuraChart chart) {
+  final tints = chart.palette.isEmpty
+      ? chart.series.map((item) => item.tint)
+      : chart.palette;
+
+  return [for (final tint in tints) context.auraColors.colorFor(tint)];
+}
+
+void _validateChart(AuraChart chart) {
+  if (_hasInvalidChart(chart)) {
     throw ArgumentError(
       'Charts require matching labels, finite values and a summary.',
     );
   }
 }
 
-bool _hasInvalidChart({
-  required String semanticLabel,
-  required List<String> labels,
-  required List<AuraChartSeries> series,
-  required AuraChartType type,
-  required double? minY,
-  required double? maxY,
-}) {
-  if (semanticLabel.trim().isEmpty) return true;
-  if (minY != null && maxY != null && minY > maxY) return true;
-  if (series.any((item) => _hasInvalidSeries(item, labels.length))) {
-    return true;
-  }
-  return _hasInvalidPie(type, series);
+bool _hasInvalidChart(AuraChart chart) {
+  return _hasInvalidChartLabel(chart) ||
+      _hasInvalidChartBounds(chart) ||
+      _hasInvalidChartSeries(chart) ||
+      _hasInvalidPie(chart.type, chart.series);
 }
+
+bool _hasInvalidChartLabel(AuraChart chart) =>
+    chart.semanticLabel.trim().isEmpty;
+
+bool _hasInvalidChartBounds(AuraChart chart) =>
+    switch ((minY: chart.minY, maxY: chart.maxY)) {
+      (minY: final minY?, maxY: final maxY?) => minY > maxY,
+      _ => false,
+    };
+
+bool _hasInvalidChartSeries(AuraChart chart) =>
+    chart.series.any((item) => _hasInvalidSeries(item, chart.labels.length));
 
 bool _hasInvalidSeries(AuraChartSeries item, int labelCount) =>
     item.values.length != labelCount ||
@@ -180,11 +253,13 @@ bool _hasInvalidSeries(AuraChartSeries item, int labelCount) =>
 bool _hasInvalidPie(AuraChartType type, List<AuraChartSeries> series) {
   if (type != AuraChartType.pie && type != AuraChartType.donut) return false;
   if (series.length != 1) return true;
+
   return series.single.values.any((value) => value < 0);
 }
 
 String _chartLegendLabel(AuraChartSeries item, String? unit) {
   if (unit == null || unit.isEmpty) return item.label;
+
   return '${item.label} ($unit)';
 }
 
@@ -201,6 +276,106 @@ typedef _CartesianLayout = ({
   double baseline,
 });
 
+typedef _CartesianScale = ({
+  double scale,
+  double divisor,
+  Iterable<double> normalized,
+});
+
+typedef _PieGeometry = ({Offset center, double radius});
+
+typedef _ChartPaintRequest = ({
+  Canvas canvas,
+  Size size,
+  List<AuraChartSeries> series,
+  AuraChartType type,
+  List<Color> colors,
+  Color axisColor,
+  TextDirection direction,
+  bool stacked,
+  double? minY,
+  double? maxY,
+});
+
+typedef _ChartHighRequest = ({
+  Iterable<double> normalized,
+  Iterable<double> stackedValues,
+  double? fixedMaxY,
+  double divisor,
+});
+
+typedef _LayoutFromBoundsRequest = ({
+  Size size,
+  double scale,
+  double low,
+  double high,
+});
+
+typedef _StackedValuesRequest = ({
+  List<AuraChartSeries> series,
+  bool stacked,
+  AuraChartType type,
+  double scale,
+});
+
+typedef _PaintSeriesRequest = ({
+  _ChartPaintRequest chart,
+  AuraChartSeries item,
+  int seriesIndex,
+  _CartesianLayout layout,
+});
+
+typedef _BarGeometryRequest = ({
+  double barX,
+  double barWidth,
+  double top,
+  double bottom,
+});
+
+typedef _PieSliceRequest = ({
+  _PieSlicesData data,
+  int index,
+  double start,
+  double sweep,
+});
+
+typedef _PieArcRequest = ({
+  Canvas canvas,
+  Offset center,
+  double radius,
+  double start,
+  double sweep,
+  Color color,
+});
+
+typedef _SeriesPaintData = ({
+  _ChartPaintRequest chart,
+  AuraChartSeries item,
+  int seriesIndex,
+  _CartesianLayout layout,
+  Paint paint,
+  Path path,
+  double slot,
+});
+
+typedef _ChartSamplePoint = ({double value, double x, double y});
+
+typedef _BarPaintData = ({
+  _SeriesPaintData series,
+  int index,
+  _ChartSamplePoint point,
+});
+
+typedef _BarGeometry = ({double left, double top, double right, double bottom});
+
+typedef _PieSlicesData = ({
+  _ChartPaintRequest chart,
+  List<double> values,
+  double total,
+  Offset center,
+  double radius,
+});
+
 double _normalizeValue(double value, double scale) =>
     scale == 0 ? 0.0 : value / scale;
 
@@ -210,19 +385,20 @@ double _chartLow(
   double divisor,
 ) {
   if (fixedMinY == null) return normalized.fold<double>(0, math.min);
+
   return fixedMinY / divisor;
 }
 
-double _chartHigh(
-  Iterable<double> normalized,
-  Iterable<double> stackedValues,
-  double? fixedMaxY,
-  double divisor,
-) {
-  if (fixedMaxY == null) {
-    return [...normalized, ...stackedValues].fold<double>(0, math.max);
+double _chartHigh(_ChartHighRequest request) {
+  final fixedMaxY = request.fixedMaxY;
+  if (fixedMaxY case final value?) {
+    return value / request.divisor;
   }
-  return fixedMaxY / divisor;
+
+  return [
+    ...request.normalized,
+    ...request.stackedValues,
+  ].fold<double>(0, math.max);
 }
 
 class _AuraChartPainter extends CustomPainter {
@@ -248,222 +424,490 @@ class _AuraChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (series.firstOrNull?.values.isEmpty ?? true) {
-      return;
-    }
-    if (size.width <= 0 || size.height <= 0) {
-      return;
-    }
-    if (_isPieChart(type)) {
-      _paintPie(canvas, size);
-
-      return;
-    }
-    _paintCartesian(canvas, size);
+    if (_hasNoChartMarks(series, size)) return;
+    _paintChart(_paintRequest(canvas, size));
   }
 
   @override
   bool shouldRepaint(_AuraChartPainter oldDelegate) => true;
 
-  void _paintCartesian(Canvas canvas, Size size) {
-    final layout = _cartesianLayout(size);
-    canvas.drawLine(
-      .new(0, layout.baseline),
-      .new(size.width, layout.baseline),
-      Paint()..color = axisColor,
-    );
-    for (final (seriesIndex, item) in series.indexed) {
-      _paintSeries(canvas, size, item, seriesIndex, layout);
-    }
+  _ChartPaintRequest _paintRequest(Canvas canvas, Size size) => (
+    canvas: canvas,
+    size: size,
+    series: series,
+    type: type,
+    colors: colors,
+    axisColor: axisColor,
+    direction: direction,
+    stacked: stacked,
+    minY: minY,
+    maxY: maxY,
+  );
+}
+
+void _paintChart(_ChartPaintRequest request) {
+  if (_isPieChart(request.type)) {
+    _paintPie(request);
+
+    return;
   }
 
-  _CartesianLayout _cartesianLayout(Size size) {
-    // Normalize first so even opposite finite double extremes do not overflow.
-    final values = series.expand((item) => item.values);
-    final scale = values.fold<double>(0, (a, b) => math.max(a, b.abs()));
-    final normalized = values.map((value) => _normalizeValue(value, scale));
-    final divisor = scale == 0 ? 1.0 : scale;
-    final low = _chartLow(normalized, minY, divisor);
-    final stackedValues = _stackedValues(scale);
-    final high = _chartHigh(normalized, stackedValues, maxY, divisor);
-    final range = high == low ? 1.0 : high - low;
-    final inset = math.min(2.0, size.height / 2);
-    final plotHeight = size.height - inset * 2;
-    return (
-      scale: scale,
-      low: low,
-      high: high,
-      range: range,
-      inset: inset,
-      plotHeight: plotHeight,
-      baseline: inset + (high / range) * plotHeight,
-    );
-  }
+  _paintCartesian(request);
+}
 
-  Iterable<double> _stackedValues(double scale) {
-    if (!stacked || type != AuraChartType.bar) return const <double>[];
-    final categoryCount = series.first.values.length;
-    return [
-      for (var index = 0; index < categoryCount; index++)
-        series.fold<double>(
-          0,
-          (sum, item) => sum + _normalizeValue(item.values[index], scale),
-        ),
-    ];
-  }
+bool _hasNoChartMarks(List<AuraChartSeries> series, Size size) =>
+    (series.firstOrNull?.values.isEmpty ?? true) ||
+    size.width <= 0 ||
+    size.height <= 0;
 
-  void _paintSeries(
-    Canvas canvas,
-    Size size,
-    AuraChartSeries item,
-    int seriesIndex,
-    _CartesianLayout layout,
-  ) {
-    final paint = Paint()
-      ..color = colors[seriesIndex]
-      ..strokeWidth = 2
-      ..strokeCap = .round;
-    final path = Path();
-    final slot = size.width / item.values.length;
-    for (final (index, sample) in item.values.indexed) {
-      _paintSample(
-        canvas,
-        size,
-        seriesIndex,
-        index,
-        sample,
-        slot,
-        paint,
-        path,
-        layout,
+void _paintCartesian(_ChartPaintRequest request) {
+  final layout = _cartesianLayout(request);
+  _paintAxis(request, layout);
+  for (final (seriesIndex, item) in request.series.indexed) {
+    _paintSeries((
+      chart: request,
+      item: item,
+      seriesIndex: seriesIndex,
+      layout: layout,
+    ));
+  }
+}
+
+void _paintAxis(_ChartPaintRequest request, _CartesianLayout layout) {
+  request.canvas.drawLine(
+    .new(0, layout.baseline),
+    .new(request.size.width, layout.baseline),
+    Paint()..color = request.axisColor,
+  );
+}
+
+_CartesianLayout _cartesianLayout(_ChartPaintRequest request) {
+  // Normalize first so even opposite finite double extremes do not overflow.
+  final values = request.series.expand((item) => item.values);
+  final scale = _cartesianScale(values);
+
+  return _cartesianLayoutFromScale(request, scale);
+}
+
+_CartesianLayout _cartesianLayoutFromScale(
+  _ChartPaintRequest request,
+  _CartesianScale scale,
+) {
+  final bounds = _cartesianBounds(request, scale);
+
+  return _layoutFromBounds((
+    size: request.size,
+    scale: scale.scale,
+    low: bounds.low,
+    high: bounds.high,
+  ));
+}
+
+typedef _CartesianBounds = ({double low, double high});
+
+_CartesianBounds _cartesianBounds(
+  _ChartPaintRequest request,
+  _CartesianScale scale,
+) {
+  final low = _cartesianLow(request, scale);
+  final high = _cartesianHigh(request, scale);
+
+  return (low: low, high: high);
+}
+
+double _cartesianLow(_ChartPaintRequest request, _CartesianScale scale) =>
+    _chartLow(scale.normalized, request.minY, scale.divisor);
+
+double _cartesianHigh(_ChartPaintRequest request, _CartesianScale scale) =>
+    _chartHigh((
+      normalized: scale.normalized,
+      stackedValues: _stackedValues((
+        series: request.series,
+        stacked: request.stacked,
+        type: request.type,
+        scale: scale.scale,
+      )),
+      fixedMaxY: request.maxY,
+      divisor: scale.divisor,
+    ));
+
+_CartesianScale _cartesianScale(Iterable<double> values) {
+  final scale = _chartScale(values);
+  final divisor = scale == 0 ? 1.0 : scale;
+
+  return (
+    scale: scale,
+    divisor: divisor,
+    normalized: values.map((value) => _normalizeValue(value, scale)),
+  );
+}
+
+_CartesianLayout _layoutFromBounds(_LayoutFromBoundsRequest request) {
+  final geometry = _layoutGeometry(request.size, request.low, request.high);
+
+  return (
+    scale: request.scale,
+    low: request.low,
+    high: request.high,
+    range: geometry.range,
+    inset: geometry.inset,
+    plotHeight: geometry.plotHeight,
+    baseline: geometry.baseline,
+  );
+}
+
+typedef _LayoutGeometry = ({
+  double range,
+  double inset,
+  double plotHeight,
+  double baseline,
+});
+
+_LayoutGeometry _layoutGeometry(Size size, double low, double high) {
+  final range = _layoutRange(low, high);
+  final inset = _layoutInset(size);
+  final plotHeight = _layoutPlotHeight(size, inset);
+
+  return (
+    range: range,
+    inset: inset,
+    plotHeight: plotHeight,
+    baseline: inset + (high / range) * plotHeight,
+  );
+}
+
+double _layoutRange(double low, double high) => high == low ? 1.0 : high - low;
+
+double _layoutInset(Size size) =>
+    math.min(_chartHalf, size.height / _chartHalf);
+
+double _layoutPlotHeight(Size size, double inset) =>
+    size.height - inset * _chartHalf;
+
+double _chartScale(Iterable<double> values) =>
+    values.fold<double>(0, (a, b) => math.max(a, b.abs()));
+
+Iterable<double> _stackedValues(_StackedValuesRequest request) {
+  if (!_canStackValues(request)) return const <double>[];
+
+  return _stackedCategoryValues(request);
+}
+
+bool _canStackValues(_StackedValuesRequest request) =>
+    request.stacked && request.type == AuraChartType.bar;
+
+Iterable<double> _stackedCategoryValues(_StackedValuesRequest request) {
+  final categoryCount = request.series.first.values.length;
+
+  return [
+    for (var index = 0; index < categoryCount; index++)
+      _stackedCategoryValue(request.series, index, request.scale),
+  ];
+}
+
+double _stackedCategoryValue(
+  List<AuraChartSeries> series,
+  int index,
+  double scale,
+) {
+  return series.fold<double>(
+    0,
+    (sum, item) => sum + _normalizeValue(item.values[index], scale),
+  );
+}
+
+void _paintSeries(_PaintSeriesRequest request) {
+  final data = _seriesPaintData(request);
+  _paintSamples(data);
+  if (request.chart.type == AuraChartType.line) {
+    request.chart.canvas.drawPath(data.path, data.paint..style = .stroke);
+  }
+}
+
+_SeriesPaintData _seriesPaintData(_PaintSeriesRequest request) {
+  final chart = request.chart;
+
+  return (
+    chart: chart,
+    item: request.item,
+    seriesIndex: request.seriesIndex,
+    layout: request.layout,
+    paint: _seriesPaint(chart.colors[request.seriesIndex]),
+    path: Path(),
+    slot: _seriesSlot(chart.size, request.item),
+  );
+}
+
+Paint _seriesPaint(Color color) => Paint()
+  ..color = color
+  ..strokeWidth = _lineStrokeWidth
+  ..strokeCap = .round;
+
+double _seriesSlot(Size size, AuraChartSeries item) =>
+    size.width / item.values.length;
+
+void _paintSamples(_SeriesPaintData data) {
+  for (final (index, sample) in data.item.values.indexed) {
+    _paintSample(data, index, sample);
+  }
+}
+
+void _paintSample(_SeriesPaintData data, int index, double sample) {
+  final point = _samplePoint(data, index, sample);
+  if (data.chart.type == AuraChartType.bar) {
+    _paintBar((series: data, index: index, point: point));
+
+    return;
+  }
+  _paintLinePoint(data, index, point);
+}
+
+_ChartSamplePoint _samplePoint(
+  _SeriesPaintData data,
+  int index,
+  double sample,
+) {
+  final value = _sampleValue(data, sample);
+  final position = _samplePosition(data, index);
+
+  return (
+    value: value,
+    x: _chartX(data.chart.size.width, position, data.chart.direction),
+    y: _sampleY(data, value),
+  );
+}
+
+double _sampleValue(_SeriesPaintData data, double sample) =>
+    _normalizeValue(sample, data.layout.scale);
+
+double _samplePosition(_SeriesPaintData data, int index) =>
+    (index + _slotCenter) * data.slot;
+
+double _sampleY(_SeriesPaintData data, double value) {
+  final layout = data.layout;
+
+  return layout.inset +
+      (layout.high - value) / layout.range * layout.plotHeight;
+}
+
+void _paintBar(_BarPaintData data) {
+  final geometry = _barGeometry(data);
+  data.series.chart.canvas.drawRect(
+    .fromLTRB(geometry.left, geometry.top, geometry.right, geometry.bottom),
+    data.series.paint,
+  );
+}
+
+_BarGeometry _barGeometry(_BarPaintData data) {
+  final barWidth = _barWidth(data);
+  final barX = _barX(data, barWidth);
+  final stackOffset = _stackOffset(data);
+  final top = _barTop(data, stackOffset);
+  final bottom = _barBottom(data, stackOffset);
+
+  return _orderedBarGeometry((
+    barX: barX,
+    barWidth: barWidth,
+    top: top,
+    bottom: bottom,
+  ));
+}
+
+_BarGeometry _orderedBarGeometry(_BarGeometryRequest request) {
+  return (
+    left: request.barX - request.barWidth / _chartHalf,
+    top: math.min(request.top, request.bottom),
+    right: request.barX + request.barWidth / _chartHalf,
+    bottom: math.max(request.top, request.bottom),
+  );
+}
+
+double _barWidth(_BarPaintData data) {
+  final series = data.series;
+  final chart = series.chart;
+
+  return chart.stacked
+      ? series.slot * _barWidthFactor
+      : series.slot * _barWidthFactor / chart.series.length;
+}
+
+double _barX(_BarPaintData data, double barWidth) {
+  return data.point.x + _barDirectionalOffset(data, barWidth);
+}
+
+double _barDirectionalOffset(_BarPaintData data, double barWidth) {
+  final chart = data.series.chart;
+  final offset = _barOffset(data, barWidth);
+
+  return chart.direction == TextDirection.rtl ? -offset : offset;
+}
+
+double _barOffset(_BarPaintData data, double barWidth) {
+  final series = data.series;
+  final chart = series.chart;
+
+  return chart.stacked
+      ? 0.0
+      : (series.seriesIndex + _slotCenter) * barWidth -
+            series.slot * _barOffsetFactor;
+}
+
+double _barTop(_BarPaintData data, double stackOffset) {
+  if (!data.series.chart.stacked) return data.point.y;
+
+  return _stackedBarY(data, stackOffset);
+}
+
+double _barBottom(_BarPaintData data, double stackOffset) {
+  final series = data.series;
+  if (!series.chart.stacked) return series.layout.baseline;
+  final layout = series.layout;
+
+  return layout.inset +
+      (layout.high - stackOffset) / layout.range * layout.plotHeight;
+}
+
+double _stackedBarY(_BarPaintData data, double stackOffset) {
+  final layout = data.series.layout;
+
+  return layout.inset +
+      (layout.high - (data.point.value + stackOffset)) /
+          layout.range *
+          layout.plotHeight;
+}
+
+double _stackOffset(_BarPaintData data) {
+  final chart = data.series.chart;
+  final scale = data.series.layout.scale;
+  if (!chart.stacked || scale == 0) return 0;
+
+  return _stackedOffset(chart, data, scale);
+}
+
+double _stackedOffset(
+  _ChartPaintRequest chart,
+  _BarPaintData data,
+  double scale,
+) {
+  return chart.series
+      .take(data.series.seriesIndex)
+      .fold<double>(
+        0,
+        (sum, previous) =>
+            sum + _normalizeValue(previous.values[data.index], scale),
       );
-    }
-    if (type == AuraChartType.line) {
-      canvas.drawPath(path, paint..style = .stroke);
-    }
-  }
+}
 
-  void _paintSample(
-    Canvas canvas,
-    Size size,
-    int seriesIndex,
-    int index,
-    double sample,
-    double slot,
-    Paint paint,
-    Path path,
-    _CartesianLayout layout,
-  ) {
-    final value = _normalizeValue(sample, layout.scale);
-    final position = (index + 0.5) * slot;
-    final x = _chartX(size.width, position);
-    final y =
-        layout.inset + (layout.high - value) / layout.range * layout.plotHeight;
-    if (type == AuraChartType.bar) {
-      _paintBar(canvas, seriesIndex, index, slot, x, y, value, paint, layout);
-      return;
-    }
-    _paintLinePoint(canvas, path, paint, index, x, y);
-  }
+double _chartX(double width, double position, TextDirection direction) =>
+    direction == TextDirection.rtl ? width - position : position;
 
-  void _paintBar(
-    Canvas canvas,
-    int seriesIndex,
-    int index,
-    double slot,
-    double x,
-    double y,
-    double value,
-    Paint paint,
-    _CartesianLayout layout,
-  ) {
-    final barWidth = stacked ? slot * 0.6 : slot * 0.6 / series.length;
-    final offset = stacked ? 0.0 : (seriesIndex + 0.5) * barWidth - slot * 0.3;
-    final barX = x + (direction == TextDirection.rtl ? -offset : offset);
-    final stackOffset = _stackOffset(seriesIndex, index, layout.scale);
-    final stackedY =
-        layout.inset +
-        (layout.high - (value + stackOffset)) /
-            layout.range *
-            layout.plotHeight;
-    final stackBaseY =
-        layout.inset +
-        (layout.high - stackOffset) / layout.range * layout.plotHeight;
-    final top = stacked ? stackedY : y;
-    final bottom = stacked ? stackBaseY : layout.baseline;
-    canvas.drawRect(
-      .fromLTRB(
-        barX - barWidth / _chartHalf,
-        math.min(top, bottom),
-        barX + barWidth / _chartHalf,
-        math.max(top, bottom),
-      ),
-      paint,
+void _paintLinePoint(
+  _SeriesPaintData data,
+  int index,
+  _ChartSamplePoint point,
+) {
+  if (index == 0) {
+    data.path.moveTo(point.x, point.y);
+  } else {
+    data.path.lineTo(point.x, point.y);
+  }
+  data.chart.canvas.drawCircle(
+    .new(point.x, point.y),
+    _pointRadius,
+    data.paint,
+  );
+}
+
+void _paintPie(_ChartPaintRequest request) {
+  final values = request.series.single.values;
+  final total = _pieTotal(values);
+  if (total <= 0) return;
+
+  final slices = _pieSlicesData(request, values, total);
+
+  _beginPie(request);
+  _drawPieSlices(slices);
+  _endPie(request, slices);
+}
+
+_PieSlicesData _pieSlicesData(
+  _ChartPaintRequest request,
+  List<double> values,
+  double total,
+) {
+  final geometry = _pieGeometry(request.size);
+
+  return (
+    chart: request,
+    values: values,
+    total: total,
+    center: geometry.center,
+    radius: geometry.radius,
+  );
+}
+
+_PieGeometry _pieGeometry(Size size) => (
+  center: size.center(.zero),
+  radius: math.min(size.width, size.height) / _chartHalf,
+);
+
+void _beginPie(_ChartPaintRequest request) {
+  if (request.type == AuraChartType.donut) {
+    request.canvas.saveLayer(Offset.zero & request.size, .new());
+  }
+}
+
+void _endPie(_ChartPaintRequest request, _PieSlicesData data) {
+  if (request.type == AuraChartType.donut) {
+    _clearDonutCenter(request, data.center, data.radius);
+  }
+}
+
+double _pieTotal(List<double> values) =>
+    values.fold<double>(0, (sum, value) => sum + value);
+
+void _drawPieSlices(_PieSlicesData data) {
+  var start = -math.pi / 2;
+  for (final (index, value) in data.values.indexed) {
+    final sweep = _pieSweep(value, data.total);
+    _drawPieSlice((data: data, index: index, start: start, sweep: sweep));
+    start += sweep;
+  }
+}
+
+double _pieSweep(double value, double total) =>
+    value / total * math.pi * _fullCircleMultiplier;
+
+void _drawPieSlice(_PieSliceRequest request) {
+  final data = request.data;
+
+  _drawPieArc(_pieArcRequest(data, request));
+}
+
+_PieArcRequest _pieArcRequest(_PieSlicesData data, _PieSliceRequest request) =>
+    (
+      canvas: data.chart.canvas,
+      center: data.center,
+      radius: data.radius,
+      start: request.start,
+      sweep: request.sweep,
+      color: data.chart.colors[request.index % data.chart.colors.length],
     );
-  }
 
-  double _stackOffset(int seriesIndex, int index, double scale) {
-    if (!stacked || scale == 0) return 0;
-    return series
-        .take(seriesIndex)
-        .fold<double>(
-          0,
-          (sum, previous) =>
-              sum + _normalizeValue(previous.values[index], scale),
-        );
-  }
+void _drawPieArc(_PieArcRequest request) => request.canvas.drawArc(
+  .fromCircle(center: request.center, radius: request.radius),
+  request.start,
+  request.sweep,
+  true,
+  Paint()..color = request.color,
+);
 
-  double _chartX(double width, double position) =>
-      direction == TextDirection.rtl ? width - position : position;
-
-  void _paintLinePoint(
-    Canvas canvas,
-    Path path,
-    Paint paint,
-    int index,
-    double x,
-    double y,
-  ) {
-    if (index == 0) {
-      path.moveTo(x, y);
-    } else {
-      path.lineTo(x, y);
-    }
-    canvas.drawCircle(.new(x, y), _pointRadius, paint);
-  }
-
-  void _paintPie(Canvas canvas, Size size) {
-    final values = series.single.values;
-    final total = values.fold<double>(0, (sum, value) => sum + value);
-    if (total <= 0) {
-      return;
-    }
-
-    final center = size.center(.zero);
-    final radius = math.min(size.width, size.height) / 2;
-    if (type == AuraChartType.donut) {
-      canvas.saveLayer(Offset.zero & size, .new());
-    }
-    var start = -math.pi / 2;
-    for (final (index, value) in values.indexed) {
-      final sweep = value / total * math.pi * 2;
-      canvas.drawArc(
-        .fromCircle(center: center, radius: radius),
-        start,
-        sweep,
-        true,
-        Paint()..color = colors[index % colors.length],
-      );
-      start += sweep;
-    }
-    if (type == AuraChartType.donut) {
-      canvas
-        ..drawCircle(
-          center,
-          radius * _donutHoleFactor,
-          Paint()..blendMode = .clear,
-        )
-        ..restore();
-    }
-  }
+void _clearDonutCenter(
+  _ChartPaintRequest request,
+  Offset center,
+  double radius,
+) {
+  request.canvas
+    ..drawCircle(center, radius * _donutHoleFactor, Paint()..blendMode = .clear)
+    ..restore();
 }
