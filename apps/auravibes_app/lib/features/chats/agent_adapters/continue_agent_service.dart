@@ -438,13 +438,44 @@ class ContinueAgentService({
         const <String, List<String>>{};
     final messageIssues =
         runtime?.a2uiMessageIssuesFor(messageId) ?? const <String>[];
-    final currentMessages = a2uiMessages;
-    if ((a2uiMessages == null || a2uiMessages.isEmpty) &&
-        issuesBySurface.isEmpty &&
-        messageIssues.isEmpty) {
+    if (_hasNoA2uiState(a2uiMessages, issuesBySurface, messageIssues)) {
       return metadata;
     }
-    final mergedIssuesBySurface = <String, List<String>>{
+
+    return (metadata ?? const MessageMetadataEntity()).copyWith(
+      a2uiMessages: _mergeA2uiMessages(metadata, a2uiMessages),
+      a2uiIssuesBySurface: _mergeA2uiIssues(metadata, issuesBySurface),
+      a2uiMessageIssues: {
+        ...?metadata?.a2uiMessageIssues,
+        ...messageIssues,
+      }.toList(),
+    );
+  }
+
+  bool _hasNoA2uiState(
+    List<String>? a2uiMessages,
+    Map<String, List<String>> issuesBySurface,
+    List<String> messageIssues,
+  ) {
+    return (a2uiMessages == null || a2uiMessages.isEmpty) &&
+        issuesBySurface.isEmpty &&
+        messageIssues.isEmpty;
+  }
+
+  List<String> _mergeA2uiMessages(
+    MessageMetadataEntity? metadata,
+    List<String>? a2uiMessages,
+  ) {
+    return a2uiMessages != null && a2uiMessages.isNotEmpty
+        ? a2uiMessages
+        : metadata?.a2uiMessages ?? const <String>[];
+  }
+
+  Map<String, List<String>> _mergeA2uiIssues(
+    MessageMetadataEntity? metadata,
+    Map<String, List<String>> issuesBySurface,
+  ) {
+    return {
       ...?metadata?.a2uiIssuesBySurface,
       for (final entry in issuesBySurface.entries)
         entry.key: {
@@ -452,17 +483,6 @@ class ContinueAgentService({
           ...entry.value,
         }.toList(),
     };
-
-    return (metadata ?? const MessageMetadataEntity()).copyWith(
-      a2uiMessages: currentMessages != null && currentMessages.isNotEmpty
-          ? currentMessages
-          : metadata?.a2uiMessages ?? const <String>[],
-      a2uiIssuesBySurface: mergedIssuesBySurface,
-      a2uiMessageIssues: {
-        ...?metadata?.a2uiMessageIssues,
-        ...messageIssues,
-      }.toList(),
-    );
   }
 
   bool _requiresA2uiAction(MessageMetadataEntity? metadata) =>
