@@ -286,42 +286,19 @@ class ModelConnectionRepository({
     ServiceConnectionTable existing,
     ModelConnectionToUpdate modelConnection,
   ) async {
-    final modelProvider = await _database.apiModelProvidersDao.getProviderById(
-      existing.serviceId,
-    );
-    if (modelProvider == null) {
-      throw ModelConnectionModelNotFoundException(existing.serviceId);
-    }
-    final modelType = modelProvider.type;
-    if (modelType == null) {
-      throw ModelConnectionNoTypeException(existing.serviceId);
-    }
-
-    final key = modelConnection.key?.trim().isEmpty == true
-        ? null
-        : modelConnection.key;
-    final existingEncryptedKey = existing.encryptedAuthValue;
-    if (key == null &&
-        (existingEncryptedKey == null || existingEncryptedKey.isEmpty)) {
-      throw const ModelConnectionException(_missingApiKeyMessage);
-    }
+    final provider = await _modelProviderForUpdate(existing.serviceId);
+    final key = _updateKey(modelConnection.key);
     final keyForValidation =
-        key ??
-        _decodeApiKey(
-          await _encryptionService.decrypt(
-            existingEncryptedKey ??
-                (throw const ModelConnectionException(_missingApiKeyMessage)),
-          ),
-        );
+        key ?? await _existingApiKey(existing.encryptedAuthValue);
     final hasUrlUpdate = modelConnection.url != null;
     final nextUrl = hasUrlUpdate
         ? _nextConnectionUrl(modelConnection.url)
         : existing.url;
     final models = await _modelProviderServices.getWorkspaceModelSelections(
       .new(
-        type: .fromString(modelType.value),
+        type: .fromString(provider.type),
         key: keyForValidation,
-        url: nextUrl ?? modelProvider.url,
+        url: nextUrl ?? provider.provider.url,
       ),
     );
     if (models == null) {
@@ -341,6 +318,36 @@ class ModelConnectionRepository({
       models: models,
       nextUrl: nextUrl,
     );
+  }
+
+  Future<({ApiModelProvidersTable provider, String type})>
+  _modelProviderForUpdate(String serviceId) async {
+    final provider = await _database.apiModelProvidersDao.getProviderById(
+      serviceId,
+    );
+    if (provider == null) {
+      throw ModelConnectionModelNotFoundException(serviceId);
+    }
+    final type = provider.type;
+    if (type == null) {
+      throw ModelConnectionNoTypeException(serviceId);
+    }
+
+    return (provider: provider, type: type.value);
+  }
+
+  String? _updateKey(String? key) {
+    if (key?.trim().isEmpty == true) return null;
+
+    return key;
+  }
+
+  Future<String> _existingApiKey(String? encryptedKey) async {
+    if (encryptedKey == null || encryptedKey.isEmpty) {
+      throw const ModelConnectionException(_missingApiKeyMessage);
+    }
+
+    return _decodeApiKey(await _encryptionService.decrypt(encryptedKey));
   }
 
   Future<String?> _updatedEncryptedKey(
