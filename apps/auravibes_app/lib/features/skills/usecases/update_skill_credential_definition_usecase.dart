@@ -54,6 +54,13 @@ class const UpdateSkillCredentialDefinitionUsecase(
       final _ = SkillCredentialAttributeDefinition.parseMap(attributesJson);
     }
 
+    return await _updateDefinition(definitionId, definition);
+  }
+
+  Future<SkillCredentialDefinitionEntity> _updateDefinition(
+    String definitionId,
+    SkillCredentialDefinitionToUpdate definition,
+  ) async {
     final cloud = cloudStore;
     if (cloud != null) {
       return await cloud.updateDefinition(definitionId, definition);
