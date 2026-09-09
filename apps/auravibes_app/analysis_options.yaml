@@ -1,5 +1,14 @@
 include: ../../analysis_options.yaml
 
+dart_code_linter:
+  rules:
+    prefer-match-file-name:
+      exclude:
+        - lib/features/chats/usecases/conversation_busy_state.dart
+        - lib/features/cloud_workspaces/models/cloud_workspace_state.dart
+        - lib/features/skills/usecases/app_skill_credential_candidate.dart
+        - lib/features/tools/usecases/tool_approval_decision.dart
+
 analyzer:
   exclude:
     - "**/**.g.dart"
