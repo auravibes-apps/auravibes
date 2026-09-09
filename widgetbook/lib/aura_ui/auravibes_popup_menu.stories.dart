@@ -4,14 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_popup_menu.stories.bridge.g.dart';
 part 'auravibes_popup_menu.stories.g.dart';
 
 class const _PopupMenuInput();
 
-const component = ComponentMeta(name: 'AuraPopupMenu');
-const meta = Meta(AuraPopupMenu.new, argsType: _PopupMenuInput.new);
+const _component = ComponentMeta(name: 'AuraPopupMenu');
+const _meta = Meta(AuraPopupMenu.new, argsType: _PopupMenuInput.new);
 
-final _Defaults popupMenuDefaults = _Defaults(
+final _Defaults _popupMenuDefaults = _Defaults(
   builder: (context, args) {
     final controller = AuraPopupMenuController();
 
@@ -22,31 +23,39 @@ final _Defaults popupMenuDefaults = _Defaults(
         tooltip: 'Open popup menu',
       ),
       items: const [
-        AuraPopupMenuItem(title: Text('Item 1'), onTap: noopCallback),
+        AuraPopupMenuItem(
+          title: Text('Item 1'),
+          onTap: StoryHelpers.noopCallback,
+        ),
         AuraPopupMenuDivider(),
-        AuraPopupMenuItem(title: Text('Item 2'), onTap: noopCallback),
+        AuraPopupMenuItem(
+          title: Text('Item 2'),
+          onTap: StoryHelpers.noopCallback,
+        ),
       ],
       controller: controller,
     );
   },
 );
 
-final $BasicPopupMenu = _Story(
-  name: 'Basic Popup Menu',
-  setup: (context, child, args) => ConstrainedBox(
-    constraints: const BoxConstraints(maxWidth: 420, maxHeight: 300),
-    child: child,
-  ),
-  args: _Args(),
-  scenarios: [
-    _Scenario(
-      name: 'Opens Menu',
-      modes: [ViewportMode(compactPhoneViewport)],
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraIconButton));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
+abstract final class _StorybookDefinitions {
+  static final $BasicPopupMenu = _Story(
+    name: 'Basic Popup Menu',
+    setup: (context, child, args) => ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420, maxHeight: 300),
+      child: child,
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-  ],
-);
+    args: _Args(),
+    scenarios: [
+      _Scenario(
+        name: 'Opens Menu',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraIconButton));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+    ],
+  );
+}

@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_radio.stories.bridge.g.dart';
 part 'auravibes_radio.stories.g.dart';
 
-const component = ComponentMeta(name: 'AuraRadio');
+const _component = ComponentMeta(name: 'AuraRadio');
 
 class const _RadioInput({
   required final AuraTint? tint,
@@ -14,9 +15,9 @@ class const _RadioInput({
   required final int itemCount,
 });
 
-const meta = Meta(SingleRadioDemo.new, argsType: _RadioInput.new);
+const _meta = Meta(SingleRadioDemo.new, argsType: _RadioInput.new);
 
-final _Defaults radioDefaults = _Defaults(
+final _Defaults _radioDefaults = _Defaults(
   builder: (context, args) => SingleRadioDemo(
     tint: args.tint,
     disabled: args.disabled,
@@ -24,29 +25,31 @@ final _Defaults radioDefaults = _Defaults(
   ),
 );
 
-final $SingleRadio = _Story(
-  name: 'Single Radio',
-  setup: (context, child, args) => constrainStoryWidth(child),
-  args: _Args(
-    tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
-    disabled: BoolArg(false, name: 'disabled'),
-    itemCount: IntArg(
-      3,
-      name: 'item count',
-      style: const SliderIntArgStyle(min: 1, max: 6, divisions: 5),
+abstract final class _StorybookDefinitions {
+  static final $SingleRadio = _Story(
+    name: 'Single Radio',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(child),
+    args: _Args(
+      tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
+      disabled: BoolArg(false, name: 'disabled'),
+      itemCount: IntArg(
+        3,
+        name: 'item count',
+        style: const SliderIntArgStyle(min: 1, max: 6, divisions: 5),
+      ),
     ),
-  ),
-  scenarios: [
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Selects Radio',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraRadio<String>).at(1));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Selects Radio',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraRadio<String>).at(1));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates a single controlled radio button.
 class const SingleRadioDemo({

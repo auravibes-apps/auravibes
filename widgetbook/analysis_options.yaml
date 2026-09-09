@@ -1,18 +1,5 @@
 include: ../analysis_options.yaml
 
-dart_code_linter:
-  rules:
-    avoid-returning-widgets:
-      exclude:
-        - lib/aura_ui/story_helpers.dart
-        - lib/main.dart
-    prefer-match-file-name:
-      exclude:
-        - lib/aura_ui/**
-    prefer-static-class:
-      exclude:
-        - lib/aura_ui/**
-
 analyzer:
   errors:
     document_ignores: ignore

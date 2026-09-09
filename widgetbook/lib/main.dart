@@ -9,80 +9,81 @@ const _auraLocales = <Locale>[Locale('en'), Locale('es'), Locale('ar')];
 
 void main() {
   final _ = WidgetsFlutterBinding.ensureInitialized();
-  runWidgetbook(createWidgetbookConfig());
+  runWidgetbook(WidgetbookConfig.create());
 }
 
-// ignore: prefer-static-class, Widgetbook entrypoint factory.
-Config createWidgetbookConfig() {
-  return Config(
-    components: components,
-    addons: [
-      GridAddon(),
-      TextScaleAddon(),
-      SemanticsAddon(),
-      TimeDilationAddon(),
-      LocaleAddon(_auraLocales, auraLocalizationDelegates),
-      AuraDirectionalityAddon(),
-      ViewportAddon([
-        Viewports.none,
-        compactPhoneViewport,
-        landscapePhoneViewport,
-        tabletViewport,
-        IosViewports.iPhone13,
-        IosViewports.iPadAir4,
-        AndroidViewports.samsungGalaxyNote20,
-        MacosViewports.macbookPro,
-        WindowsViewports.desktop,
-        LinuxViewports.desktop,
-      ]),
-      ThemeAddon<ThemeData>(
-        {'Aura Light': _createLightTheme(), 'Aura Dark': _createDarkTheme()},
-        (context, theme, child) {
-          return Theme(data: theme, child: child);
-        },
-      ),
-      BuilderAddon(
-        name: 'portal',
-        builder: (context, child) =>
-            Portal(child: AuraSnackBarHost(child: child)),
-      ),
-      BuilderAddon(
-        name: 'SafeArea',
-        builder: (ctx, child) => ColoredBox(
-          color: ctx.auraColors.surface,
-          child: SafeArea(child: child),
+abstract final class WidgetbookConfig {
+  static Config create() {
+    return Config(
+      components: components,
+      addons: [
+        GridAddon(),
+        TextScaleAddon(),
+        SemanticsAddon(),
+        TimeDilationAddon(),
+        LocaleAddon(_auraLocales, StoryHelpers.auraLocalizationDelegates),
+        AuraDirectionalityAddon(),
+        ViewportAddon([
+          Viewports.none,
+          StoryHelpers.compactPhoneViewport,
+          StoryHelpers.landscapePhoneViewport,
+          StoryHelpers.tabletViewport,
+          IosViewports.iPhone13,
+          IosViewports.iPadAir4,
+          AndroidViewports.samsungGalaxyNote20,
+          MacosViewports.macbookPro,
+          WindowsViewports.desktop,
+          LinuxViewports.desktop,
+        ]),
+        ThemeAddon<ThemeData>(
+          {'Aura Light': _createLightTheme(), 'Aura Dark': _createDarkTheme()},
+          (context, theme, child) {
+            return Theme(data: theme, child: child);
+          },
         ),
-      ),
-      AlignmentAddon(),
-      ZoomAddon(),
-    ],
-    scenarioConfig: .new(
-      definitions: [
-        ScenarioDefinition(
-          name: 'Aura Light',
-          modes: [
-            ThemeMode<ThemeData>(
-              'Aura Light',
-              _createLightTheme(),
-              _applyTheme,
-            ),
-          ],
-          strategy: .perStory,
+        BuilderAddon(
+          name: 'portal',
+          builder: (context, child) =>
+              Portal(child: AuraSnackBarHost(child: child)),
         ),
-        ScenarioDefinition(
-          name: 'Aura Dark',
-          modes: [
-            ThemeMode<ThemeData>('Aura Dark', _createDarkTheme(), _applyTheme),
-          ],
-          strategy: .perStory,
+        BuilderAddon(
+          name: 'SafeArea',
+          builder: (ctx, child) => ColoredBox(
+            color: ctx.auraColors.surface,
+            child: SafeArea(child: child),
+          ),
         ),
+        AlignmentAddon(),
+        ZoomAddon(),
       ],
-    ),
-  );
-}
+      scenarioConfig: .new(
+        definitions: [
+          ScenarioDefinition(
+            name: 'Aura Light',
+            modes: [
+              ThemeMode<ThemeData>(
+                'Aura Light',
+                _createLightTheme(),
+                applyTheme,
+              ),
+            ],
+            strategy: .perStory,
+          ),
+          ScenarioDefinition(
+            name: 'Aura Dark',
+            modes: [
+              ThemeMode<ThemeData>('Aura Dark', _createDarkTheme(), applyTheme),
+            ],
+            strategy: .perStory,
+          ),
+        ],
+      ),
+    );
+  }
 
-Widget _applyTheme(BuildContext _, ThemeData theme, Widget child) {
-  return Theme(data: theme, child: child);
+  static Widget applyTheme(BuildContext _, ThemeData theme, Widget child) {
+    return Theme(data: theme, child: child);
+  }
 }
 
 ThemeData _createLightTheme() {

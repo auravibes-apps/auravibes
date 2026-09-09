@@ -19,9 +19,9 @@ typedef _Story = MultiSelectionDemoStory;
 typedef _Args = MultiSelectionDemoArgs;
 final MultiSelectionDemoComponent =
     Component<MultiSelectionDemo, StoryArgs<MultiSelectionDemo>>(
-      name: component.name ?? 'MultiSelectionDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'MultiSelectionDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates a multi-selection toggle button group.''',
       stories: [$MultiSelectionToggle..$generatedName = 'MultiSelectionToggle'],
     );

@@ -18,9 +18,9 @@ typedef _Story = SingleRadioDemoStory;
 typedef _Args = _RadioInputArgs;
 final SingleRadioDemoComponent =
     Component<SingleRadioDemo, StoryArgs<SingleRadioDemo>>(
-      name: component.name ?? 'SingleRadioDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'SingleRadioDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates a single controlled radio button.''',
       stories: [$SingleRadio..$generatedName = 'SingleRadio'],
     );
@@ -39,7 +39,7 @@ class SingleRadioDemoStory extends Story<SingleRadioDemo, _RadioInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _RadioInputArgs(),
-         builder: builder ?? radioDefaults.builder!,
+         builder: builder ?? _radioDefaults.builder!,
        );
 }
 

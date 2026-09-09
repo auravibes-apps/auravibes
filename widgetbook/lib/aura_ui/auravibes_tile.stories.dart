@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_tile.stories.bridge.g.dart';
 part 'auravibes_tile.stories.g.dart';
 
 class const _TileInput({
@@ -16,12 +17,12 @@ class const _TileInput({
   required final bool enabled,
 });
 
-const meta = Meta(AuraTile.new, argsType: _TileInput.new);
+const _meta = Meta(AuraTile.new, argsType: _TileInput.new);
 
-final _Defaults tileDefaults = _Defaults(
+final _Defaults _tileDefaults = _Defaults(
   builder: (context, args) => AuraTile(
     child: Text(args.childText),
-    onTap: noopCallback,
+    onTap: StoryHelpers.noopCallback,
     variant: args.variant,
     size: args.size,
     isLoading: args.isLoading,
@@ -31,39 +32,41 @@ final _Defaults tileDefaults = _Defaults(
   ),
 );
 
-final $AuraTile = _Story(
-  name: 'AuraTile',
-  setup: (context, child, args) => constrainStoryWidth(child),
-  args: _Args(
-    childText: StringArg('This is a tile', name: 'Child Text'),
-    variant: EnumArg(
-      AuraTileVariant.values.first,
-      name: 'Variant',
-      values: AuraTileVariant.values,
+abstract final class _StorybookDefinitions {
+  static final $AuraTile = _Story(
+    name: 'AuraTile',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(child),
+    args: _Args(
+      childText: StringArg('This is a tile', name: 'Child Text'),
+      variant: EnumArg(
+        AuraTileVariant.values.first,
+        name: 'Variant',
+        values: AuraTileVariant.values,
+      ),
+      size: EnumArg(
+        AuraTileSize.values.first,
+        name: 'Size',
+        values: AuraTileSize.values,
+      ),
+      isLoading: BoolArg(false, name: 'Is Loading'),
+      showLeadingIcon: BoolArg(false, name: 'Show Leading Icon'),
+      showTrailingIcon: BoolArg(false, name: 'Show Trailing Icon'),
+      enabled: BoolArg(true, name: 'Enabled'),
     ),
-    size: EnumArg(
-      AuraTileSize.values.first,
-      name: 'Size',
-      values: AuraTileSize.values,
-    ),
-    isLoading: BoolArg(false, name: 'Is Loading'),
-    showLeadingIcon: BoolArg(false, name: 'Show Leading Icon'),
-    showTrailingIcon: BoolArg(false, name: 'Show Trailing Icon'),
-    enabled: BoolArg(true, name: 'Enabled'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
-    _Scenario(
-      name: 'Tapped',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraTile));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
+      _Scenario(
+        name: 'Tapped',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraTile));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}

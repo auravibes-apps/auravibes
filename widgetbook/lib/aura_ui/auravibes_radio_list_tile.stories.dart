@@ -4,37 +4,40 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_radio_list_tile.stories.bridge.g.dart';
 part 'auravibes_radio_list_tile.stories.g.dart';
 
-const component = ComponentMeta(name: 'AuraRadioListTile');
-const meta = Meta(RadioListTileDemo.new);
+const _component = ComponentMeta(name: 'AuraRadioListTile');
+const _meta = Meta(RadioListTileDemo.new);
 
-final $RadioListTile = _Story(
-  name: 'Radio List Tile',
-  setup: (context, child, args) => constrainStoryWidth(
-    Padding(padding: const EdgeInsets.all(16), child: child),
-  ),
-  args: _Args(
-    tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
-    disabled: BoolArg(false, name: 'disabled'),
-    showSubtitle: BoolArg(true, name: 'showSubtitle'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
+abstract final class _StorybookDefinitions {
+  static final $RadioListTile = _Story(
+    name: 'Radio List Tile',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(
+      Padding(padding: const EdgeInsets.all(16), child: child),
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
-    _Scenario(
-      name: 'Selects Radio',
-      run: (tester, args) async {
-        await tester.tap(find.text('Light Theme'));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
+    args: _Args(
+      tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
+      disabled: BoolArg(false, name: 'disabled'),
+      showSubtitle: BoolArg(true, name: 'showSubtitle'),
     ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
+      _Scenario(
+        name: 'Selects Radio',
+        run: (tester, args) async {
+          await tester.tap(find.text('Light Theme'));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates settings-style radio list tiles with optional subtitles.
 class const RadioListTileDemo({

@@ -19,9 +19,9 @@ typedef _Story = SingleSelectionDemoStory;
 typedef _Args = SingleSelectionDemoArgs;
 final SingleSelectionDemoComponent =
     Component<SingleSelectionDemo, StoryArgs<SingleSelectionDemo>>(
-      name: component.name ?? 'SingleSelectionDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'SingleSelectionDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates a single-selection button group.''',
       stories: [$SingleSelectionRadio..$generatedName = 'SingleSelectionRadio'],
     );

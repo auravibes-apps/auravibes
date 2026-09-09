@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_icon_button.stories.bridge.g.dart';
 part 'auravibes_icon_button.stories.g.dart';
 
 const _iconValues = <IconData>[
@@ -31,10 +32,10 @@ class const _IconButtonInput({
   required final String tooltip,
 });
 
-const component = ComponentMeta(name: 'AuraIconButton');
-const meta = Meta(AuraIconButton.new, argsType: _IconButtonInput.new);
+const _component = ComponentMeta(name: 'AuraIconButton');
+const _meta = Meta(AuraIconButton.new, argsType: _IconButtonInput.new);
 
-final _Defaults iconButtonDefaults = _Defaults(
+final _Defaults _iconButtonDefaults = _Defaults(
   builder: (context, args) => AuraIconButton(
     icon: args.icon,
     onPressed: () {
@@ -48,36 +49,38 @@ final _Defaults iconButtonDefaults = _Defaults(
   ),
 );
 
-final $IconButtonBasic = _Story(
-  name: 'Icon Button Basic',
-  setup: (context, child, args) =>
-      SizedBox(width: 420, height: 200, child: Scaffold(body: child)),
-  args: _Args(
-    icon: SingleArg(
-      Icons.add,
-      values: _iconValues,
-      labelBuilder: auraIconLabel,
+abstract final class _StorybookDefinitions {
+  static final $IconButtonBasic = _Story(
+    name: 'Icon Button Basic',
+    setup: (context, child, args) =>
+        SizedBox(width: 420, height: 200, child: Scaffold(body: child)),
+    args: _Args(
+      icon: SingleArg(
+        Icons.add,
+        values: _iconValues,
+        labelBuilder: StoryHelpers.auraIconLabel,
+      ),
+      disabled: BoolArg(false, name: 'Disabled'),
+      size: EnumArg(AuraIconSize.values.first, values: AuraIconSize.values),
+      variant: EnumArg(
+        AuraIconButtonVariant.values.first,
+        values: AuraIconButtonVariant.values,
+      ),
+      tooltip: StringArg('Add to favorites', name: 'Tooltip'),
     ),
-    disabled: BoolArg(false, name: 'Disabled'),
-    size: EnumArg(AuraIconSize.values.first, values: AuraIconSize.values),
-    variant: EnumArg(
-      AuraIconButtonVariant.values.first,
-      values: AuraIconButtonVariant.values,
-    ),
-    tooltip: StringArg('Add to favorites', name: 'Tooltip'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Pressed',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraIconButton));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Pressed',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraIconButton));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}

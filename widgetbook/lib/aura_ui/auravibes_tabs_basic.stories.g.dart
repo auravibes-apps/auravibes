@@ -17,9 +17,9 @@ typedef _Defaults = AuraTabsDefaults;
 typedef _Story<T> = AuraTabsStory<T>;
 typedef _Args<T> = AuraTabsArgs<T>;
 final AuraTabsComponent = Component<AuraTabs, StoryArgs<AuraTabs>>(
-  name: component.name ?? 'AuraTabs',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'AuraTabs',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment: r'''A selectable Aura tab strip with optional content.
 
 Use [AuraTabs] when each tab owns content. Use [AuraTabs.selector] when the

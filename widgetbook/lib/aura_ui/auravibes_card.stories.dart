@@ -3,6 +3,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 
+part 'auravibes_card.stories.bridge.g.dart';
 part 'auravibes_card.stories.g.dart';
 
 class const _CardInput({
@@ -14,10 +15,10 @@ class const _CardInput({
   required final AuraCardStyle style,
 });
 
-const component = ComponentMeta(name: 'AuraCard');
-const meta = Meta(CardDemo.new, argsType: _CardInput.new);
+const _component = ComponentMeta(name: 'AuraCard');
+const _meta = Meta(CardDemo.new, argsType: _CardInput.new);
 
-final _Defaults cardDefaults = _Defaults(
+final _Defaults _cardDefaults = _Defaults(
   builder: (context, args) => CardDemo(
     title: args.title,
     description: args.description,
@@ -28,45 +29,47 @@ final _Defaults cardDefaults = _Defaults(
   ),
 );
 
-final $BasicCard = _Story(
-  name: 'Basic Card',
-  args: _Args(
-    title: StringArg('Card Title', name: 'Title'),
-    description: StringArg(
-      'This is a basic card with some content inside it. Cards are great for organizing information.',
-      name: 'Description',
-    ),
-    padding: SingleArg(
-      AuraEdgeInsetsGeometry.medium,
-      name: 'Padding',
-      values: const [
-        AuraEdgeInsetsGeometry.none,
-        AuraEdgeInsetsGeometry.small,
+abstract final class _StorybookDefinitions {
+  static final $BasicCard = _Story(
+    name: 'Basic Card',
+    args: _Args(
+      title: StringArg('Card Title', name: 'Title'),
+      description: StringArg(
+        'This is a basic card with some content inside it. Cards are great for organizing information.',
+        name: 'Description',
+      ),
+      padding: SingleArg(
         AuraEdgeInsetsGeometry.medium,
-        AuraEdgeInsetsGeometry.large,
-      ],
-      labelBuilder: (value) => switch (value) {
-        .none => 'none',
-        .small => 'Small',
-        .medium => 'Medium',
-        .large => 'Large',
-        _ => value.toString(),
-      },
+        name: 'Padding',
+        values: const [
+          AuraEdgeInsetsGeometry.none,
+          AuraEdgeInsetsGeometry.small,
+          AuraEdgeInsetsGeometry.medium,
+          AuraEdgeInsetsGeometry.large,
+        ],
+        labelBuilder: (value) => switch (value) {
+          .none => 'none',
+          .small => 'Small',
+          .medium => 'Medium',
+          .large => 'Large',
+          _ => value.toString(),
+        },
+      ),
+      enableTap: BoolArg(true, name: 'Enable Tap'),
+      semanticLabel: NullableStringArg(null, name: 'Semantic Label'),
+      style: EnumArg(AuraCardStyle.values.first, values: AuraCardStyle.values),
     ),
-    enableTap: BoolArg(true, name: 'Enable Tap'),
-    semanticLabel: NullableStringArg(null, name: 'Semantic Label'),
-    style: EnumArg(AuraCardStyle.values.first, values: AuraCardStyle.values),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Tapped',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraCard));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Tapped',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraCard));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates editable card content and the optional tap callback.
 class const CardDemo({

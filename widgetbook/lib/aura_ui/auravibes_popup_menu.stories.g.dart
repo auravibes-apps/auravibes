@@ -18,9 +18,9 @@ typedef _Story = AuraPopupMenuStory;
 typedef _Args = _PopupMenuInputArgs;
 final AuraPopupMenuComponent =
     Component<AuraPopupMenu, StoryArgs<AuraPopupMenu>>(
-      name: component.name ?? 'AuraPopupMenu',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'AuraPopupMenu',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''A popup menu widget that displays a list of menu items.
 
 The menu can be controlled programmatically using an
@@ -42,7 +42,7 @@ class AuraPopupMenuStory extends Story<AuraPopupMenu, _PopupMenuInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _PopupMenuInputArgs(),
-         builder: builder ?? popupMenuDefaults.builder!,
+         builder: builder ?? _popupMenuDefaults.builder!,
        );
 }
 

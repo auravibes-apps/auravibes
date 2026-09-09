@@ -41,7 +41,7 @@ class AuraTextStory extends Story<AuraText, _TextInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _TextInputArgs(),
-         builder: builder ?? textDefaults.builder!,
+         builder: builder ?? _textDefaults.builder!,
        );
 }
 

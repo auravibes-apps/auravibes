@@ -17,9 +17,9 @@ typedef _Defaults = AuraModalDefaults;
 typedef _Story = AuraModalStory;
 typedef _Args = _ModalInputArgs;
 final AuraModalComponent = Component<AuraModal, StoryArgs<AuraModal>>(
-  name: component.name ?? 'AuraModal',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'AuraModal',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment: r'''A reusable modal composition with an entry point and arbitrary content.
 
 Tapping or activating [entryPointChild] opens [contentChild] in a modal
@@ -41,7 +41,7 @@ class AuraModalStory extends Story<AuraModal, _ModalInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _ModalInputArgs(),
-         builder: builder ?? modalDefaults.builder!,
+         builder: builder ?? _modalDefaults.builder!,
        );
 }
 

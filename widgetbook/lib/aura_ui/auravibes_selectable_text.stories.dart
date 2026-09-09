@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_selectable_text.stories.bridge.g.dart';
 part 'auravibes_selectable_text.stories.g.dart';
 
 class const _SelectableTextInput({
@@ -23,10 +24,10 @@ class const _SelectableTextInput({
   required final bool enableSelectionChanged,
 });
 
-const component = ComponentMeta(name: 'AuraSelectableText');
-const meta = Meta(SelectableTextDemo.new, argsType: _SelectableTextInput.new);
+const _component = ComponentMeta(name: 'AuraSelectableText');
+const _meta = Meta(SelectableTextDemo.new, argsType: _SelectableTextInput.new);
 
-final _Defaults selectableTextDefaults = _Defaults(
+final _Defaults _selectableTextDefaults = _Defaults(
   builder: (context, args) => SelectableTextDemo(
     data: args.data,
     style: args.style,
@@ -45,82 +46,84 @@ final _Defaults selectableTextDefaults = _Defaults(
   ),
 );
 
-final $DefaultSelectableText = _Story(
-  name: 'Default SelectableText',
-  setup: (context, child, args) => constrainStoryWidth(
-    Padding(padding: const EdgeInsets.all(16), child: child),
-  ),
-  args: _Args(
-    data: StringArg('This text can be selected and copied.', name: 'text'),
-    style: EnumArg(
-      AuraTextStyle.body,
-      name: 'style',
-      values: AuraTextStyle.values,
+abstract final class _StorybookDefinitions {
+  static final $DefaultSelectableText = _Story(
+    name: 'Default SelectableText',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(
+      Padding(padding: const EdgeInsets.all(16), child: child),
     ),
-    tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
-    textAlign: NullableEnumArg(
-      null,
-      name: 'textAlign',
-      values: const [
-        TextAlign.left,
-        TextAlign.center,
-        TextAlign.right,
-        TextAlign.justify,
-      ],
+    args: _Args(
+      data: StringArg('This text can be selected and copied.', name: 'text'),
+      style: EnumArg(
+        AuraTextStyle.body,
+        name: 'style',
+        values: AuraTextStyle.values,
+      ),
+      tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
+      textAlign: NullableEnumArg(
+        null,
+        name: 'textAlign',
+        values: const [
+          TextAlign.left,
+          TextAlign.center,
+          TextAlign.right,
+          TextAlign.justify,
+        ],
+      ),
+      maxLines: NullableIntArg(
+        null,
+        name: 'maxLines',
+        style: const SliderIntArgStyle(min: 1, max: 10, divisions: 9),
+      ),
+      cursorWidth: DoubleArg(
+        2,
+        name: 'cursorWidth',
+        style: const SliderDoubleArgStyle(min: 1, max: 6, divisions: 5),
+      ),
+      cursorHeight: NullableDoubleArg(
+        null,
+        name: 'cursorHeight',
+        style: const SliderDoubleArgStyle(min: 8, max: 48, divisions: 10),
+      ),
+      cursorRadius: NullableSingleArg<Radius>(
+        null,
+        name: 'cursorRadius',
+        values: const [Radius.zero, Radius.circular(2), Radius.circular(6)],
+        labelBuilder: (value) => '${value.x}px',
+      ),
+      cursorTint: NullableEnumArg(
+        null,
+        name: 'cursorTint',
+        values: AuraTint.values,
+      ),
+      showCursor: BoolArg(false, name: 'showCursor'),
+      autofocus: BoolArg(false, name: 'autofocus'),
+      minLines: NullableIntArg(
+        null,
+        name: 'minLines',
+        style: const SliderIntArgStyle(min: 1, max: 10, divisions: 9),
+      ),
+      enableTap: BoolArg(true, name: 'Enable Tap'),
+      enableSelectionChanged: BoolArg(true, name: 'Enable Selection Changed'),
     ),
-    maxLines: NullableIntArg(
-      null,
-      name: 'maxLines',
-      style: const SliderIntArgStyle(min: 1, max: 10, divisions: 9),
-    ),
-    cursorWidth: DoubleArg(
-      2,
-      name: 'cursorWidth',
-      style: const SliderDoubleArgStyle(min: 1, max: 6, divisions: 5),
-    ),
-    cursorHeight: NullableDoubleArg(
-      null,
-      name: 'cursorHeight',
-      style: const SliderDoubleArgStyle(min: 8, max: 48, divisions: 10),
-    ),
-    cursorRadius: NullableSingleArg<Radius>(
-      null,
-      name: 'cursorRadius',
-      values: const [Radius.zero, Radius.circular(2), Radius.circular(6)],
-      labelBuilder: (value) => '${value.x}px',
-    ),
-    cursorTint: NullableEnumArg(
-      null,
-      name: 'cursorTint',
-      values: AuraTint.values,
-    ),
-    showCursor: BoolArg(false, name: 'showCursor'),
-    autofocus: BoolArg(false, name: 'autofocus'),
-    minLines: NullableIntArg(
-      null,
-      name: 'minLines',
-      style: const SliderIntArgStyle(min: 1, max: 10, divisions: 9),
-    ),
-    enableTap: BoolArg(true, name: 'Enable Tap'),
-    enableSelectionChanged: BoolArg(true, name: 'Enable Selection Changed'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Tapped',
-      run: (tester, args) async {
-        await tester.tap(find.byType(SelectableText));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-    _Scenario(
-      name: 'Selects Text',
-      run: (tester, args) async {
-        await tester.longPress(find.byType(SelectableText));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Tapped',
+        run: (tester, args) async {
+          await tester.tap(find.byType(SelectableText));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+      _Scenario(
+        name: 'Selects Text',
+        run: (tester, args) async {
+          await tester.longPress(find.byType(SelectableText));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates selectable text callbacks and cursor configuration.
 class const SelectableTextDemo({

@@ -1,0 +1,11 @@
+builders:
+  story_bridge_builder:
+    import: "package:widgetbook_workspace/story_bridge_builder.dart"
+    builder_factories: ["StoryBridgeBuilder.create"]
+    runs_before: ["widgetbook:story_builder"]
+    build_extensions: { ".stories.dart": [".stories.bridge.g.dart"] }
+    auto_apply: root_package
+    build_to: source
+    defaults:
+      generate_for:
+        - lib/**.stories.dart

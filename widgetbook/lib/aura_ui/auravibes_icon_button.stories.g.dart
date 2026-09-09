@@ -18,9 +18,9 @@ typedef _Story = AuraIconButtonStory;
 typedef _Args = _IconButtonInputArgs;
 final AuraIconButtonComponent =
     Component<AuraIconButton, StoryArgs<AuraIconButton>>(
-      name: component.name ?? 'AuraIconButton',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'AuraIconButton',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''A specialized icon button component following the Aura design system.''',
       stories: [$IconButtonBasic..$generatedName = 'IconButtonBasic'],
     );
@@ -37,7 +37,7 @@ class AuraIconButtonStory extends Story<AuraIconButton, _IconButtonInputArgs> {
     StoryWidgetBuilder<AuraIconButton, _IconButtonInputArgs>? builder,
     super.scenarios,
     super.excludeFromTests,
-  }) : super(builder: builder ?? iconButtonDefaults.builder!);
+  }) : super(builder: builder ?? _iconButtonDefaults.builder!);
 }
 
 class _IconButtonInputArgs extends StoryArgs<AuraIconButton> {

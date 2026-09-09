@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_date_time_input.stories.bridge.g.dart';
 part 'auravibes_date_time_input.stories.g.dart';
 
 class const _DateTimeInputControls({
@@ -12,10 +13,10 @@ class const _DateTimeInputControls({
   required final DateTime initialValue,
 });
 
-const component = ComponentMeta(name: 'AuraDateTimeInput');
-const meta = Meta(DateTimeInputDemo.new, argsType: _DateTimeInputControls.new);
+const _component = ComponentMeta(name: 'AuraDateTimeInput');
+const _meta = Meta(DateTimeInputDemo.new, argsType: _DateTimeInputControls.new);
 
-final _Defaults dateTimeInputDefaults = _Defaults(
+final _Defaults _dateTimeInputDefaults = _Defaults(
   builder: (context, args) => DateTimeInputDemo(
     enableDate: args.enableDate || !args.enableTime,
     enableTime: args.enableTime || !args.enableDate,
@@ -24,36 +25,39 @@ final _Defaults dateTimeInputDefaults = _Defaults(
   ),
 );
 
-final $DateAndTime = _Story(
-  name: 'Date and Time',
-  setup: (context, child, args) => constrainStoryWidth(child, maxWidth: 480),
-  args: _Args(
-    enableDate: BoolArg(true, name: 'enableDate'),
-    enableTime: BoolArg(true, name: 'enableTime'),
-    enabled: BoolArg(true, name: 'enabled'),
-    initialValue: DateTimeArg(
-      .new(2026, 8, 28, 12),
-      name: 'Initial Value',
-      start: .new(2026, 1),
-      end: .new(2026, 12, 31, 23, 59),
+abstract final class _StorybookDefinitions {
+  static final $DateAndTime = _Story(
+    name: 'Date and Time',
+    setup: (context, child, args) =>
+        StoryHelpers.constrainStoryWidth(child, maxWidth: 480),
+    args: _Args(
+      enableDate: BoolArg(true, name: 'enableDate'),
+      enableTime: BoolArg(true, name: 'enableTime'),
+      enabled: BoolArg(true, name: 'enabled'),
+      initialValue: DateTimeArg(
+        .new(2026, 8, 28, 12),
+        name: 'Initial Value',
+        start: .new(2026, 1),
+        end: .new(2026, 12, 31, 23, 59),
+      ),
     ),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
-    _Scenario(
-      name: 'Opens Picker',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraDateTimeInput));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
+      _Scenario(
+        name: 'Opens Picker',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraDateTimeInput));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates the controlled date and time picker in its supported modes.
 class const DateTimeInputDemo({

@@ -43,7 +43,7 @@ class AuraTileStory extends Story<AuraTile, _TileInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _TileInputArgs(),
-         builder: builder ?? tileDefaults.builder!,
+         builder: builder ?? _tileDefaults.builder!,
        );
 }
 

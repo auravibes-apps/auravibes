@@ -18,9 +18,9 @@ typedef _Story = DateTimeInputDemoStory;
 typedef _Args = _DateTimeInputControlsArgs;
 final DateTimeInputDemoComponent =
     Component<DateTimeInputDemo, StoryArgs<DateTimeInputDemo>>(
-      name: component.name ?? 'DateTimeInputDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'DateTimeInputDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates the controlled date and time picker in its supported modes.''',
       stories: [$DateAndTime..$generatedName = 'DateAndTime'],
     );
@@ -42,7 +42,7 @@ class DateTimeInputDemoStory
     super.excludeFromTests,
   }) : super(
          args: args ?? _DateTimeInputControlsArgs(),
-         builder: builder ?? dateTimeInputDefaults.builder!,
+         builder: builder ?? _dateTimeInputDefaults.builder!,
        );
 }
 

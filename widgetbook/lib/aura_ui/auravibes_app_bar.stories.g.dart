@@ -17,9 +17,9 @@ typedef _Defaults = AppBarDemoDefaults;
 typedef _Story = AppBarDemoStory;
 typedef _Args = _AppBarInputArgs;
 final AppBarDemoComponent = Component<AppBarDemo, StoryArgs<AppBarDemo>>(
-  name: component.name ?? 'AppBarDemo',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'AppBarDemo',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment: r'''Demonstrates the Aura app bar with editable title and leading action.''',
   stories: [$AppBar..$generatedName = 'AppBar'],
 );
@@ -38,7 +38,7 @@ class AppBarDemoStory extends Story<AppBarDemo, _AppBarInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _AppBarInputArgs(),
-         builder: builder ?? appBarDefaults.builder!,
+         builder: builder ?? _appBarDefaults.builder!,
        );
 }
 

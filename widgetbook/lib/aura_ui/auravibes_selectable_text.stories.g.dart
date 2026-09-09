@@ -19,9 +19,9 @@ typedef _Story = SelectableTextDemoStory;
 typedef _Args = _SelectableTextInputArgs;
 final SelectableTextDemoComponent =
     Component<SelectableTextDemo, StoryArgs<SelectableTextDemo>>(
-      name: component.name ?? 'SelectableTextDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'SelectableTextDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates selectable text callbacks and cursor configuration.''',
       stories: [
         $DefaultSelectableText..$generatedName = 'DefaultSelectableText',
@@ -45,7 +45,7 @@ class SelectableTextDemoStory
     super.excludeFromTests,
   }) : super(
          args: args ?? _SelectableTextInputArgs(),
-         builder: builder ?? selectableTextDefaults.builder!,
+         builder: builder ?? _selectableTextDefaults.builder!,
        );
 }
 

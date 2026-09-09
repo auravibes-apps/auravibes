@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_tooltip.stories.bridge.g.dart';
 part 'auravibes_tooltip.stories.g.dart';
 
 const _defaultShowDurationMs = 2000.0;
@@ -19,13 +20,13 @@ class const _TooltipInput({
   required final double waitDurationMs,
 });
 
-const meta = Meta(AuraTooltip.new, argsType: _TooltipInput.new);
+const _meta = Meta(AuraTooltip.new, argsType: _TooltipInput.new);
 
-final _Defaults tooltipDefaults = _Defaults(
+final _Defaults _tooltipDefaults = _Defaults(
   builder: (context, args) => AuraTooltip(
     message: args.message,
     child: IconButton(
-      onPressed: noopCallback,
+      onPressed: StoryHelpers.noopCallback,
       tooltip: args.message,
       icon: const Icon(Icons.info_outline),
     ),
@@ -35,42 +36,44 @@ final _Defaults tooltipDefaults = _Defaults(
   ),
 );
 
-final $DefaultTooltip = _Story(
-  name: 'Default Tooltip',
-  args: _Args(
-    message: StringArg('This is a helpful tooltip!', name: 'message'),
-    tint: EnumArg(AuraTint.primary, name: 'tint', values: AuraTint.values),
-    showDurationMs: DoubleArg(
-      _defaultShowDurationMs,
-      name: 'showDuration (ms)',
-      style: const SliderDoubleArgStyle(
-        min: _minShowDurationMs,
-        max: _maxShowDurationMs,
-        divisions: 90,
+abstract final class _StorybookDefinitions {
+  static final $DefaultTooltip = _Story(
+    name: 'Default Tooltip',
+    args: _Args(
+      message: StringArg('This is a helpful tooltip!', name: 'message'),
+      tint: EnumArg(AuraTint.primary, name: 'tint', values: AuraTint.values),
+      showDurationMs: DoubleArg(
+        _defaultShowDurationMs,
+        name: 'showDuration (ms)',
+        style: const SliderDoubleArgStyle(
+          min: _minShowDurationMs,
+          max: _maxShowDurationMs,
+          divisions: 90,
+        ),
+      ),
+      waitDurationMs: DoubleArg(
+        0,
+        name: 'waitDuration (ms)',
+        style: const SliderDoubleArgStyle(
+          min: 0,
+          max: _maxWaitDurationMs,
+          divisions: 40,
+        ),
       ),
     ),
-    waitDurationMs: DoubleArg(
-      0,
-      name: 'waitDuration (ms)',
-      style: const SliderDoubleArgStyle(
-        min: 0,
-        max: _maxWaitDurationMs,
-        divisions: 40,
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
       ),
-    ),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Shows Tooltip',
-      run: (tester, args) async {
-        await tester.longPress(find.byType(IconButton));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Shows Tooltip',
+        run: (tester, args) async {
+          await tester.longPress(find.byType(IconButton));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}

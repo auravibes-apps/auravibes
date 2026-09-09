@@ -18,7 +18,7 @@ Future<void> main() async {
     final _ = await outputDirectory.delete(recursive: true);
   }
 
-  final widgetbookTests = testWidgetbook(createWidgetbookConfig());
+  final widgetbookTests = testWidgetbook(WidgetbookConfig.create());
   await widgetbookTests;
 
   test('registers the complete Aura catalog', () {

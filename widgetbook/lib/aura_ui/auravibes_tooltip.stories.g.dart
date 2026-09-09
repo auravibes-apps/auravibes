@@ -50,7 +50,7 @@ class AuraTooltipStory extends Story<AuraTooltip, _TooltipInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _TooltipInputArgs(),
-         builder: builder ?? tooltipDefaults.builder!,
+         builder: builder ?? _tooltipDefaults.builder!,
        );
 }
 

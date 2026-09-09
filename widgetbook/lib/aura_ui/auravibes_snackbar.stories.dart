@@ -3,9 +3,10 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 
+part 'auravibes_snackbar.stories.bridge.g.dart';
 part 'auravibes_snackbar.stories.g.dart';
 
-const component = ComponentMeta(name: 'Snackbar Variants');
+const _component = ComponentMeta(name: 'Snackbar Variants');
 
 class const _SnackBarInput({
   required final AuraSnackBarVariant variant,
@@ -13,9 +14,9 @@ class const _SnackBarInput({
   required final int durationSeconds,
 });
 
-const meta = Meta(SnackBarDemo.new, argsType: _SnackBarInput.new);
+const _meta = Meta(SnackBarDemo.new, argsType: _SnackBarInput.new);
 
-final _Defaults snackbarDefaults = _Defaults(
+final _Defaults _snackbarDefaults = _Defaults(
   builder: (context, args) => SnackBarDemo(
     variant: args.variant,
     showAction: args.showAction,
@@ -23,33 +24,35 @@ final _Defaults snackbarDefaults = _Defaults(
   ),
 );
 
-final $SnackbarVariants = _Story(
-  name: 'Snackbar Variants',
-  setup: (context, child, args) =>
-      SizedBox(width: 420, height: 300, child: Scaffold(body: child)),
-  args: _Args(
-    variant: EnumArg(
-      AuraSnackBarVariant.default_,
-      name: 'variant',
-      values: AuraSnackBarVariant.values,
+abstract final class _StorybookDefinitions {
+  static final $SnackbarVariants = _Story(
+    name: 'Snackbar Variants',
+    setup: (context, child, args) =>
+        SizedBox(width: 420, height: 300, child: Scaffold(body: child)),
+    args: _Args(
+      variant: EnumArg(
+        AuraSnackBarVariant.default_,
+        name: 'variant',
+        values: AuraSnackBarVariant.values,
+      ),
+      showAction: BoolArg(true, name: 'showAction'),
+      durationSeconds: IntArg(
+        4,
+        name: 'duration (seconds)',
+        style: const SliderIntArgStyle(min: 1, max: 10, divisions: 9),
+      ),
     ),
-    showAction: BoolArg(true, name: 'showAction'),
-    durationSeconds: IntArg(
-      4,
-      name: 'duration (seconds)',
-      style: const SliderIntArgStyle(min: 1, max: 10, divisions: 9),
-    ),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Shows Snackbar',
-      run: (tester, args) async {
-        await tester.tap(find.text('Show SnackBar'));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Shows Snackbar',
+        run: (tester, args) async {
+          await tester.tap(find.text('Show SnackBar'));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates snackbar variants, actions, and display duration.
 class const SnackBarDemo({
