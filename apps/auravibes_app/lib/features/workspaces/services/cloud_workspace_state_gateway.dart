@@ -185,7 +185,7 @@ class CloudWorkspaceStateGateway {
     Future<({T value, int currentSequence})> Function() load,
   ) async* {
     if (_disposed) return;
-    var snapshot = await load();
+    final snapshot = await load();
     var lastSequence = snapshot.currentSequence;
     yield snapshot.value;
 
@@ -201,43 +201,81 @@ class CloudWorkspaceStateGateway {
         ),
       );
       try {
-        while (await Future.any([events.moveNext(), _disposedSignal.future])) {
-          final event = events.current;
-          if (event.sequence <= lastSequence) continue;
-
-          final hasGap = event.sequence != lastSequence + 1;
-          lastSequence = event.sequence;
+        await for (final update in _consumeEvents<T>(
+          events: events,
+          resourceKinds: resourceKinds,
+          load: load,
+          lastSequence: lastSequence,
+        )) {
+          lastSequence = update.lastSequence;
           reconnectDelay = _initialReconnectDelay;
-          final affectsResources =
-              event.kind == WorkspaceStreamEnvelopeKind.workspaceInvalidated &&
-              resourceKinds.contains(event.resourceKind);
-          if (!hasGap && !affectsResources) continue;
+          if (!update.shouldYield) continue;
 
-          snapshot = await load();
-          lastSequence = snapshot.currentSequence;
-          yield snapshot.value;
+          yield update.value as T;
         }
       } on CloudWorkspaceException catch (error) {
-        if (_isTerminal(error.code)) {
-          CloudAppErrors.translateException(error, .state);
-        }
+        _handleCloudWorkspaceException(error);
       } on CloudAppException catch (error) {
-        if (_isTerminalCode(error.code)) {
-          rethrow;
-        }
+        _handleCloudAppException(error);
       } on Object catch (_) {
-        if (_disposed) return;
+        _handleOtherWatchException();
       } finally {
         final _ = await events.cancel();
       }
-      if (_disposed) return;
-      await Future.any([_delay(reconnectDelay), _disposedSignal.future]);
+      await _waitForReconnect(reconnectDelay);
       reconnectDelay = Duration(
         milliseconds: (reconnectDelay.inMilliseconds * 2).clamp(
           _initialReconnectDelay.inMilliseconds,
           _maxReconnectDelay.inMilliseconds,
         ),
       );
+    }
+  }
+
+  void _handleCloudWorkspaceException(CloudWorkspaceException error) {
+    if (_isTerminal(error.code)) {
+      CloudAppErrors.translateException(error, .state);
+    }
+  }
+
+  void _handleCloudAppException(CloudAppException error) {
+    if (_isTerminalCode(error.code)) throw error;
+  }
+
+  void _handleOtherWatchException() {
+    if (_disposed) return;
+  }
+
+  Future<void> _waitForReconnect(Duration reconnectDelay) {
+    if (_disposed) return Future.value();
+
+    return Future.any([_delay(reconnectDelay), _disposedSignal.future]);
+  }
+
+  Stream<({T? value, bool shouldYield, int lastSequence})> _consumeEvents<T>({
+    required StreamIterator<WorkspaceStreamEnvelope> events,
+    required Set<String> resourceKinds,
+    required Future<({T value, int currentSequence})> Function() load,
+    required int lastSequence,
+  }) async* {
+    var sequence = lastSequence;
+    while (await Future.any([events.moveNext(), _disposedSignal.future])) {
+      final event = events.current;
+      if (event.sequence <= sequence) continue;
+
+      final hasGap = event.sequence != sequence + 1;
+      sequence = event.sequence;
+      final affectsResources =
+          event.kind == WorkspaceStreamEnvelopeKind.workspaceInvalidated &&
+          resourceKinds.contains(event.resourceKind);
+      if (!hasGap && !affectsResources) {
+        yield (value: null, shouldYield: false, lastSequence: sequence);
+        continue;
+      }
+
+      final snapshot = await load();
+      sequence = snapshot.currentSequence;
+      yield (value: snapshot.value, shouldYield: true, lastSequence: sequence);
     }
   }
 
@@ -270,48 +308,97 @@ class CloudWorkspaceStateGateway {
       int? sequence;
       var coherent = true;
       for (final kind in kinds) {
-        final cursors = <String>{};
-        String? cursor;
-        do {
-          final state = await read(
-            pages: [
-              WorkspaceResourcePageRequest(
-                resourceKind: kind,
-                afterResourceId: cursor,
-                limit: pageSize,
-              ),
-            ],
-          );
-          sequence ??= state.currentSequence;
-          if (state.currentSequence != sequence) {
-            coherent = false;
-            break;
-          }
-          if (state.pages.length != 1 ||
-              state.pages.single.resourceKind != kind) {
-            _malformedSnapshot('unexpectedPage');
-          }
-          final page = state.pages.single;
-          for (final resource in page.resources) {
-            if (resource.resourceKind != kind) {
-              _malformedSnapshot('unexpectedKind');
-            }
-            if (seenResourceIds.add('${kind.name}/${resource.resourceId}')) {
-              resources.add(resource);
-            }
-          }
-          cursor = page.nextResourceId;
-          if (cursor != null && (cursor.isEmpty || !cursors.add(cursor))) {
-            _malformedSnapshot('invalidCursor');
-          }
-        } while (cursor != null);
-        if (!coherent) break;
+        final kindResult = await _readKind(
+          kind: kind,
+          pageSize: pageSize,
+          resources: resources,
+          seenResourceIds: seenResourceIds,
+          sequence: sequence,
+        );
+        sequence = kindResult.sequence;
+        if (!kindResult.coherent) {
+          coherent = false;
+
+          break;
+        }
       }
       if (coherent) {
         return (resources: resources, currentSequence: sequence ?? 0);
       }
     }
     _malformedSnapshot('incoherentSnapshot');
+  }
+
+  Future<({int? sequence, bool coherent})> _readKind({
+    required WorkspaceResourceKind kind,
+    required int pageSize,
+    required List<WorkspaceResource> resources,
+    required Set<String> seenResourceIds,
+    required int? sequence,
+  }) async {
+    final cursors = <String>{};
+    var currentSequence = sequence;
+    String? cursor;
+    do {
+      final state = await read(
+        pages: [
+          WorkspaceResourcePageRequest(
+            resourceKind: kind,
+            afterResourceId: cursor,
+            limit: pageSize,
+          ),
+        ],
+      );
+      currentSequence ??= state.currentSequence;
+      if (state.currentSequence != currentSequence) {
+        return (sequence: currentSequence, coherent: false);
+      }
+
+      final page = _validatedPage(state, kind);
+      _appendResources(
+        kind: kind,
+        page: page,
+        resources: resources,
+        seenResourceIds: seenResourceIds,
+      );
+      cursor = page.nextResourceId;
+      _validateCursor(cursor, cursors);
+    } while (cursor != null);
+
+    return (sequence: currentSequence, coherent: true);
+  }
+
+  WorkspaceResourcePage _validatedPage(
+    ReadWorkspaceStateResponse state,
+    WorkspaceResourceKind kind,
+  ) {
+    if (state.pages.length != 1 || state.pages.single.resourceKind != kind) {
+      _malformedSnapshot('unexpectedPage');
+    }
+
+    return state.pages.single;
+  }
+
+  void _appendResources({
+    required WorkspaceResourceKind kind,
+    required WorkspaceResourcePage page,
+    required List<WorkspaceResource> resources,
+    required Set<String> seenResourceIds,
+  }) {
+    for (final resource in page.resources) {
+      if (resource.resourceKind != kind) {
+        _malformedSnapshot('unexpectedKind');
+      }
+      if (seenResourceIds.add('${kind.name}/${resource.resourceId}')) {
+        resources.add(resource);
+      }
+    }
+  }
+
+  void _validateCursor(String? cursor, Set<String> cursors) {
+    if (cursor != null && (cursor.isEmpty || !cursors.add(cursor))) {
+      _malformedSnapshot('invalidCursor');
+    }
   }
 
   Never _malformedSnapshot(String code) => throw CloudAppException(
