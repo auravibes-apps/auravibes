@@ -13,6 +13,8 @@ class A2uiFormValidationResult {
   bool get isValid => errorsByPath.isEmpty;
 }
 
+typedef _FormIssue = ({String path, String? error, bool unanswered});
+
 /// Validates form data with the input metadata advertised by the chat catalog.
 /// The types remain JSON-only so app and server share the same decision.
 A2uiFormValidationResult validateA2uiFormValues({
@@ -24,33 +26,65 @@ A2uiFormValidationResult validateA2uiFormValues({
   final errors = <String, String>{};
   final unanswered = <String>[];
   for (final component in components) {
-    final kind = component['component'];
-    if (kind is! String || !_inputComponents.contains(kind)) continue;
-    final reference = component['value'];
-    if (reference is! Map || reference['path'] is! String) continue;
-    final path = reference['path']! as String;
-    if (!path.startsWith('/')) continue;
-    final value = _valueAtPath(values, path);
-    final isTouched = touched.contains(path);
-    final isEmpty = _isEmpty(value);
-    final required = component['required'] == true;
-    if (!required && isEmpty && !isTouched) {
-      unanswered.add(path);
+    final issue = _validateComponent(component, values, touched);
+    if (issue == null) continue;
+    if (issue.unanswered) {
+      unanswered.add(issue.path);
       continue;
     }
-    if (required && (isEmpty || kind == 'CheckBox' && value != true)) {
-      errors[path] = 'required';
-      continue;
-    }
-    if (isEmpty) continue;
-    final error = _validateValue(kind, component, value);
-    if (error != null) errors[path] = error;
+    errors[issue.path] = issue.error!;
   }
   return A2uiFormValidationResult(
     errorsByPath: .unmodifiable(errors),
     unansweredPaths: .unmodifiable(unanswered),
   );
 }
+
+_FormIssue? _validateComponent(
+  Map<String, Object?> component,
+  Map<String, Object?> values,
+  Set<String> touched,
+) {
+  final kind = _inputKind(component);
+  if (kind == null) return null;
+  final path = _componentPath(component['value']);
+  if (path == null) return null;
+  final value = _valueAtPath(values, path);
+  final isEmpty = _isEmpty(value);
+  final required = component['required'] == true;
+  if (_isUnanswered(required, isEmpty, touched.contains(path))) {
+    return (path: path, error: null, unanswered: true);
+  }
+  if (_isRequiredValueInvalid(kind, required, isEmpty, value)) {
+    return (path: path, error: 'required', unanswered: false);
+  }
+  if (isEmpty) return null;
+  final error = _validateValue(kind, component, value);
+  return error == null ? null : (path: path, error: error, unanswered: false);
+}
+
+String? _inputKind(Map<String, Object?> component) {
+  final kind = component['component'];
+  if (kind is! String) return null;
+  return _inputComponents.contains(kind) ? kind : null;
+}
+
+String? _componentPath(Object? reference) {
+  if (reference is! Map) return null;
+  final path = reference['path'];
+  if (path is! String || !path.startsWith('/')) return null;
+  return path;
+}
+
+bool _isUnanswered(bool required, bool isEmpty, bool isTouched) =>
+    !required && isEmpty && !isTouched;
+
+bool _isRequiredValueInvalid(
+  String kind,
+  bool required,
+  bool isEmpty,
+  Object? value,
+) => required && (isEmpty || kind == 'CheckBox' && value != true);
 
 /// Returns a JSON-safe form snapshot with slider values aligned to their
 /// advertised step and decimal precision.
@@ -62,30 +96,46 @@ Map<String, Object?> normalizeA2uiFormValues({
     jsonDecode(jsonEncode(values)) as Map,
   );
   for (final component in components) {
-    if (component['component'] != 'Slider') continue;
-    final reference = component['value'];
-    if (reference is! Map || reference['path'] is! String) continue;
-    final path = reference['path']! as String;
-    final current = _valueAtPath(normalized, path);
-    final min = component['min'];
-    final max = component['max'];
-    if (current is! num || min is! num || max is! num) continue;
-    final step = (component['step'] as num?)?.toDouble() ?? 1;
-    final precision = component['precision'] as int? ?? 2;
-    if (step <= 0 || precision < 0 || precision > 20) continue;
-    _setValueAtPath(
-      normalized,
-      path,
-      _normalizeSliderValue(
-        current.toDouble(),
-        min.toDouble(),
-        max.toDouble(),
-        step,
-        precision,
-      ),
-    );
+    _normalizeSliderComponent(normalized, component);
   }
   return normalized;
+}
+
+void _normalizeSliderComponent(
+  Map<String, Object?> values,
+  Map<String, Object?> component,
+) {
+  if (component['component'] != 'Slider') return;
+  final path = _componentPath(component['value']);
+  if (path == null) return;
+  final current = _valueAtPath(values, path);
+  final min = component['min'];
+  final max = component['max'];
+  if (current is! num || min is! num || max is! num) return;
+  final parameters = _sliderParameters(component);
+  if (parameters == null) return;
+  _setValueAtPath(
+    values,
+    path,
+    _normalizeSliderValue(
+      current.toDouble(),
+      min.toDouble(),
+      max.toDouble(),
+      parameters.step,
+      parameters.precision,
+    ),
+  );
+}
+
+({double step, int precision})? _sliderParameters(
+  Map<String, Object?> component,
+) {
+  final stepValue = component['step'];
+  final step = stepValue == null ? 1.0 : (stepValue as num).toDouble();
+  final precisionValue = component['precision'];
+  final precision = precisionValue == null ? 2 : precisionValue as int;
+  if (step <= 0 || precision < 0 || precision > 20) return null;
+  return (step: step, precision: precision);
 }
 
 const _inputComponents = <String>{
@@ -116,80 +166,104 @@ String? _validateValue(
   String kind,
   Map<String, Object?> component,
   Object? value,
+) => switch (kind) {
+  'CheckBox' => value is bool ? null : 'boolean',
+  'Slider' || 'Rating' => _validateNumericValue(kind, component, value),
+  'ChoicePicker' || 'TagInput' => _validateChoiceValue(kind, component, value),
+  'TextField' => _validateTextValue(component, value),
+  'DateTimeInput' => _validateDateTimeValue(component, value),
+  _ => null,
+};
+
+String? _validateNumericValue(
+  String kind,
+  Map<String, Object?> component,
+  Object? value,
 ) {
-  switch (kind) {
-    case 'CheckBox':
-      return value is bool ? null : 'boolean';
-    case 'Slider' || 'Rating':
-      if (value is! num || !value.isFinite) return 'number';
-      final min = component['min'];
-      final max = component['max'];
-      if (min is num && value < min || max is num && value > max) {
-        return 'range';
-      }
-      if (kind == 'Slider') {
-        final step = (component['step'] as num?)?.toDouble() ?? 1;
-        final precision = component['precision'] as int? ?? 2;
-        if (min is num && step > 0 && precision >= 0 && precision <= 20) {
-          final normalized = _normalizeSliderValue(
-            value.toDouble(),
-            min.toDouble(),
-            (max as num?)?.toDouble() ?? value.toDouble(),
-            step,
-            precision,
-          );
-          if (normalized != value.toDouble()) return 'step';
-        }
-      }
-      return null;
-    case 'ChoicePicker' || 'TagInput':
-      final selections = value is List ? value : [value];
-      if (selections.any((item) => item is! String)) return 'choice';
-      if (kind == 'ChoicePicker') {
-        final options = component['options'];
-        final allowed = <String>{
-          if (options is List)
-            for (final option in options)
-              if (option is Map && option['value'] is String)
-                option['value']! as String,
-        };
-        if (allowed.isEmpty ||
-            selections.any((item) => !allowed.contains(item))) {
-          return 'choice';
-        }
-      }
-      final max = component['maxSelections'];
-      if (max is int && selections.length > max) return 'maxSelections';
-      final min = component['minSelections'];
-      if (min is int && selections.length < min) return 'minSelections';
-      return null;
-    case 'TextField':
-      if (value is! String) return 'text';
-      final min = component['minLength'];
-      final max = component['maxLength'];
-      if (min is int && value.length < min ||
-          max is int && value.length > max) {
-        return 'length';
-      }
-      final pattern = component['pattern'];
-      if (pattern is String) {
-        try {
-          if (!RegExp(pattern).hasMatch(value)) return 'pattern';
-        } on FormatException {
-          return 'pattern';
-        }
-      }
-      return null;
-    case 'DateTimeInput':
-      if (value is! String) return 'dateTime';
-      if (!isValidA2uiDateTimeValue(component['variant'], value)) {
-        return 'dateTime';
-      }
-      if (!_inDateTimeRange(value, component['min'], component['max'])) {
-        return 'range';
-      }
+  if (value is! num || !value.isFinite) return 'number';
+  final min = component['min'];
+  final max = component['max'];
+  if (min is num && value < min || max is num && value > max) {
+    return 'range';
   }
+  if (kind != 'Slider') return null;
+  return _validateSliderStep(component, value, min, max);
+}
+
+String? _validateSliderStep(
+  Map<String, Object?> component,
+  num value,
+  Object? min,
+  Object? max,
+) {
+  final parameters = _sliderParameters(component);
+  if (min is! num || parameters == null) return null;
+  final normalized = _normalizeSliderValue(
+    value.toDouble(),
+    min.toDouble(),
+    (max as num?)?.toDouble() ?? value.toDouble(),
+    parameters.step,
+    parameters.precision,
+  );
+  return normalized == value.toDouble() ? null : 'step';
+}
+
+String? _validateChoiceValue(
+  String kind,
+  Map<String, Object?> component,
+  Object? value,
+) {
+  final selections = value is List ? value : [value];
+  if (selections.any((item) => item is! String)) return 'choice';
+  if (kind == 'ChoicePicker' &&
+      !_validChoiceSelections(component, selections)) {
+    return 'choice';
+  }
+  final max = component['maxSelections'];
+  if (max is int && selections.length > max) return 'maxSelections';
+  final min = component['minSelections'];
+  if (min is int && selections.length < min) return 'minSelections';
   return null;
+}
+
+bool _validChoiceSelections(
+  Map<String, Object?> component,
+  List<Object?> selections,
+) {
+  final options = component['options'];
+  final allowed = <String>{
+    if (options is List)
+      for (final option in options)
+        if (option is Map && option['value'] is String)
+          option['value']! as String,
+  };
+  return allowed.isNotEmpty && selections.every(allowed.contains);
+}
+
+String? _validateTextValue(Map<String, Object?> component, Object? value) {
+  if (value is! String) return 'text';
+  final min = component['minLength'];
+  final max = component['maxLength'];
+  if (min is int && value.length < min || max is int && value.length > max) {
+    return 'length';
+  }
+  final pattern = component['pattern'];
+  if (pattern is! String) return null;
+  try {
+    return RegExp(pattern).hasMatch(value) ? null : 'pattern';
+  } on FormatException {
+    return 'pattern';
+  }
+}
+
+String? _validateDateTimeValue(Map<String, Object?> component, Object? value) {
+  if (value is! String) return 'dateTime';
+  if (!isValidA2uiDateTimeValue(component['variant'], value)) {
+    return 'dateTime';
+  }
+  return _inDateTimeRange(value, component['min'], component['max'])
+      ? null
+      : 'range';
 }
 
 bool _inDateTimeRange(String value, Object? min, Object? max) {
