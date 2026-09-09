@@ -71,8 +71,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
     final auraTheme = context.auraTheme;
 
     final onChanged = widget.onChanged;
-    final isDisabled =
-        widget.disabled || !AuraInteractionScope.of(context).allowsValueChanges;
+    final isDisabled = _isDisabled(context);
     final isInteractive = !isDisabled && !widget.isLoading && onChanged != null;
 
     final trackWidth = _getTrackWidth();
@@ -167,6 +166,9 @@ class _AuraSwitchState extends State<AuraSwitch> {
       label: widget.semanticLabel,
     );
   }
+
+  bool _isDisabled(BuildContext context) =>
+      widget.disabled || !AuraInteractionScope.of(context).allowsValueChanges;
 
   double _getTrackWidth() {
     return switch (widget.size) {
