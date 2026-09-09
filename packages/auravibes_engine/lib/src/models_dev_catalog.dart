@@ -10,64 +10,18 @@ class ModelsDevCatalogValue({
     int? maxProviders,
     int? maxModels,
   }) {
-    if (response is! Map || response.isEmpty) {
-      throw const FormatException('Expected non-empty catalog object.');
-    }
-    if (maxProviders != null && response.length > maxProviders) {
-      throw const FormatException('Catalog exceeds provider limit.');
-    }
+    final catalog = _validatedCatalog(response, maxProviders);
     final providers = <ModelsDevProviderValue>[];
     final models = <ModelsDevModelValue>[];
-    for (final entry in response.entries) {
-      if (entry.key is! String || entry.value is! Map) {
-        throw const FormatException('Invalid catalog provider.');
-      }
-      final json = _stringKeyedMap(entry.value);
-      final id = _string(json, 'id');
-      if (id != entry.key) {
-        throw const FormatException('Provider key does not match provider id.');
-      }
-      final rawModels = json['models'];
-      if (rawModels is! Map) {
-        throw const FormatException('Invalid provider models.');
-      }
-      if (maxModels != null && models.length + rawModels.length > maxModels) {
-        throw const FormatException('Catalog exceeds model limit.');
-      }
-      providers.add(
-        ModelsDevProviderValue(
-          id: id,
-          name: _optionalString(json, 'name') ?? id,
-          type: _optionalString(json, 'npm'),
-          url: _optionalString(json, 'api'),
-          documentationUrl: _optionalString(json, 'doc'),
-        ),
+    for (final entry in catalog.entries) {
+      final parsed = _parseProvider(
+        entry,
+        canonicalModelIds,
+        maxModels,
+        models.length,
       );
-      for (final model in rawModels.entries) {
-        if (model.key is! String || model.value is! Map) {
-          throw const FormatException('Invalid catalog model.');
-        }
-        final modelJson = _stringKeyedMap(model.value);
-        final capabilities = ModelCapabilities.fromJson(id, {
-          ...modelJson,
-          'name': modelJson['name'] ?? model.key,
-          'limit':
-              modelJson['limit'] ??
-              const <String, Object?>{'context': 0, 'output': 0},
-          'modalities':
-              modelJson['modalities'] ??
-              const <String, Object?>{
-                'input': <Object?>[],
-                'output': <Object?>[],
-              },
-        }, canonicalModelIds);
-        if (capabilities.id != model.key) {
-          throw const FormatException('Model key does not match model id.');
-        }
-        models.add(
-          ModelsDevModelValue(providerId: id, capabilities: capabilities),
-        );
-      }
+      providers.add(parsed.provider);
+      models.addAll(parsed.models);
     }
     if (models.isEmpty) {
       throw const FormatException('Catalog is empty.');
@@ -78,6 +32,91 @@ class ModelsDevCatalogValue({
     );
   }
 }
+
+Map<Object?, Object?> _validatedCatalog(Object? response, int? maxProviders) {
+  if (response is! Map || response.isEmpty) {
+    throw const FormatException('Expected non-empty catalog object.');
+  }
+  if (maxProviders != null && response.length > maxProviders) {
+    throw const FormatException('Catalog exceeds provider limit.');
+  }
+  return response.cast<Object?, Object?>();
+}
+
+({ModelsDevProviderValue provider, List<ModelsDevModelValue> models})
+_parseProvider(
+  MapEntry<Object?, Object?> entry,
+  Set<String> canonicalModelIds,
+  int? maxModels,
+  int existingModelCount,
+) {
+  final providerId = entry.key;
+  if (providerId is! String || entry.value is! Map) {
+    throw const FormatException('Invalid catalog provider.');
+  }
+  final json = _stringKeyedMap(entry.value);
+  final id = _string(json, 'id');
+  if (id != providerId) {
+    throw const FormatException('Provider key does not match provider id.');
+  }
+  final rawModels = json['models'];
+  if (rawModels is! Map) {
+    throw const FormatException('Invalid provider models.');
+  }
+  if (maxModels != null && existingModelCount + rawModels.length > maxModels) {
+    throw const FormatException('Catalog exceeds model limit.');
+  }
+  return (
+    provider: ModelsDevProviderValue(
+      id: id,
+      name: _optionalString(json, 'name') ?? id,
+      type: _optionalString(json, 'npm'),
+      url: _optionalString(json, 'api'),
+      documentationUrl: _optionalString(json, 'doc'),
+    ),
+    models: [
+      for (final model in rawModels.entries)
+        _parseModel(id, model, canonicalModelIds),
+    ],
+  );
+}
+
+ModelsDevModelValue _parseModel(
+  String providerId,
+  MapEntry<Object?, Object?> model,
+  Set<String> canonicalModelIds,
+) {
+  final modelId = model.key;
+  if (modelId is! String || model.value is! Map) {
+    throw const FormatException('Invalid catalog model.');
+  }
+  final modelJson = _stringKeyedMap(model.value);
+  final capabilities = ModelCapabilities.fromJson(
+    providerId,
+    _modelCapabilitiesJson(modelJson, modelId),
+    canonicalModelIds,
+  );
+  if (capabilities.id != modelId) {
+    throw const FormatException('Model key does not match model id.');
+  }
+  return ModelsDevModelValue(
+    providerId: providerId,
+    capabilities: capabilities,
+  );
+}
+
+Map<String, dynamic> _modelCapabilitiesJson(
+  Map<String, dynamic> modelJson,
+  String modelId,
+) => {
+  ...modelJson,
+  'name': modelJson['name'] ?? modelId,
+  'limit':
+      modelJson['limit'] ?? const <String, Object?>{'context': 0, 'output': 0},
+  'modalities':
+      modelJson['modalities'] ??
+      const <String, Object?>{'input': <Object?>[], 'output': <Object?>[]},
+};
 
 class const ModelsDevProviderValue({
   required final String id,
