@@ -126,48 +126,68 @@ abstract final class CloudResourceMapper {
       .compactionSetting || .workspaceSetting => const <String, Type>{},
     };
     for (final entry in required.entries) {
-      final value = data[entry.key];
-      final hasExpectedType =
-          (entry.value == String && value is String) ||
-          (entry.value == bool && value is bool) ||
-          (entry.value == Map && value is Map);
-      final isEmptySkillMetadata =
-          kind == WorkspaceResourceKind.skill &&
-          (entry.key == 'content' || entry.key == 'description') &&
-          value is String &&
-          value.isEmpty;
-      final isLegacyEmptyAgentPrompt =
-          kind == WorkspaceResourceKind.agent &&
-          entry.key == 'content' &&
-          value is String &&
-          value.isEmpty;
-      if (!hasExpectedType) {
-        throw FormatException(
-          'Invalid ${kind.name}.${entry.key} type: ${value.runtimeType}',
-        );
-      }
-      if (value is String &&
-          value.isEmpty &&
-          !isEmptySkillMetadata &&
-          !isLegacyEmptyAgentPrompt) {
-        throw FormatException('Empty ${kind.name}.${entry.key}');
-      }
+      _validateResourceEntry(kind, data, entry);
     }
-    if (kind == WorkspaceResourceKind.agent) {
-      final _ = visibility(data['visibility']);
-    }
-    if (kind == WorkspaceResourceKind.tool ||
-        kind == WorkspaceResourceKind.toolGroup ||
-        kind == WorkspaceResourceKind.toolPermission) {
-      final _ = permission(data['permissionMode']);
-    }
-    if (kind == WorkspaceResourceKind.agentAssociation) {
-      final hasSkill = data['skillId'] is String;
-      final hasTool = data['toolId'] is String;
-      if (hasSkill == hasTool) throw const FormatException();
-      if (hasTool) {
-        final _ = permission(data['permissionMode']);
-      }
-    }
+    _validateResourceSpecificFields(kind, data);
+  }
+}
+
+void _validateResourceEntry(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+  MapEntry<String, Type> entry,
+) {
+  final value = data[entry.key];
+  if (!_hasExpectedType(entry.value, value)) {
+    throw FormatException(
+      'Invalid ${kind.name}.${entry.key} type: ${value.runtimeType}',
+    );
+  }
+  if (_isEmptyString(value) && !_allowsEmptyValue(kind, entry.key)) {
+    throw FormatException('Empty ${kind.name}.${entry.key}');
+  }
+}
+
+bool _hasExpectedType(Type expected, Object? value) {
+  if (expected == String) return value is String;
+  if (expected == bool) return value is bool;
+  return expected == Map && value is Map;
+}
+
+bool _isEmptyString(Object? value) => value is String && value.isEmpty;
+
+bool _allowsEmptyValue(WorkspaceResourceKind kind, String field) {
+  if (kind == WorkspaceResourceKind.skill) {
+    return field == 'content' || field == 'description';
+  }
+  return kind == WorkspaceResourceKind.agent && field == 'content';
+}
+
+void _validateResourceSpecificFields(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+) {
+  if (kind == WorkspaceResourceKind.agent) {
+    final _ = CloudResourceMapper.visibility(data['visibility']);
+  }
+  if (_requiresPermission(kind)) {
+    final _ = CloudResourceMapper.permission(data['permissionMode']);
+  }
+  if (kind == WorkspaceResourceKind.agentAssociation) {
+    _validateAgentAssociation(data);
+  }
+}
+
+bool _requiresPermission(WorkspaceResourceKind kind) => switch (kind) {
+  .tool || .toolGroup || .toolPermission => true,
+  _ => false,
+};
+
+void _validateAgentAssociation(Map<String, dynamic> data) {
+  final hasSkill = data['skillId'] is String;
+  final hasTool = data['toolId'] is String;
+  if (hasSkill == hasTool) throw const FormatException();
+  if (hasTool) {
+    final _ = CloudResourceMapper.permission(data['permissionMode']);
   }
 }
