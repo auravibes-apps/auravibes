@@ -95,6 +95,8 @@ Stream<List<MessageEntity>> _cloudMessages(
 }
 
 @visibleForTesting
+// Required: Public testing helper API.
+// ignore: prefer-static-class
 List<MessageEntity> readCloudConversationMessagesForTesting(
   CloudConversationState state,
 ) => _readCloudConversationMessages(state);

@@ -8,6 +8,8 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
+// Required: Conditional export API.
+// ignore: prefer-static-class
 HttpClientAdapter? createPinnedHttpClientAdapter(
   HttpClientAdapter current,
   List<String> addresses,

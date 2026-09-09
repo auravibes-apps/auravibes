@@ -268,6 +268,8 @@ class CloudAgentRepository({
   }
 }
 
+// Required: Public repository factory API.
+// ignore: prefer-static-class
 CloudAgentRepository cloudAgentRepositoryFromStore({
   required String workspaceId,
   required CloudWorkspaceResourceStore store,

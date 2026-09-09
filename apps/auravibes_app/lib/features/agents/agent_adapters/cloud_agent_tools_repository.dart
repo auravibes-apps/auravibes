@@ -111,6 +111,8 @@ class const CloudAgentToolsRepository({
       CloudResourceMapper.decode(resource);
 }
 
+// Required: Public repository factory API.
+// ignore: prefer-static-class
 CloudAgentToolsRepository cloudAgentToolsRepositoryFromStore({
   required CloudWorkspaceResourceStore store,
 }) => CloudAgentToolsRepository(

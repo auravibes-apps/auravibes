@@ -7,7 +7,11 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:genui/genui.dart';
 
+const _percentageScale = 100.0;
+
 /// Adds app-rendered dashboard items to either chat catalog.
+// Required: Public catalog adapter API.
+// ignore: prefer-static-class
 List<CatalogItem> auraDashboardCatalogItems({
   required IconData Function(String?) resolveIcon,
 }) => [
@@ -134,14 +138,16 @@ abstract final class _AuraDashboardCatalogAdapter {
             children: [
               if (label != null) AuraText(child: Text(label)),
               if (data['showValue'] == true && value != null)
-                AuraText(child: Text('${(value * 100).round()}%')),
+                AuraText(child: Text('${(value * _percentageScale).round()}%')),
             ],
           ),
         AuraLinearProgressIndicator(
           value: value,
           tint: _tone(data['tone']),
           semanticLabel: label,
-          semanticValue: value == null ? null : '${(value * 100).round()}%',
+          semanticValue: value == null
+              ? null
+              : '${(value * _percentageScale).round()}%',
         ),
       ],
       crossAxisAlignment: .stretch,

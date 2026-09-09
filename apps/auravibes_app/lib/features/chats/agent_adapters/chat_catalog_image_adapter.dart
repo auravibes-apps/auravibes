@@ -9,7 +9,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
 
+const _compactImageStatusWidth = 96.0;
+const _compactImageStatusHeight = 48.0;
+
 /// Image properties shared by the response and form catalogs.
+// Required: Public catalog schema API.
+// ignore: prefer-static-class
 final chatCatalogImageProperties = <String, Object?>{
   for (final entry
       in (a2uiChatComponentSchemas['Image']!['properties']!
@@ -28,6 +33,8 @@ final chatCatalogImageProperties = <String, Object?>{
 };
 
 /// A literal image example valid in both catalogs.
+// Required: Public catalog example API.
+// ignore: prefer-static-class
 String chatCatalogImageExample() => '''
 [{"id":"root","component":"Image","url":"https://picsum.photos/320/200",
 "variant":"normal","label":"Landscape","width":320,"height":200}]
@@ -211,7 +218,9 @@ class _ImageStatus extends StatelessWidget {
         color: context.auraColors.surfaceVariant,
         child: LayoutBuilder(
           builder: (_, constraints) => Center(
-            child: constraints.maxWidth < 96 || constraints.maxHeight < 48
+            child:
+                constraints.maxWidth < _compactImageStatusWidth ||
+                    constraints.maxHeight < _compactImageStatusHeight
                 ? FittedBox(child: AuraIcon(icon))
                 : Text(
                     text,
