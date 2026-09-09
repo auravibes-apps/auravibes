@@ -70,24 +70,24 @@ abstract class const WorkspaceToCreate._() with _$WorkspaceToCreate {
 
   /// Returns true if the workspace has a valid URL (for remote workspaces).
   bool get hasValidUrl {
-    final url = this.url;
-    final cloudWorkspaceId = this.cloudWorkspaceId;
-    final cloudAccountId = this.cloudAccountId;
-    final hasCloudMirror = cloudWorkspaceId != null && cloudAccountId != null;
-    if (isLocal && url == null && !hasCloudMirror) return true;
+    if (isLocal) return url == null && !_hasCloudMirror;
 
-    return isRemote &&
-        ((url != null && url.isNotEmpty) ||
-            (cloudWorkspaceId != null &&
-                cloudWorkspaceId.isNotEmpty &&
-                cloudAccountId != null &&
-                cloudAccountId.isNotEmpty));
+    return isRemote && (_hasUrl || _hasValidCloudMirror);
   }
 
   /// Returns true if the workspace is in a valid state.
   bool get isValid {
     return hasValidName && hasValidUrl;
   }
+
+  bool get _hasCloudMirror =>
+      cloudWorkspaceId != null && cloudAccountId != null;
+
+  bool get _hasUrl => url?.isNotEmpty == true;
+
+  bool get _hasValidCloudMirror =>
+      cloudWorkspaceId?.isNotEmpty == true &&
+      cloudAccountId?.isNotEmpty == true;
 }
 
 @freezed
@@ -101,17 +101,15 @@ abstract class const WorkspacePatch._() with _$WorkspacePatch {
     String? cloudWorkspaceId,
     String? cloudAccountId,
   }) = _WorkspacePatch;
-  String? validationErrorFor(WorkspaceEntity current) {
-    final name = this.name;
-    final url = this.url;
-    final cloudWorkspaceId = this.cloudWorkspaceId;
-    final cloudAccountId = this.cloudAccountId;
+  bool get _hasNoChanges =>
+      name == null &&
+      type == null &&
+      url == null &&
+      cloudWorkspaceId == null &&
+      cloudAccountId == null;
 
-    if (name == null &&
-        type == null &&
-        url == null &&
-        cloudWorkspaceId == null &&
-        cloudAccountId == null) {
+  String? validationErrorFor(WorkspaceEntity current) {
+    if (_hasNoChanges) {
       return 'At least one field must be provided';
     }
 
@@ -123,31 +121,40 @@ abstract class const WorkspacePatch._() with _$WorkspacePatch {
     );
     if (fieldError != null) return fieldError;
 
-    final mergedName = name ?? current.name;
-    final mergedType = type ?? current.type;
-    final mergedUrl = url ?? current.url;
-    final mergedCloudWorkspaceId = cloudWorkspaceId ?? current.cloudWorkspaceId;
-    final mergedCloudAccountId = cloudAccountId ?? current.cloudAccountId;
-    final hasCloudMirror =
-        mergedCloudWorkspaceId != null && mergedCloudAccountId != null;
+    return _mergedValidationError(_mergedWorkspace(current));
+  }
 
-    if (mergedName.isEmpty) {
+  WorkspaceToCreate _mergedWorkspace(WorkspaceEntity current) =>
+      WorkspaceToCreate(
+        name: name ?? current.name,
+        type: type ?? current.type,
+        url: url ?? current.url,
+        cloudWorkspaceId: cloudWorkspaceId ?? current.cloudWorkspaceId,
+        cloudAccountId: cloudAccountId ?? current.cloudAccountId,
+      );
+
+  String? _mergedValidationError(WorkspaceToCreate workspace) {
+    final hasCloudMirror = _hasCloudMirror(workspace);
+    if (workspace.name.isEmpty) {
       return 'Workspace name cannot be empty';
     }
-
-    if (mergedType == WorkspaceType.local &&
-        (mergedUrl != null || hasCloudMirror)) {
+    if (workspace.type == WorkspaceType.local &&
+        (workspace.url != null || hasCloudMirror)) {
       return 'Local workspace cannot have remote metadata';
     }
-
-    if (mergedType == WorkspaceType.remote &&
-        (mergedUrl == null || mergedUrl.isEmpty) &&
+    if (workspace.type == WorkspaceType.remote &&
+        _hasMissingUrl(workspace.url) &&
         !hasCloudMirror) {
       return 'Remote workspace must have a URL or cloud ID';
     }
 
     return null;
   }
+
+  bool _hasCloudMirror(WorkspaceToCreate workspace) =>
+      workspace.cloudWorkspaceId != null && workspace.cloudAccountId != null;
+
+  bool _hasMissingUrl(String? url) => url == null || url.isEmpty;
 
   String? _fieldValidationError({
     required String? name,
