@@ -236,7 +236,7 @@ class ContinueAgentService({
     final _ = await messageRepository.patchMessage(
       messageId,
       .new(
-        content: result?.entityText.isEmpty ?? true ? null : result?.entityText,
+        content: _stoppedAssistantContent(result),
         metadata: _withA2uiState(
           stoppedMetadata,
           runtime,
@@ -251,6 +251,9 @@ class ContinueAgentService({
     }
     final _ = _a2uiRuntimesByMessageId.remove(messageId);
   }
+
+  String? _stoppedAssistantContent(ChatResult<ChatMessage>? result) =>
+      result?.entityText.isEmpty ?? true ? null : result?.entityText;
 
   Future<void> _markAssistantErrored(String messageId) async {
     try {
