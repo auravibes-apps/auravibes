@@ -39,38 +39,60 @@ void _validateObject(Map<String, Object?> schema, Object? value, String path) {
     throw FormatException('Expected object at $path');
   }
 
-  final required = schema['required'];
-  if (required is List) {
-    for (final name in required.whereType<String>()) {
-      if (!value.containsKey(name)) {
-        throw FormatException(
-          'Missing required argument at ${_propertyPath(path, name)}',
-        );
-      }
+  _validateRequiredProperties(schema['required'], value, path);
+  _validateAdditionalProperties(schema, value, path);
+  _validateObjectProperties(schema, value, path);
+}
+
+void _validateRequiredProperties(
+  Object? required,
+  Map<Object?, Object?> value,
+  String path,
+) {
+  if (required is! List) return;
+
+  for (final name in required.whereType<String>()) {
+    if (!value.containsKey(name)) {
+      throw FormatException(
+        'Missing required argument at ${_propertyPath(path, name)}',
+      );
     }
   }
+}
+
+void _validateAdditionalProperties(
+  Map<String, Object?> schema,
+  Map<Object?, Object?> value,
+  String path,
+) {
+  if (schema['additionalProperties'] != false) return;
 
   final properties = schema['properties'];
-  if (schema['additionalProperties'] == false) {
-    for (final name in value.keys) {
-      if (properties is! Map || !properties.containsKey(name)) {
-        throw FormatException(
-          'Unexpected argument at ${_propertyPath(path, name)}',
-        );
-      }
+  for (final name in value.keys) {
+    if (properties is! Map || !properties.containsKey(name)) {
+      throw FormatException(
+        'Unexpected argument at ${_propertyPath(path, name)}',
+      );
     }
   }
+}
 
-  if (properties is Map) {
-    for (final entry in value.entries) {
-      final propertySchema = properties[entry.key];
-      if (propertySchema is Map) {
-        _validateValue(
-          Map<String, Object?>.from(propertySchema),
-          entry.value,
-          _propertyPath(path, entry.key),
-        );
-      }
+void _validateObjectProperties(
+  Map<String, Object?> schema,
+  Map<Object?, Object?> value,
+  String path,
+) {
+  final properties = schema['properties'];
+  if (properties is! Map) return;
+
+  for (final entry in value.entries) {
+    final propertySchema = properties[entry.key];
+    if (propertySchema is Map) {
+      _validateValue(
+        Map<String, Object?>.from(propertySchema),
+        entry.value,
+        _propertyPath(path, entry.key),
+      );
     }
   }
 }
