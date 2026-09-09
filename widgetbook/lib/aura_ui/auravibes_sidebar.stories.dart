@@ -5,6 +5,10 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_sidebar.stories.g.dart';
 
+const _sidebarWidth = 360.0;
+const _sidebarHeight = 640.0;
+const _maxSidebarIndex = 2;
+
 class const _SidebarInput({
   required final bool expanded,
   required final int selectedIndex,
@@ -13,7 +17,7 @@ class const _SidebarInput({
 int _clampSidebarIndex(int index) {
   if (index < 0) return 0;
 
-  return index > 2 ? 2 : index;
+  return index > _maxSidebarIndex ? _maxSidebarIndex : index;
 }
 
 const component = ComponentMeta(name: 'AuraSidebar');
@@ -27,7 +31,7 @@ final _Defaults sidebarDefaults = _Defaults(
 final $Sidebar = _Story(
   name: 'Sidebar',
   setup: (context, child, args) =>
-      SizedBox(width: 360, height: 640, child: child),
+      SizedBox(width: _sidebarWidth, height: _sidebarHeight, child: child),
   args: _Args(
     expanded: BoolArg(true, name: 'Expanded'),
     selectedIndex: IntArg(

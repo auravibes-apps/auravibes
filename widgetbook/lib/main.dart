@@ -12,6 +12,7 @@ void main() {
   runWidgetbook(createWidgetbookConfig());
 }
 
+// ignore: prefer-static-class, Widgetbook entrypoint factory.
 Config createWidgetbookConfig() {
   return Config(
     components: components,
