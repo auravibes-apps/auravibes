@@ -574,12 +574,7 @@ Future<Object> _listSkillCredentials({
   required AppSkillRegistry? appSkillRegistry,
   required SkillCredentialsRepository? skillCredentialsRepository,
 }) async {
-  final skillSlug = arguments['skillSlug'];
-  if (skillSlug is! String || skillSlug.isEmpty) {
-    throw const FormatException(
-      'Skill credential listing requires a skillSlug.',
-    );
-  }
+  final skillSlug = _requiredSkillSlug(arguments);
   final listSkills = listAvailableSkillsUsecase?.call(workspaceId);
   final appCandidates = listAppSkillCredentialCandidatesUsecase;
   final registry = appSkillRegistry;
@@ -596,25 +591,12 @@ Future<Object> _listSkillCredentials({
       .where((skill) => skill.slug == skillSlug)
       .firstOrNull;
   if (skill?.source == SkillSource.app) {
-    if (appCandidates == null || registry == null) {
-      throw StateError('App skill credential listing is not configured.');
-    }
-    final appSkill = registry.getBySlug(skillSlug);
-    if (appSkill == null) {
-      throw StateError('Loaded skill with credentials not found: $skillSlug');
-    }
-    final credentials = await appCandidates.call(
+    return await _listAppSkillCredentials(
       workspaceId: workspaceId,
-      skill: appSkill,
+      skillSlug: skillSlug,
+      appCandidates: appCandidates,
+      registry: registry,
     );
-
-    return {
-      'skillSlug': skillSlug,
-      'credentials': [
-        for (final credential in credentials)
-          {'id': credential.id, 'name': credential.name},
-      ],
-    };
   }
   final credentialDefinitionId = skill?.credentialDefinitionId;
   if (skill == null || credentialDefinitionId == null) {
@@ -627,6 +609,44 @@ Future<Object> _listSkillCredentials({
 
   return {
     'skillSlug': skill.slug,
+    'credentials': [
+      for (final credential in credentials)
+        {'id': credential.id, 'name': credential.name},
+    ],
+  };
+}
+
+String _requiredSkillSlug(Map<String, dynamic> arguments) {
+  final skillSlug = arguments['skillSlug'];
+  if (skillSlug is! String || skillSlug.isEmpty) {
+    throw const FormatException(
+      'Skill credential listing requires a skillSlug.',
+    );
+  }
+
+  return skillSlug;
+}
+
+Future<Object> _listAppSkillCredentials({
+  required String workspaceId,
+  required String skillSlug,
+  required ListAppSkillCredentialCandidatesUsecase? appCandidates,
+  required AppSkillRegistry? registry,
+}) async {
+  if (appCandidates == null || registry == null) {
+    throw StateError('App skill credential listing is not configured.');
+  }
+  final appSkill = registry.getBySlug(skillSlug);
+  if (appSkill == null) {
+    throw StateError('Loaded skill with credentials not found: $skillSlug');
+  }
+  final credentials = await appCandidates.call(
+    workspaceId: workspaceId,
+    skill: appSkill,
+  );
+
+  return {
+    'skillSlug': skillSlug,
     'credentials': [
       for (final credential in credentials)
         {'id': credential.id, 'name': credential.name},
