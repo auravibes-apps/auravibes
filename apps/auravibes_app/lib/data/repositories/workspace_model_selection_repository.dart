@@ -1,9 +1,11 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
+import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
@@ -86,45 +88,88 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
     final providerType = _mapToTypeTable(modelProvider?.type);
 
     return WorkspaceModelSelectionWithConnectionEntity(
-      workspaceModelSelection: .new(
-        id: withProvider.model.id,
-        modelId: withProvider.model.modelId,
-        createdAt: withProvider.model.createdAt,
-        updatedAt: withProvider.model.updatedAt,
-        modelConnectionId: withProvider.model.modelConnectionId,
-        modelName: withProvider.apiModel?.name,
-        modalitiesInput: withProvider.apiModel?.modalitiesInput ?? [],
-        modalitiesOutput: withProvider.apiModel?.modalitiesOutput ?? [],
-        supportsReasoning: withProvider.apiModel?.supportsReasoning ?? false,
-        supportsToolCalls: withProvider.apiModel?.supportsToolCalls ?? false,
-      ),
-      modelConnection: .new(
-        id: withProvider.modelConnection.id,
-        name: withProvider.modelConnection.name,
-        modelId: serviceId,
-        createdAt: withProvider.modelConnection.createdAt,
-        updatedAt: withProvider.modelConnection.updatedAt,
-        workspaceId: withProvider.modelConnection.workspaceId,
-        hasKey:
-            withProvider.modelConnection.encryptedAuthValue?.isNotEmpty == true,
-        authMode: _authMode(withProvider.modelConnection.authenticationType),
-        url: withProvider.modelConnection.url,
-        keySuffix: withProvider.modelConnection.keySuffix,
-        oauthMetadata: ServiceConnectionAuthCodec.decodeMetadata(
-          withProvider.modelConnection.metadataJson,
-        ),
-      ),
-      modelsProvider: .new(
-        id: modelProvider?.id ?? serviceId,
-        name:
-            modelProvider?.name ??
-            (isCodex ? ModelProviderOAuthProfiles.displayName : null) ??
-            serviceId,
-        type: providerType ?? (isCodex ? ModelProvidersType.openai : null),
-        url: modelProvider?.url ?? '',
-        doc: modelProvider?.doc ?? '',
+      workspaceModelSelection: _modelSelectionEntity(withProvider),
+      modelConnection: _modelConnectionEntity(withProvider, serviceId),
+      modelsProvider: _modelProviderEntity(
+        withProvider.modelProvider,
+        serviceId: serviceId,
+        isCodex: isCodex,
+        providerType: providerType,
       ),
     );
+  }
+
+  WorkspaceModelSelectionEntity _modelSelectionEntity(
+    WorkspaceModelSelectionWithConnection withProvider,
+  ) {
+    final apiModel = withProvider.apiModel;
+    return .new(
+      id: withProvider.model.id,
+      modelId: withProvider.model.modelId,
+      createdAt: withProvider.model.createdAt,
+      updatedAt: withProvider.model.updatedAt,
+      modelConnectionId: withProvider.model.modelConnectionId,
+      modelName: apiModel?.name,
+      modalitiesInput: apiModel?.modalitiesInput ?? [],
+      modalitiesOutput: apiModel?.modalitiesOutput ?? [],
+      supportsReasoning: apiModel?.supportsReasoning ?? false,
+      supportsToolCalls: apiModel?.supportsToolCalls ?? false,
+    );
+  }
+
+  ModelConnectionEntity _modelConnectionEntity(
+    WorkspaceModelSelectionWithConnection withProvider,
+    String serviceId,
+  ) {
+    final connection = withProvider.modelConnection;
+    return .new(
+      id: connection.id,
+      name: connection.name,
+      modelId: serviceId,
+      createdAt: connection.createdAt,
+      updatedAt: connection.updatedAt,
+      workspaceId: connection.workspaceId,
+      hasKey: connection.encryptedAuthValue?.isNotEmpty == true,
+      authMode: _authMode(connection.authenticationType),
+      url: connection.url,
+      keySuffix: connection.keySuffix,
+      oauthMetadata: ServiceConnectionAuthCodec.decodeMetadata(
+        connection.metadataJson,
+      ),
+    );
+  }
+
+  ApiModelProviderEntity _modelProviderEntity(
+    ApiModelProvidersTable? modelProvider, {
+    required String serviceId,
+    required bool isCodex,
+    required ModelProvidersType? providerType,
+  }) => .new(
+    id: modelProvider?.id ?? serviceId,
+    name: _providerName(modelProvider, serviceId, isCodex),
+    type: _providerType(providerType, isCodex),
+    url: modelProvider?.url ?? '',
+    doc: modelProvider?.doc ?? '',
+  );
+
+  String _providerName(
+    ApiModelProvidersTable? provider,
+    String serviceId,
+    bool isCodex,
+  ) {
+    final name = provider?.name;
+    if (name != null) return name;
+    if (isCodex) return ModelProviderOAuthProfiles.displayName;
+    return serviceId;
+  }
+
+  ModelProvidersType? _providerType(
+    ModelProvidersType? providerType,
+    bool isCodex,
+  ) {
+    if (providerType != null) return providerType;
+    if (isCodex) return ModelProvidersType.openai;
+    return null;
   }
 
   ModelProviderAuthMode _authMode(ServiceAuthenticationTypeTable type) {
