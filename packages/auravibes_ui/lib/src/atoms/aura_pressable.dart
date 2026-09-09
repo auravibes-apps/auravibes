@@ -84,7 +84,6 @@ class AuraPressableState extends State<AuraPressable> {
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
     final auraColors = context.auraColors;
-    final stateLayerColor = widget.color;
     final policy = AuraInteractionScope.of(context);
     final isAllowed = switch (widget.interaction) {
       AuraPressableInteraction.action => policy.allowsActions,
@@ -92,39 +91,42 @@ class AuraPressableState extends State<AuraPressable> {
     };
     final onPressed = isAllowed ? widget.onPressed : null;
     final onLongPress = isAllowed ? widget.onLongPress : null;
-    final canChangeColor = onPressed != null;
-    final pressed = _pressDown && canChangeColor;
-    final highlighted = (_hovering || _focused) && canChangeColor;
-
-    double alpha = 0;
-    if (pressed) {
-      alpha = _pressedAlpha;
-    } else if (highlighted) {
-      alpha = _hoverAlpha;
-    }
     if (onPressed == null) {
-      final content = Container(
-        decoration: widget.decoration,
-        child: widget.child,
-        clipBehavior: widget.decoration == null
-            ? Clip.none
-            : widget.clipBehavior ?? Clip.none,
-      );
-
-      if (!widget.isButtonSemantics &&
-          policy.mode == AuraInteractionMode.interactive &&
-          widget.semanticLabel == null) {
-        return content;
-      }
-
-      return Semantics(
-        label: widget.semanticLabel,
-        button: widget.isButtonSemantics || widget.semanticLabel != null,
-        enabled: false,
-        child: content,
-      );
+      return _buildDisabled(policy);
     }
 
+    final alpha = _stateLayerAlpha(_pressDown, _hovering || _focused);
+    return _buildEnabled(auraTheme, auraColors, alpha, onPressed, onLongPress);
+  }
+
+  Widget _buildDisabled(AuraInteractionPolicy policy) {
+    final content = Container(
+      decoration: widget.decoration,
+      child: widget.child,
+      clipBehavior: _clipBehavior,
+    );
+
+    if (!widget.isButtonSemantics &&
+        policy.mode == AuraInteractionMode.interactive &&
+        widget.semanticLabel == null) {
+      return content;
+    }
+
+    return Semantics(
+      label: widget.semanticLabel,
+      button: widget.isButtonSemantics || widget.semanticLabel != null,
+      enabled: false,
+      child: content,
+    );
+  }
+
+  Widget _buildEnabled(
+    AuraTheme auraTheme,
+    AuraColorScheme auraColors,
+    double alpha,
+    void Function() onPressed,
+    void Function()? onLongPress,
+  ) {
     return Semantics(
       child: FocusableActionDetector(
         actions: {
@@ -154,13 +156,11 @@ class AuraPressableState extends State<AuraPressable> {
                 child: Container(
                   decoration: widget.decoration,
                   child: AnimatedContainer(
-                    color: stateLayerColor.withValues(alpha: alpha),
+                    color: widget.color.withValues(alpha: alpha),
                     child: widget.child,
                     duration: auraTheme.animation.normal,
                   ),
-                  clipBehavior: widget.decoration == null
-                      ? Clip.none
-                      : widget.clipBehavior ?? Clip.none,
+                  clipBehavior: _clipBehavior,
                 ),
                 padding: widget.padding ?? .none,
               ),
@@ -183,6 +183,15 @@ class AuraPressableState extends State<AuraPressable> {
       label: widget.semanticLabel,
       onTap: onPressed,
     );
+  }
+
+  Clip get _clipBehavior =>
+      widget.decoration == null ? Clip.none : widget.clipBehavior ?? Clip.none;
+
+  double _stateLayerAlpha(bool pressed, bool highlighted) {
+    if (pressed) return _pressedAlpha;
+    if (highlighted) return _hoverAlpha;
+    return 0;
   }
 
   void _onPressed() {
