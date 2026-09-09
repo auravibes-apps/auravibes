@@ -10,65 +10,84 @@ class const BuildGroupedToolsViewUseCase() {
     required List<ToolsGroupEntity> groups,
     required List<McpConnectionView> mcpConnections,
   }) {
-    final toolsByGroupId = <String?, List<WorkspaceToolEntity>>{};
-    for (final tool in workspaceTools) {
-      final groupId = tool.workspaceToolsGroupId;
-      toolsByGroupId.putIfAbsent(groupId, () => []).add(tool);
-    }
+    final toolsByGroupId = _indexTools(workspaceTools);
 
-    final result = <GroupedToolsViewItem>[];
-    final defaultTools = toolsByGroupId[null] ?? [];
-    final builtInTools = defaultTools.where((tool) => !tool.isNative).toList();
-    final nativeTools = defaultTools.where((tool) => tool.isNative).toList();
-
-    if (builtInTools.isNotEmpty) {
-      result.add(
-        GroupedToolsViewItem(
-          group: null,
-          tools: builtInTools,
-          defaultGroupType: .builtIn,
+    return _defaultToolGroups(toolsByGroupId)
+      ..addAll(
+        _configuredToolGroups(
+          groups: groups,
+          mcpConnections: mcpConnections,
+          toolsByGroupId: toolsByGroupId,
         ),
-      );
-    }
-    if (nativeTools.isNotEmpty) {
-      result.add(
-        GroupedToolsViewItem(
-          group: null,
-          tools: nativeTools,
-          defaultGroupType: .native,
-        ),
-      );
-    }
-
-    for (final group in groups) {
-      McpConnectionView? mcpState;
-      if (group.isMcpGroup && group.mcpServerId != null) {
-        mcpState = mcpConnections
-            .where((connection) => connection.serverId == group.mcpServerId)
-            .firstOrNull;
-      }
-
-      result.add(
-        GroupedToolsViewItem(
-          group: group,
-          tools: toolsByGroupId[group.id] ?? [],
-          mcpConnection: mcpState,
-        ),
-      );
-    }
-
-    result.sort((a, b) {
-      final priorityCompare = a.sortPriority.compareTo(b.sortPriority);
-      if (priorityCompare != 0) {
-        return priorityCompare;
-      }
-
-      final aDate = a.group?.createdAt ?? DateTime(2099);
-      final bDate = b.group?.createdAt ?? DateTime(2099);
-
-      return bDate.compareTo(aDate);
-    });
-
-    return result;
+      )
+      ..sort(_compareToolGroups);
   }
+}
+
+Map<String?, List<WorkspaceToolEntity>> _indexTools(
+  List<WorkspaceToolEntity> tools,
+) {
+  final toolsByGroupId = <String?, List<WorkspaceToolEntity>>{};
+  for (final tool in tools) {
+    toolsByGroupId.putIfAbsent(tool.workspaceToolsGroupId, () => []).add(tool);
+  }
+
+  return toolsByGroupId;
+}
+
+List<GroupedToolsViewItem> _defaultToolGroups(
+  Map<String?, List<WorkspaceToolEntity>> toolsByGroupId,
+) {
+  final defaultTools = toolsByGroupId[null] ?? [];
+  final builtInTools = defaultTools.where((tool) => !tool.isNative).toList();
+  final nativeTools = defaultTools.where((tool) => tool.isNative).toList();
+
+  return [
+    if (builtInTools.isNotEmpty)
+      GroupedToolsViewItem(
+        group: null,
+        tools: builtInTools,
+        defaultGroupType: .builtIn,
+      ),
+    if (nativeTools.isNotEmpty)
+      GroupedToolsViewItem(
+        group: null,
+        tools: nativeTools,
+        defaultGroupType: .native,
+      ),
+  ];
+}
+
+List<GroupedToolsViewItem> _configuredToolGroups({
+  required List<ToolsGroupEntity> groups,
+  required List<McpConnectionView> mcpConnections,
+  required Map<String?, List<WorkspaceToolEntity>> toolsByGroupId,
+}) => [
+  for (final group in groups)
+    GroupedToolsViewItem(
+      group: group,
+      tools: toolsByGroupId[group.id] ?? [],
+      mcpConnection: _mcpConnectionFor(group, mcpConnections),
+    ),
+];
+
+McpConnectionView? _mcpConnectionFor(
+  ToolsGroupEntity group,
+  List<McpConnectionView> mcpConnections,
+) {
+  if (!group.isMcpGroup || group.mcpServerId == null) return null;
+
+  return mcpConnections
+      .where((connection) => connection.serverId == group.mcpServerId)
+      .firstOrNull;
+}
+
+int _compareToolGroups(GroupedToolsViewItem a, GroupedToolsViewItem b) {
+  final priorityCompare = a.sortPriority.compareTo(b.sortPriority);
+  if (priorityCompare != 0) return priorityCompare;
+
+  final aDate = a.group?.createdAt ?? DateTime(2099);
+  final bDate = b.group?.createdAt ?? DateTime(2099);
+
+  return bDate.compareTo(aDate);
 }
