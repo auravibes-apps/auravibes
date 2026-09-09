@@ -22,55 +22,76 @@ class const ResolveAgentSkillsUsecase(
   }) async {
     final available = <AvailableSkill>[];
     final unavailable = <AgentSkillRef>[];
-    final cloudStore = _cloudStore;
-    final appSkillSettingsRepository = _appSkillSettingsRepository;
 
     for (final ref in refs) {
-      switch (ref) {
-        case UserAgentSkillRef(:final skillId):
-          final skill =
-              await cloudStore?.skill(skillId) ??
-              await _skillsRepository?.getSkillById(skillId);
-          if (skill == null ||
-              skill.workspaceId != workspaceId ||
-              !skill.isEnabled) {
-            unavailable.add(ref);
-            continue;
-          }
-          available.add(skill.toAvailableSkill());
-        case AppAgentSkillRef(:final identifier):
-          final skill = _appSkillRegistry.getByIdentifier(identifier);
-          final bool enabled;
-          if (cloudStore != null) {
-            enabled = await cloudStore.isAppSkillEnabled(identifier);
-          } else {
-            if (appSkillSettingsRepository == null) {
-              throw StateError('Local skill settings repository unavailable');
-            }
-            enabled = await appSkillSettingsRepository.isAppSkillEnabled(
-              workspaceId,
-              identifier,
-            );
-          }
-          if (skill == null || !enabled) {
-            unavailable.add(ref);
-            continue;
-          }
-          available.add(
-            AvailableSkill(
-              source: SkillSource.app,
-              id: skill.identifier,
-              slug: skill.slug,
-              title: skill.title,
-              description: skill.description,
-              content: skill.content,
-              kind: .native,
-            ),
-          );
+      final skill = switch (ref) {
+        UserAgentSkillRef(:final skillId) => await _resolveUserSkill(
+          workspaceId: workspaceId,
+          skillId: skillId,
+        ),
+        AppAgentSkillRef(:final identifier) => await _resolveAppSkill(
+          workspaceId: workspaceId,
+          identifier: identifier,
+        ),
+      };
+      if (skill == null) {
+        unavailable.add(ref);
+      } else {
+        available.add(skill);
       }
     }
 
     return ResolvedAgentSkills(available: available, unavailable: unavailable);
+  }
+
+  Future<AvailableSkill?> _resolveUserSkill({
+    required String workspaceId,
+    required String skillId,
+  }) async {
+    final skill =
+        await _cloudStore?.skill(skillId) ??
+        await _skillsRepository?.getSkillById(skillId);
+    if (skill == null || skill.workspaceId != workspaceId || !skill.isEnabled) {
+      return null;
+    }
+
+    return skill.toAvailableSkill();
+  }
+
+  Future<AvailableSkill?> _resolveAppSkill({
+    required String workspaceId,
+    required String identifier,
+  }) async {
+    final skill = _appSkillRegistry.getByIdentifier(identifier);
+    final enabled = await _isAppSkillEnabled(workspaceId, identifier);
+    if (skill == null || !enabled) return null;
+
+    return AvailableSkill(
+      source: SkillSource.app,
+      id: skill.identifier,
+      slug: skill.slug,
+      title: skill.title,
+      description: skill.description,
+      content: skill.content,
+      kind: .native,
+    );
+  }
+
+  Future<bool> _isAppSkillEnabled(String workspaceId, String identifier) {
+    final cloudStore = _cloudStore;
+    if (cloudStore != null) {
+      return cloudStore.isAppSkillEnabled(identifier);
+    }
+
+    final appSkillSettingsRepository = _appSkillSettingsRepository;
+    if (appSkillSettingsRepository == null) {
+      throw StateError('Local skill settings repository unavailable');
+    }
+
+    return appSkillSettingsRepository.isAppSkillEnabled(
+      workspaceId,
+      identifier,
+    );
   }
 }
 
