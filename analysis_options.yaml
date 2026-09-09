@@ -107,6 +107,8 @@ plugins:
       unsupported_provider_value: true
 
 dart_code_linter:
+  metrics:
+    cyclomatic-complexity: 10
   rules:
     avoid-banned-imports:
       entries:
