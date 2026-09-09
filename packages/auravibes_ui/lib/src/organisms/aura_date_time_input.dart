@@ -747,7 +747,7 @@ class _AuraDateTimeInputHostState extends State<_AuraDateTimeInputHost> {
 
   @override
   Widget build(BuildContext context) {
-    final environment = _environment ??= ValueNotifier(
+    final environment = _environment ??= .new(
       _PickerEnvironment.from(context),
     );
     final input = widget.input;

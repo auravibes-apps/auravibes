@@ -76,6 +76,7 @@ plugins:
       prefer-provide-intl-description: true
       prefer-correct-test-file-name: true
       prefer-correct-type-name: true
+      prefer-dot-shorthands: true
       prefer-single-quotes: true
       prefer-single-widget-per-file: true
       prefer-using-list-view: true
@@ -208,7 +209,6 @@ dart_code_linter:
         # Public Freezed domain API; rename would churn generated contract
         # and app-wide callers.
         - WorkspaceModelSelectionWithConnectionEntity
-    prefer-dot-shorthands: true
     prefer-extracting-callbacks:
       allowed-line-count: 2
     prefer-match-file-name:
