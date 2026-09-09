@@ -109,6 +109,7 @@ plugins:
 dart_code_linter:
   metrics:
     cyclomatic-complexity: 10
+    halstead-volume: 150
   rules:
     avoid-banned-imports:
       entries:
