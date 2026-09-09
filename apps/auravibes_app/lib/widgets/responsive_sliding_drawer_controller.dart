@@ -1,5 +1,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
+// Required: Layout helpers return widgets to isolate desktop/mobile branches.
 
 // Required: Animation listener uses empty setState to rebuild.
 // Required: Existing code repeats lookups where extraction adds noise.
@@ -171,235 +172,41 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     final drawerWidth = _currentDrawerWidth;
     final drawerFullyOpen = _requiredController.value >= 1.0 - 0.001;
     if (isDesktop) {
-      return Stack(
-        children: [
-          AnimatedBuilder(
-            animation: _requiredController,
-            builder: (context, child) {
-              final leftOffset = drawerWidth * _requiredController.value;
-
-              return Positioned(
-                left: leftOffset,
-                top: 0,
-                right: 0,
-                bottom: 0,
-                child: widget.body,
-              );
-            },
-          ),
-          AnimatedBuilder(
-            animation: _requiredController,
-            builder: (context, child) {
-              final dx = -drawerWidth * (1 - _requiredController.value);
-
-              return Transform.translate(
-                offset: .new(dx, 0),
-                child: GestureDetector(
-                  child: SizedBox(
-                    width: drawerWidth,
-                    height: MediaQuery.sizeOf(context).height,
-                    child: FocusScope(
-                      child: widget.drawer,
-                      canRequestFocus: drawerFullyOpen,
-                      descendantsAreFocusable: drawerFullyOpen,
-                      descendantsAreTraversable: drawerFullyOpen,
-                    ),
-                  ),
-                  onHorizontalDragStart: _handleDragStart,
-                  onHorizontalDragUpdate: _handleDragUpdate,
-                  onHorizontalDragEnd: _handleDragEnd,
-                ),
-              );
-            },
-          ),
-          Positioned(
-            left: _requiredController.value < _desktopDragAreaMidpoint
-                ? 0
-                : drawerWidth,
-            top: 0,
-            bottom: 0,
-            width: _desktopDragAreaWidth,
-            child: GestureDetector(
-              onHorizontalDragStart: _handleDragStart,
-              onHorizontalDragUpdate: _handleDragUpdate,
-              onHorizontalDragEnd: _handleDragEnd,
-              behavior: .opaque,
-            ),
-          ),
-          if (drawerFullyOpen)
-            Positioned(
-              left: drawerWidth - _dividerWidth / 2,
-              top: 0,
-              bottom: 0,
-              width: _dividerWidth,
-              child: MouseRegion(
-                onEnter: (_) => setState(() => _isHoveringDivider = true),
-                onExit: (_) => setState(() => _isHoveringDivider = false),
-                cursor: SystemMouseCursors.resizeColumn,
-                child: AuraTooltip(
-                  message: LocaleKeys.navigation_drawer_resize_handle_tooltip
-                      .tr(context: context),
-                  child: Semantics(
-                    child: AnimatedOpacity(
-                      child: GestureDetector(
-                        child: SizedBox(
-                          width: _dividerWidth,
-                          child: Center(
-                            child: Container(
-                              color: _isHoveringDivider || _isResizing
-                                  ? context.auraColors.primary
-                                  : context.auraColors.outlineVariant,
-                              width: _dividerVisibleWidth,
-                              height: .infinity,
-                            ),
-                          ),
-                        ),
-                        onPanStart: (_) => _setResizing(true),
-                        onPanUpdate: _handleDividerPanUpdate,
-                        onPanEnd: (_) => _setResizing(false),
-                        onPanCancel: () => _setResizing(false),
-                        behavior: .opaque,
-                      ),
-                      opacity:
-                          (_isHoveringDivider ||
-                              _isResizing ||
-                              _resizeOvershoot != 0.0)
-                          ? 1.0
-                          : _dividerIdleOpacity,
-                      duration: const Duration(milliseconds: 200),
-                    ),
-                    label: LocaleKeys.navigation_drawer_resize_handle_tooltip
-                        .tr(context: context),
-                    hint: LocaleKeys.navigation_drawer_resize_handle_hint.tr(
-                      context: context,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
+      return _DesktopDrawerLayout(
+        animation: _requiredController,
+        drawer: widget.drawer,
+        body: widget.body,
+        drawerWidth: drawerWidth,
+        drawerFullyOpen: drawerFullyOpen,
+        isHoveringDivider: _isHoveringDivider,
+        isResizing: _isResizing,
+        resizeOvershoot: _resizeOvershoot,
+        onDragStart: _handleDragStart,
+        onDragUpdate: _handleDragUpdate,
+        onDragEnd: _handleDragEnd,
+        onDividerHover: (value) => setState(() => _isHoveringDivider = value),
+        onStartResizing: () => _setResizing(true),
+        onStopResizing: () => _setResizing(false),
+        onDividerPanUpdate: _handleDividerPanUpdate,
       );
     }
 
     final enableGestures = _isMobilePlatform(context);
 
-    return Stack(
-      children: [
-        AnimatedBuilder(
-          animation: _requiredController,
-          builder: (context, child) {
-            final dx = drawerWidth * _requiredController.value;
-
-            return Transform.translate(
-              offset: .new(dx, 0),
-              child: GestureDetector(
-                child: widget.body,
-                onTap: () => _closeIfFullyOpen(drawerFullyOpen),
-                onHorizontalDragStart: enableGestures ? _handleDragStart : null,
-                onHorizontalDragUpdate: enableGestures
-                    ? _handleDragUpdate
-                    : null,
-                onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
-              ),
-            );
-          },
-        ),
-        AnimatedBuilder(
-          animation: _requiredController,
-          builder: (context, child) {
-            final dx = drawerWidth * _requiredController.value;
-            final gradientOpacity =
-                _gradientStartOpacity * _requiredController.value;
-            final gradientColor = widget.isDarkMode
-                ? Colors.black
-                : _scrimColor;
-
-            return Transform.translate(
-              offset: .new(dx, 0),
-              child: IgnorePointer(
-                ignoring: _requiredController.value == 0,
-                child: GestureDetector(
-                  child: Stack(
-                    children: [
-                      Container(
-                        color: _scrimColor.withValues(
-                          alpha: _scrimOpacity * _requiredController.value,
-                        ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: _scrimGradientWidth,
-                        child: IgnorePointer(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  gradientColor.withValues(
-                                    alpha: gradientOpacity,
-                                  ),
-                                  gradientColor.withValues(
-                                    alpha:
-                                        gradientOpacity *
-                                        _gradientMiddleOpacity,
-                                  ),
-                                  gradientColor.withValues(
-                                    alpha:
-                                        gradientOpacity *
-                                        _gradientTrailingOpacity,
-                                  ),
-                                  gradientColor.withValues(alpha: 0),
-                                ],
-                                stops: const [0.0, 0.2, 0.6, 1.0],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  onTap: () => _closeIfFullyOpen(drawerFullyOpen),
-                  onHorizontalDragStart: enableGestures
-                      ? _handleDragStart
-                      : null,
-                  onHorizontalDragUpdate: enableGestures
-                      ? _handleDragUpdate
-                      : null,
-                  onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
-                ),
-              ),
-            );
-          },
-        ),
-        AnimatedBuilder(
-          animation: _requiredController,
-          builder: (context, child) {
-            final dx = -drawerWidth * (1 - _requiredController.value);
-
-            return Transform.translate(
-              offset: .new(dx, 0),
-              child: GestureDetector(
-                child: SizedBox(
-                  width: drawerWidth,
-                  height: MediaQuery.sizeOf(context).height,
-                  child: FocusScope(
-                    child: widget.drawer,
-                    canRequestFocus: drawerFullyOpen,
-                    descendantsAreFocusable: drawerFullyOpen,
-                    descendantsAreTraversable: drawerFullyOpen,
-                  ),
-                ),
-                onHorizontalDragStart: enableGestures ? _handleDragStart : null,
-                onHorizontalDragUpdate: enableGestures
-                    ? _handleDragUpdate
-                    : null,
-                onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
-              ),
-            );
-          },
-        ),
-      ],
+    return _MobileDrawerLayout(
+      animation: _requiredController,
+      drawer: widget.drawer,
+      body: widget.body,
+      drawerWidth: drawerWidth,
+      drawerFullyOpen: drawerFullyOpen,
+      isDarkMode: widget.isDarkMode,
+      scrimColor: _scrimColor,
+      scrimOpacity: _scrimOpacity,
+      gradientStartOpacity: _gradientStartOpacity,
+      onClose: () => _closeIfFullyOpen(drawerFullyOpen),
+      onDragStart: enableGestures ? _handleDragStart : null,
+      onDragUpdate: enableGestures ? _handleDragUpdate : null,
+      onDragEnd: enableGestures ? _handleDragEnd : null,
     );
   }
 
@@ -566,5 +373,270 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   void _handleDragStart(DragStartDetails _) {
     _dragStartedWhenOpen = _isOpen;
     _dragDirection = null;
+  }
+}
+
+class const _DesktopDrawerLayout({
+  required final Animation<double> animation,
+  required final Widget drawer,
+  required final Widget body,
+  required final double drawerWidth,
+  required final bool drawerFullyOpen,
+  required final bool isHoveringDivider,
+  required final bool isResizing,
+  required final double resizeOvershoot,
+  required final GestureDragStartCallback onDragStart,
+  required final GestureDragUpdateCallback onDragUpdate,
+  required final GestureDragEndCallback onDragEnd,
+  required final ValueChanged<bool> onDividerHover,
+  required final VoidCallback onStartResizing,
+  required final VoidCallback onStopResizing,
+  required final GestureDragUpdateCallback onDividerPanUpdate,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            final leftOffset = drawerWidth * animation.value;
+
+            return Positioned(
+              left: leftOffset,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              child: body,
+            );
+          },
+        ),
+        AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            final dx = -drawerWidth * (1 - animation.value);
+
+            return Transform.translate(
+              offset: .new(dx, 0),
+              child: GestureDetector(
+                child: SizedBox(
+                  width: drawerWidth,
+                  height: MediaQuery.sizeOf(context).height,
+                  child: FocusScope(
+                    child: drawer,
+                    canRequestFocus: drawerFullyOpen,
+                    descendantsAreFocusable: drawerFullyOpen,
+                    descendantsAreTraversable: drawerFullyOpen,
+                  ),
+                ),
+                onHorizontalDragStart: onDragStart,
+                onHorizontalDragUpdate: onDragUpdate,
+                onHorizontalDragEnd: onDragEnd,
+              ),
+            );
+          },
+        ),
+        Positioned(
+          left:
+              animation.value <
+                  _ResponsiveSlidingDrawerState._desktopDragAreaMidpoint
+              ? 0
+              : drawerWidth,
+          top: 0,
+          bottom: 0,
+          width: _ResponsiveSlidingDrawerState._desktopDragAreaWidth,
+          child: GestureDetector(
+            onHorizontalDragStart: onDragStart,
+            onHorizontalDragUpdate: onDragUpdate,
+            onHorizontalDragEnd: onDragEnd,
+            behavior: .opaque,
+          ),
+        ),
+        if (drawerFullyOpen)
+          Positioned(
+            left: drawerWidth - _ResponsiveSlidingDrawerState._dividerWidth / 2,
+            top: 0,
+            bottom: 0,
+            width: _ResponsiveSlidingDrawerState._dividerWidth,
+            child: MouseRegion(
+              onEnter: (_) => onDividerHover(true),
+              onExit: (_) => onDividerHover(false),
+              cursor: SystemMouseCursors.resizeColumn,
+              child: AuraTooltip(
+                message: LocaleKeys.navigation_drawer_resize_handle_tooltip.tr(
+                  context: context,
+                ),
+                child: Semantics(
+                  child: AnimatedOpacity(
+                    child: GestureDetector(
+                      child: SizedBox(
+                        width: _ResponsiveSlidingDrawerState._dividerWidth,
+                        child: Center(
+                          child: Container(
+                            color: isHoveringDivider || isResizing
+                                ? context.auraColors.primary
+                                : context.auraColors.outlineVariant,
+                            width: _ResponsiveSlidingDrawerState
+                                ._dividerVisibleWidth,
+                            height: .infinity,
+                          ),
+                        ),
+                      ),
+                      onPanStart: (_) => onStartResizing(),
+                      onPanUpdate: onDividerPanUpdate,
+                      onPanEnd: (_) => onStopResizing(),
+                      onPanCancel: onStopResizing,
+                      behavior: .opaque,
+                    ),
+                    opacity:
+                        isHoveringDivider ||
+                            isResizing ||
+                            resizeOvershoot != 0.0
+                        ? 1.0
+                        : _ResponsiveSlidingDrawerState._dividerIdleOpacity,
+                    duration: const Duration(milliseconds: 200),
+                  ),
+                  label: LocaleKeys.navigation_drawer_resize_handle_tooltip.tr(
+                    context: context,
+                  ),
+                  hint: LocaleKeys.navigation_drawer_resize_handle_hint.tr(
+                    context: context,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class const _MobileDrawerLayout({
+  required final Animation<double> animation,
+  required final Widget drawer,
+  required final Widget body,
+  required final double drawerWidth,
+  required final bool drawerFullyOpen,
+  required final bool isDarkMode,
+  required final Color scrimColor,
+  required final double scrimOpacity,
+  required final double gradientStartOpacity,
+  required final VoidCallback onClose,
+  required final GestureDragStartCallback? onDragStart,
+  required final GestureDragUpdateCallback? onDragUpdate,
+  required final GestureDragEndCallback? onDragEnd,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            final dx = drawerWidth * animation.value;
+
+            return Transform.translate(
+              offset: .new(dx, 0),
+              child: GestureDetector(
+                child: body,
+                onTap: onClose,
+                onHorizontalDragStart: onDragStart,
+                onHorizontalDragUpdate: onDragUpdate,
+                onHorizontalDragEnd: onDragEnd,
+              ),
+            );
+          },
+        ),
+        AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            final dx = drawerWidth * animation.value;
+            final gradientOpacity = gradientStartOpacity * animation.value;
+            final gradientColor = isDarkMode ? Colors.black : scrimColor;
+
+            return Transform.translate(
+              offset: .new(dx, 0),
+              child: IgnorePointer(
+                ignoring: animation.value == 0,
+                child: GestureDetector(
+                  child: Stack(
+                    children: [
+                      Container(
+                        color: scrimColor.withValues(
+                          alpha: scrimOpacity * animation.value,
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        width:
+                            _ResponsiveSlidingDrawerState._scrimGradientWidth,
+                        child: IgnorePointer(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  gradientColor.withValues(
+                                    alpha: gradientOpacity,
+                                  ),
+                                  gradientColor.withValues(
+                                    alpha:
+                                        gradientOpacity *
+                                        _ResponsiveSlidingDrawerState
+                                            ._gradientMiddleOpacity,
+                                  ),
+                                  gradientColor.withValues(
+                                    alpha:
+                                        gradientOpacity *
+                                        _ResponsiveSlidingDrawerState
+                                            ._gradientTrailingOpacity,
+                                  ),
+                                  gradientColor.withValues(alpha: 0),
+                                ],
+                                stops: const [0.0, 0.2, 0.6, 1.0],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  onTap: onClose,
+                  onHorizontalDragStart: onDragStart,
+                  onHorizontalDragUpdate: onDragUpdate,
+                  onHorizontalDragEnd: onDragEnd,
+                ),
+              ),
+            );
+          },
+        ),
+        AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            final dx = -drawerWidth * (1 - animation.value);
+
+            return Transform.translate(
+              offset: .new(dx, 0),
+              child: GestureDetector(
+                child: SizedBox(
+                  width: drawerWidth,
+                  height: MediaQuery.sizeOf(context).height,
+                  child: FocusScope(
+                    child: drawer,
+                    canRequestFocus: drawerFullyOpen,
+                    descendantsAreFocusable: drawerFullyOpen,
+                    descendantsAreTraversable: drawerFullyOpen,
+                  ),
+                ),
+                onHorizontalDragStart: onDragStart,
+                onHorizontalDragUpdate: onDragUpdate,
+                onHorizontalDragEnd: onDragEnd,
+              ),
+            );
+          },
+        ),
+      ],
+    );
   }
 }
