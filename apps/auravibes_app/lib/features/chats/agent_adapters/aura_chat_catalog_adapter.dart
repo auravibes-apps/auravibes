@@ -165,7 +165,7 @@ Catalog _buildCatalog({required String catalogId, required String rules}) {
           replace(BasicCatalogItems.tabs, _tabs),
           replace(BasicCatalogItems.text, _text),
           replace(BasicCatalogItems.textField, _textField),
-          ...auraDashboardCatalogItems(resolveIcon: auraChatIconData),
+          ...AuraDashboardCatalogAdapter.items(resolveIcon: auraChatIconData),
           ...auraExtendedCatalogItems(resolveIcon: auraChatIconData),
         ],
         systemPromptFragments: [rules],
@@ -181,7 +181,7 @@ CatalogItem _replace(
   dataSchema: _schemaFor(source, allowLiteralValues: allowLiteralValues),
   widgetBuilder: builder,
   exampleData: source.name == 'Image'
-      ? [chatCatalogImageExample]
+      ? [ChatCatalogImageAdapter.example]
       : [
           () => jsonEncode([
             {
@@ -219,7 +219,7 @@ Schema _schemaFor(CatalogItem source, {required bool allowLiteralValues}) {
     properties['variant'] = contractProperties['variant'];
   }
   if (source.name == 'Image') {
-    properties.addAll(chatCatalogImageProperties);
+    properties.addAll(ChatCatalogImageAdapter.properties);
   }
   final required = (sourceSchema['required'] as List?)
       ?.whereType<String>()

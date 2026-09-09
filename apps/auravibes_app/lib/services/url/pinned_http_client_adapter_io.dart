@@ -7,37 +7,38 @@ import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 
-// ignore: unused-code, conditional export implementation used on IO platforms.
-// Required: Conditional export API.
-// ignore: prefer-static-class
-HttpClientAdapter? createPinnedHttpClientAdapter(
-  HttpClientAdapter current,
-  List<String> addresses,
-) {
-  if (current is! IOHttpClientAdapter) return null;
+abstract final class PinnedHttpClientAdapterIo {
+  static HttpClientAdapter? create(
+    HttpClientAdapter current,
+    List<String> addresses,
+  ) {
+    if (current is! IOHttpClientAdapter) return null;
 
-  final firstAddress = addresses.firstOrNull;
-  if (firstAddress == null) return null;
-  final resolvedAddress = InternetAddress(firstAddress);
+    final firstAddress = addresses.firstOrNull;
+    if (firstAddress == null) return null;
+    final resolvedAddress = InternetAddress(firstAddress);
 
-  return IOHttpClientAdapter(
-    createHttpClient: () {
-      final configuredClient = current.createHttpClient?.call();
-      if (configuredClient != null) {
-        return configuredClient
+    return IOHttpClientAdapter(
+      createHttpClient: () {
+        final configuredClient = current.createHttpClient?.call();
+        if (configuredClient != null) {
+          return configuredClient
+            ..connectionFactory = (target, proxyHost, proxyPort) =>
+                Socket.startConnect(resolvedAddress, target.port);
+        }
+
+        final defaultClient = HttpClient()
+          ..idleTimeout = const Duration(seconds: 3);
+        final client =
+            current.onHttpClientCreate?.call(defaultClient) ?? defaultClient;
+
+        return client
           ..connectionFactory = (target, proxyHost, proxyPort) =>
               Socket.startConnect(resolvedAddress, target.port);
-      }
-
-      final defaultClient = HttpClient()
-        ..idleTimeout = const Duration(seconds: 3);
-      final client =
-          current.onHttpClientCreate?.call(defaultClient) ?? defaultClient;
-
-      return client
-        ..connectionFactory = (target, proxyHost, proxyPort) =>
-            Socket.startConnect(resolvedAddress, target.port);
-    },
-    validateCertificate: current.validateCertificate,
-  );
+      },
+      validateCertificate: current.validateCertificate,
+    );
+  }
 }
+
+typedef PinnedHttpClientAdapterImplementation = PinnedHttpClientAdapterIo;

@@ -18,6 +18,15 @@ class CloudAgentRepository({
   required final ReadCloudAgents read,
   required final PatchCloudAgents patch,
 }) implements AgentRepository {
+  new fromStore({
+    required String workspaceId,
+    required CloudWorkspaceResourceStore store,
+  }) : this(
+         patch: store.patch,
+         workspaceId: workspaceId,
+         read: () => _readCloudAgentResources(store),
+       );
+
   final Map<String, int> _revisions = {};
 
   @override
@@ -267,17 +276,6 @@ class CloudAgentRepository({
     );
   }
 }
-
-// Required: Public repository factory API.
-// ignore: prefer-static-class
-CloudAgentRepository cloudAgentRepositoryFromStore({
-  required String workspaceId,
-  required CloudWorkspaceResourceStore store,
-}) => CloudAgentRepository(
-  patch: store.patch,
-  workspaceId: workspaceId,
-  read: () => _readCloudAgentResources(store),
-);
 
 Future<List<WorkspaceResource>> _readCloudAgentResources(
   CloudWorkspaceResourceStore store,
