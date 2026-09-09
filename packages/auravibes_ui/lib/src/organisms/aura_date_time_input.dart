@@ -11,6 +11,14 @@ import 'package:flutter/material.dart';
 part 'aura_date_time_input_labels.dart';
 part 'picker_button.dart';
 
+typedef _PickerDialogRequest = ({
+  AuraDateTimeInput input,
+  DateTime initialValue,
+  ValueListenable<_PickerEnvironment> environment,
+  CapturedThemes capturedThemes,
+  BuildContext parentContext,
+});
+
 /// A controlled date and/or time input using a widgets-only picker.
 class AuraDateTimeInput extends StatelessWidget {
   static const _daysPerWeek = 7;
@@ -90,40 +98,8 @@ class AuraDateTimeInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _AuraDateTimeInputHost(input: this);
 
-  Widget _buildField(
-    BuildContext _,
-    VoidCallback? onTap, {
-    required bool isEnabled,
-  }) {
-    final displayValue = _displayValue();
-
-    return Semantics(
-      child: AuraFieldWrapper(
-        child: Padding(
-          padding: DesignInputSizes.paddingMd,
-          child: Row(
-            children: [
-              Expanded(child: AuraText(child: Text(displayValue))),
-              const AuraSizedBox(width: .sm),
-              AuraText(
-                child: Text(
-                  enableDate && enableTime ? labels.dateAndTime : _modeLabel(),
-                ),
-                style: .bodySmall,
-              ),
-            ],
-          ),
-        ),
-        isEnabled: isEnabled,
-        onTap: isEnabled ? onTap : null,
-      ),
-      excludeSemantics: true,
-      enabled: isEnabled,
-      button: true,
-      label: semanticLabel ?? displayValue,
-      value: displayValue,
-    );
-  }
+  Widget _buildField(VoidCallback? onTap, {required bool isEnabled}) =>
+      _AuraDateTimeInputField(input: this, onTap: onTap, isEnabled: isEnabled);
 
   String _displayValue() {
     final value = this.value;
@@ -165,173 +141,64 @@ class AuraDateTimeInput extends StatelessWidget {
     BuildContext context,
     ValueListenable<_PickerEnvironment> environment,
   ) async {
-    if (!enabled || !AuraInteractionScope.of(context).allowsValueChanges) {
-      return;
-    }
-    final initialValue = _constrain(
-      _normalise(value ?? (now?.call() ?? DateTime.now())),
-    );
-    final navigator = Navigator.of(context);
-    final capturedThemes = InheritedTheme.capture(
-      from: context,
-      to: navigator.context,
-    );
-    final pickedValue = await showGeneralDialog<DateTime>(
-      context: context,
-      pageBuilder: (dialogContext, animation, secondaryAnimation) {
-        var draftValue = initialValue;
+    if (!_canPick(context)) return;
 
-        return ValueListenableBuilder<_PickerEnvironment>(
-          valueListenable: environment,
-          builder: (pickerContext, currentEnvironment, child) {
-            final picker = StatefulBuilder(
-              builder: (pickerContext, setState) {
-                return _buildPickerDialog(
-                  context: pickerContext,
-                  value: draftValue,
-                  onChanged: (nextValue) {
-                    setState(() => draftValue = nextValue);
-                  },
-                  onCancel: () => Navigator.of(context).pop(),
-                  onDone: () =>
-                      Navigator.of(context)
-                          .pop(_constrain(_normalise(draftValue))),
-                );
-              },
-            );
-
-            return capturedThemes.wrap(
-              Localizations.override(
-                context: context,
-                locale: currentEnvironment.locale,
-                child: Theme(
-                  data: currentEnvironment.theme,
-                  child: Directionality(
-                    textDirection: currentEnvironment.textDirection,
-                    child: MediaQuery(
-                      data: currentEnvironment.mediaQuery,
-                      child: picker,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-      barrierColor: context.auraColors.scrim,
-      useRootNavigator: false,
-    );
+    final pickedValue = await _showPickerDialog(context, environment);
 
     if (!context.mounted || pickedValue == null) return;
     onChanged?.call(pickedValue);
   }
 
+  bool _canPick(BuildContext context) =>
+      enabled && AuraInteractionScope.of(context).allowsValueChanges;
+
+  Future<DateTime?> _showPickerDialog(
+    BuildContext context,
+    ValueListenable<_PickerEnvironment> environment,
+  ) => _openPickerDialog(_pickerDialogRequest(context, environment));
+
+  _PickerDialogRequest _pickerDialogRequest(
+    BuildContext context,
+    ValueListenable<_PickerEnvironment> environment,
+  ) {
+    return (
+      input: this,
+      initialValue: _initialPickerValue(),
+      environment: environment,
+      capturedThemes: _capturedPickerThemes(context),
+      parentContext: context,
+    );
+  }
+
+  DateTime _initialPickerValue() =>
+      _constrain(_normalise(value ?? (now?.call() ?? DateTime.now())));
+
+  CapturedThemes _capturedPickerThemes(BuildContext context) {
+    final navigator = Navigator.of(context);
+
+    return InheritedTheme.capture(from: context, to: navigator.context);
+  }
+
+  Future<DateTime?> _openPickerDialog(_PickerDialogRequest request) =>
+      showGeneralDialog<DateTime>(
+        context: request.parentContext,
+        pageBuilder: (_, _, _) => _AuraDateTimePickerPage(request: request),
+        barrierColor: request.parentContext.auraColors.scrim,
+        useRootNavigator: false,
+      );
+
   Widget _buildPickerDialog({
-    required BuildContext context,
     required DateTime value,
     required ValueChanged<DateTime> onChanged,
     required VoidCallback onCancel,
     required VoidCallback onDone,
-  }) {
-    final colors = context.auraColors;
-    final borderRadius = context.auraTheme.fromBorderRadius(.lg);
-
-    return Semantics(
-      key: const ValueKey<String>('auraDateTimeInputPicker'),
-      child: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(_pickerPadding),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _pickerMaxWidth),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colors.shadow.withValues(alpha: 0.2),
-                      blurRadius: _pickerShadowBlurRadius,
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(_pickerPadding),
-                  child: Column(
-                    mainAxisSize: .min,
-                    crossAxisAlignment: .stretch,
-                    children: [
-                      AuraText(child: Text(_pickerTitle()), style: .heading6),
-                      const AuraSizedBox(height: .md),
-                      Wrap(
-                        alignment: .end,
-                        spacing: _pickerButtonSpacing,
-                        children: [
-                          _PickerButton(
-                            label: labels.cancel,
-                            onPressed: onCancel,
-                            child: Text(
-                              labels.cancel,
-                              style: .new(
-                                color: colors.primary,
-                                fontSize: _pickerActionFontSize,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            width: _pickerActionWidth,
-                          ),
-                          _PickerButton(
-                            label: labels.done,
-                            onPressed: onDone,
-                            child: Text(
-                              labels.done,
-                              style: .new(
-                                color: colors.onPrimary,
-                                fontSize: _pickerActionFontSize,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            decoration: BoxDecoration(
-                              color: colors.primary,
-                              borderRadius: BorderRadius.circular(
-                                context.auraTheme.fromBorderRadius(.md),
-                              ),
-                            ),
-                            width: _pickerActionWidth,
-                          ),
-                        ],
-                      ),
-                      const AuraSizedBox(height: .md),
-                      if (enableDate)
-                        _DatePicker(
-                          input: this,
-                          value: value,
-                          colors: colors,
-                          onChanged: onChanged,
-                        ),
-                      if (enableDate && enableTime)
-                        const AuraSizedBox(height: .md),
-                      if (enableTime)
-                        _TimePicker(
-                          input: this,
-                          value: value,
-                          onChanged: onChanged,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      explicitChildNodes: true,
-      scopesRoute: true,
-      namesRoute: true,
-      label: _pickerTitle(),
-    );
-  }
+  }) => _AuraDateTimePickerDialog(
+    input: this,
+    value: value,
+    onChanged: onChanged,
+    onCancel: onCancel,
+    onDone: onDone,
+  );
 
   DateTime _constrain(DateTime value) {
     final lower = minimum;
@@ -357,11 +224,15 @@ class AuraDateTimeInput extends StatelessWidget {
 
   DateTime _changeMonth(DateTime value, int delta) {
     final month = DateTime(value.year, value.month + delta);
-    final lastDay = DateTime(month.year, month.month + 1, 0).day;
-    final day = value.day > lastDay ? lastDay : value.day;
+    final day = _clampMonthDay(
+      value.day,
+      DateTime(month.year, month.month + 1, 0).day,
+    );
 
     return DateTime(month.year, month.month, day, value.hour, value.minute);
   }
+
+  int _clampMonthDay(int day, int lastDay) => day > lastDay ? lastDay : day;
 
   DateTime _changeHour(DateTime value, int delta) {
     final hour = (value.hour + delta + 24) % 24;
@@ -384,6 +255,508 @@ class AuraDateTimeInput extends StatelessWidget {
       enableTime ? value.minute : 0,
     );
   }
+}
+
+class const _AuraDateTimeInputField({
+  required final AuraDateTimeInput input,
+  required final VoidCallback? onTap,
+  required final bool isEnabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final displayValue = input._displayValue();
+
+    return Semantics(
+      child: _AuraDateTimeInputFieldSurface(
+        input: input,
+        onTap: onTap,
+        isEnabled: isEnabled,
+        displayValue: displayValue,
+      ),
+      excludeSemantics: true,
+      enabled: isEnabled,
+      button: true,
+      label: input.semanticLabel ?? displayValue,
+      value: displayValue,
+    );
+  }
+}
+
+class const _AuraDateTimeInputFieldSurface({
+  required final AuraDateTimeInput input,
+  required final VoidCallback? onTap,
+  required final bool isEnabled,
+  required final String displayValue,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraFieldWrapper(
+    child: _AuraDateTimeInputFieldContent(
+      input: input,
+      displayValue: displayValue,
+    ),
+    isEnabled: isEnabled,
+    onTap: isEnabled ? onTap : null,
+  );
+}
+
+class const _AuraDateTimeInputFieldContent({
+  required final AuraDateTimeInput input,
+  required final String displayValue,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: DesignInputSizes.paddingMd,
+    child: Row(
+      children: [
+        Expanded(child: AuraText(child: Text(displayValue))),
+        const AuraSizedBox(width: .sm),
+        _AuraDateTimeInputMode(input: input),
+      ],
+    ),
+  );
+}
+
+class const _AuraDateTimeInputMode({required final AuraDateTimeInput input})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      input.enableDate && input.enableTime
+          ? input.labels.dateAndTime
+          : input._modeLabel(),
+    ),
+    style: .bodySmall,
+  );
+}
+
+class const _AuraDateTimePickerPage({
+  required final _PickerDialogRequest request,
+}) extends StatefulWidget {
+  @override
+  State<_AuraDateTimePickerPage> createState() =>
+      _AuraDateTimePickerPageState();
+}
+
+class _AuraDateTimePickerPageState extends State<_AuraDateTimePickerPage> {
+  DateTime? _draftValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final request = widget.request;
+
+    return ValueListenableBuilder<_PickerEnvironment>(
+      valueListenable: request.environment,
+      builder: (_, currentEnvironment, _) => _AuraDateTimePickerEnvironment(
+        page: this,
+        environment: currentEnvironment,
+      ),
+    );
+  }
+
+  void _updateValue(DateTime value) => setState(() => _draftValue = value);
+
+  void _cancel() => Navigator.of(widget.request.parentContext).pop();
+
+  void _done() {
+    final value = _draftValue ?? widget.request.initialValue;
+    Navigator.of(widget.request.parentContext).pop(
+      widget.request.input._constrain(widget.request.input._normalise(value)),
+    );
+  }
+}
+
+class const _AuraDateTimePickerDialog({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final ValueChanged<DateTime> onChanged,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('auraDateTimeInputPicker'),
+    child: SafeArea(
+      child: _AuraDateTimePickerCard(
+        input: input,
+        value: value,
+        onChanged: onChanged,
+        onCancel: onCancel,
+        onDone: onDone,
+      ),
+    ),
+    explicitChildNodes: true,
+    scopesRoute: true,
+    namesRoute: true,
+    label: input._pickerTitle(),
+  );
+}
+
+class const _AuraDateTimePickerEnvironment({
+  required final _AuraDateTimePickerPageState page,
+  required final _PickerEnvironment environment,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final request = page.widget.request;
+    final value = page._draftValue ??= request.initialValue;
+
+    return _AuraDateTimePickerLocale(
+      request: request,
+      page: page,
+      environment: environment,
+      value: value,
+    );
+  }
+}
+
+class const _AuraDateTimePickerLocale({
+  required final _PickerDialogRequest request,
+  required final _AuraDateTimePickerPageState page,
+  required final _PickerEnvironment environment,
+  required final DateTime value,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => request.capturedThemes.wrap(
+    _AuraDateTimePickerLocalized(
+      request: request,
+      page: page,
+      environment: environment,
+      value: value,
+    ),
+  );
+}
+
+class const _AuraDateTimePickerLocalized({
+  required final _PickerDialogRequest request,
+  required final _AuraDateTimePickerPageState page,
+  required final _PickerEnvironment environment,
+  required final DateTime value,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Localizations.override(
+    context: request.parentContext,
+    locale: environment.locale,
+    child: _AuraDateTimePickerThemeContent(
+      request: request,
+      page: page,
+      environment: environment,
+      value: value,
+    ),
+  );
+}
+
+class const _AuraDateTimePickerThemeContent({
+  required final _PickerDialogRequest request,
+  required final _AuraDateTimePickerPageState page,
+  required final _PickerEnvironment environment,
+  required final DateTime value,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraDateTimePickerTheme(
+    input: request.input,
+    value: value,
+    onChanged: page._updateValue,
+    onCancel: page._cancel,
+    onDone: page._done,
+    theme: environment.theme,
+    textDirection: environment.textDirection,
+    mediaQuery: environment.mediaQuery,
+  );
+}
+
+class const _AuraDateTimePickerTheme({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final ValueChanged<DateTime> onChanged,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+  required final ThemeData theme,
+  required final TextDirection textDirection,
+  required final MediaQueryData mediaQuery,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Theme(
+    data: theme,
+    child: _AuraDateTimePickerDirectionality(
+      input: input,
+      value: value,
+      onChanged: onChanged,
+      onCancel: onCancel,
+      onDone: onDone,
+      textDirection: textDirection,
+      mediaQuery: mediaQuery,
+    ),
+  );
+}
+
+class const _AuraDateTimePickerDirectionality({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final ValueChanged<DateTime> onChanged,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+  required final TextDirection textDirection,
+  required final MediaQueryData mediaQuery,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Directionality(
+    textDirection: textDirection,
+    child: _AuraDateTimePickerMediaQuery(
+      input: input,
+      value: value,
+      onChanged: onChanged,
+      onCancel: onCancel,
+      onDone: onDone,
+      mediaQuery: mediaQuery,
+    ),
+  );
+}
+
+class const _AuraDateTimePickerMediaQuery({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final ValueChanged<DateTime> onChanged,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+  required final MediaQueryData mediaQuery,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MediaQuery(
+    data: mediaQuery,
+    child: input._buildPickerDialog(
+      value: value,
+      onChanged: onChanged,
+      onCancel: onCancel,
+      onDone: onDone,
+    ),
+  );
+}
+
+class const _AuraDateTimePickerCard({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final ValueChanged<DateTime> onChanged,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(AuraDateTimeInput._pickerPadding),
+      child: _AuraDateTimePickerSurface(
+        input: input,
+        value: value,
+        onChanged: onChanged,
+        onCancel: onCancel,
+        onDone: onDone,
+      ),
+    ),
+  );
+}
+
+class const _AuraDateTimePickerSurface({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final ValueChanged<DateTime> onChanged,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(
+      maxWidth: AuraDateTimeInput._pickerMaxWidth,
+    ),
+    child: _AuraDateTimePickerFrame(
+      input: input,
+      value: value,
+      onChanged: onChanged,
+      onCancel: onCancel,
+      onDone: onDone,
+    ),
+  );
+}
+
+class const _AuraDateTimePickerFrame({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final ValueChanged<DateTime> onChanged,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.auraColors;
+
+    return _AuraDateTimePickerFrameSurface(
+      input: input,
+      value: value,
+      colors: colors,
+      onChanged: onChanged,
+      onCancel: onCancel,
+      onDone: onDone,
+    );
+  }
+}
+
+class const _AuraDateTimePickerBody({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final AuraColorScheme colors,
+  required final ValueChanged<DateTime> onChanged,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    children: [
+      _AuraDateTimePickerHeader(
+        input: input,
+        colors: colors,
+        onCancel: onCancel,
+        onDone: onDone,
+      ),
+      const AuraSizedBox(height: .md),
+      _AuraDateTimePickerSelection(
+        input: input,
+        value: value,
+        colors: colors,
+        onChanged: onChanged,
+      ),
+    ],
+  );
+}
+
+class const _AuraDateTimePickerHeader({
+  required final AuraDateTimeInput input,
+  required final AuraColorScheme colors,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      AuraText(child: Text(input._pickerTitle()), style: .heading6),
+      const AuraSizedBox(height: .md),
+      _AuraDateTimePickerActions(
+        input: input,
+        colors: colors,
+        onCancel: onCancel,
+        onDone: onDone,
+      ),
+    ],
+  );
+}
+
+class const _AuraDateTimePickerSelection({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final AuraColorScheme colors,
+  required final ValueChanged<DateTime> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      if (input.enableDate)
+        _DatePicker(
+          input: input,
+          value: value,
+          colors: colors,
+          onChanged: onChanged,
+        ),
+      if (input.enableDate && input.enableTime) const AuraSizedBox(height: .md),
+      if (input.enableTime)
+        _TimePicker(input: input, value: value, onChanged: onChanged),
+    ],
+  );
+}
+
+class const _AuraDateTimePickerActions({
+  required final AuraDateTimeInput input,
+  required final AuraColorScheme colors,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    alignment: .end,
+    spacing: AuraDateTimeInput._pickerButtonSpacing,
+    children: [
+      _AuraDateTimePickerCancelButton(
+        input: input,
+        colors: colors,
+        onPressed: onCancel,
+      ),
+      _AuraDateTimePickerDoneButton(
+        input: input,
+        colors: colors,
+        onPressed: onDone,
+      ),
+    ],
+  );
+}
+
+class const _AuraDateTimePickerCancelButton({
+  required final AuraDateTimeInput input,
+  required final AuraColorScheme colors,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _PickerButton(
+    label: input.labels.cancel,
+    onPressed: onPressed,
+    child: Text(
+      input.labels.cancel,
+      style: .new(
+        color: colors.primary,
+        fontSize: AuraDateTimeInput._pickerActionFontSize,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+    width: AuraDateTimeInput._pickerActionWidth,
+  );
+}
+
+class const _AuraDateTimePickerDoneButton({
+  required final AuraDateTimeInput input,
+  required final AuraColorScheme colors,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _PickerButton(
+    label: input.labels.done,
+    onPressed: onPressed,
+    child: _AuraDateTimePickerDoneLabel(
+      label: input.labels.done,
+      color: colors.onPrimary,
+    ),
+    decoration: _doneDecoration(context, colors),
+    width: AuraDateTimeInput._pickerActionWidth,
+  );
+
+  Decoration _doneDecoration(BuildContext context, AuraColorScheme colors) =>
+      BoxDecoration(
+        color: colors.primary,
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.fromBorderRadius(.md),
+        ),
+      );
+}
+
+class const _AuraDateTimePickerDoneLabel({
+  required final String label,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    label,
+    style: .new(
+      color: color,
+      fontSize: AuraDateTimeInput._pickerActionFontSize,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 }
 
 class const _AuraDateTimeInputHost({required final AuraDateTimeInput input})
@@ -417,12 +790,63 @@ class _AuraDateTimeInputHostState extends State<_AuraDateTimeInputHost> {
   @override
   Widget build(BuildContext context) {
     final environment = _environment ??= .new(_PickerEnvironment.from(context));
-    final input = widget.input;
+
+    return _AuraDateTimeInputHostContent(
+      input: widget.input,
+      environment: environment,
+    );
+  }
+}
+
+class const _AuraDateTimePickerFrameSurface({
+  required final AuraDateTimeInput input,
+  required final DateTime value,
+  required final AuraColorScheme colors,
+  required final ValueChanged<DateTime> onChanged,
+  required final VoidCallback onCancel,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: _pickerDecoration(context, colors),
+    child: Padding(
+      padding: const EdgeInsets.all(AuraDateTimeInput._pickerPadding),
+      child: _AuraDateTimePickerBody(
+        input: input,
+        value: value,
+        colors: colors,
+        onChanged: onChanged,
+        onCancel: onCancel,
+        onDone: onDone,
+      ),
+    ),
+  );
+
+  Decoration _pickerDecoration(BuildContext context, AuraColorScheme colors) =>
+      BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.fromBorderRadius(.lg),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: 0.2),
+            blurRadius: AuraDateTimeInput._pickerShadowBlurRadius,
+          ),
+        ],
+      );
+}
+
+class const _AuraDateTimeInputHostContent({
+  required final AuraDateTimeInput input,
+  required final ValueListenable<_PickerEnvironment> environment,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final isEnabled =
         input.enabled && AuraInteractionScope.of(context).allowsValueChanges;
 
     return input._buildField(
-      context,
       isEnabled ? () => input._pick(context, environment) : null,
       isEnabled: isEnabled,
     );
