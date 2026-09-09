@@ -59,39 +59,22 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   Widget build(BuildContext context) {
     final agentId = widget.agentId;
     if (agentId != null && !_loaded) {
-      return FutureBuilder<AgentEntity?>(
+      return _AgentLoader(
         future: ref
             .read(agentRepositoryProvider(widget.workspaceId))
             .getAgentById(agentId),
-        builder: (context, snapshot) {
-          final agent = snapshot.data;
-          if (agent == null) return const Center(child: AuraSpinner());
-          _initialize(agent);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) setState(() => _loaded = true);
-          });
-
-          return const Center(child: AuraSpinner());
-        },
+        onLoaded: _initialize,
+        onInitialized: _markAgentLoaded,
       );
     }
 
     if (agentId != null && !_toolOverridesLoaded) {
-      return FutureBuilder<List<AgentToolOverrideEntity>>(
+      return _AgentToolOverridesLoader(
         future: ref
             .read(listAgentToolOverridesUsecaseProvider(widget.workspaceId))
             .call(agentId),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const AuraScreen(child: Center(child: AuraSpinner()));
-          }
-          _initializeToolOverrides(snapshot.requireData);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) setState(() => _toolOverridesLoaded = true);
-          });
-
-          return const AuraScreen(child: Center(child: AuraSpinner()));
-        },
+        onLoaded: _initializeToolOverrides,
+        onInitialized: _markToolOverridesLoaded,
       );
     }
     final skillsAsync = ref.watch(workspaceSkillsProvider(widget.workspaceId));
@@ -251,6 +234,16 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       );
   }
 
+  void _markAgentLoaded() {
+    if (!mounted) return;
+    setState(() => _loaded = true);
+  }
+
+  void _markToolOverridesLoaded() {
+    if (!mounted) return;
+    setState(() => _toolOverridesLoaded = true);
+  }
+
   void _toggleSkillValue(WorkspaceSkill skill) {
     if (_selectedSkills.contains(skill.ref)) {
       final _ = _selectedSkills.remove(skill.ref);
@@ -356,6 +349,48 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
         .read(saveAgentToolOverridesUsecaseProvider(widget.workspaceId))
         .call(agentId: agentId, permissionsByToolId: _toolPermissionModes);
   }
+}
+
+class const _AgentLoader({
+  required final Future<AgentEntity?> future,
+  required final ValueChanged<AgentEntity> onLoaded,
+  required final VoidCallback onInitialized,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FutureBuilder<AgentEntity?>(
+    future: future,
+    builder: (context, snapshot) {
+      final agent = snapshot.data;
+      if (agent == null) return const Center(child: AuraSpinner());
+
+      onLoaded(agent);
+      WidgetsBinding.instance.addPostFrameCallback((_) => onInitialized());
+
+      return const Center(child: AuraSpinner());
+    },
+  );
+}
+
+class const _AgentToolOverridesLoader({
+  required final Future<List<AgentToolOverrideEntity>> future,
+  required final ValueChanged<List<AgentToolOverrideEntity>> onLoaded,
+  required final VoidCallback onInitialized,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      FutureBuilder<List<AgentToolOverrideEntity>>(
+        future: future,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const AuraScreen(child: Center(child: AuraSpinner()));
+          }
+
+          onLoaded(snapshot.requireData);
+          WidgetsBinding.instance.addPostFrameCallback((_) => onInitialized());
+
+          return const AuraScreen(child: Center(child: AuraSpinner()));
+        },
+      );
 }
 
 class const _AgentForm({
