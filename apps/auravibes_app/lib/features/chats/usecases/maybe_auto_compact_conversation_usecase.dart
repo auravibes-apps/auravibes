@@ -28,25 +28,32 @@ class const MaybeAutoCompactConversationUsecase({
   Future<void> call({required String conversationId}) async {
     final cloudDecision = cloudShouldCompact;
     if (cloudDecision != null) {
-      if (!await cloudDecision(conversationId)) return;
-      switch (await compactConversationUsecase(
-        conversationId: conversationId,
-        trigger: CompactionTrigger.auto,
-      )) {
-        case _:
-          return;
-      }
+      await _runCloudCompaction(cloudDecision, conversationId);
+
+      return;
     }
-    final repository = conversationRepository;
-    final getModelStore = modelSelectionStore;
-    final models = apiModelRepository;
-    final shouldCompact = shouldCompactConversationUsecase;
-    if (repository == null ||
-        getModelStore == null ||
-        models == null ||
-        shouldCompact == null) {
-      throw StateError('Local compaction dependencies unavailable');
-    }
+    await _runLocalCompaction(conversationId);
+  }
+
+  Future<void> _runCloudCompaction(
+    Future<bool> Function(String conversationId) cloudDecision,
+    String conversationId,
+  ) async {
+    if (!await cloudDecision(conversationId)) return;
+
+    final _ = await compactConversationUsecase(
+      conversationId: conversationId,
+      trigger: CompactionTrigger.auto,
+    );
+  }
+
+  Future<void> _runLocalCompaction(String conversationId) async {
+    final dependencies = _requiredLocalDependencies();
+    final repository = dependencies.repository;
+    final getModelStore = dependencies.getModelStore;
+    final models = dependencies.models;
+    final shouldCompact = dependencies.shouldCompact;
+
     final conversation = await repository.getConversationById(conversationId);
     if (conversation == null) return;
 
@@ -73,13 +80,36 @@ class const MaybeAutoCompactConversationUsecase({
 
     if (!decision.shouldCompact) return;
 
-    switch (await compactConversationUsecase(
+    final _ = await compactConversationUsecase(
       conversationId: conversationId,
       trigger: CompactionTrigger.auto,
-    )) {
-      case _:
-        return;
+    );
+  }
+
+  ({
+    ConversationRepository repository,
+    Future<ModelSelectionStore> Function(String workspaceId) getModelStore,
+    ApiModelRepository models,
+    ShouldCompactConversationUsecase shouldCompact,
+  })
+  _requiredLocalDependencies() {
+    final repository = conversationRepository;
+    final getModelStore = modelSelectionStore;
+    final models = apiModelRepository;
+    final shouldCompact = shouldCompactConversationUsecase;
+    if (repository == null ||
+        getModelStore == null ||
+        models == null ||
+        shouldCompact == null) {
+      throw StateError('Local compaction dependencies unavailable');
     }
+
+    return (
+      repository: repository,
+      getModelStore: getModelStore,
+      models: models,
+      shouldCompact: shouldCompact,
+    );
   }
 }
 
