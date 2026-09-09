@@ -333,20 +333,11 @@ class WorkspaceRepository(
   /// [workspace] The workspace to validate.
   /// Returns a string describing the validation error.
   String _getValidationErrorToCreate(WorkspaceToCreate workspace) {
-    if (workspace.name.isEmpty) return 'Workspace name cannot be empty';
-    if (workspace.type == WorkspaceType.local &&
-        (workspace.url != null || workspace.cloudWorkspaceId != null)) {
+    if (!workspace.hasValidName) return 'Workspace name cannot be empty';
+    if (workspace.isLocal && !workspace.hasValidUrl) {
       return 'Local workspace cannot have remote metadata';
     }
-    final url = workspace.url;
-    final cloudWorkspaceId = workspace.cloudWorkspaceId;
-    final cloudAccountId = workspace.cloudAccountId;
-    if (workspace.type == WorkspaceType.remote &&
-        (url == null || url.isEmpty) &&
-        (cloudWorkspaceId == null ||
-            cloudWorkspaceId.isEmpty ||
-            cloudAccountId == null ||
-            cloudAccountId.isEmpty)) {
+    if (workspace.isRemote && !workspace.hasValidUrl) {
       return 'Remote workspace must have a URL or cloud ID';
     }
 
