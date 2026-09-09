@@ -110,48 +110,54 @@ class const CloudConversationState({
   /// Applies only the next event in the durable ordering.
   CloudConversationState? apply(ConversationStreamEvent event) {
     if (event.kind == ConversationEventType.a2uiMessage) {
-      if (event.sequence != sequence) return null;
-      final assistantMessageId =
-          _assistantMessageId(event.payloadJson) ??
-          activeExecution?.assistantMessageId;
-      if (assistantMessageId == null) return null;
-      final messages = a2uiMessagesByAssistantMessageId[assistantMessageId];
-      if (messages?.contains(event.payloadJson) ?? false) return this;
-
-      return CloudConversationState(
-        conversation: conversation,
-        messages: this.messages,
-        pendingMessages: pendingMessages,
-        activeExecution: activeExecution,
-        toolCalls: toolCalls,
-        sequence: sequence,
-        activeAssistantContent: activeAssistantContent,
-        activeAssistantTransientContent: activeAssistantTransientContent,
-        a2uiMessagesByAssistantMessageId: {
-          ...a2uiMessagesByAssistantMessageId,
-          assistantMessageId: [...?messages, event.payloadJson],
-        },
-        a2uiIssuesByAssistantMessageId: a2uiIssuesByAssistantMessageId,
-        a2uiMessageIssuesByAssistantMessageId:
-            a2uiMessageIssuesByAssistantMessageId,
-        transientA2uiSequenceByAssistantMessageId: {
-          ...transientA2uiSequenceByAssistantMessageId,
-          assistantMessageId: sequence,
-        },
-        appliedTransientEventKeys: appliedTransientEventKeys,
-      );
+      return _applyA2uiMessage(event);
     }
-    final isTransientDelta = event.transientTextDelta != null;
+
+    return _applyTextEvent(event);
+  }
+
+  CloudConversationState? _applyA2uiMessage(ConversationStreamEvent event) {
+    if (event.sequence != sequence) return null;
+    final assistantMessageId =
+        _assistantMessageId(event.payloadJson) ??
+        activeExecution?.assistantMessageId;
+    if (assistantMessageId == null) return null;
+    final messages = a2uiMessagesByAssistantMessageId[assistantMessageId];
+    if (messages?.contains(event.payloadJson) ?? false) return this;
+
+    return CloudConversationState(
+      conversation: conversation,
+      messages: this.messages,
+      pendingMessages: pendingMessages,
+      activeExecution: activeExecution,
+      toolCalls: toolCalls,
+      sequence: sequence,
+      activeAssistantContent: activeAssistantContent,
+      activeAssistantTransientContent: activeAssistantTransientContent,
+      a2uiMessagesByAssistantMessageId: {
+        ...a2uiMessagesByAssistantMessageId,
+        assistantMessageId: [...?messages, event.payloadJson],
+      },
+      a2uiIssuesByAssistantMessageId: a2uiIssuesByAssistantMessageId,
+      a2uiMessageIssuesByAssistantMessageId:
+          a2uiMessageIssuesByAssistantMessageId,
+      transientA2uiSequenceByAssistantMessageId: {
+        ...transientA2uiSequenceByAssistantMessageId,
+        assistantMessageId: sequence,
+      },
+      appliedTransientEventKeys: appliedTransientEventKeys,
+    );
+  }
+
+  CloudConversationState? _applyTextEvent(ConversationStreamEvent event) {
+    final delta = event.transientTextDelta;
+    final isTransientDelta = delta != null;
     if (isTransientDelta
         ? event.sequence != sequence
         : event.sequence != sequence + 1) {
       return null;
     }
-    final transientEventKey = isTransientDelta
-        ? event.eventId ??
-              '${event.sequence}:${event.createdAt.microsecondsSinceEpoch}:'
-                  '${event.transientTextDelta}'
-        : null;
+    final transientEventKey = _transientEventKey(event, delta);
     if (transientEventKey != null &&
         appliedTransientEventKeys.contains(transientEventKey)) {
       return this;
@@ -166,10 +172,10 @@ class const CloudConversationState({
       sequence: event.sequence,
       activeAssistantContent: isTransientDelta
           ? '${_activeAssistantBaseContent()}$activeAssistantTransientContent'
-                '${event.transientTextDelta}'
+                '$delta'
           : '',
       activeAssistantTransientContent: isTransientDelta
-          ? '$activeAssistantTransientContent${event.transientTextDelta}'
+          ? '$activeAssistantTransientContent$delta'
           : '',
       a2uiMessagesByAssistantMessageId: a2uiMessagesByAssistantMessageId,
       a2uiIssuesByAssistantMessageId: a2uiIssuesByAssistantMessageId,
@@ -182,6 +188,13 @@ class const CloudConversationState({
           ? {...appliedTransientEventKeys, ?transientEventKey}
           : const {},
     );
+  }
+
+  String? _transientEventKey(ConversationStreamEvent event, String? delta) {
+    if (delta == null) return null;
+
+    return event.eventId ??
+        '${event.sequence}:${event.createdAt.microsecondsSinceEpoch}:$delta';
   }
 
   String _activeAssistantBaseContent() {
