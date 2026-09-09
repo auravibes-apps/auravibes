@@ -202,15 +202,15 @@ class const _LoadedChatConversation({
     );
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
+    final cloudExecutionState = cloudConversation?.conversation.executionState;
     final isInputBusy =
         (isCloud
-            ? cloudConversation?.conversation.executionState == 'running' ||
-                  cloudConversation?.conversation.executionState ==
-                      'awaitingApproval'
+            ? cloudExecutionState == 'running' ||
+                  cloudExecutionState == 'awaitingApproval'
             : busyState?.isBusy ?? false) ||
         rateLimitRetryAt != null;
     final isGenerating = isCloud
-        ? cloudConversation?.conversation.executionState == 'running'
+        ? cloudExecutionState == 'running'
         : busyState?.isStreaming == true;
     Dispose? resetStopRequested() {
       stopRequested.value = false;

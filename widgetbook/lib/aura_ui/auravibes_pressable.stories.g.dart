@@ -18,9 +18,9 @@ typedef _Story = PressableDemoStory;
 typedef _Args = _PressableInputArgs;
 final PressableDemoComponent =
     Component<PressableDemo, StoryArgs<PressableDemo>>(
-      name: component.name ?? 'PressableDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'PressableDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates keyboard and pointer feedback on a reusable pressable surface.''',
       stories: [$Pressable..$generatedName = 'Pressable'],
     );
@@ -39,7 +39,7 @@ class PressableDemoStory extends Story<PressableDemo, _PressableInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _PressableInputArgs(),
-         builder: builder ?? pressableDefaults.builder!,
+         builder: builder ?? _pressableDefaults.builder!,
        );
 }
 

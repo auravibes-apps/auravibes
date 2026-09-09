@@ -4,49 +4,52 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_radio_group.stories.bridge.g.dart';
 part 'auravibes_radio_group.stories.g.dart';
 
-const component = ComponentMeta(name: 'AuraRadioGroup');
-const meta = Meta(RadioGroupDemo.new);
+const _component = ComponentMeta(name: 'AuraRadioGroup');
+const _meta = Meta(RadioGroupDemo.new);
 
-final $RadioGroup = _Story(
-  name: 'Radio Group',
-  setup: (context, child, args) => constrainStoryWidth(
-    Padding(padding: const EdgeInsets.all(16), child: child),
-    maxWidth: 420,
-  ),
-  args: _Args(
-    direction: SingleArg(
-      Axis.vertical,
-      name: 'direction',
-      values: const [Axis.vertical, Axis.horizontal],
-      labelBuilder: (value) =>
-          value == Axis.vertical ? 'vertical' : 'horizontal',
+abstract final class _StorybookDefinitions {
+  static final $RadioGroup = _Story(
+    name: 'Radio Group',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(
+      Padding(padding: const EdgeInsets.all(16), child: child),
+      maxWidth: 420,
     ),
-    tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
-    showLabel: BoolArg(true, name: 'showLabel'),
-    showSubtitles: BoolArg(false, name: 'showSubtitles'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
+    args: _Args(
+      direction: SingleArg(
+        Axis.vertical,
+        name: 'direction',
+        values: const [Axis.vertical, Axis.horizontal],
+        labelBuilder: (value) =>
+            value == Axis.vertical ? 'vertical' : 'horizontal',
+      ),
+      tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
+      showLabel: BoolArg(true, name: 'showLabel'),
+      showSubtitles: BoolArg(false, name: 'showSubtitles'),
     ),
-    _Scenario(
-      name: 'Landscape Phone',
-      modes: [ViewportMode(landscapePhoneViewport)],
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
-    _Scenario(
-      name: 'Selects Radio',
-      run: (tester, args) async {
-        await tester.tap(find.text('Light'));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(
+        name: 'Landscape Phone',
+        modes: [ViewportMode(StoryHelpers.landscapePhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
+      _Scenario(
+        name: 'Selects Radio',
+        run: (tester, args) async {
+          await tester.tap(find.text('Light'));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates a controlled radio group in vertical and horizontal layouts.
 class const RadioGroupDemo({

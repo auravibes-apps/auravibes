@@ -17,9 +17,9 @@ typedef _Defaults = SwitchDemoDefaults;
 typedef _Story = SwitchDemoStory;
 typedef _Args = SwitchDemoArgs;
 final SwitchDemoComponent = Component<SwitchDemo, StoryArgs<SwitchDemo>>(
-  name: component.name ?? 'SwitchDemo',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'SwitchDemo',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment: r'''Demonstrates a controlled switch with size, loading, and disabled states.''',
   stories: [$Default..$generatedName = 'Default'],
 );

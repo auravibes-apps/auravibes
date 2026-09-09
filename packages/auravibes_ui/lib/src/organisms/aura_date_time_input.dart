@@ -8,80 +8,14 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Caller-provided visible and semantic strings used by [AuraDateTimeInput].
-class AuraDateTimeInputLabels {
-  /// Creates localized date/time picker labels.
-  const new({
-    this.selectDateAndTime = 'Select date and time',
-    this.selectDate = 'Select date',
-    this.selectTime = 'Select time',
-    this.dateAndTime = 'Date and time',
-    this.date = 'Date',
-    this.time = 'Time',
-    this.cancel = 'Cancel',
-    this.done = 'Done',
-    this.previousMonth = 'Previous month',
-    this.nextMonth = 'Next month',
-    this.decreaseHour = 'Decrease hour',
-    this.increaseHour = 'Increase hour',
-    this.decreaseMinute = 'Decrease minute',
-    this.increaseMinute = 'Increase minute',
-    this.weekdayLabels = const ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
-    this.dayLabelBuilder,
-  });
-
-  /// Label for a date and time picker.
-  final String selectDateAndTime;
-
-  /// Label for a date picker.
-  final String selectDate;
-
-  /// Label for a time picker.
-  final String selectTime;
-
-  /// Label for combined date and time mode.
-  final String dateAndTime;
-
-  /// Label for date-only mode.
-  final String date;
-
-  /// Label for time-only mode.
-  final String time;
-
-  /// Confirmation cancellation label.
-  final String cancel;
-
-  /// Confirmation completion label.
-  final String done;
-
-  /// Previous-month control label.
-  final String previousMonth;
-
-  /// Next-month control label.
-  final String nextMonth;
-
-  /// Decrease-hour control label.
-  final String decreaseHour;
-
-  /// Increase-hour control label.
-  final String increaseHour;
-
-  /// Decrease-minute control label.
-  final String decreaseMinute;
-
-  /// Increase-minute control label.
-  final String increaseMinute;
-
-  /// Short weekday labels from Monday through Sunday.
-  final List<String> weekdayLabels;
-
-  /// Builds a semantic label for a calendar day.
-  final String Function(int day)? dayLabelBuilder;
-}
+part 'aura_date_time_input_labels.dart';
+part 'picker_button.dart';
 
 /// A controlled date and/or time input using a widgets-only picker.
 class AuraDateTimeInput extends StatelessWidget {
   static const _daysPerWeek = 7;
+  static const _yearWidth = 4;
+  static const _twoDigitWidth = 2;
   static const _pickerMaxWidth = 360.0;
   static const _pickerPadding = 16.0;
   static const _pickerControlHeight = 48.0;
@@ -90,6 +24,8 @@ class AuraDateTimeInput extends StatelessWidget {
   static const _pickerActionFontSize = 14.0;
   static const _pickerControlFontSize = 18.0;
   static const _pickerDayFontSize = 14.0;
+  static const _pickerShadowBlurRadius = 16.0;
+  static const _calendarGridSpacing = 2.0;
 
   /// Creates a date and/or time input.
   new({
@@ -204,17 +140,17 @@ class AuraDateTimeInput extends StatelessWidget {
     final formatter = dateFormatter;
     if (formatter != null) return formatter(value);
 
-    return '${value.year.toString().padLeft(4, '0')}-'
-        '${value.month.toString().padLeft(2, '0')}-'
-        '${value.day.toString().padLeft(2, '0')}';
+    return '${value.year.toString().padLeft(_yearWidth, '0')}-'
+        '${value.month.toString().padLeft(_twoDigitWidth, '0')}-'
+        '${value.day.toString().padLeft(_twoDigitWidth, '0')}';
   }
 
   String _formatTime(DateTime value) {
     final formatter = timeFormatter;
     if (formatter != null) return formatter(value);
 
-    return '${value.hour.toString().padLeft(2, '0')}:'
-        '${value.minute.toString().padLeft(2, '0')}';
+    return '${value.hour.toString().padLeft(_twoDigitWidth, '0')}:'
+        '${value.minute.toString().padLeft(_twoDigitWidth, '0')}';
   }
 
   String _placeholder() {
@@ -316,7 +252,7 @@ class AuraDateTimeInput extends StatelessWidget {
                   boxShadow: [
                     BoxShadow(
                       color: colors.shadow.withValues(alpha: 0.2),
-                      blurRadius: 16,
+                      blurRadius: _pickerShadowBlurRadius,
                     ),
                   ],
                 ),
@@ -332,11 +268,9 @@ class AuraDateTimeInput extends StatelessWidget {
                         alignment: .end,
                         spacing: _pickerButtonSpacing,
                         children: [
-                          _buildPickerButton(
-                            context: context,
+                          _PickerButton(
                             label: labels.cancel,
                             onPressed: onCancel,
-                            width: _pickerActionWidth,
                             child: Text(
                               labels.cancel,
                               style: .new(
@@ -345,12 +279,11 @@ class AuraDateTimeInput extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
+                            width: _pickerActionWidth,
                           ),
-                          _buildPickerButton(
-                            context: context,
+                          _PickerButton(
                             label: labels.done,
                             onPressed: onDone,
-                            width: _pickerActionWidth,
                             child: Text(
                               labels.done,
                               style: .new(
@@ -365,13 +298,14 @@ class AuraDateTimeInput extends StatelessWidget {
                                 context.auraTheme.fromBorderRadius(.md),
                               ),
                             ),
+                            width: _pickerActionWidth,
                           ),
                         ],
                       ),
                       const AuraSizedBox(height: .md),
                       if (enableDate)
-                        _buildDatePicker(
-                          context: context,
+                        _DatePicker(
+                          input: this,
                           value: value,
                           colors: colors,
                           onChanged: onChanged,
@@ -379,8 +313,8 @@ class AuraDateTimeInput extends StatelessWidget {
                       if (enableDate && enableTime)
                         const AuraSizedBox(height: .md),
                       if (enableTime)
-                        _buildTimePicker(
-                          context: context,
+                        _TimePicker(
+                          input: this,
                           value: value,
                           onChanged: onChanged,
                         ),
@@ -408,271 +342,6 @@ class AuraDateTimeInput extends StatelessWidget {
     return value;
   }
 
-  Widget _buildDatePicker({
-    required BuildContext context,
-    required DateTime value,
-    required AuraColorScheme colors,
-    required ValueChanged<DateTime> onChanged,
-  }) {
-    final firstDay = DateTime(value.year, value.month);
-    final daysInMonth = DateTime(value.year, value.month + 1, 0).day;
-    final days = <Widget>[
-      for (var index = 1; index < firstDay.weekday; index++)
-        const SizedBox.shrink(),
-      for (var day = 1; day <= daysInMonth; day++)
-        _buildPickerButton(
-          context: context,
-          label: labels.dayLabelBuilder?.call(day) ?? 'Day $day',
-          onPressed: () {
-            onChanged(
-              DateTime(value.year, value.month, day, value.hour, value.minute),
-            );
-          },
-          child: Text(
-            '$day',
-            style: .new(
-              color: day == value.day ? colors.onPrimary : colors.onSurface,
-              fontSize: _pickerDayFontSize,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          decoration: BoxDecoration(
-            color: day == value.day ? colors.primary : null,
-            border: day == value.day
-                ? null
-                : Border.fromBorderSide(.new(color: colors.outlineVariant)),
-            shape: .circle,
-          ),
-          selected: day == value.day,
-        ),
-    ];
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            _buildPickerButton(
-              context: context,
-              label: labels.previousMonth,
-              onPressed: () => onChanged(_changeMonth(value, -1)),
-              child: Text(
-                '<',
-                style: .new(
-                  color: colors.primary,
-                  fontSize: _pickerControlFontSize,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Center(
-                child: AuraText(
-                  child: Text(_formatMonth(value)),
-                  style: .heading6,
-                ),
-              ),
-            ),
-            _buildPickerButton(
-              context: context,
-              label: labels.nextMonth,
-              onPressed: () => onChanged(_changeMonth(value, 1)),
-              child: Text(
-                '>',
-                style: .new(
-                  color: colors.primary,
-                  fontSize: _pickerControlFontSize,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const AuraSizedBox(height: .sm),
-        Row(
-          mainAxisAlignment: .spaceAround,
-          children: [
-            for (var weekday = 1; weekday <= _daysPerWeek; weekday++)
-              Expanded(
-                child: Center(
-                  child: Text(
-                    labels.weekdayLabels[weekday - 1],
-                    style: .new(
-                      color: colors.mutedForeground,
-                      fontSize: _pickerActionFontSize,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const AuraSizedBox(height: .xs),
-        GridView.count(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          crossAxisCount: _daysPerWeek,
-          mainAxisSpacing: 2,
-          crossAxisSpacing: 2,
-          children: days,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimePicker({
-    required BuildContext context,
-    required DateTime value,
-    required ValueChanged<DateTime> onChanged,
-  }) {
-    final colors = context.auraColors;
-
-    return Column(
-      children: [
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: AuraText(child: Text(labels.time), style: .heading6),
-        ),
-        const AuraSizedBox(height: .xs),
-        Wrap(
-          alignment: .center,
-          spacing: _pickerButtonSpacing,
-          runSpacing: _pickerButtonSpacing,
-          children: [
-            Row(
-              mainAxisSize: .min,
-              children: [
-                _buildPickerButton(
-                  context: context,
-                  label: labels.decreaseHour,
-                  onPressed: () => onChanged(_changeHour(value, -1)),
-                  child: Text(
-                    '-',
-                    style: .new(
-                      color: colors.primary,
-                      fontSize: _pickerControlFontSize,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: _pickerControlHeight,
-                  child: Center(
-                    child: Text(
-                      _twoDigits(value.hour),
-                      style: .new(
-                        color: colors.onSurface,
-                        fontSize: _pickerControlFontSize,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                _buildPickerButton(
-                  context: context,
-                  label: labels.increaseHour,
-                  onPressed: () => onChanged(_changeHour(value, 1)),
-                  child: Text(
-                    '+',
-                    style: .new(
-                      color: colors.primary,
-                      fontSize: _pickerControlFontSize,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Text(
-              ':',
-              style: .new(
-                color: colors.onSurface,
-                fontSize: _pickerControlFontSize,
-              ),
-            ),
-            Row(
-              mainAxisSize: .min,
-              children: [
-                _buildPickerButton(
-                  context: context,
-                  label: labels.decreaseMinute,
-                  onPressed: () => onChanged(_changeMinute(value, -1)),
-                  child: Text(
-                    '-',
-                    style: .new(
-                      color: colors.primary,
-                      fontSize: _pickerControlFontSize,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: _pickerControlHeight,
-                  child: Center(
-                    child: Text(
-                      _twoDigits(value.minute),
-                      style: .new(
-                        color: colors.onSurface,
-                        fontSize: _pickerControlFontSize,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                _buildPickerButton(
-                  context: context,
-                  label: labels.increaseMinute,
-                  onPressed: () => onChanged(_changeMinute(value, 1)),
-                  child: Text(
-                    '+',
-                    style: .new(
-                      color: colors.primary,
-                      fontSize: _pickerControlFontSize,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPickerButton({
-    required BuildContext context,
-    required String label,
-    required VoidCallback onPressed,
-    required Widget child,
-    Decoration? decoration,
-    bool selected = false,
-    double width = _pickerControlHeight,
-  }) {
-    final colors = context.auraColors;
-    final controlRadius = context.auraTheme.fromBorderRadius(.md);
-
-    return Semantics(
-      child: AuraPressable(
-        child: SizedBox(
-          width: width,
-          height: _pickerControlHeight,
-          child: Center(child: child),
-        ),
-        color: colors.primary.withValues(alpha: 0.16),
-        decoration:
-            decoration ??
-            BoxDecoration(
-              border: Border.fromBorderSide(.new(color: colors.outlineVariant)),
-              borderRadius: BorderRadius.circular(controlRadius),
-            ),
-        onPressed: onPressed,
-      ),
-      selected: selected,
-      button: true,
-      label: label,
-    );
-  }
-
   String _pickerTitle() {
     if (enableDate && enableTime) return labels.selectDateAndTime;
 
@@ -680,11 +349,11 @@ class AuraDateTimeInput extends StatelessWidget {
   }
 
   String _formatMonth(DateTime value) {
-    return '${value.year.toString().padLeft(4, '0')}-'
-        '${value.month.toString().padLeft(2, '0')}';
+    return '${value.year.toString().padLeft(_yearWidth, '0')}-'
+        '${value.month.toString().padLeft(_twoDigitWidth, '0')}';
   }
 
-  String _twoDigits(int value) => value.toString().padLeft(2, '0');
+  String _twoDigits(int value) => value.toString().padLeft(_twoDigitWidth, '0');
 
   DateTime _changeMonth(DateTime value, int delta) {
     final month = DateTime(value.year, value.month + delta);

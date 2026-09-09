@@ -17,9 +17,9 @@ typedef _Defaults = SnackBarDemoDefaults;
 typedef _Story = SnackBarDemoStory;
 typedef _Args = _SnackBarInputArgs;
 final SnackBarDemoComponent = Component<SnackBarDemo, StoryArgs<SnackBarDemo>>(
-  name: component.name ?? 'SnackBarDemo',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'SnackBarDemo',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment:
       r'''Demonstrates snackbar variants, actions, and display duration.''',
   stories: [$SnackbarVariants..$generatedName = 'SnackbarVariants'],
@@ -39,7 +39,7 @@ class SnackBarDemoStory extends Story<SnackBarDemo, _SnackBarInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _SnackBarInputArgs(),
-         builder: builder ?? snackbarDefaults.builder!,
+         builder: builder ?? _snackbarDefaults.builder!,
        );
 }
 

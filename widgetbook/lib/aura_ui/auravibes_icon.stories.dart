@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_icon.stories.bridge.g.dart';
 part 'auravibes_icon.stories.g.dart';
 
 const _iconValues = <IconData>[
@@ -28,25 +29,27 @@ class const _IconInput({
   required final AuraIconSize size,
 });
 
-const component = ComponentMeta(name: 'AuraIcon');
-const meta = Meta(AuraIcon.new, argsType: _IconInput.new);
+const _component = ComponentMeta(name: 'AuraIcon');
+const _meta = Meta(AuraIcon.new, argsType: _IconInput.new);
 
-final _Defaults iconDefaults = _Defaults(
+final _Defaults _iconDefaults = _Defaults(
   builder: (context, args) => AuraIcon(
     args.icon,
     size: args.size,
-    semanticLabel: auraIconLabel(args.icon),
+    semanticLabel: StoryHelpers.auraIconLabel(args.icon),
   ),
 );
 
-final $BasicIcons = _Story(
-  name: 'Basic Icons',
-  args: _Args(
-    icon: SingleArg(
-      Icons.add,
-      values: _iconValues,
-      labelBuilder: auraIconLabel,
+abstract final class _StorybookDefinitions {
+  static final $BasicIcons = _Story(
+    name: 'Basic Icons',
+    args: _Args(
+      icon: SingleArg(
+        Icons.add,
+        values: _iconValues,
+        labelBuilder: StoryHelpers.auraIconLabel,
+      ),
+      size: EnumArg(AuraIconSize.values.first, values: AuraIconSize.values),
     ),
-    size: EnumArg(AuraIconSize.values.first, values: AuraIconSize.values),
-  ),
-);
+  );
+}

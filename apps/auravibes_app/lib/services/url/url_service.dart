@@ -65,7 +65,7 @@ class UrlService({Dio? dio}) {
   Dio? _dioForAddresses(List<String>? addresses) {
     if (addresses == null) return _dio;
 
-    final adapter = createPinnedHttpClientAdapter(
+    final adapter = PinnedHttpClientAdapter.create(
       _dio.httpClientAdapter,
       addresses,
     );

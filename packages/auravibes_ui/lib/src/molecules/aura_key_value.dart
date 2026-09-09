@@ -2,17 +2,7 @@ import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/widgets.dart';
 
-/// A caller-localized display row.
-class AuraKeyValueEntry {
-  /// Creates one key/value row.
-  const new({required this.label, required this.value});
-
-  /// Visible key.
-  final String label;
-
-  /// Visible value.
-  final String value;
-}
+part 'aura_key_value_entry.dart';
 
 /// A display-only key/value list.
 class AuraKeyValue extends StatelessWidget {

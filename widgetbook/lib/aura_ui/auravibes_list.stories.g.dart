@@ -41,7 +41,7 @@ class AuraListStory extends Story<AuraList, _ListInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _ListInputArgs(),
-         builder: builder ?? listDefaults.builder!,
+         builder: builder ?? _listDefaults.builder!,
        );
 }
 

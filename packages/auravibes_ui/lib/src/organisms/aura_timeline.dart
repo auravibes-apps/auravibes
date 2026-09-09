@@ -4,28 +4,7 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// One read-only timeline entry.
-class AuraTimelineEntry {
-  /// Creates an entry.
-  const new({
-    required this.title,
-    this.description,
-    this.time,
-    this.tint = AuraTint.primary,
-  });
-
-  /// Caller-localized title.
-  final String title;
-
-  /// Optional description.
-  final String? description;
-
-  /// Optional time label.
-  final String? time;
-
-  /// Entry marker tint.
-  final AuraTint tint;
-}
+part 'aura_timeline_entry.dart';
 
 /// A display-only activity history.
 class AuraTimeline extends StatelessWidget {

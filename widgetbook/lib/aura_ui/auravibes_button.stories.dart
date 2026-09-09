@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_button.stories.bridge.g.dart';
 part 'auravibes_button.stories.g.dart';
 
 class const _ButtonInput({
@@ -16,11 +17,11 @@ class const _ButtonInput({
   required final String semanticLabel,
 });
 
-const meta = Meta(AuraButton.new, argsType: _ButtonInput.new);
+const _meta = Meta(AuraButton.new, argsType: _ButtonInput.new);
 
-final _Defaults buttonDefaults = _Defaults(
+final _Defaults _buttonDefaults = _Defaults(
   builder: (context, args) => AuraButton(
-    onPressed: noopCallback,
+    onPressed: StoryHelpers.noopCallback,
     child: Text(args.buttonContent),
     variant: args.variant,
     size: args.size,
@@ -31,33 +32,35 @@ final _Defaults buttonDefaults = _Defaults(
   ),
 );
 
-final $PrimaryButton = _Story(
-  name: 'Primary Button',
-  args: _Args(
-    buttonContent: StringArg('Primary Button', name: 'button content'),
-    variant: EnumArg(
-      AuraButtonVariant.primary,
-      values: AuraButtonVariant.values,
+abstract final class _StorybookDefinitions {
+  static final $PrimaryButton = _Story(
+    name: 'Primary Button',
+    args: _Args(
+      buttonContent: StringArg('Primary Button', name: 'button content'),
+      variant: EnumArg(
+        AuraButtonVariant.primary,
+        values: AuraButtonVariant.values,
+      ),
+      size: EnumArg(AuraButtonSize.medium, values: AuraButtonSize.values),
+      isLoading: BoolArg(false),
+      isFullWidth: BoolArg(false),
+      disabled: BoolArg(false),
+      semanticLabel: StringArg('Primary action', name: 'Semantic Label'),
     ),
-    size: EnumArg(AuraButtonSize.medium, values: AuraButtonSize.values),
-    isLoading: BoolArg(false),
-    isFullWidth: BoolArg(false),
-    disabled: BoolArg(false),
-    semanticLabel: StringArg('Primary action', name: 'Semantic Label'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
-    _Scenario(
-      name: 'Pressed',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraButton));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
+      _Scenario(
+        name: 'Pressed',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraButton));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_pressable.stories.bridge.g.dart';
 part 'auravibes_pressable.stories.g.dart';
 
 class const _PressableInput({
@@ -10,33 +11,35 @@ class const _PressableInput({
   required final bool enabled,
 });
 
-const component = ComponentMeta(name: 'AuraPressable');
-const meta = Meta(PressableDemo.new, argsType: _PressableInput.new);
+const _component = ComponentMeta(name: 'AuraPressable');
+const _meta = Meta(PressableDemo.new, argsType: _PressableInput.new);
 
-final _Defaults pressableDefaults = _Defaults(
+final _Defaults _pressableDefaults = _Defaults(
   builder: (context, args) =>
       PressableDemo(label: args.label, enabled: args.enabled),
 );
 
-final $Pressable = _Story(
-  name: 'Pressable',
-  setup: (context, child, args) =>
-      Padding(padding: const EdgeInsets.all(24), child: child),
-  args: _Args(
-    label: StringArg('Press me', name: 'Label'),
-    enabled: BoolArg(true, name: 'Enabled'),
-  ),
-  scenarios: [
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Pressed',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraPressable));
-        await tester.pump(const Duration(milliseconds: 200));
-      },
+abstract final class _StorybookDefinitions {
+  static final $Pressable = _Story(
+    name: 'Pressable',
+    setup: (context, child, args) =>
+        Padding(padding: const EdgeInsets.all(24), child: child),
+    args: _Args(
+      label: StringArg('Press me', name: 'Label'),
+      enabled: BoolArg(true, name: 'Enabled'),
     ),
-  ],
-);
+    scenarios: [
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Pressed',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraPressable));
+          await tester.pump(const Duration(milliseconds: 200));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates keyboard and pointer feedback on a reusable pressable surface.
 class const PressableDemo({

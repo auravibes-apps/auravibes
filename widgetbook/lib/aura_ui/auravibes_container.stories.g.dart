@@ -39,7 +39,7 @@ class AuraContainerStory extends Story<AuraContainer, _ContainerInputArgs> {
     StoryWidgetBuilder<AuraContainer, _ContainerInputArgs>? builder,
     super.scenarios,
     super.excludeFromTests,
-  }) : super(builder: builder ?? containerDefaults.builder!);
+  }) : super(builder: builder ?? _containerDefaults.builder!);
 }
 
 class _ContainerInputArgs extends StoryArgs<AuraContainer> {

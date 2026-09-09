@@ -19,9 +19,9 @@ typedef _Story = SingleCheckboxDemoStory;
 typedef _Args = SingleCheckboxDemoArgs;
 final SingleCheckboxDemoComponent =
     Component<SingleCheckboxDemo, StoryArgs<SingleCheckboxDemo>>(
-      name: component.name ?? 'SingleCheckboxDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'SingleCheckboxDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates a controlled checkbox with focus, tint, and disabled states.''',
       stories: [$SingleCheckbox..$generatedName = 'SingleCheckbox'],
     );

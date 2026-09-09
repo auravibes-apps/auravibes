@@ -18,9 +18,9 @@ typedef _Story = RadioListTileDemoStory;
 typedef _Args = RadioListTileDemoArgs;
 final RadioListTileDemoComponent =
     Component<RadioListTileDemo, StoryArgs<RadioListTileDemo>>(
-      name: component.name ?? 'RadioListTileDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'RadioListTileDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates settings-style radio list tiles with optional subtitles.''',
       stories: [$RadioListTile..$generatedName = 'RadioListTile'],
     );

@@ -6,31 +6,34 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_alert_dialog.stories.bridge.g.dart';
 part 'auravibes_alert_dialog.stories.g.dart';
 
-const component = ComponentMeta(name: 'AuraAlertDialog');
-const meta = Meta(AlertDialogDemo.new);
+const _component = ComponentMeta(name: 'AuraAlertDialog');
+const _meta = Meta(AlertDialogDemo.new);
 
-final $AlertDialog = _Story(
-  name: 'Alert Dialog',
-  args: _Args(
-    tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
+abstract final class _StorybookDefinitions {
+  static final $AlertDialog = _Story(
+    name: 'Alert Dialog',
+    args: _Args(
+      tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Opens Dialog',
-      run: (tester, args) async {
-        await tester.tap(find.text('Show Alert Dialog'));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Opens Dialog',
+        run: (tester, args) async {
+          await tester.tap(find.text('Show Alert Dialog'));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates the alert dialog trigger and dismissible dialog content.
 class const AlertDialogDemo({super.key, required final AuraTint? tint})

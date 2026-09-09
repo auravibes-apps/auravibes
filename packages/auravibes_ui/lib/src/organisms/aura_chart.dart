@@ -5,39 +5,12 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-/// Supported chart presentations.
-enum AuraChartType {
-  /// Connected points in input order.
-  line,
+part 'aura_chart_type.dart';
+part 'aura_chart_series.dart';
 
-  /// Bars extending from zero.
-  bar,
-
-  /// Proportional slices from one non-negative series.
-  pie,
-
-  /// Proportional slices with a central cutout.
-  donut,
-}
-
-/// One named series with a semantic accent.
-class AuraChartSeries {
-  /// Creates a series. Values must be finite and match the chart labels.
-  const new({
-    required this.label,
-    required this.values,
-    this.tint = AuraTint.primary,
-  });
-
-  /// Caller-localized series name.
-  final String label;
-
-  /// Samples at equally spaced labeled positions.
-  final List<double> values;
-
-  /// Series accent.
-  final AuraTint tint;
-}
+const _chartHalf = 2.0;
+const _pointRadius = 2.0;
+const _donutHoleFactor = 0.5;
 
 /// A static chart rendered with Flutter drawing primitives and a text legend.
 class AuraChart extends StatelessWidget {
@@ -277,9 +250,9 @@ class _AuraChartPainter extends CustomPainter {
           final stackBaseY = inset + (high - stackOffset) / range * plotHeight;
           canvas.drawRect(
             .fromLTRB(
-              barX - barWidth / 2,
+              barX - barWidth / _chartHalf,
               math.min(stacked ? stackedY : y, stacked ? stackBaseY : baseline),
-              barX + barWidth / 2,
+              barX + barWidth / _chartHalf,
               math.max(stacked ? stackedY : y, stacked ? stackBaseY : baseline),
             ),
             paint,
@@ -290,7 +263,7 @@ class _AuraChartPainter extends CustomPainter {
           } else {
             path.lineTo(x, y);
           }
-          canvas.drawCircle(.new(x, y), 2, paint);
+          canvas.drawCircle(.new(x, y), _pointRadius, paint);
         }
       }
       if (type == AuraChartType.line) {
@@ -328,7 +301,11 @@ class _AuraChartPainter extends CustomPainter {
     }
     if (type == AuraChartType.donut) {
       canvas
-        ..drawCircle(center, radius * 0.5, Paint()..blendMode = .clear)
+        ..drawCircle(
+          center,
+          radius * _donutHoleFactor,
+          Paint()..blendMode = .clear,
+        )
         ..restore();
     }
   }

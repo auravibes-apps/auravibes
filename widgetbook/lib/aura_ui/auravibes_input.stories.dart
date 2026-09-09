@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_input.stories.bridge.g.dart';
 part 'auravibes_input.stories.g.dart';
 
 const _iconValues = <IconData>[
@@ -38,10 +39,10 @@ class const _InputControls({
   required final String semanticLabel,
 });
 
-const component = ComponentMeta(name: 'AuraInput');
-const meta = Meta(AuraInput.new, argsType: _InputControls.new);
+const _component = ComponentMeta(name: 'AuraInput');
+const _meta = Meta(AuraInput.new, argsType: _InputControls.new);
 
-final _Defaults inputDefaults = _Defaults(
+final _Defaults _inputDefaults = _Defaults(
   builder: (context, args) {
     final placeholderText = args.placeholderText;
     final hintText = args.hintText;
@@ -63,55 +64,63 @@ final _Defaults inputDefaults = _Defaults(
   },
 );
 
-final $Input = _Story(
-  name: 'Input',
-  setup: (context, child, args) => constrainStoryWidth(child),
-  args: _Args(
-    initialValue: NullableStringArg(null, name: 'Initial Value'),
-    placeholderText: NullableStringArg('Enter text here', name: 'Placeholder'),
-    hintText: NullableStringArg('This is a hint text', name: 'Hint'),
-    prefixIcon: NullableSingleArg(
-      null,
-      name: 'Prefix Icon',
-      values: _iconValues,
-      labelBuilder: auraIconLabel,
+abstract final class _StorybookDefinitions {
+  static final $Input = _Story(
+    name: 'Input',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(child),
+    args: _Args(
+      initialValue: NullableStringArg(null, name: 'Initial Value'),
+      placeholderText: NullableStringArg(
+        'Enter text here',
+        name: 'Placeholder',
+      ),
+      hintText: NullableStringArg('This is a hint text', name: 'Hint'),
+      prefixIcon: NullableSingleArg(
+        null,
+        name: 'Prefix Icon',
+        values: _iconValues,
+        labelBuilder: StoryHelpers.auraIconLabel,
+      ),
+      suffixIcon: NullableSingleArg(
+        null,
+        name: 'Suffix Icon',
+        values: _iconValues,
+        labelBuilder: StoryHelpers.auraIconLabel,
+      ),
+      size: EnumArg(AuraInputSize.values.first, values: AuraInputSize.values),
+      state: EnumArg(
+        AuraInputState.values.first,
+        values: AuraInputState.values,
+      ),
+      keyboardType: NullableSingleArg(
+        null,
+        name: 'Keyboard Type',
+        values: TextInputType.values,
+        labelBuilder: (value) => value.toString(),
+      ),
+      enabled: BoolArg(true, name: 'Enabled'),
+      maxLines: IntArg(
+        1,
+        name: 'Max Lines',
+        style: const SliderIntArgStyle(min: 1, max: 10, divisions: 9),
+      ),
+      maxLength: NullableIntArg(null, name: 'Max Length'),
+      semanticLabel: StringArg('Text input', name: 'Semantic Label'),
     ),
-    suffixIcon: NullableSingleArg(
-      null,
-      name: 'Suffix Icon',
-      values: _iconValues,
-      labelBuilder: auraIconLabel,
-    ),
-    size: EnumArg(AuraInputSize.values.first, values: AuraInputSize.values),
-    state: EnumArg(AuraInputState.values.first, values: AuraInputState.values),
-    keyboardType: NullableSingleArg(
-      null,
-      name: 'Keyboard Type',
-      values: TextInputType.values,
-      labelBuilder: (value) => value.toString(),
-    ),
-    enabled: BoolArg(true, name: 'Enabled'),
-    maxLines: IntArg(
-      1,
-      name: 'Max Lines',
-      style: const SliderIntArgStyle(min: 1, max: 10, divisions: 9),
-    ),
-    maxLength: NullableIntArg(null, name: 'Max Length'),
-    semanticLabel: StringArg('Text input', name: 'Semantic Label'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
-    _Scenario(
-      name: 'Enters Text',
-      run: (tester, args) async {
-        await tester.enterText(find.byType(TextField), 'Widgetbook input');
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
+      _Scenario(
+        name: 'Enters Text',
+        run: (tester, args) async {
+          await tester.enterText(find.byType(TextField), 'Widgetbook input');
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}

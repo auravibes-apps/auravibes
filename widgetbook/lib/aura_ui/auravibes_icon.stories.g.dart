@@ -17,9 +17,9 @@ typedef _Defaults = AuraIconDefaults;
 typedef _Story = AuraIconStory;
 typedef _Args = _IconInputArgs;
 final AuraIconComponent = Component<AuraIcon, StoryArgs<AuraIcon>>(
-  name: component.name ?? 'AuraIcon',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'AuraIcon',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment:
       r'''A customizable icon component following the Aura design system.''',
   stories: [$BasicIcons..$generatedName = 'BasicIcons'],
@@ -37,7 +37,7 @@ class AuraIconStory extends Story<AuraIcon, _IconInputArgs> {
     StoryWidgetBuilder<AuraIcon, _IconInputArgs>? builder,
     super.scenarios,
     super.excludeFromTests,
-  }) : super(builder: builder ?? iconDefaults.builder!);
+  }) : super(builder: builder ?? _iconDefaults.builder!);
 }
 
 class _IconInputArgs extends StoryArgs<AuraIcon> {

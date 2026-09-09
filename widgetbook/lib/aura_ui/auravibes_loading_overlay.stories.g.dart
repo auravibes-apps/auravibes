@@ -19,9 +19,9 @@ typedef _Story = LoadingOverlayDemoStory;
 typedef _Args = _LoadingOverlayInputArgs;
 final LoadingOverlayDemoComponent =
     Component<LoadingOverlayDemo, StoryArgs<LoadingOverlayDemo>>(
-      name: component.name ?? 'LoadingOverlayDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'LoadingOverlayDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates loading content with an optional message and accessible state.''',
       stories: [$LoadingOverlay..$generatedName = 'LoadingOverlay'],
     );
@@ -43,7 +43,7 @@ class LoadingOverlayDemoStory
     super.excludeFromTests,
   }) : super(
          args: args ?? _LoadingOverlayInputArgs(),
-         builder: builder ?? loadingOverlayDefaults.builder!,
+         builder: builder ?? _loadingOverlayDefaults.builder!,
        );
 }
 

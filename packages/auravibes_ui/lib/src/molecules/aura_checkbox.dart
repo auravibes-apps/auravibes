@@ -3,7 +3,7 @@
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
-    show AuraTint, DesignColors;
+    show AuraTint, DesignColors, DesignInputSizes;
 import 'package:flutter/widgets.dart';
 
 export 'aura_checkbox_list_tile.dart';
@@ -134,8 +134,8 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
               : SystemMouseCursors.forbidden,
           child: GestureDetector(
             child: SizedBox(
-              width: 48,
-              height: 48,
+              width: DesignInputSizes.heightLg,
+              height: DesignInputSizes.heightLg,
               child: Center(
                 child: Opacity(
                   opacity: widget.isDisabled ? 0.6 : 1,
@@ -191,6 +191,8 @@ class const _CheckboxVisual({
 }) extends StatelessWidget {
   static const _boxSize = 24.0;
   static const _checkMarkSize = 12.0;
+  static const _focusedBorderWidth = 3.0;
+  static const _defaultBorderWidth = 2.0;
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -201,7 +203,10 @@ class const _CheckboxVisual({
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: value ? activeColor : DesignColors.transparent,
-        border: Border.all(color: borderColor, width: isFocused ? 3 : 2),
+        border: Border.all(
+          color: borderColor,
+          width: isFocused ? _focusedBorderWidth : _defaultBorderWidth,
+        ),
         borderRadius: const BorderRadius.all(.circular(4)),
       ),
       width: _boxSize,

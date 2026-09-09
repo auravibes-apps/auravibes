@@ -2,6 +2,7 @@
 import 'package:auravibes_ui/ui.dart';
 import 'package:widgetbook/widgetbook.dart';
 
+part 'auravibes_spinner.stories.bridge.g.dart';
 part 'auravibes_spinner.stories.g.dart';
 
 class const _SpinnerInput({
@@ -11,9 +12,9 @@ class const _SpinnerInput({
   required final String semanticLabel,
 });
 
-const meta = Meta(AuraSpinner.new, argsType: _SpinnerInput.new);
+const _meta = Meta(AuraSpinner.new, argsType: _SpinnerInput.new);
 
-final _Defaults spinnerDefaults = _Defaults(
+final _Defaults _spinnerDefaults = _Defaults(
   builder: (context, args) => AuraSpinner(
     size: args.size,
     tint: args.tint,
@@ -22,16 +23,21 @@ final _Defaults spinnerDefaults = _Defaults(
   ),
 );
 
-final $AuraSpinner = _Story(
-  name: 'AuraSpinner',
-  args: _Args(
-    size: EnumArg(AuraSpinnerSize.values.first, values: AuraSpinnerSize.values),
-    tint: NullableEnumArg(null, name: 'Tint', values: AuraTint.values),
-    strokeWidth: DoubleArg(
-      4,
-      name: 'strokeWidth',
-      style: const SliderDoubleArgStyle(min: 1, max: 10, divisions: 9),
+abstract final class _StorybookDefinitions {
+  static final $AuraSpinner = _Story(
+    name: 'AuraSpinner',
+    args: _Args(
+      size: EnumArg(
+        AuraSpinnerSize.values.first,
+        values: AuraSpinnerSize.values,
+      ),
+      tint: NullableEnumArg(null, name: 'Tint', values: AuraTint.values),
+      strokeWidth: DoubleArg(
+        4,
+        name: 'strokeWidth',
+        style: const SliderDoubleArgStyle(min: 1, max: 10, divisions: 9),
+      ),
+      semanticLabel: StringArg('Loading', name: 'Semantic Label'),
     ),
-    semanticLabel: StringArg('Loading', name: 'Semantic Label'),
-  ),
-);
+  );
+}

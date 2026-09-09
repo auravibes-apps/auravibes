@@ -19,9 +19,9 @@ typedef _Story = PopupMenuButtonDemoStory;
 typedef _Args = PopupMenuButtonDemoArgs;
 final PopupMenuButtonDemoComponent =
     Component<PopupMenuButtonDemo, StoryArgs<PopupMenuButtonDemo>>(
-      name: component.name ?? 'PopupMenuButtonDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'PopupMenuButtonDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates a labeled popup-menu trigger and its action entries.''',
       stories: [$PopupMenuButton..$generatedName = 'PopupMenuButton'],
     );

@@ -6,156 +6,23 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
 import 'package:flutter/widgets.dart';
 
+part 'aura_slider_mark.dart';
+part 'aura_labeled_slider.dart';
+
 const _controlHeight = 48.0;
 const _trackHeight = 4.0;
 const _thumbRadius = 10.0;
 const double _thumbDiameter = _thumbRadius * 2;
+const _defaultPrecision = 2;
+const _maximumPrecision = 20;
+const _markLabelHeight = 20.0;
+const _alignmentRange = 2.0;
+const _focusRingOffset = 3.0;
+const _half = 2.0;
 
 class const _AuraSliderIncreaseIntent() extends Intent;
 
 class const _AuraSliderDecreaseIntent() extends Intent;
-
-/// A labeled point on an [AuraLabeledSlider] range.
-class AuraSliderMark {
-  /// Creates a mark at an in-range value.
-  const new({required this.value, this.label});
-
-  /// Mark position in the slider's units.
-  final double value;
-
-  /// Optional visible caller-localized label.
-  final String? label;
-}
-
-/// A slider with a visible label, current value, and range bounds.
-class AuraLabeledSlider extends StatelessWidget {
-  /// Creates a labeled slider while keeping [AuraSlider] available alone.
-  const new({
-    required this.value,
-    required this.onChanged,
-    super.key,
-    this.min = 0,
-    this.max = 1,
-    this.step = 1,
-    this.precision = 2,
-    this.enabled = true,
-    this.label,
-    this.semanticLabel,
-    this.tint = AuraTint.primary,
-    this.valueFormatter,
-    this.marks = const [],
-  }) : assert(min <= max, 'min must be less than or equal to max'),
-       assert(step > 0, 'step must be greater than zero'),
-       assert(precision >= 0, 'precision must not be negative'),
-       assert(precision <= 20, 'precision must not exceed 20');
-
-  /// Current controlled value.
-  final double value;
-
-  /// Inclusive lower bound.
-  final double min;
-
-  /// Inclusive upper bound.
-  final double max;
-
-  /// Selectable increment, anchored at [min].
-  final double step;
-
-  /// Number of decimal places used for rounding and display.
-  final int precision;
-
-  /// Called with the next value after user interaction.
-  final ValueChanged<double>? onChanged;
-
-  /// Whether the slider accepts user interaction.
-  final bool enabled;
-
-  /// Visible field label.
-  final String? label;
-
-  /// Accessible label announced for the slider.
-  final String? semanticLabel;
-
-  /// Aura tint used for the active track and thumb.
-  final AuraTint tint;
-
-  /// Optional display formatter for current and boundary values.
-  final String Function(double value)? valueFormatter;
-
-  /// Optional static labels placed at meaningful positions in the range.
-  final List<AuraSliderMark> marks;
-
-  @override
-  Widget build(BuildContext context) {
-    final effectiveValue = _normalizeValue(value, min, max, step, precision);
-    final format =
-        valueFormatter ?? (value) => _formatSliderValue(value, precision);
-    final spacing = context.auraTheme.spacing;
-    if (marks.any((mark) => mark.value < min || mark.value > max)) {
-      throw ArgumentError('Slider marks must be inside the configured range.');
-    }
-
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        Row(
-          children: [
-            if (label case final label?)
-              Expanded(
-                child: AuraText(child: Text(label), style: .bodySmall),
-              )
-            else
-              const Spacer(),
-            AuraText(child: Text(format(effectiveValue)), style: .bodySmall),
-          ],
-        ),
-        SizedBox(height: spacing.xs),
-        AuraSlider(
-          value: effectiveValue,
-          onChanged: onChanged,
-          min: min,
-          max: max,
-          step: step,
-          precision: precision,
-          enabled: enabled,
-          semanticLabel: semanticLabel ?? label,
-          tint: tint,
-        ),
-        if (marks.isNotEmpty) ...[
-          SizedBox(height: spacing.xs),
-          SizedBox(
-            height: 20,
-            child: Stack(
-              clipBehavior: .none,
-              children: [
-                for (final mark in marks)
-                  Align(
-                    alignment: Alignment(
-                      min == max
-                          ? 0
-                          : ((mark.value - min) / (max - min)) * 2 - 1,
-                      0,
-                    ),
-                    child: AuraText(
-                      child: Text(mark.label ?? format(mark.value)),
-                      style: .caption,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-        Row(
-          mainAxisAlignment: .spaceBetween,
-          children: [
-            AuraText(child: Text(format(min)), style: .caption),
-            AuraText(child: Text(format(max)), style: .caption),
-          ],
-        ),
-      ],
-    );
-  }
-}
 
 /// A controlled, themed slider for selecting a numeric value.
 class AuraSlider extends StatefulWidget {
@@ -167,14 +34,14 @@ class AuraSlider extends StatefulWidget {
     this.min = 0,
     this.max = 1,
     this.step = 1,
-    this.precision = 2,
+    this.precision = _defaultPrecision,
     this.enabled = true,
     this.semanticLabel,
     this.tint = AuraTint.primary,
   }) : assert(min <= max, 'min must be less than or equal to max'),
        assert(step > 0, 'step must be greater than zero'),
        assert(precision >= 0, 'precision must not be negative'),
-       assert(precision <= 20, 'precision must not exceed 20');
+       assert(precision <= _maximumPrecision, 'precision must not exceed 20');
 
   /// Current controlled value.
   final double value;
@@ -481,8 +348,8 @@ class const _AuraSliderFocusRingPainter({
       ..strokeWidth = 2;
 
     canvas.drawCircle(
-      .new(thumbX, size.height / 2),
-      _thumbRadius + 3,
+      .new(thumbX, size.height / _half),
+      _thumbRadius + _focusRingOffset,
       focusPaint,
     );
   }

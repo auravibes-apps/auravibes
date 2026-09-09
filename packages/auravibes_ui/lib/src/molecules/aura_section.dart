@@ -2,6 +2,8 @@ import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/widgets.dart';
 
+part 'aura_fieldset.dart';
+
 /// A titled content section.
 class AuraSection extends StatelessWidget {
   /// Creates a section.
@@ -35,15 +37,4 @@ class AuraSection extends StatelessWidget {
     ),
     container: true,
   );
-}
-
-/// A section whose title acts as a form legend.
-class AuraFieldset extends AuraSection {
-  /// Creates a fieldset.
-  const new({
-    required super.title,
-    required super.child,
-    super.key,
-    super.description,
-  });
 }

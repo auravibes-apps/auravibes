@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_a2ui_catalog.stories.bridge.g.dart';
 part 'auravibes_a2ui_catalog.stories.g.dart';
 
 /// One visual fixture for the reusable controls exposed to A2UI catalogs.
@@ -34,7 +35,10 @@ class _A2uiCatalogShowcaseState extends State<A2uiCatalogShowcase> {
           icon: Icons.trending_up,
           tint: .success,
         ),
-        const AuraLink(label: 'Read release notes', onPressed: noopCallback),
+        const AuraLink(
+          label: 'Read release notes',
+          onPressed: StoryHelpers.noopCallback,
+        ),
         const AuraTooltip(
           message: 'Visible on hover or focus',
           child: AuraIcon(Icons.help_outline),
@@ -126,18 +130,20 @@ class _A2uiCatalogShowcaseState extends State<A2uiCatalogShowcase> {
   );
 }
 
-const component = ComponentMeta(name: 'A2UI Catalog Components');
-const meta = Meta(A2uiCatalogShowcase.new);
+const _component = ComponentMeta(name: 'A2UI Catalog Components');
+const _meta = Meta(A2uiCatalogShowcase.new);
 
-final $Showcase = _Story(
-  name: 'Catalog components',
-  setup: (context, child, args) => SizedBox(width: 360, child: child),
-  args: _Args(),
-  scenarios: [
-    _Scenario(
-      name: 'Compact phone',
-      modes: [ViewportMode(compactPhoneViewport)],
-    ),
-    _Scenario(name: 'Large text', modes: [TextScaleMode(2)]),
-  ],
-);
+abstract final class _StorybookDefinitions {
+  static final $Showcase = _Story(
+    name: 'Catalog components',
+    setup: (context, child, args) => SizedBox(width: 360, child: child),
+    args: _Args(),
+    scenarios: [
+      _Scenario(
+        name: 'Compact phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'Large text', modes: [TextScaleMode(2)]),
+    ],
+  );
+}

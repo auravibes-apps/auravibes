@@ -17,9 +17,9 @@ typedef _Defaults = SliderDemoDefaults;
 typedef _Story = SliderDemoStory;
 typedef _Args = SliderDemoArgs;
 final SliderDemoComponent = Component<SliderDemo, StoryArgs<SliderDemo>>(
-  name: component.name ?? 'SliderDemo',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'SliderDemo',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment:
       r'''Demonstrates an interactive slider with enabled and tinted states.''',
   stories: [$Default..$generatedName = 'Default'],

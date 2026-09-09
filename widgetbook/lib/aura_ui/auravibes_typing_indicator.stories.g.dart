@@ -47,7 +47,7 @@ class AuraTypingIndicatorStory
     super.excludeFromTests,
   }) : super(
          args: args ?? _TypingIndicatorInputArgs(),
-         builder: builder ?? typingIndicatorDefaults.builder!,
+         builder: builder ?? _typingIndicatorDefaults.builder!,
        );
 }
 
