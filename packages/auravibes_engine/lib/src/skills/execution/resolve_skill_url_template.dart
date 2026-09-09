@@ -406,11 +406,7 @@ class const _TemplateContext({
     for (final match in _liquidReferencePattern.allMatches(value)) {
       final source = match.group(1) ?? '';
       final key = match.group(2) ?? '';
-      final isOptional = switch (source) {
-        'input' => inputDefinitions[key]?.optional ?? false,
-        'credential' => credentialDefinitions[key]?.optional ?? false,
-        _ => false,
-      };
+      final isOptional = _isOptionalReference(source, key);
       if (isOptional) continue;
       final exists = switch (source) {
         'input' => inputs.containsKey(key) && inputs[key] != null,
@@ -422,4 +418,10 @@ class const _TemplateContext({
       }
     }
   }
+
+  bool _isOptionalReference(String source, String key) => switch (source) {
+    'input' => inputDefinitions[key]?.optional ?? false,
+    'credential' => credentialDefinitions[key]?.optional ?? false,
+    _ => false,
+  };
 }
