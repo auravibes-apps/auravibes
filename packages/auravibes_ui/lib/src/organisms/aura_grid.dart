@@ -1,6 +1,8 @@
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/widgets.dart';
 
+part 'aura_wrap.dart';
+
 /// A responsive grid using a minimum item width and theme spacing.
 class AuraGrid extends StatelessWidget {
   /// Creates a grid.
@@ -45,24 +47,5 @@ class AuraGrid extends StatelessWidget {
         );
       },
     );
-  }
-}
-
-/// A token-spaced flow layout.
-class AuraWrap extends StatelessWidget {
-  /// Creates a wrapping layout.
-  const new({required this.children, super.key, this.spacing});
-
-  /// Flow children.
-  final List<Widget> children;
-
-  /// Optional item gap.
-  final double? spacing;
-
-  @override
-  Widget build(BuildContext context) {
-    final gap = spacing ?? context.auraTheme.spacing.sm;
-
-    return Wrap(spacing: gap, runSpacing: gap, children: children);
   }
 }

@@ -1,31 +1,5 @@
 include: ../../analysis_options.yaml
 
-dart_code_linter:
-  rules:
-    avoid-returning-widgets:
-      exclude:
-        - lib/src/organisms/aura_date_time_input.dart
-        - lib/src/organisms/aura_table.dart
-    prefer-match-file-name:
-      exclude:
-        - lib/src/atoms/aura_animated_content.dart
-        - lib/src/atoms/aura_flex.dart
-        - lib/src/atoms/aura_interaction_scope.dart
-        - lib/src/molecules/aura_key_value.dart
-        - lib/src/molecules/aura_slider.dart
-        - lib/src/organisms/aura_accordion.dart
-        - lib/src/organisms/aura_chart.dart
-        - lib/src/organisms/aura_choice_picker.dart
-        - lib/src/organisms/aura_date_time_input.dart
-        - lib/src/organisms/aura_stepper.dart
-        - lib/src/organisms/aura_timeline.dart
-    prefer-single-widget-per-file:
-      exclude:
-        - lib/src/atoms/aura_flex.dart
-        - lib/src/molecules/aura_section.dart
-        - lib/src/molecules/aura_slider.dart
-        - lib/src/organisms/aura_grid.dart
-
 analyzer:
   exclude:
     - build/**

@@ -3,17 +3,7 @@ import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 
-/// One locally navigable accordion item.
-class AuraAccordionItem {
-  /// Creates an accordion item.
-  const new({required this.title, required this.child});
-
-  /// Caller-localized title.
-  final String title;
-
-  /// Expanded content.
-  final Widget child;
-}
+part 'aura_accordion_item.dart';
 
 /// Local expand/collapse navigation with no external side effects.
 class AuraAccordion extends StatefulWidget {
@@ -49,65 +39,66 @@ class _AuraAccordionState extends State<AuraAccordion> {
 
     return Column(
       crossAxisAlignment: .stretch,
-      children: [
-        for (final (index, item) in widget.items.indexed)
-          DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(bottom: .new(color: context.auraColors.outline)),
-            ),
-            child: Column(
-              crossAxisAlignment: .stretch,
-              children: [
-                Semantics(
-                  child: InkWell(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: context.auraTheme.spacing.sm,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: AuraText(
-                              child: Text(item.title),
-                              style: .bodyLarge,
+      children: widget.items.indexed
+          .map((entry) {
+            final (index, item) = entry;
+            final isExpanded = _expanded.contains(index);
+
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(bottom: .new(color: context.auraColors.outline)),
+              ),
+              child: Column(
+                crossAxisAlignment: .stretch,
+                children: [
+                  Semantics(
+                    child: InkWell(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: context.auraTheme.spacing.sm,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: AuraText(
+                                child: Text(item.title),
+                                style: .bodyLarge,
+                              ),
                             ),
-                          ),
-                          Icon(
-                            // ignore: prefer-moving-to-variable, repeated state lookup.
-                            _expanded.contains(index)
-                                ? Icons.expand_less
-                                : Icons.expand_more,
-                          ),
-                        ],
+                            Icon(
+                              isExpanded
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                            ),
+                          ],
+                        ),
                       ),
+                      onTap: navigable
+                          ? () => setState(() {
+                              if (isExpanded) {
+                                if (!_expanded.remove(index)) return;
+                              } else if (!_expanded.add(index)) {
+                                return;
+                              }
+                            })
+                          : null,
                     ),
-                    onTap: navigable
-                        ? () => setState(() {
-                            if (_expanded.contains(index)) {
-                              if (!_expanded.remove(index)) return;
-                            } else if (!_expanded.add(index)) {
-                              return;
-                            }
-                          })
-                        : null,
+                    enabled: navigable,
+                    button: true,
+                    expanded: isExpanded,
                   ),
-                  enabled: navigable,
-                  button: true,
-                  // ignore: prefer-moving-to-variable, repeated state lookup.
-                  expanded: _expanded.contains(index),
-                ),
-                // ignore: prefer-moving-to-variable, repeated state lookup.
-                if (_expanded.contains(index))
-                  Padding(
-                    padding: EdgeInsets.only(
-                      bottom: context.auraTheme.spacing.md,
+                  if (isExpanded)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: context.auraTheme.spacing.md,
+                      ),
+                      child: item.child,
                     ),
-                    child: item.child,
-                  ),
-              ],
-            ),
-          ),
-      ],
+                ],
+              ),
+            );
+          })
+          .toList(growable: false),
     );
   }
 }

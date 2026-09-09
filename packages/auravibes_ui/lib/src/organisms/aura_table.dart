@@ -116,7 +116,27 @@ class _AuraTableState extends State<AuraTable> {
                         vertical: theme.spacing.sm,
                         horizontal: theme.spacing.md,
                       ),
-                      child: _cell(index, columnIndex, cell),
+                      child: _AuraTableCell(
+                        isHeader: index == 0,
+                        header: columns[columnIndex],
+                        cell: cell,
+                        format: columnIndex < widget.columnFormats.length
+                            ? widget.columnFormats[columnIndex]
+                            : AuraTableValueFormat.plain,
+                        alignment: columnIndex < widget.columnAlignments.length
+                            ? widget.columnAlignments[columnIndex]
+                            : AuraTableAlignment.start,
+                        onSort:
+                            index == 0 &&
+                                columnIndex < widget.sortableColumns.length &&
+                                widget.sortableColumns[columnIndex]
+                            ? () => setState(() {
+                                _ascending =
+                                    _sortIndex != columnIndex || !_ascending;
+                                _sortIndex = columnIndex;
+                              })
+                            : null,
+                      ),
                     ),
                     header: index == 0,
                     label: index == 0 || cell != null
@@ -202,50 +222,46 @@ class _AuraTableState extends State<AuraTable> {
       color: context.auraColors.colorFor(tint).withValues(alpha: 0.08),
     );
   }
+}
 
-  Widget _cell(int rowIndex, int columnIndex, Object? cell) {
-    if (rowIndex == 0) {
-      final sortable =
-          columnIndex < widget.sortableColumns.length &&
-          widget.sortableColumns[columnIndex];
-      final header = AuraText(child: Text(widget.columns[columnIndex]));
-      if (!sortable) {
-        return header;
+class const _AuraTableCell({
+  required final bool isHeader,
+  required final String header,
+  required final Object? cell,
+  required final AuraTableValueFormat format,
+  required final AuraTableAlignment alignment,
+  final VoidCallback? onSort,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final Widget content;
+    if (isHeader) {
+      content = AuraText(child: Text(header));
+    } else {
+      final cellValue = cell;
+      final String rendered;
+      if (cellValue == null) {
+        rendered = String.fromCharCode(0x2014);
+      } else if (cellValue is num && format == AuraTableValueFormat.percent) {
+        rendered = '${(cellValue * 100).toStringAsFixed(0)}%';
+      } else {
+        rendered = cellValue.toString();
       }
-
-      return Semantics(
-        child: GestureDetector(
-          child: header,
-          onTap: () => setState(() {
-            _ascending = _sortIndex != columnIndex || !_ascending;
-            _sortIndex = columnIndex;
-          }),
-        ),
-        button: true,
+      content = AuraText(
+        child: Text(rendered),
+        textAlign: switch (alignment) {
+          .center => TextAlign.center,
+          .end => TextAlign.end,
+          .start => TextAlign.start,
+        },
       );
     }
-    final format = columnIndex < widget.columnFormats.length
-        ? widget.columnFormats[columnIndex]
-        : AuraTableValueFormat.plain;
-    final String rendered;
-    if (cell == null) {
-      rendered = String.fromCharCode(0x2014);
-    } else if (cell is num && format == AuraTableValueFormat.percent) {
-      rendered = '${(cell * 100).toStringAsFixed(0)}%';
-    } else {
-      rendered = cell.toString();
-    }
-    final alignment = columnIndex < widget.columnAlignments.length
-        ? widget.columnAlignments[columnIndex]
-        : AuraTableAlignment.start;
+    final onSort = this.onSort;
+    if (onSort == null) return content;
 
-    return AuraText(
-      child: Text(rendered),
-      textAlign: switch (alignment) {
-        .center => TextAlign.center,
-        .end => TextAlign.end,
-        .start => TextAlign.start,
-      },
+    return Semantics(
+      child: GestureDetector(child: content, onTap: onSort),
+      button: true,
     );
   }
 }
