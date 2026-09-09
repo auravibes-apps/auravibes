@@ -285,7 +285,7 @@ class const _FilteredToolsList({
   Widget _itemBuilder(BuildContext _, int index) =>
       _AvailableToolTile(toolType: tools[index], workspaceId: workspaceId);
 
-  Widget _separatorBuilder(BuildContext _, int index) {
+  Widget _separatorBuilder(BuildContext _, _) {
     return const AuraSizedBox(height: .sm);
   }
 }
