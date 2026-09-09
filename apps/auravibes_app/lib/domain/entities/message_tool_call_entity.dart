@@ -232,14 +232,17 @@ abstract class const MessageToCreate._() with _$MessageToCreate {
 
   /// Returns true if the message has valid content.
   bool get hasValidContent {
-    if (content.trim().isNotEmpty) {
-      return true;
-    }
+    if (content.trim().isNotEmpty || attachments.isNotEmpty) return true;
 
-    if (attachments.isNotEmpty) {
-      return true;
-    }
+    return _hasValidMetadata;
+  }
 
+  /// Returns true if the message is in a valid state.
+  bool get isValid {
+    return hasValidContent && conversationId.isNotEmpty;
+  }
+
+  bool get _hasValidMetadata {
     final metadata = this.metadata;
 
     if (status == MessageStatus.unfinished && !isUser) {
@@ -256,11 +259,6 @@ abstract class const MessageToCreate._() with _$MessageToCreate {
         metadata != null &&
         metadata.trim().isNotEmpty &&
         JsonCodec.decode(metadata) != null;
-  }
-
-  /// Returns true if the message is in a valid state.
-  bool get isValid {
-    return hasValidContent && conversationId.isNotEmpty;
   }
 }
 
