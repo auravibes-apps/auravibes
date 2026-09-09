@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -19,7 +20,9 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -458,8 +461,38 @@ Future<List<PendingToolCall>> pendingToolCalls(
   final currentMessages = ref
       .watch(chatMessagesProvider(workspaceId, conversationId))
       .value;
-  final inactiveChildIds = conversations
-      .where((id) => id != conversationId && !activeChildren.contains(id))
+  final childMessagesByConversationId = await _loadChildMessages(
+    ref,
+    parentConversationId: conversationId,
+    activeChildIds: activeChildren,
+    childConversations: childConversations,
+  );
+  final pendingByConversation = await Future.wait(
+    conversations.map(
+      (sourceConversationId) => _pendingForSourceConversation(
+        ref,
+        parentConversationId: conversationId,
+        sourceConversationId: sourceConversationId,
+        workspaceId: workspaceId,
+        currentMessages: currentMessages,
+        childConversations: childConversations,
+        childMessagesByConversationId: childMessagesByConversationId,
+      ),
+    ),
+  );
+
+  return pendingByConversation.expand((pending) => pending).toList();
+}
+
+Future<Map<String, List<MessageEntity>>> _loadChildMessages(
+  Ref ref, {
+  required String parentConversationId,
+  required Set<String> activeChildIds,
+  required List<ConversationEntity> childConversations,
+}) async {
+  final inactiveChildIds = childConversations
+      .map((conversation) => conversation.id)
+      .where((id) => id != parentConversationId && !activeChildIds.contains(id))
       .toList();
   final inactiveChildMessages = inactiveChildIds.isEmpty
       ? const <MessageEntity>[]
@@ -470,7 +503,7 @@ Future<List<PendingToolCall>> pendingToolCalls(
     for (final message in inactiveChildMessages)
       message.conversationId: [message],
   };
-  for (final childId in activeChildren) {
+  for (final childId in activeChildIds) {
     final message = ref
         .watch(latestAssistantMessageByConversationProvider(childId))
         .value;
@@ -478,37 +511,43 @@ Future<List<PendingToolCall>> pendingToolCalls(
         ? const <MessageEntity>[]
         : [message];
   }
-  final pendingByConversation = await Future.wait(
-    conversations.map((sourceConversationId) async {
-      final messages = sourceConversationId == conversationId
-          ? currentMessages
-          : childMessagesByConversationId[sourceConversationId];
-      final sourceConversation = sourceConversationId == conversationId
-          ? null
-          : childConversations.firstWhereOrNull(
-              (conversation) => conversation.id == sourceConversationId,
-            );
 
-      final sourceWorkspaceId =
-          sourceConversation?.workspaceId ??
-          (await ref.watch(
-            conversationByIdStreamProvider(
-              workspaceId,
-              conversationId: sourceConversationId,
-            ).future,
-          ))?.workspaceId;
+  return childMessagesByConversationId;
+}
 
-      return await _pendingToolCallsForConversation(
-        ref,
-        conversationId: sourceConversationId,
-        workspaceId: sourceWorkspaceId,
-        messages: messages,
-        sourceLabel: sourceConversation?.title,
-      );
-    }),
+Future<List<PendingToolCall>> _pendingForSourceConversation(
+  Ref ref, {
+  required String parentConversationId,
+  required String sourceConversationId,
+  required String workspaceId,
+  required List<MessageEntity>? currentMessages,
+  required List<ConversationEntity> childConversations,
+  required Map<String, List<MessageEntity>> childMessagesByConversationId,
+}) async {
+  final messages = sourceConversationId == parentConversationId
+      ? currentMessages
+      : childMessagesByConversationId[sourceConversationId];
+  final sourceConversation = sourceConversationId == parentConversationId
+      ? null
+      : childConversations.firstWhereOrNull(
+          (conversation) => conversation.id == sourceConversationId,
+        );
+  final sourceWorkspaceId =
+      sourceConversation?.workspaceId ??
+      (await ref.watch(
+        conversationByIdStreamProvider(
+          workspaceId,
+          conversationId: sourceConversationId,
+        ).future,
+      ))?.workspaceId;
+
+  return await _pendingToolCallsForConversation(
+    ref,
+    conversationId: sourceConversationId,
+    workspaceId: sourceWorkspaceId,
+    messages: messages,
+    sourceLabel: sourceConversation?.title,
   );
-
-  return pendingByConversation.expand((pending) => pending).toList();
 }
 
 Future<List<PendingToolCall>> _pendingToolCallsForConversation(
@@ -538,16 +577,12 @@ Future<List<PendingToolCall>> _pendingToolCallsForConversation(
       'tool calls as needing confirmation',
     );
 
-    return pendingCalls
-        .map(
-          (toolCall) => PendingToolCall(
-            toolCall: toolCall,
-            messageId: latestAssistantMessage.id,
-            sourceConversationId: conversationId,
-            sourceLabel: sourceLabel,
-          ),
-        )
-        .toList();
+    return _toPendingToolCalls(
+      pendingCalls,
+      message: latestAssistantMessage,
+      conversationId: conversationId,
+      sourceLabel: sourceLabel,
+    );
   }
 
   final decisionUsecase = ref.watch(
@@ -559,48 +594,74 @@ Future<List<PendingToolCall>> _pendingToolCallsForConversation(
         conversationId: conversationId,
         workspaceId: resolvedWorkspaceId,
       );
-  const resolver = ToolResolverService();
-
   final entries = await Future.wait(
-    pendingCalls.map((toolCall) async {
-      final resolvedTool = resolver.resolveTool(toolCall.name, catalog);
-      if (resolvedTool == null) {
-        return (toolCall: toolCall, needsConfirmation: true);
-      }
-
-      try {
-        final decision = await decisionUsecase(
-          conversationId: conversationId,
-          workspaceId: resolvedWorkspaceId,
-          toolCallId: toolCall.id,
-          resolvedTool: resolvedTool,
-        );
-
-        return (
-          toolCall: toolCall,
-          needsConfirmation: decision.needsConfirmation,
-        );
-      } on Object catch (error, stackTrace) {
-        _logger.warning(
-          'Error resolving pending tool call ${toolCall.id}/${toolCall.name}',
-          error,
-          stackTrace,
-        );
-
-        return (toolCall: toolCall, needsConfirmation: true);
-      }
-    }),
+    pendingCalls.map(
+      (toolCall) => _resolvePendingToolCall(
+        decisionUsecase: decisionUsecase,
+        catalog: catalog,
+        conversationId: conversationId,
+        workspaceId: resolvedWorkspaceId,
+        toolCall: toolCall,
+      ),
+    ),
   );
 
-  return entries
-      .where((e) => e.needsConfirmation)
-      .map(
-        (e) => PendingToolCall(
-          toolCall: e.toolCall,
-          messageId: latestAssistantMessage.id,
-          sourceConversationId: conversationId,
-          sourceLabel: sourceLabel,
-        ),
-      )
-      .toList();
+  return _toPendingToolCalls(
+    entries
+        .where((entry) => entry.needsConfirmation)
+        .map((entry) => entry.toolCall),
+    message: latestAssistantMessage,
+    conversationId: conversationId,
+    sourceLabel: sourceLabel,
+  );
+}
+
+List<PendingToolCall> _toPendingToolCalls(
+  Iterable<MessageToolCallEntity> toolCalls, {
+  required MessageEntity message,
+  required String conversationId,
+  required String? sourceLabel,
+}) => toolCalls
+    .map(
+      (toolCall) => PendingToolCall(
+        toolCall: toolCall,
+        messageId: message.id,
+        sourceConversationId: conversationId,
+        sourceLabel: sourceLabel,
+      ),
+    )
+    .toList();
+
+Future<({MessageToolCallEntity toolCall, bool needsConfirmation})>
+_resolvePendingToolCall({
+  required ResolveToolApprovalDecisionUsecase decisionUsecase,
+  required ToolCatalog<ResolvedTool> catalog,
+  required String conversationId,
+  required String workspaceId,
+  required MessageToolCallEntity toolCall,
+}) async {
+  const resolver = ToolResolverService();
+  final resolvedTool = resolver.resolveTool(toolCall.name, catalog);
+  if (resolvedTool == null) {
+    return (toolCall: toolCall, needsConfirmation: true);
+  }
+
+  try {
+    final decision = await decisionUsecase(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      toolCallId: toolCall.id,
+      resolvedTool: resolvedTool,
+    );
+
+    return (toolCall: toolCall, needsConfirmation: decision.needsConfirmation);
+  } on Object catch (error, stackTrace) {
+    _logger.warning(
+      'Error resolving pending tool call ${toolCall.id}/${toolCall.name}',
+      error,
+      stackTrace,
+    );
+
+    return (toolCall: toolCall, needsConfirmation: true);
+  }
 }
