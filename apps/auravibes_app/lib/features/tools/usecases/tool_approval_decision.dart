@@ -66,10 +66,7 @@ class const ResolveToolApprovalDecisionUsecase({
     required String workspaceId,
     required ResolvedTool resolvedTool,
   }) async {
-    if (resolvedTool.isSkillCommand ||
-        resolvedTool.isSkillControl ||
-        resolvedTool.isSkillTemplate ||
-        resolvedTool.isSkillNative) {
+    if (_isSkillTool(resolvedTool)) {
       if (resolvedTool.toolIdentifier == agent.callSkillToolName &&
           resolvedTool.target == null) {
         return null;
@@ -100,6 +97,12 @@ class const ResolveToolApprovalDecisionUsecase({
 
     return workspaceTool?.id;
   }
+
+  bool _isSkillTool(ResolvedTool resolvedTool) =>
+      resolvedTool.isSkillCommand ||
+      resolvedTool.isSkillControl ||
+      resolvedTool.isSkillTemplate ||
+      resolvedTool.isSkillNative;
 }
 
 final ProviderFamily<ResolveToolApprovalDecisionUsecase, String>
