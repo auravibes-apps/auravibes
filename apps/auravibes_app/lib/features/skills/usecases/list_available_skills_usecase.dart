@@ -49,21 +49,12 @@ class const ListAvailableSkillsUsecase(
     required SkillLoadFilter filter,
   }) async {
     final cloud = cloudStore;
-    final skillsRepository = _skillsRepository;
-    final userSkills = switch ((cloud: cloud, repository: skillsRepository)) {
-      (cloud: final cloud?, repository: _) => await cloud.skills(),
-      (cloud: _, repository: final repository?) =>
-        await repository.getWorkspaceSkills(workspaceId),
-      _ => throw StateError('Skill store is unavailable'),
-    };
-    final conversationSkills = cloud == null
-        ? await _requiredConversationSkillsRepository.getConversationSkills(
-            conversationId,
-          )
-        : const <ConversationSkillEntity>[];
-    final cloudSelections = cloud == null
-        ? const <({String skillId})>[]
-        : await cloud.selectionResources(conversationId);
+    final userSkills = await _loadUserSkills(cloud, workspaceId);
+    final conversationSkills = await _loadConversationSkills(
+      cloud,
+      conversationId,
+    );
+    final cloudSelections = await _loadCloudSelections(cloud, conversationId);
     final loadedUserIds = {
       ...conversationSkills.loadedUserSkillIds,
       ...cloudSelections.map((item) => item.skillId),
@@ -72,56 +63,162 @@ class const ListAvailableSkillsUsecase(
       ...conversationSkills.loadedAppSkillIdentifiers,
       ...cloudSelections.map((item) => item.skillId),
     };
-    final result = <AvailableSkill>[];
 
+    return [
+      ...await _listUserSkills(
+        cloud: cloud,
+        userSkills: userSkills,
+        loadedUserIds: loadedUserIds,
+        workspaceId: workspaceId,
+        filter: filter,
+      ),
+      ...await _listAppSkills(
+        cloud: cloud,
+        loadedAppIds: loadedAppIds,
+        workspaceId: workspaceId,
+        filter: filter,
+      ),
+    ];
+  }
+
+  Future<List<SkillEntity>> _loadUserSkills(
+    CloudSkillStore? cloud,
+    String workspaceId,
+  ) async {
+    return switch ((cloud: cloud, repository: _skillsRepository)) {
+      (cloud: final cloud?, repository: _) => await cloud.skills(),
+      (cloud: _, repository: final repository?) =>
+        await repository.getWorkspaceSkills(workspaceId),
+      _ => throw StateError('Skill store is unavailable'),
+    };
+  }
+
+  Future<List<ConversationSkillEntity>> _loadConversationSkills(
+    CloudSkillStore? cloud,
+    String conversationId,
+  ) async {
+    if (cloud != null) return const [];
+
+    return await _requiredConversationSkillsRepository.getConversationSkills(
+      conversationId,
+    );
+  }
+
+  Future<List<({String skillId})>> _loadCloudSelections(
+    CloudSkillStore? cloud,
+    String conversationId,
+  ) async {
+    if (cloud == null) return const [];
+
+    return await cloud.selectionResources(conversationId);
+  }
+
+  Future<List<AvailableSkill>> _listUserSkills({
+    required CloudSkillStore? cloud,
+    required List<SkillEntity> userSkills,
+    required Set<String> loadedUserIds,
+    required String workspaceId,
+    required SkillLoadFilter filter,
+  }) async {
+    final result = <AvailableSkill>[];
     for (final skill in userSkills.where(
       (skill) => skill.source == SkillSource.user,
     )) {
-      if (!skill.isEnabled) continue;
-      final isLoaded = loadedUserIds.contains(skill.id);
-      final isCredentialReady = cloud == null
-          ? isLoaded || await _isCredentialReady(workspaceId, skill)
-          : await cloud.userSkillReady(skill);
-      if (!isSkillLoadable(
-            isEnabled: skill.isEnabled,
-            isLoaded: isLoaded,
-            isCredentialReady: isCredentialReady,
-          ) &&
-          !isLoaded) {
-        continue;
-      }
-      if (!filter.matches(isLoaded: isLoaded)) continue;
-      result.add(skill.toAvailableSkill());
-    }
-
-    for (final skill in _appSkillRegistry.getAll()) {
-      final isEnabled = cloud == null
-          ? await _requiredAppSkillSettingsRepository.isAppSkillEnabled(
-              workspaceId,
-              skill.identifier,
-            )
-          : await cloud.isAppSkillEnabled(skill.identifier);
-      if (!isEnabled) continue;
-      final isLoaded = loadedAppIds.contains(skill.identifier);
-      final hasUsableTool = cloud == null
-          ? await _hasLocallyUsableAppSkillTool(workspaceId, skill)
-          : await _hasUsableAppSkillTool(workspaceId, skill);
-      if (!isLoaded && !hasUsableTool) continue;
-      if (!filter.matches(isLoaded: isLoaded)) continue;
-      result.add(
-        AvailableSkill(
-          source: SkillSource.app,
-          id: skill.identifier,
-          slug: skill.slug,
-          title: skill.title,
-          description: skill.description,
-          content: skill.content,
-          kind: .native,
-        ),
+      final availableSkill = await _toAvailableUserSkill(
+        cloud: cloud,
+        skill: skill,
+        loadedUserIds: loadedUserIds,
+        workspaceId: workspaceId,
+        filter: filter,
       );
+      if (availableSkill == null) continue;
+
+      result.add(availableSkill);
     }
 
     return result;
+  }
+
+  Future<AvailableSkill?> _toAvailableUserSkill({
+    required CloudSkillStore? cloud,
+    required SkillEntity skill,
+    required Set<String> loadedUserIds,
+    required String workspaceId,
+    required SkillLoadFilter filter,
+  }) async {
+    if (!skill.isEnabled) return null;
+
+    final isLoaded = loadedUserIds.contains(skill.id);
+    final isCredentialReady = cloud == null
+        ? isLoaded || await _isCredentialReady(workspaceId, skill)
+        : await cloud.userSkillReady(skill);
+    if (!isSkillLoadable(
+          isEnabled: skill.isEnabled,
+          isLoaded: isLoaded,
+          isCredentialReady: isCredentialReady,
+        ) &&
+        !isLoaded) {
+      return null;
+    }
+    if (!filter.matches(isLoaded: isLoaded)) return null;
+
+    return skill.toAvailableSkill();
+  }
+
+  Future<List<AvailableSkill>> _listAppSkills({
+    required CloudSkillStore? cloud,
+    required Set<String> loadedAppIds,
+    required String workspaceId,
+    required SkillLoadFilter filter,
+  }) async {
+    final result = <AvailableSkill>[];
+    for (final skill in _appSkillRegistry.getAll()) {
+      final availableSkill = await _toAvailableAppSkill(
+        cloud: cloud,
+        skill: skill,
+        loadedAppIds: loadedAppIds,
+        workspaceId: workspaceId,
+        filter: filter,
+      );
+      if (availableSkill == null) continue;
+
+      result.add(availableSkill);
+    }
+
+    return result;
+  }
+
+  Future<AvailableSkill?> _toAvailableAppSkill({
+    required CloudSkillStore? cloud,
+    required AppSkillDefinition skill,
+    required Set<String> loadedAppIds,
+    required String workspaceId,
+    required SkillLoadFilter filter,
+  }) async {
+    final isEnabled = cloud == null
+        ? await _requiredAppSkillSettingsRepository.isAppSkillEnabled(
+            workspaceId,
+            skill.identifier,
+          )
+        : await cloud.isAppSkillEnabled(skill.identifier);
+    if (!isEnabled) return null;
+
+    final isLoaded = loadedAppIds.contains(skill.identifier);
+    final hasUsableTool = cloud == null
+        ? await _hasLocallyUsableAppSkillTool(workspaceId, skill)
+        : await _hasUsableAppSkillTool(workspaceId, skill);
+    if (!isLoaded && !hasUsableTool) return null;
+    if (!filter.matches(isLoaded: isLoaded)) return null;
+
+    return AvailableSkill(
+      source: SkillSource.app,
+      id: skill.identifier,
+      slug: skill.slug,
+      title: skill.title,
+      description: skill.description,
+      content: skill.content,
+      kind: .native,
+    );
   }
 
   Future<bool> _isCredentialReady(String workspaceId, SkillEntity skill) {
