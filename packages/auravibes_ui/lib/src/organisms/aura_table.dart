@@ -83,6 +83,30 @@ class _AuraTableState extends State<AuraTable> {
   Widget build(BuildContext context) {
     final columns = widget.columns;
     final rows = widget.rows;
+    _validateRows(columns, rows);
+    final theme = context.auraTheme;
+    final sortedRows = _sortedRows(rows);
+    final table = _table(context, columns, sortedRows, theme);
+    final caption = widget.caption;
+    final emptyText = rows.isEmpty ? widget.emptyText : null;
+    if (caption == null && (emptyText == null || emptyText.isEmpty)) {
+      return table;
+    }
+
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      spacing: theme.spacing.sm,
+      children: [
+        if (caption case final value?) AuraText(child: value),
+        table,
+        if (emptyText case final value? when value.isNotEmpty)
+          AuraText(child: Text(value), style: .bodySmall),
+      ],
+    );
+  }
+
+  void _validateRows(List<String> columns, List<List<Object?>> rows) {
     if (columns.isEmpty || rows.any((row) => row.length != columns.length)) {
       throw ArgumentError('Rows must match a non-empty list of columns.');
     }
@@ -94,9 +118,15 @@ class _AuraTableState extends State<AuraTable> {
         throw ArgumentError('Table cells must be finite scalar values.');
       }
     }
-    final theme = context.auraTheme;
-    final sortedRows = _sortedRows(rows);
-    final table = SingleChildScrollView(
+  }
+
+  Widget _table(
+    BuildContext context,
+    List<String> columns,
+    List<({int index, List<Object?> cells})> sortedRows,
+    AuraTheme theme,
+  ) {
+    return SingleChildScrollView(
       scrollDirection: .horizontal,
       child: Table(
         children: [
@@ -132,23 +162,6 @@ class _AuraTableState extends State<AuraTable> {
         ),
         defaultVerticalAlignment: .middle,
       ),
-    );
-    final caption = widget.caption;
-    final emptyText = rows.isEmpty ? widget.emptyText : null;
-    if (caption == null && (emptyText == null || emptyText.isEmpty)) {
-      return table;
-    }
-
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .start,
-      spacing: theme.spacing.sm,
-      children: [
-        if (caption case final value?) AuraText(child: value),
-        table,
-        if (emptyText case final value? when value.isNotEmpty)
-          AuraText(child: Text(value), style: .bodySmall),
-      ],
     );
   }
 
