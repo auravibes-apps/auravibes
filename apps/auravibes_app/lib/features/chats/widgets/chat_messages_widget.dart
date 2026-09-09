@@ -328,11 +328,11 @@ class const _ChatMessageRow({
       messagesStreamingProvider.select((state) => state[messageId]?.lastResult),
     );
     final persistedMessage = ref.watch(
-      messageConversationByIdProvider(
-        workspaceId,
-        parentConversationId,
-        messageId,
-      ),
+      messageConversationByIdProvider((
+        workspaceId: workspaceId,
+        conversationId: parentConversationId,
+        messageId: messageId,
+      )),
     );
     final sourceMessage = persistedMessage ?? baseMessage;
     final message = _mergeMessage(sourceMessage, streamingResult);
