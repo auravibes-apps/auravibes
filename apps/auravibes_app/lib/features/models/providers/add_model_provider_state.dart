@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/codex_oauth_service.dart';
@@ -82,81 +83,33 @@ class AddModelProviderState extends _$AddModelProviderState {
     void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
     bool Function()? isCodexOAuthCancelled,
   }) async {
-    if (!state.isValid()) {
-      return null;
-    }
-
-    final name = state.name;
-    final key = state.key;
-    final modelId = state.modelId;
-    if (name == null || modelId == null) {
-      return null;
-    }
+    final input = _validatedInput();
+    if (input == null) return null;
 
     try {
       final authMode = state.authMode;
       final session = await ref.read(
         workspaceSessionForRouteProvider(_workspaceId).future,
       );
-      final capabilities = session.capabilities;
-      capabilities.require(
-        supported: capabilities.modelProviderIds.contains(modelId),
+      _requireCapabilities(
+        session: session,
+        modelId: input.modelId,
+        authMode: authMode,
+        codexOAuthMethod: codexOAuthMethod,
       );
-      if (authMode == ModelProviderAuthMode.oauth2) {
-        capabilities.require(
-          supported: codexOAuthMethod == CodexOAuthMethod.deviceCode
-              ? capabilities.modelDeviceOAuth
-              : capabilities.modelBrowserOAuth,
-        );
-      }
       final repo = await ref.read(
         modelConnectionStoreProvider(_workspaceId).future,
       );
-      if (authMode == ModelProviderAuthMode.oauth2) {
-        if (session.cloud != null) {
-          final gateway = await ref.read(
-            cloudWorkspaceStateGatewayForWorkspaceProvider(_workspaceId).future,
-          );
-          if (gateway == null) throw StateError('Cloud workspace unavailable');
-          final connection = await repo.createModelConnection(
-            .new(
-              name: name,
-              workspaceId: _workspaceId,
-              modelId: modelId,
-              authMode: authMode,
-              url: state.url,
-            ),
-          );
-          final oauth = await CloudModelGateway(gateway)
-              .startCodexOAuth(connectionId: connection.id);
-          await ref.read(openCodexAuthorizationProvider)(
-            .parse(oauth.authorizationUrl),
-          );
 
-          return connection;
-        }
-
-        return await _addOAuthModelProvider(
-          repo,
-          name,
-          modelId,
-          authMode,
-          codexOAuthMethod,
-          onCodexDeviceCode,
-          isCodexOAuthCancelled,
-        );
-      }
-
-      if (key == null || key.trim().isEmpty) return null;
-
-      return await repo.createModelConnection(
-        .new(
-          name: name,
-          workspaceId: _workspaceId,
-          modelId: modelId,
-          key: key,
-          url: state.url,
-        ),
+      return await _addModelConnection(
+        repo: repo,
+        session: session,
+        name: input.name,
+        modelId: input.modelId,
+        authMode: authMode,
+        codexOAuthMethod: codexOAuthMethod,
+        onCodexDeviceCode: onCodexDeviceCode,
+        isCodexOAuthCancelled: isCodexOAuthCancelled,
       );
     } on CodexOAuthCanceledException {
       return null;
@@ -164,6 +117,133 @@ class AddModelProviderState extends _$AddModelProviderState {
       _log.severe('addModelProvider error', e, s);
       rethrow;
     }
+  }
+
+  ({String name, String modelId})? _validatedInput() {
+    if (!state.isValid()) return null;
+
+    final name = state.name;
+    final modelId = state.modelId;
+    if (name == null || modelId == null) return null;
+
+    return (name: name, modelId: modelId);
+  }
+
+  void _requireCapabilities({
+    required WorkspaceSession session,
+    required String modelId,
+    required ModelProviderAuthMode authMode,
+    required CodexOAuthMethod? codexOAuthMethod,
+  }) {
+    final capabilities = session.capabilities;
+    capabilities.require(
+      supported: capabilities.modelProviderIds.contains(modelId),
+    );
+    if (authMode != ModelProviderAuthMode.oauth2) return;
+
+    capabilities.require(
+      supported: codexOAuthMethod == CodexOAuthMethod.deviceCode
+          ? capabilities.modelDeviceOAuth
+          : capabilities.modelBrowserOAuth,
+    );
+  }
+
+  Future<ModelConnectionEntity?> _addModelConnection({
+    required ModelConnectionStore repo,
+    required WorkspaceSession session,
+    required String name,
+    required String modelId,
+    required ModelProviderAuthMode authMode,
+    required CodexOAuthMethod? codexOAuthMethod,
+    required void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
+    required bool Function()? isCodexOAuthCancelled,
+  }) {
+    if (authMode == ModelProviderAuthMode.oauth2) {
+      return _addOAuthModelProviderForSession(
+        repo,
+        session,
+        name,
+        modelId,
+        authMode,
+        codexOAuthMethod,
+        onCodexDeviceCode,
+        isCodexOAuthCancelled,
+      );
+    }
+
+    return _addApiKeyModelProvider(repo, name, modelId);
+  }
+
+  Future<ModelConnectionEntity?> _addOAuthModelProviderForSession(
+    ModelConnectionStore repo,
+    WorkspaceSession session,
+    String name,
+    String modelId,
+    ModelProviderAuthMode authMode,
+    CodexOAuthMethod? codexOAuthMethod,
+    void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
+    bool Function()? isCodexOAuthCancelled,
+  ) {
+    if (session.cloud != null) {
+      return _addCloudOAuthModelProvider(repo, name, modelId, authMode);
+    }
+
+    return _addOAuthModelProvider(
+      repo,
+      name,
+      modelId,
+      authMode,
+      codexOAuthMethod,
+      onCodexDeviceCode,
+      isCodexOAuthCancelled,
+    );
+  }
+
+  Future<ModelConnectionEntity> _addCloudOAuthModelProvider(
+    ModelConnectionStore repo,
+    String name,
+    String modelId,
+    ModelProviderAuthMode authMode,
+  ) async {
+    final gateway = await ref.read(
+      cloudWorkspaceStateGatewayForWorkspaceProvider(_workspaceId).future,
+    );
+    if (gateway == null) throw StateError('Cloud workspace unavailable');
+    final connection = await repo.createModelConnection(
+      .new(
+        name: name,
+        workspaceId: _workspaceId,
+        modelId: modelId,
+        authMode: authMode,
+        url: state.url,
+      ),
+    );
+    final oauth = await CloudModelGateway(gateway)
+        .startCodexOAuth(connectionId: connection.id);
+    await ref.read(openCodexAuthorizationProvider)(
+      .parse(oauth.authorizationUrl),
+    );
+
+    return connection;
+  }
+
+  Future<ModelConnectionEntity?> _addApiKeyModelProvider(
+    ModelConnectionStore repo,
+    String name,
+    String modelId,
+  ) async {
+    final key = state.key;
+    if (key == null || key.trim().isEmpty) return null;
+
+    return await repo.createModelConnection(
+      .new(
+        name: name,
+        workspaceId: _workspaceId,
+        modelId: modelId,
+        key: key,
+        url: state.url,
+      ),
+    );
   }
 
   Future<ModelConnectionEntity> _addOAuthModelProvider(
