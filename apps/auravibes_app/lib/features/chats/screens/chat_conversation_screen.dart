@@ -12,6 +12,8 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
@@ -23,6 +25,7 @@ import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
@@ -157,19 +160,13 @@ class const _LoadedChatConversation({
 
     final onCompact = useCallback(onCompactCallback, [ref, conversation.id]);
 
-    final isCloud =
-        ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
-        null;
-    final cloudConversation = isCloud
-        ? ref
-              .watch(
-                cloudConversationStateProvider((
-                  workspaceId: workspaceId,
-                  conversationId: conversation.id,
-                )),
-              )
-              .value
-        : null;
+    final isCloud = _isCloudWorkspace(ref, workspaceId);
+    final cloudConversation = _watchCloudConversation(
+      ref,
+      isCloud: isCloud,
+      workspaceId: workspaceId,
+      conversationId: conversation.id,
+    );
     final busyState = _conversationBusyStateValue(
       ref.watch(conversationBusyStateProvider(workspaceId, conversation.id)),
     );
@@ -182,36 +179,35 @@ class const _LoadedChatConversation({
       conversationQueuedDraftsProvider(workspaceId, conversation.id),
     );
     final selectedModelId = conversation.modelId;
-    final selectedModelAsync = selectedModelId == null
-        ? null
-        : ref.watch(
-            workspaceModelSelectionByIdProvider(workspaceId, selectedModelId),
-          );
-    final modalitiesInput =
-        selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
-        const <String>[];
-    final pendingCalls = isCloud
-        ? CloudMessageTools.pendingToolCalls(cloudConversation)
-        : ref
-                  .watch(pendingToolCallsProvider(workspaceId, conversation.id))
-                  .value ??
-              const [];
+    final modalitiesInput = _watchModelModalities(
+      ref,
+      workspaceId: workspaceId,
+      modelId: selectedModelId,
+    );
+    final pendingCalls = _watchPendingCalls(
+      ref,
+      isCloud: isCloud,
+      cloudConversation: cloudConversation,
+      workspaceId: workspaceId,
+      conversationId: conversation.id,
+    );
     final hasPendingApprovals = pendingCalls.isNotEmpty;
     final compactionState = ref.watch(
       compactionExecutionStateProvider(conversation.id),
     );
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
-    final isInputBusy =
-        (isCloud
-            ? cloudConversation?.conversation.executionState == 'running' ||
-                  cloudConversation?.conversation.executionState ==
-                      'awaitingApproval'
-            : busyState?.isBusy ?? false) ||
-        rateLimitRetryAt != null;
-    final isGenerating = isCloud
-        ? cloudConversation?.conversation.executionState == 'running'
-        : busyState?.isStreaming == true;
+    final isInputBusy = _isInputBusy(
+      isCloud: isCloud,
+      cloudConversation: cloudConversation,
+      busyState: busyState,
+      rateLimitRetryAt: rateLimitRetryAt,
+    );
+    final isGenerating = _isGenerating(
+      isCloud: isCloud,
+      cloudConversation: cloudConversation,
+      busyState: busyState,
+    );
     Dispose? resetStopRequested() {
       stopRequested.value = false;
 
@@ -230,115 +226,42 @@ class const _LoadedChatConversation({
     useEffect(resetStopRequestedWhenIdle, [conversation.id, isInputBusy]);
     final hidesStoppedRun = stopRequested.value && isInputBusy;
 
-    return AuraScreen(
-      child: AuraColumn(
-        children: [
-          _ChatControlsBar(
-            workspaceId: workspaceId,
-            conversationId: conversation.id,
-          ),
-          Expanded(
-            child: _ChatList(
-              workspaceId: workspaceId,
-              conversationId: conversation.id,
-              pendingToolCalls: pendingCalls,
-              showThinking: isGenerating && !hidesStoppedRun,
-            ),
-          ),
-          if (rateLimitRetryAt != null && !hidesStoppedRun)
-            _RateLimitRetryIndicator(retryAt: rateLimitRetryAt),
-          if (queuedDrafts.isNotEmpty)
-            ChatQueuedMessagesIndicator(
-              conversationId: conversation.id,
-              queuedDrafts: queuedDrafts,
-            ),
-          if (hasPendingApprovals)
-            ChatToolApprovalCard(
-              workspaceId: workspaceId,
-              conversationId: conversation.id,
-              pendingCalls: pendingCalls,
-            ),
-          if (showInputComposer)
-            Offstage(
-              offstage: hasPendingApprovals,
-              child: ChatInputWidget(
-                workspaceId: workspaceId,
-                onSendMessage: onSendMessage,
-                onToolsPress: onToolsPress,
-                modelSheetControl: CompactWorkspaceModelSelector(
-                  workspaceId: workspaceId,
-                  workspaceModelSelectionId: conversation.modelId,
-                  onChanged: (modelId) => _onModelChanged(
-                    context,
-                    ref,
-                    workspaceId,
-                    conversation.id,
-                    modelId,
-                  ),
-                  sheetMode: true,
-                ),
-                agentSheetControl: CompactAgentSelector(
-                  workspaceId: workspaceId,
-                  agentId: conversation.agentId,
-                  onChanged: (agentId) => _onAgentChanged(
-                    ref,
-                    workspaceId,
-                    conversation.id,
-                    agentId,
-                  ),
-                  sheetMode: true,
-                ),
-                modelCompactControl: CompactWorkspaceModelSelector(
-                  workspaceId: workspaceId,
-                  workspaceModelSelectionId: conversation.modelId,
-                  onChanged: (modelId) => _onModelSelectionChanged(
-                    ref,
-                    workspaceId,
-                    conversation.id,
-                    modelId,
-                  ),
-                  compactMode: true,
-                ),
-                agentCompactControl: CompactAgentSelector(
-                  workspaceId: workspaceId,
-                  agentId: conversation.agentId,
-                  onChanged: (agentId) => _onAgentChanged(
-                    ref,
-                    workspaceId,
-                    conversation.id,
-                    agentId,
-                  ),
-                  compactMode: true,
-                ),
-                modalitiesInput: modalitiesInput,
-                onSkillsPress: () => _showSkillsModal(
-                  context: context,
-                  workspaceId: workspaceId,
-                  conversationId: conversation.id,
-                ),
-                onContinueAgent: isInputBusy
-                    ? null
-                    : () => unawaited(
-                        _continueAgent(
-                          context,
-                          ref,
-                          workspaceId,
-                          conversation.id,
-                        ),
-                      ),
-                isBusy: isInputBusy,
-                showStopButton: isInputBusy && !hidesStoppedRun,
-                onStop: onStop,
-                onCompact: onCompact,
-                isCompacting: isCompacting,
-              ),
-            ),
-        ],
+    return _LoadedChatConversationView(
+      workspaceId: workspaceId,
+      conversation: conversation,
+      pendingCalls: pendingCalls,
+      isGenerating: isGenerating,
+      hidesStoppedRun: hidesStoppedRun,
+      rateLimitRetryAt: rateLimitRetryAt,
+      queuedDrafts: queuedDrafts,
+      hasPendingApprovals: hasPendingApprovals,
+      showInputComposer: showInputComposer,
+      modalitiesInput: modalitiesInput,
+      isInputBusy: isInputBusy,
+      isCompacting: isCompacting,
+      onSendMessage: onSendMessage,
+      onToolsPress: onToolsPress,
+      onStop: onStop,
+      onCompact: onCompact,
+      onModelChanged: (modelId) =>
+          _onModelChanged(context, ref, workspaceId, conversation.id, modelId),
+      onModelSelectionChanged: (modelId) =>
+          _onModelSelectionChanged(ref, workspaceId, conversation.id, modelId),
+      onAgentChanged: (agentId) =>
+          _onAgentChanged(ref, workspaceId, conversation.id, agentId),
+      onSkillsPress: () => _showSkillsModal(
+        context: context,
+        workspaceId: workspaceId,
+        conversationId: conversation.id,
       ),
-      appBar: AuraAppBarWithDrawer(
-        title: Text(conversation.title),
-        leading: _leading(context),
+      onContinueAgent: _continueAgentCallback(
+        context: context,
+        ref: ref,
+        workspaceId: workspaceId,
+        conversationId: conversation.id,
+        isInputBusy: isInputBusy,
       ),
+      leading: _leading(context),
     );
   }
 
@@ -392,6 +315,242 @@ class const _LoadedChatConversation({
     return AuraIconButton(
       icon: Icons.arrow_back,
       onPressed: () => Navigator.of(context).pop(),
+    );
+  }
+}
+
+bool _isCloudWorkspace(WidgetRef ref, String workspaceId) =>
+    ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
+    null;
+
+CloudConversationState? _watchCloudConversation(
+  WidgetRef ref, {
+  required bool isCloud,
+  required String workspaceId,
+  required String conversationId,
+}) {
+  if (!isCloud) return null;
+  return ref
+      .watch(
+        cloudConversationStateProvider((
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        )),
+      )
+      .value;
+}
+
+List<String> _watchModelModalities(
+  WidgetRef ref, {
+  required String workspaceId,
+  required String? modelId,
+}) {
+  if (modelId == null) return const [];
+  final selectedModelAsync = ref.watch(
+    workspaceModelSelectionByIdProvider(workspaceId, modelId),
+  );
+  return selectedModelAsync.value?.workspaceModelSelection.modalitiesInput ??
+      const <String>[];
+}
+
+List<PendingToolCall> _watchPendingCalls(
+  WidgetRef ref, {
+  required bool isCloud,
+  required CloudConversationState? cloudConversation,
+  required String workspaceId,
+  required String conversationId,
+}) {
+  if (isCloud) return CloudMessageTools.pendingToolCalls(cloudConversation);
+  return ref
+          .watch(pendingToolCallsProvider(workspaceId, conversationId))
+          .value ??
+      const [];
+}
+
+bool _isInputBusy({
+  required bool isCloud,
+  required CloudConversationState? cloudConversation,
+  required ConversationBusyState? busyState,
+  required DateTime? rateLimitRetryAt,
+}) {
+  if (rateLimitRetryAt != null) return true;
+  if (isCloud) return _isCloudInputBusy(cloudConversation);
+  return busyState?.isBusy ?? false;
+}
+
+bool _isCloudInputBusy(CloudConversationState? state) {
+  final executionState = state?.conversation.executionState;
+  return executionState == 'running' || executionState == 'awaitingApproval';
+}
+
+bool _isGenerating({
+  required bool isCloud,
+  required CloudConversationState? cloudConversation,
+  required ConversationBusyState? busyState,
+}) {
+  if (isCloud) {
+    return cloudConversation?.conversation.executionState == 'running';
+  }
+  return busyState?.isStreaming == true;
+}
+
+VoidCallback? _continueAgentCallback({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String workspaceId,
+  required String conversationId,
+  required bool isInputBusy,
+}) {
+  if (isInputBusy) return null;
+  return () =>
+      unawaited(_continueAgent(context, ref, workspaceId, conversationId));
+}
+
+class const _LoadedChatConversationView({
+  required final String workspaceId,
+  required final ConversationEntity conversation,
+  required final List<PendingToolCall> pendingCalls,
+  required final bool isGenerating,
+  required final bool hidesStoppedRun,
+  required final DateTime? rateLimitRetryAt,
+  required final List<ConversationQueuedDraft> queuedDrafts,
+  required final bool hasPendingApprovals,
+  required final bool showInputComposer,
+  required final List<String> modalitiesInput,
+  required final bool isInputBusy,
+  required final bool isCompacting,
+  required final Future<void> Function(ChatDraft) onSendMessage,
+  required final VoidCallback onToolsPress,
+  required final VoidCallback onStop,
+  required final VoidCallback onCompact,
+  required final ValueChanged<String?> onModelChanged,
+  required final ValueChanged<String?> onModelSelectionChanged,
+  required final ValueChanged<String?> onAgentChanged,
+  required final VoidCallback onSkillsPress,
+  required final VoidCallback? onContinueAgent,
+  required final Widget? leading,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final conversationId = conversation.id;
+    final retryAt = rateLimitRetryAt;
+    return AuraScreen(
+      child: AuraColumn(
+        children: [
+          _ChatControlsBar(
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+          ),
+          Expanded(
+            child: _ChatList(
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+              pendingToolCalls: pendingCalls,
+              showThinking: isGenerating && !hidesStoppedRun,
+            ),
+          ),
+          if (retryAt != null && !hidesStoppedRun)
+            _RateLimitRetryIndicator(retryAt: retryAt),
+          if (queuedDrafts.isNotEmpty)
+            ChatQueuedMessagesIndicator(
+              conversationId: conversationId,
+              queuedDrafts: queuedDrafts,
+            ),
+          if (hasPendingApprovals)
+            ChatToolApprovalCard(
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+              pendingCalls: pendingCalls,
+            ),
+          if (showInputComposer)
+            _ChatComposer(
+              workspaceId: workspaceId,
+              conversation: conversation,
+              modalitiesInput: modalitiesInput,
+              isInputBusy: isInputBusy,
+              hasPendingApprovals: hasPendingApprovals,
+              isCompacting: isCompacting,
+              hidesStoppedRun: hidesStoppedRun,
+              onSendMessage: onSendMessage,
+              onToolsPress: onToolsPress,
+              onStop: onStop,
+              onCompact: onCompact,
+              onModelChanged: onModelChanged,
+              onModelSelectionChanged: onModelSelectionChanged,
+              onAgentChanged: onAgentChanged,
+              onSkillsPress: onSkillsPress,
+              onContinueAgent: onContinueAgent,
+            ),
+        ],
+      ),
+      appBar: AuraAppBarWithDrawer(
+        title: Text(conversation.title),
+        leading: leading,
+      ),
+    );
+  }
+}
+
+class const _ChatComposer({
+  required final String workspaceId,
+  required final ConversationEntity conversation,
+  required final List<String> modalitiesInput,
+  required final bool isInputBusy,
+  required final bool hasPendingApprovals,
+  required final bool isCompacting,
+  required final bool hidesStoppedRun,
+  required final Future<void> Function(ChatDraft) onSendMessage,
+  required final VoidCallback onToolsPress,
+  required final VoidCallback onStop,
+  required final VoidCallback onCompact,
+  required final ValueChanged<String?> onModelChanged,
+  required final ValueChanged<String?> onModelSelectionChanged,
+  required final ValueChanged<String?> onAgentChanged,
+  required final VoidCallback onSkillsPress,
+  required final VoidCallback? onContinueAgent,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final conversationId = conversation.id;
+    return Offstage(
+      offstage: hasPendingApprovals,
+      child: ChatInputWidget(
+        workspaceId: workspaceId,
+        onSendMessage: onSendMessage,
+        onToolsPress: onToolsPress,
+        modelSheetControl: CompactWorkspaceModelSelector(
+          workspaceId: workspaceId,
+          workspaceModelSelectionId: conversation.modelId,
+          onChanged: onModelChanged,
+          sheetMode: true,
+        ),
+        agentSheetControl: CompactAgentSelector(
+          workspaceId: workspaceId,
+          agentId: conversation.agentId,
+          onChanged: onAgentChanged,
+          sheetMode: true,
+        ),
+        modelCompactControl: CompactWorkspaceModelSelector(
+          workspaceId: workspaceId,
+          workspaceModelSelectionId: conversation.modelId,
+          onChanged: onModelSelectionChanged,
+          compactMode: true,
+        ),
+        agentCompactControl: CompactAgentSelector(
+          workspaceId: workspaceId,
+          agentId: conversation.agentId,
+          onChanged: onAgentChanged,
+          compactMode: true,
+        ),
+        modalitiesInput: modalitiesInput,
+        onSkillsPress: onSkillsPress,
+        onContinueAgent: onContinueAgent,
+        isBusy: isInputBusy,
+        showStopButton: isInputBusy && !hidesStoppedRun,
+        onStop: onStop,
+        onCompact: onCompact,
+        isCompacting: isCompacting,
+      ),
     );
   }
 }
@@ -577,58 +736,68 @@ Future<void> _setModelWithAttachmentWarning({
   final messages =
       ref.read(chatMessagesProvider(workspaceId, conversationId)).value ??
       const [];
+  final missing = _missingAttachmentModalities(messages, supported);
+  if (!await _confirmModelSwitch(context, missing)) return;
+
+  await ref
+      .read(conversationChatProvider(workspaceId, conversationId).notifier)
+      .setModel(modelId);
+}
+
+Set<String> _missingAttachmentModalities(
+  Iterable<MessageEntity> messages,
+  List<String> supported,
+) {
   final missing = <String>{};
   for (final message in messages) {
     for (final attachment in message.attachments) {
-      final modality = attachment.modality.name;
       if (!ChatAttachmentModality.supports(
         attachment.modality,
         supported,
         mimeType: attachment.mimeType,
       )) {
-        final _ = missing.add(modality);
+        final _ = missing.add(attachment.modality.name);
       }
     }
   }
+  return missing;
+}
 
-  if (missing.isNotEmpty && context.mounted) {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          LocaleKeys
-              .chats_screens_chat_conversation_switch_model_unsupported_title
-              .tr(),
-        ),
-        content: Text(
-          LocaleKeys
-              .chats_screens_chat_conversation_switch_model_unsupported_body
-              .tr(namedArgs: {'modalities': missing.join(', ')}),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              LocaleKeys.chats_screens_chat_conversation_switch_model_cancel
-                  .tr(),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              LocaleKeys.chats_screens_chat_conversation_switch_model_confirm
-                  .tr(),
-            ),
-          ),
-        ],
+Future<bool> _confirmModelSwitch(
+  BuildContext context,
+  Set<String> missing,
+) async {
+  if (missing.isEmpty || !context.mounted) return true;
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(
+        LocaleKeys
+            .chats_screens_chat_conversation_switch_model_unsupported_title
+            .tr(),
       ),
-    );
-    if (confirmed != true) return;
-  }
-
-  await ref
-      .read(conversationChatProvider(workspaceId, conversationId).notifier)
-      .setModel(modelId);
+      content: Text(
+        LocaleKeys.chats_screens_chat_conversation_switch_model_unsupported_body
+            .tr(namedArgs: {'modalities': missing.join(', ')}),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(
+            LocaleKeys.chats_screens_chat_conversation_switch_model_cancel.tr(),
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(
+            LocaleKeys.chats_screens_chat_conversation_switch_model_confirm
+                .tr(),
+          ),
+        ),
+      ],
+    ),
+  );
+  return confirmed == true;
 }
 
 Future<void> _continueAgent(
@@ -643,27 +812,16 @@ Future<void> _continueAgent(
   final rateLimitRetryAt = ref.read(
     conversationRateLimitRetryProvider,
   )[conversationId];
-  if ((busyState?.isBusy ?? false) || rateLimitRetryAt != null) return;
+  if (!_canContinueAgent(busyState, rateLimitRetryAt)) return;
 
   try {
     final cloud = await ref.read(cloudTurnUsecaseProvider(workspaceId).future);
     if (cloud != null) {
-      final state = ref
-          .read(
-            cloudConversationStateProvider((
-              workspaceId: workspaceId,
-              conversationId: conversationId,
-            )),
-          )
-          .value;
-      if (state == null ||
-          (state.conversation.executionState != 'idle' &&
-              state.conversation.executionState != 'failed')) {
-        return;
-      }
-      final _ = await cloud.continueSharedConversation(
+      await _continueCloudAgent(
+        ref,
+        cloud,
+        workspaceId: workspaceId,
         conversationId: conversationId,
-        projectionRevision: state.conversation.projectionRevision,
       );
 
       return;
@@ -701,6 +859,38 @@ Future<void> _continueAgent(
   }
 }
 
+bool _canContinueAgent(
+  ConversationBusyState? busyState,
+  DateTime? rateLimitRetryAt,
+) => busyState?.isBusy != true && rateLimitRetryAt == null;
+
+Future<void> _continueCloudAgent(
+  WidgetRef ref,
+  CloudTurnUsecase cloud, {
+  required String workspaceId,
+  required String conversationId,
+}) async {
+  final state = ref
+      .read(
+        cloudConversationStateProvider((
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        )),
+      )
+      .value;
+  if (!_canContinueCloudState(state)) return;
+  final _ = await cloud.continueSharedConversation(
+    conversationId: conversationId,
+    projectionRevision: state!.conversation.projectionRevision,
+  );
+}
+
+bool _canContinueCloudState(CloudConversationState? state) {
+  if (state == null) return false;
+  final executionState = state.conversation.executionState;
+  return executionState == 'idle' || executionState == 'failed';
+}
+
 Future<void> _stopConversation(
   BuildContext context,
   WidgetRef ref,
@@ -709,22 +899,11 @@ Future<void> _stopConversation(
 ) async {
   final cloud = await ref.read(cloudTurnUsecaseProvider(workspaceId).future);
   if (cloud != null) {
-    final state = ref
-        .read(
-          cloudConversationStateProvider((
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-          )),
-        )
-        .value;
-    if (state == null ||
-        (state.conversation.executionState != 'running' &&
-            state.conversation.executionState != 'awaitingApproval')) {
-      return;
-    }
-    final _ = await cloud.stopSharedConversation(
+    await _stopCloudConversation(
+      ref,
+      cloud,
+      workspaceId: workspaceId,
       conversationId: conversationId,
-      projectionRevision: state.conversation.projectionRevision,
     );
 
     return;
@@ -784,6 +963,33 @@ Future<void> _stopConversation(
       variant: .error,
     );
   }
+}
+
+Future<void> _stopCloudConversation(
+  WidgetRef ref,
+  CloudTurnUsecase cloud, {
+  required String workspaceId,
+  required String conversationId,
+}) async {
+  final state = ref
+      .read(
+        cloudConversationStateProvider((
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        )),
+      )
+      .value;
+  if (!_canStopCloudState(state)) return;
+  final _ = await cloud.stopSharedConversation(
+    conversationId: conversationId,
+    projectionRevision: state!.conversation.projectionRevision,
+  );
+}
+
+bool _canStopCloudState(CloudConversationState? state) {
+  if (state == null) return false;
+  final executionState = state.conversation.executionState;
+  return executionState == 'running' || executionState == 'awaitingApproval';
 }
 
 Future<void> _sendMessage(
