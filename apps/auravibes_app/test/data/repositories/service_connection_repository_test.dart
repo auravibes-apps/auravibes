@@ -83,11 +83,11 @@ void main() {
         kind: .modelProvider,
       );
 
-      final candidates = await repository.listAppSkillCredentialCandidates(
+      final candidates = await repository.listAppSkillCredentialCandidates((
         workspaceId: 'workspace-1',
         appSkillServiceId: 'searxng',
         compatibleModelProviderIds: const ['openai'],
-      );
+      ));
 
       expect(candidates.map((candidate) => candidate.id), [
         appCredentialId,
@@ -120,12 +120,13 @@ void main() {
         secretValue: 'old-secret',
       );
 
-      await repository.updateAppSkillCredential(
+      await repository.updateAppSkillCredential((
         id: id,
         workspaceId: 'workspace-1',
         name: 'Preserved',
         clearSecret: false,
-      );
+        secret: null,
+      ));
       expect(
         (await repository.readSecret(
           id,
@@ -133,13 +134,13 @@ void main() {
         'old-secret',
       );
 
-      await repository.updateAppSkillCredential(
+      await repository.updateAppSkillCredential((
         id: id,
         workspaceId: 'workspace-1',
         name: 'Replaced',
         clearSecret: false,
         secret: 'new-secret',
-      );
+      ));
       expect(
         (await repository.readSecret(
           id,
@@ -147,12 +148,13 @@ void main() {
         'new-secret',
       );
 
-      await repository.updateAppSkillCredential(
+      await repository.updateAppSkillCredential((
         id: id,
         workspaceId: 'workspace-1',
         name: 'Cleared',
         clearSecret: true,
-      );
+        secret: null,
+      ));
       await expectLater(repository.readSecret(id), throwsFormatException);
       expect(
         (await repository.getAppSkillCredentialForEdit(

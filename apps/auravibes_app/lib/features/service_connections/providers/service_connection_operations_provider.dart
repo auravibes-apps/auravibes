@@ -3,7 +3,6 @@ import 'package:auravibes_app/features/service_connections/models/cloud_service_
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -43,20 +42,28 @@ typedef _UpdateServiceConnection = Future<void> Function(
   GenericServiceConnectionForEdit connection,
   GenericServiceConnectionUpdate update,
 );
+typedef _LocalUpdateRequest = ({
+  ServiceConnectionRepository local,
+  GenericServiceConnectionForEdit connection,
+  GenericServiceConnectionUpdate update,
+  String workspaceId,
+});
 
 ServiceConnectionOperations _cloudServiceConnectionOperations(
   CloudWorkspaceStateGateway gateway,
 ) {
-  final cloud = CloudServiceConnectionUsecases(
-    CloudWorkspaceResourceStore(gateway),
-  );
+  final cloud = _cloudServiceConnectionUsecases(gateway);
 
   return _serviceConnectionOperations(
-    create: _cloudCreateCallback(cloud),
     get: _cloudGetCallback(cloud),
+    create: _cloudCreateCallback(cloud),
     update: _cloudUpdateCallback(cloud),
   );
 }
+
+CloudServiceConnectionUsecases _cloudServiceConnectionUsecases(
+  CloudWorkspaceStateGateway gateway,
+) => .new(.new(gateway));
 
 ServiceConnectionOperations _serviceConnectionOperations({
   required _CreateServiceConnection create,
@@ -78,13 +85,12 @@ _CreateServiceConnection _cloudCreateCallback(
     required appSkillServiceId,
     required name,
     required apiKey,
-  }) => _createCloudCredential(
-    cloud,
+  }) => _createCloudCredential(cloud, (
     workspaceId: workspaceId,
     appSkillServiceId: appSkillServiceId,
     name: name,
     apiKey: apiKey,
-  );
+  ));
 }
 
 _GetServiceConnection _cloudGetCallback(CloudServiceConnectionUsecases cloud) {
@@ -99,21 +105,18 @@ _UpdateServiceConnection _cloudUpdateCallback(
 }
 
 Future<void> _createCloudCredential(
-  CloudServiceConnectionUsecases cloud, {
-  required String workspaceId,
-  required String appSkillServiceId,
-  required String name,
-  required String apiKey,
-}) {
-  final _ = workspaceId;
+  CloudServiceConnectionUsecases cloud,
+  AppSkillCredentialCreateRequest request,
+) {
+  final _ = request.workspaceId;
 
   return cloud.create(
     id: const UuidV7().generate(),
-    name: name,
-    serviceId: appSkillServiceId,
+    name: request.name,
+    serviceId: request.appSkillServiceId,
     secretKind: .skillCredential,
     scope: .workspace,
-    secret: apiKey,
+    secret: request.apiKey,
   );
 }
 
@@ -167,8 +170,8 @@ ServiceConnectionOperations _localServiceConnectionOperations(
   String workspaceId,
 ) {
   return _serviceConnectionOperations(
-    create: _localCreateCallback(local),
     get: _localGetCallback(local, workspaceId),
+    create: _localCreateCallback(local),
     update: _localUpdateCallback(local, workspaceId),
   );
 }
@@ -181,13 +184,12 @@ _CreateServiceConnection _localCreateCallback(
     required appSkillServiceId,
     required name,
     required apiKey,
-  }) => _createLocalCredential(
-    local,
+  }) => _createLocalCredential(local, (
     workspaceId: workspaceId,
     appSkillServiceId: appSkillServiceId,
     name: name,
     apiKey: apiKey,
-  );
+  ));
 }
 
 _GetServiceConnection _localGetCallback(
@@ -201,23 +203,19 @@ _UpdateServiceConnection _localUpdateCallback(
   ServiceConnectionRepository local,
   String workspaceId,
 ) {
-  return (connection, update) =>
-      _updateLocalCredential(local, connection, update, workspaceId);
+  return (connection, update) => _updateLocalCredential((
+    local: local,
+    connection: connection,
+    update: update,
+    workspaceId: workspaceId,
+  ));
 }
 
 Future<void> _createLocalCredential(
-  ServiceConnectionRepository local, {
-  required String workspaceId,
-  required String appSkillServiceId,
-  required String name,
-  required String apiKey,
-}) async {
-  final _ = await local.createAppSkillCredential(
-    workspaceId: workspaceId,
-    appSkillServiceId: appSkillServiceId,
-    name: name,
-    apiKey: apiKey,
-  );
+  ServiceConnectionRepository local,
+  AppSkillCredentialCreateRequest request,
+) async {
+  final _ = await local.createAppSkillCredential(request);
 }
 
 Future<GenericServiceConnectionForEdit?> _getLocalCredential(
@@ -240,20 +238,24 @@ Future<GenericServiceConnectionForEdit?> _getLocalCredential(
   );
 }
 
-Future<void> _updateLocalCredential(
-  ServiceConnectionRepository local,
-  GenericServiceConnectionForEdit connection,
-  GenericServiceConnectionUpdate update,
-  String workspaceId,
-) {
-  return local.updateAppSkillCredential(
+Future<void> _updateLocalCredential(_LocalUpdateRequest request) {
+  final connection = request.connection;
+  final update = request.update;
+
+  return request.local.updateAppSkillCredential((
     id: connection.id,
-    workspaceId: workspaceId,
+    workspaceId: request.workspaceId,
     name: update.name,
-    clearSecret: update.secretEdit == ServiceConnectionSecretEdit.clear,
-    secret: update.secretEdit == ServiceConnectionSecretEdit.replace
-        ? update.secret
-        : null,
-  );
+    clearSecret: _shouldClearSecret(update),
+    secret: _secretForUpdate(update),
+  ));
 }
+
+bool _shouldClearSecret(GenericServiceConnectionUpdate update) =>
+    update.secretEdit == ServiceConnectionSecretEdit.clear;
+
+String? _secretForUpdate(GenericServiceConnectionUpdate update) =>
+    update.secretEdit == ServiceConnectionSecretEdit.replace
+    ? update.secret
+    : null;
 // Top-level API/provider declarations are required by their consumers.

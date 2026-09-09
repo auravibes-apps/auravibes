@@ -25,33 +25,10 @@ class const ListAppSkillCredentialCandidatesUsecase(
       workspaceId,
     );
     if (cloudConnections != null) {
-      return [
-        for (final connection in cloudConnections)
-          if (connection.kind == 'appSkillCredential' &&
-              connection.serviceId == skill.identifier &&
-              connection.isEnabled &&
-              connection.hasSecret)
-            AppSkillCredentialCandidate(
-              id: 'service:${connection.id}',
-              name: connection.name,
-            ),
-      ];
+      return _cloudCandidates(cloudConnections, skill.identifier);
     }
 
-    final candidates = await _serviceConnectionRepository()
-        .listAppSkillCredentialCandidates(
-          workspaceId: workspaceId,
-          appSkillServiceId: skill.identifier,
-          compatibleModelProviderIds: skill.compatibleModelProviderIds,
-        );
-
-    return [
-      for (final candidate in candidates)
-        AppSkillCredentialCandidate(
-          id: _prefixedId(candidate),
-          name: candidate.name,
-        ),
-    ];
+    return _localCandidates(workspaceId, skill);
   }
 
   bool isCredentialRequired(AppSkillDefinition skill) {
@@ -65,24 +42,56 @@ class const ListAppSkillCredentialCandidatesUsecase(
   }) async {
     if (skill.identifier == agentsSkillSlug) return true;
 
-    final isServiceSkill = serviceSkillDefinitions.any(
-      (candidate) => candidate.identifier == skill.identifier,
-    );
-    final usableNativeTools = skill.nativeTools
-        .where(
-          (tool) =>
-              tool.urlTemplate != null ||
-              (isServiceSkill && tool.callback != null),
-        )
-        .toList(growable: false);
+    final usableNativeTools = _usableNativeTools(skill);
     if (usableNativeTools.isEmpty) return false;
 
-    if (usableNativeTools.any((tool) => !tool.requiresCredential)) {
-      return true;
-    }
+    if (_hasCredentiallessTool(usableNativeTools)) return true;
 
     return (await call(workspaceId: workspaceId, skill: skill)).isNotEmpty;
   }
+
+  Future<List<AppSkillCredentialCandidate>> _localCandidates(
+    String workspaceId,
+    AppSkillDefinition skill,
+  ) async {
+    final candidates = await _serviceConnectionRepository()
+        .listAppSkillCredentialCandidates((
+          workspaceId: workspaceId,
+          appSkillServiceId: skill.identifier,
+          compatibleModelProviderIds: skill.compatibleModelProviderIds,
+        ));
+
+    return [
+      for (final candidate in candidates)
+        AppSkillCredentialCandidate(
+          id: _prefixedId(candidate),
+          name: candidate.name,
+        ),
+    ];
+  }
+
+  List<AppSkillCredentialCandidate> _cloudCandidates(
+    List<CloudServiceConnection> connections,
+    String serviceId,
+  ) => [
+    for (final connection in connections)
+      if (_isUsableCloudCredential(connection, serviceId))
+        AppSkillCredentialCandidate(
+          id: 'service:${connection.id}',
+          name: connection.name,
+        ),
+  ];
+
+  List<AppSkillToolDefinition> _usableNativeTools(AppSkillDefinition skill) {
+    final isServiceSkill = _isServiceSkill(skill);
+
+    return skill.nativeTools
+        .where((tool) => _isUsableNativeTool(tool, isServiceSkill))
+        .toList(growable: false);
+  }
+
+  bool _hasCredentiallessTool(List<AppSkillToolDefinition> tools) =>
+      tools.any((tool) => !tool.requiresCredential);
 
   String _prefixedId(ServiceConnectionCandidate candidate) {
     if (candidate.kind == ServiceConnectionKindTable.modelProvider) {
@@ -92,6 +101,22 @@ class const ListAppSkillCredentialCandidatesUsecase(
     return 'service:${candidate.id}';
   }
 }
+
+bool _isUsableCloudCredential(
+  CloudServiceConnection connection,
+  String serviceId,
+) =>
+    connection.kind == 'appSkillCredential' &&
+    connection.serviceId == serviceId &&
+    connection.isEnabled &&
+    connection.hasSecret;
+
+bool _isServiceSkill(AppSkillDefinition skill) => serviceSkillDefinitions.any(
+  (candidate) => candidate.identifier == skill.identifier,
+);
+
+bool _isUsableNativeTool(AppSkillToolDefinition tool, bool isServiceSkill) =>
+    tool.urlTemplate != null || (isServiceSkill && tool.callback != null);
 
 final listAppSkillCredentialCandidatesUsecaseProvider =
     Provider<ListAppSkillCredentialCandidatesUsecase>((ref) {

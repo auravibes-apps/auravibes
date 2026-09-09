@@ -14,6 +14,14 @@ class _ServiceConnectionRepository extends Mock
     implements ServiceConnectionRepository;
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue((
+      workspaceId: '',
+      appSkillServiceId: '',
+      compatibleModelProviderIds: <String>[],
+    ));
+  });
+
   const skill = AppSkillDefinition(
     identifier: 'example-search',
     slug: 'example-search',
@@ -66,11 +74,11 @@ void main() {
   test('lists only matching cloud app-skill credentials', () async {
     final repository = _ServiceConnectionRepository();
     when(
-      () => repository.listAppSkillCredentialCandidates(
+      () => repository.listAppSkillCredentialCandidates((
         workspaceId: 'workspace-1',
         appSkillServiceId: skill.identifier,
         compatibleModelProviderIds: skill.compatibleModelProviderIds,
-      ),
+      )),
     ).thenAnswer((_) async => []);
     final usecase = ListAppSkillCredentialCandidatesUsecase(
       () => repository,
@@ -139,13 +147,8 @@ void main() {
     'eligibility includes service callbacks but excludes control callbacks',
     () async {
       final repository = _ServiceConnectionRepository();
-      when(
-        () => repository.listAppSkillCredentialCandidates(
-          workspaceId: any(named: 'workspaceId'),
-          appSkillServiceId: any(named: 'appSkillServiceId'),
-          compatibleModelProviderIds: any(named: 'compatibleModelProviderIds'),
-        ),
-      ).thenAnswer((_) async => []);
+      when(() => repository.listAppSkillCredentialCandidates(any()))
+          .thenAnswer((_) async => []);
       final usecase = ListAppSkillCredentialCandidatesUsecase(() => repository);
       const registry = AppSkillRegistry();
       final skillsManager =
