@@ -109,22 +109,20 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
     /// Whether this conversation is pinned.
     bool? isPinned,
   }) = _ConversationPatch;
-  bool get isValid {
-    final title = this.title;
-    if (title != null && title.isEmpty) return false;
+  bool get isValid => _hasValidValues && _hasChanges;
 
-    final modelId = this.modelId;
-    if (modelId != null && modelId.isEmpty) return false;
+  bool get _hasValidValues =>
+      _isNullOrNonEmpty(title) &&
+      _isNullOrNonEmpty(modelId) &&
+      _isNullOrNonEmpty(agentId) &&
+      (!clearAgent || agentId == null);
 
-    final agentId = this.agentId;
-    if (agentId != null && agentId.isEmpty) return false;
-
-    if (clearAgent && agentId != null) return false;
-
-    return title != null ||
-        modelId != null ||
-        agentId != null ||
-        clearAgent ||
-        isPinned != null;
-  }
+  bool get _hasChanges =>
+      title != null ||
+      modelId != null ||
+      agentId != null ||
+      clearAgent ||
+      isPinned != null;
 }
+
+bool _isNullOrNonEmpty(String? value) => value == null || value.isNotEmpty;
