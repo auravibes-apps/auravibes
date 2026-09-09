@@ -73,29 +73,33 @@ abstract final class CloudAppErrors {
   }
 }
 
-String _workspaceKey(CloudWorkspaceErrorCode code) => switch (code) {
-  .authenticationRequired ||
-  .emailAccountRequired => LocaleKeys.cloud_errors_authentication_required,
-  .workspaceNotFound || .inviteNotFound => LocaleKeys.cloud_errors_not_found,
-  .membershipRequired ||
-  .permissionDenied ||
-  .ownerRequired => LocaleKeys.cloud_errors_permission_denied,
-  .validationFailed ||
-  .invalidRole ||
-  .confirmationNameMismatch ||
-  .invalidCursor => LocaleKeys.cloud_errors_validation,
-  .ownerCannotLeave ||
-  .ownerCannotBeRemoved ||
-  .ownershipTransferRequired ||
-  .inviteExpired ||
-  .inviteRevoked ||
-  .inviteEmailMismatch ||
-  .duplicateInvite ||
-  .duplicateMembership ||
-  .staleRevision ||
-  .idempotencyConflict ||
-  .conflict => LocaleKeys.cloud_errors_conflict,
+const _workspaceLocalizationKeys = <CloudWorkspaceErrorCode, String>{
+  .authenticationRequired: LocaleKeys.cloud_errors_authentication_required,
+  .emailAccountRequired: LocaleKeys.cloud_errors_authentication_required,
+  .workspaceNotFound: LocaleKeys.cloud_errors_not_found,
+  .inviteNotFound: LocaleKeys.cloud_errors_not_found,
+  .membershipRequired: LocaleKeys.cloud_errors_permission_denied,
+  .permissionDenied: LocaleKeys.cloud_errors_permission_denied,
+  .ownerRequired: LocaleKeys.cloud_errors_permission_denied,
+  .validationFailed: LocaleKeys.cloud_errors_validation,
+  .invalidRole: LocaleKeys.cloud_errors_validation,
+  .confirmationNameMismatch: LocaleKeys.cloud_errors_validation,
+  .invalidCursor: LocaleKeys.cloud_errors_validation,
+  .ownerCannotLeave: LocaleKeys.cloud_errors_conflict,
+  .ownerCannotBeRemoved: LocaleKeys.cloud_errors_conflict,
+  .ownershipTransferRequired: LocaleKeys.cloud_errors_conflict,
+  .inviteExpired: LocaleKeys.cloud_errors_conflict,
+  .inviteRevoked: LocaleKeys.cloud_errors_conflict,
+  .inviteEmailMismatch: LocaleKeys.cloud_errors_conflict,
+  .duplicateInvite: LocaleKeys.cloud_errors_conflict,
+  .duplicateMembership: LocaleKeys.cloud_errors_conflict,
+  .staleRevision: LocaleKeys.cloud_errors_conflict,
+  .idempotencyConflict: LocaleKeys.cloud_errors_conflict,
+  .conflict: LocaleKeys.cloud_errors_conflict,
 };
+
+String _workspaceKey(CloudWorkspaceErrorCode code) =>
+    _workspaceLocalizationKeys[code]!;
 
 String _conversationKey(ConversationErrorCode code) => switch (code) {
   .authenticationRequired => LocaleKeys.cloud_errors_authentication_required,
