@@ -42,9 +42,11 @@ class AuraRadioListTile<T> extends StatelessWidget {
   /// A semantic label announced by assistive technologies.
   final String? semanticLabel;
 
+  bool get _isDisabled => disabled || onChanged == null;
+
   @override
   Widget build(BuildContext context) {
-    final isDisabled = disabled || onChanged == null;
+    final isDisabled = _isDisabled;
     final subtitle = this.subtitle;
 
     final onTap = isDisabled ? null : () => onChanged?.call(value);
