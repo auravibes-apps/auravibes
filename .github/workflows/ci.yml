@@ -17,6 +17,8 @@ permissions:
 jobs:
   format:
     name: format
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -34,6 +36,8 @@ jobs:
 
   analysis:
     name: analysis
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -51,6 +55,8 @@ jobs:
 
   code-health:
     name: code health
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -71,6 +77,8 @@ jobs:
 
   integrity:
     name: integrity
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -130,6 +138,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.platforms.outputs.platforms }}
+      run_code_checks: ${{ steps.platforms.outputs.run_code_checks }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -149,6 +158,7 @@ jobs:
 
           all_platforms='["android","ios","macos","linux","windows","web"]'
           full_build=false
+          run_code_checks=true
           base_sha=''
           head_sha="$GITHUB_SHA"
 
@@ -182,11 +192,13 @@ jobs:
 
           if [[ "$full_build" == true ]]; then
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
+            printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           changed_files="$(git diff --name-only --diff-filter=ACDMRTUXB "$base_sha" "$head_sha")"
           platforms=()
+          run_code_checks=false
 
           add_platform() {
             local platform="$1"
@@ -197,6 +209,17 @@ jobs:
           }
 
           while IFS= read -r path; do
+            case "$path" in
+              .github/*|.fvm/*|.fvmrc|.vscode/settings.json|assets/*|*/assets/*)
+                run_code_checks=true
+                ;;
+              *.md|*.mdx|README|*/README|CHANGELOG|*/CHANGELOG|LICENSE|*/LICENSE|.pi/*|sonar-project.properties)
+                ;;
+              *)
+                run_code_checks=true
+                ;;
+            esac
+
             case "$path" in
               apps/auravibes_app/android/*) add_platform android ;;
               apps/auravibes_app/ios/*) add_platform ios ;;
@@ -221,6 +244,7 @@ jobs:
           else
             printf '%s\n' "${platforms[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))' | sed 's/^/platforms=/' >> "$GITHUB_OUTPUT"
           fi
+          printf 'run_code_checks=%s\n' "$run_code_checks" >> "$GITHUB_OUTPUT"
 
   platform-builds:
     name: platform builds
@@ -233,6 +257,8 @@ jobs:
 
   test-plan:
     name: test plan
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     outputs:
       mode: ${{ steps.plan.outputs.mode }}
@@ -290,7 +316,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
-      max-parallel: 3
+      max-parallel: 7
       matrix: ${{ fromJSON(needs.test-plan.outputs.matrix) }}
     steps:
       - name: Checkout
@@ -339,8 +365,17 @@ jobs:
 
   coverage:
     name: coverage and Sonar
-    needs: [test-plan, test]
-    if: ${{ always() && needs.test-plan.outputs.mode == 'full' && needs.test.result == 'success' }}
+    needs: [format, analysis, code-health, integrity, test-plan, test]
+    if: >-
+      ${{
+        always() &&
+        needs.format.result == 'success' &&
+        needs.analysis.result == 'success' &&
+        needs.code-health.result == 'success' &&
+        needs.integrity.result == 'success' &&
+        needs.test-plan.outputs.mode == 'full' &&
+        needs.test.result == 'success'
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
