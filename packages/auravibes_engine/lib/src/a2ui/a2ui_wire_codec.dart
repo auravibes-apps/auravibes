@@ -117,9 +117,45 @@ class A2uiV09Codec implements A2uiWireCodec {
     }
     final outer = Map<String, Object?>.from(value);
     final diagnosticPayloadJson = jsonEncode(outer);
-    final raw = outer['message'] is Map
-        ? Map<String, Object?>.from(outer['message']! as Map)
-        : outer;
+    final raw = _rawMessage(outer);
+    final failure = _singleDecodeFailure(
+      outer,
+      raw,
+      diagnosticPayloadJson,
+      allowLegacyBindings: allowLegacyBindings,
+    );
+    if (failure != null) return failure;
+
+    final interactionMode = _interactionMode(outer);
+    _normalizeCreateSurface(raw);
+    final kind = A2uiOperationKind.values
+        .where((candidate) => raw.containsKey(candidate.name))
+        .single;
+    final payloadJson = jsonEncode({
+      'protocolVersion': a2uiChatProtocolVersion,
+      'interactionMode': interactionMode,
+      'message': raw,
+    });
+    return A2uiDecodeResult.valid(
+      .new(
+        envelopeVersion: a2uiChatProtocolVersion,
+        wireVersion: wireVersion,
+        interactionMode: interactionMode,
+        operation: A2uiOperation(kind: kind, json: raw),
+        payloadJson: payloadJson,
+      ),
+    );
+  }
+
+  Map<String, Object?> _rawMessage(Map<String, Object?> outer) {
+    final message = outer['message'];
+    final raw = message is Map ? Map<String, Object?>.from(message) : outer;
+    _normalizeLegacyCreateSurface(raw);
+
+    return raw;
+  }
+
+  void _normalizeLegacyCreateSurface(Map<String, Object?> raw) {
     final create = raw['createSurface'];
     if (create is Map && create['sendDataModel'] == true) {
       raw['createSurface'] = {
@@ -127,6 +163,14 @@ class A2uiV09Codec implements A2uiWireCodec {
         'sendDataModel': false,
       };
     }
+  }
+
+  A2uiDecodeResult? _singleDecodeFailure(
+    Map<String, Object?> outer,
+    Map<String, Object?> raw,
+    String diagnosticPayloadJson, {
+    required bool allowLegacyBindings,
+  }) {
     final envelopeVersion = outer['protocolVersion'];
     if (envelopeVersion != null && envelopeVersion != a2uiChatProtocolVersion) {
       return A2uiDecodeResult.invalid(
@@ -163,30 +207,24 @@ class A2uiV09Codec implements A2uiWireCodec {
         diagnosticPayloadJson: diagnosticPayloadJson,
       );
     }
-    final normalizedCreate = raw['createSurface'];
-    if (normalizedCreate is Map) {
+
+    return null;
+  }
+
+  String _interactionMode(Map<String, Object?> outer) {
+    final mode = outer['interactionMode'];
+
+    return mode is String ? mode : 'passive';
+  }
+
+  void _normalizeCreateSurface(Map<String, Object?> raw) {
+    final create = raw['createSurface'];
+    if (create is Map) {
       raw['createSurface'] = {
-        ...Map<String, Object?>.from(normalizedCreate),
+        ...Map<String, Object?>.from(create),
         'sendDataModel': false,
       };
     }
-    final kind = A2uiOperationKind.values
-        .where((candidate) => raw.containsKey(candidate.name))
-        .single;
-    final payloadJson = jsonEncode({
-      'protocolVersion': a2uiChatProtocolVersion,
-      'interactionMode': interactionMode,
-      'message': raw,
-    });
-    return A2uiDecodeResult.valid(
-      .new(
-        envelopeVersion: a2uiChatProtocolVersion,
-        wireVersion: wireVersion,
-        interactionMode: interactionMode,
-        operation: A2uiOperation(kind: kind, json: raw),
-        payloadJson: payloadJson,
-      ),
-    );
   }
 
   Iterable<A2uiDecodeResult> _decodeInitialSurface(
@@ -287,31 +325,40 @@ class A2uiV09Codec implements A2uiWireCodec {
   @override
   String? recoverSurfaceId(Object value) {
     if (value is! Map) return null;
-    String? read(Map<Object?, Object?> source) {
-      final surfaceId = source['surfaceId'];
-      return surfaceId is String &&
-              surfaceId.isNotEmpty &&
-              surfaceId.length <= 200
-          ? surfaceId
-          : null;
-    }
-
-    final direct = read(value);
+    final direct = _readSurfaceId(value);
     if (direct != null) return direct;
     final message = value['message'];
     final raw = message is Map ? message : value;
-    final initialSurface = value['initialSurface'];
-    if (initialSurface is Map) {
-      final surfaceId = read(initialSurface);
-      if (surfaceId != null) return surfaceId;
+    final initialSurfaceId = _readInitialSurfaceId(value);
+    if (initialSurfaceId != null) return initialSurfaceId;
+
+    return _readOperationSurfaceId(raw);
+  }
+
+  String? _readSurfaceId(Map<Object?, Object?> source) {
+    final surfaceId = source['surfaceId'];
+    if (surfaceId is! String || surfaceId.isEmpty || surfaceId.length > 200) {
+      return null;
     }
+
+    return surfaceId;
+  }
+
+  String? _readInitialSurfaceId(Map<Object?, Object?> value) {
+    final initialSurface = value['initialSurface'];
+    if (initialSurface is! Map) return null;
+
+    return _readSurfaceId(initialSurface);
+  }
+
+  String? _readOperationSurfaceId(Map<Object?, Object?> raw) {
     for (final operation in A2uiOperationKind.values) {
       final body = raw[operation.name];
-      if (body is Map) {
-        final surfaceId = read(body);
-        if (surfaceId != null) return surfaceId;
-      }
+      if (body is! Map) continue;
+      final surfaceId = _readSurfaceId(body);
+      if (surfaceId != null) return surfaceId;
     }
+
     return null;
   }
 }
@@ -319,7 +366,17 @@ class A2uiV09Codec implements A2uiWireCodec {
 const activeA2uiWireCodec = A2uiV09Codec();
 
 String appendA2uiSurfacesToPrompt(String content, Object? metadata) {
-  if (metadata is! Map || metadata['a2uiMessages'] is! List) return content;
+  final validated = _validatedA2uiPayloads(metadata);
+  if (validated.isEmpty) return content;
+  final separator = content.isEmpty ? '' : '\n\n';
+  return '$content${separator}The assistant presented this interface:\n'
+      '${validated.join('\n')}';
+}
+
+List<String> _validatedA2uiPayloads(Object? metadata) {
+  if (metadata is! Map || metadata['a2uiMessages'] is! List) {
+    return const [];
+  }
   final validated = <String>[];
   var totalBytes = 0;
   for (final payload
@@ -341,8 +398,6 @@ String appendA2uiSurfacesToPrompt(String content, Object? metadata) {
       continue;
     }
   }
-  if (validated.isEmpty) return content;
-  final separator = content.isEmpty ? '' : '\n\n';
-  return '$content${separator}The assistant presented this interface:\n'
-      '${validated.join('\n')}';
+
+  return validated;
 }
