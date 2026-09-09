@@ -36,8 +36,7 @@ abstract final class MessageTranscriptSnapshotMapper {
       },
       textCharacterCount: message.content.length,
       toolCalls: [
-        for (final toolCall
-            in metadata?.toolCalls ?? const <MessageToolCallEntity>[])
+        for (final toolCall in _toolCallsFor(metadata))
           AgentTranscriptToolCallSnapshot(
             id: toolCall.id,
             lifecycle: AgentToolStatusMapper.toLifecycle(toolCall.resultStatus),
@@ -51,4 +50,8 @@ abstract final class MessageTranscriptSnapshotMapper {
       excludedMessageIds: metadata?.compactedMessageIds ?? const [],
     );
   }
+
+  static Iterable<MessageToolCallEntity> _toolCallsFor(
+    MessageMetadataEntity? metadata,
+  ) => metadata?.toolCalls ?? const <MessageToolCallEntity>[];
 }
