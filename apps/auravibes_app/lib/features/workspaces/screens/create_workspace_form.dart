@@ -138,11 +138,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
     try {
       ref.read(validateWorkspaceNameUseCaseProvider).call(name: name);
       final workspace = await _createWorkspace(name);
-      ref.invalidate(allWorkspacesProvider);
-      if (_targetAccountId != _localTarget) {
-        ref.invalidate(cloudWorkspaceStateProvider(_targetAccountId));
-      }
-      if (mounted) widget.onCreated(workspace);
+      _handleCreatedWorkspace(workspace);
     } on AppCloudWorkspaceException catch (error) {
       if (mounted) setState(() => _errorText = error.localizationKey.tr());
     } on WorkspaceException catch (error) {
@@ -158,6 +154,14 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
     } finally {
       if (mounted) setState(() => _isCreating = false);
     }
+  }
+
+  void _handleCreatedWorkspace(WorkspaceEntity workspace) {
+    ref.invalidate(allWorkspacesProvider);
+    if (_targetAccountId != _localTarget) {
+      ref.invalidate(cloudWorkspaceStateProvider(_targetAccountId));
+    }
+    if (mounted) widget.onCreated(workspace);
   }
 
   Future<WorkspaceEntity> _createWorkspace(String name) async {
