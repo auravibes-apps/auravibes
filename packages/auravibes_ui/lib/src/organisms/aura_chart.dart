@@ -262,6 +262,9 @@ class _AuraChartPainter extends CustomPainter {
     _paintCartesian(canvas, size);
   }
 
+  @override
+  bool shouldRepaint(_AuraChartPainter oldDelegate) => true;
+
   void _paintCartesian(Canvas canvas, Size size) {
     final layout = _cartesianLayout(size);
     canvas.drawLine(
@@ -390,9 +393,9 @@ class _AuraChartPainter extends CustomPainter {
     final bottom = stacked ? stackBaseY : layout.baseline;
     canvas.drawRect(
       .fromLTRB(
-        barX - barWidth / 2,
+        barX - barWidth / _chartHalf,
         math.min(top, bottom),
-        barX + barWidth / 2,
+        barX + barWidth / _chartHalf,
         math.max(top, bottom),
       ),
       paint,
@@ -426,11 +429,8 @@ class _AuraChartPainter extends CustomPainter {
     } else {
       path.lineTo(x, y);
     }
-    canvas.drawCircle(.new(x, y), 2, paint);
+    canvas.drawCircle(.new(x, y), _pointRadius, paint);
   }
-
-  @override
-  bool shouldRepaint(_AuraChartPainter oldDelegate) => true;
 
   void _paintPie(Canvas canvas, Size size) {
     final values = series.single.values;
