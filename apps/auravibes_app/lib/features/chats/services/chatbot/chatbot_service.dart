@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/repositories/service_connection_repository.da
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
+import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/provider_factory.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
@@ -54,7 +55,7 @@ class ChatbotService({
       returnToolRequests: true,
     );
 
-    var pendingThinking = StringBuffer();
+    final pendingThinking = StringBuffer();
     final generationEvents = responseStream
         .map((chunk) {
           final thinking = _extractThinking(chunk);
@@ -63,61 +64,15 @@ class ChatbotService({
           return chunk.text;
         })
         .transform(const ChatA2uiParserTransformer());
-    await for (final event in generationEvents) {
-      switch (event) {
-        case ChatA2uiMessageEvent(:final message):
-          final runtime = a2uiRuntime;
-          if (runtime == null || !runtime.enabled) continue;
-          yield const ChatResult<ChatMessage>(
-            output: ChatMessage(role: .model),
-            metadata: {'a2uiPresent': true},
-          );
-          runtime.addProtocolMessage(message);
-        case ChatA2uiInvalidEvent(
-          :final issue,
-          :final wireSurfaceId,
-          :final diagnosticPayloadJson,
-        ):
-          final runtime = a2uiRuntime;
-          if (runtime == null || !runtime.enabled) continue;
-          yield const ChatResult<ChatMessage>(
-            output: ChatMessage(role: .model),
-            metadata: {'a2uiPresent': true},
-          );
-          runtime.recordIssue(
-            issue,
-            surfaceId: wireSurfaceId,
-            diagnosticPayloadJson: diagnosticPayloadJson,
-          );
-        case ChatA2uiTextEvent(:final text):
-          if (text.isEmpty) continue;
-          final thinking = pendingThinking.isEmpty
-              ? null
-              : pendingThinking.toString();
-          pendingThinking = StringBuffer();
-          yield ChatResult<ChatMessage>(
-            output: ChatMessage(role: .model, content: text),
-            thinking: thinking,
-          );
-      }
-    }
-
-    if (pendingThinking.isNotEmpty) {
-      yield ChatResult<ChatMessage>(
-        output: const ChatMessage(role: .model),
-        thinking: pendingThinking.toString(),
-      );
-    }
+    yield* _streamGenerationEvents(
+      generationEvents,
+      a2uiRuntime,
+      pendingThinking,
+    );
 
     a2uiRuntime?.commitCurrentMessage();
     final finalResult = _finalChatResult(await responseStream.onResult);
-    if (a2uiRuntime?.requiresUserAction == true) {
-      yield finalResult.copyWith(
-        metadata: {...finalResult.metadata, 'a2uiRequiresUserAction': true},
-      );
-    } else {
-      yield finalResult;
-    }
+    yield _withA2uiState(finalResult, a2uiRuntime);
   }
 
   Future<String> generateTitle(
@@ -161,6 +116,105 @@ class ChatbotService({
 
   static String generateFallbackTitle(String message) =>
       fallbackConversationTitle(message);
+
+  Stream<ChatResult<ChatMessage>> _streamGenerationEvents(
+    Stream<ChatA2uiGenerationEvent> events,
+    ChatA2uiRuntime? runtime,
+    StringBuffer pendingThinking,
+  ) async* {
+    await for (final event in events) {
+      yield* _streamGenerationEvent(event, runtime, pendingThinking);
+    }
+    if (pendingThinking.isNotEmpty) {
+      yield ChatResult<ChatMessage>(
+        output: const ChatMessage(role: .model),
+        thinking: pendingThinking.toString(),
+      );
+    }
+  }
+
+  Stream<ChatResult<ChatMessage>> _streamGenerationEvent(
+    ChatA2uiGenerationEvent event,
+    ChatA2uiRuntime? runtime,
+    StringBuffer pendingThinking,
+  ) => switch (event) {
+    ChatA2uiMessageEvent(:final message) => _streamA2uiMessage(
+      runtime,
+      message,
+    ),
+    ChatA2uiInvalidEvent(
+      :final issue,
+      :final wireSurfaceId,
+      :final diagnosticPayloadJson,
+    ) =>
+      _streamA2uiIssue(runtime, issue, wireSurfaceId, diagnosticPayloadJson),
+    ChatA2uiTextEvent(:final text) => _streamTextEvent(text, pendingThinking),
+  };
+
+  Stream<ChatResult<ChatMessage>> _streamA2uiMessage(
+    ChatA2uiRuntime? runtime,
+    ChatA2uiProtocolMessage message,
+  ) async* {
+    if (runtime == null || !runtime.enabled) return;
+
+    yield const ChatResult<ChatMessage>(
+      output: ChatMessage(role: .model),
+      metadata: {'a2uiPresent': true},
+    );
+    runtime.addProtocolMessage(message);
+  }
+
+  Stream<ChatResult<ChatMessage>> _streamA2uiIssue(
+    ChatA2uiRuntime? runtime,
+    ChatA2uiSurfaceIssue issue,
+    String? wireSurfaceId,
+    String? diagnosticPayloadJson,
+  ) async* {
+    if (runtime == null || !runtime.enabled) return;
+
+    yield const ChatResult<ChatMessage>(
+      output: ChatMessage(role: .model),
+      metadata: {'a2uiPresent': true},
+    );
+    runtime.recordIssue(
+      issue,
+      surfaceId: wireSurfaceId,
+      diagnosticPayloadJson: diagnosticPayloadJson,
+    );
+  }
+
+  Stream<ChatResult<ChatMessage>> _streamTextEvent(
+    String text,
+    StringBuffer pendingThinking,
+  ) async* {
+    if (text.isEmpty) return;
+    yield ChatResult<ChatMessage>(
+      output: ChatMessage(role: .model, content: text),
+      thinking: _takeThinking(pendingThinking),
+    );
+  }
+
+  String? _takeThinking(StringBuffer pendingThinking) {
+    if (pendingThinking.isEmpty) return null;
+
+    final thinking = pendingThinking.toString();
+    pendingThinking.clear();
+
+    return thinking;
+  }
+
+  ChatResult<ChatMessage> _withA2uiState(
+    ChatResult<ChatMessage> result,
+    ChatA2uiRuntime? runtime,
+  ) {
+    if (runtime?.requiresUserAction == true) {
+      return result.copyWith(
+        metadata: {...result.metadata, 'a2uiRequiresUserAction': true},
+      );
+    }
+
+    return result;
+  }
 
   List<Tool<Map<String, Object?>, Object?>>? _defineGenkitTools(
     Genkit ai,
@@ -239,15 +293,11 @@ class ChatbotService({
 
     final normalized = normalizeCompletionResult(
       hasToolCalls: finalResponse.toolRequests.isNotEmpty,
-      providerFinishReason:
-          finalResponse.candidates?.firstOrNull?.finishReason.value,
-      promptTokens: finalResponse.usage?.inputTokens?.toInt(),
-      responseTokens: finalResponse.usage?.outputTokens?.toInt(),
-      totalTokens: finalResponse.usage?.totalTokens?.toInt(),
-      metadata:
-          finalResponse.candidates?.firstOrNull?.message.metadata
-              ?.cast<String, Object?>() ??
-          const <String, Object?>{},
+      providerFinishReason: _providerFinishReason(finalResponse),
+      promptTokens: _promptTokens(finalResponse),
+      responseTokens: _responseTokens(finalResponse),
+      totalTokens: _totalTokens(finalResponse),
+      metadata: _responseMetadata(finalResponse),
     );
 
     return ChatResult<ChatMessage>(
@@ -257,4 +307,23 @@ class ChatbotService({
       metadata: normalized.metadata,
     );
   }
+
+  String? _providerFinishReason(GenerateResponseHelper<Object?> response) =>
+      response.candidates?.firstOrNull?.finishReason.value;
+
+  int? _promptTokens(GenerateResponseHelper<Object?> response) =>
+      response.usage?.inputTokens?.toInt();
+
+  int? _responseTokens(GenerateResponseHelper<Object?> response) =>
+      response.usage?.outputTokens?.toInt();
+
+  int? _totalTokens(GenerateResponseHelper<Object?> response) =>
+      response.usage?.totalTokens?.toInt();
+
+  Map<String, Object?> _responseMetadata(
+    GenerateResponseHelper<Object?> response,
+  ) =>
+      response.candidates?.firstOrNull?.message.metadata
+          ?.cast<String, Object?>() ??
+      const <String, Object?>{};
 }
