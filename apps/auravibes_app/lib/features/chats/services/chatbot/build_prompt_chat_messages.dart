@@ -95,6 +95,22 @@ class const BuildPromptChatMessages({
 
   agent.AgentPromptMessage _toAgentPromptMessage(MessageEntity message) {
     final metadata = message.metadata;
+
+    return agent.AgentPromptMessage(
+      content: _promptContent(message),
+      isUser: message.isUser,
+      type: message.messageType == MessageType.system
+          ? agent.AgentPromptMessageType.system
+          : agent.AgentPromptMessageType.text,
+      isCompactionSummary: metadata?.isCompactionSummary ?? false,
+      thinking: metadata?.thinking,
+      modelMetadata: metadata?.modelMetadata ?? const {},
+      toolCalls: _toAgentToolCalls(metadata?.toolCalls),
+    );
+  }
+
+  String _promptContent(MessageEntity message) {
+    final metadata = message.metadata;
     final action = agent.A2uiChatContract.decodeActionMetadata(
       metadata?.modelMetadata,
       conversationId: message.conversationId,
@@ -110,28 +126,21 @@ class const BuildPromptChatMessages({
       });
     }
 
-    return agent.AgentPromptMessage(
-      content: content,
-      isUser: message.isUser,
-      type: message.messageType == MessageType.system
-          ? agent.AgentPromptMessageType.system
-          : agent.AgentPromptMessageType.text,
-      isCompactionSummary: metadata?.isCompactionSummary ?? false,
-      thinking: metadata?.thinking,
-      modelMetadata: metadata?.modelMetadata ?? const {},
-      toolCalls: [
-        for (final toolCall
-            in metadata?.toolCalls ?? const <MessageToolCallEntity>[])
-          agent.AgentPromptToolCall(
-            id: toolCall.id,
-            name: toolCall.name,
-            arguments: toolCall.arguments,
-            isResolved: toolCall.isResolved,
-            response: toolCall.getResponseForAI(),
-          ),
-      ],
-    );
+    return content;
   }
+
+  List<agent.AgentPromptToolCall> _toAgentToolCalls(
+    List<MessageToolCallEntity>? toolCalls,
+  ) => [
+    for (final toolCall in toolCalls ?? const <MessageToolCallEntity>[])
+      agent.AgentPromptToolCall(
+        id: toolCall.id,
+        name: toolCall.name,
+        arguments: toolCall.arguments,
+        isResolved: toolCall.isResolved,
+        response: toolCall.getResponseForAI(),
+      ),
+  ];
 
   ChatMessage _toChatMessage(agent.AgentChatMessage message) {
     return ChatMessage(
