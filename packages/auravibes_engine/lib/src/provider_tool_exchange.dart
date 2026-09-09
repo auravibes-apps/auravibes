@@ -35,7 +35,7 @@ CompletionResult normalizeCompletionResult({
           responseTokens: responseTokens,
           totalTokens: totalTokens,
         ),
-  metadata: Map.unmodifiable(metadata),
+  metadata: .unmodifiable(metadata),
 );
 
 class const ProviderToolCallRecord({

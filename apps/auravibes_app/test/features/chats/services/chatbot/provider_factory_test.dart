@@ -1,7 +1,6 @@
 // Required: Tests repeat generation config lookups for readability.
 // Required: Tests keep helper functions top-level.
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -30,7 +29,7 @@ void main() {
       bool supportsReasoning = false,
     }) {
       return WorkspaceModelSelectionWithConnectionEntity(
-        workspaceModelSelection: WorkspaceModelSelectionEntity(
+        workspaceModelSelection: .new(
           id: 'ws1',
           modelId: modelId,
           createdAt: DateTime(2025),
@@ -38,7 +37,7 @@ void main() {
           modelConnectionId: 'mc1',
           supportsReasoning: supportsReasoning,
         ),
-        modelConnection: ModelConnectionEntity(
+        modelConnection: .new(
           id: 'mc1',
           name: 'Test',
           modelId: connectionModelId ?? modelId,
@@ -49,7 +48,7 @@ void main() {
           authMode: authMode,
           url: connectionUrl,
         ),
-        modelsProvider: ApiModelProviderEntity(
+        modelsProvider: .new(
           id: providerId,
           name: providerName,
           type: type,
@@ -59,7 +58,7 @@ void main() {
     }
 
     test('creates Genkit for openai provider', () async {
-      final config = makeConfig(type: ModelProvidersType.openai);
+      final config = makeConfig(type: .openai);
       final ai = await factory.createGenkit(config);
 
       expect(ai, isA<Genkit>());
@@ -71,9 +70,9 @@ void main() {
         resolveOAuthAccessToken: (_) async => 'oauth-token',
       );
       final config = makeConfig(
-        type: ModelProvidersType.openai,
+        type: .openai,
         connectionModelId: ModelProviderOAuthProfiles.providerId,
-        authMode: ModelProviderAuthMode.oauth2,
+        authMode: .oauth2,
       );
 
       final ai = await oauthFactory.createGenkit(config);
@@ -83,9 +82,9 @@ void main() {
 
     test('resolves Codex OAuth model reference with Codex namespace', () {
       final config = makeConfig(
-        type: ModelProvidersType.openai,
+        type: .openai,
         connectionModelId: ModelProviderOAuthProfiles.providerId,
-        authMode: ModelProviderAuthMode.oauth2,
+        authMode: .oauth2,
       );
 
       final ref = factory.getModelReference(config);
@@ -99,7 +98,7 @@ void main() {
           apiKey: 'legacy-api-key',
         ),
       );
-      final config = makeConfig(type: ModelProvidersType.openai);
+      final config = makeConfig(type: .openai);
 
       final ai = await legacyFactory.createGenkit(config);
 
@@ -107,10 +106,7 @@ void main() {
     });
 
     test('creates Genkit for anthropic provider', () async {
-      final config = makeConfig(
-        type: ModelProvidersType.anthropic,
-        modelId: 'claude-sonnet-4-0',
-      );
+      final config = makeConfig(type: .anthropic, modelId: 'claude-sonnet-4-0');
       final ai = await factory.createGenkit(config);
 
       expect(ai, isA<Genkit>());
@@ -118,7 +114,7 @@ void main() {
 
     test('creates Genkit for openrouter provider', () async {
       final config = makeConfig(
-        type: ModelProvidersType.openrouter,
+        type: .openrouter,
         modelId: 'anthropic/claude-sonnet-4',
         providerId: 'openrouter',
         providerName: 'OpenRouter',
@@ -130,17 +126,14 @@ void main() {
     });
 
     test('resolves model reference for openai provider', () {
-      final config = makeConfig(type: ModelProvidersType.openai);
+      final config = makeConfig(type: .openai);
       final ref = factory.getModelReference(config);
 
       expect(ref.name, 'openai/gpt-4o');
     });
 
     test('resolves model reference for anthropic provider', () {
-      final config = makeConfig(
-        type: ModelProvidersType.anthropic,
-        modelId: 'claude-sonnet-4-0',
-      );
+      final config = makeConfig(type: .anthropic, modelId: 'claude-sonnet-4-0');
       final ref = factory.getModelReference(config);
 
       expect(ref.name, 'anthropic/claude-sonnet-4-0');
@@ -148,7 +141,7 @@ void main() {
 
     test('resolves model reference for openrouter provider', () {
       final config = makeConfig(
-        type: ModelProvidersType.openrouter,
+        type: .openrouter,
         modelId: 'anthropic/claude-sonnet-4',
       );
       final ref = factory.getModelReference(config);
@@ -157,10 +150,7 @@ void main() {
     });
 
     test('uses typed anthropic model reference for anthropic provider', () {
-      final config = makeConfig(
-        type: ModelProvidersType.anthropic,
-        modelId: 'claude-sonnet-4-0',
-      );
+      final config = makeConfig(type: .anthropic, modelId: 'claude-sonnet-4-0');
       final ref = factory.getModelReference(config);
 
       expect(ref.customOptions, same(AnthropicOptions.$schema));
@@ -168,7 +158,7 @@ void main() {
 
     test('resolves anthropic provider URL with anthropic namespace', () {
       final config = makeConfig(
-        type: ModelProvidersType.anthropic,
+        type: .anthropic,
         modelId: 'claude-sonnet-4-0',
         providerUrl: 'https://api.anthropic.com/v1',
       );
@@ -181,7 +171,7 @@ void main() {
       'resolves model reference to openai for anthropic with custom baseUrl',
       () {
         final config = makeConfig(
-          type: ModelProvidersType.anthropic,
+          type: .anthropic,
           modelId: 'claude-sonnet-4-0',
           connectionUrl: 'https://custom-proxy.example.com/v1',
         );
@@ -193,7 +183,7 @@ void main() {
 
     test('resolves OpenAI-compatible reasoning model to custom namespace', () {
       final config = makeConfig(
-        type: ModelProvidersType.openai,
+        type: .openai,
         modelId: 'glm-4.5',
         providerUrl: 'https://openai-compatible.example.com/v1',
         supportsReasoning: true,
@@ -204,10 +194,7 @@ void main() {
     });
 
     test('enables thinking config for reasoning-capable anthropic models', () {
-      final config = makeConfig(
-        type: ModelProvidersType.anthropic,
-        supportsReasoning: true,
-      );
+      final config = makeConfig(type: .anthropic, supportsReasoning: true);
 
       expect(
         _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
@@ -218,10 +205,7 @@ void main() {
     });
 
     test('does not infer anthropic reasoning from known model ids', () {
-      final config = makeConfig(
-        type: ModelProvidersType.anthropic,
-        modelId: 'claude-sonnet-4-5',
-      );
+      final config = makeConfig(type: .anthropic, modelId: 'claude-sonnet-4-5');
 
       expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
@@ -234,7 +218,7 @@ void main() {
         'claude-sonnet-4-6',
       ]) {
         final config = makeConfig(
-          type: ModelProvidersType.anthropic,
+          type: .anthropic,
           modelId: modelId,
           supportsReasoning: true,
         );
@@ -250,7 +234,7 @@ void main() {
 
     test('uses manual thinking for older anthropic reasoning models', () {
       final config = makeConfig(
-        type: ModelProvidersType.anthropic,
+        type: .anthropic,
         modelId: 'claude-sonnet-4-5',
         supportsReasoning: true,
       );
@@ -264,14 +248,14 @@ void main() {
     });
 
     test('does not enable thinking for non-reasoning anthropic models', () {
-      final config = makeConfig(type: ModelProvidersType.anthropic);
+      final config = makeConfig(type: .anthropic);
 
       expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
     test('does not enable thinking for anthropic custom baseUrl', () {
       final config = makeConfig(
-        type: ModelProvidersType.anthropic,
+        type: .anthropic,
         supportsReasoning: true,
         connectionUrl: 'https://custom-proxy.example.com/v1',
       );
@@ -281,7 +265,7 @@ void main() {
 
     test('enables thinking config for OpenAI-compatible reasoning models', () {
       final config = makeConfig(
-        type: ModelProvidersType.openai,
+        type: .openai,
         modelId: 'glm-4.5',
         providerUrl: 'https://openai-compatible.example.com/v1',
         supportsReasoning: true,
@@ -297,7 +281,7 @@ void main() {
       'falls back to OpenAI namespace when reasoning model has no base URL',
       () {
         final config = makeConfig(
-          type: ModelProvidersType.openai,
+          type: .openai,
           modelId: 'glm-4.5',
           supportsReasoning: true,
         );

@@ -62,7 +62,7 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
     required bool isEnabled,
   }) async {
     final _ = await (update(mcpServers)..where((t) => t.id.equals(id))).write(
-      McpServersCompanion(isEnabled: Value(isEnabled)),
+      McpServersCompanion(isEnabled: .new(isEnabled)),
     );
 
     return await getMcpServerById(id);

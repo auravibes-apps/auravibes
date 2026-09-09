@@ -1,6 +1,5 @@
 import 'package:auravibes_app/data/repositories/last_workspace_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:auravibes_app/features/workspaces/usecases/resolve_workspace_selection_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -125,8 +124,8 @@ WorkspaceEntity _workspace(String id) {
   return WorkspaceEntity(
     id: id,
     name: 'Workspace',
-    type: WorkspaceType.local,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    type: .local,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }

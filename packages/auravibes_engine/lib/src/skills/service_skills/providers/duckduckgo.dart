@@ -4,7 +4,6 @@ import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/url_request.dart';
 import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
@@ -54,7 +53,7 @@ CancelableOperation<Object?> _search(
   final body = '${Uri(queryParameters: {'q': query, 'kl': region}).query}&b=';
 
   return context(
-    UrlRequest(
+    .new(
       url: _endpoint,
       method: UrlRequestMethod.post,
       headers: const {
@@ -158,11 +157,11 @@ String _decodeHtmlText(String value) {
       .replaceAll(RegExp('<[^>]*>'), ' ')
       .replaceAllMapped(
         RegExp(r'&#(\d+);'),
-        (match) => String.fromCharCode(int.parse(match.group(1)!)),
+        (match) => String.fromCharCode(.parse(match.group(1)!)),
       )
       .replaceAllMapped(
         RegExp('&#x([0-9a-f]+);', caseSensitive: false),
-        (match) => String.fromCharCode(int.parse(match.group(1)!, radix: 16)),
+        (match) => String.fromCharCode(.parse(match.group(1)!, radix: 16)),
       )
       .replaceAll(RegExp('&nbsp;', caseSensitive: false), ' ')
       .replaceAll(RegExp('&amp;', caseSensitive: false), '&')

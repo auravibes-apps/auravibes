@@ -57,7 +57,7 @@ class AuraRadioListTile<T> extends StatelessWidget {
         child: Opacity(
           opacity: isDisabled ? 0.6 : 1.0,
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               ExcludeSemantics(
                 child: AuraRadio<T>(
@@ -71,8 +71,8 @@ class AuraRadioListTile<T> extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
                   children: [
                     DefaultTextStyle(
                       style:
@@ -101,7 +101,7 @@ class AuraRadioListTile<T> extends StatelessWidget {
           ),
         ),
         onTap: onTap,
-        behavior: HitTestBehavior.opaque,
+        behavior: .opaque,
         excludeFromSemantics: true,
       ),
     );

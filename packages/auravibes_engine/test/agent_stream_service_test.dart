@@ -24,10 +24,7 @@ void main() {
 
       final result = await usecase.call(
         conversationId: 'c1',
-        responseStream: Stream.fromIterable([
-          const _Chunk('a'),
-          const _Chunk('b'),
-        ]),
+        responseStream: .fromIterable([const _Chunk('a'), const _Chunk('b')]),
         pendingUserMessageIds: const ['u1'],
       );
 
@@ -112,7 +109,7 @@ void main() {
       await expectLater(
         usecase.call(
           conversationId: 'c1',
-          responseStream: Stream.error(StateError('boom')),
+          responseStream: .error(StateError('boom')),
           pendingUserMessageIds: const ['u1'],
         ),
         throwsA(isA<StateError>()),
@@ -139,10 +136,7 @@ void main() {
       await expectLater(
         usecase.call(
           conversationId: 'c1',
-          responseStream: Stream.fromIterable([
-            const _Chunk('a'),
-            const _Chunk('b'),
-          ]),
+          responseStream: .fromIterable([const _Chunk('a'), const _Chunk('b')]),
           pendingUserMessageIds: const [],
         ),
         throwsA(isA<StateError>()),
@@ -177,10 +171,7 @@ void main() {
 
       final result = await usecase.call(
         conversationId: 'c1',
-        responseStream: Stream.fromIterable([
-          const _Chunk('a'),
-          const _Chunk('b'),
-        ]),
+        responseStream: .fromIterable([const _Chunk('a'), const _Chunk('b')]),
         pendingUserMessageIds: const ['u1'],
       );
 

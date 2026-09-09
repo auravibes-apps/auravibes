@@ -11,9 +11,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: const Scaffold(
-          body: AppErrorWidget(error: error, stackTrace: StackTrace.empty),
+          body: AppErrorWidget(error: error, stackTrace: .empty),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -30,9 +30,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: const Scaffold(
-          body: AppErrorWidget(error: 42, stackTrace: StackTrace.empty),
+          body: AppErrorWidget(error: 42, stackTrace: .empty),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -49,11 +49,11 @@ void main() {
         home: Scaffold(
           body: AppErrorWidget(
             error: StateError('failed'),
-            stackTrace: StackTrace.empty,
+            stackTrace: .empty,
             action: const Text('Retry'),
           ),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -71,7 +71,7 @@ void main() {
         home: Scaffold(
           body: AppErrorWidget(error: error, stackTrace: stackTrace),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

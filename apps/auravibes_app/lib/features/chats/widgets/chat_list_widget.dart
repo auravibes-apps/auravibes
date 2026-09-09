@@ -59,15 +59,15 @@ class const _ChatListEmptyState({required final String workspaceId})
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
           children: [
-            const AuraIcon(Icons.chat_outlined, size: AuraIconSize.extraLarge),
+            const AuraIcon(Icons.chat_outlined, size: .extraLarge),
             const SizedBox(height: 16),
             const AuraText(
               child: TextLocale(
                 LocaleKeys.home_screen_conversation_states_no_chats_yet,
               ),
-              style: AuraTextStyle.heading3,
+              style: .heading3,
             ),
             const SizedBox(height: 8),
             const AuraText(
@@ -75,7 +75,7 @@ class const _ChatListEmptyState({required final String workspaceId})
                 LocaleKeys
                     .home_screen_conversation_states_start_first_conversation,
               ),
-              textAlign: TextAlign.center,
+              textAlign: .center,
             ),
             const SizedBox(height: 16),
             AuraButton(
@@ -125,26 +125,26 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
 
     return AuraCard(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Row(
                   children: [
                     if (widget.chat.isPinned) ...[
                       const AuraIcon(
                         Icons.push_pin_outlined,
-                        size: AuraIconSize.small,
-                        tint: AuraTint.warning,
+                        size: .small,
+                        tint: .warning,
                       ),
                       const SizedBox(width: 8),
                     ],
                     Expanded(
                       child: AuraText(
-                        child: Text(title, overflow: TextOverflow.ellipsis),
-                        style: AuraTextStyle.heading6,
+                        child: Text(title, overflow: .ellipsis),
+                        style: .heading6,
                       ),
                     ),
                   ],
@@ -153,26 +153,23 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                 AuraText(
                   child: Text(
                     RelativeTimeFormatter.format(widget.chat.updatedAt),
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                   ),
-                  style: AuraTextStyle.bodySmall,
+                  style: .bodySmall,
                 ),
               ],
             ),
           ),
           if (modelDisplayName != null) ...[
             const SizedBox(width: 8),
-            AuraBadge.text(
-              child: Text(modelDisplayName),
-              variant: AuraBadgeVariant.info,
-            ),
+            AuraBadge.text(child: Text(modelDisplayName), variant: .info),
           ],
           const SizedBox(width: 8),
           AuraPopupMenu(
             child: AuraIconButton(
               icon: Icons.more_vert,
               onPressed: _menuController.toggle,
-              size: AuraIconSize.small,
+              size: .small,
               tooltip: LocaleKeys
                   .chats_screens_chat_conversation_options_tooltip
                   .tr(),
@@ -182,7 +179,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                 title: const TextLocale(LocaleKeys.common_delete),
                 onTap: () => _handleDelete(context),
                 leading: const AuraIcon(Icons.delete_outline),
-                variant: AuraTileVariant.error,
+                variant: .error,
               ),
             ],
             controller: _menuController,
@@ -190,7 +187,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
         ],
       ),
       onTap: () => _openConversation(context),
-      style: AuraCardStyle.border,
+      style: .border,
     );
   }
 

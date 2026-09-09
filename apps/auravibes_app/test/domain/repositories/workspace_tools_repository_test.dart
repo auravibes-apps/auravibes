@@ -50,9 +50,9 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
       workspaceId: workspaceId,
       toolId: toolType,
       isEnabled: isEnabled,
-      permissionMode: ToolPermissionMode.alwaysAsk,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
+      permissionMode: .alwaysAsk,
+      createdAt: .new(2024),
+      updatedAt: .new(2024),
     );
   }
 
@@ -74,9 +74,9 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
       workspaceId: 'ws-1',
       toolId: 'tool-1',
       isEnabled: isEnabled,
-      permissionMode: ToolPermissionMode.alwaysAsk,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
+      permissionMode: .alwaysAsk,
+      createdAt: .new(2024),
+      updatedAt: .new(2024),
     );
   }
 
@@ -140,8 +140,8 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
       toolId: 'tool-1',
       isEnabled: true,
       permissionMode: permissionMode,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
+      createdAt: .new(2024),
+      updatedAt: .new(2024),
     );
   }
 }
@@ -273,7 +273,7 @@ void main() {
 
       final result = await repo.setToolPermissionMode(
         'wt-1',
-        permissionMode: ToolPermissionMode.alwaysAllow,
+        permissionMode: .alwaysAllow,
       );
 
       expect(result.id, 'wt-1');

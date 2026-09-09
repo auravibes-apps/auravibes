@@ -19,7 +19,7 @@ final _Defaults snackbarDefaults = _Defaults(
   builder: (context, args) => SnackBarDemo(
     variant: args.variant,
     showAction: args.showAction,
-    duration: Duration(seconds: args.durationSeconds),
+    duration: .new(seconds: args.durationSeconds),
   ),
 );
 
@@ -68,11 +68,11 @@ class const SnackBarDemo({
 
   String _getMessage() {
     return switch (variant) {
-      AuraSnackBarVariant.default_ => 'This is a default snackbar message.',
-      AuraSnackBarVariant.success => 'Operation completed successfully!',
-      AuraSnackBarVariant.error => 'An error occurred. Please try again.',
-      AuraSnackBarVariant.warning => 'Warning: This action cannot be undone.',
-      AuraSnackBarVariant.info => 'New updates are available.',
+      .default_ => 'This is a default snackbar message.',
+      .success => 'Operation completed successfully!',
+      .error => 'An error occurred. Please try again.',
+      .warning => 'Warning: This action cannot be undone.',
+      .info => 'New updates are available.',
     };
   }
 

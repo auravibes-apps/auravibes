@@ -111,7 +111,7 @@ class const AppAllowedToolsDataProvider({
       }
 
       final effective = await agent.resolveEffectiveToolApprovalTarget(
-        requestedTarget: agent.AgentResolvedToolName.skillControl(
+        requestedTarget: .skillControl(
           toolIdentifier: resolvedTool.toolIdentifier,
         ),
         arguments: decoded,
@@ -220,7 +220,7 @@ class const AppAllowedToolsDataProvider({
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
   }
 
@@ -247,7 +247,7 @@ class const AppAllowedToolsDataProvider({
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
   }
 }

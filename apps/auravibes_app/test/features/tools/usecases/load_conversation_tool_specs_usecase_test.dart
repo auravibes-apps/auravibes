@@ -15,7 +15,6 @@ import 'package:auravibes_app/features/skills/usecases/list_available_skills_use
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
-import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -234,11 +233,7 @@ void main() {
           String sourceId,
           ResolvedTool target,
         ) => ToolCatalogCandidate.external(
-          spec: ToolSpec(
-            name: name,
-            description: name,
-            inputJsonSchema: const {},
-          ),
+          spec: .new(name: name, description: name, inputJsonSchema: const {}),
           target: target,
           sourceId: sourceId,
         );
@@ -246,12 +241,12 @@ void main() {
         final calculatorA = ResolvedTool.builtIn(
           tableId: 'calculator-row-a',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         );
         final calculatorB = ResolvedTool.builtIn(
           tableId: 'calculator-row-b',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         );
         final githubSearch = ResolvedTool.mcp(
           tableId: 'github-search-row',
@@ -424,9 +419,9 @@ void main() {
           workspaceId: 'ws-1',
           toolId: 'tool1',
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAllow,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          permissionMode: .alwaysAllow,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
       ];
 
@@ -483,9 +478,9 @@ void main() {
             workspaceId: 'ws-1',
             toolId: loadSkillToolName,
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAsk,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            permissionMode: .alwaysAsk,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
             workspaceToolsGroupId: 'skills-group',
           ),
           WorkspaceToolEntity(
@@ -493,9 +488,9 @@ void main() {
             workspaceId: 'ws-1',
             toolId: unloadSkillToolName,
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAsk,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            permissionMode: .alwaysAsk,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
             workspaceToolsGroupId: 'skills-group',
           ),
         ]),
@@ -552,9 +547,9 @@ void main() {
               workspaceId: 'workspace-1',
               toolId: name,
               isEnabled: true,
-              permissionMode: ToolPermissionMode.alwaysAsk,
-              createdAt: DateTime(2026),
-              updatedAt: DateTime(2026),
+              permissionMode: .alwaysAsk,
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
             ),
         ]),
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),

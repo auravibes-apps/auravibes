@@ -168,42 +168,39 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
 
   IconData _getStatusIcon() {
     return switch (widget.status) {
-      AuraMessageDeliveryStatus.sending => Icons.access_time,
-      AuraMessageDeliveryStatus.unfinished => Icons.more_horiz,
-      AuraMessageDeliveryStatus.sent => Icons.done,
-      AuraMessageDeliveryStatus.delivered => Icons.done_all,
-      AuraMessageDeliveryStatus.read => Icons.done_all,
-      AuraMessageDeliveryStatus.error => Icons.error_outline,
+      .sending => Icons.access_time,
+      .unfinished => Icons.more_horiz,
+      .sent => Icons.done,
+      .delivered => Icons.done_all,
+      .read => Icons.done_all,
+      .error => Icons.error_outline,
     };
   }
 
   Color _getStatusColor(AuraColorScheme auraColors) {
     return switch (widget.status) {
-      AuraMessageDeliveryStatus.sending =>
-        auraColors.onSurfaceVariant.withValues(alpha: 0.6),
-      AuraMessageDeliveryStatus.unfinished => auraColors.warning.withValues(
-        alpha: 0.8,
-      ),
-      AuraMessageDeliveryStatus.sent => auraColors.onSurfaceVariant,
-      AuraMessageDeliveryStatus.delivered => auraColors.info,
-      AuraMessageDeliveryStatus.read => auraColors.success,
-      AuraMessageDeliveryStatus.error => auraColors.error,
+      .sending => auraColors.onSurfaceVariant.withValues(alpha: 0.6),
+      .unfinished => auraColors.warning.withValues(alpha: 0.8),
+      .sent => auraColors.onSurfaceVariant,
+      .delivered => auraColors.info,
+      .read => auraColors.success,
+      .error => auraColors.error,
     };
   }
 
   double _getIconSize() {
     return switch (widget.size) {
-      AuraMessageStatusSize.small => 12.0,
-      AuraMessageStatusSize.medium => 16.0,
-      AuraMessageStatusSize.large => 20.0,
+      .small => 12.0,
+      .medium => 16.0,
+      .large => 20.0,
     };
   }
 
   double _getPadding() {
     return switch (widget.size) {
-      AuraMessageStatusSize.small => _smallPadding,
-      AuraMessageStatusSize.medium => _mediumPadding,
-      AuraMessageStatusSize.large => _largePadding,
+      .small => _smallPadding,
+      .medium => _mediumPadding,
+      .large => _largePadding,
     };
   }
 
@@ -212,13 +209,12 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     if (semanticLabel != null) return semanticLabel;
 
     return switch (widget.status) {
-      AuraMessageDeliveryStatus.sending => 'Message is being sent',
-      AuraMessageDeliveryStatus.unfinished =>
-        'Message was interrupted before completion',
-      AuraMessageDeliveryStatus.sent => 'Message sent successfully',
-      AuraMessageDeliveryStatus.delivered => 'Message delivered',
-      AuraMessageDeliveryStatus.read => 'Message read by recipient',
-      AuraMessageDeliveryStatus.error => 'Message failed to send',
+      .sending => 'Message is being sent',
+      .unfinished => 'Message was interrupted before completion',
+      .sent => 'Message sent successfully',
+      .delivered => 'Message delivered',
+      .read => 'Message read by recipient',
+      .error => 'Message failed to send',
     };
   }
 }

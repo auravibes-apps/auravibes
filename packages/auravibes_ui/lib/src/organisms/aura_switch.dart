@@ -134,7 +134,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
                         decoration: BoxDecoration(
                           color: thumbColor,
                           boxShadow: isDisabled ? null : [DesignShadows.sm],
-                          shape: BoxShape.circle,
+                          shape: .circle,
                         ),
                         width: thumbSize,
                         height: thumbSize,
@@ -159,7 +159,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
             ),
           ),
           onTap: isInteractive ? handleToggle : null,
-          behavior: HitTestBehavior.opaque,
+          behavior: .opaque,
         ),
       ),
       enabled: isInteractive,
@@ -170,25 +170,25 @@ class _AuraSwitchState extends State<AuraSwitch> {
 
   double _getTrackWidth() {
     return switch (widget.size) {
-      AuraSwitchSize.sm => _smallTrackWidth,
-      AuraSwitchSize.base => _baseTrackWidth,
-      AuraSwitchSize.lg => _largeTrackWidth,
+      .sm => _smallTrackWidth,
+      .base => _baseTrackWidth,
+      .lg => _largeTrackWidth,
     };
   }
 
   double _getTrackHeight() {
     return switch (widget.size) {
-      AuraSwitchSize.sm => _smallTrackHeight,
-      AuraSwitchSize.base => _baseTrackHeight,
-      AuraSwitchSize.lg => _largeTrackHeight,
+      .sm => _smallTrackHeight,
+      .base => _baseTrackHeight,
+      .lg => _largeTrackHeight,
     };
   }
 
   double _getThumbSize() {
     return switch (widget.size) {
-      AuraSwitchSize.sm => _smallThumbSize,
-      AuraSwitchSize.base => _baseThumbSize,
-      AuraSwitchSize.lg => _largeThumbSize,
+      .sm => _smallThumbSize,
+      .base => _baseThumbSize,
+      .lg => _largeThumbSize,
     };
   }
 

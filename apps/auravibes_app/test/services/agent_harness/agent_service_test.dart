@@ -44,8 +44,8 @@ void main() {
           title: 'Conversation 1',
           workspaceId: 'workspace-1',
           isPinned: false,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
         ),
       );
 
@@ -54,11 +54,11 @@ void main() {
           id: 'queued-user-1',
           conversationId: 'conversation-1',
           content: 'Queued follow-up',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          status: .sending,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
         ),
       );
     });
@@ -72,7 +72,7 @@ void main() {
         () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         ),
@@ -86,7 +86,7 @@ void main() {
       final result = await fixture.usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
+          origin: .userMessage,
           ackMessageIds: ['user-1'],
         ),
       );
@@ -105,7 +105,7 @@ void main() {
         () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         ),
@@ -119,7 +119,7 @@ void main() {
       final _ = await fixture.usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
+          origin: .userMessage,
           ackMessageIds: ['user-1'],
         ),
       );
@@ -129,7 +129,7 @@ void main() {
           () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
+              origin: .userMessage,
               ackMessageIds: ['user-1'],
             ),
           ),
@@ -190,7 +190,7 @@ void main() {
         final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
@@ -253,7 +253,7 @@ void main() {
         final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
@@ -296,7 +296,7 @@ void main() {
       final result = await fixture.usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
+          origin: .userMessage,
           ackMessageIds: ['user-1'],
         ),
       );
@@ -335,7 +335,7 @@ void main() {
           conversationSendQueueRuntimeProvider,
         ),
         cancellationEffects: fixture.agentCancellationRuntime,
-        rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
+        rateLimitRetryRuntime: .new(
           start: fixture.rateLimitRetryRuntime.start,
           clear: fixture.rateLimitRetryRuntime.clear,
         ),
@@ -373,7 +373,7 @@ void main() {
       final result = await fixture.usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
+          origin: .userMessage,
           ackMessageIds: ['user-1'],
         ),
       );
@@ -425,7 +425,7 @@ void main() {
         final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
@@ -462,11 +462,11 @@ void main() {
               id: 'queued-user-1',
               conversationId: 'conversation-1',
               content: 'Queued follow-up',
-              messageType: MessageType.text,
+              messageType: .text,
               isUser: true,
-              status: MessageStatus.sending,
-              createdAt: DateTime(2025),
-              updatedAt: DateTime(2025),
+              status: .sending,
+              createdAt: .new(2025),
+              updatedAt: .new(2025),
             );
           });
       when(() => fixture.messageRepository.patchMessage(any(), any()))
@@ -475,18 +475,18 @@ void main() {
               id: 'queued-user-1',
               conversationId: 'conversation-1',
               content: 'Queued follow-up',
-              messageType: MessageType.text,
+              messageType: .text,
               isUser: true,
-              status: MessageStatus.sent,
-              createdAt: DateTime(2025),
-              updatedAt: DateTime(2025),
+              status: .sent,
+              createdAt: .new(2025),
+              updatedAt: .new(2025),
             ),
           );
 
       final result = await fixture.usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
+          origin: .userMessage,
           ackMessageIds: ['user-1'],
         ),
       );
@@ -516,7 +516,7 @@ void main() {
           () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
+              origin: .userMessage,
               ackMessageIds: ['user-1'],
             ),
           ),
@@ -536,7 +536,7 @@ void main() {
         final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
@@ -557,7 +557,7 @@ void main() {
         () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1', 'queued-user-1'],
           ),
         ),
@@ -571,7 +571,7 @@ void main() {
       final result = await fixture.usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
+          origin: .userMessage,
           ackMessageIds: ['user-1'],
         ),
       );
@@ -582,7 +582,7 @@ void main() {
         () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1', 'queued-user-1'],
           ),
         ),
@@ -647,7 +647,7 @@ void main() {
         final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
@@ -714,18 +714,18 @@ void main() {
                 id: 'queued-user-$createdCount',
                 conversationId: 'conversation-1',
                 content: 'Queued follow-up $createdCount',
-                messageType: MessageType.text,
+                messageType: .text,
                 isUser: true,
-                status: MessageStatus.sending,
-                createdAt: DateTime(2025),
-                updatedAt: DateTime(2025),
+                status: .sending,
+                createdAt: .new(2025),
+                updatedAt: .new(2025),
               );
             });
 
         final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
@@ -759,7 +759,7 @@ void main() {
         final _ = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
@@ -811,7 +811,7 @@ void main() {
           final _ = await fixture.usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
+              origin: .userMessage,
               ackMessageIds: ['user-1'],
             ),
           );
@@ -838,7 +838,7 @@ void main() {
           fixture.usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
+              origin: .userMessage,
               ackMessageIds: ['user-1'],
             ),
           ),
@@ -880,7 +880,7 @@ void main() {
           final _ = await fixture.usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
+              origin: .userMessage,
               ackMessageIds: ['user-1'],
             ),
           );
@@ -916,11 +916,11 @@ void main() {
                 id: 'queued-user-1',
                 conversationId: 'conversation-1',
                 content: 'Queued follow-up',
-                messageType: MessageType.text,
+                messageType: .text,
                 isUser: true,
-                status: MessageStatus.sending,
-                createdAt: DateTime(2025),
-                updatedAt: DateTime(2025),
+                status: .sending,
+                createdAt: .new(2025),
+                updatedAt: .new(2025),
               );
             });
         when(() => fixture.messageRepository.patchMessage(any(), any()))
@@ -929,18 +929,18 @@ void main() {
                 id: 'queued-user-1',
                 conversationId: 'conversation-1',
                 content: 'Queued follow-up',
-                messageType: MessageType.text,
+                messageType: .text,
                 isUser: true,
-                status: MessageStatus.sent,
-                createdAt: DateTime(2025),
-                updatedAt: DateTime(2025),
+                status: .sent,
+                createdAt: .new(2025),
+                updatedAt: .new(2025),
               ),
             );
 
         final _ = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
@@ -1062,11 +1062,11 @@ class _AgentServiceFixture._({
         tools: AppAgentLoopToolProvider(runAllowedToolsUsecase),
         sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
         cancellationEffects: agentCancellationRuntime,
-        rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
+        rateLimitRetryRuntime: .new(
           start: rateLimitRetryRuntime.start,
           clear: rateLimitRetryRuntime.clear,
         ),
-        rateLimitRetryDelay: Duration.zero,
+        rateLimitRetryDelay: .zero,
       ),
     );
   }

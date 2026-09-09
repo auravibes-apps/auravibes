@@ -60,7 +60,7 @@ void main() {
   Widget buildSubject() {
     return TestableApp(
       child: Theme(
-        data: ThemeData(extensions: [AuraTheme.light]),
+        data: .new(extensions: [AuraTheme.light]),
         child: const Scaffold(
           body: Material(
             child: CompactionSettingsSection(workspaceId: testWorkspaceId),

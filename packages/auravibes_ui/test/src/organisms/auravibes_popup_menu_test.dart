@@ -1,6 +1,5 @@
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -299,17 +298,17 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
       expect(controller.isShowing, isFalse);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
 
       expect(nextPressed, isTrue);
@@ -358,24 +357,24 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
       await tester.pump();
       expect(controller.isShowing, isTrue);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
 
       expect(selectedItem, isNotNull);

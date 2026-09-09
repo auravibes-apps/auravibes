@@ -36,7 +36,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -71,7 +71,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -96,7 +96,7 @@ void main() {
                     final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Success!'),
-                      variant: AuraSnackBarVariant.success,
+                      variant: .success,
                     );
                   },
                   child: const Text('Show'),
@@ -104,7 +104,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -127,7 +127,7 @@ void main() {
                     final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Error!'),
-                      variant: AuraSnackBarVariant.error,
+                      variant: .error,
                     );
                   },
                   child: const Text('Show'),
@@ -135,7 +135,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -157,7 +157,7 @@ void main() {
                     final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Warning!'),
-                      variant: AuraSnackBarVariant.warning,
+                      variant: .warning,
                     );
                   },
                   child: const Text('Show'),
@@ -165,7 +165,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -187,7 +187,7 @@ void main() {
                     final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Info!'),
-                      variant: AuraSnackBarVariant.info,
+                      variant: .info,
                     );
                   },
                   child: const Text('Show'),
@@ -195,7 +195,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -233,7 +233,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -289,7 +289,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -362,7 +362,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -401,7 +401,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -428,7 +428,7 @@ void main() {
                     final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Colored snackbar'),
-                      variant: AuraSnackBarVariant.error,
+                      variant: .error,
                     );
                   },
                   child: const Text('Show'),
@@ -436,7 +436,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -466,7 +466,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 

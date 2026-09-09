@@ -3,7 +3,6 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -67,9 +66,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
     String workspaceId,
-  ) => watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
-  );
+  ) => watchWorkspaceModelSelections(.new(workspaces: [workspaceId]));
 
   WorkspaceModelSelectionsCompanion _workspaceModelSelectionToCreateToCompanion(
     WorkspaceModelSelectionToCreate workspaceModelSelection,
@@ -89,7 +86,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
     final providerType = _mapToTypeTable(modelProvider?.type);
 
     return WorkspaceModelSelectionWithConnectionEntity(
-      workspaceModelSelection: WorkspaceModelSelectionEntity(
+      workspaceModelSelection: .new(
         id: withProvider.model.id,
         modelId: withProvider.model.modelId,
         createdAt: withProvider.model.createdAt,
@@ -101,7 +98,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
         supportsReasoning: withProvider.apiModel?.supportsReasoning ?? false,
         supportsToolCalls: withProvider.apiModel?.supportsToolCalls ?? false,
       ),
-      modelConnection: ModelConnectionEntity(
+      modelConnection: .new(
         id: withProvider.modelConnection.id,
         name: withProvider.modelConnection.name,
         modelId: serviceId,
@@ -117,7 +114,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
           withProvider.modelConnection.metadataJson,
         ),
       ),
-      modelsProvider: ApiModelProviderEntity(
+      modelsProvider: .new(
         id: modelProvider?.id ?? serviceId,
         name:
             modelProvider?.name ??
@@ -132,7 +129,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
 
   ModelProviderAuthMode _authMode(ServiceAuthenticationTypeTable type) {
     return switch (type) {
-      ServiceAuthenticationTypeTable.oauth2 => ModelProviderAuthMode.oauth2,
+      .oauth2 => ModelProviderAuthMode.oauth2,
       _ => ModelProviderAuthMode.apiKey,
     };
   }

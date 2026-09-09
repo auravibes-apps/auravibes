@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -54,14 +53,14 @@ void main() {
     expect(first.cloud?.cloudWorkspaceId, 1);
 
     workspaces.add([_workspace(cloudWorkspaceId: '2')]);
-    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(.zero);
     final second = await container.read(
       workspaceSessionForRouteProvider('local').future,
     );
     expect(second.cloud?.cloudWorkspaceId, 2);
 
     workspaces.add([]);
-    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(.zero);
     await expectLater(
       container.read(workspaceSessionForRouteProvider('local').future),
       throwsStateError,
@@ -144,9 +143,9 @@ WorkspaceEntity _workspace({
   return WorkspaceEntity(
     id: id,
     name: 'Cloud',
-    type: WorkspaceType.remote,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    type: .remote,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
     url: serverUrl,
     cloudWorkspaceId: cloudWorkspaceId,
     cloudAccountId: accountId,

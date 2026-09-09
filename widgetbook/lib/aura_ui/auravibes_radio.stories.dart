@@ -37,7 +37,7 @@ final $SingleRadio = _Story(
     ),
   ),
   scenarios: [
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Selects Radio',
       run: (tester, args) async {
@@ -65,7 +65,7 @@ class _SingleRadioDemoState extends State<SingleRadioDemo> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         for (var index = 0; index < widget.itemCount; index++) ...[
           AuraRadio<String>(

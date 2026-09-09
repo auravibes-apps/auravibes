@@ -35,9 +35,7 @@ void main() {
 
     final result = await usecase(
       conversationId: 'conversation-1',
-      context: const AgentIterationContext(
-        origin: AgentIterationOrigin.userMessage,
-      ),
+      context: const AgentIterationContext(origin: .userMessage),
     );
 
     expect(result, AgentIterationDecision.done);
@@ -51,9 +49,7 @@ void main() {
     expect(
       () => usecase(
         conversationId: 'conversation-1',
-        context: const AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
-        ),
+        context: const AgentIterationContext(origin: .userMessage),
       ),
       throwsA(isA<Exception>()),
     );
@@ -72,7 +68,7 @@ void main() {
     final result = await usecase(
       conversationId: 'conversation-1',
       context: const AgentIterationContext(
-        origin: AgentIterationOrigin.manualContinue,
+        origin: .manualContinue,
         ackMessageIds: ['existing'],
       ),
     );
@@ -96,9 +92,7 @@ void main() {
 
     final result = await usecase(
       conversationId: 'conversation-1',
-      context: const AgentIterationContext(
-        origin: AgentIterationOrigin.userMessage,
-      ),
+      context: const AgentIterationContext(origin: .userMessage),
     );
 
     expect(result, AgentIterationDecision.done);
@@ -114,7 +108,7 @@ void main() {
     );
     final usecase = _buildAgentService(
       dataProvider,
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
+      rateLimitRetryRuntime: .new(
         start: (_, retryAt) => retryEvents.add('start:$retryAt'),
         clear: (conversationId) => retryEvents.add('clear:$conversationId'),
       ),
@@ -129,9 +123,7 @@ void main() {
 
     final result = await usecase(
       conversationId: 'conversation-1',
-      context: const AgentIterationContext(
-        origin: AgentIterationOrigin.userMessage,
-      ),
+      context: const AgentIterationContext(origin: .userMessage),
     );
 
     expect(result, AgentIterationDecision.done);
@@ -162,9 +154,7 @@ void main() {
 
     final result = await usecase(
       conversationId: 'conversation-1',
-      context: const AgentIterationContext(
-        origin: AgentIterationOrigin.userMessage,
-      ),
+      context: const AgentIterationContext(origin: .userMessage),
     );
 
     expect(result, AgentIterationDecision.done);
@@ -191,9 +181,7 @@ void main() {
     await expectLater(
       usecase(
         conversationId: 'conversation-1',
-        context: const AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
-        ),
+        context: const AgentIterationContext(origin: .userMessage),
       ),
       throwsA(isA<Exception>()),
     );
@@ -211,7 +199,7 @@ void main() {
       dataProvider,
       sendQueueRuntime: sendQueue,
       cancellationEffects: cancellationRuntime,
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
+      rateLimitRetryRuntime: .new(
         start: (_, _) => cancellationRuntime.requestStop('conversation-1'),
         clear: (_) {},
       ),
@@ -225,9 +213,7 @@ void main() {
 
     final result = await usecase(
       conversationId: 'conversation-1',
-      context: const AgentIterationContext(
-        origin: AgentIterationOrigin.userMessage,
-      ),
+      context: const AgentIterationContext(origin: .userMessage),
     );
 
     expect(result, AgentIterationDecision.done);
@@ -244,9 +230,7 @@ void main() {
     expect(
       () => usecase(
         conversationId: 'conversation-1',
-        context: const AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
-        ),
+        context: const AgentIterationContext(origin: .userMessage),
       ),
       throwsA(isA<StateError>()),
     );
@@ -268,9 +252,7 @@ void main() {
 
     final result = await usecase(
       conversationId: 'conversation-1',
-      context: const AgentIterationContext(
-        origin: AgentIterationOrigin.userMessage,
-      ),
+      context: const AgentIterationContext(origin: .userMessage),
     );
 
     expect(result, AgentIterationDecision.done);
@@ -320,7 +302,7 @@ class _FakeAgentConversationDataProvider
   }) async {
     continuationContexts.add(context);
     if (continueErrors.isNotEmpty) {
-      Error.throwWithStackTrace(continueErrors.removeAt(0), StackTrace.current);
+      Error.throwWithStackTrace(continueErrors.removeAt(0), .current);
     }
 
     return continueResults.isEmpty

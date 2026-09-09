@@ -96,7 +96,7 @@ class const AgentToolExecutionService<TTool extends Object>({
         updates.add(
           AgentToolResultUpdate(
             toolCallId: toolToCall.id,
-            resultStatus: AgentToolResultStatus.stoppedByUser,
+            resultStatus: .stoppedByUser,
           ),
         );
         continue;
@@ -111,47 +111,47 @@ class const AgentToolExecutionService<TTool extends Object>({
       );
 
       switch (decision.permissionResult) {
-        case AgentToolPermissionResult.granted:
+        case .granted:
           grantedTools.add(toolToCall);
-        case AgentToolPermissionResult.needsConfirmation:
+        case .needsConfirmation:
           hasPendingTools = true;
-        case AgentToolPermissionResult.disabledInConversation:
+        case .disabledInConversation:
           updates.add(
             AgentToolResultUpdate(
               toolCallId: toolToCall.id,
-              resultStatus: AgentToolResultStatus.disabledInConversation,
+              resultStatus: .disabledInConversation,
               responseRaw:
                   'Tool "${provider.toolIdentifier(toolToCall.tool)}" is '
                   'disabled for '
                   'this conversation.',
             ),
           );
-        case AgentToolPermissionResult.disabledByAgent:
+        case .disabledByAgent:
           updates.add(
             AgentToolResultUpdate(
               toolCallId: toolToCall.id,
-              resultStatus: AgentToolResultStatus.disabledByAgent,
+              resultStatus: .disabledByAgent,
               responseRaw:
                   'Tool "${provider.toolIdentifier(toolToCall.tool)}" is '
                   'denied by the selected agent.',
             ),
           );
-        case AgentToolPermissionResult.disabledInWorkspace:
+        case .disabledInWorkspace:
           updates.add(
             AgentToolResultUpdate(
               toolCallId: toolToCall.id,
-              resultStatus: AgentToolResultStatus.disabledInWorkspace,
+              resultStatus: .disabledInWorkspace,
               responseRaw:
                   'Tool "${provider.toolIdentifier(toolToCall.tool)}" is '
                   'disabled in '
                   'workspace settings.',
             ),
           );
-        case AgentToolPermissionResult.notConfigured:
+        case .notConfigured:
           updates.add(
             AgentToolResultUpdate(
               toolCallId: toolToCall.id,
-              resultStatus: AgentToolResultStatus.notConfigured,
+              resultStatus: .notConfigured,
               responseRaw:
                   'Tool "${provider.toolIdentifier(toolToCall.tool)}" is not '
                   'configured. Enable it in workspace settings to use it.',
@@ -216,7 +216,7 @@ class const AgentToolExecutionService<TTool extends Object>({
       latestToolCalls.notFoundToolCallIds.map(
         (toolCallId) => AgentToolResultUpdate(
           toolCallId: toolCallId,
-          resultStatus: AgentToolResultStatus.toolNotFound,
+          resultStatus: .toolNotFound,
           responseRaw: 'Tool not found for tool call: $toolCallId.',
         ),
       ),
@@ -233,7 +233,7 @@ class const AgentToolExecutionService<TTool extends Object>({
       latestToolCalls.previouslyFailedToolCallIds.map(
         (toolCallId) => AgentToolResultUpdate(
           toolCallId: toolCallId,
-          resultStatus: AgentToolResultStatus.executionError,
+          resultStatus: .executionError,
           responseRaw:
               'Tool execution was already attempted and failed. Not retrying.',
         ),

@@ -145,7 +145,7 @@ class const BuildPromptChatMessages() {
       if (message.content.isNotEmpty) AgentChatPart.text(message.content),
       for (final toolCall in message.toolCalls)
         AgentChatPart.toolRequest(
-          AgentToolRequest(
+          .new(
             ref: toolCall.id,
             name: toolCall.name,
             input: toolCall.arguments,
@@ -157,7 +157,7 @@ class const BuildPromptChatMessages() {
       for (final toolCall in message.toolCalls)
         if (toolCall.isResolved)
           AgentChatPart.toolResponse(
-            AgentToolResponse(
+            .new(
               ref: toolCall.id,
               name: toolCall.name,
               output: toolCall.response,
@@ -173,7 +173,7 @@ class const BuildPromptChatMessages() {
           metadata: message.modelMetadata,
         ),
       if (resultParts.isNotEmpty)
-        AgentChatMessage(role: AgentChatMessageRole.tool, parts: resultParts),
+        AgentChatMessage(role: .tool, parts: resultParts),
     ];
   }
 }

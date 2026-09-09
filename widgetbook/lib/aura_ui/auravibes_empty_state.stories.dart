@@ -10,10 +10,8 @@ final $Example = _Story(
   name: 'AuraEmptyState',
   setup: (context, child, args) => SizedBox(width: 320, child: child),
   args: _Args(
-    title: Arg.fixed(const Text('No items yet')),
-    description: Arg.fixed(const Text('New items will appear here.')),
-    icon: Arg.fixed(
-      const AuraIcon(Icons.inbox_outlined, semanticLabel: 'Inbox'),
-    ),
+    title: .fixed(const Text('No items yet')),
+    description: .fixed(const Text('New items will appear here.')),
+    icon: .fixed(const AuraIcon(Icons.inbox_outlined, semanticLabel: 'Inbox')),
   ),
 );

@@ -19,17 +19,12 @@ void main() {
       workspace: workspace,
       readState: (_) => Completer<ReadWorkspaceStateResponse>().future,
       subscribe: (_) => const Stream.empty(),
-      readTimeout: Duration.zero,
+      readTimeout: .zero,
     );
 
     await expectLater(
       gateway.read(
-        pages: [
-          WorkspaceResourcePageRequest(
-            resourceKind: WorkspaceResourceKind.skill,
-            limit: 1,
-          ),
-        ],
+        pages: [WorkspaceResourcePageRequest(resourceKind: .skill, limit: 1)],
       ),
       throwsA(
         isA<CloudAppException>()
@@ -56,14 +51,11 @@ void main() {
             : Future.value(_response(sequence: 1));
       },
       subscribe: (_) => const Stream.empty(),
-      readTimeout: Duration.zero,
+      readTimeout: .zero,
     );
 
     final pages = [
-      WorkspaceResourcePageRequest(
-        resourceKind: WorkspaceResourceKind.skill,
-        limit: 1,
-      ),
+      WorkspaceResourcePageRequest(resourceKind: .skill, limit: 1),
     ];
 
     await expectLater(
@@ -74,11 +66,11 @@ void main() {
       gateway.read(pages: pages),
       throwsA(isA<CloudAppException>()),
     );
-    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(.zero);
     expect(reads, 1);
 
     firstResponse.complete(_response(sequence: 1));
-    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(.zero);
     expect(reads, 2);
   });
 
@@ -194,7 +186,7 @@ void main() {
     final done = gateway.watchResources(const [
       WorkspaceResourceKind.workspaceSetting,
     ]).drain<void>();
-    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(.zero);
 
     gateway.dispose();
 
@@ -211,11 +203,7 @@ void main() {
       subscribe: (_) {
         subscriptions++;
 
-        return Stream.error(
-          CloudWorkspaceException(
-            code: CloudWorkspaceErrorCode.membershipRequired,
-          ),
-        );
+        return Stream.error(CloudWorkspaceException(code: .membershipRequired));
       },
       delay: (_) => Future.value(),
     );
@@ -384,11 +372,11 @@ WorkspaceResource _resource(
 }
 
 WorkspaceStreamEnvelope _event(int sequence) => WorkspaceStreamEnvelope(
-  kind: WorkspaceStreamEnvelopeKind.workspaceInvalidated,
+  kind: .workspaceInvalidated,
   workspaceId: 7,
   sequence: sequence,
   eventId: 'event-$sequence',
   eventKind: 'workspace.invalidated',
   resourceKind: WorkspaceResourceKind.workspaceSetting.name,
-  createdAt: DateTime.utc(2026),
+  createdAt: .utc(2026),
 );

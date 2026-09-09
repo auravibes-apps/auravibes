@@ -24,7 +24,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -41,10 +41,10 @@ void main() {
     setUp(() async {
       fixture.reset();
       final ws = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       final conv = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(workspaceId: ws.id, title: 'Conv'),
+        .insert(workspaceId: ws.id, title: 'Conv'),
       );
       conversationId = conv.id;
     });
@@ -55,7 +55,7 @@ void main() {
 
     test('insertMessage creates and returns message', () async {
       final msg = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Hello',
           messageType: MessagesTableType.text,
@@ -69,7 +69,7 @@ void main() {
 
     test('getMessageById returns message', () async {
       final created = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Hi',
           messageType: MessagesTableType.text,
@@ -94,7 +94,7 @@ void main() {
 
     test('patchMessage updates fields', () async {
       final created = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Original',
           messageType: MessagesTableType.text,
@@ -104,10 +104,7 @@ void main() {
       );
       final patched = await fixture.database.messageDao.patchMessage(
         created.id,
-        MessagesCompanion(
-          updatedAt: Value(DateTime.now()),
-          content: const Value('Updated'),
-        ),
+        .new(updatedAt: Value(DateTime.now()), content: const Value('Updated')),
       );
       expect(patched, isNotNull);
       expect(
@@ -119,14 +116,14 @@ void main() {
     test('patchMessage returns null for nonexistent', () async {
       final patched = await fixture.database.messageDao.patchMessage(
         'missing',
-        const MessagesCompanion(content: Value('X')),
+        const MessagesCompanion(content: .new('X')),
       );
       expect(patched, isNull);
     });
 
     test('deleteMessage removes message', () async {
       final created = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Delete me',
           messageType: MessagesTableType.text,
@@ -153,7 +150,7 @@ void main() {
 
     test('getMessagesByConversation returns ordered messages', () async {
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'First',
           messageType: MessagesTableType.text,
@@ -162,7 +159,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Second',
           messageType: MessagesTableType.text,
@@ -181,7 +178,7 @@ void main() {
     test('getMessagesByConversationPaginated paginates correctly', () async {
       for (var i = 0; i < 5; i++) {
         final _ = await fixture.database.messageDao.insertMessage(
-          MessagesCompanion.insert(
+          .insert(
             conversationId: conversationId,
             content: 'Msg $i',
             messageType: MessagesTableType.text,
@@ -197,7 +194,7 @@ void main() {
 
     test('getMessagesByType filters by type', () async {
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Text msg',
           messageType: MessagesTableType.text,
@@ -206,7 +203,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'System msg',
           messageType: MessagesTableType.system,
@@ -216,7 +213,7 @@ void main() {
       );
       final textMsgs = await fixture.database.messageDao.getMessagesByType(
         conversationId,
-        MessagesTableType.text,
+        .text,
       );
       expect(textMsgs.length, equals(1));
       expect(textMsgs.firstOrNull?.content, equals('Text msg'));
@@ -224,7 +221,7 @@ void main() {
 
     test('getUserMessages returns only user messages', () async {
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'User',
           messageType: MessagesTableType.text,
@@ -233,7 +230,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'AI',
           messageType: MessagesTableType.text,
@@ -250,7 +247,7 @@ void main() {
 
     test('getSystemMessages returns only non-user messages', () async {
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'User',
           messageType: MessagesTableType.text,
@@ -259,7 +256,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'AI',
           messageType: MessagesTableType.text,
@@ -282,7 +279,7 @@ void main() {
         equals(0),
       );
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Msg',
           messageType: MessagesTableType.text,
@@ -300,7 +297,7 @@ void main() {
 
     test('messageExists returns correct state', () async {
       final created = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Exists',
           messageType: MessagesTableType.text,
@@ -320,7 +317,7 @@ void main() {
 
     test('getMessagesByStatus filters by status', () async {
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Sent',
           messageType: MessagesTableType.text,
@@ -329,7 +326,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Error',
           messageType: MessagesTableType.text,

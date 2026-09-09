@@ -1,5 +1,4 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
@@ -16,7 +15,7 @@ abstract final class MessageTranscriptSnapshotMapper {
     final metadata = message.metadata;
     final role = switch (message.messageType) {
       _ when message.isUser => AgentTranscriptRole.user,
-      MessageType.system => AgentTranscriptRole.system,
+      .system => AgentTranscriptRole.system,
       _ => AgentTranscriptRole.model,
     };
 
@@ -24,16 +23,16 @@ abstract final class MessageTranscriptSnapshotMapper {
       id: message.id,
       role: role,
       kind: switch (message.messageType) {
-        MessageType.text => AgentTranscriptKind.text,
-        MessageType.image => AgentTranscriptKind.image,
-        MessageType.toolCall => AgentTranscriptKind.toolCall,
-        MessageType.system => AgentTranscriptKind.system,
+        .text => AgentTranscriptKind.text,
+        .image => AgentTranscriptKind.image,
+        .toolCall => AgentTranscriptKind.toolCall,
+        .system => AgentTranscriptKind.system,
       },
       status: switch (message.status) {
-        MessageStatus.sending => AgentTranscriptStatus.sending,
-        MessageStatus.unfinished => AgentTranscriptStatus.unfinished,
-        MessageStatus.sent => AgentTranscriptStatus.sent,
-        MessageStatus.error => AgentTranscriptStatus.error,
+        .sending => AgentTranscriptStatus.sending,
+        .unfinished => AgentTranscriptStatus.unfinished,
+        .sent => AgentTranscriptStatus.sent,
+        .error => AgentTranscriptStatus.error,
       },
       textCharacterCount: message.content.length,
       toolCalls: [

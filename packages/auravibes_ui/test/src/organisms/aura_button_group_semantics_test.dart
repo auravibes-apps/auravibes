@@ -12,7 +12,7 @@ void main() {
     try {
       await tester.pumpWidget(
         Directionality(
-          textDirection: TextDirection.ltr,
+          textDirection: .ltr,
           child: AuraButtonGroup<String>.action(
             items: const [
               AuraButtonGroupItem(
@@ -32,7 +32,7 @@ void main() {
           .getSemantics(find.bySemanticsLabel('Save changes'))
           .getSemanticsData();
 
-      expect(node.hasAction(SemanticsAction.tap), isTrue);
+      expect(node.hasAction(.tap), isTrue);
       expect(node.rect.width, greaterThanOrEqualTo(48));
       expect(node.rect.height, greaterThanOrEqualTo(48));
     } finally {
@@ -49,7 +49,7 @@ void main() {
       Theme(
         data: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         child: Directionality(
-          textDirection: TextDirection.ltr,
+          textDirection: .ltr,
           child: StatefulBuilder(
             builder: (context, setState) => AuraButtonGroup<String>.single(
               items: const [

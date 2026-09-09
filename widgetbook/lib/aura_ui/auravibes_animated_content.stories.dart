@@ -9,7 +9,7 @@ const meta = Meta(AuraAnimatedContent.new);
 final $Example = _Story(
   name: 'AuraAnimatedContent',
   setup: (context, child, args) => SizedBox(width: 320, child: child),
-  args: _Args(child: Arg.fixed(const _FadeDemo())),
+  args: _Args(child: .fixed(const _FadeDemo())),
 );
 
 class _FadeDemo extends StatefulWidget {
@@ -25,7 +25,7 @@ class _FadeDemoState extends State<_FadeDemo> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         AuraAnimatedContent(
           child: Text(

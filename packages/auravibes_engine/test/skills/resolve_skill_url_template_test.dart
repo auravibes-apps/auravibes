@@ -144,9 +144,9 @@ void main() {
       final request = resolver(
         template: const SkillUrlTemplate(
           url: 'https://example.com/search',
-          method: UrlRequestMethod.post,
+          method: .post,
           body: '{"query":"{input:query}","limit":"{input:limit}"}',
-          bodyFormat: SkillUrlTemplateBodyFormat.json,
+          bodyFormat: .json,
         ),
         inputs: {'query': 'dart', 'limit': 3},
         credentials: const {},

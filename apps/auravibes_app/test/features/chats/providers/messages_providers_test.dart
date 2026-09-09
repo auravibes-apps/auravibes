@@ -1,6 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-// Required: provider unit tests read scoped providers directly.
+// Required: Provider unit tests read scoped providers directly.
 
 import 'dart:async';
 
@@ -14,7 +14,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:rxdart/rxdart.dart';
 
 void _ignoreProviderUpdate(Object? _, Object? _) {
   final _ = Object();
@@ -32,9 +31,9 @@ MessageEntity _message({
     id: id,
     conversationId: 'conv-1',
     content: content,
-    messageType: MessageType.text,
+    messageType: .text,
     isUser: isUser,
-    status: MessageStatus.sent,
+    status: .sent,
     createdAt: now,
     updatedAt: now,
     metadata: metadata,
@@ -170,7 +169,7 @@ class _MessagesProvidersFixture {
   void setUp() {
     final repository = _FakeMessageRepository();
     _repository = repository;
-    _container = ProviderContainer(
+    _container = .new(
       overrides: [
         workspaceSessionProvider(
           const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
@@ -214,7 +213,7 @@ void main() {
       );
       addTearDown(subscription.close);
       final _ = fixture.repository.emit([]);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(
         fixture.container.read(chatMessageIdsProvider('ws-1', 'conv-1')),
@@ -289,12 +288,12 @@ void main() {
       fixture.repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
       ]);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       fixture.container
           .read(messagesStreamingProvider.notifier)
-          .startSubscription(CompositeSubscription(), 'm1');
-      await Future<void>.delayed(Duration.zero);
+          .startSubscription(.new(), 'm1');
+      await Future<void>.delayed(.zero);
 
       expect(fixture.container.read(isMessageStreamingProvider('m1')), isTrue);
     });
@@ -316,7 +315,7 @@ void main() {
         fireImmediately: true,
       );
       fixture.repository.emit([]);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(
         fixture.container.read(
@@ -337,7 +336,7 @@ void main() {
       fixture.repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
       ]);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(
         fixture.container.read(
@@ -364,7 +363,7 @@ void main() {
           metadata: const MessageMetadataEntity(totalTokens: 500),
         ),
       ]);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(
         fixture.container.read(

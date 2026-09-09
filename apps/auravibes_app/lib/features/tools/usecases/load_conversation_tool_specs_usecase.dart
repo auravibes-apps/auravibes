@@ -22,7 +22,7 @@ class const LoadConversationToolSpecsUsecase({
   _buildDynamicSkillToolSpecsUsecase,
   required final SyncSkillToolPermissionsUsecase
   _syncSkillToolPermissionsUsecase,
-  // ponytail: Compatibility only; manifests now own materialization.
+  // Ponytail: Compatibility only; manifests now own materialization.
   // ignore: avoid_unused_constructor_parameters
   BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
   // Native materializer remains accepted by legacy direct callers.
@@ -88,7 +88,7 @@ loadConversationToolSpecsUsecaseProvider =
         conversationToolsRepository: ref.watch(
           conversationToolsRepositoryProvider(workspaceId),
         ),
-        buildCombinedToolSpecsUseCase: BuildCombinedToolSpecsUseCase(
+        buildCombinedToolSpecsUseCase: .new(
           getToolsGroupById: ref
               .watch(toolsGroupsRepositoryProvider(session))
               .getToolsGroupById,

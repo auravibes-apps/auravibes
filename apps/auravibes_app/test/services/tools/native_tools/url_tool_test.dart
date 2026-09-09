@@ -4,7 +4,6 @@ import 'dart:convert';
 
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tools/url_tool.dart';
-import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,7 +13,7 @@ void main() {
     test('accepts JSON input with leading whitespace', () async {
       final dio = Dio()
         ..httpClientAdapter = _SuccessAdapter(body: 'ok', statusCode: 200);
-      final tool = UrlTool(urlService: UrlService(dio: dio));
+      final tool = UrlTool(urlService: .new(dio: dio));
 
       final result = await tool.runner('  {"url":"https://1.1.1.1"}').value;
 
@@ -86,7 +85,7 @@ void main() {
     test('accepts plain URL string input', () async {
       final dio = Dio()
         ..httpClientAdapter = _SuccessAdapter(body: 'page', statusCode: 200);
-      final tool = UrlTool(urlService: UrlService(dio: dio));
+      final tool = UrlTool(urlService: .new(dio: dio));
 
       final result = await tool.runner('https://1.1.1.1').value;
 
@@ -181,7 +180,7 @@ void main() {
             );
           },
         );
-      final tool = UrlTool(urlService: UrlService(dio: dio));
+      final tool = UrlTool(urlService: .new(dio: dio));
 
       final _ = await tool
           .runner(
@@ -206,7 +205,7 @@ void main() {
             'authorization': ['Bearer secret'],
           },
         );
-      final tool = UrlTool(urlService: UrlService(dio: dio));
+      final tool = UrlTool(urlService: .new(dio: dio));
 
       final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
 
@@ -250,7 +249,7 @@ void main() {
     test('accepts valid headers', () async {
       final dio = Dio()
         ..httpClientAdapter = _SuccessAdapter(body: 'ok', statusCode: 200);
-      final tool = UrlTool(urlService: UrlService(dio: dio));
+      final tool = UrlTool(urlService: .new(dio: dio));
 
       final result = await tool
           .runner(
@@ -286,7 +285,7 @@ void main() {
       test('allows mapped public IPv4', () async {
         final dio = Dio()
           ..httpClientAdapter = _SuccessAdapter(body: 'ok', statusCode: 200);
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool.runner('http://[::ffff:8.8.8.8]/').value;
 
@@ -303,7 +302,7 @@ void main() {
             'content-type': ['text/html'],
           },
         );
-      final tool = UrlTool(urlService: UrlService(dio: dio));
+      final tool = UrlTool(urlService: .new(dio: dio));
 
       final result = await tool.runner('https://1.1.1.1').value;
 
@@ -322,7 +321,7 @@ void main() {
             'content-type': ['application/json'],
           },
         );
-      final tool = UrlTool(urlService: UrlService(dio: dio));
+      final tool = UrlTool(urlService: .new(dio: dio));
 
       final result = await tool.runner('https://1.1.1.1').value;
 
@@ -340,7 +339,7 @@ void main() {
             'content-type': ['text/plain'],
           },
         );
-      final tool = UrlTool(urlService: UrlService(dio: dio));
+      final tool = UrlTool(urlService: .new(dio: dio));
 
       final result = await tool.runner('https://1.1.1.1').value;
 
@@ -352,7 +351,7 @@ void main() {
     test('handles unknown content type with unsupported format', () async {
       final dio = Dio()
         ..httpClientAdapter = _SuccessAdapter(body: 'data', statusCode: 200);
-      final tool = UrlTool(urlService: UrlService(dio: dio));
+      final tool = UrlTool(urlService: .new(dio: dio));
 
       final result = await tool.runner('https://1.1.1.1').value;
 
@@ -374,7 +373,7 @@ void main() {
               'content-type': ['text/html'],
             },
           );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool
             .runner('{"url": "https://1.1.1.1", "format": "markdown"}')
@@ -396,7 +395,7 @@ void main() {
               'content-type': ['text/html'],
             },
           );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool
             .runner('{"url": "https://1.1.1.1", "format": "text"}')
@@ -417,7 +416,7 @@ void main() {
               'content-type': ['text/html'],
             },
           );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool
             .runner('{"url": "https://1.1.1.1", "format": "html"}')
@@ -436,7 +435,7 @@ void main() {
               'content-type': ['text/html'],
             },
           );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool.runner('https://1.1.1.1').value;
 
@@ -476,7 +475,7 @@ void main() {
             body: largeContent,
             statusCode: 200,
           );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
 
@@ -506,7 +505,7 @@ void main() {
             body: largeContent,
             statusCode: 200,
           );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
 
@@ -520,7 +519,7 @@ void main() {
             body: 'Hello world',
             statusCode: 200,
           );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
 
@@ -536,7 +535,7 @@ void main() {
             body: manyLines,
             statusCode: 200,
           );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
 
@@ -558,7 +557,7 @@ void main() {
             statusCode: 200,
             extraHeaders: largeHeaders,
           );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
+        final tool = UrlTool(urlService: .new(dio: dio));
 
         final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
 

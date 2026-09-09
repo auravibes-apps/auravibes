@@ -29,7 +29,7 @@ McpServersCompanion _testServer({
     name: name,
     url: url,
     transport: const McpTransportTypeSSE(),
-    isEnabled: Value(isEnabled),
+    isEnabled: .new(isEnabled),
   );
 }
 
@@ -40,7 +40,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -57,7 +57,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       final ws = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
@@ -141,7 +141,7 @@ void main() {
         _testServer(workspaceId: workspaceId),
       );
       final group = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           mcpServerId: Value(server.id),
           name: 'Group',
@@ -151,7 +151,7 @@ void main() {
       await fixture.database.workspaceToolsDao.insertToolsBatch([
         ToolsCompanion.insert(
           workspaceId: workspaceId,
-          workspaceToolsGroupId: Value(group.id),
+          workspaceToolsGroupId: .new(group.id),
           toolId: 'tool1',
         ),
       ]);

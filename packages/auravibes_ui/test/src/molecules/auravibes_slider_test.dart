@@ -1,5 +1,4 @@
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,7 +8,7 @@ const _sliderWidth = 320.0;
 const _narrowSliderWidth = 20.0;
 
 Widget _host(Widget child, {double width = _sliderWidth}) => Directionality(
-  textDirection: TextDirection.ltr,
+  textDirection: .ltr,
   child: Align(
     alignment: Alignment.topLeft,
     child: SizedBox(width: width, child: child),
@@ -34,7 +33,7 @@ void main() {
           onChanged: (value) => expect(value, isA<double>()),
           min: _minValue,
           max: _maxValue,
-          tint: AuraTint.error,
+          tint: .error,
         ),
       ),
     );
@@ -85,9 +84,7 @@ void main() {
       find.byType(GestureDetector),
     );
     final width = tester.getSize(find.byType(GestureDetector)).width;
-    gestureDetector.onTapDown?.call(
-      TapDownDetails(localPosition: Offset(width, 24)),
-    );
+    gestureDetector.onTapDown?.call(.new(localPosition: Offset(width, 24)));
 
     expect(changedValue, _maxValue);
   });
@@ -183,7 +180,7 @@ void main() {
       tester.getSize(find.byType(GestureDetector)).width,
       _narrowSliderWidth,
     );
-    gestureDetector.onTapDown?.call(TapDownDetails(localPosition: Offset.zero));
+    gestureDetector.onTapDown?.call(.new(localPosition: Offset.zero));
 
     expect(changedValue, 6);
   });
@@ -208,13 +205,13 @@ void main() {
       ),
     );
 
-    expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+    expect(await tester.sendKeyEvent(.tab), isTrue);
     await tester.pump();
-    expect(await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight), isTrue);
+    expect(await tester.sendKeyEvent(.arrowRight), isTrue);
     expect(changedValue, 7);
 
     for (var index = 0; index < 20; index++) {
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight), isTrue);
+      expect(await tester.sendKeyEvent(.arrowRight), isTrue);
       await tester.pump();
     }
     expect(changedValue, _maxValue);
@@ -240,13 +237,11 @@ void main() {
     final gestureDetector = tester.widget<GestureDetector>(
       find.byType(GestureDetector),
     );
-    gestureDetector.onTapDown?.call(
-      TapDownDetails(localPosition: const Offset(0, 24)),
-    );
+    gestureDetector.onTapDown?.call(.new(localPosition: const Offset(0, 24)));
     expect(changedValue, _minValue);
 
     gestureDetector.onTapDown?.call(
-      TapDownDetails(
+      .new(
         localPosition: Offset(
           tester.getSize(find.byType(GestureDetector)).width,
           24,
@@ -280,8 +275,8 @@ void main() {
     expect(find.text('0.00'), findsOneWidget);
     expect(find.text('1.00'), findsOneWidget);
 
-    expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
-    expect(await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight), isTrue);
+    expect(await tester.sendKeyEvent(.tab), isTrue);
+    expect(await tester.sendKeyEvent(.arrowRight), isTrue);
     expect(changedValue, 0.5);
   });
 
@@ -300,8 +295,8 @@ void main() {
       ),
     );
 
-    expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
-    expect(await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight), isTrue);
+    expect(await tester.sendKeyEvent(.tab), isTrue);
+    expect(await tester.sendKeyEvent(.arrowRight), isTrue);
     expect(changedValue, 10);
   });
 

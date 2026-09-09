@@ -111,16 +111,10 @@ class const ChatInputWidget({
         (workspaceCapabilities?.attachments ?? false) && !kIsWeb;
     final supportsAudio =
         supportsLocalAttachments &&
-        ChatAttachmentModality.supports(
-          MessageAttachmentModality.audio,
-          modalitiesInput,
-        );
+        ChatAttachmentModality.supports(.audio, modalitiesInput);
     final supportsImage =
         (workspaceCapabilities?.attachments ?? false) &&
-        ChatAttachmentModality.supports(
-          MessageAttachmentModality.image,
-          modalitiesInput,
-        );
+        ChatAttachmentModality.supports(.image, modalitiesInput);
     final supportsFile =
         supportsLocalAttachments &&
         ChatAttachmentModality.supportsFiles(modalitiesInput);
@@ -137,7 +131,7 @@ class const ChatInputWidget({
             child: AuraInput(
               controller: controller,
               placeholder: const TextLocale(messagePlaceholderKey),
-              textInputAction: TextInputAction.send,
+              textInputAction: .send,
               readOnly: isRecording.value,
               maxLines: _maxInputLines,
               onSubmitted: (value) {
@@ -186,7 +180,7 @@ class const ChatInputWidget({
           ),
         ),
         onTap: focusNode.requestFocus,
-        behavior: HitTestBehavior.translucent,
+        behavior: .translucent,
       ),
     );
   }
@@ -466,12 +460,12 @@ Future<void> _showSelectorSheet({
             color: context.auraColors.surface,
             borderRadius: BorderRadius.vertical(top: radius),
           ),
-          constraints: BoxConstraints(maxHeight: maxHeight),
+          constraints: .new(maxHeight: maxHeight),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: .min,
+            crossAxisAlignment: .stretch,
             children: [
-              AuraText(child: title, style: AuraTextStyle.heading5),
+              AuraText(child: title, style: .heading5),
               const SizedBox(height: 16),
               Flexible(child: child),
             ],
@@ -535,9 +529,9 @@ class const _ChatInputFooter({
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: double.infinity,
+      width: .infinity,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           if (attachments.isNotEmpty) ...[
             _AttachmentChips(
@@ -551,12 +545,12 @@ class const _ChatInputFooter({
             AuraText(
               child: Row(
                 children: [
-                  const AuraIcon(Icons.info_outline, size: AuraIconSize.small),
+                  const AuraIcon(Icons.info_outline, size: .small),
                   const SizedBox(width: 6),
                   Expanded(child: disabledHint),
                 ],
               ),
-              style: AuraTextStyle.bodySmall,
+              style: .bodySmall,
             ),
             const AuraSizedBox(height: .xs),
           ],
@@ -576,7 +570,7 @@ class const _ChatInputFooter({
                         titleKey: _attachPhotoKey,
                         icon: Icons.photo_outlined,
                         enabled: supportsLocalAttachments && supportsImage,
-                        onTap: () => actions.pickImage(ImageSource.gallery),
+                        onTap: () => actions.pickImage(.gallery),
                       ),
                     if (defaultTargetPlatform == TargetPlatform.android ||
                         defaultTargetPlatform == TargetPlatform.iOS)
@@ -584,7 +578,7 @@ class const _ChatInputFooter({
                         titleKey: _attachCameraKey,
                         icon: Icons.photo_camera_outlined,
                         enabled: supportsLocalAttachments && supportsImage,
-                        onTap: () => actions.pickImage(ImageSource.camera),
+                        onTap: () => actions.pickImage(.camera),
                       ),
                     AuraPopupMenuItem(
                       title: const TextLocale(LocaleKeys.menu_tools),
@@ -659,7 +653,7 @@ class const _ChatInputFooter({
                     icon: Icons.stop_rounded,
                     onPressed: actions.stopRecording,
                     disabled: isStartingRecording,
-                    tint: AuraTint.error,
+                    tint: .error,
                     tooltip: _stopRecordingKey.tr(),
                   ),
                 ),
@@ -685,9 +679,9 @@ class const _ChatInputFooter({
                     child: AuraButton(
                       onPressed: onStop,
                       child: const AuraIcon(Icons.stop_rounded),
-                      variant: AuraButtonVariant.outlined,
-                      tint: AuraTint.error,
-                      size: AuraButtonSize.small,
+                      variant: .outlined,
+                      tint: .error,
+                      size: .small,
                     ),
                   ),
                   visible: shouldShowStopButton,
@@ -700,7 +694,7 @@ class const _ChatInputFooter({
               AuraButton(
                 onPressed: () => unawaited(actions.sendMessage()),
                 child: const AuraIcon(Icons.arrow_upward),
-                size: AuraButtonSize.small,
+                size: .small,
                 disabled: isEmpty && !isRecording || disabled || isSending,
               ),
             ],
@@ -755,12 +749,12 @@ class const _RecordingIndicator({required final Duration elapsed})
           Expanded(
             child: Text(
               '${_recordingStatusKey.tr()} ${_formatElapsed(elapsed)}',
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
             ),
           ),
         ],
       ),
-      style: AuraTextStyle.bodySmall,
+      style: .bodySmall,
     );
   }
 }
@@ -792,8 +786,8 @@ abstract final class AttachmentDisplayNames {
 
 IconData _attachmentIcon(MessageAttachmentModality modality) {
   return switch (modality) {
-    MessageAttachmentModality.image => Icons.image_outlined,
-    MessageAttachmentModality.audio => Icons.mic_none_outlined,
-    MessageAttachmentModality.file => Icons.insert_drive_file_outlined,
+    .image => Icons.image_outlined,
+    .audio => Icons.mic_none_outlined,
+    .file => Icons.insert_drive_file_outlined,
   };
 }

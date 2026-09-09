@@ -91,17 +91,17 @@ class _ResolveAgentSkillsFixture({
     final skillsRepository = SkillsRepository(database);
     final appSettingsRepository = AppSkillWorkspaceSettingsRepository(database);
     final workspace = await database.workspaceDao.insertWorkspace(
-      WorkspacesCompanion.insert(name: 'Workspace', type: WorkspaceType.local),
+      .insert(name: 'Workspace', type: WorkspaceType.local),
     );
     final otherWorkspace = await database.workspaceDao.insertWorkspace(
-      WorkspacesCompanion.insert(name: 'Other', type: WorkspaceType.local),
+      .insert(name: 'Other', type: WorkspaceType.local),
     );
 
     return _ResolveAgentSkillsFixture(
       database: database,
       skillsRepository: skillsRepository,
       appSettingsRepository: appSettingsRepository,
-      usecase: ResolveAgentSkillsUsecase(
+      usecase: .new(
         skillsRepository,
         appSettingsRepository,
         const AppSkillRegistry(),
@@ -120,7 +120,7 @@ class _ResolveAgentSkillsFixture({
   }) {
     return skillsRepository.createSkill(
       targetWorkspaceId,
-      SkillToCreate(
+      .new(
         kind: SkillKind.template,
         title: title,
         description: 'Description',

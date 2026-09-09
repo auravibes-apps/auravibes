@@ -42,8 +42,8 @@ void main() {
             resourceId: operation.resourceId,
             data: operation.data ?? '{}',
             revision: 1,
-            createdAt: DateTime.utc(2026),
-            updatedAt: DateTime.utc(2026),
+            createdAt: .utc(2026),
+            updatedAt: .utc(2026),
           );
           resources.add(resource);
           changed.add(resource);
@@ -83,7 +83,7 @@ void main() {
             resources.addAll([
               WorkspaceResource(
                 workspaceId: 7,
-                resourceKind: WorkspaceResourceKind.mcpServer,
+                resourceKind: .mcpServer,
                 resourceId: serverId,
                 data: jsonEncode({
                   'id': serverId,
@@ -97,7 +97,7 @@ void main() {
               ),
               WorkspaceResource(
                 workspaceId: 7,
-                resourceKind: WorkspaceResourceKind.toolGroup,
+                resourceKind: .toolGroup,
                 resourceId: groupId,
                 data: jsonEncode({
                   'id': groupId,
@@ -112,7 +112,7 @@ void main() {
               ),
               WorkspaceResource(
                 workspaceId: 7,
-                resourceKind: WorkspaceResourceKind.tool,
+                resourceKind: .tool,
                 resourceId: 'created-tool',
                 data: jsonEncode({
                   'toolId': 'sum',
@@ -127,7 +127,7 @@ void main() {
               ),
               WorkspaceResource(
                 workspaceId: 7,
-                resourceKind: WorkspaceResourceKind.toolPermission,
+                resourceKind: .toolPermission,
                 resourceId: 'created-permission',
                 data: jsonEncode({
                   'toolId': 'created-tool',
@@ -143,10 +143,7 @@ void main() {
             return CreateMcpServerResult(
               mcpServerId: serverId,
               createdAt: now,
-              discovery: DiscoverMcpServerResult(
-                health: McpServerHealth.healthy,
-                tools: const [],
-              ),
+              discovery: .new(health: McpServerHealth.healthy, tools: const []),
             );
           },
       delete: ({required mcpServerId}) async {
@@ -164,7 +161,7 @@ void main() {
         discoveries++;
 
         return DiscoverMcpServerResult(
-          health: McpServerHealth.healthy,
+          health: .healthy,
           tools: [
             DiscoveredMcpTool(
               name: 'sum',
@@ -262,7 +259,7 @@ void main() {
         name: 'Cloud MCP',
         url: 'https://mcp.example.com',
         transport: McpTransportTypeStreamableHttp(),
-        authenticationType: McpAuthenticationTypeOptions.bearerToken,
+        authenticationType: .bearerToken,
         bearerToken: 'test-token',
       ),
       workspaceId: 'workspace-1',
@@ -310,7 +307,7 @@ void main() {
 
 WorkspaceResource _serverResource() => WorkspaceResource(
   workspaceId: 7,
-  resourceKind: WorkspaceResourceKind.mcpServer,
+  resourceKind: .mcpServer,
   resourceId: 'server-1',
   data: jsonEncode({
     'id': 'server-1',
@@ -319,6 +316,6 @@ WorkspaceResource _serverResource() => WorkspaceResource(
     'transport': {'type': 'streamableHttp', 'useHttp2': false},
   }),
   revision: 1,
-  createdAt: DateTime.utc(2026),
-  updatedAt: DateTime.utc(2026),
+  createdAt: .utc(2026),
+  updatedAt: .utc(2026),
 );

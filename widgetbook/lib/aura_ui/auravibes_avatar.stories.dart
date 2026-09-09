@@ -10,7 +10,7 @@ final $Example = _Story(
   name: 'AuraAvatar',
   setup: (context, child, args) => SizedBox(width: 320, child: child),
   args: _Args(
-    child: Arg.fixed(const Text('AL')),
+    child: .fixed(const Text('AL')),
     semanticLabel: NullableStringArg('Alex Lee'),
     size: EnumArg(AuraSpacing.xl2, values: AuraSpacing.values),
     tint: EnumArg(AuraTint.primary, values: AuraTint.values),

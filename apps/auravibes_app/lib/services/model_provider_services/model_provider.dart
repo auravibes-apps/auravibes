@@ -83,7 +83,7 @@ Future<bool> _validateOpenRouterKey(ModelProvider provider) async {
     const successStatusUpperBound = 300;
     final request = await http
         .get(
-          Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/key'),
+          .parse('${url.replaceFirst(RegExp(r'/$'), '')}/key'),
           headers: <String, String>{
             'authorization': 'Bearer ${provider.key}',
             'accept': 'application/json',
@@ -108,7 +108,7 @@ Future<List<String>?> _openRouterModels(ModelProvider provider) async {
     const successStatusUpperBound = 300;
     final request = await http
         .get(
-          Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/models'),
+          .parse('${url.replaceFirst(RegExp(r'/$'), '')}/models'),
           headers: <String, String>{
             'authorization': 'Bearer ${provider.key}',
             'accept': 'application/json',

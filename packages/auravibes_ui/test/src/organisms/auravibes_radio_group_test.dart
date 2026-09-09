@@ -23,7 +23,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -45,7 +45,7 @@ void main() {
               options: const [],
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -67,7 +67,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -97,7 +97,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -122,7 +122,7 @@ void main() {
               label: const Text('Select an option'),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -147,7 +147,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -170,11 +170,11 @@ void main() {
                   AuraRadioOption(value: 'option1', label: Text('Option 1')),
                   AuraRadioOption(value: 'option2', label: Text('Option 2')),
                 ],
-                direction: Axis.horizontal,
+                direction: .horizontal,
               ),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -193,10 +193,10 @@ void main() {
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
               ],
-              tint: AuraTint.secondary,
+              tint: .secondary,
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -224,7 +224,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -253,7 +253,7 @@ void main() {
               title: const Text('Option 1'),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -276,7 +276,7 @@ void main() {
               title: const Text('Option 1'),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -298,7 +298,7 @@ void main() {
               subtitle: const Text('Subtitle text'),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -321,7 +321,7 @@ void main() {
               title: const Text('Option 1'),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -344,7 +344,7 @@ void main() {
               title: const Text('Option 1'),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -369,7 +369,7 @@ void main() {
               disabled: true,
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -390,10 +390,10 @@ void main() {
                 final _ = Object();
               },
               title: const Text('Option 1'),
-              tint: AuraTint.secondary,
+              tint: .secondary,
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 

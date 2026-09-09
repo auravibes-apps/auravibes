@@ -50,9 +50,7 @@ class _CompactionSettingsSectionState
     );
     final settings = settingsAsync.asData?.value ?? CompactionSettings.defaults;
     _usagePercentageThreshold = settings.usagePercentageThreshold.clamp(5, 100);
-    _remainingController = TextEditingController(
-      text: '${settings.remainingTokenThreshold}',
-    );
+    _remainingController = .new(text: '${settings.remainingTokenThreshold}');
     _autoEnabled = settings.autoCompactionEnabled;
   }
 
@@ -82,11 +80,11 @@ class _CompactionSettingsSectionState
         children: [
           const AuraText(
             child: TextLocale(LocaleKeys.compaction_settings_title),
-            style: AuraTextStyle.heading6,
+            style: .heading6,
           ),
           const AuraText(
             child: TextLocale(LocaleKeys.compaction_settings_subtitle),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
           AuraRow(
             children: [
@@ -102,11 +100,11 @@ class _CompactionSettingsSectionState
                       child: TextLocale(
                         LocaleKeys.compaction_settings_auto_enabled_hint,
                       ),
-                      style: AuraTextStyle.bodySmall,
+                      style: .bodySmall,
                     ),
                   ],
                   spacing: .xs,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                 ),
               ),
               AuraSwitch(
@@ -120,7 +118,7 @@ class _CompactionSettingsSectionState
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
                 validationError,
-                style: TextStyle(
+                style: .new(
                   color: Theme.of(context).colorScheme.error,
                   fontSize: 12,
                 ),
@@ -139,10 +137,10 @@ class _CompactionSettingsSectionState
                   ),
                   AuraText(
                     child: Text('$_usagePercentageThreshold%'),
-                    style: AuraTextStyle.bodyLarge,
+                    style: .bodyLarge,
                   ),
                 ],
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: .spaceBetween,
               ),
               AuraSlider(
                 value: _usagePercentageThreshold.toDouble(),
@@ -155,7 +153,7 @@ class _CompactionSettingsSectionState
               ),
             ],
             spacing: .xs,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: .stretch,
           ),
           AuraInput(
             controller: _requiredRemainingController,
@@ -165,18 +163,18 @@ class _CompactionSettingsSectionState
             label: Text(
               LocaleKeys.compaction_settings_remaining_threshold.tr(),
             ),
-            keyboardType: TextInputType.number,
+            keyboardType: .number,
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: .end,
             children: [
               AuraButton(
                 onPressed: () => unawaited(_resetDefaults()),
                 child: const TextLocale(
                   LocaleKeys.compaction_settings_reset_defaults,
                 ),
-                variant: AuraButtonVariant.ghost,
-                size: AuraButtonSize.small,
+                variant: .ghost,
+                size: .small,
               ),
               const SizedBox(width: 8),
               AuraButton(
@@ -184,12 +182,12 @@ class _CompactionSettingsSectionState
                 child: const TextLocale(
                   LocaleKeys.settings_screen_actions_save,
                 ),
-                size: AuraButtonSize.small,
+                size: .small,
               ),
             ],
           ),
         ],
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -230,7 +228,7 @@ class _CompactionSettingsSectionState
           content: const TextLocale(
             LocaleKeys.compaction_settings_save_success,
           ),
-          variant: AuraSnackBarVariant.success,
+          variant: .success,
         );
       }
     } on CompactionSettingsValidationException catch (e) {
@@ -241,7 +239,7 @@ class _CompactionSettingsSectionState
         final _ = AuraSnackBars.show(
           context: context,
           content: const TextLocale(LocaleKeys.compaction_settings_save_error),
-          variant: AuraSnackBarVariant.error,
+          variant: .error,
         );
       }
     }
@@ -271,7 +269,7 @@ class _CompactionSettingsSectionState
         final _ = AuraSnackBars.show(
           context: context,
           content: const TextLocale(LocaleKeys.compaction_settings_reset_error),
-          variant: AuraSnackBarVariant.error,
+          variant: .error,
         );
       }
 
@@ -292,7 +290,7 @@ class _CompactionSettingsSectionState
       final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.compaction_settings_reset_success),
-        variant: AuraSnackBarVariant.success,
+        variant: .success,
       );
     }
   }

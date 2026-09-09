@@ -1,6 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
-import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -81,14 +80,14 @@ void main() {
     group('getWorkspaceModelSelections', () {
       test('returns mapped entities with connections', () async {
         final withConnection = WorkspaceModelSelectionWithConnection(
-          model: WorkspaceModelSelectionTable(
+          model: .new(
             id: 'sel-1',
             createdAt: now,
             updatedAt: now,
             modelId: 'openai',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ServiceConnectionTable(
+          modelConnection: .new(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
@@ -104,7 +103,7 @@ void main() {
           modelProvider: const ApiModelProvidersTable(
             id: 'openai',
             name: 'OpenAI',
-            type: ModelProvidersTableType.openai,
+            type: .openai,
           ),
           apiModel: const ApiModelsTable(
             modelProvider: 'openai',
@@ -162,14 +161,14 @@ void main() {
     group('getWorkspaceModelSelectionById', () {
       test('returns entity when found', () async {
         final withConnection = WorkspaceModelSelectionWithConnection(
-          model: WorkspaceModelSelectionTable(
+          model: .new(
             id: 'sel-1',
             createdAt: now,
             updatedAt: now,
             modelId: 'openai',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ServiceConnectionTable(
+          modelConnection: .new(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
@@ -217,14 +216,14 @@ void main() {
     group('type mapping', () {
       test('maps null provider type correctly', () async {
         final withConnection = WorkspaceModelSelectionWithConnection(
-          model: WorkspaceModelSelectionTable(
+          model: .new(
             id: 'sel-1',
             createdAt: now,
             updatedAt: now,
             modelId: 'test',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ServiceConnectionTable(
+          modelConnection: .new(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
@@ -254,14 +253,14 @@ void main() {
 
       test('maps anthropic type correctly', () async {
         final withConnection = WorkspaceModelSelectionWithConnection(
-          model: WorkspaceModelSelectionTable(
+          model: .new(
             id: 'sel-1',
             createdAt: now,
             updatedAt: now,
             modelId: 'anthropic',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ServiceConnectionTable(
+          modelConnection: .new(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
@@ -276,7 +275,7 @@ void main() {
           modelProvider: const ApiModelProvidersTable(
             id: 'anthropic',
             name: 'Anthropic',
-            type: ModelProvidersTableType.anthropic,
+            type: .anthropic,
           ),
         );
 
@@ -295,14 +294,14 @@ void main() {
 
       test('maps openrouter type correctly', () async {
         final withConnection = WorkspaceModelSelectionWithConnection(
-          model: WorkspaceModelSelectionTable(
+          model: .new(
             id: 'sel-1',
             createdAt: now,
             updatedAt: now,
             modelId: 'anthropic/claude-sonnet-4',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ServiceConnectionTable(
+          modelConnection: .new(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
@@ -317,7 +316,7 @@ void main() {
           modelProvider: const ApiModelProvidersTable(
             id: 'openrouter',
             name: 'OpenRouter',
-            type: ModelProvidersTableType.openrouter,
+            type: .openrouter,
           ),
         );
 

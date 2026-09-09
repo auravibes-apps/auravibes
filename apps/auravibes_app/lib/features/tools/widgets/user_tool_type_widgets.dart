@@ -9,19 +9,19 @@ import 'package:flutter/material.dart';
 extension UserToolTypeWidgets on UserToolType {
   Widget getIconWidget() {
     return switch (this) {
-      UserToolType.calculator => const Icon(Icons.calculate),
+      .calculator => const Icon(Icons.calculate),
     };
   }
 
   Widget getNameWidget() {
     return TextLocale(switch (this) {
-      UserToolType.calculator => LocaleKeys.tools_names_calculator_name,
+      .calculator => LocaleKeys.tools_names_calculator_name,
     });
   }
 
   Widget getDescriptionWidget() {
     return TextLocale(switch (this) {
-      UserToolType.calculator => LocaleKeys.tools_names_calculator_description,
+      .calculator => LocaleKeys.tools_names_calculator_description,
     });
   }
 }
@@ -29,19 +29,19 @@ extension UserToolTypeWidgets on UserToolType {
 extension NativeToolTypeWidgets on NativeToolType {
   Widget getIconWidget() {
     return switch (this) {
-      NativeToolType.url => const Icon(Icons.link),
+      .url => const Icon(Icons.link),
     };
   }
 
   Widget getNameWidget() {
     return TextLocale(switch (this) {
-      NativeToolType.url => LocaleKeys.tools_names_url_name,
+      .url => LocaleKeys.tools_names_url_name,
     });
   }
 
   Widget getDescriptionWidget() {
     return TextLocale(switch (this) {
-      NativeToolType.url => LocaleKeys.tools_names_url_description,
+      .url => LocaleKeys.tools_names_url_description,
     });
   }
 }

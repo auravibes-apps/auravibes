@@ -15,7 +15,7 @@ void main() {
           statusCode: 200,
           body: 'template body',
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         );
       });
 
@@ -41,7 +41,7 @@ void main() {
           headers: {
             'set-cookie': ['secret=value'],
           },
-          elapsed: Duration(seconds: 1),
+          elapsed: .new(seconds: 1),
         );
       });
 
@@ -66,7 +66,7 @@ void main() {
           statusCode: 200,
           body: 'callback body',
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         );
       });
 
@@ -91,7 +91,7 @@ void main() {
           statusCode: 200,
           body: _duckDuckGoHtml,
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         );
       });
 
@@ -127,7 +127,7 @@ void main() {
           statusCode: 202,
           body: '<html><div class="anomaly-modal"></div></html>',
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         );
       });
 
@@ -160,7 +160,7 @@ void main() {
           statusCode: 200,
           body: '{}',
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         );
       });
 
@@ -202,7 +202,7 @@ void main() {
           statusCode: 200,
           body: '{}',
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         );
       });
 
@@ -261,7 +261,7 @@ void main() {
           title: 'Bad',
           description: 'Bad',
           urlTemplate: const AppSkillUrlTemplate(
-            template: SkillUrlTemplate(url: 'https://example.com'),
+            template: .new(url: 'https://example.com'),
             inputs: {},
           ),
           callback: (input, request) =>
@@ -280,7 +280,7 @@ void main() {
           statusCode: 200,
           body: '{}',
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         );
       });
 
@@ -317,7 +317,7 @@ void main() {
           statusCode: 200,
           body: '{}',
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         );
       });
 
@@ -374,7 +374,7 @@ void main() {
           statusCode: 200,
           body: '',
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         );
       });
 
@@ -398,7 +398,7 @@ AppSkillExecutor _executor(UrlResponse Function(UrlRequest) run) {
   final httpClient = _FakeSkillHttpClient(run);
 
   return AppSkillExecutor(
-    RunSkillUrlTemplate(const ResolveSkillUrlTemplate(), httpClient.execute),
+    .new(const ResolveSkillUrlTemplate(), httpClient.execute),
     httpClient.execute,
   );
 }
@@ -414,7 +414,7 @@ const _templateSkill = AppSkillDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search.',
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://example.com/search',
           headers: {'authorization': 'Bearer {{ credential.apiKey }}'},
@@ -441,7 +441,7 @@ final _callbackSkill = AppSkillDefinition(
       title: 'Fetch',
       description: 'Fetch.',
       callback: (input, context) {
-        return context(UrlRequest(url: input['url'] as String))
+        return context(.new(url: input['url'] as String))
             .then<Object?>((response) => response.body);
       },
     ),
@@ -452,7 +452,7 @@ class const _FakeSkillHttpClient(
   final UrlResponse Function(UrlRequest request) run,
 ) {
   CancelableOperation<UrlResponse> execute(UrlRequest request) {
-    return CancelableOperation.fromFuture(Future.value(run(request)));
+    return CancelableOperation.fromFuture(.value(run(request)));
   }
 }
 

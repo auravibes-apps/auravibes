@@ -25,9 +25,9 @@ bool supportsAttachmentModality(
   final normalizedMimeType = mimeType?.toLowerCase();
 
   return switch (modality) {
-    AttachmentModality.image => supported.contains('image'),
-    AttachmentModality.audio => supported.contains('audio'),
-    AttachmentModality.file =>
+    .image => supported.contains('image'),
+    .audio => supported.contains('audio'),
+    .file =>
       supported.contains('file') ||
           _supportsSpecificFileType(supported, normalizedMimeType),
   };

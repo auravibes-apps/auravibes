@@ -1,4 +1,3 @@
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
@@ -7,7 +6,6 @@ import 'package:auravibes_app/features/service_connections/usecases/cloud_servic
 import 'package:auravibes_app/features/service_connections/usecases/watch_service_connection_list_items_usecase.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
@@ -29,13 +27,9 @@ Stream<List<ServiceConnectionListItem>> serviceConnections(
     final modelStore = await ref.watch(
       modelConnectionStoreProvider(workspaceId).future,
     );
-    final serviceUsecases = CloudServiceConnectionUsecases(
-      CloudWorkspaceResourceStore(gateway),
-    );
+    final serviceUsecases = CloudServiceConnectionUsecases(.new(gateway));
     yield* Rx.combineLatest2(
-      modelStore.watchModelConnections(
-        ModelConnectionFilter(workspaces: [workspaceId]),
-      ),
+      modelStore.watchModelConnections(.new(workspaces: [workspaceId])),
       serviceUsecases.watch(),
       (models, services) => [
         ...models.map(ServiceConnectionListItem.fromModelConnection),
@@ -67,7 +61,7 @@ ServiceConnectionListItem _cloudServiceConnectionItem(
   workspaceId: workspaceId,
   name: connection.name,
   serviceName: connection.serviceId,
-  kind: ServiceConnectionListItemKind.skillCredential,
+  kind: .skillCredential,
   keySuffix: connection.keySuffix,
   credentialDefinitionId: connection.credentialDefinitionId,
   mcpServerId: null,

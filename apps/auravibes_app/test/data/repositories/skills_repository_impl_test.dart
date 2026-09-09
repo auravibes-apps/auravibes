@@ -12,43 +12,33 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
-import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/resolve_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/skills/usecases/app_skill_http_client_adapter.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
@@ -72,12 +62,12 @@ void main() {
         SkillCredentialDefinitionsRepository(database);
     var skillCredentialsRepository = SkillCredentialsRepository(
       database: database,
-      encryptionService: EncryptionService(_FakeSecretKeyManager()),
+      encryptionService: .new(_FakeSecretKeyManager()),
     );
     var conversationSkillsRepository = ConversationSkillsRepository(database);
     var serviceConnectionRepository = ServiceConnectionRepository(
       database,
-      EncryptionService(_FakeSecretKeyManager()),
+      .new(_FakeSecretKeyManager()),
     );
     var appSkillSettingsRepository = AppSkillWorkspaceSettingsRepository(
       database,
@@ -89,7 +79,7 @@ void main() {
       conversationSkillsRepository,
       appSkillSettingsRepository,
       const AppSkillRegistry(),
-      CheckSkillCredentialReadinessUsecase(skillCredentialsRepository),
+      .new(skillCredentialsRepository),
     );
 
     setUp(() {
@@ -104,12 +94,12 @@ void main() {
           SkillCredentialDefinitionsRepository(database);
       skillCredentialsRepository = SkillCredentialsRepository(
         database: database,
-        encryptionService: EncryptionService(_FakeSecretKeyManager()),
+        encryptionService: .new(_FakeSecretKeyManager()),
       );
       conversationSkillsRepository = ConversationSkillsRepository(database);
       serviceConnectionRepository = ServiceConnectionRepository(
         database,
-        EncryptionService(_FakeSecretKeyManager()),
+        .new(_FakeSecretKeyManager()),
       );
       appSkillSettingsRepository = AppSkillWorkspaceSettingsRepository(
         database,
@@ -121,7 +111,7 @@ void main() {
         conversationSkillsRepository,
         appSkillSettingsRepository,
         const AppSkillRegistry(),
-        CheckSkillCredentialReadinessUsecase(skillCredentialsRepository),
+        .new(skillCredentialsRepository),
       );
     });
 
@@ -168,26 +158,19 @@ void main() {
         updateSkillUsecase,
         createTemplateToolUsecase(),
         updateTemplateToolUsecase(),
-        CreateSkillCredentialDefinitionUsecase(
-          skillCredentialDefinitionsRepository,
-        ),
-        UpdateSkillCredentialDefinitionUsecase(
-          skillCredentialDefinitionsRepository,
-        ),
+        .new(skillCredentialDefinitionsRepository),
+        .new(skillCredentialDefinitionsRepository),
       );
     }
 
     test('creates user skill with generated immutable slug', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final skill = await createSkillUsecase.call(
         workspace.id,
         const SkillToCreate(
-          kind: SkillKind.template,
+          kind: .template,
           title: 'Example Services',
           description: 'Call Example APIs',
           content: 'Use Example Services for company data.',
@@ -206,15 +189,12 @@ void main() {
 
     test('rejects invalid and duplicate skill titles', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final _ = await createSkillUsecase.call(
         workspace.id,
         const SkillToCreate(
-          kind: SkillKind.template,
+          kind: .template,
           title: 'Example Services',
           description: 'Call Example APIs',
           content: 'Use Example Services for company data.',
@@ -225,7 +205,7 @@ void main() {
         createSkillUsecase.call(
           workspace.id,
           const SkillToCreate(
-            kind: SkillKind.template,
+            kind: .template,
             title: 'Bad/Title',
             description: 'Invalid title',
             content: 'Invalid title',
@@ -249,7 +229,7 @@ void main() {
         createSkillUsecase.call(
           workspace.id,
           const SkillToCreate(
-            kind: SkillKind.template,
+            kind: .template,
             title: 'Example Services',
             description: 'Duplicate title',
             content: 'Duplicate title',
@@ -261,15 +241,12 @@ void main() {
 
     test('stores template tools under user skill', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final skill = await createSkillUsecase.call(
         workspace.id,
         const SkillToCreate(
-          kind: SkillKind.template,
+          kind: .template,
           title: 'Example Services',
           description: 'Call Example APIs',
           content: 'Use Example Services for company data.',
@@ -279,7 +256,7 @@ void main() {
       final tool = await toolsRepository.createTool(
         skill.id,
         const SkillTemplateToolToCreate(
-          templateType: SkillTemplateToolType.url,
+          templateType: .url,
           title: 'Find Company',
           description: 'Find a company by id.',
           templateJson: '{"url":"https://example.com"}',
@@ -295,15 +272,12 @@ void main() {
 
     test('duplicates user skill with template tools', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final skill = await createSkillUsecase.call(
         workspace.id,
         const SkillToCreate(
-          kind: SkillKind.template,
+          kind: .template,
           title: 'Example Services',
           description: 'Call Example APIs',
           content: 'Use Example Services for company data.',
@@ -312,7 +286,7 @@ void main() {
       final _ = await toolsRepository.createTool(
         skill.id,
         const SkillTemplateToolToCreate(
-          templateType: SkillTemplateToolType.url,
+          templateType: .url,
           title: 'Find Company',
           description: 'Find a company by id.',
           templateJson: '{"url":"https://example.com"}',
@@ -334,21 +308,15 @@ void main() {
       'tracks conversation skill load state for user and app skills',
       () async {
         final workspace = await workspaceRepository.createWorkspace(
-          const WorkspaceToCreate(
-            name: 'Test Workspace',
-            type: WorkspaceType.local,
-          ),
+          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
         );
         final conversation = await conversationRepository.createConversation(
-          ConversationToCreate(
-            title: 'Test Conversation',
-            workspaceId: workspace.id,
-          ),
+          .new(title: 'Test Conversation', workspaceId: workspace.id),
         );
         final skill = await createSkillUsecase.call(
           workspace.id,
           const SkillToCreate(
-            kind: SkillKind.template,
+            kind: .template,
             title: 'Example Services',
             description: 'Call Example APIs',
             content: 'Use Example Services for company data.',
@@ -374,16 +342,10 @@ void main() {
 
     test('app skill disablement is scoped to workspace', () async {
       final firstWorkspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'First Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'First Workspace', type: .local),
       );
       final secondWorkspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Second Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Second Workspace', type: .local),
       );
 
       await appSkillSettingsRepository.setAppSkillEnabled(
@@ -410,21 +372,15 @@ void main() {
 
     test('builds dynamic load and unload skill tool specs', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final conversation = await conversationRepository.createConversation(
-        ConversationToCreate(
-          title: 'Test Conversation',
-          workspaceId: workspace.id,
-        ),
+        .new(title: 'Test Conversation', workspaceId: workspace.id),
       );
       final skill = await createSkillUsecase.call(
         workspace.id,
         const SkillToCreate(
-          kind: SkillKind.template,
+          kind: .template,
           title: 'Example Services',
           description: 'Call Example APIs',
           content: 'Use Example Services for company data.',
@@ -444,9 +400,7 @@ void main() {
       final buildSpecsUsecase = BuildDynamicSkillToolSpecsUsecase(
         (_) => listAvailableSkillsUsecase,
         const AppSkillRegistry(),
-        ListAppSkillCredentialCandidatesUsecase(
-          () => serviceConnectionRepository,
-        ),
+        .new(() => serviceConnectionRepository),
       );
 
       var specs = await buildSpecsUsecase.call(
@@ -500,21 +454,15 @@ void main() {
 
     test('builds loaded skill content as XML user context messages', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final conversation = await conversationRepository.createConversation(
-        ConversationToCreate(
-          title: 'Test Conversation',
-          workspaceId: workspace.id,
-        ),
+        .new(title: 'Test Conversation', workspaceId: workspace.id),
       );
       final skill = await createSkillUsecase.call(
         workspace.id,
         const SkillToCreate(
-          kind: SkillKind.template,
+          kind: .template,
           title: 'Example Services',
           description: 'Call Example APIs',
           content: 'Use <company> & account data.',
@@ -527,7 +475,7 @@ void main() {
       );
       final usecase = BuildSkillContextMessagesService(
         listAvailableSkillsUsecase.call,
-        ListConversationAgentSkillsUsecase(
+        .new(
           (conversationId, _) =>
               conversationRepository.getConversationById(conversationId),
           (_) => AgentsRepository(database),
@@ -555,16 +503,10 @@ void main() {
 
     test('blocks credential-backed skills without credentials', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final conversation = await conversationRepository.createConversation(
-        ConversationToCreate(
-          title: 'Test Conversation',
-          workspaceId: workspace.id,
-        ),
+        .new(title: 'Test Conversation', workspaceId: workspace.id),
       );
       final definition = await skillCredentialDefinitionsRepository
           .createDefinition(
@@ -576,7 +518,7 @@ void main() {
           );
       final skill = await createSkillUsecase.call(
         workspace.id,
-        SkillToCreate(
+        .new(
           kind: SkillKind.template,
           title: 'Example Services',
           description: 'Call Example APIs',
@@ -589,10 +531,8 @@ void main() {
         conversationSkillsRepository,
         appSkillSettingsRepository,
         const AppSkillRegistry(),
-        CheckSkillCredentialReadinessUsecase(skillCredentialsRepository),
-        ListAppSkillCredentialCandidatesUsecase(
-          () => serviceConnectionRepository,
-        ),
+        .new(skillCredentialsRepository),
+        .new(() => serviceConnectionRepository),
       );
 
       final loadableSkills = await listAvailableSkillsUsecase(
@@ -607,7 +547,7 @@ void main() {
       );
       final optionalSkill = await createSkillUsecase.call(
         workspace.id,
-        SkillToCreate(
+        .new(
           kind: SkillKind.template,
           title: 'Optional Example Services',
           description: 'Call Example APIs without requiring credentials.',
@@ -643,7 +583,7 @@ void main() {
 
       final _ = await skillCredentialsRepository.createCredential(
         workspace.id,
-        SkillCredentialToCreate(
+        .new(
           credentialDefinitionId: definition.id,
           name: 'Example Credential',
           attributes: const {'api_key': 'secret-token'},
@@ -665,16 +605,10 @@ void main() {
       'keeps loaded skills visible after required credential is deleted',
       () async {
         final workspace = await workspaceRepository.createWorkspace(
-          const WorkspaceToCreate(
-            name: 'Test Workspace',
-            type: WorkspaceType.local,
-          ),
+          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
         );
         final conversation = await conversationRepository.createConversation(
-          ConversationToCreate(
-            title: 'Test Conversation',
-            workspaceId: workspace.id,
-          ),
+          .new(title: 'Test Conversation', workspaceId: workspace.id),
         );
         final definition = await skillCredentialDefinitionsRepository
             .createDefinition(
@@ -686,7 +620,7 @@ void main() {
             );
         final credential = await skillCredentialsRepository.createCredential(
           workspace.id,
-          SkillCredentialToCreate(
+          .new(
             credentialDefinitionId: definition.id,
             name: 'Example Credential',
             attributes: const {'api_key': 'secret-token'},
@@ -694,7 +628,7 @@ void main() {
         );
         final skill = await createSkillUsecase.call(
           workspace.id,
-          SkillToCreate(
+          .new(
             kind: SkillKind.template,
             title: 'Example Services',
             description: 'Call Example APIs',
@@ -731,20 +665,14 @@ void main() {
 
     test('builds and runs loaded URL template skill tool', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final conversation = await conversationRepository.createConversation(
-        ConversationToCreate(
-          title: 'Test Conversation',
-          workspaceId: workspace.id,
-        ),
+        .new(title: 'Test Conversation', workspaceId: workspace.id),
       );
       final definition = await database.skillCredentialDefinitionsDao
           .createDefinition(
-            SkillCredentialDefinitionsCompanion.insert(
+            .insert(
               workspaceId: workspace.id,
               title: 'Example Service',
               slug: 'example_service',
@@ -756,7 +684,7 @@ void main() {
           );
       final credential = await skillCredentialsRepository.createCredential(
         workspace.id,
-        SkillCredentialToCreate(
+        .new(
           credentialDefinitionId: definition.id,
           name: 'Example Credential',
           attributes: const {'api_key': 'secret-token'},
@@ -764,7 +692,7 @@ void main() {
       );
       final skill = await createSkillUsecase.call(
         workspace.id,
-        SkillToCreate(
+        .new(
           kind: SkillKind.template,
           title: 'Example Services',
           description: 'Call Example APIs',
@@ -774,7 +702,7 @@ void main() {
       );
       final _ = await toolsRepository.createTool(
         skill.id,
-        SkillTemplateToolToCreate(
+        .new(
           templateType: SkillTemplateToolType.url,
           title: 'Find Company',
           description: 'Find company records.',
@@ -822,7 +750,7 @@ void main() {
         skillsRepository,
         skillCredentialDefinitionsRepository,
         skillCredentialsRepository,
-        RunSkillUrlTemplate(
+        .new(
           const ResolveSkillUrlTemplate(),
           AppSkillHttpClientAdapter(urlService).execute,
         ),
@@ -845,7 +773,7 @@ void main() {
       );
       final _ = await skillCredentialsRepository.createCredential(
         workspace.id,
-        SkillCredentialToCreate(
+        .new(
           credentialDefinitionId: definition.id,
           name: 'Backup Credential',
           attributes: const {'api_key': 'backup-token'},
@@ -884,16 +812,10 @@ void main() {
 
     test('builds credentialId schema from credential requirement', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final conversation = await conversationRepository.createConversation(
-        ConversationToCreate(
-          title: 'Test Conversation',
-          workspaceId: workspace.id,
-        ),
+        .new(title: 'Test Conversation', workspaceId: workspace.id),
       );
       final definition = await skillCredentialDefinitionsRepository
           .createDefinition(
@@ -905,7 +827,7 @@ void main() {
           );
       final skill = await createSkillUsecase.call(
         workspace.id,
-        SkillToCreate(
+        .new(
           kind: SkillKind.template,
           title: 'Example Services',
           description: 'Call Example APIs',
@@ -916,7 +838,7 @@ void main() {
       );
       final _ = await toolsRepository.createTool(
         skill.id,
-        SkillTemplateToolToCreate(
+        .new(
           templateType: SkillTemplateToolType.url,
           title: 'Public Search',
           description: 'Search public records.',
@@ -926,7 +848,7 @@ void main() {
       );
       final _ = await toolsRepository.createTool(
         skill.id,
-        SkillTemplateToolToCreate(
+        .new(
           templateType: SkillTemplateToolType.url,
           title: 'Private Search',
           description: 'Search private records.',
@@ -962,7 +884,7 @@ void main() {
 
       final credential = await skillCredentialsRepository.createCredential(
         workspace.id,
-        SkillCredentialToCreate(
+        .new(
           credentialDefinitionId: definition.id,
           name: 'Example Credential',
           attributes: const {'api_key': 'secret-token'},
@@ -971,7 +893,7 @@ void main() {
       final secondCredential = await skillCredentialsRepository
           .createCredential(
             workspace.id,
-            SkillCredentialToCreate(
+            .new(
               credentialDefinitionId: definition.id,
               name: 'Second Example Credential',
               attributes: const {'api_key': 'second-secret-token'},
@@ -1005,16 +927,10 @@ void main() {
 
     test('lists loaded skill credential ids and names only', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final conversation = await conversationRepository.createConversation(
-        ConversationToCreate(
-          title: 'Test Conversation',
-          workspaceId: workspace.id,
-        ),
+        .new(title: 'Test Conversation', workspaceId: workspace.id),
       );
       final definition = await skillCredentialDefinitionsRepository
           .createDefinition(
@@ -1026,7 +942,7 @@ void main() {
           );
       final skill = await createSkillUsecase.call(
         workspace.id,
-        SkillToCreate(
+        .new(
           kind: SkillKind.template,
           title: 'Example Services',
           description: 'Call Example APIs',
@@ -1036,7 +952,7 @@ void main() {
       );
       final credential = await skillCredentialsRepository.createCredential(
         workspace.id,
-        SkillCredentialToCreate(
+        .new(
           credentialDefinitionId: definition.id,
           name: 'Example Credential',
           attributes: const {'api_key': 'secret-token'},
@@ -1048,7 +964,7 @@ void main() {
         isLoaded: true,
       );
       final runUsecase = ResolvedToolService(
-        agentCancellationRuntime: AgentCancellationRuntime(),
+        agentCancellationRuntime: .new(),
         mcpToolCaller: ({
           required mcpServerId,
           required toolIdentifier,
@@ -1061,9 +977,7 @@ void main() {
 
       final output = await runUsecase.call(
         conversationId: conversation.id,
-        tool: ResolvedTool.skillControl(
-          toolIdentifier: SkillToolNames.listCredentials,
-        ),
+        tool: .skillControl(toolIdentifier: SkillToolNames.listCredentials),
         arguments: {'skillSlug': skill.slug},
       );
       final result =
@@ -1080,7 +994,7 @@ void main() {
       const usecase = ResolveSkillUrlTemplate();
 
       final request = usecase.call(
-        template: SkillUrlTemplate(
+        template: .new(
           url: 'https://example.com',
           headers: {
             'X-User': [
@@ -1124,7 +1038,7 @@ void main() {
       const usecase = ResolveSkillUrlTemplate();
 
       final request = usecase.call(
-        template: SkillUrlTemplate(
+        template: .new(
           url: 'https://example.com',
           body: [
             '{"filters":{{ input.filters | json }},',
@@ -1179,10 +1093,7 @@ void main() {
 
     test('deletes skill credential', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final definition = await skillCredentialDefinitionsRepository
           .createDefinition(
@@ -1194,7 +1105,7 @@ void main() {
           );
       final credential = await skillCredentialsRepository.createCredential(
         workspace.id,
-        SkillCredentialToCreate(
+        .new(
           credentialDefinitionId: definition.id,
           name: 'Example Credential',
           attributes: const {'api_key': 'secret-token'},
@@ -1213,10 +1124,7 @@ void main() {
 
     test('stores and edits secret-aware skill credentials', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final definition = await skillCredentialDefinitionsRepository
           .createDefinition(
@@ -1247,7 +1155,7 @@ void main() {
       await expectLater(
         skillCredentialsRepository.createCredential(
           workspace.id,
-          SkillCredentialToCreate(
+          .new(
             credentialDefinitionId: definition.id,
             name: 'Invalid Credential',
             attributes: const {'api_key': '', 'account_id': 'acct-123'},
@@ -1263,7 +1171,7 @@ void main() {
       );
       final credential = await skillCredentialsRepository.createCredential(
         workspace.id,
-        SkillCredentialToCreate(
+        .new(
           credentialDefinitionId: definition.id,
           name: 'Example Credential',
           attributes: const {
@@ -1357,10 +1265,7 @@ void main() {
 
     test('watches skill credential definitions changes', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final stream = StreamQueue(
         skillCredentialDefinitionsRepository.watchDefinitions(workspace.id),
@@ -1393,10 +1298,7 @@ void main() {
 
     test('watches skill credential workspace changes', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final definition = await skillCredentialDefinitionsRepository
           .createDefinition(
@@ -1414,7 +1316,7 @@ void main() {
       expect(await stream.next, isEmpty);
       final credential = await skillCredentialsRepository.createCredential(
         workspace.id,
-        SkillCredentialToCreate(
+        .new(
           credentialDefinitionId: definition.id,
           name: 'Example Credential',
           attributes: const {'api_key': 'secret-token'},
@@ -1428,16 +1330,10 @@ void main() {
 
     test('builds and runs loaded skills manager native tools', () async {
       final workspace = await workspaceRepository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
       final conversation = await conversationRepository.createConversation(
-        ConversationToCreate(
-          title: 'Test Conversation',
-          workspaceId: workspace.id,
-        ),
+        .new(title: 'Test Conversation', workspaceId: workspace.id),
       );
       final _ = await conversationSkillsRepository.setAppSkillLoaded(
         conversation.id,
@@ -1446,9 +1342,7 @@ void main() {
       );
       final buildSpecsUsecase = BuildAppSkillNativeToolSpecsUsecase(
         (_) => listAvailableSkillsUsecase,
-        ListAppSkillCredentialCandidatesUsecase(
-          () => serviceConnectionRepository,
-        ),
+        .new(() => serviceConnectionRepository),
       );
       final runUsecase = runSkillsManagerToolUsecase();
 
@@ -1756,10 +1650,7 @@ void main() {
       'skills manager validates and runs JSON object input template tools',
       () async {
         final workspace = await workspaceRepository.createWorkspace(
-          const WorkspaceToCreate(
-            name: 'Test Workspace',
-            type: WorkspaceType.local,
-          ),
+          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
         );
         final runUsecase = runSkillsManagerToolUsecase();
         final definitionResult = await runUsecase.call(
@@ -1842,7 +1733,7 @@ void main() {
         final definitionId = (definition ?? fail('definition missing')).id;
         final credential = await skillCredentialsRepository.createCredential(
           workspace.id,
-          SkillCredentialToCreate(
+          .new(
             credentialDefinitionId: definitionId,
             name: 'RescueGroups Credential',
             attributes: const {'api_key': 'secret-token'},
@@ -1857,7 +1748,7 @@ void main() {
           skillsRepository,
           skillCredentialDefinitionsRepository,
           skillCredentialsRepository,
-          RunSkillUrlTemplate(
+          .new(
             const ResolveSkillUrlTemplate(),
             AppSkillHttpClientAdapter(urlService).execute,
           ),
@@ -1908,7 +1799,7 @@ void main() {
         template: const SkillUrlTemplate(
           url: 'https://example.com',
           body: 'token={{ input.maybe_token }}',
-          bodyFormat: SkillUrlTemplateBodyFormat.text,
+          bodyFormat: .text,
         ),
         inputs: const {},
         credentials: const {},

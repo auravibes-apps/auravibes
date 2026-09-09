@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   Widget app(Widget child) => MaterialApp(
     home: Scaffold(body: child),
-    theme: ThemeData(extensions: [AuraTheme.light]),
+    theme: .new(extensions: [AuraTheme.light]),
   );
 
   testWidgets('model updates replace and clear text without user callbacks', (
@@ -52,8 +52,8 @@ void main() {
       final original = tester.widget<TextField>(find.byType(TextField));
       const edit = TextEditingValue(
         text: 'Edited',
-        selection: TextSelection.collapsed(offset: 3),
-        composing: TextRange(start: 1, end: 4),
+        selection: .collapsed(offset: 3),
+        composing: .new(start: 1, end: 4),
       );
       tester.testTextInput.updateEditingValue(edit);
       await tester.pump();

@@ -42,11 +42,11 @@ class AuraAvatar extends StatelessWidget {
           child: ColoredBox(
             color: colors.colorFor(tint),
             child: DefaultTextStyle.merge(
-              style: TextStyle(color: foreground),
+              style: .new(color: foreground),
               child: IconTheme(
-                data: IconThemeData(color: foreground),
+                data: .new(color: foreground),
                 child: Stack(
-                  fit: StackFit.expand,
+                  fit: .expand,
                   children: [
                     Center(child: child),
                     if (image != null)
@@ -54,7 +54,7 @@ class AuraAvatar extends StatelessWidget {
                         image: image,
                         errorBuilder: _imageError,
                         excludeFromSemantics: true,
-                        fit: BoxFit.cover,
+                        fit: .cover,
                       ),
                   ],
                 ),

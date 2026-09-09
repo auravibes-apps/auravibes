@@ -19,7 +19,7 @@ void main() {
           resources: [
             WorkspaceResource(
               workspaceId: 1,
-              resourceKind: WorkspaceResourceKind.agent,
+              resourceKind: .agent,
               resourceId: agentOperation.resourceId,
               data: agentOperation.data ?? '{}',
               revision: 1,
@@ -34,7 +34,7 @@ void main() {
       read: () async => [
         WorkspaceResource(
           workspaceId: 1,
-          resourceKind: WorkspaceResourceKind.agent,
+          resourceKind: .agent,
           resourceId: 'agent-1',
           data: jsonEncode({
             'name': 'Agent',
@@ -80,7 +80,7 @@ void main() {
     final resources = <WorkspaceResource>[
       _resource(
         now: now,
-        kind: WorkspaceResourceKind.agent,
+        kind: .agent,
         id: 'agent-1',
         data: {
           'id': 'agent-1',
@@ -93,14 +93,14 @@ void main() {
       ),
       _resource(
         now: now,
-        kind: WorkspaceResourceKind.agentAssociation,
+        kind: .agentAssociation,
         id: 'association-1',
         data: {'agentId': 'agent-1', 'skillId': 'skill-1'},
         revision: 2,
       ),
       _resource(
         now: now,
-        kind: WorkspaceResourceKind.agentAssociation,
+        kind: .agentAssociation,
         id: 'association-2',
         data: {
           'agentId': 'agent-1',
@@ -110,7 +110,7 @@ void main() {
       ),
       _resource(
         now: now,
-        kind: WorkspaceResourceKind.agentAssociation,
+        kind: .agentAssociation,
         id: 'association-3',
         data: {
           'agentId': 'agent-1',

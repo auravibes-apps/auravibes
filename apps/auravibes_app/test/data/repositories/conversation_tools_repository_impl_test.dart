@@ -58,9 +58,9 @@ void main() {
           workspaceId: testWorkspaceId,
           toolId: testToolId,
           isEnabled: false,
-          permissionMode: ToolPermissionMode.alwaysAllow,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          permissionMode: .alwaysAllow,
+          createdAt: .now(),
+          updatedAt: .now(),
         ),
       );
 
@@ -90,9 +90,9 @@ void main() {
             workspaceId: testWorkspaceId,
             toolId: testToolId,
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAllow,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
+            permissionMode: .alwaysAllow,
+            createdAt: .now(),
+            updatedAt: .now(),
           ),
         );
 
@@ -123,9 +123,9 @@ void main() {
             workspaceId: testWorkspaceId,
             toolId: testToolId,
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAsk,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
+            permissionMode: .alwaysAsk,
+            createdAt: .now(),
+            updatedAt: .now(),
           ),
         );
 
@@ -143,10 +143,10 @@ void main() {
 
     test('agent override takes priority over workspace default', () async {
       final workspace = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       final _ = await fixture.database.agentsDao.createAgent(
-        AgentsCompanion.insert(
+        .insert(
           id: const Value('agent-1'),
           workspaceId: workspace.id,
           name: 'Agent',
@@ -155,7 +155,7 @@ void main() {
         const [],
       );
       final _ = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(
+        .insert(
           id: const Value(testConversationId),
           workspaceId: workspace.id,
           title: 'Conv',
@@ -176,7 +176,7 @@ void main() {
       final _ = await fixture.database.agentToolsDao.setAgentToolPermission(
         'agent-1',
         'workspace-tool-id',
-        permission: PermissionAccess.granted,
+        permission: .granted,
       );
       when(
         () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
@@ -189,9 +189,9 @@ void main() {
           workspaceId: workspace.id,
           toolId: testToolId,
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAsk,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          permissionMode: .alwaysAsk,
+          createdAt: .now(),
+          updatedAt: .now(),
         ),
       );
 
@@ -206,10 +206,10 @@ void main() {
 
     test('conversation override takes priority over agent override', () async {
       final workspace = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       final _ = await fixture.database.agentsDao.createAgent(
-        AgentsCompanion.insert(
+        .insert(
           id: const Value('agent-1'),
           workspaceId: workspace.id,
           name: 'Agent',
@@ -218,7 +218,7 @@ void main() {
         const [],
       );
       final _ = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(
+        .insert(
           id: const Value(testConversationId),
           workspaceId: workspace.id,
           title: 'Conv',
@@ -239,14 +239,14 @@ void main() {
       final _ = await fixture.database.agentToolsDao.setAgentToolPermission(
         'agent-1',
         'workspace-tool-id',
-        permission: PermissionAccess.granted,
+        permission: .granted,
       );
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
             testConversationId,
             'workspace-tool-id',
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       when(
         () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
@@ -259,9 +259,9 @@ void main() {
           workspaceId: workspace.id,
           toolId: testToolId,
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAllow,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          permissionMode: .alwaysAllow,
+          createdAt: .now(),
+          updatedAt: .now(),
         ),
       );
 
@@ -276,10 +276,10 @@ void main() {
 
     test('agent deny takes priority over workspace default', () async {
       final workspace = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       final _ = await fixture.database.agentsDao.createAgent(
-        AgentsCompanion.insert(
+        .insert(
           id: const Value('agent-1'),
           workspaceId: workspace.id,
           name: 'Agent',
@@ -288,7 +288,7 @@ void main() {
         const [],
       );
       final _ = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(
+        .insert(
           id: const Value(testConversationId),
           workspaceId: workspace.id,
           title: 'Conv',
@@ -309,7 +309,7 @@ void main() {
       final _ = await fixture.database.agentToolsDao.setAgentToolPermission(
         'agent-1',
         'workspace-tool-id',
-        permission: PermissionAccess.denied,
+        permission: .denied,
       );
       when(
         () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
@@ -322,9 +322,9 @@ void main() {
           workspaceId: workspace.id,
           toolId: testToolId,
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAllow,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          permissionMode: .alwaysAllow,
+          createdAt: .now(),
+          updatedAt: .now(),
         ),
       );
 
@@ -339,10 +339,10 @@ void main() {
 
     test('conversation allow takes priority over agent deny', () async {
       final workspace = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       final _ = await fixture.database.agentsDao.createAgent(
-        AgentsCompanion.insert(
+        .insert(
           id: const Value('agent-1'),
           workspaceId: workspace.id,
           name: 'Agent',
@@ -351,7 +351,7 @@ void main() {
         const [],
       );
       final _ = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(
+        .insert(
           id: const Value(testConversationId),
           workspaceId: workspace.id,
           title: 'Conv',
@@ -372,14 +372,14 @@ void main() {
       final _ = await fixture.database.agentToolsDao.setAgentToolPermission(
         'agent-1',
         'workspace-tool-id',
-        permission: PermissionAccess.denied,
+        permission: .denied,
       );
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
             testConversationId,
             'workspace-tool-id',
             isEnabled: true,
-            permission: PermissionAccess.granted,
+            permission: .granted,
           );
       when(
         () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
@@ -392,9 +392,9 @@ void main() {
           workspaceId: workspace.id,
           toolId: testToolId,
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAsk,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          permissionMode: .alwaysAsk,
+          createdAt: .now(),
+          updatedAt: .now(),
         ),
       );
 
@@ -420,9 +420,9 @@ void main() {
           workspaceId: testWorkspaceId,
           toolId: testToolId,
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAllow,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          permissionMode: .alwaysAllow,
+          createdAt: .now(),
+          updatedAt: .now(),
         ),
       );
 
@@ -432,7 +432,7 @@ void main() {
             testConversationId,
             'workspace-tool-id',
             isEnabled: false,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
 
       // Act.
@@ -461,9 +461,9 @@ void main() {
             workspaceId: testWorkspaceId,
             toolId: testToolId,
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAllow,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
+            permissionMode: .alwaysAllow,
+            createdAt: .now(),
+            updatedAt: .now(),
           ),
         );
 
@@ -473,7 +473,7 @@ void main() {
               testConversationId,
               'workspace-tool-id',
               isEnabled: true,
-              permission: PermissionAccess.ask,
+              permission: .ask,
             );
 
         // Act.
@@ -503,9 +503,9 @@ void main() {
             workspaceId: testWorkspaceId,
             toolId: testToolId,
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAsk,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
+            permissionMode: .alwaysAsk,
+            createdAt: .now(),
+            updatedAt: .now(),
           ),
         );
 
@@ -515,7 +515,7 @@ void main() {
               testConversationId,
               'workspace-tool-id',
               isEnabled: true,
-              permission: PermissionAccess.granted,
+              permission: .granted,
             );
 
         // Act.
@@ -542,9 +542,9 @@ void main() {
           workspaceId: testWorkspaceId,
           toolId: 'load_skill',
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAsk,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          permissionMode: .alwaysAsk,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
       );
 
@@ -576,7 +576,7 @@ void main() {
             'conv-1',
             'tool-1',
             isEnabled: true,
-            permission: PermissionAccess.granted,
+            permission: .granted,
           );
 
       final tools = await fixture.repository.getConversationTools('conv-1');
@@ -609,7 +609,7 @@ void main() {
             'conv-1',
             'tool-1',
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
 
       final tool = await fixture.repository.getConversationTool(
@@ -660,7 +660,7 @@ void main() {
       final result = await fixture.repository.setConversationToolPermission(
         'conv-1',
         'tool-1',
-        permissionMode: ToolPermissionMode.alwaysAllow,
+        permissionMode: .alwaysAllow,
       );
       expect(result, isTrue);
     });
@@ -669,7 +669,7 @@ void main() {
       final result = await fixture.repository.setConversationToolPermission(
         'conv-1',
         'tool-1',
-        permissionMode: ToolPermissionMode.alwaysAsk,
+        permissionMode: .alwaysAsk,
       );
       expect(result, isTrue);
     });
@@ -696,7 +696,7 @@ void main() {
             'conv-1',
             'tool-1',
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
 
       final result = await fixture.repository.toggleConversationTool(
@@ -734,7 +734,7 @@ void main() {
             'conv-1',
             'tool-1',
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
 
       final result = await fixture.repository.isConversationToolEnabled(
@@ -766,7 +766,7 @@ void main() {
             'conv-1',
             'tool-1',
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
 
       final result = await fixture.repository.removeConversationTool(
@@ -803,14 +803,14 @@ void main() {
             'conv-1',
             'tool-1',
             isEnabled: true,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
             'conv-1',
             'tool-2',
             isEnabled: false,
-            permission: PermissionAccess.granted,
+            permission: .granted,
           );
 
       final count = await fixture.repository.getConversationToolsCount(
@@ -848,7 +848,7 @@ void main() {
             'conv-1',
             'tool-1',
             isEnabled: true,
-            permission: PermissionAccess.granted,
+            permission: .granted,
           );
 
       await fixture.repository.copyConversationTools('conv-1', 'conv-2');
@@ -889,9 +889,9 @@ void main() {
             workspaceId: 'ws-1',
             toolId: 'tool-1',
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAllow,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            permissionMode: .alwaysAllow,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
           ),
         );
 
@@ -940,9 +940,9 @@ void main() {
             workspaceId: 'ws-1',
             toolId: 'tool-1',
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAllow,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            permissionMode: .alwaysAllow,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
           ),
         );
 
@@ -951,7 +951,7 @@ void main() {
               'conv-1',
               'tool-1',
               isEnabled: false,
-              permission: PermissionAccess.ask,
+              permission: .ask,
             );
 
         final result = await fixture.repository.isToolAvailableForConversation(
@@ -983,18 +983,18 @@ void main() {
             workspaceId: 'ws-1',
             toolId: 'read_file',
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAllow,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            permissionMode: .alwaysAllow,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
           ),
           WorkspaceToolEntity(
             id: 'tool-2',
             workspaceId: 'ws-1',
             toolId: 'write_file',
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAllow,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            permissionMode: .alwaysAllow,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
           ),
         ],
       );
@@ -1009,9 +1009,9 @@ void main() {
           workspaceId: 'ws-1',
           toolId: 'write_file',
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAllow,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          permissionMode: .alwaysAllow,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
       );
 
@@ -1020,7 +1020,7 @@ void main() {
             'conv-1',
             'tool-1',
             isEnabled: false,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
 
       final result = await fixture.repository.getAvailableToolsForConversation(
@@ -1042,9 +1042,9 @@ void main() {
             workspaceId: 'ws-1',
             toolId: 'read_file',
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAllow,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            permissionMode: .alwaysAllow,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
           ),
         ],
       );
@@ -1059,9 +1059,9 @@ void main() {
           workspaceId: 'ws-1',
           toolId: 'read_file',
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAllow,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          permissionMode: .alwaysAllow,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
       );
 
@@ -1101,9 +1101,9 @@ void main() {
         workspaceId: 'ws-1',
         toolId: 'read_file',
         isEnabled: true,
-        permissionMode: ToolPermissionMode.alwaysAllow,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        permissionMode: .alwaysAllow,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
       when(
         () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
@@ -1122,7 +1122,7 @@ void main() {
             'conv-1',
             'tool-1',
             isEnabled: false,
-            permission: PermissionAccess.ask,
+            permission: .ask,
           );
 
       final result = await fixture.repository
@@ -1136,9 +1136,9 @@ void main() {
         workspaceId: 'ws-1',
         toolId: 'read_file',
         isEnabled: true,
-        permissionMode: ToolPermissionMode.alwaysAllow,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        permissionMode: .alwaysAllow,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
       when(
         () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
@@ -1229,10 +1229,10 @@ void main() {
       'returns enabled tools filtered by disabled conversation tools',
       () async {
         final workspace = await fixture.database.workspaceDao.insertWorkspace(
-          WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+          .insert(name: 'WS', type: WorkspaceType.local),
         );
         final _ = await fixture.database.conversationDao.insertConversation(
-          ConversationsCompanion.insert(
+          .insert(
             id: const Value('conv-1'),
             workspaceId: workspace.id,
             title: 'Conv',
@@ -1250,9 +1250,9 @@ void main() {
               workspaceId: workspace.id,
               toolId: 'read_file',
               isEnabled: true,
-              permissionMode: ToolPermissionMode.alwaysAllow,
-              createdAt: DateTime(2026),
-              updatedAt: DateTime(2026),
+              permissionMode: .alwaysAllow,
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
             ),
           ],
         );
@@ -1267,9 +1267,9 @@ void main() {
             workspaceId: workspace.id,
             toolId: 'read_file',
             isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAllow,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            permissionMode: .alwaysAllow,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
           ),
         );
 
@@ -1305,10 +1305,7 @@ final class _ConversationToolsRepositoryFixture {
 
     _database = database;
     _mockWorkspaceToolsRepository = mockWorkspaceToolsRepository;
-    _repository = ConversationToolsRepository(
-      database,
-      mockWorkspaceToolsRepository,
-    );
+    _repository = .new(database, mockWorkspaceToolsRepository);
   }
 
   Future<void> tearDown() async {

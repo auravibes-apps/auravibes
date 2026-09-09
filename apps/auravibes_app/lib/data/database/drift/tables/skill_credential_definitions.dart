@@ -8,7 +8,7 @@ import 'package:drift/drift.dart';
 @DataClassName('SkillCredentialDefinitionsTable')
 class SkillCredentialDefinitions extends Table with TableMixin {
   TextColumn get workspaceId =>
-      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
   TextColumn get title => text()();
 

@@ -29,7 +29,7 @@ void main() {
       final notifier = container.read(compactionExecutionProvider.notifier);
 
       notifier.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
           startedAt: DateTime.now(),
@@ -48,7 +48,7 @@ void main() {
       expect(notifier.isCompacting('conv-1'), isFalse);
 
       notifier.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
           startedAt: DateTime.now(),
@@ -63,7 +63,7 @@ void main() {
       final notifier = container.read(compactionExecutionProvider.notifier);
 
       notifier.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
           startedAt: DateTime.now(),
@@ -81,7 +81,7 @@ void main() {
       final notifier = container.read(compactionExecutionProvider.notifier);
 
       notifier.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
           startedAt: DateTime.now(),
@@ -118,7 +118,7 @@ void main() {
 
       notifier
         ..markRunning(
-          CompactionExecutionState(
+          .new(
             conversationId: 'conv-1',
             trigger: CompactionTrigger.auto,
             startedAt: DateTime.now(),
@@ -126,7 +126,7 @@ void main() {
           ),
         )
         ..markRunning(
-          CompactionExecutionState(
+          .new(
             conversationId: 'conv-2',
             trigger: CompactionTrigger.manual,
             startedAt: DateTime.now(),
@@ -151,7 +151,7 @@ void main() {
       );
 
       notifier.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
           startedAt: DateTime.now(),
@@ -168,7 +168,7 @@ void main() {
       final runtime = container.read(compactionExecutionRuntimeProvider);
 
       runtime.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
           startedAt: DateTime.now(),
@@ -188,7 +188,7 @@ void main() {
       );
 
       runtime.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
           startedAt: DateTime.now(),
@@ -207,7 +207,7 @@ void main() {
       final notifier = container.read(compactionExecutionProvider.notifier);
 
       notifier.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
           startedAt: DateTime.now(),
@@ -224,7 +224,7 @@ void main() {
       final notifier = container.read(compactionExecutionProvider.notifier);
 
       notifier.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
           startedAt: DateTime.now(),
@@ -242,7 +242,7 @@ void main() {
       final notifier = container.read(compactionExecutionProvider.notifier);
 
       notifier.markRunning(
-        CompactionExecutionState(
+        .new(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
           startedAt: DateTime.now(),

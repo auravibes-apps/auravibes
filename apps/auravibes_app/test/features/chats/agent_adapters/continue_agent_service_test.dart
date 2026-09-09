@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -13,7 +12,6 @@ import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuati
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
@@ -58,7 +56,7 @@ void main() {
         buildSkillContextMessagesUsecase:
             const _FakeBuildSkillContextMessagesService([]),
       ),
-      messagesStreamingRuntime: MessagesStreamingRuntime(
+      messagesStreamingRuntime: .new(
         startSubscription: (_, messageId) {
           startedSubscriptionMessageIds.add(messageId);
         },
@@ -72,7 +70,7 @@ void main() {
           return Future<void>.value();
         },
       ),
-      conversationStreamingRuntime: ConversationStreamingRuntime(
+      conversationStreamingRuntime: .new(
         start: startedConversationIds.add,
         isStreaming: (_) => false,
         remove: removedConversationIds.add,
@@ -113,7 +111,7 @@ void main() {
           buildSkillContextMessagesUsecase:
               const _FakeBuildSkillContextMessagesService([]),
         ),
-        messagesStreamingRuntime: MessagesStreamingRuntime(
+        messagesStreamingRuntime: .new(
           startSubscription: (_, messageId) {
             startedSubscriptionMessageIds.add(messageId);
           },
@@ -127,7 +125,7 @@ void main() {
             return Future<void>.value();
           },
         ),
-        conversationStreamingRuntime: ConversationStreamingRuntime(
+        conversationStreamingRuntime: .new(
           start: startedConversationIds.add,
           isStreaming: (_) => false,
           remove: removedConversationIds.add,
@@ -181,7 +179,7 @@ void main() {
               '',
               parts: [
                 ToolRequestPart(
-                  toolRequest: ToolRequest(
+                  toolRequest: .new(
                     ref: 'tool-1',
                     name: 'calculator',
                     input: const {'input': '2+2'},
@@ -189,7 +187,7 @@ void main() {
                 ),
               ],
             ),
-            finishReason: ChatFinishReason.toolCalls,
+            finishReason: .toolCalls,
             usage: const LanguageModelUsage(responseTokens: 7),
           ),
         ]),
@@ -238,13 +236,13 @@ void main() {
             buildSkillContextMessagesUsecase:
                 const _FakeBuildSkillContextMessagesService([
                   ChatMessage(
-                    role: ChatMessageRole.user,
+                    role: .user,
                     content: _skillContextXml,
                     metadata: {'kind': skillContextMetadataKind},
                   ),
                 ]),
           ),
-          messagesStreamingRuntime: MessagesStreamingRuntime(
+          messagesStreamingRuntime: .new(
             startSubscription: (_, messageId) {
               startedSubscriptionMessageIds.add(messageId);
             },
@@ -258,7 +256,7 @@ void main() {
               return Future<void>.value();
             },
           ),
-          conversationStreamingRuntime: ConversationStreamingRuntime(
+          conversationStreamingRuntime: .new(
             start: startedConversationIds.add,
             isStreaming: (_) => false,
             remove: removedConversationIds.add,
@@ -286,7 +284,7 @@ void main() {
           return Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
-              finishReason: ChatFinishReason.stop,
+              finishReason: .stop,
               usage: const LanguageModelUsage(),
             ),
           ]);
@@ -306,7 +304,7 @@ void main() {
           const [],
           const [
             ChatMessage(
-              role: ChatMessageRole.user,
+              role: .user,
               content: '<skill><name>Research</name><skill_manifest>{&quot;revision&quot;:&quot;r1&quot;}</skill_manifest></skill>',
               metadata: {'kind': skillContextMetadataKind},
             ),
@@ -324,7 +322,7 @@ void main() {
             loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
             buildSkillContextMessagesUsecase: contexts,
           ),
-          messagesStreamingRuntime: MessagesStreamingRuntime(
+          messagesStreamingRuntime: .new(
             startSubscription: (_, messageId) {
               startedSubscriptionMessageIds.add(messageId);
             },
@@ -334,7 +332,7 @@ void main() {
             },
             remove: (messageId) async => removedMessageIds.add(messageId),
           ),
-          conversationStreamingRuntime: ConversationStreamingRuntime(
+          conversationStreamingRuntime: .new(
             start: startedConversationIds.add,
             isStreaming: (_) => false,
             remove: removedConversationIds.add,
@@ -368,7 +366,7 @@ void main() {
           return Stream.value(
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
-              finishReason: ChatFinishReason.stop,
+              finishReason: .stop,
               usage: const LanguageModelUsage(),
             ),
           );
@@ -377,9 +375,7 @@ void main() {
         final _ = await usecase.call(conversationId: 'conversation-1');
         final _ = await usecase.call(
           conversationId: 'conversation-1',
-          context: const AgentIterationContext(
-            origin: AgentIterationOrigin.toolResume,
-          ),
+          context: const AgentIterationContext(origin: .toolResume),
         );
 
         expect(sentTools, hasLength(2));
@@ -415,7 +411,7 @@ void main() {
           ),
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Done'),
-            finishReason: ChatFinishReason.stop,
+            finishReason: .stop,
             usage: const LanguageModelUsage(),
           ),
         ]),
@@ -453,7 +449,7 @@ void main() {
               '',
               parts: [
                 ToolRequestPart(
-                  toolRequest: ToolRequest(
+                  toolRequest: .new(
                     ref: 'tool-1',
                     name: 'calculator',
                     input: const {'input': '2+2'},
@@ -461,7 +457,7 @@ void main() {
                 ),
               ],
             ),
-            finishReason: ChatFinishReason.toolCalls,
+            finishReason: .toolCalls,
             usage: const LanguageModelUsage(),
           ),
         ]),
@@ -506,7 +502,7 @@ void main() {
           ),
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Done'),
-            finishReason: ChatFinishReason.stop,
+            finishReason: .stop,
             usage: const LanguageModelUsage(),
           ),
         ]),
@@ -581,7 +577,7 @@ void main() {
           (_) => Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
-              finishReason: ChatFinishReason.stop,
+              finishReason: .stop,
               usage: const LanguageModelUsage(),
             ),
           ]),
@@ -656,7 +652,7 @@ void main() {
           (_) => Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
-              finishReason: ChatFinishReason.stop,
+              finishReason: .stop,
               usage: const LanguageModelUsage(),
             ),
           ]),
@@ -741,7 +737,7 @@ void main() {
           (_) => Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Working'),
-              finishReason: ChatFinishReason.stop,
+              finishReason: .stop,
               usage: const LanguageModelUsage(),
             ),
           ]),
@@ -750,7 +746,7 @@ void main() {
         final _ = await usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
@@ -758,7 +754,7 @@ void main() {
         verify(
           () => messageRepository.patchMessage(
             'user-1',
-            const MessagePatch(status: MessageStatus.sent),
+            const MessagePatch(status: .sent),
           ),
         ).called(1);
 
@@ -783,7 +779,7 @@ void main() {
           (_) => Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Working'),
-              finishReason: ChatFinishReason.stop,
+              finishReason: .stop,
               usage: const LanguageModelUsage(),
             ),
           ]),
@@ -792,7 +788,7 @@ void main() {
         final _ = await usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1', 'user-2'],
           ),
         );
@@ -800,13 +796,13 @@ void main() {
         verify(
           () => messageRepository.patchMessage(
             'user-1',
-            const MessagePatch(status: MessageStatus.sent),
+            const MessagePatch(status: .sent),
           ),
         ).called(1);
         verify(
           () => messageRepository.patchMessage(
             'user-2',
-            const MessagePatch(status: MessageStatus.sent),
+            const MessagePatch(status: .sent),
           ),
         ).called(1);
 
@@ -833,11 +829,11 @@ void main() {
         final future = usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         );
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
 
         agentCancellationRuntime.requestStop('conversation-1');
 
@@ -849,13 +845,13 @@ void main() {
         verify(
           () => messageRepository.patchMessage(
             'user-1',
-            const MessagePatch(status: MessageStatus.sent),
+            const MessagePatch(status: .sent),
           ),
         ).called(1);
         final _ = verifyNever(
           () => messageRepository.patchMessage(
             'assistant-1',
-            const MessagePatch(status: MessageStatus.error),
+            const MessagePatch(status: .error),
           ),
         );
       },
@@ -878,13 +874,13 @@ void main() {
         controller.add(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Partial answer'),
-            finishReason: ChatFinishReason.stop,
+            finishReason: .stop,
             usage: const LanguageModelUsage(),
           ),
         );
 
         while (startedSubscriptionMessageIds.isEmpty) {
-          await Future<void>.delayed(Duration.zero);
+          await Future<void>.delayed(.zero);
         }
         agentCancellationRuntime.requestStop('conversation-1');
 
@@ -925,7 +921,7 @@ void main() {
             '',
             parts: [
               ToolRequestPart(
-                toolRequest: ToolRequest(
+                toolRequest: .new(
                   ref: 'tool-1',
                   name: 'calculator',
                   input: const {'input': '2+2'},
@@ -933,13 +929,13 @@ void main() {
               ),
             ],
           ),
-          finishReason: ChatFinishReason.toolCalls,
+          finishReason: .toolCalls,
           usage: const LanguageModelUsage(),
         ),
       );
 
       while (startedSubscriptionMessageIds.isEmpty) {
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
       }
       agentCancellationRuntime.requestStop('conversation-1');
 
@@ -985,7 +981,7 @@ void main() {
         controller.add(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Partial answer'),
-            finishReason: ChatFinishReason.stop,
+            finishReason: .stop,
             usage: const LanguageModelUsage(),
           ),
         );
@@ -999,7 +995,7 @@ void main() {
 
         unawaited(markComplete());
         agentCancellationRuntime.requestStop('conversation-1');
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
 
         expect(didComplete, isFalse);
 
@@ -1047,9 +1043,7 @@ void main() {
 
       final result = await usecase.call(
         conversationId: 'conversation-1',
-        context: const AgentIterationContext(
-          origin: AgentIterationOrigin.toolResume,
-        ),
+        context: const AgentIterationContext(origin: .toolResume),
       );
 
       expect(result.messageId, isEmpty);
@@ -1082,7 +1076,7 @@ void main() {
         buildSkillContextMessagesUsecase:
             const _FakeBuildSkillContextMessagesService([]),
       ),
-      messagesStreamingRuntime: MessagesStreamingRuntime(
+      messagesStreamingRuntime: .new(
         startSubscription: (_, _) {
           final _ = Object();
         },
@@ -1093,7 +1087,7 @@ void main() {
           return Future<void>.value();
         },
       ),
-      conversationStreamingRuntime: ConversationStreamingRuntime(
+      conversationStreamingRuntime: .new(
         start: (_) {
           final _ = Object();
         },
@@ -1132,7 +1126,7 @@ void main() {
           buildSkillContextMessagesUsecase:
               const _FakeBuildSkillContextMessagesService([]),
         ),
-        messagesStreamingRuntime: MessagesStreamingRuntime(
+        messagesStreamingRuntime: .new(
           startSubscription: (_, _) {
             final _ = Object();
           },
@@ -1143,7 +1137,7 @@ void main() {
             return Future<void>.value();
           },
         ),
-        conversationStreamingRuntime: ConversationStreamingRuntime(
+        conversationStreamingRuntime: .new(
           start: (_) {
             final _ = Object();
           },
@@ -1176,8 +1170,8 @@ void main() {
         title: 'No Model',
         workspaceId: 'workspace-1',
         isPinned: false,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
       );
       when(() => conversationRepository.getConversationById('conversation-1'))
           .thenAnswer((_) async => noModelConversation);
@@ -1337,7 +1331,7 @@ void main() {
         buildSkillContextMessagesUsecase:
             const _FakeBuildSkillContextMessagesService([]),
       ),
-      messagesStreamingRuntime: MessagesStreamingRuntime(
+      messagesStreamingRuntime: .new(
         startSubscription: (_, _) {
           final _ = Object();
         },
@@ -1348,7 +1342,7 @@ void main() {
           return Future<void>.value();
         },
       ),
-      conversationStreamingRuntime: ConversationStreamingRuntime(
+      conversationStreamingRuntime: .new(
         start: (_) {
           final _ = Object();
         },
@@ -1387,7 +1381,7 @@ void main() {
           buildSkillContextMessagesUsecase:
               const _FakeBuildSkillContextMessagesService([]),
         ),
-        messagesStreamingRuntime: MessagesStreamingRuntime(
+        messagesStreamingRuntime: .new(
           startSubscription: (_, _) {
             final _ = Object();
           },
@@ -1398,7 +1392,7 @@ void main() {
             return Future<void>.value();
           },
         ),
-        conversationStreamingRuntime: ConversationStreamingRuntime(
+        conversationStreamingRuntime: .new(
           start: (_) {
             final _ = Object();
           },
@@ -1448,7 +1442,7 @@ void main() {
         (_) => Stream.fromIterable([
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Done'),
-            finishReason: ChatFinishReason.stop,
+            finishReason: .stop,
             usage: const LanguageModelUsage(),
           ),
         ]),
@@ -1477,8 +1471,8 @@ final _conversation = ConversationEntity(
   title: 'Conversation 1',
   workspaceId: 'workspace-1',
   isPinned: false,
-  createdAt: DateTime(2025),
-  updatedAt: DateTime(2025),
+  createdAt: .new(2025),
+  updatedAt: .new(2025),
   modelId: 'model-1',
 );
 
@@ -1486,22 +1480,22 @@ final _userMessage = MessageEntity(
   id: 'user-1',
   conversationId: 'conversation-1',
   content: 'What is 2 + 2?',
-  messageType: MessageType.text,
+  messageType: .text,
   isUser: true,
-  status: MessageStatus.sent,
-  createdAt: DateTime(2025),
-  updatedAt: DateTime(2025),
+  status: .sent,
+  createdAt: .new(2025),
+  updatedAt: .new(2025),
 );
 
 final _unfinishedAssistantMessage = MessageEntity(
   id: 'assistant-1',
   conversationId: 'conversation-1',
   content: 'Working',
-  messageType: MessageType.text,
+  messageType: .text,
   isUser: false,
-  status: MessageStatus.unfinished,
-  createdAt: DateTime(2025),
-  updatedAt: DateTime(2025),
+  status: .unfinished,
+  createdAt: .new(2025),
+  updatedAt: .new(2025),
 );
 
 const _skillContextXml =
@@ -1528,14 +1522,14 @@ AppAgentContinuationAdapter _appAgentContinuationAdapter({
 }
 
 final _model = WorkspaceModelSelectionWithConnectionEntity(
-  workspaceModelSelection: WorkspaceModelSelectionEntity(
+  workspaceModelSelection: .new(
     id: 'model-1',
     modelId: 'gpt-4',
     createdAt: DateTime(2025),
     updatedAt: DateTime(2025),
     modelConnectionId: 'credential-1',
   ),
-  modelConnection: ModelConnectionEntity(
+  modelConnection: .new(
     id: 'credential-1',
     name: 'Main credential',
     modelId: 'model-1',
@@ -1547,7 +1541,7 @@ final _model = WorkspaceModelSelectionWithConnectionEntity(
   modelsProvider: const ApiModelProviderEntity(
     id: 'provider-1',
     name: 'OpenAI',
-    type: ModelProvidersType.openai,
+    type: .openai,
   ),
 );
 

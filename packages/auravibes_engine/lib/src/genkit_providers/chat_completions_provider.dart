@@ -107,7 +107,7 @@ class const ChatCompletionsCodec({
 
       final parts = _partsFromEvent(event);
       if (parts.isNotEmpty) {
-        sendChunk(ModelResponseChunk(index: 0, content: parts));
+        sendChunk(.new(index: 0, content: parts));
       }
     }
 
@@ -147,7 +147,7 @@ class const ChatCompletionsCodec({
 
     throw GenkitException(
       '$errorLabel API request failed (HTTP $statusCode).',
-      status: StatusCodes.fromHttpStatus(statusCode),
+      status: .fromHttpStatus(statusCode),
     );
   }
 }
@@ -219,7 +219,7 @@ Map<String, dynamic> _mediaToChatContent(Part part, Media media) {
   if (data == null) {
     throw GenkitException(
       'Chat Completions media inputs require a data URL for files and audio.',
-      status: StatusCodes.INVALID_ARGUMENT,
+      status: .INVALID_ARGUMENT,
     );
   }
   if (contentType.startsWith('audio/')) {
@@ -300,14 +300,14 @@ Message _messageFromAssistant(sdk.AssistantMessage message) {
     }
   }
 
-  return Message(role: Role.model, content: parts);
+  return Message(role: .model, content: parts);
 }
 
 ToolRequestPart _toolRequestFromToolCall(sdk.ToolCall toolCall) {
   final arguments = toolCall.function.arguments;
 
   return ToolRequestPart(
-    toolRequest: ToolRequest(
+    toolRequest: .new(
       ref: toolCall.id,
       name: toolCall.function.name,
       input: arguments.isNotEmpty

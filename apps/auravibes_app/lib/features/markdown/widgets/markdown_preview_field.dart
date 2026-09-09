@@ -20,17 +20,14 @@ class const MarkdownPreviewField({
           AuraRow(
             children: [
               Expanded(
-                child: AuraText(
-                  child: TextLocale(titleKey),
-                  style: AuraTextStyle.heading6,
-                ),
+                child: AuraText(child: TextLocale(titleKey), style: .heading6),
               ),
               if (!isReadOnly)
                 AuraButton(
                   onPressed: onEdit,
                   child: TextLocale(editKey),
-                  variant: AuraButtonVariant.outlined,
-                  size: AuraButtonSize.small,
+                  variant: .outlined,
+                  size: .small,
                 ),
             ],
             spacing: .md,
@@ -48,9 +45,9 @@ class const MarkdownPreviewField({
           ),
         ],
         spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
-      style: AuraCardStyle.border,
+      style: .border,
     );
   }
 }

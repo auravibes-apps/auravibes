@@ -4,7 +4,6 @@ import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -16,19 +15,10 @@ void main() {
       final now = DateTime(2026);
       when(() => repository.getAgentsByWorkspace('workspace-1')).thenAnswer(
         (_) async => [
-          _agent(
-            id: 'main',
-            now: now,
-            visibility: AgentVisibility.chatSelector,
-          ),
-          _agent(id: 'sub', now: now, visibility: AgentVisibility.subAgentList),
-          _agent(id: 'both', now: now, visibility: AgentVisibility.both),
-          _agent(
-            id: 'off',
-            now: now,
-            visibility: AgentVisibility.both,
-            isEnabled: false,
-          ),
+          _agent(id: 'main', now: now, visibility: .chatSelector),
+          _agent(id: 'sub', now: now, visibility: .subAgentList),
+          _agent(id: 'both', now: now, visibility: .both),
+          _agent(id: 'off', now: now, visibility: .both, isEnabled: false),
         ],
       );
 
@@ -47,18 +37,10 @@ void main() {
       final repository = _MockAgentsRepository();
       final now = DateTime(2026);
       when(() => repository.getAgentById('sub')).thenAnswer(
-        (_) async => _agent(
-          id: 'sub',
-          now: now,
-          visibility: AgentVisibility.subAgentList,
-        ),
+        (_) async => _agent(id: 'sub', now: now, visibility: .subAgentList),
       );
       when(() => repository.getAgentById('main')).thenAnswer(
-        (_) async => _agent(
-          id: 'main',
-          now: now,
-          visibility: AgentVisibility.chatSelector,
-        ),
+        (_) async => _agent(id: 'main', now: now, visibility: .chatSelector),
       );
       when(() => repository.getAgentById('missing'))
           .thenAnswer((_) async => null);
@@ -123,9 +105,9 @@ void main() {
       const input = MessageToCreate(
         conversationId: 'child',
         content: 'Do it',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sent,
+        status: .sent,
       );
       when(() => repository.createMessage(input)).thenAnswer(
         (_) async => _message(
@@ -218,9 +200,9 @@ MessageEntity _message({
     id: id,
     conversationId: conversationId,
     content: content,
-    messageType: MessageType.text,
+    messageType: .text,
     isUser: isUser,
-    status: MessageStatus.sent,
+    status: .sent,
     createdAt: now,
     updatedAt: now,
   );

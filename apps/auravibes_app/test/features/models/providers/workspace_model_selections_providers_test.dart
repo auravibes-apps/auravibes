@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
@@ -116,9 +115,7 @@ class _FakeWorkspaceModelSelectionRepository([
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
     String workspaceId,
-  ) => watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
-  );
+  ) => watchWorkspaceModelSelections(.new(workspaces: [workspaceId]));
 }
 
 WorkspaceModelSelectionWithConnectionEntity _makeSelection({
@@ -133,14 +130,14 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection({
   final now = DateTime(2026);
 
   return WorkspaceModelSelectionWithConnectionEntity(
-    workspaceModelSelection: WorkspaceModelSelectionEntity(
+    workspaceModelSelection: .new(
       id: selectionId,
       modelId: modelId ?? 'model-$selectionId',
       createdAt: now,
       updatedAt: now,
       modelConnectionId: modelConnectionId,
     ),
-    modelConnection: ModelConnectionEntity(
+    modelConnection: .new(
       id: modelConnectionId,
       name: modelConnectionName,
       modelId: connectionProviderId ?? modelId ?? 'model-$selectionId',
@@ -149,11 +146,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection({
       workspaceId: 'ws-1',
       hasKey: true,
     ),
-    modelsProvider: ApiModelProviderEntity(
-      id: providerId,
-      name: providerName,
-      type: null,
-    ),
+    modelsProvider: .new(id: providerId, name: providerName, type: null),
   );
 }
 
@@ -173,14 +166,14 @@ void main() {
       final now = DateTime(2024);
       final selections = [
         WorkspaceModelSelectionWithConnectionEntity(
-          workspaceModelSelection: WorkspaceModelSelectionEntity(
+          workspaceModelSelection: .new(
             id: 'sel-1',
             modelId: 'gpt-4',
             createdAt: now,
             updatedAt: now,
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ModelConnectionEntity(
+          modelConnection: .new(
             id: 'conn-1',
             name: 'OpenAI',
             modelId: 'gpt-4',
@@ -232,14 +225,14 @@ void main() {
     test('emits updated selections after initial value', () async {
       final now = DateTime(2026);
       final initialSelection = WorkspaceModelSelectionWithConnectionEntity(
-        workspaceModelSelection: WorkspaceModelSelectionEntity(
+        workspaceModelSelection: .new(
           id: 'sel-1',
           modelId: 'gpt-4',
           createdAt: now,
           updatedAt: now,
           modelConnectionId: 'conn-1',
         ),
-        modelConnection: ModelConnectionEntity(
+        modelConnection: .new(
           id: 'conn-1',
           name: 'OpenAI',
           modelId: 'gpt-4',
@@ -255,14 +248,14 @@ void main() {
         ),
       );
       final updatedSelection = WorkspaceModelSelectionWithConnectionEntity(
-        workspaceModelSelection: WorkspaceModelSelectionEntity(
+        workspaceModelSelection: .new(
           id: 'sel-2',
           modelId: 'claude-3',
           createdAt: now,
           updatedAt: now,
           modelConnectionId: 'conn-2',
         ),
-        modelConnection: ModelConnectionEntity(
+        modelConnection: .new(
           id: 'conn-2',
           name: 'Anthropic',
           modelId: 'claude-3',
@@ -350,7 +343,7 @@ void main() {
       const openAIProvider = ApiModelProviderEntity(
         id: 'openai',
         name: 'OpenAI',
-        type: ModelProvidersType.openai,
+        type: .openai,
       );
       const openAIModels = [
         ApiModelEntity(
@@ -432,7 +425,7 @@ void main() {
         const openAIProvider = ApiModelProviderEntity(
           id: 'openai',
           name: 'OpenAI',
-          type: ModelProvidersType.openai,
+          type: .openai,
         );
         const openAIModels = [
           ApiModelEntity(

@@ -2,7 +2,6 @@ import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
@@ -23,7 +22,7 @@ enrichment, and summarization.
       description: 'Search the web with Kagi.',
       inputJsonSchema: searchInputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://kagi.com/api/v1/search',
           headers: {'authorization': 'Bot {{ credential.apiKey }}'},
@@ -47,7 +46,7 @@ enrichment, and summarization.
       description: 'Find enriched web information for a query.',
       inputJsonSchema: searchInputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://kagi.com/api/v0/enrich/web',
           headers: {'authorization': 'Bot {{ credential.apiKey }}'},

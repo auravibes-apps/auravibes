@@ -70,11 +70,11 @@ class const ConversationToolTile({
             ),
         ],
         spacing: .none,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
       padding: .none,
       onTap: isWorkspaceEnabled ? onToggle : null,
-      style: AuraCardStyle.border,
+      style: .border,
     );
   }
 }
@@ -127,7 +127,7 @@ class const _ToolIcon({
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
+          .circular(context.auraTheme.fromBorderRadius(.md)),
         ),
       ),
       width: iconSize,
@@ -149,25 +149,25 @@ class const _ToolDescription({
         if (isWorkspaceEnabled)
           AuraText(
             child: DefaultTextStyle.merge(
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
               maxLines: 1,
               child: toolState.tool.getDescriptionWidget(),
             ),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           )
         else
           AuraText(
             child: DefaultTextStyle.merge(
-              style: const TextStyle(fontStyle: FontStyle.italic),
+              style: const TextStyle(fontStyle: .italic),
               child: const TextLocale(
                 LocaleKeys.tools_screen_disabled_in_workspace,
               ),
             ),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
       ],
       spacing: .xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
     );
   }
 }
@@ -181,7 +181,7 @@ class const _ToolToggleIcon({
     if (!isWorkspaceEnabled) {
       return const Opacity(
         opacity: 0.5,
-        child: AuraIcon(Icons.block, size: AuraIconSize.small),
+        child: AuraIcon(Icons.block, size: .small),
       );
     }
 
@@ -206,18 +206,18 @@ class const _ToolPermissionSection({
             children: [
               const AuraText(
                 child: TextLocale(LocaleKeys.tools_screen_permission_label),
-                style: AuraTextStyle.bodySmall,
+                style: .bodySmall,
               ),
               ToolPermissionSelector(value: value, onChanged: onChanged),
             ],
             spacing: .sm,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
           ),
           padding: .medium,
         ),
       ],
       spacing: .none,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
     );
   }
 }

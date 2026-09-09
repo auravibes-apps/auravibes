@@ -1,6 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
@@ -33,7 +32,7 @@ void main() {
       workspaceId: 'workspace-1',
       toolId: 'web_search',
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAllow,
+      permissionMode: .alwaysAllow,
       createdAt: createdAt,
       updatedAt: createdAt,
     );
@@ -43,7 +42,7 @@ void main() {
       workspaceId: 'workspace-1',
       toolId: 'url',
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAllow,
+      permissionMode: .alwaysAllow,
       createdAt: createdAt,
       updatedAt: createdAt,
     );
@@ -53,7 +52,7 @@ void main() {
       workspaceId: 'workspace-1',
       toolId: 'mcp_server_1_fetch',
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAllow,
+      permissionMode: .alwaysAllow,
       createdAt: createdAt,
       updatedAt: createdAt,
       workspaceToolsGroupId: 'group-1',
@@ -64,7 +63,7 @@ void main() {
       workspaceId: 'workspace-1',
       name: 'MCP Tools',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
+      permissions: .ask,
       createdAt: createdAt,
       updatedAt: createdAt,
       mcpServerId: 'server-1',
@@ -185,7 +184,7 @@ void main() {
         await notifier.toggleGroupTools(
           null,
           enabled: true,
-          defaultGroupType: DefaultToolGroupType.builtIn,
+          defaultGroupType: .builtIn,
         );
 
         expect(conversationToolsRepository.enabledToolIds, contains('tool-1'));
@@ -229,7 +228,7 @@ class _GroupedConversationToolsFixture {
     _workspaceToolsRepository = workspaceToolsRepository;
     _conversationToolsRepository = conversationToolsRepository;
     _mcpNotifier = mcpNotifier;
-    _container = ProviderContainer(
+    _container = .new(
       overrides: [
         toolsGroupsRepositoryProvider(
           const WorkspaceSession(

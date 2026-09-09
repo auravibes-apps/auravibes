@@ -1,4 +1,4 @@
-// Required: provider unit tests read scoped providers directly.
+// Required: Provider unit tests read scoped providers directly.
 
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:flutter_test/flutter_test.dart';

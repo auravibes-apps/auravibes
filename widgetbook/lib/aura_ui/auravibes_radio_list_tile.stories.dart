@@ -24,7 +24,7 @@ final $RadioListTile = _Story(
       name: 'Compact Phone',
       modes: [ViewportMode(compactPhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
     _Scenario(
       name: 'Selects Radio',
@@ -53,7 +53,7 @@ class _RadioListTileDemoState extends State<RadioListTileDemo> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         AuraRadioListTile<String>(
           value: 'system',

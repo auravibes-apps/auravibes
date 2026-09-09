@@ -309,18 +309,18 @@ void main() {
         );
         final message = await database.messageDao.insertMessage(
           const MessagesCompanion(
-            conversationId: Value('conv-1'),
-            content: Value('see attachment'),
-            messageType: Value(MessagesTableType.text),
-            isUser: Value(true),
-            status: Value(MessageTableStatus.sent),
+            conversationId: .new('conv-1'),
+            content: .new('see attachment'),
+            messageType: .new(MessagesTableType.text),
+            isUser: .new(true),
+            status: .new(MessageTableStatus.sent),
           ),
         );
         final _ = await database
             .into(database.messageAttachments)
             .insert(
               MessageAttachmentsCompanion(
-                messageId: Value(message.id),
+                messageId: .new(message.id),
                 localPath: const Value('/support/image.png'),
                 fileName: const Value('image.png'),
                 displayName: const Value('image.png'),

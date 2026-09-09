@@ -3,7 +3,6 @@
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
-import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/models/tool_approval_decision.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
@@ -32,7 +31,7 @@ class const ResolveToolApprovalDecisionUsecase({
         resolvedTool.toolIdentifier == agent.listSkillsToolName) {
       return ToolApprovalDecision(
         toolCallId: toolCallId,
-        permissionResult: ToolPermissionResult.granted,
+        permissionResult: .granted,
       );
     }
 
@@ -44,7 +43,7 @@ class const ResolveToolApprovalDecisionUsecase({
     if (permissionTableId == null) {
       return ToolApprovalDecision(
         toolCallId: toolCallId,
-        permissionResult: ToolPermissionResult.notConfigured,
+        permissionResult: .notConfigured,
       );
     }
 

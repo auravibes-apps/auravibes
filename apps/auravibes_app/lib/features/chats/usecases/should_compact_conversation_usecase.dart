@@ -28,7 +28,7 @@ class const ShouldCompactConversationUsecase({
     if (trigger == CompactionTrigger.auto && !settings.autoCompactionEnabled) {
       return CompactionDecision(
         shouldCompact: false,
-        reason: CompactionDecisionReason.disabled,
+        reason: .disabled,
         trigger: trigger,
         settings: settings,
       );
@@ -37,7 +37,7 @@ class const ShouldCompactConversationUsecase({
     if (trigger == CompactionTrigger.auto && contextLimit == null) {
       return CompactionDecision(
         shouldCompact: false,
-        reason: CompactionDecisionReason.unknownContextLimit,
+        reason: .unknownContextLimit,
         trigger: trigger,
         settings: settings,
       );
@@ -53,7 +53,7 @@ class const ShouldCompactConversationUsecase({
     if (!isContextSafeForCompaction(context)) {
       return CompactionDecision(
         shouldCompact: false,
-        reason: CompactionDecisionReason.unsafeState,
+        reason: .unsafeState,
         trigger: trigger,
         settings: settings,
       );
@@ -62,7 +62,7 @@ class const ShouldCompactConversationUsecase({
     if (trigger == CompactionTrigger.manual) {
       return CompactionDecision(
         shouldCompact: true,
-        reason: CompactionDecisionReason.eligible,
+        reason: .eligible,
         trigger: trigger,
         settings: settings,
       );
@@ -72,7 +72,7 @@ class const ShouldCompactConversationUsecase({
     if (effectiveContextLimit == null) {
       return CompactionDecision(
         shouldCompact: false,
-        reason: CompactionDecisionReason.unknownContextLimit,
+        reason: .unknownContextLimit,
         trigger: trigger,
         settings: settings,
       );
@@ -107,7 +107,7 @@ class const ShouldCompactConversationUsecase({
     if (evaluation.shouldCompact) {
       return CompactionDecision(
         shouldCompact: true,
-        reason: CompactionDecisionReason.eligible,
+        reason: .eligible,
         trigger: trigger,
         estimate: estimate,
         settings: settings,
@@ -116,7 +116,7 @@ class const ShouldCompactConversationUsecase({
 
     return CompactionDecision(
       shouldCompact: false,
-      reason: CompactionDecisionReason.belowPercentageThreshold,
+      reason: .belowPercentageThreshold,
       trigger: trigger,
       estimate: estimate,
       settings: settings,

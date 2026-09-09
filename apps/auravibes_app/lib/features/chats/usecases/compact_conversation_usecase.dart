@@ -46,8 +46,7 @@ class const CompactConversationUsecase({
 }) {
   static const String _failureMessageKey =
       LocaleKeys.compaction_errors_auto_blocked;
-  static const BuildPromptChatMessages _buildPromptChatMessages =
-      BuildPromptChatMessages();
+  static const BuildPromptChatMessages _buildPromptChatMessages = .new();
 
   Future<CompactionExecutionState> call({
     required String conversationId,
@@ -76,7 +75,7 @@ class const CompactConversationUsecase({
     }
     final startedAt = DateTime.now();
     compactionExecution.markRunning(
-      CompactionExecutionState(
+      .new(
         conversationId: conversationId,
         trigger: trigger,
         startedAt: startedAt,
@@ -145,7 +144,7 @@ class const CompactConversationUsecase({
         conversationId: conversationId,
         trigger: trigger,
         startedAt: startedAt,
-        status: CompactionExecutionStatus.success,
+        status: .success,
       );
     } on Exception {
       compactionExecution.markFailure(conversationId);
@@ -196,7 +195,7 @@ class const CompactConversationUsecase({
       compactedFromMessageId: range.fromMessageId,
       compactedThroughMessageId: range.throughMessageId,
       compactedMessageIds: range.messageIds,
-      compactionCreatedAt: DateTime.now(),
+      compactionCreatedAt: .now(),
     );
 
     final repository = messageRepository;
@@ -204,7 +203,7 @@ class const CompactConversationUsecase({
       throw StateError('Local message repository unavailable');
     }
     final created = await repository.createMessage(
-      MessageToCreate(
+      .new(
         conversationId: conversationId,
         content: summaryText,
         messageType: MessageType.system,
@@ -216,7 +215,7 @@ class const CompactConversationUsecase({
 
     switch (await repository.patchMessage(
       created.id,
-      const MessagePatch(status: MessageStatus.sent),
+      const MessagePatch(status: .sent),
     )) {
       case _:
         return;
@@ -231,7 +230,7 @@ class const CompactConversationUsecase({
       throw StateError('Local message repository unavailable');
     }
     final created = await repository.createMessage(
-      MessageToCreate(
+      .new(
         conversationId: conversationId,
         content: _failureMessageKey,
         messageType: MessageType.system,
@@ -242,7 +241,7 @@ class const CompactConversationUsecase({
 
     switch (await repository.patchMessage(
       created.id,
-      const MessagePatch(status: MessageStatus.error),
+      const MessagePatch(status: .error),
     )) {
       case _:
         return;
@@ -271,7 +270,7 @@ compactConversationUsecaseProvider =
 
         return CompactConversationUsecase(
           compactionExecution: execution,
-          cloudCompaction: CloudCompactionUsecase(
+          cloudCompaction: .new(
             conversations: conversations,
             turns: turns,
             execution: execution,

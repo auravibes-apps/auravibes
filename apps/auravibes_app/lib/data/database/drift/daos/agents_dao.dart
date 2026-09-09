@@ -83,7 +83,7 @@ class AgentsDao(super.attachedDatabase)
 
     for (final skill in skills) {
       final _ = await into(agentSkills)
-          .insert(skill.copyWith(agentId: Value(agentId)));
+          .insert(skill.copyWith(agentId: .new(agentId)));
     }
   }
 }

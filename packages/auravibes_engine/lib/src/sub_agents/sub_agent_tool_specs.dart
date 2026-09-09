@@ -52,7 +52,7 @@ final runSubAgentToolSpec = ToolSpec(
   },
 );
 
-final List<ToolSpec> subAgentToolSpecs = List.unmodifiable([
+final List<ToolSpec> subAgentToolSpecs = .unmodifiable([
   listAgentsToolSpec,
   runSubAgentToolSpec,
 ]);

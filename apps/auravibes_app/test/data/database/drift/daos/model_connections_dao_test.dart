@@ -24,7 +24,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -41,7 +41,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       final ws = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
@@ -53,7 +53,7 @@ void main() {
     test('insertModelConnection creates and returns connection', () async {
       final conn = await fixture.database.modelConnectionsDao
           .insertModelConnection(
-            ServiceConnectionsCompanion.insert(
+            .insert(
               name: 'My Connection',
               serviceId: 'gpt-4',
               kind: ServiceConnectionKindTable.modelProvider,
@@ -69,7 +69,7 @@ void main() {
     test('getModelConnectionById returns connection', () async {
       final created = await fixture.database.modelConnectionsDao
           .insertModelConnection(
-            ServiceConnectionsCompanion.insert(
+            .insert(
               name: 'Conn',
               serviceId: 'gpt-4',
               kind: ServiceConnectionKindTable.modelProvider,
@@ -102,8 +102,8 @@ void main() {
               ServiceConnectionsCompanion.insert(
                 name: 'Custom API',
                 serviceId: 'custom-api',
-                kind: ServiceConnectionKindTable.customHttp,
-                authenticationType: ServiceAuthenticationTypeTable.bearerToken,
+                kind: .customHttp,
+                authenticationType: .bearerToken,
                 encryptedAuthValue: const Value('token'),
                 workspaceId: workspaceId,
               ),
@@ -119,11 +119,11 @@ void main() {
       'getAllModelConnectionsByWorkspace filters by workspace IDs',
       () async {
         final ws2 = await fixture.database.workspaceDao.insertWorkspace(
-          WorkspacesCompanion.insert(name: 'WS2', type: WorkspaceType.local),
+          .insert(name: 'WS2', type: WorkspaceType.local),
         );
         final _ = await fixture.database.modelConnectionsDao
             .insertModelConnection(
-              ServiceConnectionsCompanion.insert(
+              .insert(
                 name: 'C1',
                 serviceId: 'gpt-4',
                 kind: ServiceConnectionKindTable.modelProvider,
@@ -134,7 +134,7 @@ void main() {
             );
         final _ = await fixture.database.modelConnectionsDao
             .insertModelConnection(
-              ServiceConnectionsCompanion.insert(
+              .insert(
                 name: 'C2',
                 serviceId: 'gpt-4',
                 kind: ServiceConnectionKindTable.modelProvider,
@@ -154,11 +154,11 @@ void main() {
       'getAllModelConnectionsByWorkspace returns multiple for multiple IDs',
       () async {
         final ws2 = await fixture.database.workspaceDao.insertWorkspace(
-          WorkspacesCompanion.insert(name: 'WS2', type: WorkspaceType.local),
+          .insert(name: 'WS2', type: WorkspaceType.local),
         );
         final _ = await fixture.database.modelConnectionsDao
             .insertModelConnection(
-              ServiceConnectionsCompanion.insert(
+              .insert(
                 name: 'C1',
                 serviceId: 'gpt-4',
                 kind: ServiceConnectionKindTable.modelProvider,
@@ -169,7 +169,7 @@ void main() {
             );
         final _ = await fixture.database.modelConnectionsDao
             .insertModelConnection(
-              ServiceConnectionsCompanion.insert(
+              .insert(
                 name: 'C2',
                 serviceId: 'gpt-4',
                 kind: ServiceConnectionKindTable.modelProvider,
@@ -189,7 +189,7 @@ void main() {
     test('deleteModelConnection removes connection', () async {
       final created = await fixture.database.modelConnectionsDao
           .insertModelConnection(
-            ServiceConnectionsCompanion.insert(
+            .insert(
               name: 'C',
               serviceId: 'gpt-4',
               kind: ServiceConnectionKindTable.modelProvider,
@@ -218,8 +218,8 @@ void main() {
               ServiceConnectionsCompanion.insert(
                 name: 'Custom API',
                 serviceId: 'custom-api',
-                kind: ServiceConnectionKindTable.customHttp,
-                authenticationType: ServiceAuthenticationTypeTable.bearerToken,
+                kind: .customHttp,
+                authenticationType: .bearerToken,
                 encryptedAuthValue: const Value('token'),
                 workspaceId: workspaceId,
               ),

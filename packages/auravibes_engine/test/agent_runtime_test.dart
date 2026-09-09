@@ -12,8 +12,8 @@ void main() {
       type: 'text',
       status: 'sent',
       isUser: true,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
 
     expect(created.id, 'm1');
@@ -35,7 +35,7 @@ void main() {
         ..requestStop()
         ..requestStop()
         ..registerCleanup(() => calls.add('late'));
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(scope.isCancellationRequested, isTrue);
       expect(calls, ['first', 'async', 'late']);

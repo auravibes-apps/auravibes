@@ -37,7 +37,7 @@ final $SingleSelectionRadio = _Story(
       name: 'Landscape Phone',
       modes: [ViewportMode(landscapePhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Selects Option',
       run: (tester, args) async {
@@ -67,7 +67,7 @@ class _SingleSelectionDemoState extends State<SingleSelectionDemo> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         AuraButtonGroup<String>.single(
           items: const [
@@ -99,7 +99,7 @@ class _SingleSelectionDemoState extends State<SingleSelectionDemo> {
         const SizedBox(height: 16),
         Text(
           'Selected: $_selectedValue',
-          style: TextStyle(color: context.auraColors.onSurface),
+          style: .new(color: context.auraColors.onSurface),
         ),
       ],
     );

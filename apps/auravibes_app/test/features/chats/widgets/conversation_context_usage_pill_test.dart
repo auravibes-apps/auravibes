@@ -1,4 +1,4 @@
-// Required: widget tests override scoped providers directly.
+// Required: Widget tests override scoped providers directly.
 
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
@@ -22,7 +22,7 @@ void main() {
       child: EasyLocalization(
         child: MaterialApp(
           home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
+            data: .new(extensions: [AuraTheme.light]),
             child: const Material(
               child: ConversationContextUsagePill(
                 workspaceId: 'ws-1',

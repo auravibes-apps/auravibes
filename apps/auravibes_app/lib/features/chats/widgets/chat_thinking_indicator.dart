@@ -12,17 +12,14 @@ class const ChatThinkingIndicator({super.key}) extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const AuraTypingIndicator(
-            size: AuraTypingIndicatorSize.small,
-            showContainer: false,
-          ),
+          const AuraTypingIndicator(size: .small, showContainer: false),
           const AuraSizedBox(width: .sm),
           Flexible(
             child: AuraText(
               child: Text(
                 LocaleKeys.chats_screens_chat_conversation_thinking_status.tr(),
               ),
-              style: AuraTextStyle.bodySmall,
+              style: .bodySmall,
             ),
           ),
         ],

@@ -75,15 +75,11 @@ void main() {
     const usecase = BuildPromptChatMessages();
 
     final result = usecase([
-      const AgentPromptMessage(
-        content: 'skip',
-        isUser: false,
-        type: AgentPromptMessageType.system,
-      ),
+      const AgentPromptMessage(content: 'skip', isUser: false, type: .system),
       const AgentPromptMessage(
         content: ' keep ',
         isUser: false,
-        type: AgentPromptMessageType.system,
+        type: .system,
         isCompactionSummary: true,
       ),
     ]);

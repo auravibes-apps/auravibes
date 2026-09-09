@@ -177,10 +177,7 @@ class _SkillCredentialDefinitionEditScreenState
         );
         final _ = await usecase.call(
           widget.workspaceId,
-          SkillCredentialDefinitionToCreate(
-            title: _titleController.text,
-            attributesJson: attributesJson,
-          ),
+          .new(title: _titleController.text, attributesJson: attributesJson),
         );
       } else {
         final definitionId = widget.definitionId;
@@ -190,10 +187,7 @@ class _SkillCredentialDefinitionEditScreenState
         );
         final _ = await usecase.call(
           definitionId,
-          SkillCredentialDefinitionToUpdate(
-            title: _titleController.text,
-            attributesJson: attributesJson,
-          ),
+          .new(title: _titleController.text, attributesJson: attributesJson),
         );
         ref.invalidate(
           skillCredentialDefinitionProvider(widget.workspaceId, definitionId),
@@ -211,7 +205,7 @@ class _SkillCredentialDefinitionEditScreenState
             context: context,
           ),
         ),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -288,7 +282,7 @@ class _SkillCredentialDefinitionEditScreenState
             context: context,
           ),
         ),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -350,8 +344,8 @@ class const _SkillCredentialDefinitionForm({
                     ),
                   ),
                 ],
-                spacing: AuraSpacing.sm,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: .sm,
+                crossAxisAlignment: .start,
               ),
               Align(
                 alignment: Alignment.centerRight,
@@ -364,8 +358,8 @@ class const _SkillCredentialDefinitionForm({
                 ),
               ),
             ],
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: .md,
+            crossAxisAlignment: .start,
           ),
         ),
       ],
@@ -379,12 +373,8 @@ class _AttributeFormRow({
   var bool optional = false,
   var bool secret = true,
 }) {
-  final TextEditingController variableController = TextEditingController(
-    text: variable,
-  );
-  final TextEditingController descriptionController = TextEditingController(
-    text: description,
-  );
+  final TextEditingController variableController = .new(text: variable);
+  final TextEditingController descriptionController = .new(text: description);
   void dispose() {
     variableController.dispose();
     descriptionController.dispose();
@@ -410,14 +400,14 @@ class const _AttributeRowEditor({
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
+        borderRadius: const BorderRadius.all(.circular(8)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: AuraColumn(
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Expanded(
                   child: AuraInput(
@@ -459,7 +449,7 @@ class const _AttributeRowEditor({
                   ),
                 ),
               ],
-              spacing: AuraSpacing.md,
+              spacing: .md,
             ),
             AuraRow(
               children: [
@@ -478,11 +468,11 @@ class const _AttributeRowEditor({
                   ),
                 ),
               ],
-              spacing: AuraSpacing.md,
+              spacing: .md,
             ),
           ],
-          spacing: AuraSpacing.sm,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: .sm,
+          crossAxisAlignment: .start,
         ),
       ),
     );

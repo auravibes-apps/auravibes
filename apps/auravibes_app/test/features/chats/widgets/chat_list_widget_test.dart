@@ -40,7 +40,7 @@ void main() {
           builder: (context) {
             return MaterialApp(
               home: Theme(
-                data: ThemeData(extensions: [AuraTheme.light]),
+                data: .new(extensions: [AuraTheme.light]),
                 child: Portal(
                   child: Material(
                     child: ChatListWidget(workspaceId: workspaceId),
@@ -74,8 +74,8 @@ void main() {
       title: title,
       workspaceId: 'ws-1',
       isPinned: isPinned,
-      createdAt: DateTime(2025),
-      updatedAt: DateTime(2025),
+      createdAt: .new(2025),
+      updatedAt: .new(2025),
       modelId: modelId,
     );
   }
@@ -90,9 +90,7 @@ void main() {
 
   group('ChatListWidget', () {
     testWidgets('shows empty state when no chats', (tester) async {
-      final repo = _StubConversationRepository(
-        conversationsStream: Stream.value([]),
-      );
+      final repo = _StubConversationRepository(conversationsStream: .value([]));
 
       await pumpAndInit(
         tester,
@@ -140,7 +138,7 @@ void main() {
         _createConversation(id: 'conv-2', title: 'Chat Two'),
       ];
       final repo = _StubConversationRepository(
-        conversationsStream: Stream.value(conversations),
+        conversationsStream: .value(conversations),
       );
 
       await pumpAndInit(
@@ -166,7 +164,7 @@ void main() {
         _createConversation(title: 'Pinned Chat', isPinned: true),
       ];
       final repo = _StubConversationRepository(
-        conversationsStream: Stream.value(conversations),
+        conversationsStream: .value(conversations),
       );
 
       await pumpAndInit(
@@ -189,7 +187,7 @@ void main() {
     testWidgets('shows options menu button for each chat', (tester) async {
       final conversations = [_createConversation(title: 'Chat One')];
       final repo = _StubConversationRepository(
-        conversationsStream: Stream.value(conversations),
+        conversationsStream: .value(conversations),
       );
 
       await pumpAndInit(
@@ -244,7 +242,7 @@ void main() {
         _createConversation(title: 'Chat One', modelId: 'gpt-4'),
       ];
       final repo = _StubConversationRepository(
-        conversationsStream: Stream.value(conversations),
+        conversationsStream: .value(conversations),
       );
 
       await pumpAndInit(
@@ -267,7 +265,7 @@ void main() {
     testWidgets('uses streaming title when available', (tester) async {
       final conversations = [_createConversation(title: 'Original Title')];
       final repo = _StubConversationRepository(
-        conversationsStream: Stream.value(conversations),
+        conversationsStream: .value(conversations),
       );
 
       await pumpAndInit(
@@ -294,7 +292,7 @@ void main() {
         _createConversation(id: 'conv-3', title: 'Chat Three'),
       ];
       final repo = _StubConversationRepository(
-        conversationsStream: Stream.value(conversations),
+        conversationsStream: .value(conversations),
       );
 
       await pumpAndInit(
@@ -317,9 +315,7 @@ void main() {
     });
 
     testWidgets('shows no chats text in empty state', (tester) async {
-      final repo = _StubConversationRepository(
-        conversationsStream: Stream.value([]),
-      );
+      final repo = _StubConversationRepository(conversationsStream: .value([]));
 
       await pumpAndInit(
         tester,

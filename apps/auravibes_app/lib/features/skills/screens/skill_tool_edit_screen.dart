@@ -44,8 +44,8 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   final _bodyController = TextEditingController();
   final _queryFields = <_KeyValueField>[];
   final _inputFields = <_InputField>[];
-  UrlRequestMethod _method = UrlRequestMethod.get;
-  SkillUrlTemplateBodyFormat _bodyFormat = SkillUrlTemplateBodyFormat.json;
+  UrlRequestMethod _method = .get;
+  SkillUrlTemplateBodyFormat _bodyFormat = .json;
   bool _requiresCredential = false;
   bool _isEnabled = true;
   bool _initialized = false;
@@ -315,7 +315,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
         );
         final _ = await usecase.call(
           widget.skillId,
-          SkillTemplateToolToCreate(
+          .new(
             templateType: SkillTemplateToolType.url,
             title: _titleController.text,
             description: _descriptionController.text,
@@ -333,7 +333,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
         );
         final _ = await usecase.call(
           toolId,
-          SkillTemplateToolToUpdate(
+          .new(
             title: _titleController.text,
             description: _descriptionController.text,
             templateJson: templateJson,
@@ -350,7 +350,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       final _ = AuraSnackBars.show(
         context: context,
         content: Text(LocaleKeys.skills_tool_save_error.tr(context: context)),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -513,11 +513,7 @@ class const _SkillToolForm({
                   ),
                 ],
                 value: [bodyFormat],
-                onChanged: (values) {
-                  final selected = values.firstOrNull;
-                  if (selected == null) return;
-                  onBodyFormatChanged(selected);
-                },
+                onChanged: _handleBodyFormatChanged,
                 label: Text(
                   LocaleKeys.skills_tool_body_format_label.tr(context: context),
                 ),
@@ -559,7 +555,7 @@ class const _SkillToolForm({
                     ),
                   ),
                 ],
-                spacing: AuraSpacing.md,
+                spacing: .md,
               ),
               Align(
                 alignment: Alignment.centerRight,
@@ -570,12 +566,18 @@ class const _SkillToolForm({
                 ),
               ),
             ],
-            spacing: AuraSpacing.lg,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: .lg,
+            crossAxisAlignment: .start,
           ),
         ),
       ],
     );
+  }
+
+  void _handleBodyFormatChanged(List<SkillUrlTemplateBodyFormat> values) {
+    final selected = values.firstOrNull;
+    if (selected == null) return;
+    onBodyFormatChanged(selected);
   }
 }
 
@@ -590,7 +592,7 @@ class const _QueryFieldsSection({
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.skills_tool_query_section_title),
-          style: AuraTextStyle.heading4,
+          style: .heading4,
         ),
         const AuraText(child: TextLocale(LocaleKeys.skills_tool_query_hint)),
         for (final field in fields)
@@ -632,14 +634,14 @@ class const _QueryFieldsSection({
               const AuraIcon(Icons.add),
               Text(LocaleKeys.skills_tool_add_query.tr(context: context)),
             ],
-            spacing: AuraSpacing.xs,
-            mainAxisSize: MainAxisSize.min,
+            spacing: .xs,
+            mainAxisSize: .min,
           ),
-          variant: AuraButtonVariant.text,
+          variant: .text,
         ),
       ],
-      spacing: AuraSpacing.sm,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: .sm,
+      crossAxisAlignment: .start,
     );
   }
 }
@@ -656,7 +658,7 @@ class const _InputFieldsSection({
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.skills_tool_inputs_section_title),
-          style: AuraTextStyle.heading4,
+          style: .heading4,
         ),
         const AuraText(child: TextLocale(LocaleKeys.skills_tool_inputs_hint)),
         for (final field in fields)
@@ -753,16 +755,16 @@ class const _InputFieldsSection({
                         const AuraIcon(Icons.remove_circle_outline),
                         Text(LocaleKeys.common_remove.tr(context: context)),
                       ],
-                      spacing: AuraSpacing.xs,
-                      mainAxisSize: MainAxisSize.min,
+                      spacing: .xs,
+                      mainAxisSize: .min,
                     ),
-                    variant: AuraButtonVariant.text,
+                    variant: .text,
                   ),
                 ),
               ],
-              spacing: AuraSpacing.sm,
+              spacing: .sm,
             ),
-            style: AuraCardStyle.border,
+            style: .border,
           ),
         AuraButton(
           onPressed: onAdd,
@@ -771,14 +773,14 @@ class const _InputFieldsSection({
               const AuraIcon(Icons.add),
               Text(LocaleKeys.skills_tool_add_input.tr(context: context)),
             ],
-            spacing: AuraSpacing.xs,
-            mainAxisSize: MainAxisSize.min,
+            spacing: .xs,
+            mainAxisSize: .min,
           ),
-          variant: AuraButtonVariant.text,
+          variant: .text,
         ),
       ],
-      spacing: AuraSpacing.sm,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: .sm,
+      crossAxisAlignment: .start,
     );
   }
 
@@ -790,10 +792,8 @@ class const _InputFieldsSection({
 }
 
 class _KeyValueField({String key = '', String value = ''}) {
-  final TextEditingController keyController = TextEditingController(text: key);
-  final TextEditingController valueController = TextEditingController(
-    text: value,
-  );
+  final TextEditingController keyController = .new(text: key);
+  final TextEditingController valueController = .new(text: value);
 
   void dispose() {
     keyController.dispose();
@@ -807,12 +807,8 @@ class _InputField({
   String description = '',
   var bool optional = false,
 }) {
-  final TextEditingController nameController = TextEditingController(
-    text: name,
-  );
-  final TextEditingController descriptionController = TextEditingController(
-    text: description,
-  );
+  final TextEditingController nameController = .new(text: name);
+  final TextEditingController descriptionController = .new(text: description);
   void dispose() {
     nameController.dispose();
     descriptionController.dispose();
@@ -830,8 +826,8 @@ class const _ReadOnlyField({
         AuraText(child: TextLocale(labelKey)),
         AuraSelectableText(value),
       ],
-      spacing: AuraSpacing.xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: .xs,
+      crossAxisAlignment: .start,
     );
   }
 }

@@ -7,11 +7,8 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -48,10 +45,7 @@ void main() {
       encryptionService: encryptionService,
     );
     final workspace = await WorkspaceRepository(database).createWorkspace(
-      const WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      ),
+      const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
     final session = WorkspaceSession(
       LocalWorkspaceRef(localWorkspaceId: workspace.id),
@@ -69,7 +63,7 @@ void main() {
           (_) async => ServiceConnectionsActionUsecase(
             (_) => Future<void>.value(),
             (_) => throw UnimplementedError(),
-            DeleteServiceConnectionUsecase(
+            .new(
               modelConnectionRepository: ModelConnectionRepository(
                 database: database,
                 encryptionService: encryptionService,
@@ -91,7 +85,7 @@ void main() {
         );
     final _ = await credentialsRepository.createCredential(
       workspace.id,
-      SkillCredentialToCreate(
+      .new(
         credentialDefinitionId: definition.id,
         name: 'Main Token',
         attributes: const {'token': 'secret-value'},
@@ -147,7 +141,7 @@ void main() {
 
     final _ = await credentialsRepository.createCredential(
       workspace.id,
-      SkillCredentialToCreate(
+      .new(
         credentialDefinitionId: definition.id,
         name: 'Second Token',
         attributes: const {'token': 'secret-value'},
@@ -158,7 +152,7 @@ void main() {
     expect(find.text('Second Token'), findsOneWidget);
 
     final _ = await database.skillCredentialsDao.createCredential(
-      ServiceConnectionsCompanion.insert(
+      .insert(
         name: 'Stale Token',
         serviceId: 'missing-definition',
         kind: ServiceConnectionKindTable.skillCredential,
@@ -176,7 +170,7 @@ void main() {
       findsOneWidget,
     );
     final connection = await database.modelConnectionsDao.insertModelConnection(
-      ServiceConnectionsCompanion.insert(
+      .insert(
         name: 'OpenAI Main',
         serviceId: 'openai',
         kind: ServiceConnectionKindTable.modelProvider,
@@ -213,10 +207,10 @@ void main() {
           ServiceConnectionsCompanion.insert(
             name: 'Notion OAuth',
             serviceId: 'notion-mcp',
-            kind: ServiceConnectionKindTable.mcpServer,
-            authenticationType: ServiceAuthenticationTypeTable.oauth2,
+            kind: .mcpServer,
+            authenticationType: .oauth2,
             encryptedAuthValue: const Value('{"access_token":"secret-token"}'),
-            metadataJson: Value(
+            metadataJson: .new(
               ServiceConnectionAuthCodec.encodeMetadata(
                 const ServiceConnectionMetadata(
                   clientId: 'notion-client-id',
@@ -230,7 +224,7 @@ void main() {
           ),
         );
     final _ = await database.mcpServersDao.insertMcpServer(
-      McpServersCompanion.insert(
+      .insert(
         workspaceId: workspace.id,
         name: 'Notion',
         url: 'https://mcp.notion.com/mcp',
@@ -314,7 +308,7 @@ Future<void> _pumpUntil(
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {
-  final SecretKey _key = SecretKey(List<int>.filled(32, 7));
+  final SecretKey _key = .new(List<int>.filled(32, 7));
 
   @override
   Future<SecretKey> getOrCreateSecretKey() async => _key;

@@ -23,7 +23,7 @@ class const BuildLoadedSkillManifestsUsecase(
     final loadedSkills = await _listAvailableSkillsUsecase(workspaceId).call(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      filter: SkillLoadFilter.loaded,
+      filter: .loaded,
     );
     final identities = <String>{};
     final skills = [

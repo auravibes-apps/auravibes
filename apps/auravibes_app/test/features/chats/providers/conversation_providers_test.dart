@@ -74,8 +74,8 @@ void main() {
         title: 'Test',
         workspaceId: 'ws1',
         isPinned: false,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
 
       fixture.repository.conversationById = conversation;
@@ -152,8 +152,8 @@ void main() {
           title: 'Chat 1',
           workspaceId: 'ws1',
           isPinned: false,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
       ];
 
@@ -240,7 +240,7 @@ class _ConversationProviderFixture {
   void reset() {
     final repository = _FakeConversationRepository();
     _repository = repository;
-    _container = ProviderContainer(
+    _container = .new(
       overrides: [
         workspaceSessionForRouteProvider('ws1').overrideWith(
           (_) async => const WorkspaceSession(

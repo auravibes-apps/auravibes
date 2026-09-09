@@ -18,7 +18,7 @@ final $PopupMenuButton = _Story(
       name: 'Compact Phone',
       modes: [ViewportMode(compactPhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Arabic', modes: [AuraArabicLocaleMode()]),
     _Scenario(
       name: 'Opens Menu',

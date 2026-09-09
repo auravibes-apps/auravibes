@@ -24,6 +24,6 @@ String audioFormat(String contentType, String providerName) {
 
   throw GenkitException(
     '$providerName audio input supports only mp3 and wav.',
-    status: StatusCodes.INVALID_ARGUMENT,
+    status: .INVALID_ARGUMENT,
   );
 }

@@ -27,14 +27,11 @@ void main() {
     final fixture = _Fixture();
 
     setUp(() async {
-      fixture.database = AppDatabase(
+      fixture.database = .new(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       final workspace = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
-          name: 'Workspace',
-          type: WorkspaceType.local,
-        ),
+        .insert(name: 'Workspace', type: WorkspaceType.local),
       );
       final dynamicSpecs = _MockBuildDynamicSkillToolSpecsUsecase();
       final templateSpecs = _MockBuildSkillTemplateToolSpecsUsecase();
@@ -44,7 +41,7 @@ void main() {
         ..dynamicSpecs = dynamicSpecs
         ..templateSpecs = templateSpecs
         ..nativeSpecs = nativeSpecs
-        ..usecase = SyncSkillToolPermissionsUsecase(
+        ..usecase = .new(
           database: fixture.database,
           buildDynamicSkillToolSpecs: dynamicSpecs,
           buildSkillTemplateToolSpecs: templateSpecs,
@@ -134,10 +131,7 @@ void main() {
       final _ = await fixture.database.workspaceToolsDao
           .setWorkspaceToolEnabledById(created.id, isEnabled: false);
       final _ = await fixture.database.workspaceToolsDao
-          .setWorkspaceToolPermission(
-            created.id,
-            permission: PermissionAccess.granted,
-          );
+          .setWorkspaceToolPermission(created.id, permission: .granted);
 
       final updatedSpec = ToolSpec(
         name: 'skill__user__example__search',
@@ -306,35 +300,25 @@ class _Fixture {
 
   AppDatabase get database =>
       _database ?? fail('Database fixture not initialized');
-
-  set database(AppDatabase value) => _database = value;
-
   String get workspaceId =>
       _workspaceId ?? fail('Workspace fixture not initialized');
-
-  set workspaceId(String value) => _workspaceId = value;
-
   _MockBuildDynamicSkillToolSpecsUsecase get dynamicSpecs =>
       _dynamicSpecs ?? fail('Dynamic specs fixture not initialized');
-
-  set dynamicSpecs(_MockBuildDynamicSkillToolSpecsUsecase value) =>
-      _dynamicSpecs = value;
-
   _MockBuildSkillTemplateToolSpecsUsecase get templateSpecs =>
       _templateSpecs ?? fail('Template specs fixture not initialized');
-
-  set templateSpecs(_MockBuildSkillTemplateToolSpecsUsecase value) =>
-      _templateSpecs = value;
-
   _MockBuildAppSkillNativeToolSpecsUsecase get nativeSpecs =>
       _nativeSpecs ?? fail('Native specs fixture not initialized');
-
-  set nativeSpecs(_MockBuildAppSkillNativeToolSpecsUsecase value) =>
-      _nativeSpecs = value;
-
   SyncSkillToolPermissionsUsecase get usecase =>
       _usecase ?? fail('Usecase fixture not initialized');
 
+  set database(AppDatabase value) => _database = value;
+  set workspaceId(String value) => _workspaceId = value;
+  set dynamicSpecs(_MockBuildDynamicSkillToolSpecsUsecase value) =>
+      _dynamicSpecs = value;
+  set templateSpecs(_MockBuildSkillTemplateToolSpecsUsecase value) =>
+      _templateSpecs = value;
+  set nativeSpecs(_MockBuildAppSkillNativeToolSpecsUsecase value) =>
+      _nativeSpecs = value;
   set usecase(SyncSkillToolPermissionsUsecase value) => _usecase = value;
 
   void reset() {

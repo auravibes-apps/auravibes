@@ -73,7 +73,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
                   AuraText(
                     child: Text(
                       value.toString(),
-                      style: TextStyle(
+                      style: .new(
                         color: isEnabled
                             ? auraColors.onSurface
                             : auraColors.onSurface.withValues(alpha: 0.6),
@@ -86,11 +86,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
               trailing,
             ] else if (isSelected) ...[
               const AuraSizedBox(width: .sm),
-              const AuraIcon(
-                Icons.check,
-                size: AuraIconSize.small,
-                tint: AuraTint.primary,
-              ),
+              const AuraIcon(Icons.check, size: .small, tint: .primary),
             ],
           ],
         ),

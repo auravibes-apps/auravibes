@@ -63,8 +63,8 @@ void main() {
           home: Scaffold(
             body: AuraList(
               children: [Text('First'), Text('Second')],
-              direction: Axis.horizontal,
-              alignment: CrossAxisAlignment.center,
+              direction: .horizontal,
+              alignment: .center,
             ),
           ),
         ),
@@ -121,7 +121,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               AuraList(children: [SizedBox(height: childHeight)]),
             ],

@@ -25,7 +25,7 @@ class const _Subject({required final List<Object> overrides})
           builder: (context) {
             return MaterialApp(
               home: Theme(
-                data: ThemeData(extensions: [AuraTheme.light]),
+                data: .new(extensions: [AuraTheme.light]),
                 child: const Scaffold(body: SizedBox.shrink()),
               ),
               locale: context.locale,
@@ -190,7 +190,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(notifier.hasAdded(UserToolType.calculator), isTrue);
+      expect(notifier.hasAdded(.calculator), isTrue);
       expect(find.byType(AddToolModal), findsNothing);
     });
 

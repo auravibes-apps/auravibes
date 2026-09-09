@@ -98,7 +98,7 @@ class const _NewChatContent({required final String workspaceId})
             content: const TextLocale(
               LocaleKeys.chats_screens_chat_conversation_send_error,
             ),
-            variant: AuraSnackBarVariant.error,
+            variant: .error,
           );
         }
         Error.throwWithStackTrace(error, stackTrace);
@@ -180,7 +180,7 @@ class const _NewChatUnavailable({required final String workspaceId})
                   TextLocale(LocaleKeys.workspace_management_cloud_unavailable),
                 ],
                 spacing: .sm,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
               ),
             ),
           ),
@@ -231,7 +231,7 @@ class const _WorkspaceSelector({required final String workspaceId})
         ),
         AsyncLoading() => const AuraDropdownSelector<String>(
           options: [],
-          placeholder: AuraSpinner(size: AuraSpinnerSize.small),
+          placeholder: AuraSpinner(size: .small),
           isEnabled: false,
         ),
         AsyncError() => AuraDropdownSelector<String>(
@@ -258,28 +258,25 @@ class const _NoModelProviderPrompt({required final String workspaceId})
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          constraints: .new(minHeight: constraints.maxHeight),
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: AuraColumn(
                 children: [
-                  const AuraIcon(
-                    Icons.hub_outlined,
-                    size: AuraIconSize.extraLarge,
-                  ),
+                  const AuraIcon(Icons.hub_outlined, size: .extraLarge),
                   const AuraText(
                     child: TextLocale(
                       LocaleKeys.models_screens_list_empty_title,
                     ),
-                    style: AuraTextStyle.heading3,
-                    textAlign: TextAlign.center,
+                    style: .heading3,
+                    textAlign: .center,
                   ),
                   const AuraText(
                     child: TextLocale(
                       LocaleKeys.models_screens_list_empty_subtitle,
                     ),
-                    textAlign: TextAlign.center,
+                    textAlign: .center,
                   ),
                   AuraButton(
                     onPressed: () => unawaited(
@@ -293,7 +290,7 @@ class const _NoModelProviderPrompt({required final String workspaceId})
                     ),
                   ),
                 ],
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: .center,
               ),
             ),
           ),

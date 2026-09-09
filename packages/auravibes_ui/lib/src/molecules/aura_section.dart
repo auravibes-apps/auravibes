@@ -24,7 +24,7 @@ class AuraSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       spacing: context.auraTheme.spacing.sm,
       children: [
         AuraText(child: Text(title), style: .heading5),

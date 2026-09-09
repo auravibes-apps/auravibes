@@ -1,8 +1,6 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -31,7 +29,7 @@ void main() {
         id: 'call_3',
         name: 'test_tool',
         argumentsRaw: '{}',
-        resultStatus: ToolCallResultStatus.success,
+        resultStatus: .success,
       );
       expect(toolCall.isResolved, isTrue);
     });
@@ -50,7 +48,7 @@ void main() {
         id: 'call_running',
         name: 'test_tool',
         argumentsRaw: '{}',
-        resultStatus: ToolCallResultStatus.running,
+        resultStatus: .running,
       );
       expect(toolCall.isResolved, isFalse);
     });
@@ -69,7 +67,7 @@ void main() {
         id: 'call_running',
         name: 'test_tool',
         argumentsRaw: '{}',
-        resultStatus: ToolCallResultStatus.running,
+        resultStatus: .running,
       );
       expect(toolCall.isPending, isTrue);
     });
@@ -79,7 +77,7 @@ void main() {
         id: 'call_6',
         name: 'test_tool',
         argumentsRaw: '{}',
-        resultStatus: ToolCallResultStatus.success,
+        resultStatus: .success,
       );
       expect(toolCall.isPending, isFalse);
     });
@@ -94,7 +92,7 @@ void main() {
         id: 'call_running',
         name: 'test_tool',
         argumentsRaw: '{}',
-        resultStatus: ToolCallResultStatus.running,
+        resultStatus: .running,
       );
 
       expect(awaiting.isAwaitingApproval, isTrue);
@@ -109,7 +107,7 @@ void main() {
         name: 'test_tool',
         argumentsRaw: '{}',
         responseRaw: 'custom response',
-        resultStatus: ToolCallResultStatus.success,
+        resultStatus: .success,
       );
       expect(toolCall.getResponseForAI(), 'custom response');
     });
@@ -119,7 +117,7 @@ void main() {
         id: 'call_8',
         name: 'test_tool',
         argumentsRaw: '{}',
-        resultStatus: ToolCallResultStatus.executionError,
+        resultStatus: .executionError,
       );
       expect(toolCall.getResponseForAI(), 'Tool execution failed.');
     });
@@ -175,7 +173,7 @@ void main() {
             name: 'native_url_url',
             argumentsRaw: '{"url":"https://example.com"}',
             responseRaw: 'ok',
-            resultStatus: ToolCallResultStatus.success,
+            resultStatus: .success,
           ),
         ],
         promptTokens: 10,
@@ -185,11 +183,11 @@ void main() {
         modelMetadata: const {'provider': 'openai'},
         metadataVersion: 2,
         isCompactionSummary: true,
-        compactionKind: CompactionKind.manual,
+        compactionKind: .manual,
         compactedFromMessageId: 'msg-1',
         compactedThroughMessageId: 'msg-2',
         compactedMessageIds: const ['msg-1', 'msg-2'],
-        compactionCreatedAt: DateTime.utc(2026, 5, 3, 10),
+        compactionCreatedAt: .utc(2026, 5, 3, 10),
       );
 
       expect(jsonDecode(jsonEncode(metadata.toJson())), {
@@ -346,7 +344,7 @@ void main() {
       test('no tool metadata invariant for compaction summaries', () {
         const metadata = MessageMetadataEntity(
           isCompactionSummary: true,
-          compactionKind: CompactionKind.manual,
+          compactionKind: .manual,
           compactedFromMessageId: 'msg-1',
           compactedThroughMessageId: 'msg-3',
           compactedMessageIds: ['msg-1', 'msg-2', 'msg-3'],
@@ -360,7 +358,7 @@ void main() {
         final metadata = MessageMetadataEntity(
           metadataVersion: 2,
           isCompactionSummary: true,
-          compactionKind: CompactionKind.auto,
+          compactionKind: .auto,
           compactedFromMessageId: 'a',
           compactedThroughMessageId: 'b',
           compactedMessageIds: ['a', 'b'],
@@ -382,9 +380,9 @@ void main() {
       id: 'msg_1',
       conversationId: 'conv_1',
       content: 'Hello',
-      messageType: MessageType.text,
+      messageType: .text,
       isUser: true,
-      status: MessageStatus.sent,
+      status: .sent,
       createdAt: now,
       updatedAt: now,
     );
@@ -398,9 +396,9 @@ void main() {
         id: 'msg_2',
         conversationId: 'conv_1',
         content: '',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sent,
+        status: .sent,
         createdAt: now,
         updatedAt: now,
       );
@@ -412,9 +410,9 @@ void main() {
         id: 'msg_2',
         conversationId: 'conv_1',
         content: '   ',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sent,
+        status: .sent,
         createdAt: now,
         updatedAt: now,
       );
@@ -430,9 +428,9 @@ void main() {
         id: 'msg_3',
         conversationId: '',
         content: 'Hello',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sent,
+        status: .sent,
         createdAt: now,
         updatedAt: now,
       );
@@ -444,9 +442,9 @@ void main() {
         id: 'msg_4',
         conversationId: 'conv_1',
         content: '',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sent,
+        status: .sent,
         createdAt: now,
         updatedAt: now,
       );
@@ -459,9 +457,9 @@ void main() {
       const msg = MessageToCreate(
         conversationId: 'conv_1',
         content: 'Hello',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sent,
+        status: .sent,
       );
       expect(msg.hasValidContent, isTrue);
     });
@@ -470,9 +468,9 @@ void main() {
       const msg = MessageToCreate(
         conversationId: 'conv_1',
         content: '',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sending,
+        status: .sending,
       );
       expect(msg.hasValidContent, isFalse);
     });
@@ -481,9 +479,9 @@ void main() {
       const msg = MessageToCreate(
         conversationId: 'conv_1',
         content: '',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.sent,
+        status: .sent,
         metadata: '{}',
       );
       expect(msg.hasValidContent, isFalse);
@@ -493,9 +491,9 @@ void main() {
       const msg = MessageToCreate(
         conversationId: 'conv_1',
         content: '   ',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.sent,
+        status: .sent,
         metadata: '{}',
       );
       expect(msg.hasValidContent, isFalse);
@@ -505,9 +503,9 @@ void main() {
       const msg = MessageToCreate(
         conversationId: 'conv_1',
         content: '',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: false,
-        status: MessageStatus.unfinished,
+        status: .unfinished,
         metadata: '{}',
       );
       expect(msg.hasValidContent, isTrue);
@@ -519,9 +517,9 @@ void main() {
         const msg = MessageToCreate(
           conversationId: 'conv_1',
           content: 'Hello',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         );
         expect(msg.isValid, isTrue);
       },
@@ -531,9 +529,9 @@ void main() {
       const msg = MessageToCreate(
         conversationId: '',
         content: 'Hello',
-        messageType: MessageType.text,
+        messageType: .text,
         isUser: true,
-        status: MessageStatus.sending,
+        status: .sending,
       );
       expect(msg.isValid, isFalse);
     });
@@ -546,14 +544,12 @@ void main() {
     });
 
     test('isValid true when metadata is set', () {
-      const patch = MessagePatch(
-        metadata: MessageMetadataEntity(totalTokens: 10),
-      );
+      const patch = MessagePatch(metadata: .new(totalTokens: 10));
       expect(patch.isValid, isTrue);
     });
 
     test('isValid true when status is set', () {
-      const patch = MessagePatch(status: MessageStatus.sent);
+      const patch = MessagePatch(status: .sent);
       expect(patch.isValid, isTrue);
     });
 

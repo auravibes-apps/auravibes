@@ -68,7 +68,7 @@ final class CloudChatAttachmentUsecaseProvider
 }
 
 String _$cloudChatAttachmentUsecaseHash() =>
-    r'26b1630ab9b9e3e4f45aec53ded754131249c2cf';
+    r'b913056769097e7b35f8c0b99cb9f358022a21f6';
 
 final class CloudChatAttachmentUsecaseFamily extends $Family
     with

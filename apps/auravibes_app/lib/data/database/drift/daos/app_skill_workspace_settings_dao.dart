@@ -40,9 +40,9 @@ class AppSkillWorkspaceSettingsDao(super.attachedDatabase)
     if (existing == null) {
       return await into(appSkillWorkspaceSettings).insertReturning(
         AppSkillWorkspaceSettingsCompanion(
-          workspaceId: Value(workspaceId),
-          appSkillIdentifier: Value(appSkillIdentifier),
-          isEnabled: Value(isEnabled),
+          workspaceId: .new(workspaceId),
+          appSkillIdentifier: .new(appSkillIdentifier),
+          isEnabled: .new(isEnabled),
         ),
       );
     }
@@ -52,8 +52,8 @@ class AppSkillWorkspaceSettingsDao(super.attachedDatabase)
           appSkillWorkspaceSettings,
         )..where((tbl) => tbl.id.equals(existing.id))).write(
           AppSkillWorkspaceSettingsCompanion(
-            updatedAt: Value(DateTime.now()),
-            isEnabled: Value(isEnabled),
+            updatedAt: .new(DateTime.now()),
+            isEnabled: .new(isEnabled),
           ),
         );
     final updated = await getSetting(workspaceId, appSkillIdentifier);

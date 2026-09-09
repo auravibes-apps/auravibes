@@ -77,7 +77,7 @@ class const BuildPromptChatMessages({
     final dataUrl = 'data:${attachment.mimeType};base64,${base64Encode(bytes)}';
 
     return MediaPart(
-      media: Media(contentType: attachment.mimeType, url: dataUrl),
+      media: .new(contentType: attachment.mimeType, url: dataUrl),
       metadata: {'filename': _safeFileName(attachment.fileName)},
     );
   }

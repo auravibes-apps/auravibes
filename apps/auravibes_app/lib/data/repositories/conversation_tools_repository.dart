@@ -47,9 +47,9 @@ class ConversationToolsRepository(
             conversationId: conversationId,
             toolId: toolId,
             isEnabled: true, // These are computed enabled tools.
-            permissionMode: ToolPermissionMode.alwaysAsk,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
+            permissionMode: .alwaysAsk,
+            createdAt: .now(),
+            updatedAt: .now(),
           ),
         )
         .toList();
@@ -256,7 +256,7 @@ class ConversationToolsRepository(
 
     return _permissionModeResult(
       workspaceTool.permissionMode,
-      denyResult: ToolPermissionResult.disabledInWorkspace,
+      denyResult: .disabledInWorkspace,
     );
   }
 
@@ -323,17 +323,17 @@ class ConversationToolsRepository(
 
   ToolPermissionMode _mapPermissionAccess(PermissionAccess access) {
     return switch (access) {
-      PermissionAccess.ask => ToolPermissionMode.alwaysAsk,
-      PermissionAccess.granted => ToolPermissionMode.alwaysAllow,
-      PermissionAccess.denied => ToolPermissionMode.alwaysDeny,
+      .ask => ToolPermissionMode.alwaysAsk,
+      .granted => ToolPermissionMode.alwaysAllow,
+      .denied => ToolPermissionMode.alwaysDeny,
     };
   }
 
   PermissionAccess _mapPermissionMode(ToolPermissionMode mode) {
     return switch (mode) {
-      ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
-      ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
-      ToolPermissionMode.alwaysDeny => PermissionAccess.denied,
+      .alwaysAsk => PermissionAccess.ask,
+      .alwaysAllow => PermissionAccess.granted,
+      .alwaysDeny => PermissionAccess.denied,
     };
   }
 
@@ -368,7 +368,7 @@ class ConversationToolsRepository(
 
     return _permissionModeResult(
       workspaceTool.permissionMode,
-      denyResult: ToolPermissionResult.disabledInWorkspace,
+      denyResult: .disabledInWorkspace,
     );
   }
 
@@ -392,7 +392,7 @@ class ConversationToolsRepository(
 
     return _permissionModeResult(
       conversationTool.permissionMode,
-      denyResult: ToolPermissionResult.disabledInConversation,
+      denyResult: .disabledInConversation,
     );
   }
 
@@ -418,7 +418,7 @@ class ConversationToolsRepository(
 
     return _permissionModeResult(
       _mapPermissionAccess(agentTool.permissions),
-      denyResult: ToolPermissionResult.disabledByAgent,
+      denyResult: .disabledByAgent,
     );
   }
 
@@ -437,9 +437,9 @@ class ConversationToolsRepository(
     required ToolPermissionResult denyResult,
   }) {
     return switch (mode) {
-      ToolPermissionMode.alwaysDeny => denyResult,
-      ToolPermissionMode.alwaysAsk => ToolPermissionResult.needsConfirmation,
-      ToolPermissionMode.alwaysAllow => ToolPermissionResult.granted,
+      .alwaysDeny => denyResult,
+      .alwaysAsk => ToolPermissionResult.needsConfirmation,
+      .alwaysAllow => ToolPermissionResult.granted,
     };
   }
 }

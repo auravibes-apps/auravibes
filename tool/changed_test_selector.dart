@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 
-// ponytail: retain UTF-16 slicing without adding characters dependency;
-// upgrade to package:characters if these paths become user-facing text.
+// Ponytail: Retain UTF-16 slicing without adding a characters dependency.
+// Upgrade to package:characters if these paths become user-facing text.
 extension on String {
   String _slice(int start, [int? end]) =>
       String.fromCharCodes(codeUnits.getRange(start, end ?? length));
@@ -215,7 +215,7 @@ SelectionResult selectChangedTests({
 
   if (paths.isEmpty) {
     return SelectionResult(
-      mode: SelectionMode.none,
+      mode: .none,
       packages: const {},
       reason: 'No executable test input.',
     );
@@ -226,7 +226,7 @@ SelectionResult selectChangedTests({
   }
   if (paths.every(_isDocumentation)) {
     return SelectionResult(
-      mode: SelectionMode.none,
+      mode: .none,
       packages: const {},
       reason: 'No executable test input.',
     );
@@ -239,7 +239,7 @@ SelectionResult selectChangedTests({
     }
     if (paths.every((path) => !_isSupportedDartPath(path, roots.values))) {
       return SelectionResult(
-        mode: SelectionMode.none,
+        mode: .none,
         packages: const {},
         reason: 'No executable test input.',
       );
@@ -290,19 +290,19 @@ SelectionResult selectChangedTests({
     }
     if (packages.isEmpty) {
       return SelectionResult(
-        mode: SelectionMode.none,
+        mode: .none,
         packages: const {},
         reason: 'No affected current test files.',
       );
     }
 
     return SelectionResult(
-      mode: SelectionMode.affected,
+      mode: .affected,
       packages: packages,
       reason: 'reverse import impact',
     );
   } on Object catch (_) {
-    // ponytail: any incomplete static graph runs full suite; dynamic/runtime
+    // Ponytail: Any incomplete static graph runs full suite; dynamic/runtime
     // loading is outside this deliberately bounded analyzer graph.
     return _full('Unable to build import graph.');
   }
@@ -509,7 +509,7 @@ Future<SelectionResult> selectRepository({
     _validateRevision(head);
     final packages = await _loadPackages(rootPath);
     final headSources = await _workspaceSources(packages);
-    // ponytail: graph inputs are limited to package lib/test roots; skip
+    // Ponytail: Graph inputs are limited to package lib/test roots; skip
     // unrelated repository Dart files before loading base contents.
     final basePaths = await _git(rootPath, [
       'ls-tree',
@@ -943,11 +943,8 @@ String _relativePath(String root, String path) {
       : path.replaceAll(Platform.pathSeparator, '/');
 }
 
-SelectionResult _full(String reason) => SelectionResult(
-  mode: SelectionMode.full,
-  packages: const {},
-  reason: reason,
-);
+SelectionResult _full(String reason) =>
+    SelectionResult(mode: .full, packages: const {}, reason: reason);
 
 bool _hasOpaqueRuntimeChange(
   List<ChangedFile> changes,
@@ -983,7 +980,7 @@ bool _hasOpaqueRuntimeChange(
 }
 
 bool _containsOpaqueRuntimeMarker(String source) =>
-    // ponytail: this finite marker list bounds known opaque runtimes; unknown
+    // Ponytail: This finite marker list bounds known opaque runtimes; unknown
     // dynamic/reflection behavior remains residual risk until explicit marker
     // coverage is added.
     RegExp('''['"]dart:(?:ffi|mirrors|js|js_util|html)['"]''')

@@ -173,7 +173,7 @@ MessageEntity _readCloudMessage(
     id: message.id,
     conversationId: message.conversationId,
     content: message.content,
-    messageType: MessageType.fromString(message.kind),
+    messageType: .fromString(message.kind),
     isUser: message.role == 'user',
     status: switch (message.status) {
       'queued' ||

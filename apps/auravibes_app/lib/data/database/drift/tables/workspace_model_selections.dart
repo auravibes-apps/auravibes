@@ -17,5 +17,5 @@ class WorkspaceModelSelections extends Table with TableMixin {
   TextColumn get modelId => text()();
 
   TextColumn get modelConnectionId =>
-      text().references(ServiceConnections, #id, onDelete: KeyAction.cascade)();
+      text().references(ServiceConnections, #id, onDelete: .cascade)();
 }

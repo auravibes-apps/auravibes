@@ -93,16 +93,13 @@ class const _SectionTile({
       child: AuraColumn(
         children: [
           TextLocale(titleKey),
-          AuraText(
-            child: TextLocale(subtitleKey),
-            style: AuraTextStyle.bodySmall,
-          ),
+          AuraText(child: TextLocale(subtitleKey), style: .bodySmall),
         ],
         spacing: .xs,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
       onTap: onTap,
-      variant: AuraTileVariant.ghost,
+      variant: .ghost,
       leading: AuraIcon(icon),
       trailing: const AuraIcon(Icons.chevron_right),
     );

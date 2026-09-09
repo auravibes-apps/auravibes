@@ -1,5 +1,4 @@
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
@@ -26,7 +25,7 @@ Future<void> _pumpNewChatWithinPausedBranch(
         child: TickerMode(
           enabled: tickerEnabled,
           child: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
+            data: .new(extensions: [AuraTheme.light]),
             child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
           ),
         ),
@@ -42,9 +41,9 @@ Future<void> _pumpNewChatWithinPausedBranch(
 WorkspaceEntity _workspace(String id) => WorkspaceEntity(
   id: id,
   name: 'Personal',
-  type: WorkspaceType.local,
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  type: .local,
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
 );
 
 List<Object> _newChatOverrides({NewChatState state = const NewChatState()}) => [
@@ -147,7 +146,7 @@ void main() {
             ..._newChatOverrides(),
             workspaceAvailabilityProvider('test-ws').overrideWith(
               (ref) async => const WorkspaceAuthenticationRequired(
-                WorkspaceSession(
+                .new(
                   CloudWorkspaceRef(
                     localWorkspaceId: 'test-ws',
                     serverUrl: 'https://example.com',
@@ -182,7 +181,7 @@ void main() {
         await tester.pumpWidget(
           TestableApp(
             child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
             ),
             overrides: _newChatOverrides(),
@@ -209,7 +208,7 @@ void main() {
         await tester.pumpWidget(
           TestableApp(
             child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
             ),
             overrides: _newChatOverrides(

@@ -60,7 +60,7 @@ class const ServiceConnectionsScreen({
         AsyncError() => const Center(
           child: AuraText(
             child: TextLocale(LocaleKeys.service_connections_load_error),
-            tint: AuraTint.error,
+            tint: .error,
           ),
         ),
       },
@@ -91,7 +91,7 @@ class const _ConnectionsList({
 }
 
 class _ConnectionsListState extends State<_ConnectionsList> {
-  _ConnectionFilter _selectedFilter = _ConnectionFilter.all;
+  _ConnectionFilter _selectedFilter = .all;
 
   @override
   Widget build(BuildContext context) {
@@ -99,36 +99,34 @@ class _ConnectionsListState extends State<_ConnectionsList> {
       return Center(
         child: AuraColumn(
           children: [
-            const AuraIcon(Icons.hub_outlined, size: AuraIconSize.extraLarge),
+            const AuraIcon(Icons.hub_outlined, size: .extraLarge),
             const AuraText(
               child: TextLocale(LocaleKeys.service_connections_empty_title),
-              style: AuraTextStyle.heading3,
+              style: .heading3,
             ),
             const AuraText(
               child: TextLocale(LocaleKeys.service_connections_empty_subtitle),
-              textAlign: TextAlign.center,
+              textAlign: .center,
             ),
             AuraButton(
               onPressed: widget.onAddConnection,
               child: const TextLocale(LocaleKeys.service_connections_add),
             ),
           ],
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
         ),
       );
     }
 
     final kind = switch (_selectedFilter) {
-      _ConnectionFilter.all => null,
-      _ConnectionFilter.modelProviders =>
-        ServiceConnectionListItemKind.modelProvider,
-      _ConnectionFilter.skillCredentials =>
-        ServiceConnectionListItemKind.skillCredential,
-      _ConnectionFilter.mcpServers => ServiceConnectionListItemKind.mcpServer,
+      .all => null,
+      .modelProviders => ServiceConnectionListItemKind.modelProvider,
+      .skillCredentials => ServiceConnectionListItemKind.skillCredential,
+      .mcpServers => ServiceConnectionListItemKind.mcpServer,
     };
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       children: [
         AuraTabs<_ConnectionFilter>.selector(
           options: [
@@ -144,30 +142,21 @@ class _ConnectionsListState extends State<_ConnectionsList> {
               title: const TextLocale(
                 LocaleKeys.service_connections_filter_model_providers,
               ),
-              semanticLabel: _connectionFilterLabel(
-                context,
-                ServiceConnectionListItemKind.modelProvider,
-              ),
+              semanticLabel: _connectionFilterLabel(context, .modelProvider),
             ),
             AuraTabOption(
               value: _ConnectionFilter.skillCredentials,
               title: const TextLocale(
                 LocaleKeys.service_connections_filter_skill_credentials,
               ),
-              semanticLabel: _connectionFilterLabel(
-                context,
-                ServiceConnectionListItemKind.skillCredential,
-              ),
+              semanticLabel: _connectionFilterLabel(context, .skillCredential),
             ),
             AuraTabOption(
               value: _ConnectionFilter.mcpServers,
               title: const TextLocale(
                 LocaleKeys.service_connections_filter_mcp_servers,
               ),
-              semanticLabel: _connectionFilterLabel(
-                context,
-                ServiceConnectionListItemKind.mcpServer,
-              ),
+              semanticLabel: _connectionFilterLabel(context, .mcpServer),
             ),
           ],
           value: _selectedFilter,
@@ -200,7 +189,7 @@ class const _ConnectionsTab({
       return Center(
         child: AuraColumn(
           children: [
-            const AuraIcon(Icons.hub_outlined, size: AuraIconSize.extraLarge),
+            const AuraIcon(Icons.hub_outlined, size: .extraLarge),
             AuraText(
               child: Text(
                 LocaleKeys.service_connections_empty_filter.tr(
@@ -208,14 +197,14 @@ class const _ConnectionsTab({
                   context: context,
                 ),
               ),
-              style: AuraTextStyle.heading3,
+              style: .heading3,
             ),
             AuraButton(
               onPressed: onAddConnection,
               child: const TextLocale(LocaleKeys.service_connections_add),
             ),
           ],
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
         ),
       );
     }
@@ -237,16 +226,16 @@ String _connectionFilterLabel(
 ) {
   return switch (kind) {
     null => LocaleKeys.service_connections_filter_all.tr(context: context),
-    ServiceConnectionListItemKind.modelProvider =>
-      LocaleKeys.service_connections_filter_model_providers.tr(
-        context: context,
-      ),
-    ServiceConnectionListItemKind.skillCredential =>
+    .modelProvider => LocaleKeys.service_connections_filter_model_providers.tr(
+      context: context,
+    ),
+    .skillCredential =>
       LocaleKeys.service_connections_filter_skill_credentials.tr(
         context: context,
       ),
-    ServiceConnectionListItemKind.mcpServer =>
-      LocaleKeys.service_connections_filter_mcp_servers.tr(context: context),
+    .mcpServer => LocaleKeys.service_connections_filter_mcp_servers.tr(
+      context: context,
+    ),
   };
 }
 
@@ -255,9 +244,9 @@ class const _ConnectionTile({
 }) extends ConsumerWidget {
   IconData get _icon {
     return switch (connection.kind) {
-      ServiceConnectionListItemKind.modelProvider => Icons.memory_outlined,
-      ServiceConnectionListItemKind.skillCredential => Icons.key_outlined,
-      ServiceConnectionListItemKind.mcpServer => Icons.hub_outlined,
+      .modelProvider => Icons.memory_outlined,
+      .skillCredential => Icons.key_outlined,
+      .mcpServer => Icons.hub_outlined,
     };
   }
 
@@ -269,20 +258,17 @@ class const _ConnectionTile({
       child: AuraTile(
         child: AuraColumn(
           children: [
-            AuraText(
-              child: Text(connection.name),
-              style: AuraTextStyle.heading6,
-            ),
+            AuraText(child: Text(connection.name), style: .heading6),
             AuraText(child: Text(_subtitle(context))),
             if (connection.kind == ServiceConnectionListItemKind.mcpServer)
               _ConnectionStatusBadge(status: connection.displayStatus),
             if (connection.metadataValues.isNotEmpty)
               _ConnectionMetadata(values: connection.metadataValues),
           ],
-          spacing: AuraSpacing.xs,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: .xs,
+          crossAxisAlignment: .start,
         ),
-        variant: AuraTileVariant.ghost,
+        variant: .ghost,
         leading: AuraIcon(_icon),
         trailing: AuraPopupMenu(
           child: AuraIconButton(
@@ -323,26 +309,28 @@ class const _ConnectionTile({
                 title: const TextLocale(LocaleKeys.common_delete),
                 onTap: () => _confirmDelete(context, ref),
                 leading: const AuraIcon(Icons.delete_outline),
-                variant: AuraTileVariant.error,
+                variant: .error,
               ),
           ],
           controller: menuController,
         ),
       ),
-      style: AuraCardStyle.border,
+      style: .border,
     );
   }
 
   String _subtitle(BuildContext context) {
     final kind = switch (connection.kind) {
-      ServiceConnectionListItemKind.modelProvider =>
-        LocaleKeys.service_connections_type_model_provider.tr(context: context),
-      ServiceConnectionListItemKind.skillCredential =>
+      .modelProvider => LocaleKeys.service_connections_type_model_provider.tr(
+        context: context,
+      ),
+      .skillCredential =>
         LocaleKeys.service_connections_type_skill_credential.tr(
           context: context,
         ),
-      ServiceConnectionListItemKind.mcpServer =>
-        LocaleKeys.service_connections_type_mcp_server.tr(context: context),
+      .mcpServer => LocaleKeys.service_connections_type_mcp_server.tr(
+        context: context,
+      ),
     };
     if (connection.kind == ServiceConnectionListItemKind.mcpServer) {
       return '$kind - ${connection.authenticationType ?? 'unknown'}/'
@@ -368,22 +356,18 @@ class const _ConnectionTile({
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final titleKey = switch (connection.kind) {
-      ServiceConnectionListItemKind.modelProvider =>
+      .modelProvider =>
         LocaleKeys.service_connections_delete_model_provider_title,
-      ServiceConnectionListItemKind.skillCredential =>
+      .skillCredential =>
         LocaleKeys.service_connections_delete_credential_title,
-      ServiceConnectionListItemKind.mcpServer => throw StateError(
-        _mcpCredentialsDeleteError,
-      ),
+      .mcpServer => throw StateError(_mcpCredentialsDeleteError),
     };
     final confirmKey = switch (connection.kind) {
-      ServiceConnectionListItemKind.modelProvider =>
+      .modelProvider =>
         LocaleKeys.service_connections_delete_model_provider_confirm,
-      ServiceConnectionListItemKind.skillCredential =>
+      .skillCredential =>
         LocaleKeys.service_connections_delete_credential_confirm,
-      ServiceConnectionListItemKind.mcpServer => throw StateError(
-        _mcpCredentialsDeleteError,
-      ),
+      .mcpServer => throw StateError(_mcpCredentialsDeleteError),
     };
     _logger.info(
       'debug:service connection delete confirmation opened '
@@ -441,17 +425,16 @@ class const _ConnectionTile({
       );
       if (!context.mounted) return;
       final errorKey = switch (connection.kind) {
-        ServiceConnectionListItemKind.modelProvider =>
+        .modelProvider =>
           LocaleKeys.service_connections_delete_model_provider_error,
-        ServiceConnectionListItemKind.skillCredential =>
+        .skillCredential =>
           LocaleKeys.service_connections_delete_credential_error,
-        ServiceConnectionListItemKind.mcpServer =>
-          LocaleKeys.service_connections_action_reconnect_error,
+        .mcpServer => LocaleKeys.service_connections_action_reconnect_error,
       };
       final _ = AuraSnackBars.show(
         context: context,
         content: TextLocale(errorKey),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     }
   }
@@ -486,7 +469,7 @@ class const _ConnectionTile({
         content: const TextLocale(
           LocaleKeys.service_connections_action_reconnect_error,
         ),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     }
   }
@@ -524,7 +507,7 @@ class const _ConnectionTile({
         content: const TextLocale(
           LocaleKeys.service_connections_action_refresh_error,
         ),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     }
   }
@@ -539,12 +522,12 @@ class const _ConnectionStatusBadge({
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
         color: _color(context).withValues(alpha: 0.12),
-        borderRadius: const BorderRadius.all(Radius.circular(6)),
+        borderRadius: const BorderRadius.all(.circular(6)),
       ),
       child: Text(
         _statusLabel(context, status),
         style: Theme.of(context).textTheme.labelSmall
-            ?.copyWith(color: _color(context), fontWeight: FontWeight.w600),
+            ?.copyWith(color: _color(context), fontWeight: .w600),
       ),
     );
   }
@@ -553,11 +536,11 @@ class const _ConnectionStatusBadge({
     final colors = Theme.of(context).colorScheme;
 
     return switch (status) {
-      ServiceConnectionDisplayStatus.connected => colors.primary,
-      ServiceConnectionDisplayStatus.expiringSoon => colors.tertiary,
-      ServiceConnectionDisplayStatus.needsReauth => colors.error,
-      ServiceConnectionDisplayStatus.failed => colors.error,
-      ServiceConnectionDisplayStatus.unknown => colors.outline,
+      .connected => colors.primary,
+      .expiringSoon => colors.tertiary,
+      .needsReauth => colors.error,
+      .failed => colors.error,
+      .unknown => colors.outline,
     };
   }
 }
@@ -575,13 +558,13 @@ class const _ConnectionMetadata({
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: const BorderRadius.all(Radius.circular(6)),
+            borderRadius: const BorderRadius.all(.circular(6)),
           ),
           constraints: const BoxConstraints(maxWidth: 520),
           child: Text(
             '${_metadataLabel(context, value.key)}: ${value.value}',
             style: Theme.of(context).textTheme.labelSmall,
-            overflow: TextOverflow.ellipsis,
+            overflow: .ellipsis,
             maxLines: 2,
           ),
         );
@@ -595,16 +578,11 @@ String _statusLabel(
   ServiceConnectionDisplayStatus status,
 ) {
   final key = switch (status) {
-    ServiceConnectionDisplayStatus.connected =>
-      LocaleKeys.service_connections_status_connected,
-    ServiceConnectionDisplayStatus.expiringSoon =>
-      LocaleKeys.service_connections_status_expiring_soon,
-    ServiceConnectionDisplayStatus.needsReauth =>
-      LocaleKeys.service_connections_status_needs_reauth,
-    ServiceConnectionDisplayStatus.failed =>
-      LocaleKeys.service_connections_status_failed,
-    ServiceConnectionDisplayStatus.unknown =>
-      LocaleKeys.service_connections_status_unknown,
+    .connected => LocaleKeys.service_connections_status_connected,
+    .expiringSoon => LocaleKeys.service_connections_status_expiring_soon,
+    .needsReauth => LocaleKeys.service_connections_status_needs_reauth,
+    .failed => LocaleKeys.service_connections_status_failed,
+    .unknown => LocaleKeys.service_connections_status_unknown,
   };
 
   return key.tr(context: context);
@@ -612,18 +590,13 @@ String _statusLabel(
 
 String _metadataLabel(BuildContext context, ServiceConnectionMetadataKey key) {
   final localeKey = switch (key) {
-    ServiceConnectionMetadataKey.issuer =>
-      LocaleKeys.service_connections_metadata_issuer,
-    ServiceConnectionMetadataKey.clientId =>
-      LocaleKeys.service_connections_metadata_client_id,
-    ServiceConnectionMetadataKey.scopes =>
-      LocaleKeys.service_connections_metadata_scopes,
-    ServiceConnectionMetadataKey.expiresAt =>
-      LocaleKeys.service_connections_metadata_expires_at,
-    ServiceConnectionMetadataKey.lastRefreshedAt =>
+    .issuer => LocaleKeys.service_connections_metadata_issuer,
+    .clientId => LocaleKeys.service_connections_metadata_client_id,
+    .scopes => LocaleKeys.service_connections_metadata_scopes,
+    .expiresAt => LocaleKeys.service_connections_metadata_expires_at,
+    .lastRefreshedAt =>
       LocaleKeys.service_connections_metadata_last_refreshed_at,
-    ServiceConnectionMetadataKey.lastAuthError =>
-      LocaleKeys.service_connections_metadata_last_auth_error,
+    .lastAuthError => LocaleKeys.service_connections_metadata_last_auth_error,
   };
 
   return localeKey.tr(context: context);

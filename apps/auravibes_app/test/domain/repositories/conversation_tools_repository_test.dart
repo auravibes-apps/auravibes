@@ -21,7 +21,7 @@ class _StubConversationToolsRepository implements ConversationToolsRepository {
   bool isAvailableResult = false;
   List<String> availableTools = [];
   List<WorkspaceToolEntity> availableEntities = [];
-  ToolPermissionResult permissionResult = ToolPermissionResult.granted;
+  ToolPermissionResult permissionResult = .granted;
 
   @override
   Future<List<ConversationToolEntity>> getConversationTools(
@@ -208,7 +208,7 @@ void main() {
       final result = await repo.setConversationToolPermission(
         'c-1',
         't-1',
-        permissionMode: ToolPermissionMode.alwaysAllow,
+        permissionMode: .alwaysAllow,
       );
 
       expect(result, true);
@@ -297,7 +297,7 @@ void main() {
 
     test('checkToolPermission returns result', () async {
       final repo = _StubConversationToolsRepository();
-      repo.permissionResult = ToolPermissionResult.granted;
+      repo.permissionResult = .granted;
 
       final result = await repo.checkToolPermission(
         conversationId: 'c-1',
@@ -310,7 +310,7 @@ void main() {
 
     test('checkToolPermission returns needsConfirmation', () async {
       final repo = _StubConversationToolsRepository();
-      repo.permissionResult = ToolPermissionResult.needsConfirmation;
+      repo.permissionResult = .needsConfirmation;
 
       final result = await repo.checkToolPermission(
         conversationId: 'c-1',

@@ -25,7 +25,7 @@ final $Default = _Story(
       name: 'Compact Phone',
       modes: [ViewportMode(compactPhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Changes Value',
       run: (tester, args) async {

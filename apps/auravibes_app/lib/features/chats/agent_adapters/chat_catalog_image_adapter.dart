@@ -34,41 +34,43 @@ String chatCatalogImageExample() => '''
 ''';
 
 /// Binds image content while keeping presentation separate from its label.
-Widget buildChatCatalogImage(
-  CatalogItemContext context, {
-  required IconData Function(String?) resolveIcon,
-}) {
-  final data = context.data as Map<Object?, Object?>;
+abstract final class ChatCatalogImageAdapter {
+  static Widget build(
+    CatalogItemContext context, {
+    required IconData Function(String?) resolveIcon,
+  }) {
+    final data = context.data as Map<Object?, Object?>;
 
-  return BoundString(
-    dataContext: context.dataContext,
-    value: data['url'],
-    builder: (_, url) => BoundString(
+    return BoundString(
       dataContext: context.dataContext,
-      value: data['label'],
-      builder: (_, label) => BoundString(
+      value: data['url'],
+      builder: (_, url) => BoundString(
         dataContext: context.dataContext,
-        value: data['fallbackText'],
-        builder: (_, fallbackText) => ChatCatalogImage(
-          url: url ?? '',
-          label: label,
-          variant: switch (data['variant']) {
-            'circle' => .circle,
-            'avatar' => .avatar,
-            _ => .normal,
-          },
-          fit: BoxFit.values.asNameMap()[data['fit']] ?? .cover,
-          width: (data['width'] as num?)?.toDouble(),
-          height: (data['height'] as num?)?.toDouble(),
-          fallbackText: fallbackText,
-          fallbackIcon: switch (data['fallbackIcon']) {
-            final String icon => resolveIcon(icon),
-            _ => null,
-          },
+        value: data['label'],
+        builder: (_, label) => BoundString(
+          dataContext: context.dataContext,
+          value: data['fallbackText'],
+          builder: (_, fallbackText) => ChatCatalogImage(
+            url: url ?? '',
+            label: label,
+            variant: switch (data['variant']) {
+              'circle' => .circle,
+              'avatar' => .avatar,
+              _ => .normal,
+            },
+            fit: BoxFit.values.asNameMap()[data['fit']] ?? .cover,
+            width: (data['width'] as num?)?.toDouble(),
+            height: (data['height'] as num?)?.toDouble(),
+            fallbackText: fallbackText,
+            fallbackIcon: switch (data['fallbackIcon']) {
+              final String icon => resolveIcon(icon),
+              _ => null,
+            },
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Supported image shapes. Avatars default to a compact circle.
@@ -213,8 +215,8 @@ class _ImageStatus extends StatelessWidget {
                 ? FittedBox(child: AuraIcon(icon))
                 : Text(
                     text,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
+                    textAlign: .center,
+                    overflow: .ellipsis,
                     maxLines: 2,
                   ),
           ),

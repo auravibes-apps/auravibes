@@ -1,5 +1,4 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -15,11 +14,11 @@ MessageEntity _makeMessage({
     id: id,
     conversationId: 'conv-1',
     content: content,
-    messageType: MessageType.system,
+    messageType: .system,
     isUser: false,
-    status: MessageStatus.sent,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    status: .sent,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
     metadata: metadata,
   );
 }
@@ -33,7 +32,7 @@ class const _Subject({required final MessageEntity message})
         builder: (context) {
           return MaterialApp(
             home: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: Scaffold(
                 body: SingleChildScrollView(
                   child: CompactedMessageDetails(message: message),
@@ -63,7 +62,7 @@ void main() {
     const metadata = MessageMetadataEntity(
       metadataVersion: 2,
       isCompactionSummary: true,
-      compactionKind: CompactionKind.auto,
+      compactionKind: .auto,
       compactedFromMessageId: 'from-1',
       compactedThroughMessageId: 'to-1',
       compactedMessageIds: ['msg-a', 'msg-b'],

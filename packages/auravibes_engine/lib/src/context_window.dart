@@ -37,7 +37,7 @@ AgentContextWindowUsage calculateContextWindowUsage({
       remainingTokens: null,
       usagePercentage: null,
       overflowTokens: null,
-      limitValidity: AgentContextLimitValidity.unknown,
+      limitValidity: .unknown,
     );
   }
 

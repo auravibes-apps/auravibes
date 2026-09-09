@@ -4,7 +4,6 @@ import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 const _controlHeight = 48.0;
@@ -97,23 +96,17 @@ class AuraLabeledSlider extends StatelessWidget {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       children: [
         Row(
           children: [
             if (label case final label?)
               Expanded(
-                child: AuraText(
-                  child: Text(label),
-                  style: AuraTextStyle.bodySmall,
-                ),
+                child: AuraText(child: Text(label), style: .bodySmall),
               )
             else
               const Spacer(),
-            AuraText(
-              child: Text(format(effectiveValue)),
-              style: AuraTextStyle.bodySmall,
-            ),
+            AuraText(child: Text(format(effectiveValue)), style: .bodySmall),
           ],
         ),
         SizedBox(height: spacing.xs),
@@ -133,7 +126,7 @@ class AuraLabeledSlider extends StatelessWidget {
           SizedBox(
             height: 20,
             child: Stack(
-              clipBehavior: Clip.none,
+              clipBehavior: .none,
               children: [
                 for (final mark in marks)
                   Align(
@@ -145,7 +138,7 @@ class AuraLabeledSlider extends StatelessWidget {
                     ),
                     child: AuraText(
                       child: Text(mark.label ?? format(mark.value)),
-                      style: AuraTextStyle.caption,
+                      style: .caption,
                     ),
                   ),
               ],
@@ -153,10 +146,10 @@ class AuraLabeledSlider extends StatelessWidget {
           ),
         ],
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: .spaceBetween,
           children: [
-            AuraText(child: Text(format(min)), style: AuraTextStyle.caption),
-            AuraText(child: Text(format(max)), style: AuraTextStyle.caption),
+            AuraText(child: Text(format(min)), style: .caption),
+            AuraText(child: Text(format(max)), style: .caption),
           ],
         ),
       ],
@@ -269,14 +262,10 @@ class _AuraSliderState extends State<AuraSlider> {
       child: FocusableActionDetector(
         enabled: isEnabled,
         shortcuts: const {
-          SingleActivator(LogicalKeyboardKey.arrowRight):
-              _AuraSliderIncreaseIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowUp):
-              _AuraSliderIncreaseIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowLeft):
-              _AuraSliderDecreaseIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowDown):
-              _AuraSliderDecreaseIntent(),
+          SingleActivator(.arrowRight): _AuraSliderIncreaseIntent(),
+          SingleActivator(.arrowUp): _AuraSliderIncreaseIntent(),
+          SingleActivator(.arrowLeft): _AuraSliderDecreaseIntent(),
+          SingleActivator(.arrowDown): _AuraSliderDecreaseIntent(),
         },
         actions: {
           _AuraSliderIncreaseIntent: CallbackAction<_AuraSliderIncreaseIntent>(
@@ -351,7 +340,7 @@ class _AuraSliderState extends State<AuraSlider> {
                       ),
                     )
                   : null,
-              behavior: HitTestBehavior.opaque,
+              behavior: .opaque,
             );
           },
         ),
@@ -452,8 +441,8 @@ class const _AuraSliderPainter({
     canvas.drawRRect(trackRRect, Paint()..color = inactiveColor);
     if (thumbX > trackStart) {
       canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTRB(
+        .fromRectAndRadius(
+          .fromLTRB(
             trackStart,
             centerY - trackRadius,
             thumbX,
@@ -465,7 +454,7 @@ class const _AuraSliderPainter({
       );
     }
     canvas.drawCircle(
-      Offset(thumbX, centerY),
+      .new(thumbX, centerY),
       _thumbRadius,
       Paint()..color = activeColor,
     );
@@ -488,11 +477,11 @@ class const _AuraSliderFocusRingPainter({
   void paint(Canvas canvas, Size size) {
     final focusPaint = Paint()
       ..color = color.withValues(alpha: 0.24)
-      ..style = PaintingStyle.stroke
+      ..style = .stroke
       ..strokeWidth = 2;
 
     canvas.drawCircle(
-      Offset(thumbX, size.height / 2),
+      .new(thumbX, size.height / 2),
       _thumbRadius + 3,
       focusPaint,
     );

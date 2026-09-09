@@ -1,14 +1,13 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
+    show AgentIterationContext, AgentIterationDecision;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -30,11 +29,11 @@ void main() {
           id: 'user-1',
           conversationId: 'conversation-1',
           content: 'Hello',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          status: .sending,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
         ),
       );
       when(
@@ -70,7 +69,7 @@ void main() {
           () => fixture.runAgentIterationUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
+              origin: .userMessage,
               ackMessageIds: ['user-1'],
             ),
           ),
@@ -142,7 +141,7 @@ void main() {
         () => fixture.runAgentIterationUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
+            origin: .userMessage,
             ackMessageIds: ['user-1'],
           ),
         ),
@@ -177,7 +176,7 @@ class _SendMessageUsecaseFixture({
       messageRepository: messageRepository,
       getConversationBusyStateUsecase: getConversationBusyStateUsecase,
       container: container,
-      usecase: SendMessageUsecase(
+      usecase: .new(
         continueAgentTurn: runAgentIterationUsecase.call,
         messageRepository: messageRepository,
         getConversationBusyStateUsecase: getConversationBusyStateUsecase,

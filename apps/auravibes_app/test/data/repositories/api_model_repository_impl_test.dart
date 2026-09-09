@@ -1,7 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
-import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -25,7 +24,7 @@ void main() {
     const providerRow = ApiModelProvidersTable(
       id: 'openai',
       name: 'OpenAI',
-      type: ModelProvidersTableType.openai,
+      type: .openai,
       url: 'https://api.openai.com',
       doc: 'https://docs.openai.com',
     );
@@ -87,7 +86,7 @@ void main() {
         const openRouterRow = ApiModelProvidersTable(
           id: 'openrouter',
           name: 'OpenRouter',
-          type: ModelProvidersTableType.openrouter,
+          type: .openrouter,
           url: 'https://openrouter.ai/api/v1',
         );
         when(() => fixture.mockProvidersDao.getProvidersByType('openrouter'))
@@ -179,7 +178,7 @@ void main() {
         const entity = ApiModelProviderEntity(
           id: 'openai',
           name: 'OpenAI',
-          type: ModelProvidersType.openai,
+          type: .openai,
           url: 'https://api.openai.com',
           doc: 'https://docs.openai.com',
         );
@@ -260,7 +259,7 @@ void main() {
               ApiModelProviderEntity(
                 id: 'openai',
                 name: 'OpenAI',
-                type: ModelProvidersType.openai,
+                type: .openai,
                 url: 'https://api.openai.com',
               ),
             ],
@@ -314,7 +313,7 @@ void main() {
             ApiModelProviderEntity(
               id: 'openai',
               name: 'OpenAI',
-              type: ModelProvidersType.openai,
+              type: .openai,
               url: 'https://api.openai.com',
             ),
           ],
@@ -361,7 +360,7 @@ void main() {
         const anthropicRow = ApiModelProvidersTable(
           id: 'anthropic',
           name: 'Anthropic',
-          type: ModelProvidersTableType.anthropic,
+          type: .anthropic,
         );
         when(() => fixture.mockProvidersDao.getAllProviders())
             .thenAnswer((_) async => [anthropicRow]);
@@ -375,7 +374,7 @@ void main() {
         const openRouterRow = ApiModelProvidersTable(
           id: 'openrouter',
           name: 'OpenRouter',
-          type: ModelProvidersTableType.openrouter,
+          type: .openrouter,
         );
         when(() => fixture.mockProvidersDao.getAllProviders())
             .thenAnswer((_) async => [openRouterRow]);
@@ -412,7 +411,7 @@ class _ApiModelRepositoryFixture {
     _mockProvidersDao = providersDao;
     _mockModelsDao = modelsDao;
     _database = database;
-    _repository = ApiModelRepository(database);
+    _repository = .new(database);
   }
 
   Future<void> dispose() async {

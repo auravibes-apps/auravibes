@@ -32,8 +32,8 @@ void main() {
       messageType: messageType,
       isUser: isUser,
       status: status,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       metadata: metadata,
     );
   }
@@ -67,7 +67,7 @@ void main() {
           _makeMessage(
             id: 'msg-summary',
             isUser: false,
-            messageType: MessageType.system,
+            messageType: .system,
             metadata: const MessageMetadataEntity(
               isCompactionSummary: true,
               compactedMessageIds: ['msg-1', 'msg-2'],
@@ -95,7 +95,7 @@ void main() {
         _makeMessage(
           id: 'msg-summary',
           isUser: false,
-          messageType: MessageType.system,
+          messageType: .system,
           metadata: const MessageMetadataEntity(
             isCompactionSummary: true,
             compactedMessageIds: ['msg-1'],
@@ -118,14 +118,14 @@ void main() {
         _makeMessage(
           id: 'summary-1',
           isUser: false,
-          messageType: MessageType.system,
+          messageType: .system,
           metadata: const MessageMetadataEntity(isCompactionSummary: true),
         ),
         _makeMessage(id: 'msg-2'),
         _makeMessage(
           id: 'summary-2',
           isUser: false,
-          messageType: MessageType.system,
+          messageType: .system,
           metadata: const MessageMetadataEntity(
             isCompactionSummary: true,
             compactedMessageIds: ['summary-1', 'msg-2'],
@@ -147,8 +147,8 @@ void main() {
       'includes messages of all statuses including error and sending',
       () async {
         final messages = [
-          _makeMessage(id: 'err-1', status: MessageStatus.error),
-          _makeMessage(id: 'send-1', status: MessageStatus.sending),
+          _makeMessage(id: 'err-1', status: .error),
+          _makeMessage(id: 'send-1', status: .sending),
           _makeMessage(id: 'msg-2'),
           _makeMessage(id: 'msg-3', isUser: false),
         ];
@@ -170,7 +170,7 @@ void main() {
         _makeMessage(
           id: 'summary',
           isUser: false,
-          messageType: MessageType.system,
+          messageType: .system,
           metadata: const MessageMetadataEntity(
             isCompactionSummary: true,
             compactedMessageIds: ['old-1', 'old-2'],
@@ -199,7 +199,7 @@ void main() {
         _makeMessage(
           id: 'summary',
           isUser: false,
-          messageType: MessageType.system,
+          messageType: .system,
           metadata: const MessageMetadataEntity(
             isCompactionSummary: true,
             compactedFromMessageId: 'old-1',
@@ -229,7 +229,7 @@ void main() {
           _makeMessage(
             id: 'summary-1',
             isUser: false,
-            messageType: MessageType.system,
+            messageType: .system,
             metadata: const MessageMetadataEntity(
               isCompactionSummary: true,
               compactedThroughMessageId: 'a-2',
@@ -240,7 +240,7 @@ void main() {
           _makeMessage(
             id: 'summary-2',
             isUser: false,
-            messageType: MessageType.system,
+            messageType: .system,
             metadata: const MessageMetadataEntity(
               isCompactionSummary: true,
               compactedThroughMessageId: 'b-1',
@@ -271,7 +271,7 @@ void main() {
           _makeMessage(
             id: 'summary',
             isUser: false,
-            messageType: MessageType.system,
+            messageType: .system,
             metadata: const MessageMetadataEntity(
               isCompactionSummary: true,
               compactedMessageIds: ['old-1'],
@@ -297,7 +297,7 @@ void main() {
         _makeMessage(
           id: 'summary',
           isUser: false,
-          messageType: MessageType.system,
+          messageType: .system,
           metadata: const MessageMetadataEntity(
             isCompactionSummary: true,
             compactedThroughMessageId: 'old-1',
@@ -323,7 +323,7 @@ void main() {
         _makeMessage(
           id: 'summary',
           isUser: false,
-          messageType: MessageType.system,
+          messageType: .system,
           metadata: const MessageMetadataEntity(
             isCompactionSummary: true,
             compactedThroughMessageId: 'assistant',
@@ -348,7 +348,7 @@ void main() {
         _makeMessage(
           id: 'summary',
           isUser: false,
-          messageType: MessageType.system,
+          messageType: .system,
           metadata: const MessageMetadataEntity(
             isCompactionSummary: true,
             compactedThroughMessageId: 'old-1',

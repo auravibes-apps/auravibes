@@ -14,8 +14,8 @@ void main() {
         providerId: request.providerId,
         hasSecret: false,
         revision: 1,
-        createdAt: DateTime.utc(2026),
-        updatedAt: DateTime.utc(2026),
+        createdAt: .utc(2026),
+        updatedAt: .utc(2026),
       ),
     );
 

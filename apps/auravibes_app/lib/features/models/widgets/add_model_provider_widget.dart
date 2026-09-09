@@ -85,7 +85,7 @@ class const AddModelProviderWidget({
     final capabilities = session.requireValue.capabilities;
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         if (showHeader)
           _ModalHeader(onClose: onCancel ?? () => Navigator.of(context).pop()),
@@ -97,18 +97,18 @@ class const AddModelProviderWidget({
             child: Form(
               key: formKey,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: .min,
+                crossAxisAlignment: .start,
                 children: [
                   EnhancedModelInput(
                     workspaceId: workspaceId,
-                    fieldType: ModelInputFieldType.name,
+                    fieldType: .name,
                     // OnSubmitted: keyFocusNode.requestFocus,.
                   ),
                   if (!isOAuth) ...[
                     EnhancedModelInput(
                       workspaceId: workspaceId,
-                      fieldType: ModelInputFieldType.key,
+                      fieldType: .key,
                     ),
                     const AuraSizedBox(height: .xl),
                     _ApiConfigSection(
@@ -168,7 +168,7 @@ class const AddModelProviderWidget({
                         codexOAuthCancellation,
                       ),
                       child: const TextLocale(_cancelConnectionKey),
-                      variant: AuraButtonVariant.outlined,
+                      variant: .outlined,
                       isFullWidth: true,
                     ),
                   ],
@@ -227,7 +227,7 @@ class const AddModelProviderWidget({
       _submitForm(
         context,
         ref,
-        codexOAuthMethod: CodexOAuthMethod.browser,
+        codexOAuthMethod: .browser,
         isCodexOAuthCancelled: () => cancellation.isCancelled,
       ),
     );
@@ -248,7 +248,7 @@ class const AddModelProviderWidget({
       _submitForm(
         context,
         ref,
-        codexOAuthMethod: CodexOAuthMethod.deviceCode,
+        codexOAuthMethod: .deviceCode,
         onCodexDeviceCode: (value) {
           if (!context.mounted ||
               cancellation.isCancelled ||
@@ -292,7 +292,7 @@ class const _ModalHeader({required final VoidCallback onClose})
           const Expanded(
             child: AuraText(
               child: TextLocale(LocaleKeys.models_screens_add_provider_title),
-              style: AuraTextStyle.heading5,
+              style: .heading5,
             ),
           ),
           AuraIconButton(
@@ -317,7 +317,7 @@ class const _ApiConfigSection({
       title: LocaleKeys.models_screens_add_provider_sections_advanced,
       child: EnhancedModelInput(
         workspaceId: workspaceId,
-        fieldType: ModelInputFieldType.url,
+        fieldType: .url,
 
         onSubmitted: onSubmit,
       ),
@@ -335,7 +335,7 @@ class const _HiddenSection({
     final visibilityState = useState(false);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         Row(
           children: [
@@ -343,7 +343,7 @@ class const _HiddenSection({
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: context.auraColors.primary,
-                fontWeight: FontWeight.w600,
+                fontWeight: .w600,
               ),
             ),
             AuraIconButton(
@@ -373,7 +373,7 @@ class const _ErrorBanner() extends ConsumerWidget {
 
     final error = switch (addCredentialsModelMutation) {
       MutationError<void>(:final error) => _mapErrorMessage(error),
-      _ => null,
+      MutationIdle() || MutationPending() || MutationSuccess() => null,
     };
 
     if (error == null) {
@@ -387,7 +387,7 @@ class const _ErrorBanner() extends ConsumerWidget {
         color: errorColor.withValues(alpha: 0.1),
         border: Border.all(color: errorColor),
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
+          .circular(context.auraTheme.fromBorderRadius(.md)),
         ),
       ),
       child: Row(
@@ -449,7 +449,7 @@ class const _CreateButton({
             child: const TextLocale(
               LocaleKeys.models_screens_add_provider_connect_browser,
             ),
-            size: AuraButtonSize.large,
+            size: .large,
             isLoading:
                 isSubmitting &&
                 activeCodexOAuthMethod == CodexOAuthMethod.browser,
@@ -466,7 +466,7 @@ class const _CreateButton({
                   ? LocaleKeys.models_screens_add_provider_use_device_code
                   : LocaleKeys.models_screens_add_provider_create_button,
             ),
-            size: AuraButtonSize.large,
+            size: .large,
             isLoading:
                 isSubmitting &&
                 (!isCodex ||
@@ -484,14 +484,14 @@ class const _CodexOAuthPendingStatus({final bool showSpinner = true})
   @override
   Widget build(BuildContext _) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: .center,
       children: [
-        if (showSpinner) const AuraSpinner(size: AuraSpinnerSize.small),
+        if (showSpinner) const AuraSpinner(size: .small),
         if (showSpinner) const AuraSizedBox(width: .sm),
         const Flexible(
           child: AuraText(
             child: TextLocale(_oauthWaitingKey),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
         ),
       ],
@@ -508,19 +508,19 @@ class const _CodexDeviceCodePanel({
   Widget build(BuildContext context) {
     final linkStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
       color: context.auraColors.primary,
-      decoration: TextDecoration.underline,
+      decoration: .underline,
       decorationColor: context.auraColors.primary,
     );
 
     return AuraCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           const AuraText(
             child: TextLocale(
               LocaleKeys.models_screens_add_provider_device_code_instruction,
             ),
-            style: AuraTextStyle.bodyLarge,
+            style: .bodyLarge,
           ),
           const AuraSizedBox(height: .sm),
           const AuraText(
@@ -534,8 +534,8 @@ class const _CodexDeviceCodePanel({
               Expanded(
                 child: AuraSelectableText(
                   deviceCode.userCode,
-                  style: AuraTextStyle.heading5,
-                  tint: AuraTint.primary,
+                  style: .heading5,
+                  tint: .primary,
                 ),
               ),
               AuraIconButton(
@@ -566,7 +566,7 @@ class const _CodexDeviceCodePanel({
               AuraIconButton(
                 icon: Icons.open_in_new,
                 onPressed: () => _showVerificationUrlActions(context),
-                tint: AuraTint.primary,
+                tint: .primary,
                 tooltip: LocaleKeys
                     .models_screens_add_provider_device_code_open_link_tooltip
                     .tr(context: context),
@@ -581,7 +581,7 @@ class const _CodexDeviceCodePanel({
           AuraButton(
             onPressed: onCancel,
             child: const TextLocale(_cancelConnectionKey),
-            variant: AuraButtonVariant.outlined,
+            variant: .outlined,
             isFullWidth: true,
           ),
         ],
@@ -590,7 +590,7 @@ class const _CodexDeviceCodePanel({
   }
 
   Future<void> _copyCode(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: deviceCode.userCode));
+    await Clipboard.setData(.new(text: deviceCode.userCode));
     if (!context.mounted) return;
 
     final _ = AuraSnackBars.show(
@@ -598,12 +598,12 @@ class const _CodexDeviceCodePanel({
       content: Text(
         LocaleKeys.models_screens_add_provider_device_code_copied.tr(),
       ),
-      variant: AuraSnackBarVariant.success,
+      variant: .success,
     );
   }
 
   Future<void> _copyVerificationUrl(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: deviceCode.verificationUrl));
+    await Clipboard.setData(.new(text: deviceCode.verificationUrl));
     if (!context.mounted) return;
 
     final _ = AuraSnackBars.show(
@@ -611,7 +611,7 @@ class const _CodexDeviceCodePanel({
       content: Text(
         LocaleKeys.models_screens_add_provider_device_code_link_copied.tr(),
       ),
-      variant: AuraSnackBarVariant.success,
+      variant: .success,
     );
   }
 
@@ -622,8 +622,8 @@ class const _CodexDeviceCodePanel({
         LocaleKeys.models_screens_add_provider_device_code_link_actions_title,
       ),
       message: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
         children: [
           AuraButton(
             onPressed: () {
@@ -644,7 +644,7 @@ class const _CodexDeviceCodePanel({
             child: const TextLocale(
               LocaleKeys.models_screens_add_provider_device_code_copy_link,
             ),
-            variant: AuraButtonVariant.outlined,
+            variant: .outlined,
             isFullWidth: true,
           ),
         ],
@@ -666,7 +666,7 @@ class const _CodexDeviceCodePanel({
           LocaleKeys.models_screens_add_provider_device_code_open_link_failed
               .tr(),
         ),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     }
   }
@@ -741,7 +741,7 @@ class const _SelectModelProvider({required final String workspaceId})
           child: filteredModels.isEmpty
               ? Center(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: .center,
                     children: [
                       Icon(
                         Icons.search_off,
@@ -753,7 +753,7 @@ class const _SelectModelProvider({required final String workspaceId})
                         child: TextLocale(
                           AddModelProviderWidget.noModelsFoundKey,
                         ),
-                        style: AuraTextStyle.bodyLarge,
+                        style: .bodyLarge,
                       ),
                     ],
                   ),
@@ -775,8 +775,8 @@ class const _SelectModelProvider({required final String workspaceId})
                               child: TextLocale(
                                 LocaleKeys.mcp_modal_auth_oauth,
                               ),
-                              style: AuraTextStyle.bodySmall,
-                              tint: AuraTint.primary,
+                              style: .bodySmall,
+                              tint: .primary,
                             ),
                         ],
                       ),
@@ -843,10 +843,7 @@ class const _SelectedModelHeader({required final String workspaceId})
         ),
         const AuraSizedBox(width: .md),
         Expanded(
-          child: AuraText(
-            child: Text(selectedModelName),
-            style: AuraTextStyle.bodyLarge,
-          ),
+          child: AuraText(child: Text(selectedModelName), style: .bodyLarge),
         ),
       ],
     );

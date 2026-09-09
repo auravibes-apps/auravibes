@@ -15,7 +15,6 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
-import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,8 +28,8 @@ final _server = McpServerEntity(
   url: 'https://example.com',
   transport: const McpTransportTypeSSE(),
   authenticationType: const McpAuthenticationTypeNone(),
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
 );
 
 final _server2 = McpServerEntity(
@@ -40,8 +39,8 @@ final _server2 = McpServerEntity(
   url: 'https://example.org',
   transport: const McpTransportTypeSSE(),
   authenticationType: const McpAuthenticationTypeNone(),
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
 );
 
 const _toolInfo = McpToolInfo(
@@ -56,7 +55,7 @@ McpConnectionState _connectedState({
 }) {
   return McpConnectionState(
     server: _server,
-    status: McpConnectionStatus.connected,
+    status: .connected,
     client: client,
     tools: tools,
   );
@@ -119,33 +118,24 @@ void main() {
 
   group('McpConnectionState', () {
     test('isReady returns false when no client', () {
-      final state = McpConnectionState(
-        server: _server,
-        status: McpConnectionStatus.connected,
-      );
+      final state = McpConnectionState(server: _server, status: .connected);
       expect(state.isReady, isFalse);
     });
 
     test('isReady returns false when connecting', () {
-      final state = McpConnectionState(
-        server: _server,
-        status: McpConnectionStatus.connecting,
-      );
+      final state = McpConnectionState(server: _server, status: .connecting);
       expect(state.isReady, isFalse);
     });
 
     test('isReady returns false when disconnected', () {
-      final state = McpConnectionState(
-        server: _server,
-        status: McpConnectionStatus.disconnected,
-      );
+      final state = McpConnectionState(server: _server, status: .disconnected);
       expect(state.isReady, isFalse);
     });
 
     test('isReady returns false when error', () {
       final state = McpConnectionState(
         server: _server,
-        status: McpConnectionStatus.error,
+        status: .error,
         errorMessage: 'fail',
       );
       expect(state.isReady, isFalse);
@@ -154,17 +144,14 @@ void main() {
     test('hasTools returns true when tools present', () {
       final state = McpConnectionState(
         server: _server,
-        status: McpConnectionStatus.connected,
+        status: .connected,
         tools: [_toolInfo],
       );
       expect(state.hasTools, isTrue);
     });
 
     test('hasTools returns false when no tools', () {
-      final state = McpConnectionState(
-        server: _server,
-        status: McpConnectionStatus.connected,
-      );
+      final state = McpConnectionState(server: _server, status: .connected);
       expect(state.hasTools, isFalse);
     });
   });
@@ -201,7 +188,7 @@ void main() {
       );
       if (initialize) {
         final _ = testContainer.read(mcpConnectionProvider);
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
       }
 
       return testContainer;
@@ -253,12 +240,7 @@ void main() {
 
     test('getConnection returns state for existing server', () {
       final notifier = container.read(mcpConnectionProvider.notifier)
-        ..state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.connected,
-          ),
-        ];
+        ..state = [McpConnectionState(server: _server, status: .connected)];
       final conn = notifier.getConnection('server-1');
       expect(conn, isNotNull);
       expect(
@@ -283,17 +265,14 @@ void main() {
       'waitForConnectionsReady returns immediately with zero duration',
       () async {
         container.read(mcpConnectionProvider.notifier).state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.connected,
-          ),
+          McpConnectionState(server: _server, status: .connected),
         ];
 
         final notifier = container.read(mcpConnectionProvider.notifier);
         final sw = Stopwatch()..start();
         await notifier.waitForConnectionsReady(
           mcpServerIds: const ['server-1'],
-          timeout: Duration.zero,
+          timeout: .zero,
         );
         sw.stop();
         expect(sw.elapsed, lessThan(const Duration(milliseconds: 50)));
@@ -304,10 +283,7 @@ void main() {
       'waitForConnectionsReady returns immediately when not connecting',
       () async {
         container.read(mcpConnectionProvider.notifier).state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.connected,
-          ),
+          McpConnectionState(server: _server, status: .connected),
         ];
 
         final notifier = container.read(mcpConnectionProvider.notifier);
@@ -323,12 +299,7 @@ void main() {
 
     test('waitForConnectionsReady honors timeout', () async {
       final notifier = container.read(mcpConnectionProvider.notifier)
-        ..state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.connecting,
-          ),
-        ];
+        ..state = [McpConnectionState(server: _server, status: .connecting)];
 
       final sw = Stopwatch()..start();
       await notifier.waitForConnectionsReady(
@@ -345,20 +316,12 @@ void main() {
 
     test('waitForConnectionsReady resolves when status changes', () async {
       final notifier = container.read(mcpConnectionProvider.notifier)
-        ..state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.connecting,
-          ),
-        ];
+        ..state = [McpConnectionState(server: _server, status: .connecting)];
 
       unawaited(
         Future<void>.delayed(const Duration(milliseconds: 20), () {
           notifier.state = [
-            McpConnectionState(
-              server: _server,
-              status: McpConnectionStatus.connected,
-            ),
+            McpConnectionState(server: _server, status: .connected),
           ];
         }),
       );
@@ -375,14 +338,8 @@ void main() {
     test('getConnectingServers filters by status', () {
       final notifier = container.read(mcpConnectionProvider.notifier)
         ..state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.connecting,
-          ),
-          McpConnectionState(
-            server: _server2,
-            status: McpConnectionStatus.connected,
-          ),
+          McpConnectionState(server: _server, status: .connecting),
+          McpConnectionState(server: _server2, status: .connected),
         ];
 
       final connecting = notifier.getConnectingServers(const [
@@ -395,12 +352,7 @@ void main() {
 
     test('getConnectingServers returns empty when none match', () {
       final notifier = container.read(mcpConnectionProvider.notifier)
-        ..state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.connected,
-          ),
-        ];
+        ..state = [McpConnectionState(server: _server, status: .connected)];
 
       final connecting = notifier.getConnectingServers(const ['server-1']);
       expect(connecting, isEmpty);
@@ -431,7 +383,7 @@ void main() {
         ..state = [
           McpConnectionState(
             server: _server,
-            status: McpConnectionStatus.connected,
+            status: .connected,
             tools: [_toolInfo],
           ),
         ];
@@ -447,7 +399,7 @@ void main() {
         ..state = [
           McpConnectionState(
             server: _server,
-            status: McpConnectionStatus.connected,
+            status: .connected,
             tools: const [_toolInfo],
           ),
         ];
@@ -463,7 +415,7 @@ void main() {
         ..state = [
           McpConnectionState(
             server: _server,
-            status: McpConnectionStatus.connected,
+            status: .connected,
             client: _FakeMcpManagerClient(),
             tools: const [_toolInfo],
           ),
@@ -506,14 +458,8 @@ void main() {
     test('deleteMcpServer removes from state and database', () async {
       final notifier = container.read(mcpConnectionProvider.notifier)
         ..state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.disconnected,
-          ),
-          McpConnectionState(
-            server: _server2,
-            status: McpConnectionStatus.connected,
-          ),
+          McpConnectionState(server: _server, status: .disconnected),
+          McpConnectionState(server: _server2, status: .connected),
         ];
 
       await notifier.deleteMcpServer('server-1');
@@ -526,12 +472,7 @@ void main() {
 
     test('deleteMcpServer works for server not in state', () async {
       final notifier = container.read(mcpConnectionProvider.notifier)
-        ..state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.connected,
-          ),
-        ];
+        ..state = [McpConnectionState(server: _server, status: .connected)];
 
       await notifier.deleteMcpServer('server-2');
 
@@ -568,12 +509,7 @@ void main() {
 
     test('callTool throws descriptive message for not connected', () async {
       final notifier = container.read(mcpConnectionProvider.notifier)
-        ..state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.disconnected,
-          ),
-        ];
+        ..state = [McpConnectionState(server: _server, status: .disconnected)];
 
       try {
         final _ = await notifier.callTool(
@@ -593,12 +529,7 @@ void main() {
       addTearDown(testContainer.dispose);
 
       final notifier = testContainer.read(mcpConnectionProvider.notifier)
-        ..state = [
-          McpConnectionState(
-            server: _server,
-            status: McpConnectionStatus.disconnected,
-          ),
-        ];
+        ..state = [McpConnectionState(server: _server, status: .disconnected)];
 
       await notifier.reconnectMcpServer('server-1');
 
@@ -625,10 +556,7 @@ void main() {
 
     test('dispose cleans up connections', () {
       container.read(mcpConnectionProvider.notifier).state = [
-        McpConnectionState(
-          server: _server,
-          status: McpConnectionStatus.connected,
-        ),
+        McpConnectionState(server: _server, status: .connected),
       ];
 
       expect(container.read(mcpConnectionProvider), hasLength(1));
@@ -640,7 +568,7 @@ void main() {
         ..state = [
           McpConnectionState(
             server: _server,
-            status: McpConnectionStatus.connected,
+            status: .connected,
             tools: const [_toolInfo],
           ),
         ];
@@ -687,7 +615,7 @@ void main() {
                 name: 'Bearer MCP',
                 url: 'https://example.com',
                 transport: McpTransportTypeSSE(),
-                authenticationType: McpAuthenticationTypeOptions.bearerToken,
+                authenticationType: .bearerToken,
                 bearerToken: 'test-token',
               ),
               workspaceId: 'workspace-1',
@@ -707,7 +635,7 @@ void main() {
     );
 
     test('addMcpServer cleans up credential when persistence fails', () async {
-      mcpServersRepository.addServerError = Exception('insert failed');
+      mcpServersRepository.addServerError = .new('insert failed');
       final testContainer = await createInitializedContainer(
         _SuccessfulMcpManagerService(),
       );
@@ -721,7 +649,7 @@ void main() {
                 name: 'Bearer MCP',
                 url: 'https://example.com',
                 transport: McpTransportTypeSSE(),
-                authenticationType: McpAuthenticationTypeOptions.bearerToken,
+                authenticationType: .bearerToken,
                 bearerToken: 'test-token',
               ),
               workspaceId: 'workspace-1',
@@ -749,7 +677,7 @@ void main() {
       final subscription = Logger.root.onRecord.listen(records.add);
       addTearDown(subscription.cancel);
       final previousLevel = Logger.root.level;
-      Logger.root.level = Level.ALL;
+      Logger.root.level = .ALL;
       addTearDown(() {
         Logger.root.level = previousLevel;
       });
@@ -763,7 +691,7 @@ void main() {
       addTearDown(testContainer.dispose);
 
       expect(testContainer.read(mcpConnectionProvider), isEmpty);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(testContainer.read(mcpConnectionProvider), isEmpty);
       final record = records.firstWhere(
@@ -781,7 +709,7 @@ void main() {
       final subscription = Logger.root.onRecord.listen(records.add);
       addTearDown(subscription.cancel);
       final previousLevel = Logger.root.level;
-      Logger.root.level = Level.ALL;
+      Logger.root.level = .ALL;
       addTearDown(() {
         Logger.root.level = previousLevel;
       });
@@ -820,7 +748,7 @@ void main() {
         ..state = [
           McpConnectionState(
             server: _server,
-            status: McpConnectionStatus.connected,
+            status: .connected,
             client: client,
             tools: const [_toolInfo],
           ),
@@ -840,7 +768,7 @@ void main() {
       final tokenController = StreamController<OAuthTokenEntity>();
       addTearDown(tokenController.close);
       final fakeService = _SuccessfulMcpManagerService(
-        client: _FakeMcpManagerClient(tokenUpdates: tokenController.stream),
+        client: .new(tokenUpdates: tokenController.stream),
       );
       final testContainer = await createInitializedContainer(fakeService);
       addTearDown(testContainer.dispose);
@@ -852,7 +780,7 @@ void main() {
               name: 'Bearer MCP',
               url: 'https://example.com',
               transport: McpTransportTypeSSE(),
-              authenticationType: McpAuthenticationTypeOptions.bearerToken,
+              authenticationType: .bearerToken,
               bearerToken: 'test-token',
             ),
             workspaceId: 'workspace-1',
@@ -860,11 +788,11 @@ void main() {
       tokenController.add(
         OAuthTokenEntity(
           accessToken: 'updated-access-token',
-          issuedAt: DateTime(2026, 1, 2),
+          issuedAt: .new(2026, 1, 2),
           expiresIn: 3600,
         ),
       );
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       final credentials = await getDatabase()
           .select(getDatabase().serviceConnections)
@@ -903,8 +831,8 @@ class _FakeMcpServersRepository implements McpServersRepository {
       url: serverToCreate.url,
       transport: serverToCreate.transport,
       authenticationType: serverToCreate.authenticationType,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       serviceConnectionId: serverToCreate.serviceConnectionId,
       description: serverToCreate.description,
     );
@@ -949,7 +877,7 @@ class _FakeMcpServersRepository implements McpServersRepository {
 }
 
 final class _FakeEncryptionService() extends EncryptionService {
-  this : super(SecretKeyManager());
+  this : super(.new());
 
   @override
   Future<String> decrypt(String encryptedBase64) async => encryptedBase64;
@@ -969,9 +897,9 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   new({_FakeMcpManagerClient? client})
     : _client = client ?? _FakeMcpManagerClient();
 
-  final _FakeMcpManagerClient _client;
   final connectedServers = <McpServerToCreate>[];
   final calledToolIdentifiers = <String>[];
+  final _FakeMcpManagerClient _client;
 
   @override
   Future<McpManagerClient> connectMcp(McpServerToCreate serverInfo) async {

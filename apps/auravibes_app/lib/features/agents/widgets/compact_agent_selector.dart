@@ -21,9 +21,7 @@ class const CompactAgentSelector({
 
     if (sheetMode) {
       return switch (agentsAsync) {
-        AsyncLoading() => const Center(
-          child: AuraSpinner(size: AuraSpinnerSize.small),
-        ),
+        AsyncLoading() => const Center(child: AuraSpinner(size: .small)),
         AsyncError() => const Center(
           child: TextLocale(LocaleKeys.agents_selector_placeholder),
         ),
@@ -37,9 +35,7 @@ class const CompactAgentSelector({
 
     if (compactMode) {
       return switch (agentsAsync) {
-        AsyncLoading() => const _AgentChip(
-          label: AuraSpinner(size: AuraSpinnerSize.small),
-        ),
+        AsyncLoading() => const _AgentChip(label: AuraSpinner(size: .small)),
         AsyncError() => const _AgentChip(
           label: TextLocale(LocaleKeys.agents_selector_placeholder),
         ),
@@ -48,14 +44,10 @@ class const CompactAgentSelector({
             null => const TextLocale(
               LocaleKeys.agents_selector_none,
               softWrap: false,
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
               maxLines: 1,
             ),
-            final name => Text(
-              name,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
+            final name => Text(name, overflow: .ellipsis, maxLines: 1),
           },
         ),
       };
@@ -66,7 +58,7 @@ class const CompactAgentSelector({
       child: switch (agentsAsync) {
         AsyncLoading() => const AuraDropdownSelector<String>(
           options: [],
-          placeholder: AuraSpinner(size: AuraSpinnerSize.small),
+          placeholder: AuraSpinner(size: .small),
           isEnabled: false,
         ),
         AsyncError() => const AuraDropdownSelector<String>(
@@ -100,8 +92,8 @@ class const _AgentChip({required final Widget label}) extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuraTile(
       child: label,
-      variant: AuraTileVariant.selected,
-      size: AuraTileSize.small,
+      variant: .selected,
+      size: .small,
       leading: const AuraIcon(Icons.smart_toy_outlined),
     );
   }
@@ -132,7 +124,7 @@ class const _AgentSheetSelector({
               .toList();
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         AuraInput(
           controller: controller,
@@ -156,7 +148,7 @@ class const _AgentSheetSelector({
               return _AgentSheetTile(
                 isSelected: agent.id == agentId,
                 onTap: () => _select(context, agent.id),
-                child: Text(agent.name, overflow: TextOverflow.ellipsis),
+                child: Text(agent.name, overflow: .ellipsis),
               );
             },
             separatorBuilder: (context, index) =>
@@ -185,9 +177,7 @@ class const _AgentSheetTile({
       child: child,
       onTap: onTap,
       variant: isSelected ? AuraTileVariant.selected : AuraTileVariant.surface,
-      trailing: isSelected
-          ? const AuraIcon(Icons.check, tint: AuraTint.primary)
-          : null,
+      trailing: isSelected ? const AuraIcon(Icons.check, tint: .primary) : null,
     );
   }
 }

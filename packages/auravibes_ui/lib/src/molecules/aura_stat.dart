@@ -35,7 +35,7 @@ class AuraStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraCard(
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       spacing: context.auraTheme.spacing.xs,
       children: [
         if (icon case final value?) AuraIcon(value, tint: tint),

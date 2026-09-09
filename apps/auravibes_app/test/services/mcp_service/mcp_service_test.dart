@@ -64,7 +64,7 @@ void main() {
         name: 'My Cool Server!',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationType.none(),
+        authenticationType: .none(),
       );
       expect(server.slugServerName, 'my-cool-server');
     });
@@ -74,7 +74,7 @@ void main() {
         name: 'myserver',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationType.none(),
+        authenticationType: .none(),
       );
       expect(server.slugServerName, 'myserver');
     });
@@ -84,7 +84,7 @@ void main() {
         name: 'Test @ Server #1',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationType.none(),
+        authenticationType: .none(),
       );
       expect(server.slugServerName, 'test-server-1');
     });
@@ -94,14 +94,14 @@ void main() {
         name: 'A&&B%%C',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationType.none(),
+        authenticationType: .none(),
       );
       expect(server.slugServerName, 'a-b-c');
     });
 
     test('slugServerName handles unicode characters', () {
       final server = McpServerToCreate(
-        name: String.fromCharCodes([
+        name: .fromCharCodes([
           83,
           101,
           114,
@@ -133,7 +133,7 @@ void main() {
         name: 'Test',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.none,
+        authenticationType: .none,
         bearerToken: null,
       );
       expect(form.isValid, isTrue);
@@ -144,7 +144,7 @@ void main() {
         name: '',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.none,
+        authenticationType: .none,
         bearerToken: null,
       );
       expect(form.isValid, isFalse);
@@ -155,7 +155,7 @@ void main() {
         name: 'Test',
         url: '',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.none,
+        authenticationType: .none,
         bearerToken: null,
       );
       expect(form.isValid, isFalse);
@@ -166,7 +166,7 @@ void main() {
         name: 'Test',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.oauth,
+        authenticationType: .oauth,
         bearerToken: null,
       );
       expect(form.isValid, isTrue);
@@ -177,7 +177,7 @@ void main() {
         name: 'Test',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.bearerToken,
+        authenticationType: .bearerToken,
         bearerToken: null,
       );
       expect(form.isValid, isFalse);
@@ -188,7 +188,7 @@ void main() {
         name: 'Test',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.bearerToken,
+        authenticationType: .bearerToken,
         bearerToken: '',
       );
       expect(form.isValid, isFalse);
@@ -199,7 +199,7 @@ void main() {
         name: 'Test',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.bearerToken,
+        authenticationType: .bearerToken,
         bearerToken: 'my-secret-token',
       );
       expect(form.isValid, isTrue);
@@ -210,7 +210,7 @@ void main() {
         name: 'Test',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.none,
+        authenticationType: .none,
         bearerToken: null,
       );
       expect(form.validationErrors, isEmpty);
@@ -221,7 +221,7 @@ void main() {
         name: '',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.none,
+        authenticationType: .none,
         bearerToken: null,
       );
       expect(form.validationErrors, contains(contains('Name')));
@@ -232,7 +232,7 @@ void main() {
         name: 'Test',
         url: '',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.none,
+        authenticationType: .none,
         bearerToken: null,
       );
       expect(form.validationErrors, contains(contains('URL')));
@@ -243,7 +243,7 @@ void main() {
         name: 'Test',
         url: 'http://localhost',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.bearerToken,
+        authenticationType: .bearerToken,
         bearerToken: null,
       );
       expect(form.validationErrors, contains(contains('Bearer token')));
@@ -254,7 +254,7 @@ void main() {
         name: '',
         url: '',
         transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationTypeOptions.bearerToken,
+        authenticationType: .bearerToken,
         bearerToken: null,
       );
       expect(form.validationErrors.length, greaterThanOrEqualTo(2));
@@ -263,17 +263,14 @@ void main() {
 
   group('OAuthTokenEntity', () {
     test('isOAuthTokenExpired returns true when expiresIn is null', () {
-      final token = OAuthTokenEntity(
-        accessToken: 'abc',
-        issuedAt: DateTime(2026),
-      );
+      final token = OAuthTokenEntity(accessToken: 'abc', issuedAt: .new(2026));
       expect(token.isOAuthTokenExpired, isTrue);
     });
 
     test('isOAuthTokenExpired returns false for fresh token', () {
       final token = OAuthTokenEntity(
         accessToken: 'abc',
-        issuedAt: DateTime.now(),
+        issuedAt: .now(),
         expiresIn: 3600,
       );
       expect(token.isOAuthTokenExpired, isFalse);
@@ -282,7 +279,7 @@ void main() {
     test('isOAuthTokenExpired returns true for expired token', () {
       final token = OAuthTokenEntity(
         accessToken: 'abc',
-        issuedAt: DateTime(2020),
+        issuedAt: .new(2020),
         expiresIn: 60,
       );
       expect(token.isOAuthTokenExpired, isTrue);
@@ -291,7 +288,7 @@ void main() {
     test('needsOAuthTokenRefresh is false when no refreshToken', () {
       final token = OAuthTokenEntity(
         accessToken: 'abc',
-        issuedAt: DateTime(2020),
+        issuedAt: .new(2020),
         expiresIn: 60,
       );
       expect(token.needsOAuthTokenRefresh, isFalse);
@@ -300,7 +297,7 @@ void main() {
     test('needsOAuthTokenRefresh is true when expired with refreshToken', () {
       final token = OAuthTokenEntity(
         accessToken: 'abc',
-        issuedAt: DateTime(2020),
+        issuedAt: .new(2020),
         refreshToken: 'refresh-abc',
         expiresIn: 60,
       );
@@ -312,7 +309,7 @@ void main() {
       () {
         final token = OAuthTokenEntity(
           accessToken: 'abc',
-          issuedAt: DateTime.now(),
+          issuedAt: .now(),
           refreshToken: 'refresh-abc',
           expiresIn: 3600,
         );
@@ -323,7 +320,7 @@ void main() {
     test('copyCryptor encrypts fields', () async {
       final token = OAuthTokenEntity(
         accessToken: 'plain-access',
-        issuedAt: DateTime(2026),
+        issuedAt: .new(2026),
         refreshToken: 'plain-refresh',
         expiresIn: 3600,
       );
@@ -338,7 +335,7 @@ void main() {
     test('copyCryptor handles null refreshToken', () async {
       final token = OAuthTokenEntity(
         accessToken: 'plain',
-        issuedAt: DateTime(2026),
+        issuedAt: .new(2026),
       );
 
       final encrypted = await token.copyCryptor((v) async => 'enc($v)');
@@ -373,7 +370,7 @@ void main() {
 
     test('copyCryptor encrypts oauth token', () async {
       final auth = McpAuthenticationType.oauth(
-        token: OAuthTokenEntity(
+        token: .new(
           accessToken: 'access',
           issuedAt: DateTime(2026),
           refreshToken: 'refresh',
@@ -406,8 +403,8 @@ void main() {
         url: 'http://localhost',
         transport: const McpTransportTypeSSE(),
         authenticationType: const McpAuthenticationType.none(),
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
 
       expect(tool.finalToolName(server), 'mcp_srv-1_my-server_read_file');
@@ -426,8 +423,8 @@ void main() {
         url: 'http://localhost',
         transport: const McpTransportTypeSSE(),
         authenticationType: const McpAuthenticationType.none(),
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
 
       final name = tool.finalToolName(server);

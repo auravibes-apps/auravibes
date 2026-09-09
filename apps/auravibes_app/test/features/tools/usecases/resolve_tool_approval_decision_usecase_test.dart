@@ -1,11 +1,8 @@
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
-import 'package:auravibes_app/services/tools/native_tool_type.dart';
-import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -27,7 +24,7 @@ void main() {
         final resolvedTool = ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         );
 
         when(
@@ -60,7 +57,7 @@ void main() {
           final resolvedTool = ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
-            tooltype: UserToolType.calculator,
+            tooltype: .calculator,
           );
 
           when(
@@ -93,7 +90,7 @@ void main() {
         final usecase = fixture.usecase;
         final resolvedTool = ResolvedTool.native(
           tableId: 'native-1',
-          nativeToolType: NativeToolType.url,
+          nativeToolType: .url,
         );
 
         when(
@@ -213,7 +210,7 @@ void main() {
             toolCallId: toolCallId,
             resolvedTool: ResolvedTool.skillCommand(
               commandName: agent.callSkillToolName,
-              target: agent.AgentResolvedToolName.skillNative(
+              target: .skillNative(
                 tableId: 'search',
                 skillSlug: skill,
                 toolIdentifier: 'search',
@@ -261,7 +258,7 @@ void main() {
           toolCallId: 'tc-1',
           resolvedTool: ResolvedTool.skillCommand(
             commandName: agent.callSkillToolName,
-            target: agent.AgentResolvedToolName.skillNative(
+            target: .skillNative(
               tableId: 'search',
               skillSlug: 'duckduckgo',
               toolIdentifier: 'search',
@@ -340,9 +337,9 @@ void main() {
               workspaceId: 'ws-1',
               name: 'Group',
               isEnabled: true,
-              permissions: PermissionAccess.ask,
-              createdAt: DateTime(2026),
-              updatedAt: DateTime(2026),
+              permissions: .ask,
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
               mcpServerId: 'server-1',
             ),
           );
@@ -357,9 +354,9 @@ void main() {
               workspaceId: 'ws-1',
               toolId: 'sum',
               isEnabled: true,
-              permissionMode: ToolPermissionMode.alwaysAllow,
-              createdAt: DateTime(2026),
-              updatedAt: DateTime(2026),
+              permissionMode: .alwaysAllow,
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
               workspaceToolsGroupId: 'group-1',
             ),
           );
@@ -426,9 +423,9 @@ void main() {
                 workspaceId: 'ws-1',
                 name: 'Group',
                 isEnabled: true,
-                permissions: PermissionAccess.ask,
-                createdAt: DateTime(2026),
-                updatedAt: DateTime(2026),
+                permissions: .ask,
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
                 mcpServerId: 'server-1',
               ),
             );
@@ -457,7 +454,7 @@ void main() {
         final resolvedTool = ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         );
 
         when(
@@ -514,7 +511,7 @@ class _ResolveToolApprovalDecisionFixture {
     _conversationToolsRepository = conversationToolsRepository;
     _toolsGroupsRepository = toolsGroupsRepository;
     _workspaceToolsRepository = workspaceToolsRepository;
-    _usecase = ResolveToolApprovalDecisionUsecase(
+    _usecase = .new(
       conversationToolsRepository: conversationToolsRepository,
       toolsGroupsRepository: toolsGroupsRepository,
       workspaceToolsRepository: workspaceToolsRepository,

@@ -19,7 +19,7 @@ class AuraThemeWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(body: child),
-      theme: ThemeData(extensions: [AuraTheme.light]),
+      theme: .new(extensions: [AuraTheme.light]),
     );
   }
 }
@@ -96,7 +96,7 @@ void main() {
       );
 
       // The confirm button should have error styling.
-      final confirmButton = findAuraButtonByColorVariant(AuraTint.error);
+      final confirmButton = findAuraButtonByColorVariant(.error);
 
       expect(confirmButton, findsOneWidget);
     });
@@ -125,7 +125,7 @@ void main() {
             message: Text('Proceed with caution'),
             confirmLabel: Text('Confirm'),
             cancelLabel: Text('Cancel'),
-            tint: AuraTint.error,
+            tint: .error,
           ),
         ),
       );

@@ -202,10 +202,10 @@ ToolsGroupWithTools _toToolsGroupWithTools(
 
 McpConnectionViewStatus _toMcpConnectionViewStatus(McpConnectionStatus status) {
   return switch (status) {
-    McpConnectionStatus.disconnected => McpConnectionViewStatus.disconnected,
-    McpConnectionStatus.connecting => McpConnectionViewStatus.connecting,
-    McpConnectionStatus.connected => McpConnectionViewStatus.connected,
-    McpConnectionStatus.error => McpConnectionViewStatus.error,
+    .disconnected => McpConnectionViewStatus.disconnected,
+    .connecting => McpConnectionViewStatus.connecting,
+    .connected => McpConnectionViewStatus.connected,
+    .error => McpConnectionViewStatus.error,
   };
 }
 

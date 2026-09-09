@@ -40,7 +40,7 @@ void main() {
     when(() => gateway.watchResources(any())).thenAnswer(
       (_) => Stream.value([
         _resource(
-          kind: WorkspaceResourceKind.skill,
+          kind: .skill,
           id: 'skill-1',
           data:
               '{"slug":"weather","title":"Weather",'
@@ -48,7 +48,7 @@ void main() {
               '"content":"Instructions","isEnabled":true}',
         ),
         _resource(
-          kind: WorkspaceResourceKind.skillSetting,
+          kind: .skillSetting,
           id: 'setting-1',
           data: '{"skillId":"skill-1","isEnabled":false}',
         ),
@@ -65,7 +65,7 @@ void main() {
     when(() => gateway.watchResources(any())).thenAnswer(
       (_) => Stream.value([
         _resource(
-          kind: WorkspaceResourceKind.skill,
+          kind: .skill,
           id: 'agents',
           data:
               '{"source":"app","slug":"agents","title":"Agents", '
@@ -85,7 +85,7 @@ void main() {
     when(() => gateway.watchResources(any())).thenAnswer(
       (_) => Stream.value([
         _resource(
-          kind: WorkspaceResourceKind.compactionSetting,
+          kind: .compactionSetting,
           id: 'workspace',
           data:
               '{"autoCompactionEnabled":false,'
@@ -104,11 +104,7 @@ void main() {
   test('saves settings with expected revision', () async {
     when(() => gateway.watchResources(any())).thenAnswer(
       (_) => Stream.value([
-        _resource(
-          kind: WorkspaceResourceKind.compactionSetting,
-          id: 'workspace',
-          data: '{}',
-        ),
+        _resource(kind: .compactionSetting, id: 'workspace', data: '{}'),
       ]),
     );
     when(
@@ -141,11 +137,7 @@ void main() {
   test('reset deletes current override with expected revision', () async {
     when(() => gateway.watchResources(any())).thenAnswer(
       (_) => Stream.value([
-        _resource(
-          kind: WorkspaceResourceKind.compactionSetting,
-          id: 'workspace',
-          data: '{}',
-        ),
+        _resource(kind: .compactionSetting, id: 'workspace', data: '{}'),
       ]),
     );
     when(
@@ -232,8 +224,8 @@ void main() {
     final submittedSecrets = verify(
       () => gateway.putSecret(
         requestId: any(named: 'requestId'),
-        secretKind: WorkspaceSecretKind.skillCredential,
-        scope: WorkspaceSecretScope.workspace,
+        secretKind: .skillCredential,
+        scope: .workspace,
         resourceId: 'credential-1',
         secret: captureAny(named: 'secret'),
         expectedRevision: 1,

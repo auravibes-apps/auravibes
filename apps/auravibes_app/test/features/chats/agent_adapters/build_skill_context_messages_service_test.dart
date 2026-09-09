@@ -27,13 +27,13 @@ void main() {
         title: 'Research',
         description: '',
         content: 'Use primary sources.',
-        kind: SkillKind.template,
+        kind: .template,
       );
       when(
         () => listUseCase.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer((_) async => const [skill]);
       when(
@@ -88,7 +88,7 @@ void main() {
         () => listUseCase.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer(
         (_) async => [
@@ -99,7 +99,7 @@ void main() {
             title: '<a&b"c\'d>',
             description: '',
             content: '<x&y"z\'w>',
-            kind: SkillKind.template,
+            kind: .template,
           ),
         ],
       );
@@ -139,7 +139,7 @@ void main() {
         title: 'Skill One',
         description: '',
         content: 'Loaded content',
-        kind: SkillKind.template,
+        kind: .template,
       );
       const duplicateAgentSkill = AvailableSkill(
         source: SkillSource.user,
@@ -148,7 +148,7 @@ void main() {
         title: 'Skill One Duplicate',
         description: '',
         content: 'Agent duplicate content',
-        kind: SkillKind.template,
+        kind: .template,
       );
       const appAgentSkill = AvailableSkill(
         source: SkillSource.app,
@@ -157,14 +157,14 @@ void main() {
         title: 'App Skill',
         description: '',
         content: 'App content',
-        kind: SkillKind.native,
+        kind: .native,
       );
 
       when(
         () => listUseCase.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer((_) async => [loadedSkill]);
       when(
@@ -213,7 +213,7 @@ void main() {
         () => listUseCase.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer((_) async => const []);
       when(

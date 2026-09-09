@@ -112,8 +112,8 @@ class AuraChart extends StatelessWidget {
 
     return Semantics(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
         spacing: context.auraTheme.spacing.sm,
         children: [
           if (yAxisTitle case final title?)
@@ -139,7 +139,7 @@ class AuraChart extends StatelessWidget {
           ),
           if (labels.isNotEmpty)
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 for (final label in labels)
                   Expanded(
@@ -239,15 +239,15 @@ class _AuraChartPainter extends CustomPainter {
     final plotHeight = size.height - inset * 2;
     final baseline = inset + (high / range) * plotHeight;
     canvas.drawLine(
-      Offset(0, baseline),
-      Offset(size.width, baseline),
+      .new(0, baseline),
+      .new(size.width, baseline),
       Paint()..color = axisColor,
     );
     for (final (seriesIndex, item) in series.indexed) {
       final paint = Paint()
         ..color = colors[seriesIndex]
         ..strokeWidth = 2
-        ..strokeCap = StrokeCap.round;
+        ..strokeCap = .round;
       final path = Path();
       final slot = size.width / item.values.length;
       for (final (index, sample) in item.values.indexed) {
@@ -276,7 +276,7 @@ class _AuraChartPainter extends CustomPainter {
               inset + (high - (value + stackOffset)) / range * plotHeight;
           final stackBaseY = inset + (high - stackOffset) / range * plotHeight;
           canvas.drawRect(
-            Rect.fromLTRB(
+            .fromLTRB(
               barX - barWidth / 2,
               math.min(stacked ? stackedY : y, stacked ? stackBaseY : baseline),
               barX + barWidth / 2,
@@ -290,14 +290,17 @@ class _AuraChartPainter extends CustomPainter {
           } else {
             path.lineTo(x, y);
           }
-          canvas.drawCircle(Offset(x, y), 2, paint);
+          canvas.drawCircle(.new(x, y), 2, paint);
         }
       }
       if (type == AuraChartType.line) {
-        canvas.drawPath(path, paint..style = PaintingStyle.stroke);
+        canvas.drawPath(path, paint..style = .stroke);
       }
     }
   }
+
+  @override
+  bool shouldRepaint(_AuraChartPainter oldDelegate) => true;
 
   void _paintPie(Canvas canvas, Size size) {
     final values = series.single.values;
@@ -306,16 +309,16 @@ class _AuraChartPainter extends CustomPainter {
       return;
     }
 
-    final center = size.center(Offset.zero);
+    final center = size.center(.zero);
     final radius = math.min(size.width, size.height) / 2;
     if (type == AuraChartType.donut) {
-      canvas.saveLayer(Offset.zero & size, Paint());
+      canvas.saveLayer(Offset.zero & size, .new());
     }
     var start = -math.pi / 2;
     for (final (index, value) in values.indexed) {
       final sweep = value / total * math.pi * 2;
       canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
+        .fromCircle(center: center, radius: radius),
         start,
         sweep,
         true,
@@ -325,11 +328,8 @@ class _AuraChartPainter extends CustomPainter {
     }
     if (type == AuraChartType.donut) {
       canvas
-        ..drawCircle(center, radius * 0.5, Paint()..blendMode = BlendMode.clear)
+        ..drawCircle(center, radius * 0.5, Paint()..blendMode = .clear)
         ..restore();
     }
   }
-
-  @override
-  bool shouldRepaint(_AuraChartPainter oldDelegate) => true;
 }

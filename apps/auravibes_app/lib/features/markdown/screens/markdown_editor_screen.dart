@@ -70,7 +70,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
                             TextFormField(
                               controller: _controller,
                               focusNode: _focusNode,
-                              decoration: InputDecoration(
+                              decoration: .new(
                                 hintText: LocaleKeys
                                     .markdown_editor_editor_label
                                     .tr(context: context),
@@ -86,8 +86,8 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
                                 contentPadding: EdgeInsets.zero,
                                 border: InputBorder.none,
                               ),
-                              keyboardType: TextInputType.multiline,
-                              style: TextStyle(
+                              keyboardType: .multiline,
+                              style: .new(
                                 color: auraColors.onSurface,
                                 fontSize: typography.fontSizeBase,
                                 fontWeight: typography.fontWeightRegular,
@@ -99,13 +99,13 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
                             ),
                           ],
                           spacing: .md,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: .start,
                         ),
                       ),
                     ],
                   ),
                   onTap: _focusInput,
-                  behavior: HitTestBehavior.translucent,
+                  behavior: .translucent,
                 ),
               ),
               SafeArea(
@@ -115,7 +115,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
                     vertical: 8,
                     horizontal: 16,
                   ),
-                  width: double.infinity,
+                  width: .infinity,
                   child: MarkdownEditorToolbar(
                     controller: _controller,
                     focusNode: _focusNode,
@@ -130,7 +130,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
         title: GestureDetector(
           child: const TextLocale(LocaleKeys.markdown_editor_title),
           onTap: _unfocusInput,
-          behavior: HitTestBehavior.opaque,
+          behavior: .opaque,
         ),
         actions: [
           ValueListenableBuilder<TextEditingValue>(
@@ -191,14 +191,14 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
             return Center(
               child: AuraText(
                 child: Text('$characterCount/$maxCharacters'),
-                style: AuraTextStyle.caption,
+                style: .caption,
                 tint: tint,
               ),
             );
           },
         ),
         onTap: _unfocusInput,
-        behavior: HitTestBehavior.opaque,
+        behavior: .opaque,
       ),
     );
   }

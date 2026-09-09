@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
@@ -12,10 +10,10 @@ class const ChatAttachmentImageIo({required final String localPath, super.key})
     const imageHeight = 140.0;
 
     return Image.file(
-      File(localPath),
+      .new(localPath),
       width: imageWidth,
       height: imageHeight,
-      fit: BoxFit.cover,
+      fit: .cover,
       cacheWidth: (pixelRatio * imageWidth).round(),
       cacheHeight: (pixelRatio * imageHeight).round(),
     );

@@ -4,7 +4,6 @@ import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart'
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
@@ -56,7 +55,7 @@ AppSkillUrlTemplate _template(
   Map<String, SkillTemplateInputDefinition> inputs,
 ) {
   return AppSkillUrlTemplate(
-    template: SkillUrlTemplate(
+    template: .new(
       url: url,
       method: UrlRequestMethod.post,
       headers: {

@@ -14,7 +14,7 @@ class AgentNamespace({
   required AgentCancellationEffects cancellationEffects,
   required AgentRateLimitRetryRuntime rateLimitRetryRuntime,
 }) {
-  final AgentService _loop = AgentService(
+  final AgentService _loop = .new(
     data: data,
     models: models,
     tools: tools,
@@ -22,7 +22,7 @@ class AgentNamespace({
     cancellationEffects: cancellationEffects,
     rateLimitRetryRuntime: rateLimitRetryRuntime,
   );
-  final AgentStopService _stop = AgentStopService(
+  final AgentStopService _stop = .new(
     cancellationEffects: cancellationEffects,
     sendQueueRuntime: sendQueueRuntime,
     provider: data,

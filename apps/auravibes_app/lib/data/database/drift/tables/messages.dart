@@ -11,7 +11,7 @@ export 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart
 @DataClassName('MessagesTable')
 class Messages extends Table with TableMixin {
   TextColumn get conversationId =>
-      text().references(Conversations, #id, onDelete: KeyAction.cascade)();
+      text().references(Conversations, #id, onDelete: .cascade)();
   TextColumn get content => text()();
   TextColumn get messageType => textEnum<MessagesTableType>()();
   BoolColumn get isUser => boolean()();

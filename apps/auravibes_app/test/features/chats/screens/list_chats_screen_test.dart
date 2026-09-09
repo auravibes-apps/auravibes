@@ -29,7 +29,7 @@ void main() {
         await tester.pumpWidget(
           TestableApp(
             child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
+              data: .new(extensions: [AuraTheme.light]),
               child: const ChatsListScreen(workspaceId: 'test-ws'),
             ),
             overrides: [

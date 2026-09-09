@@ -55,7 +55,7 @@ void main() {
           home: Scaffold(
             body: AuraContainer(
               child: Text('Content'),
-              variant: AuraContainerVariant.surfaceVariant,
+              variant: .surfaceVariant,
             ),
           ),
         ),
@@ -93,7 +93,7 @@ void main() {
 
     testWidgets('applies custom border correctly', (tester) async {
       const customBorder = Border.fromBorderSide(
-        BorderSide(color: Colors.blue, width: 2),
+        .new(color: Colors.blue, width: 2),
       );
 
       await tester.pumpWidget(
@@ -170,10 +170,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              shadow: AuraContainerShadow.sm,
-            ),
+            body: AuraContainer(child: Text('Content'), shadow: .sm),
           ),
         ),
       );
@@ -190,10 +187,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              shadow: AuraContainerShadow.md,
-            ),
+            body: AuraContainer(child: Text('Content'), shadow: .md),
           ),
         ),
       );
@@ -210,10 +204,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              shadow: AuraContainerShadow.lg,
-            ),
+            body: AuraContainer(child: Text('Content'), shadow: .lg),
           ),
         ),
       );
@@ -230,10 +221,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              shadow: AuraContainerShadow.xl,
-            ),
+            body: AuraContainer(child: Text('Content'), shadow: .xl),
           ),
         ),
       );
@@ -250,10 +238,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              shadow: AuraContainerShadow.inner,
-            ),
+            body: AuraContainer(child: Text('Content'), shadow: .inner),
           ),
         ),
       );
@@ -270,10 +255,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              shadow: AuraContainerShadow.glass,
-            ),
+            body: AuraContainer(child: Text('Content'), shadow: .glass),
           ),
         ),
       );

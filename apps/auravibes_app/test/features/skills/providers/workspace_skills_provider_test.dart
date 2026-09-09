@@ -110,7 +110,7 @@ WorkspaceResource _resource({required String id, required String data}) {
 
   return WorkspaceResource(
     workspaceId: 7,
-    resourceKind: WorkspaceResourceKind.skill,
+    resourceKind: .skill,
     resourceId: id,
     data: data,
     revision: 1,

@@ -3,7 +3,6 @@ import 'package:auravibes_app/data/repositories/skill_credential_definitions_rep
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/drift.dart';
@@ -42,10 +41,7 @@ void main() {
     );
     addTearDown(container.dispose);
     final workspace = await WorkspaceRepository(database).createWorkspace(
-      const WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      ),
+      const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
     final definition = await SkillCredentialDefinitionsRepository(database)
         .createDefinition(
@@ -66,7 +62,7 @@ void main() {
               child: MaterialApp(
                 home: ServiceConnectionCreateScreen(
                   workspaceId: workspace.id,
-                  initialType: ServiceConnectionCreateType.skillCredential,
+                  initialType: .skillCredential,
                   initialCredentialDefinitionId: definition.id,
                 ),
                 locale: context.locale,

@@ -39,13 +39,13 @@ class AuraCallout extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(context.auraTheme.spacing.md),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           spacing: context.auraTheme.spacing.sm,
           children: [
             if (icon case final value?) AuraIcon(value, tint: tint),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 children: [
                   AuraText(child: Text(title), style: .bodyLarge, tint: tint),
                   if (description case final value?)

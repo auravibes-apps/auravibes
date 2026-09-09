@@ -1,6 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-// Required: test expectations use chaining on matchers which triggers.
+// Required: Test expectations use chaining on matchers which triggers.
 // Cascade_invocations lint. Not applicable in test assertions.
 
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
@@ -41,8 +41,8 @@ class _FakeRepository implements WorkspaceRepository {
       id: 'ws-${_nextId++}',
       name: workspace.name,
       type: workspace.type,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     _workspaces.add(entity);
 
@@ -127,7 +127,7 @@ class _FakeRepository implements WorkspaceRepository {
     required String serverUrl,
   }) {
     return createWorkspace(
-      WorkspaceToCreate(
+      .new(
         name: name,
         type: WorkspaceType.remote,
         url: serverUrl,
@@ -306,10 +306,10 @@ void main() {
 
     test('deletes workspace successfully', () async {
       final _ = await fixture.repository.createWorkspace(
-        const WorkspaceToCreate(name: 'WS1', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'WS1', type: .local),
       );
       final _ = await fixture.repository.createWorkspace(
-        const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'WS2', type: .local),
       );
 
       await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-2');
@@ -320,7 +320,7 @@ void main() {
 
     test('deletes last remaining workspace', () async {
       final _ = await fixture.repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'Only', type: .local),
       );
 
       await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'other');
@@ -331,10 +331,10 @@ void main() {
 
     test('deletes active workspace', () async {
       final _ = await fixture.repository.createWorkspace(
-        const WorkspaceToCreate(name: 'WS1', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'WS1', type: .local),
       );
       final _ = await fixture.repository.createWorkspace(
-        const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'WS2', type: .local),
       );
 
       await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-1');
@@ -344,7 +344,7 @@ void main() {
 
     test('allows deleting active workspace when it is the last one', () async {
       final _ = await fixture.repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
+        const WorkspaceToCreate(name: 'Only', type: .local),
       );
 
       await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-1');
@@ -362,7 +362,7 @@ class const _CreateWorkspaceUseCaseFixture._(
     final repository = _FakeRepository();
 
     return _CreateWorkspaceUseCaseFixture._(
-      CreateWorkspaceUseCase(
+      .new(
         repository: repository,
         validateName: const ValidateWorkspaceNameUseCase(),
       ),
@@ -379,7 +379,7 @@ class const _EditWorkspaceUseCaseFixture._(
 
     return _EditWorkspaceUseCaseFixture._(
       repository,
-      EditWorkspaceUseCase(
+      .new(
         repository: repository,
         validateName: const ValidateWorkspaceNameUseCase(),
       ),
@@ -388,7 +388,7 @@ class const _EditWorkspaceUseCaseFixture._(
 
   Future<void> setUp() async {
     final _ = await repository.createWorkspace(
-      const WorkspaceToCreate(name: 'Original', type: WorkspaceType.local),
+      const WorkspaceToCreate(name: 'Original', type: .local),
     );
   }
 }
@@ -402,7 +402,7 @@ class const _DeleteWorkspaceUseCaseFixture._(
 
     return _DeleteWorkspaceUseCaseFixture._(
       repository,
-      DeleteWorkspaceUseCase(repository: repository),
+      .new(repository: repository),
     );
   }
 }

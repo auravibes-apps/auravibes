@@ -1,4 +1,4 @@
-// Required: widget tests override scoped providers directly.
+// Required: Widget tests override scoped providers directly.
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';
@@ -19,7 +19,6 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
-import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -179,7 +178,7 @@ void main() {
     const notFound = ConversationNotFound();
     const mismatch = ConversationWorkspaceMismatch();
     final found = ConversationFound(
-      ConversationEntity(
+      .new(
         id: 'c1',
         title: 'Test',
         workspaceId: 'ws1',
@@ -323,8 +322,8 @@ void main() {
       title: 'Test',
       workspaceId: 'ws1',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     final found = ConversationFound(entity);
     expect(found.conversation, same(entity));
@@ -336,7 +335,7 @@ void main() {
     const notFound = ConversationNotFound();
     const mismatch = ConversationWorkspaceMismatch();
     final found = ConversationFound(
-      ConversationEntity(
+      .new(
         id: 'c1',
         title: 'Test',
         workspaceId: 'ws1',
@@ -396,8 +395,8 @@ void main() {
       title: 'Test',
       workspaceId: 'ws1',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     expect(entity.hasValidTitle, isTrue);
   });
@@ -408,8 +407,8 @@ void main() {
       title: '',
       workspaceId: 'ws1',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     expect(entity.hasValidTitle, isFalse);
   });
@@ -420,8 +419,8 @@ void main() {
       title: 'Test',
       workspaceId: 'ws1',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     expect(entity.isValid, isTrue);
   });
@@ -432,8 +431,8 @@ void main() {
       title: 'Test',
       workspaceId: '',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     expect(entity.isValid, isFalse);
   });
@@ -444,8 +443,8 @@ void main() {
       title: 'Test',
       workspaceId: 'ws1',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     expect(entity.modelId, isNull);
   });
@@ -456,8 +455,8 @@ void main() {
       title: 'Test',
       workspaceId: 'ws1',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       modelId: 'gpt-4',
     );
     expect(entity.modelId, 'gpt-4');
@@ -469,8 +468,8 @@ void main() {
       title: 'Test',
       workspaceId: 'ws1',
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     final copy = entity.copyWith(title: 'Updated');
     expect(copy.id, 'c1');
@@ -484,8 +483,8 @@ void main() {
       title: 'Test',
       workspaceId: 'ws1',
       isPinned: true,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     expect(entity.isPinned, isTrue);
   });
@@ -498,8 +497,8 @@ void main() {
       title: 'Chat',
       workspaceId: _workspaceId,
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
 
     await tester.runAsync(() async {
@@ -585,8 +584,8 @@ void main() {
       title: 'Chat',
       workspaceId: _workspaceId,
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
 
     await tester.runAsync(() async {
@@ -637,7 +636,7 @@ void main() {
                   agentsProvider(_workspaceId)
                       .overrideWith((ref) => Stream.value(const [])),
                   compactionExecutionStateProvider(_chatId).overrideWithValue(
-                    CompactionExecutionState(
+                    .new(
                       conversationId: _chatId,
                       trigger: CompactionTrigger.manual,
                       startedAt: DateTime(2026),
@@ -681,8 +680,8 @@ void main() {
       title: 'Chat',
       workspaceId: _workspaceId,
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     final refreshCompleter = Completer<ConversationBusyState>();
     final container = ProviderContainer(
@@ -795,8 +794,8 @@ void main() {
       title: 'Chat',
       workspaceId: _workspaceId,
       isPinned: false,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     );
     final retryAt = DateTime.now().add(const Duration(seconds: 30));
 
@@ -962,8 +961,8 @@ Future<void> _pumpCloudConversationScreen(
     title: 'Chat',
     workspaceId: _workspaceId,
     isPinned: false,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
   final cloudUsecase = usecaseFuture ?? Future.value(usecase);
 
@@ -1099,7 +1098,7 @@ CloudTurnUsecase _cloudTurnUsecase(_CloudConversationEndpoint endpoint) {
   when(() => gateway.client).thenReturn(client);
   when(() => client.conversation).thenReturn(endpoint);
 
-  return CloudTurnUsecase(CloudChatGateway(gateway));
+  return CloudTurnUsecase(.new(gateway));
 }
 
 CloudConversationState _cloudState({
@@ -1108,7 +1107,7 @@ CloudConversationState _cloudState({
   List<ConversationMessageView> messages = const [],
   List<ConversationToolCallView> toolCalls = const [],
 }) => CloudConversationState(
-  conversation: ConversationProjectionView(
+  conversation: .new(
     id: _chatId,
     workspaceId: 7,
     executionState: executionState,
@@ -1124,7 +1123,7 @@ CloudConversationState _cloudState({
 );
 
 ConversationSnapshot _cloudSnapshot() => ConversationSnapshot(
-  conversation: ConversationProjectionView(
+  conversation: .new(
     id: _chatId,
     workspaceId: 7,
     executionState: 'running',

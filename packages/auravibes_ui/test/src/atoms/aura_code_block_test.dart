@@ -13,7 +13,7 @@ void main() {
             semanticLabel: 'Example code',
           ),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

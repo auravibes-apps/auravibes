@@ -29,10 +29,7 @@ abstract final class CloudResourceMapper {
         '$skillMetadata errorType=${error.runtimeType}.',
       );
 
-      return CloudAppErrors.translateException(
-        error,
-        CloudOperationContext.resource,
-      );
+      return CloudAppErrors.translateException(error, .resource);
     }
   }
 
@@ -56,7 +53,7 @@ abstract final class CloudResourceMapper {
     'alwaysDeny' => .alwaysDeny,
     _ => throw const CloudAppException(
       localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-      context: CloudOperationContext.resource,
+      context: .resource,
       code: 'permissionMode',
     ),
   };
@@ -67,7 +64,7 @@ abstract final class CloudResourceMapper {
     'both' => .both,
     _ => throw const CloudAppException(
       localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-      context: CloudOperationContext.resource,
+      context: .resource,
       code: 'visibility',
     ),
   };

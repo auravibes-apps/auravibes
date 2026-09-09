@@ -1,8 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: UI components keep related private widgets together.
 
-import 'dart:ui';
-
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -56,10 +54,8 @@ class AuraScreen extends StatelessWidget {
     }
 
     content = switch (variant) {
-      AuraScreenVariation.standard => content,
-      AuraScreenVariation.aurora => Stack(
-        children: [const _AuroraBackground(), content],
-      ),
+      .standard => content,
+      .aurora => Stack(children: [const _AuroraBackground(), content]),
     };
 
     return Scaffold(
@@ -126,7 +122,7 @@ class const _AuroraBackground() extends StatelessWidget {
         ),
         // Blur Mesh.
         BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: _blurRadius, sigmaY: _blurRadius),
+          filter: .blur(sigmaX: _blurRadius, sigmaY: _blurRadius),
           child: Container(color: DesignColors.transparent),
         ),
       ],
@@ -144,7 +140,7 @@ class const _Blob({required final Color color, required final double size})
           colors: [color, color.withAlpha(0)],
           stops: const [0.0, 1.0],
         ),
-        shape: BoxShape.circle,
+        shape: .circle,
       ),
       width: size,
       height: size,

@@ -18,7 +18,7 @@ class const CloudCompactionUsecase({
   }) async {
     final startedAt = DateTime.now();
     execution.markRunning(
-      CompactionExecutionState(
+      .new(
         conversationId: conversation.id,
         trigger: trigger,
         startedAt: startedAt,
@@ -44,7 +44,7 @@ class const CloudCompactionUsecase({
         conversationId: conversation.id,
         trigger: trigger,
         startedAt: startedAt,
-        status: CompactionExecutionStatus.success,
+        status: .success,
       );
     } on Exception {
       execution.markFailure(conversation.id);

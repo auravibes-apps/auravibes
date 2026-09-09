@@ -19,7 +19,7 @@ import 'package:auravibes_engine/src/skills/service_skills/providers/tinyfish.da
 import 'package:auravibes_engine/src/skills/service_skills/providers/xai.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/zai.dart';
 
-final List<AppSkillDefinition> serviceSkillDefinitions = List.unmodifiable([
+final List<AppSkillDefinition> serviceSkillDefinitions = .unmodifiable([
   braveSkill,
   exaSkill,
   anthropicSkill,

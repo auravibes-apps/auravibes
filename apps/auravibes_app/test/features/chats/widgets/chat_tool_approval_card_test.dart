@@ -1,4 +1,4 @@
-// Required: widget tests override scoped providers directly.
+// Required: Widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -19,7 +19,7 @@ void main() {
           builder: (context) {
             return MaterialApp(
               home: Theme(
-                data: ThemeData(extensions: [AuraTheme.light]),
+                data: .new(extensions: [AuraTheme.light]),
                 child: const Material(
                   child: ChatToolApprovalCard(
                     workspaceId: 'ws-1',
@@ -53,7 +53,7 @@ void main() {
     int? turnRevision,
   }) {
     return PendingToolCall(
-      toolCall: MessageToolCallEntity(
+      toolCall: .new(
         id: toolCallId,
         name: toolName,
         argumentsRaw: argumentsRaw,

@@ -2,7 +2,6 @@ import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
@@ -22,7 +21,7 @@ documents against a query.
       title: 'Reader fetch',
       description: 'Fetch clean readable content from a URL.',
       inputJsonSchema: fetchInputSchema,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(url: 'https://r.jina.ai/{{ input.url }}'),
         inputs: urlInputs,
       ),
@@ -33,7 +32,7 @@ documents against a query.
       description: 'Search clean web content for a query.',
       inputJsonSchema: searchInputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://s.jina.ai/',
           headers: {'authorization': 'Bearer {{ credential.apiKey }}'},

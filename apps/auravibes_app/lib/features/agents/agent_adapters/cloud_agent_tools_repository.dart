@@ -123,10 +123,7 @@ Future<List<WorkspaceResource>> _readCloudAgentTools(
 ) async {
   final response = await store.read(
     pages: [
-      WorkspaceResourcePageRequest(
-        resourceKind: WorkspaceResourceKind.agentAssociation,
-        limit: 100,
-      ),
+      WorkspaceResourcePageRequest(resourceKind: .agentAssociation, limit: 100),
     ],
   );
   if (response.pages.isEmpty) return [];

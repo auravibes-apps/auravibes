@@ -29,14 +29,14 @@ class AgentToolsDao(super.attachedDatabase)
   }) {
     return into(agentTools).insertReturning(
       AgentToolsCompanion(
-        agentId: Value(agentId),
-        toolId: Value(toolId),
-        permissions: Value(permission),
+        agentId: .new(agentId),
+        toolId: .new(toolId),
+        permissions: .new(permission),
       ),
       onConflict: DoUpdate(
         (old) => AgentToolsCompanion(
-          updatedAt: Value(DateTime.now()),
-          permissions: Value(permission),
+          updatedAt: .new(DateTime.now()),
+          permissions: .new(permission),
         ),
         target: [agentTools.agentId, agentTools.toolId],
       ),

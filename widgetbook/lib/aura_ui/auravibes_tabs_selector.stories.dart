@@ -20,7 +20,7 @@ final $SelectorTabs = _Story(
         await tester.pump(const Duration(milliseconds: 300));
       },
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Selects Details',
       run: (tester, args) async {
@@ -40,7 +40,7 @@ class const SelectorTabsDemo({super.key}) extends StatefulWidget {
 }
 
 class _SelectorTabsDemoState extends State<SelectorTabsDemo> {
-  _SelectorTab _selected = _SelectorTab.overview;
+  _SelectorTab _selected = .overview;
 
   @override
   Widget build(BuildContext context) {

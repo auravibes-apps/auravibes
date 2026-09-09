@@ -51,12 +51,12 @@ class const AddToolModal({required final String workspaceId, super.key})
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+          .circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
-        constraints: BoxConstraints(
+        constraints: .new(
           maxWidth: 400,
           maxHeight: MediaQuery.sizeOf(context).height * 0.7,
         ),
@@ -67,7 +67,7 @@ class const AddToolModal({required final String workspaceId, super.key})
               padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(
+                  bottom: .new(
                     color: context.auraColors.outline.withValues(alpha: 0.2),
                   ),
                 ),
@@ -76,7 +76,7 @@ class const AddToolModal({required final String workspaceId, super.key})
                 children: [
                   const AuraText(
                     child: TextLocale(LocaleKeys.tools_screen_add_tool_title),
-                    style: AuraTextStyle.heading6,
+                    style: .heading6,
                   ),
                   const Spacer(),
                   AuraIconButton(
@@ -96,7 +96,7 @@ class const AddToolModal({required final String workspaceId, super.key})
                   LocaleKeys.tools_screen_search_tools,
                 ),
                 prefixIcon: const AuraIcon(Icons.search),
-                size: AuraInputSize.small,
+                size: .small,
               ),
             ),
 
@@ -119,7 +119,7 @@ class const AddToolModal({required final String workspaceId, super.key})
             // Bottom padding.
             const AuraSizedBox(height: .md),
           ],
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
         ),
       ),
     );
@@ -150,7 +150,7 @@ class const _AvailableToolsList({
             children: [
               AuraIcon(
                 tools.isEmpty ? Icons.check_circle_outline : Icons.search_off,
-                size: AuraIconSize.large,
+                size: .large,
               ),
               AuraText(
                 child: TextLocale(
@@ -158,11 +158,11 @@ class const _AvailableToolsList({
                       ? LocaleKeys.tools_screen_all_tools_added
                       : LocaleKeys.tools_screen_no_tools_found,
                 ),
-                textAlign: TextAlign.center,
+                textAlign: .center,
               ),
             ],
             spacing: .sm,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
           ),
         ),
       );
@@ -195,35 +195,32 @@ class const _AvailableToolTile({
           AuraText(child: toolType.getNameWidget()),
           AuraText(
             child: DefaultTextStyle.merge(
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
               maxLines: 2,
               child: toolType.getDescriptionWidget(),
             ),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
         ],
         spacing: .xs,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
       onTap: () {
         unawaited(_addTool(context, ref));
       },
-      variant: AuraTileVariant.surface,
+      variant: .surface,
       leading: Container(
         decoration: BoxDecoration(
           color: context.auraColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.all(
-            Radius.circular(context.auraTheme.fromBorderRadius(.md)),
+            .circular(context.auraTheme.fromBorderRadius(.md)),
           ),
         ),
         width: AddToolModal._iconSize,
         height: AddToolModal._iconSize,
         child: toolType.getIconWidget(),
       ),
-      trailing: const AuraIcon(
-        Icons.add_circle_outline,
-        tint: AuraTint.primary,
-      ),
+      trailing: const AuraIcon(Icons.add_circle_outline, tint: .primary),
     );
   }
 

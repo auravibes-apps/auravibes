@@ -60,7 +60,7 @@ void main() {
                                     AuraChartSeries(
                                       label: 'Comparison',
                                       values: [1, 3, 2],
-                                      tint: AuraTint.secondary,
+                                      tint: .secondary,
                                     ),
                                   ],
                                   semanticLabel:
@@ -79,16 +79,16 @@ void main() {
                           caption: Text('Inventory'),
                         ),
                         const ChoicePickerDemo(
-                          variant: AuraChoicePickerVariant.multipleSelection,
-                          tint: AuraTint.primary,
-                          presentation: AuraChoicePickerPresentation.chips,
+                          variant: .multipleSelection,
+                          tint: .primary,
+                          presentation: .chips,
                         ),
                         const AuraAnimatedContent(
                           child: AuraEmptyState(
                             title: Text('No more items'),
                             description: Text('New items appear here.'),
                           ),
-                          transition: AuraContentTransition.none,
+                          transition: .none,
                         ),
                       ],
                     ),
@@ -97,7 +97,7 @@ void main() {
               ),
             ),
           ),
-          theme: ThemeData(extensions: [theme], brightness: brightness),
+          theme: .new(extensions: [theme], brightness: brightness),
         ),
       );
       final _ = await tester.pumpAndSettle();

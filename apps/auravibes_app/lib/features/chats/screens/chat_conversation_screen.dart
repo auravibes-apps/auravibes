@@ -38,7 +38,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext, AgentIterationOrigin, SubAgentCompletionStatus;
+    show AgentIterationContext;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -98,14 +98,12 @@ class const _ChatConversationScreen({
               .tr(),
         ConversationNotFound() =>
           LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
-        _ => LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
+        null || ConversationFound() =>
+          LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
       };
 
       return AuraScreen(
-        child: AppErrorWidget(
-          error: errorMessage,
-          stackTrace: StackTrace.empty,
-        ),
+        child: AppErrorWidget(error: errorMessage, stackTrace: .empty),
       );
     }
 
@@ -409,7 +407,7 @@ class const _ChatControlsBar({
     return DecoratedBox(
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant,
-        border: Border(bottom: BorderSide(color: auraColors.outlineVariant)),
+        border: Border(bottom: .new(color: auraColors.outlineVariant)),
       ),
       child: SafeArea(
         top: false,
@@ -474,7 +472,7 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
       ),
       child: Row(
         children: [
-          const AuraSpinner(size: AuraSpinnerSize.small),
+          const AuraSpinner(size: .small),
           const AuraSizedBox(width: .sm),
           Flexible(
             child: AuraText(
@@ -483,7 +481,7 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
                   namedArgs: {'seconds': remainingSeconds.toString()},
                 ),
               ),
-              style: AuraTextStyle.bodySmall,
+              style: .bodySmall,
             ),
           ),
         ],
@@ -492,7 +490,7 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), _onTimerTick);
+    _timer = .periodic(const Duration(seconds: 1), _onTimerTick);
   }
 
   void _onTimerTick(Timer timer) {
@@ -503,8 +501,8 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
   }
 
   int _remainingSeconds() {
-    final remaining = widget.retryAt.difference(DateTime.now());
-    if (remaining <= Duration.zero) return 0;
+    final remaining = widget.retryAt.difference(.now());
+    if (remaining <= .zero) return 0;
 
     return remaining.inSeconds + 1;
   }
@@ -516,7 +514,7 @@ ConversationBusyState? _conversationBusyStateValue(
   return switch (state) {
     AsyncData(:final value) => value,
     AsyncLoading(:final value?, hasValue: true) => value,
-    _ => null,
+    AsyncLoading() || AsyncError() => null,
   };
 }
 
@@ -675,9 +673,7 @@ Future<void> _continueAgent(
         .agent
         .continueTurn(
           conversationId: conversationId,
-          context: const AgentIterationContext(
-            origin: AgentIterationOrigin.manualContinue,
-          ),
+          context: const AgentIterationContext(origin: .manualContinue),
         );
   } on Exception catch (error, stackTrace) {
     _logger.severe(
@@ -686,7 +682,7 @@ Future<void> _continueAgent(
       stackTrace,
     );
     FlutterError.reportError(
-      FlutterErrorDetails(
+      .new(
         library: 'chat_conversation_screen',
         exception: error,
         stack: stackTrace,
@@ -700,7 +696,7 @@ Future<void> _continueAgent(
       content: Text(
         LocaleKeys.chats_screens_chat_conversation_continue_error.tr(),
       ),
-      variant: AuraSnackBarVariant.error,
+      variant: .error,
     );
   }
 }
@@ -770,11 +766,7 @@ Future<void> _stopConversation(
     } finally {
       ref
           .read(activeSubAgentRuntimeProvider.notifier)
-          .finish(
-            parentId: conversationId,
-            childId: childId,
-            status: SubAgentCompletionStatus.stopped,
-          );
+          .finish(parentId: conversationId, childId: childId, status: .stopped);
     }
   }
 
@@ -789,7 +781,7 @@ Future<void> _stopConversation(
     final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.chats_screens_chat_conversation_stop_error.tr()),
-      variant: AuraSnackBarVariant.error,
+      variant: .error,
     );
   }
 }
@@ -816,7 +808,7 @@ Future<void> _sendMessage(
     final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.chats_screens_chat_conversation_send_error.tr()),
-      variant: AuraSnackBarVariant.error,
+      variant: .error,
     );
   }
 }
@@ -840,7 +832,7 @@ Future<void> _manualCompact(
     final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.compaction_manual_success.tr()),
-      variant: AuraSnackBarVariant.success,
+      variant: .success,
     );
   } on CompactionException {
     if (!context.mounted) return;
@@ -848,7 +840,7 @@ Future<void> _manualCompact(
     final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.compaction_manual_failure.tr()),
-      variant: AuraSnackBarVariant.error,
+      variant: .error,
     );
   }
 }

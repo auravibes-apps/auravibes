@@ -26,7 +26,7 @@ final class _DatabaseFixture {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {

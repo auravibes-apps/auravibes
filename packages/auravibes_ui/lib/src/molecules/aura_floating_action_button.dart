@@ -97,7 +97,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         label: AuraText(
           child: Text(
             labelText,
-            style: TextStyle(
+            style: .new(
               color: resolvedForeground,
               fontWeight: context.auraTheme.typography.fontWeightMedium,
             ),
@@ -138,28 +138,28 @@ class AuraFloatingActionButton extends StatelessWidget {
 
   double _getFABSize() {
     return switch (size) {
-      AuraFABSize.mini => _miniSize,
-      AuraFABSize.regular => _regularSize,
-      AuraFABSize.large => _largeSize,
-      AuraFABSize.extended => _regularSize, // Height for extended.
+      .mini => _miniSize,
+      .regular => _regularSize,
+      .large => _largeSize,
+      .extended => _regularSize, // Height for extended.
     };
   }
 
   double _getIconPixels() {
     return switch (size) {
-      AuraFABSize.mini => _miniIconSize,
-      AuraFABSize.regular => _regularIconSize,
-      AuraFABSize.large => _largeIconSize,
-      AuraFABSize.extended => _regularIconSize,
+      .mini => _miniIconSize,
+      .regular => _regularIconSize,
+      .large => _largeIconSize,
+      .extended => _regularIconSize,
     };
   }
 
   AuraBorderRadius _getBorderRadius() {
     return switch (size) {
-      AuraFABSize.mini => .lg,
-      AuraFABSize.regular => .xl,
-      AuraFABSize.large => .xl,
-      AuraFABSize.extended => .xl,
+      .mini => .lg,
+      .regular => .xl,
+      .large => .xl,
+      .extended => .xl,
     };
   }
 

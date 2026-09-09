@@ -53,7 +53,7 @@ void main() {
               ),
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.dark]),
+          theme: .new(extensions: [AuraTheme.dark]),
         ),
       );
 
@@ -64,10 +64,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraBadge(
-              child: Text('Secondary'),
-              variant: AuraBadgeVariant.secondary,
-            ),
+            body: AuraBadge(child: Text('Secondary'), variant: .secondary),
           ),
         ),
       );
@@ -84,10 +81,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraBadge(
-              child: Text('Outlined'),
-              variant: AuraBadgeVariant.outlined,
-            ),
+            body: AuraBadge(child: Text('Outlined'), variant: .outlined),
           ),
         ),
       );
@@ -105,10 +99,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraBadge(
-              child: Text('Soft'),
-              variant: AuraBadgeVariant.soft,
-            ),
+            body: AuraBadge(child: Text('Soft'), variant: .soft),
           ),
         ),
       );
@@ -125,7 +116,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraBadge(child: Text('Small'), size: AuraBadgeSize.small),
+            body: AuraBadge(child: Text('Small'), size: .small),
           ),
         ),
       );

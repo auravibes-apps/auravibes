@@ -42,8 +42,8 @@ void main() {
         url: 'http://localhost',
         transport: const McpTransportTypeSSE(),
         authenticationType: const McpAuthenticationTypeNone(),
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
       );
       final name = info.finalToolName(server);
       expect(name, 'mcp_42_my-server_read_file_');
@@ -62,8 +62,8 @@ void main() {
         url: 'http://localhost',
         transport: const McpTransportTypeSSE(),
         authenticationType: const McpAuthenticationTypeNone(),
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
       );
       final name = info.finalToolName(server);
       expect(name, 'mcp_1_server_tool_with_spaces');

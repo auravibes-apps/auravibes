@@ -51,10 +51,10 @@ class AuraLinearProgressIndicator extends StatelessWidget {
         height: height,
         child: ClipRRect(
           borderRadius: BorderRadius.all(
-            Radius.circular(context.auraTheme.fromBorderRadius(borderRadius)),
+            .circular(context.auraTheme.fromBorderRadius(borderRadius)),
           ),
           child: Stack(
-            fit: StackFit.expand,
+            fit: .expand,
             children: [
               ColoredBox(
                 color: auraColors.surfaceVariant.withValues(

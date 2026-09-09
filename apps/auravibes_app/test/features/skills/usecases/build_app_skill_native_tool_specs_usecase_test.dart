@@ -21,7 +21,7 @@ void main() {
         () => listUsecase.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer((_) async => [_appSkill('openai')]);
 
@@ -53,7 +53,7 @@ void main() {
         () => listUsecase.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer((_) async => [_appSkill('openai')]);
 
@@ -85,7 +85,7 @@ void main() {
         () => listUsecase.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer(
         (_) async => [
@@ -119,7 +119,7 @@ void main() {
         () => listUsecase.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer((_) async => [_appSkill(agentsSkillSlug)]);
 
@@ -171,7 +171,7 @@ void main() {
         () => listUsecase.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer((_) async => [_appSkill('codex')]);
 
@@ -199,7 +199,7 @@ void main() {
           () => listUsecase.call(
             conversationId: any(named: 'conversationId'),
             workspaceId: any(named: 'workspaceId'),
-            filter: SkillLoadFilter.loaded,
+            filter: .loaded,
           ),
         ).thenAnswer((_) async => [_appSkill('jina')]);
 
@@ -229,7 +229,7 @@ void main() {
         () => listUsecase.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer((_) async => [_appSkill('searxng')]);
 
@@ -255,7 +255,7 @@ void main() {
           () => listUsecase.call(
             conversationId: any(named: 'conversationId'),
             workspaceId: any(named: 'workspaceId'),
-            filter: SkillLoadFilter.loaded,
+            filter: .loaded,
           ),
         ).thenAnswer((_) async => [_appSkill('searxng')]);
 
@@ -283,7 +283,7 @@ AvailableSkill _appSkill(String slug) {
     title: slug,
     description: '',
     content: '',
-    kind: SkillKind.native,
+    kind: .native,
   );
 }
 

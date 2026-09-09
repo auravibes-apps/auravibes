@@ -205,9 +205,10 @@ ProviderContainer _container({
 
 class _FakeModelConnectionRepository(List<ModelConnectionEntity> initial)
     implements ModelConnectionRepository {
-  final BehaviorSubject<List<ModelConnectionEntity>> _subject =
-      BehaviorSubject.seeded(initial);
   ModelConnectionFilter? watchedFilter;
+  final BehaviorSubject<List<ModelConnectionEntity>> _subject = .seeded(
+    initial,
+  );
 
   List<ModelConnectionEntity> get current => _subject.value;
 
@@ -263,9 +264,9 @@ class _FakeModelConnectionRepository(List<ModelConnectionEntity> initial)
 
 class _FakeDefinitionsRepository(List<SkillCredentialDefinitionEntity> initial)
     implements SkillCredentialDefinitionsRepository {
-  final BehaviorSubject<List<SkillCredentialDefinitionEntity>> _subject =
-      BehaviorSubject.seeded(initial);
   String? watchedWorkspaceId;
+  final BehaviorSubject<List<SkillCredentialDefinitionEntity>> _subject =
+      .seeded(initial);
 
   Future<void> dispose() => _subject.close();
 
@@ -324,9 +325,10 @@ class _FakeDefinitionsRepository(List<SkillCredentialDefinitionEntity> initial)
 
 class _FakeCredentialsRepository(List<SkillCredentialEntity> initial)
     implements SkillCredentialsRepository {
-  final BehaviorSubject<List<SkillCredentialEntity>> _subject =
-      BehaviorSubject.seeded(initial);
   String? watchedWorkspaceId;
+  final BehaviorSubject<List<SkillCredentialEntity>> _subject = .seeded(
+    initial,
+  );
 
   Future<void> dispose() => _subject.close();
 

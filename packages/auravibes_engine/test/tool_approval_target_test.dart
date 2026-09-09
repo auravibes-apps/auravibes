@@ -29,9 +29,7 @@ void main() {
       toolIdentifier: 'search',
     );
     final target = await resolveEffectiveToolApprovalTarget(
-      requestedTarget: AgentResolvedToolName.skillControl(
-        toolIdentifier: callSkillToolName,
-      ),
+      requestedTarget: .skillControl(toolIdentifier: callSkillToolName),
       arguments: const {
         'skill': 'duckduckgo',
         'tool': 'search',
@@ -55,9 +53,7 @@ void main() {
     var resolverCalled = false;
 
     final target = await resolveEffectiveToolApprovalTarget(
-      requestedTarget: AgentResolvedToolName.skillControl(
-        toolIdentifier: callSkillToolName,
-      ),
+      requestedTarget: .skillControl(toolIdentifier: callSkillToolName),
       arguments: const {'skill': 'duckduckgo'},
       resolveSkillTarget: (_) async {
         resolverCalled = true;
@@ -71,9 +67,7 @@ void main() {
 
   test('returns null when nested target is unresolved', () async {
     final target = await resolveEffectiveToolApprovalTarget(
-      requestedTarget: AgentResolvedToolName.skillControl(
-        toolIdentifier: callSkillToolName,
-      ),
+      requestedTarget: .skillControl(toolIdentifier: callSkillToolName),
       arguments: const {
         'skill': 'duckduckgo',
         'tool': 'search',
@@ -91,9 +85,7 @@ void main() {
 
     await expectLater(
       resolveEffectiveToolApprovalTarget(
-        requestedTarget: AgentResolvedToolName.skillControl(
-          toolIdentifier: callSkillToolName,
-        ),
+        requestedTarget: .skillControl(toolIdentifier: callSkillToolName),
         arguments: const {
           'skill': 'duckduckgo',
           'tool': 'search',

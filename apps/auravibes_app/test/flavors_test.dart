@@ -29,7 +29,7 @@ void main() {
 
     test('name and title return correct values for assigned flavor', () {
       try {
-        AppFlavorConfig.appFlavor = Flavor.prod;
+        AppFlavorConfig.appFlavor = .prod;
       } on Object catch (_) {
         // Already set by another test in this process.
       }

@@ -30,7 +30,7 @@ void main() {
                 revision: 1,
                 uploadUrl: 'https://upload.example/object',
                 headers: const {},
-                expiresAt: DateTime.utc(2026),
+                expiresAt: .utc(2026),
               );
             },
         uploadBytes: (upload, _) async => calls.add('put:${upload.objectId}'),
@@ -63,7 +63,7 @@ void main() {
             fileName: 'draft.txt',
             displayName: 'draft.txt',
             mimeType: 'text/plain',
-            modality: MessageAttachmentModality.file,
+            modality: .file,
             sizeBytes: 3,
           ),
         ],
@@ -95,11 +95,11 @@ void main() {
               revision: 1,
               uploadUrl: 'https://upload.example/object',
               headers: const {},
-              expiresAt: DateTime.utc(2026),
+              expiresAt: .utc(2026),
             ),
         uploadBytes: (_, _) => Future<void>.value(),
         completeUpload: ({required objectId}) =>
-            throw ObjectException(code: ObjectErrorCode.scanInfected),
+            throw ObjectException(code: .scanInfected),
         getDownload: ({required objectId}) => throw UnimplementedError(),
         deleteObject: ({
           required objectId,
@@ -117,7 +117,7 @@ void main() {
               fileName: 'draft.txt',
               displayName: 'draft.txt',
               mimeType: 'text/plain',
-              modality: MessageAttachmentModality.file,
+              modality: .file,
               sizeBytes: 1,
             ),
           ],
@@ -150,12 +150,12 @@ void main() {
             revision: 1,
             uploadUrl: 'https://upload.example/object',
             headers: const {},
-            expiresAt: DateTime.utc(2026),
+            expiresAt: .utc(2026),
           ),
       uploadBytes: (_, _) => Future<void>.value(),
       completeUpload: ({required objectId}) {
         if (objectId == 2) {
-          throw ObjectException(code: ObjectErrorCode.scanInfected);
+          throw ObjectException(code: .scanInfected);
         }
 
         return Future.value(
@@ -165,9 +165,7 @@ void main() {
             displayName: 'draft.txt',
             mimeType: 'text/plain',
             sizeBytes: 1,
-            checksumSha256: CloudAttachmentChecksum.fromBytes(
-              Uint8List.fromList([1]),
-            ),
+            checksumSha256: CloudAttachmentChecksum.fromBytes(.fromList([1])),
             revision: 2,
           ),
         );
@@ -192,7 +190,7 @@ void main() {
             fileName: 'one.txt',
             displayName: 'one.txt',
             mimeType: 'text/plain',
-            modality: MessageAttachmentModality.file,
+            modality: .file,
             sizeBytes: 1,
           ),
           MessageAttachmentToCreate(
@@ -200,7 +198,7 @@ void main() {
             fileName: 'two.txt',
             displayName: 'two.txt',
             mimeType: 'text/plain',
-            modality: MessageAttachmentModality.file,
+            modality: .file,
             sizeBytes: 1,
           ),
         ],
@@ -232,7 +230,7 @@ void main() {
       getDownload: ({required objectId}) => Future.value(
         GetDownloadResult(
           downloadUrl: 'http://unsafe.example/object',
-          expiresAt: DateTime.utc(2026),
+          expiresAt: .utc(2026),
         ),
       ),
       deleteObject: ({

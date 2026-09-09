@@ -9,7 +9,7 @@ void main() {
           title: 'Research',
           content: 'Use primary sources.',
           identity: 'user:skill-1',
-          manifest: SkillManifest(
+          manifest: .new(
             slug: 'research',
             title: 'Research',
             instructions: 'Use primary sources.',

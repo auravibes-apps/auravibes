@@ -222,7 +222,7 @@ void main() {
 
   test('pcm16ToWav writes a playable wav header', () {
     final wav = LocalChatAttachmentRecording.pcm16ToWav(
-      Uint8List.fromList([1, 2, 3, 4]),
+      .fromList([1, 2, 3, 4]),
       sampleRate: 44100,
       channels: 1,
     );
@@ -241,8 +241,8 @@ class _FakeRecordPlatform({
   String? startPath;
   bool startStreamCalled = false;
   bool stopCalled = false;
-  StreamController<Uint8List>? _streamController;
   void Function(RecordConfig config)? configChangedHandler;
+  StreamController<Uint8List>? _streamController;
 
   String? get outputPath => startPath;
 
@@ -316,11 +316,7 @@ class _FakeRecordPlatform({
   @override
   Future<List<InputDevice>> listInputDevices(String recorderId) async {
     return const [
-      InputDevice(
-        id: 'built-in',
-        label: 'Built In',
-        type: InputDeviceType.builtIn,
-      ),
+      InputDevice(id: 'built-in', label: 'Built In', type: .builtIn),
     ];
   }
 

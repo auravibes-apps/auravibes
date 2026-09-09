@@ -1,7 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_use_case.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -23,10 +22,7 @@ class const CreateWorkspaceUseCase({
     final trimmed = name.trim();
     _validateName.call(name: trimmed);
 
-    final workspace = WorkspaceToCreate(
-      name: trimmed,
-      type: WorkspaceType.local,
-    );
+    final workspace = WorkspaceToCreate(name: trimmed, type: .local);
 
     return _repository.createWorkspace(workspace);
   }

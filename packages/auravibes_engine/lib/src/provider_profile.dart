@@ -34,34 +34,34 @@ ProviderRuntimeSelection selectProviderRuntime({
       modelId.startsWith('claude-sonnet-4-6');
   if (usesOAuth && isCodexOAuth) {
     return const ProviderRuntimeSelection(
-      runtime: ProviderRuntime.codexOAuth,
+      runtime: .codexOAuth,
       modelNamespace: 'openai',
       usesAdaptiveThinking: false,
     );
   }
   if (providerId == 'anthropic' && !hasCustomUrl) {
     return ProviderRuntimeSelection(
-      runtime: ProviderRuntime.anthropic,
+      runtime: .anthropic,
       modelNamespace: 'anthropic',
       usesAdaptiveThinking: adaptive,
     );
   }
   if (providerId == 'openrouter') {
     return const ProviderRuntimeSelection(
-      runtime: ProviderRuntime.openRouter,
+      runtime: .openRouter,
       modelNamespace: 'openrouter',
       usesAdaptiveThinking: false,
     );
   }
   if (providerId == 'openai' && supportsReasoning && hasCustomUrl) {
     return const ProviderRuntimeSelection(
-      runtime: ProviderRuntime.openAiReasoning,
+      runtime: .openAiReasoning,
       modelNamespace: 'openai_reasoning',
       usesAdaptiveThinking: false,
     );
   }
   return const ProviderRuntimeSelection(
-    runtime: ProviderRuntime.openAi,
+    runtime: .openAi,
     modelNamespace: 'openai',
     usesAdaptiveThinking: false,
   );

@@ -115,12 +115,12 @@ void main() {
 
   test('result serializes mode and omits empty packages for none/full', () {
     final none = SelectionResult(
-      mode: SelectionMode.none,
+      mode: .none,
       packages: {},
       reason: 'No executable test input.',
     );
     final full = SelectionResult(
-      mode: SelectionMode.full,
+      mode: .full,
       packages: {},
       reason: 'Global or ambiguous test input.',
     );
@@ -137,7 +137,7 @@ void main() {
 
   test('result serializes affected package paths', () {
     final result = SelectionResult(
-      mode: SelectionMode.affected,
+      mode: .affected,
       packages: {
         'packages/core': ['test/core_test.dart'],
       },
@@ -161,7 +161,7 @@ void main() {
     final paths = ['test/core_test.dart'];
     final packages = <String, List<String>>{'packages/core': paths};
     final result = SelectionResult(
-      mode: SelectionMode.affected,
+      mode: .affected,
       packages: packages,
       reason: 'reverse import impact',
     );
@@ -467,7 +467,7 @@ void main() {
   });
   test('manifest round trips and rejects malformed modes', () {
     final result = SelectionResult(
-      mode: SelectionMode.affected,
+      mode: .affected,
       packages: {
         'packages/core': ['test/behavior_test.dart'],
       },
@@ -486,7 +486,7 @@ void main() {
       final root = await _runnerFixture();
       addTearDown(() => root.delete(recursive: true));
       final selection = SelectionResult(
-        mode: SelectionMode.affected,
+        mode: .affected,
         packages: {
           'packages/core': [
             'test/behavior_test.dart',
@@ -524,11 +524,7 @@ void main() {
 
   test('matrix emits no rows for no affected tests', () async {
     final matrix = await buildTestMatrix(
-      SelectionResult(
-        mode: SelectionMode.none,
-        packages: const {},
-        reason: 'docs',
-      ),
+      .new(mode: .none, packages: const {}, reason: 'docs'),
       rootPath: Directory.current.path,
       shardPackage: 'apps/auravibes_app',
       shardCount: 3,
@@ -544,11 +540,7 @@ void main() {
       addTearDown(() => root.delete(recursive: true));
 
       final matrix = await buildTestMatrix(
-        SelectionResult(
-          mode: SelectionMode.full,
-          packages: const {},
-          reason: 'global',
-        ),
+        .new(mode: .full, packages: const {}, reason: 'global'),
         rootPath: root.path,
         shardPackage: 'apps/auravibes_app',
         shardCount: 3,
@@ -571,7 +563,7 @@ void main() {
     final root = await _runnerFixture();
     addTearDown(() => root.delete(recursive: true));
     final selection = SelectionResult(
-      mode: SelectionMode.affected,
+      mode: .affected,
       packages: {
         'packages/core': ['../outside.dart'],
       },
@@ -595,8 +587,8 @@ void main() {
     expect(code, isNonZero);
     expect(
       await runSelectedTests(
-        SelectionResult(
-          mode: SelectionMode.affected,
+        .new(
+          mode: .affected,
           packages: {
             'packages/core': ['test/test_helper.dart'],
           },
@@ -625,11 +617,7 @@ void main() {
     var capturedArguments = <String>[];
 
     final code = await runSelectedTests(
-      SelectionResult(
-        mode: SelectionMode.full,
-        packages: const {},
-        reason: 'global',
-      ),
+      .new(mode: .full, packages: const {}, reason: 'global'),
       rootPath: root.path,
       launcher:
           ({
@@ -652,7 +640,7 @@ void main() {
     final root = await _runnerFixture(flutter: true);
     addTearDown(() => root.delete(recursive: true));
     final selection = SelectionResult(
-      mode: SelectionMode.affected,
+      mode: .affected,
       packages: {
         'packages/core': ['test/behavior_test.dart'],
       },
@@ -698,8 +686,8 @@ void main() {
       String? capturedExecutable;
 
       final code = await runSelectedTests(
-        SelectionResult(
-          mode: SelectionMode.affected,
+        .new(
+          mode: .affected,
           packages: {
             'packages/core': ['test/behavior_test.dart'],
           },
@@ -734,8 +722,8 @@ void main() {
       final executables = <String>[];
 
       final code = await runSelectedTests(
-        SelectionResult(
-          mode: SelectionMode.affected,
+        .new(
+          mode: .affected,
           packages: {
             'packages/core': ['test/behavior_test.dart'],
           },
@@ -766,7 +754,7 @@ void main() {
       final root = await _runnerFixture();
       addTearDown(() => root.delete(recursive: true));
       final selection = SelectionResult(
-        mode: SelectionMode.affected,
+        mode: .affected,
         packages: {
           'packages/core': ['test/behavior_test.dart'],
         },
@@ -813,7 +801,7 @@ void main() {
       final root = await _runnerFixture();
       addTearDown(() => root.delete(recursive: true));
       final selection = SelectionResult(
-        mode: SelectionMode.affected,
+        mode: .affected,
         packages: {
           'packages/core': ['test/behavior_test.dart'],
         },
@@ -877,8 +865,8 @@ name: other
       var launches = 0;
 
       final code = await runSelectedTests(
-        SelectionResult(
-          mode: SelectionMode.affected,
+        .new(
+          mode: .affected,
           packages: {
             'packages/core': ['test/behavior_test.dart'],
             'packages/other': ['test/other_test.dart'],
@@ -909,7 +897,7 @@ name: other
     final root = await _runnerFixture(serverpod: true);
     addTearDown(() => root.delete(recursive: true));
     final selection = SelectionResult(
-      mode: SelectionMode.affected,
+      mode: .affected,
       packages: {
         'packages/core': ['test/features/example_test.dart'],
       },

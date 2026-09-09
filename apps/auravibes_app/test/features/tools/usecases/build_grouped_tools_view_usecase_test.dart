@@ -1,4 +1,3 @@
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
@@ -10,9 +9,9 @@ WorkspaceToolEntity _tool(String id, {String? groupId}) => WorkspaceToolEntity(
   workspaceId: 'w1',
   toolId: 'custom_tool',
   isEnabled: true,
-  permissionMode: ToolPermissionMode.alwaysAsk,
-  createdAt: DateTime(2025),
-  updatedAt: DateTime(2025),
+  permissionMode: .alwaysAsk,
+  createdAt: .new(2025),
+  updatedAt: .new(2025),
   workspaceToolsGroupId: groupId,
 );
 
@@ -21,16 +20,14 @@ ToolsGroupEntity _group(String id, String serverId) => ToolsGroupEntity(
   workspaceId: 'w1',
   name: 'MCP',
   isEnabled: true,
-  permissions: PermissionAccess.ask,
-  createdAt: DateTime(2025),
-  updatedAt: DateTime(2025),
+  permissions: .ask,
+  createdAt: .new(2025),
+  updatedAt: .new(2025),
   mcpServerId: serverId,
 );
 
-McpConnectionView _connection(String serverId) => McpConnectionView(
-  serverId: serverId,
-  status: McpConnectionViewStatus.connected,
-);
+McpConnectionView _connection(String serverId) =>
+    McpConnectionView(serverId: serverId, status: .connected);
 
 void main() {
   test('builds default and mcp groups with connection state', () {

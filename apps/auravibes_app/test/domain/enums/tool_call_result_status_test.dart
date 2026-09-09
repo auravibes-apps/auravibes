@@ -53,40 +53,19 @@ void main() {
       });
 
       test('serializes all values to snake_case', () {
-        expect(converter.toJson(ToolCallResultStatus.running), 'running');
-        expect(converter.toJson(ToolCallResultStatus.success), 'success');
+        expect(converter.toJson(.running), 'running');
+        expect(converter.toJson(.success), 'success');
+        expect(converter.toJson(.skippedByUser), 'skipped_by_user');
+        expect(converter.toJson(.stoppedByUser), 'stopped_by_user');
+        expect(converter.toJson(.toolNotFound), 'tool_not_found');
+        expect(converter.toJson(.disabledInWorkspace), 'disabled_in_workspace');
         expect(
-          converter.toJson(ToolCallResultStatus.skippedByUser),
-          'skipped_by_user',
-        );
-        expect(
-          converter.toJson(ToolCallResultStatus.stoppedByUser),
-          'stopped_by_user',
-        );
-        expect(
-          converter.toJson(ToolCallResultStatus.toolNotFound),
-          'tool_not_found',
-        );
-        expect(
-          converter.toJson(ToolCallResultStatus.disabledInWorkspace),
-          'disabled_in_workspace',
-        );
-        expect(
-          converter.toJson(ToolCallResultStatus.disabledInConversation),
+          converter.toJson(.disabledInConversation),
           'disabled_in_conversation',
         );
-        expect(
-          converter.toJson(ToolCallResultStatus.disabledByAgent),
-          'disabled_by_agent',
-        );
-        expect(
-          converter.toJson(ToolCallResultStatus.notConfigured),
-          'not_configured',
-        );
-        expect(
-          converter.toJson(ToolCallResultStatus.executionError),
-          'execution_error',
-        );
+        expect(converter.toJson(.disabledByAgent), 'disabled_by_agent');
+        expect(converter.toJson(.notConfigured), 'not_configured');
+        expect(converter.toJson(.executionError), 'execution_error');
       });
 
       test('round-trip fromJson -> toJson is identity', () {

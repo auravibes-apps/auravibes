@@ -23,6 +23,36 @@ class const CloudConversationState({
   final Map<String, int> transientA2uiSequenceByAssistantMessageId = const {},
   final Set<String> appliedTransientEventKeys = const {},
 }) {
+  factory fromSnapshot(ConversationSnapshot snapshot) => CloudConversationState(
+    conversation: snapshot.conversation,
+    messages: snapshot.messages,
+    pendingMessages: snapshot.pendingMessages,
+    activeExecution: snapshot.activeExecution,
+    toolCalls: snapshot.toolCalls,
+    sequence: snapshot.sequence,
+    a2uiMessagesByAssistantMessageId: {
+      for (final message in snapshot.messages)
+        if (_a2uiMessages(message.metadataJson) case final messages
+            when messages.isNotEmpty)
+          message.id: messages,
+    },
+    a2uiIssuesByAssistantMessageId: {
+      for (final message in snapshot.messages)
+        if (_a2uiIssues(message.metadataJson) case final issues
+            when issues.isNotEmpty)
+          message.id: issues,
+    },
+    a2uiMessageIssuesByAssistantMessageId: {
+      for (final message in snapshot.messages)
+        if (_a2uiMessageIssues(message.metadataJson) case final issues
+            when issues.isNotEmpty)
+          message.id: issues,
+    },
+  );
+
+  /// Complete text currently visible for the active assistant message.
+  String get activeAssistantRenderedContent => activeAssistantContent;
+
   CloudConversationState preserveTransientA2uiFrom(
     CloudConversationState previous,
   ) => CloudConversationState(
@@ -76,36 +106,6 @@ class const CloudConversationState({
         ? {...previous.appliedTransientEventKeys, ...appliedTransientEventKeys}
         : appliedTransientEventKeys,
   );
-
-  factory fromSnapshot(ConversationSnapshot snapshot) => CloudConversationState(
-    conversation: snapshot.conversation,
-    messages: snapshot.messages,
-    pendingMessages: snapshot.pendingMessages,
-    activeExecution: snapshot.activeExecution,
-    toolCalls: snapshot.toolCalls,
-    sequence: snapshot.sequence,
-    a2uiMessagesByAssistantMessageId: {
-      for (final message in snapshot.messages)
-        if (_a2uiMessages(message.metadataJson) case final messages
-            when messages.isNotEmpty)
-          message.id: messages,
-    },
-    a2uiIssuesByAssistantMessageId: {
-      for (final message in snapshot.messages)
-        if (_a2uiIssues(message.metadataJson) case final issues
-            when issues.isNotEmpty)
-          message.id: issues,
-    },
-    a2uiMessageIssuesByAssistantMessageId: {
-      for (final message in snapshot.messages)
-        if (_a2uiMessageIssues(message.metadataJson) case final issues
-            when issues.isNotEmpty)
-          message.id: issues,
-    },
-  );
-
-  /// Complete text currently visible for the active assistant message.
-  String get activeAssistantRenderedContent => activeAssistantContent;
 
   /// Applies only the next event in the durable ordering.
   CloudConversationState? apply(ConversationStreamEvent event) {

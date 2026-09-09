@@ -9,7 +9,6 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -67,7 +66,7 @@ void main() {
           builder: (context) {
             return MaterialApp(
               home: Theme(
-                data: ThemeData(extensions: [AuraTheme.light]),
+                data: .new(extensions: [AuraTheme.light]),
                 child: Material(
                   child: Portal(
                     child: ChatInputWidget(
@@ -255,7 +254,7 @@ void main() {
   });
 
   testWidgets('shows file and hides photo attachment on macOS', (tester) async {
-    overridePlatform(TargetPlatform.macOS);
+    overridePlatform(.macOS);
 
     await pumpAndInit(
       tester,
@@ -277,7 +276,7 @@ void main() {
   });
 
   testWidgets('shows file attachment for audio on macOS', (tester) async {
-    overridePlatform(TargetPlatform.macOS);
+    overridePlatform(.macOS);
 
     await pumpAndInit(
       tester,
@@ -298,7 +297,7 @@ void main() {
   });
 
   testWidgets('keeps photo attachment visible outside macOS', (tester) async {
-    overridePlatform(TargetPlatform.linux);
+    overridePlatform(.linux);
 
     await pumpAndInit(
       tester,
@@ -405,11 +404,11 @@ void main() {
     await tester.tap(find.byType(EditableText));
     await tester.pump();
 
-    expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+    expect(await tester.sendKeyEvent(.tab), isTrue);
     await tester.pump();
     expect(find.byIcon(Icons.build_circle_outlined), findsNothing);
 
-    expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+    expect(await tester.sendKeyEvent(.enter), isTrue);
     await tester.pump();
 
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);

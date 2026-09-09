@@ -35,7 +35,7 @@ class const OAuthConnector({
 /// Implements RFC 8414 (OAuth 2.0 Authorization Server Metadata) and RFC 7591
 /// (OAuth 2.0 Dynamic Client Registration) for automatic OAuth discovery.
 class OAuthDiscoveryService {
-  static final Logger _logger = Logger('OAuthDiscoveryService');
+  static final Logger _logger = .new('OAuthDiscoveryService');
 
   /// Automatically discovers OAuth configuration for an MCP server URL.
   static Future<OAuthDiscoveryResult?> discoverOAuth(
@@ -81,7 +81,7 @@ class OAuthDiscoveryService {
       _logger.info('Trying well-known OAuth endpoint');
 
       final response = await http
-          .get(Uri.parse(wellKnownUrl), headers: _jsonAcceptHeader)
+          .get(.parse(wellKnownUrl), headers: _jsonAcceptHeader)
           .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == HttpStatus.ok) {
@@ -219,7 +219,7 @@ class OAuthDiscoveryService {
       _logger.info('Trying OAuth metadata endpoint');
 
       final response = await http
-          .get(Uri.parse(metadataUrl), headers: _jsonAcceptHeader)
+          .get(.parse(metadataUrl), headers: _jsonAcceptHeader)
           .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == HttpStatus.ok) {
@@ -267,7 +267,7 @@ class OAuthDiscoveryService {
 
       final response = await http
           .post(
-            Uri.parse(registrationEndpoint),
+            .parse(registrationEndpoint),
             headers: {'Content-Type': 'application/json', ..._jsonAcceptHeader},
             body: json.encode(clientMetadata),
           )

@@ -30,10 +30,7 @@ void main() {
 
     test('should create and retrieve a workspace', () async {
       // Arrange.
-      const workspace = WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      );
+      const workspace = WorkspaceToCreate(name: 'Test Workspace', type: .local);
 
       // Act.
       final createResult = await repository.createWorkspace(workspace);
@@ -54,11 +51,11 @@ void main() {
       // Arrange.
       const workspace1 = WorkspaceToCreate(
         name: 'Test Workspace 1',
-        type: WorkspaceType.local,
+        type: .local,
       );
       const workspace2 = WorkspaceToCreate(
         name: 'Test Workspace 2',
-        type: WorkspaceType.remote,
+        type: .remote,
         url: 'https://example.com',
       );
 
@@ -75,10 +72,7 @@ void main() {
 
     test('should update a workspace', () async {
       // Arrange.
-      const workspace = WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      );
+      const workspace = WorkspaceToCreate(name: 'Test Workspace', type: .local);
       final createdWorkspace = await repository.createWorkspace(workspace);
 
       const updatedWorkspace = WorkspacePatch(name: 'Updated Workspace');
@@ -95,10 +89,7 @@ void main() {
 
     test('should reject empty workspace patch', () async {
       // Arrange.
-      const workspace = WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      );
+      const workspace = WorkspaceToCreate(name: 'Test Workspace', type: .local);
       final createdWorkspace = await repository.createWorkspace(workspace);
 
       // Act + Assert.
@@ -118,11 +109,11 @@ void main() {
       // Arrange.
       const localWorkspace = WorkspaceToCreate(
         name: 'Local Workspace',
-        type: WorkspaceType.local,
+        type: .local,
       );
       const remoteWorkspace = WorkspaceToCreate(
         name: 'Remote Workspace',
-        type: WorkspaceType.remote,
+        type: .remote,
         url: 'https://example.com',
       );
       final createdLocal = await repository.createWorkspace(localWorkspace);
@@ -142,7 +133,7 @@ void main() {
       await expectLater(
         repository.patchWorkspace(
           createdRemote.id,
-          const WorkspacePatch(type: WorkspaceType.local),
+          const WorkspacePatch(type: .local),
         ),
         throwsA(isA<WorkspaceValidationException>()),
       );
@@ -150,10 +141,7 @@ void main() {
 
     test('should delete a workspace', () async {
       // Arrange.
-      const workspace = WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      );
+      const workspace = WorkspaceToCreate(name: 'Test Workspace', type: .local);
       final cretadWorkspace = await repository.createWorkspace(workspace);
 
       // Act.
@@ -172,19 +160,16 @@ void main() {
         database,
         attachmentFileStore: fileStore,
       );
-      const workspace = WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      );
+      const workspace = WorkspaceToCreate(name: 'Test Workspace', type: .local);
       final createdWorkspace = await repository.createWorkspace(workspace);
       final conversation = await database.conversationDao.insertConversation(
-        ConversationsCompanion(
+        .new(
           workspaceId: Value(createdWorkspace.id),
           title: const Value('Conversation'),
         ),
       );
       final message = await database.messageDao.insertMessage(
-        MessagesCompanion(
+        .new(
           conversationId: Value(conversation.id),
           content: const Value('see attachment'),
           messageType: const Value(MessagesTableType.text),
@@ -196,12 +181,12 @@ void main() {
           .into(database.messageAttachments)
           .insert(
             MessageAttachmentsCompanion(
-              messageId: Value(message.id),
+              messageId: .new(message.id),
               localPath: const Value('/support/image.png'),
               fileName: const Value('image.png'),
               displayName: const Value('image.png'),
               mimeType: const Value('image/png'),
-              modality: Value(MessageAttachmentModality.image.name),
+              modality: .new(MessageAttachmentModality.image.name),
               sizeBytes: const Value(10),
             ),
           );
@@ -215,11 +200,11 @@ void main() {
       // Arrange.
       const workspace1 = WorkspaceToCreate(
         name: 'Development Workspace',
-        type: WorkspaceType.local,
+        type: .local,
       );
       const workspace2 = WorkspaceToCreate(
         name: 'Production Workspace',
-        type: WorkspaceType.remote,
+        type: .remote,
         url: 'https://example.com',
       );
 
@@ -238,7 +223,7 @@ void main() {
       // Arrange - Create invalid workspace (local with URL).
       const invalidWorkspace = WorkspaceToCreate(
         name: 'Test Workspace',
-        type: WorkspaceType.local,
+        type: .local,
         url: 'https://example.com', // Local workspace shouldn't have URL.
       );
 
@@ -252,7 +237,7 @@ void main() {
     test('should reject remote workspace without URL', () async {
       const invalidWorkspace = WorkspaceToCreate(
         name: 'Remote Workspace',
-        type: WorkspaceType.remote,
+        type: .remote,
       );
 
       await expectLater(

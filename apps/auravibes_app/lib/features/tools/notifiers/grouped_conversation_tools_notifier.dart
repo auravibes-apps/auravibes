@@ -76,7 +76,7 @@ class GroupedConversationToolsNotifier
         ConversationToolsGroupWithTools(
           group: null,
           tools: builtInTools,
-          defaultGroupType: DefaultToolGroupType.builtIn,
+          defaultGroupType: .builtIn,
         ),
       );
     }
@@ -86,7 +86,7 @@ class GroupedConversationToolsNotifier
         ConversationToolsGroupWithTools(
           group: null,
           tools: nativeTools,
-          defaultGroupType: DefaultToolGroupType.native,
+          defaultGroupType: .native,
         ),
       );
     }

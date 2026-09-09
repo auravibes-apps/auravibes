@@ -12,10 +12,10 @@ class const AgentToolOverrideEntity({
 extension AgentToolPermissionModeX on AgentToolPermissionMode {
   ToolPermissionMode? get overridePermission {
     return switch (this) {
-      AgentToolPermissionMode.workspaceDefault => null,
-      AgentToolPermissionMode.alwaysAsk => ToolPermissionMode.alwaysAsk,
-      AgentToolPermissionMode.alwaysAllow => ToolPermissionMode.alwaysAllow,
-      AgentToolPermissionMode.alwaysDeny => ToolPermissionMode.alwaysDeny,
+      .workspaceDefault => null,
+      .alwaysAsk => ToolPermissionMode.alwaysAsk,
+      .alwaysAllow => ToolPermissionMode.alwaysAllow,
+      .alwaysDeny => ToolPermissionMode.alwaysDeny,
     };
   }
 }
@@ -23,9 +23,9 @@ extension AgentToolPermissionModeX on AgentToolPermissionMode {
 extension ToolPermissionModeAgentX on ToolPermissionMode {
   AgentToolPermissionMode get agentMode {
     return switch (this) {
-      ToolPermissionMode.alwaysAsk => AgentToolPermissionMode.alwaysAsk,
-      ToolPermissionMode.alwaysAllow => AgentToolPermissionMode.alwaysAllow,
-      ToolPermissionMode.alwaysDeny => AgentToolPermissionMode.alwaysDeny,
+      .alwaysAsk => AgentToolPermissionMode.alwaysAsk,
+      .alwaysAllow => AgentToolPermissionMode.alwaysAllow,
+      .alwaysDeny => AgentToolPermissionMode.alwaysDeny,
     };
   }
 }

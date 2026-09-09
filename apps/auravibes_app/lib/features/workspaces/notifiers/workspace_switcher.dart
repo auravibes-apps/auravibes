@@ -43,7 +43,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
     _debounceTimer?.cancel();
     final switchGeneration = ++_switchGeneration;
 
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    _debounceTimer = .new(const Duration(milliseconds: 300), () {
       _queueSwitch(workspaceId, switchGeneration);
     });
   }
@@ -87,7 +87,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
 
       if (!ref.mounted || switchGeneration != _switchGeneration) return;
       state = WorkspaceSwitchState(
-        status: SwitchStatus.loading,
+        status: .loading,
         targetWorkspaceId: workspaceId,
       );
 
@@ -113,7 +113,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
       _logger.severe('Workspace switch failed', error, stackTrace);
       if (ref.mounted && switchGeneration == _switchGeneration) {
         state = WorkspaceSwitchState(
-          status: SwitchStatus.error,
+          status: .error,
           targetWorkspaceId: workspaceId,
           errorLocalizationKey: LocaleKeys.workspace_management_switch_error,
         );

@@ -150,8 +150,8 @@ class _SelectableTextDemoState extends State<SelectableTextDemo> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
         AuraSelectableText(
           widget.data,

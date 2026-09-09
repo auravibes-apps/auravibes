@@ -20,13 +20,13 @@ enum MessageType(final String value) {
   }
   String get displayName {
     switch (this) {
-      case MessageType.text:
+      case .text:
         return 'Text';
-      case MessageType.image:
+      case .image:
         return 'Image';
-      case MessageType.toolCall:
+      case .toolCall:
         return 'Tool Call';
-      case MessageType.system:
+      case .system:
         return 'System';
     }
   }
@@ -86,13 +86,13 @@ enum MessageStatus(final String value) {
   }
   String get displayName {
     switch (this) {
-      case MessageStatus.sending:
+      case .sending:
         return 'Sending';
-      case MessageStatus.unfinished:
+      case .unfinished:
         return 'Unfinished';
-      case MessageStatus.sent:
+      case .sent:
         return 'Sent';
-      case MessageStatus.error:
+      case .error:
         return 'Error';
     }
   }

@@ -80,11 +80,11 @@ void main() {
       readState: (_) async => ReadWorkspaceStateResponse(
         pages: [
           WorkspaceResourcePage(
-            resourceKind: WorkspaceResourceKind.serviceConnection,
+            resourceKind: .serviceConnection,
             resources: [
               WorkspaceResource(
                 workspaceId: 1,
-                resourceKind: WorkspaceResourceKind.serviceConnection,
+                resourceKind: .serviceConnection,
                 resourceId: 'connection',
                 data:
                     '{"id":"connection","name":"GitHub",'

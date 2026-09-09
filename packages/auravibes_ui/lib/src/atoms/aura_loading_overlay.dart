@@ -61,14 +61,14 @@ class AuraLoadingOverlay extends StatelessWidget {
             decoration: BoxDecoration(
               color: auraColors.surface,
               borderRadius: BorderRadius.all(
-                Radius.circular(auraTheme.fromBorderRadius(.lg)),
+                .circular(auraTheme.fromBorderRadius(.lg)),
               ),
               boxShadow: const [DesignShadows.lg],
             ),
             child: message != null
                 ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: .center,
+                    mainAxisSize: .min,
                     children: [
                       AuraSpinner(
                         size: spinnerSize,
@@ -78,13 +78,13 @@ class AuraLoadingOverlay extends StatelessWidget {
                       SizedBox(height: auraTheme.fromSpacing(.md)),
                       Text(
                         message,
-                        style: TextStyle(
+                        style: .new(
                           color: auraColors.onSurfaceVariant,
                           fontSize: typography.fontSizeLg,
                           fontWeight: typography.fontWeightRegular,
                           fontFamily: typography.bodyFontFamily,
                         ),
-                        textAlign: TextAlign.center,
+                        textAlign: .center,
                       ),
                     ],
                   )

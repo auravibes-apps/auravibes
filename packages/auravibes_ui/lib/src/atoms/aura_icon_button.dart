@@ -103,10 +103,7 @@ class AuraIconButton extends StatelessWidget {
         padding: EdgeInsets.zero,
         alignment: Alignment.center,
         onPressed: disabled ? null : onPressed,
-        constraints: BoxConstraints(
-          minWidth: buttonSize,
-          minHeight: buttonSize,
-        ),
+        constraints: .new(minWidth: buttonSize, minHeight: buttonSize),
         style: IconButton.styleFrom(
           alignment: Alignment.center,
           padding: EdgeInsets.zero,
@@ -135,23 +132,23 @@ class AuraIconButton extends StatelessWidget {
 
   double _getButtonSize() {
     return switch (size) {
-      AuraIconSize.extraSmall => _extraSmallButtonSize,
-      AuraIconSize.small => _smallButtonSize,
-      AuraIconSize.medium => _mediumButtonSize,
-      AuraIconSize.large => _largeButtonSize,
-      AuraIconSize.extraLarge => _extraLargeButtonSize,
-      AuraIconSize.huge => _hugeButtonSize,
+      .extraSmall => _extraSmallButtonSize,
+      .small => _smallButtonSize,
+      .medium => _mediumButtonSize,
+      .large => _largeButtonSize,
+      .extraLarge => _extraLargeButtonSize,
+      .huge => _hugeButtonSize,
     };
   }
 
   double _getIconSize() {
     return switch (size) {
-      AuraIconSize.extraSmall => _extraSmallIconSize,
-      AuraIconSize.small => _smallIconSize,
-      AuraIconSize.medium => _mediumIconSize,
-      AuraIconSize.large => _largeIconSize,
-      AuraIconSize.extraLarge => _extraLargeIconSize,
-      AuraIconSize.huge => _hugeIconSize,
+      .extraSmall => _extraSmallIconSize,
+      .small => _smallIconSize,
+      .medium => _mediumIconSize,
+      .large => _largeIconSize,
+      .extraLarge => _extraLargeIconSize,
+      .huge => _hugeIconSize,
     };
   }
 
@@ -169,13 +166,11 @@ class AuraIconButton extends StatelessWidget {
     final tint = this.tint;
 
     return switch (variant) {
-      AuraIconButtonVariant.ghost =>
+      .ghost =>
         tint == null ? colors.foregroundOnSurface : colors.colorFor(tint),
-      AuraIconButtonVariant.filled => colors.onTint(tint ?? AuraTint.primary),
-      AuraIconButtonVariant.outlined => colors.colorFor(
-        tint ?? AuraTint.primary,
-      ),
-      AuraIconButtonVariant.elevated => colors.onTint(tint ?? AuraTint.primary),
+      .filled => colors.onTint(tint ?? AuraTint.primary),
+      .outlined => colors.colorFor(tint ?? AuraTint.primary),
+      .elevated => colors.onTint(tint ?? AuraTint.primary),
     };
   }
 

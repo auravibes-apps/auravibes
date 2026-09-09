@@ -8,7 +8,7 @@ import 'package:drift/drift.dart';
 @DataClassName('WorkspaceCompactionSettingsTable')
 class WorkspaceCompactionSettings extends Table with TableMixin {
   TextColumn get workspaceId =>
-      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
   BoolColumn get autoCompactEnabled => boolean().nullable()();
 

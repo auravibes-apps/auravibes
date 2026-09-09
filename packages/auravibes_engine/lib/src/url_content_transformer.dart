@@ -76,20 +76,20 @@ class const UrlContentTransformer() {
         originalLength,
         elapsed,
         contentType,
-        UrlContentFormat.unsupported,
+        .unsupported,
       );
     }
 
     if (contentType.contains('text/html')) {
       return switch (effectiveFormat) {
-        UrlResponseFormat.html => _passthrough(
+        .html => _passthrough(
           body,
           originalLength,
           elapsed,
           contentType,
-          UrlContentFormat.html,
+          .html,
         ),
-        UrlResponseFormat.text => _transformHtmlToText(
+        .text => _transformHtmlToText(
           body,
           originalLength,
           elapsed,
@@ -102,13 +102,7 @@ class const UrlContentTransformer() {
     final isJson =
         contentType == 'application/json' || contentType.endsWith('+json');
     if (isJson) {
-      return _passthrough(
-        body,
-        originalLength,
-        elapsed,
-        contentType,
-        UrlContentFormat.json,
-      );
+      return _passthrough(body, originalLength, elapsed, contentType, .json);
     }
 
     if (contentType.contains('text/markdown') ||
@@ -118,18 +112,12 @@ class const UrlContentTransformer() {
         originalLength,
         elapsed,
         contentType,
-        UrlContentFormat.markdown,
+        .markdown,
       );
     }
 
     if (contentType.contains('text/plain')) {
-      return _passthrough(
-        body,
-        originalLength,
-        elapsed,
-        contentType,
-        UrlContentFormat.text,
-      );
+      return _passthrough(body, originalLength, elapsed, contentType, .text);
     }
 
     return _passthrough(
@@ -137,7 +125,7 @@ class const UrlContentTransformer() {
       originalLength,
       elapsed,
       contentType,
-      UrlContentFormat.unsupported,
+      .unsupported,
     );
   }
 

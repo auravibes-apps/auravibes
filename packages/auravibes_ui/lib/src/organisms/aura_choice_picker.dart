@@ -128,10 +128,7 @@ class AuraChoicePicker<T> extends StatelessWidget {
             runSpacing: context.auraTheme.spacing.sm,
             children: optionWidgets,
           )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: optionWidgets,
-          );
+        : Column(crossAxisAlignment: .start, children: optionWidgets);
 
     final label = this.label;
     final semanticLabel = this.semanticLabel;
@@ -141,7 +138,7 @@ class AuraChoicePicker<T> extends StatelessWidget {
     var result = visibleLabel == null
         ? choices
         : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               visibleLabel,
               const AuraSizedBox(height: .sm),
@@ -255,7 +252,7 @@ class const _AuraChoicePickerOption<T>({
         ? option.label
         : ExcludeSemantics(child: option.label);
     final control = switch (variant) {
-      AuraChoicePickerVariant.mutuallyExclusive => AuraRadio<T>(
+      .mutuallyExclusive => AuraRadio<T>(
         value: option.value,
         groupValue: _mutuallyExclusiveValue,
         onChanged: _isInteractive ? (_) => _handleChange() : null,
@@ -263,7 +260,7 @@ class const _AuraChoicePickerOption<T>({
         disabled: option.disabled,
         semanticLabel: option.semanticLabel ?? 'Choice',
       ),
-      AuraChoicePickerVariant.multipleSelection => AuraCheckbox(
+      .multipleSelection => AuraCheckbox(
         value: _isSelected,
         onChanged: _isInteractive ? (_) => _handleChange() : null,
         tint: tint,
@@ -282,7 +279,7 @@ class const _AuraChoicePickerOption<T>({
               child: Center(child: ExcludeSemantics(child: control)),
             ),
             onTap: _isInteractive ? _handleChange : null,
-            behavior: HitTestBehavior.opaque,
+            behavior: .opaque,
             excludeFromSemantics: true,
           ),
           const AuraSizedBox(width: .sm),
@@ -301,7 +298,7 @@ class const _AuraChoicePickerOption<T>({
                 ),
               ),
               onTap: _isInteractive ? _handleChange : null,
-              behavior: HitTestBehavior.opaque,
+              behavior: .opaque,
               excludeFromSemantics: true,
             ),
           ),

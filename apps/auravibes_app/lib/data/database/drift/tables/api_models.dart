@@ -13,7 +13,7 @@ export 'package:auravibes_app/data/database/drift/converters/list_converter.dart
 @DataClassName('ApiModelsTable')
 class ApiModels extends Table {
   TextColumn get modelProvider =>
-      text().references(ApiModelProviders, #id, onDelete: KeyAction.cascade)();
+      text().references(ApiModelProviders, #id, onDelete: .cascade)();
 
   // Model id.
   TextColumn get id => text()();

@@ -52,7 +52,7 @@ Future<void> _waitUntil(bool Function() condition) async {
   for (var attempt = 0; attempt < 20; attempt++) {
     if (condition()) return;
 
-    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(.zero);
   }
 
   fail('Condition was not met after queued asynchronous work completed.');
@@ -158,7 +158,7 @@ void main() {
         expect(pendingSelection.savedWorkspaceIds, ['ws-1', 'ws-2']);
 
         pendingSelection.completeSave(1);
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
         expect(fakeRouter.lastLocation, '/workspaces/ws-2/chat/new');
         expect(fakeRouter.locations, ['/workspaces/ws-2/chat/new']);
       },
@@ -184,7 +184,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 350));
       notifier.cancelPendingSwitch();
       pendingSelection.completeSave(0);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(fakeRouter.locations, isEmpty);
       expect(
@@ -273,7 +273,7 @@ void main() {
 
       // Manually set error state.
       notifier.state = const WorkspaceSwitchState(
-        status: SwitchStatus.error,
+        status: .error,
         targetWorkspaceId: 'ws-1',
         errorLocalizationKey: 'Failed',
       );

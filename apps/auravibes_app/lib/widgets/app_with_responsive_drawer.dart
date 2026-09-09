@@ -46,8 +46,7 @@ class AppWithResponsiveDrawer extends StatefulWidget {
 }
 
 class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
-  final ResponsiveSlidingDrawerController _controller =
-      ResponsiveSlidingDrawerController();
+  final ResponsiveSlidingDrawerController _controller = .new();
   GoRouter? _router;
   Uri? _previousRoute;
 
@@ -61,7 +60,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   @override
   void initState() {
     super.initState();
-    _router = GoRouter.of(context);
+    _router = .of(context);
     _previousRoute = _router?.routeInformationProvider.value.uri;
     _router?.routeInformationProvider.addListener(_onRouteChanged);
   }
@@ -119,7 +118,7 @@ class const _WorkspaceHeader({required final String workspaceId})
           child: Text(
             workspace?.name ?? LocaleKeys.workspace_management_loading.tr(),
           ),
-          style: AuraTextStyle.heading6,
+          style: .heading6,
         );
       case AsyncLoading():
         header = const AuraContainer(

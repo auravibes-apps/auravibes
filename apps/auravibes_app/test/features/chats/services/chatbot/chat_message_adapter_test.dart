@@ -1,6 +1,4 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
@@ -15,11 +13,11 @@ void main() {
           id: 'u1',
           conversationId: 'c1',
           content: 'Hello',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          status: .sent,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
         ),
       ];
 
@@ -35,11 +33,11 @@ void main() {
           id: 'a1',
           conversationId: 'c1',
           content: 'Hi there',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          status: .sent,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
         ),
       ];
 
@@ -55,11 +53,11 @@ void main() {
           id: 'a1',
           conversationId: 'c1',
           content: '',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          status: .sent,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
           metadata: const MessageMetadataEntity(
             toolCalls: [
               MessageToolCallEntity(
@@ -67,7 +65,7 @@ void main() {
                 name: 'calculator',
                 argumentsRaw: '{"expr":"2+2"}',
                 responseRaw: '4',
-                resultStatus: ToolCallResultStatus.success,
+                resultStatus: .success,
               ),
             ],
           ),
@@ -99,11 +97,11 @@ void main() {
           id: 'a1',
           conversationId: 'c1',
           content: '',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          status: .sent,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
           metadata: const MessageMetadataEntity(
             toolCalls: [
               MessageToolCallEntity(
@@ -129,21 +127,21 @@ void main() {
           id: 'u1',
           conversationId: 'c1',
           content: 'Hi',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          status: .sent,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
         ),
         MessageEntity(
           id: 'a1',
           conversationId: 'c1',
           content: 'Hello!',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          status: .sent,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
         ),
       ];
 

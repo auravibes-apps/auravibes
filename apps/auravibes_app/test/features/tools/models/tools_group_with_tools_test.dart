@@ -1,8 +1,6 @@
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
-import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -16,18 +14,18 @@ void main() {
       workspaceId: 'ws1',
       toolId: 'calculator',
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAsk,
-      createdAt: DateTime(2025),
-      updatedAt: DateTime(2025),
+      permissionMode: .alwaysAsk,
+      createdAt: .new(2025),
+      updatedAt: .new(2025),
     );
     final tool2 = WorkspaceToolEntity(
       id: 't2',
       workspaceId: 'ws1',
       toolId: 'readFile',
       isEnabled: false,
-      permissionMode: ToolPermissionMode.alwaysAllow,
-      createdAt: DateTime(2025),
-      updatedAt: DateTime(2025),
+      permissionMode: .alwaysAllow,
+      createdAt: .new(2025),
+      updatedAt: .new(2025),
     );
 
     final testGroup = ToolsGroupEntity(
@@ -35,9 +33,9 @@ void main() {
       workspaceId: 'ws1',
       name: 'Test Group',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
-      createdAt: DateTime(2025),
-      updatedAt: DateTime(2025),
+      permissions: .ask,
+      createdAt: .new(2025),
+      updatedAt: .new(2025),
     );
     final mcpServer = McpServerEntity(
       id: 'server_1',
@@ -46,8 +44,8 @@ void main() {
       url: 'https://example.com',
       transport: const McpTransportTypeSSE(),
       authenticationType: const McpAuthenticationTypeNone(),
-      createdAt: DateTime(2025),
-      updatedAt: DateTime(2025),
+      createdAt: .new(2025),
+      updatedAt: .new(2025),
     );
 
     test('enabledToolsCount counts enabled tools', () {
@@ -64,9 +62,9 @@ void main() {
         workspaceId: 'ws1',
         toolId: 'disabledTool',
         isEnabled: false,
-        permissionMode: ToolPermissionMode.alwaysAsk,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissionMode: .alwaysAsk,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
       );
       final grouped = ToolsGroupWithTools(group: testGroup, tools: [tool3]);
       expect(grouped.enabledToolsCount, 0);
@@ -84,7 +82,7 @@ void main() {
       final grouped = ToolsGroupWithTools(
         group: null,
         tools: [tool1],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(grouped.isDefaultGroup, isTrue);
     });
@@ -98,7 +96,7 @@ void main() {
       final grouped = ToolsGroupWithTools(
         group: null,
         tools: [tool1],
-        defaultGroupType: DefaultToolGroupType.native,
+        defaultGroupType: .native,
       );
       expect(grouped.isNativeDefaultGroup, isTrue);
     });
@@ -107,7 +105,7 @@ void main() {
       final grouped = ToolsGroupWithTools(
         group: null,
         tools: [tool1],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(grouped.isNativeDefaultGroup, isFalse);
     });
@@ -118,9 +116,9 @@ void main() {
         workspaceId: 'ws1',
         name: 'MCP Group',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
         mcpServerId: 'server1',
       );
       final grouped = ToolsGroupWithTools(group: mcpGroup, tools: []);
@@ -133,9 +131,9 @@ void main() {
         workspaceId: 'ws1',
         name: 'MCP Group',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
         mcpServerId: 'server_42',
       );
       final grouped = ToolsGroupWithTools(group: mcpGroup, tools: []);
@@ -146,7 +144,7 @@ void main() {
       final grouped = ToolsGroupWithTools(
         group: testGroup.copyWith(mcpServerId: 'server_1'),
         tools: const [],
-        mcpConnectionState: McpConnectionState(
+        mcpConnectionState: .new(
           server: mcpServer,
           status: McpConnectionStatus.error,
           errorMessage: 'timeout',
@@ -160,7 +158,7 @@ void main() {
       final grouped = ToolsGroupWithTools(
         group: testGroup,
         tools: const [],
-        mcpConnectionState: McpConnectionState(
+        mcpConnectionState: .new(
           server: mcpServer,
           status: McpConnectionStatus.error,
           errorMessage: LocaleKeys.tools_screen_mcp_error,
@@ -182,9 +180,9 @@ void main() {
         workspaceId: 'ws1',
         name: 'Disabled',
         isEnabled: false,
-        permissions: PermissionAccess.ask,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
       );
       final grouped = ToolsGroupWithTools(group: disabledGroup, tools: []);
       expect(grouped.isEnabled, isFalse);
@@ -194,7 +192,7 @@ void main() {
       final grouped = ToolsGroupWithTools(
         group: null,
         tools: [tool1],
-        defaultGroupType: DefaultToolGroupType.builtIn,
+        defaultGroupType: .builtIn,
       );
       expect(grouped.isEnabled, isTrue);
     });
@@ -204,7 +202,7 @@ void main() {
         final grouped = ToolsGroupWithTools(
           group: null,
           tools: [tool1],
-          defaultGroupType: DefaultToolGroupType.builtIn,
+          defaultGroupType: .builtIn,
         );
         expect(grouped.sortPriority, 0);
       });
@@ -213,7 +211,7 @@ void main() {
         final grouped = ToolsGroupWithTools(
           group: null,
           tools: [tool1],
-          defaultGroupType: DefaultToolGroupType.native,
+          defaultGroupType: .native,
         );
         expect(grouped.sortPriority, 1);
       });
@@ -222,7 +220,7 @@ void main() {
         final grouped = ToolsGroupWithTools(
           group: null,
           tools: [tool1],
-          defaultGroupType: DefaultToolGroupType.builtIn,
+          defaultGroupType: .builtIn,
         );
         expect(grouped.sortPriority, 0);
       });
@@ -243,12 +241,12 @@ void main() {
         final builtInGroup = ToolsGroupWithTools(
           group: null,
           tools: [tool1],
-          defaultGroupType: DefaultToolGroupType.builtIn,
+          defaultGroupType: .builtIn,
         );
         final nativeGroup = ToolsGroupWithTools(
           group: null,
           tools: [tool1],
-          defaultGroupType: DefaultToolGroupType.native,
+          defaultGroupType: .native,
         );
         expect(builtInGroup.localizedDisplayNameKey, isNotNull);
         expect(nativeGroup.localizedDisplayNameKey, isNotNull);

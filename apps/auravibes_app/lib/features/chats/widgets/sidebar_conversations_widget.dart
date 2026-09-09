@@ -118,8 +118,8 @@ class const _SidebarConversationsError<T extends Object>({
         ),
         child: AuraText(
           child: TextLocale(CloudAppErrors.localizationKey(error)),
-          style: AuraTextStyle.bodySmall,
-          tint: AuraTint.error,
+          style: .bodySmall,
+          tint: .error,
         ),
       ),
     );
@@ -136,7 +136,7 @@ class const _SidebarConversationsSectionHeader() extends StatelessWidget {
       ),
       child: const AuraText(
         child: TextLocale(LocaleKeys.sidebar_recent_chats),
-        style: AuraTextStyle.caption,
+        style: .caption,
       ),
     );
   }
@@ -152,8 +152,8 @@ class const _SidebarConversationsEmptyState() extends StatelessWidget {
       ),
       child: const AuraText(
         child: TextLocale(LocaleKeys.sidebar_no_recent_chats),
-        style: AuraTextStyle.bodySmall,
-        textAlign: TextAlign.center,
+        style: .bodySmall,
+        textAlign: .center,
       ),
     );
   }
@@ -174,8 +174,8 @@ class const _SidebarConversationsViewAllButton({
       child: AuraButton(
         onPressed: () => ChatsRoute(workspaceId: workspaceId).go(context),
         child: const TextLocale(LocaleKeys.sidebar_view_all_chats),
-        variant: AuraButtonVariant.ghost,
-        size: AuraButtonSize.small,
+        variant: .ghost,
+        size: .small,
         isFullWidth: true,
       ),
     );
@@ -214,10 +214,10 @@ class _SidebarConversationTileState
           child: Text(
             ref.watch(streamingTitleProvider(widget.chat.id)) ??
                 widget.chat.title,
-            overflow: TextOverflow.ellipsis,
+            overflow: .ellipsis,
             maxLines: 1,
           ),
-          style: AuraTextStyle.bodySmall,
+          style: .bodySmall,
           tint: widget.isActive ? AuraTint.primary : null,
         ),
         onTap: () => ConversationRoute(
@@ -227,17 +227,17 @@ class _SidebarConversationTileState
         variant: widget.isActive
             ? AuraTileVariant.selected
             : AuraTileVariant.ghost,
-        size: AuraTileSize.small,
+        size: .small,
         leading: AuraIcon(
           Icons.chat_bubble_outline,
-          size: AuraIconSize.small,
+          size: .small,
           tint: widget.isActive ? AuraTint.primary : null,
         ),
         trailing: AuraPopupMenu(
           child: AuraIconButton(
             icon: Icons.more_vert,
             onPressed: _menuController.toggle,
-            size: AuraIconSize.small,
+            size: .small,
             tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
                 .tr(),
           ),
@@ -246,7 +246,7 @@ class _SidebarConversationTileState
               title: const TextLocale(LocaleKeys.common_delete),
               onTap: () => unawaited(_handleDelete(context)),
               leading: const AuraIcon(Icons.delete_outline),
-              variant: AuraTileVariant.error,
+              variant: .error,
             ),
           ],
           controller: _menuController,
@@ -285,10 +285,10 @@ class const _CompactingRow() extends StatelessWidget {
       child: const AuraTile(
         child: AuraText(
           child: TextLocale(LocaleKeys.compaction_compacting_row_label),
-          style: AuraTextStyle.bodySmall,
+          style: .bodySmall,
         ),
-        variant: AuraTileVariant.ghost,
-        size: AuraTileSize.small,
+        variant: .ghost,
+        size: .small,
         leading: Padding(
           padding: EdgeInsets.all(4),
           child: SizedBox(width: 16, height: 16, child: AuraSpinner()),

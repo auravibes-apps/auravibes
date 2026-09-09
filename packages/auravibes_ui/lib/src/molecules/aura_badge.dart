@@ -102,12 +102,12 @@ class AuraBadge extends StatelessWidget {
         ),
       ),
       child: DefaultTextStyle(
-        style: TextStyle(
+        style: .new(
           color: foreground,
           fontWeight: context.auraTheme.typography.fontWeightMedium,
         ),
         child: IconTheme(
-          data: IconThemeData(color: foreground),
+          data: .new(color: foreground),
           child: child,
         ),
       ),
@@ -122,15 +122,12 @@ class AuraBadge extends StatelessWidget {
 
   EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
     return switch (size) {
-      AuraBadgeSize.small => EdgeInsets.symmetric(
-        vertical: 2,
-        horizontal: spacing.xs,
-      ),
-      AuraBadgeSize.medium => EdgeInsets.symmetric(
+      .small => EdgeInsets.symmetric(vertical: 2, horizontal: spacing.xs),
+      .medium => EdgeInsets.symmetric(
         vertical: spacing.xs,
         horizontal: spacing.sm,
       ),
-      AuraBadgeSize.large => EdgeInsets.symmetric(
+      .large => EdgeInsets.symmetric(
         vertical: spacing.xs,
         horizontal: spacing.sm,
       ),
@@ -139,51 +136,51 @@ class AuraBadge extends StatelessWidget {
 
   AuraBorderRadius _getBorderRadius() {
     return switch (size) {
-      AuraBadgeSize.small => .sm,
-      AuraBadgeSize.medium => .sm,
-      AuraBadgeSize.large => .md,
+      .small => .sm,
+      .medium => .sm,
+      .large => .md,
     };
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
     return switch (variant) {
-      AuraBadgeVariant.primary => colors.primary,
-      AuraBadgeVariant.secondary => colors.secondary,
-      AuraBadgeVariant.success => colors.success,
-      AuraBadgeVariant.warning => colors.warning,
-      AuraBadgeVariant.error => colors.error,
-      AuraBadgeVariant.info => colors.info,
-      AuraBadgeVariant.neutral => colors.onSurfaceVariant,
-      AuraBadgeVariant.outlined => DesignColors.transparent,
-      AuraBadgeVariant.soft => _getSoftBackgroundColor(colors),
+      .primary => colors.primary,
+      .secondary => colors.secondary,
+      .success => colors.success,
+      .warning => colors.warning,
+      .error => colors.error,
+      .info => colors.info,
+      .neutral => colors.onSurfaceVariant,
+      .outlined => DesignColors.transparent,
+      .soft => _getSoftBackgroundColor(colors),
     };
   }
 
   Color _getForegroundColor(AuraColorScheme colors) {
     return switch (variant) {
-      AuraBadgeVariant.primary => colors.onTint(AuraTint.primary),
-      AuraBadgeVariant.secondary => colors.onTint(AuraTint.secondary),
-      AuraBadgeVariant.success => colors.onTint(AuraTint.success),
-      AuraBadgeVariant.warning => colors.onTint(AuraTint.warning),
-      AuraBadgeVariant.error => colors.onTint(AuraTint.error),
-      AuraBadgeVariant.info => colors.onTint(AuraTint.info),
-      AuraBadgeVariant.neutral => colors.foregroundOnSurface,
-      AuraBadgeVariant.outlined => _getOutlinedForegroundColor(colors),
-      AuraBadgeVariant.soft => _getSoftForegroundColor(colors),
+      .primary => colors.onTint(.primary),
+      .secondary => colors.onTint(.secondary),
+      .success => colors.onTint(.success),
+      .warning => colors.onTint(.warning),
+      .error => colors.onTint(.error),
+      .info => colors.onTint(.info),
+      .neutral => colors.foregroundOnSurface,
+      .outlined => _getOutlinedForegroundColor(colors),
+      .soft => _getSoftForegroundColor(colors),
     };
   }
 
   Color _getBorderColor(AuraColorScheme colors) {
     return switch (variant) {
-      AuraBadgeVariant.primary => colors.primary,
-      AuraBadgeVariant.secondary => colors.secondary,
-      AuraBadgeVariant.success => colors.success,
-      AuraBadgeVariant.warning => colors.warning,
-      AuraBadgeVariant.error => colors.error,
-      AuraBadgeVariant.info => colors.info,
-      AuraBadgeVariant.neutral => colors.onSurfaceVariant,
-      AuraBadgeVariant.outlined => colors.outline,
-      AuraBadgeVariant.soft => DesignColors.transparent,
+      .primary => colors.primary,
+      .secondary => colors.secondary,
+      .success => colors.success,
+      .warning => colors.warning,
+      .error => colors.error,
+      .info => colors.info,
+      .neutral => colors.onSurfaceVariant,
+      .outlined => colors.outline,
+      .soft => DesignColors.transparent,
     };
   }
 
@@ -212,9 +209,9 @@ class const _AuraBadgeText({
 
     return AuraText(
       child: IconTheme(
-        data: IconThemeData(color: foreground),
+        data: .new(color: foreground),
         child: DefaultTextStyle.merge(
-          style: TextStyle(color: foreground),
+          style: .new(color: foreground),
           child: child,
         ),
       ),

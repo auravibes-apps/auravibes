@@ -42,8 +42,8 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
       id: 'ws-${created.length}',
       name: workspace.name,
       type: workspace.type,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
+      createdAt: .new(2024),
+      updatedAt: .new(2024),
       url: workspace.url,
     );
     created.add(entity);
@@ -60,8 +60,8 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
       id: id,
       name: workspace.name ?? 'patched',
       type: workspace.type ?? WorkspaceType.local,
-      createdAt: DateTime(2024),
-      updatedAt: DateTime(2024),
+      createdAt: .new(2024),
+      updatedAt: .new(2024),
       url: workspace.url,
     );
     patched.add(entity);
@@ -101,7 +101,7 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
     required String serverUrl,
   }) {
     return createWorkspace(
-      WorkspaceToCreate(
+      .new(
         name: name,
         type: WorkspaceType.remote,
         url: serverUrl,
@@ -163,9 +163,9 @@ void main() {
         WorkspaceEntity(
           id: 'ws-1',
           name: 'Test',
-          type: WorkspaceType.local,
-          createdAt: DateTime(2024),
-          updatedAt: DateTime(2024),
+          type: .local,
+          createdAt: .new(2024),
+          updatedAt: .new(2024),
         ),
       ];
 
@@ -186,17 +186,14 @@ void main() {
     test('getWorkspacesByType returns filtered list', () async {
       final repo = _StubWorkspaceRepository();
 
-      final result = await repo.getWorkspacesByType(WorkspaceType.remote);
+      final result = await repo.getWorkspacesByType(.remote);
 
       expect(result, isEmpty);
     });
 
     test('createWorkspace returns entity', () async {
       final repo = _StubWorkspaceRepository();
-      const toCreate = WorkspaceToCreate(
-        name: 'New',
-        type: WorkspaceType.local,
-      );
+      const toCreate = WorkspaceToCreate(name: 'New', type: .local);
 
       final result = await repo.createWorkspace(toCreate);
 
@@ -251,7 +248,7 @@ void main() {
       final repo = _StubWorkspaceRepository();
       repo.countByTypeResult = 3;
 
-      expect(await repo.getWorkspaceCountByType(WorkspaceType.local), 3);
+      expect(await repo.getWorkspaceCountByType(.local), 3);
     });
 
     test('validateWorkspace throws for invalid name', () {
@@ -260,7 +257,7 @@ void main() {
 
       expect(
         () => repo.validateWorkspace(
-          const WorkspaceToCreate(name: '  ', type: WorkspaceType.local),
+          const WorkspaceToCreate(name: '  ', type: .local),
         ),
         throwsA(
           isA<WorkspaceValidationException>().having(
@@ -274,10 +271,7 @@ void main() {
 
     test('validateWorkspace returns bool', () async {
       final repo = _StubWorkspaceRepository();
-      const toCreate = WorkspaceToCreate(
-        name: 'Valid',
-        type: WorkspaceType.local,
-      );
+      const toCreate = WorkspaceToCreate(name: 'Valid', type: .local);
 
       expect(await repo.validateWorkspace(toCreate), true);
     });

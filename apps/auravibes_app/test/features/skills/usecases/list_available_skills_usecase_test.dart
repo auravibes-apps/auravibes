@@ -8,10 +8,8 @@ import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
-import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -66,20 +64,18 @@ void main() {
           ]),
           const _FakeAppSkillWorkspaceSettingsRepository(),
           const AppSkillRegistry(),
-          CheckSkillCredentialReadinessUsecase(
-            _FakeSkillCredentialsRepository(),
-          ),
+          .new(_FakeSkillCredentialsRepository()),
         );
 
         final loadable = await usecase.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
-          filter: SkillLoadFilter.loadable,
+          filter: .loadable,
         );
         final loaded = await usecase.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         );
 
         expect(loadable.map((skill) => skill.id), [optionalSkill.id]);
@@ -118,7 +114,7 @@ void main() {
       final skills = await usecase.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
-        filter: SkillLoadFilter.loaded,
+        filter: .loaded,
       );
 
       expect(skills, isEmpty);
@@ -150,7 +146,7 @@ void main() {
         final skills = await usecase.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
-          filter: SkillLoadFilter.loadable,
+          filter: .loadable,
         );
 
         expect(
@@ -169,7 +165,7 @@ void main() {
       const conversationId = 'conversation-1';
       final cloud = _cloudStore([
         _cloudResource(
-          kind: WorkspaceResourceKind.skill,
+          kind: .skill,
           id: 'jina',
           data: {
             'id': 'jina',
@@ -184,7 +180,7 @@ void main() {
           },
         ),
         _cloudResource(
-          kind: WorkspaceResourceKind.skillSetting,
+          kind: .skillSetting,
           id: 'jina',
           data: {'id': 'jina', 'skillId': 'jina', 'isEnabled': true},
         ),
@@ -202,7 +198,7 @@ void main() {
       final skills = await usecase.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
-        filter: SkillLoadFilter.loadable,
+        filter: .loadable,
       );
 
       expect(skills.where((skill) => skill.slug == 'jina'), hasLength(1));
@@ -217,7 +213,7 @@ void main() {
       const conversationId = 'conversation-1';
       final cloud = _cloudStore([
         _cloudResource(
-          kind: WorkspaceResourceKind.skillSetting,
+          kind: .skillSetting,
           id: 'anthropic',
           data: const {
             'id': 'anthropic',
@@ -239,7 +235,7 @@ void main() {
       final skills = await usecase.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
-        filter: SkillLoadFilter.loadable,
+        filter: .loadable,
       );
 
       expect(skills.map((skill) => skill.slug), contains(agentsSkillSlug));
@@ -259,7 +255,7 @@ void main() {
           _FakeSkillsRepository([]),
           _FakeConversationSkillsRepository([]),
           _FakeAppSkillWorkspaceSettingsRepository({'openai'}),
-          AppSkillRegistry(),
+          .new(),
           null,
           _FakeAppSkillCandidates(),
         );
@@ -267,7 +263,7 @@ void main() {
         final skills = await usecase.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
-          filter: SkillLoadFilter.loadable,
+          filter: .loadable,
         );
 
         expect(skills.map((skill) => skill.slug), isNot(contains('openai')));
@@ -301,7 +297,7 @@ void main() {
         final loaded = await usecase.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         );
 
         expect(loaded.map((skill) => skill.slug), contains('openai'));
@@ -315,7 +311,7 @@ void main() {
         _FakeSkillsRepository([]),
         _FakeConversationSkillsRepository([]),
         _FakeAppSkillWorkspaceSettingsRepository({'duckduckgo'}),
-        AppSkillRegistry(),
+        .new(),
         null,
         _FakeAppSkillCandidates(),
       );
@@ -323,7 +319,7 @@ void main() {
       final skills = await usecase.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
-        filter: SkillLoadFilter.loadable,
+        filter: .loadable,
       );
 
       expect(skills.map((skill) => skill.slug), contains('duckduckgo'));
@@ -338,7 +334,7 @@ void main() {
           _FakeSkillsRepository([]),
           _FakeConversationSkillsRepository([]),
           _FakeAppSkillWorkspaceSettingsRepository({'jina'}),
-          AppSkillRegistry(),
+          .new(),
           null,
           _FakeAppSkillCandidates(),
         );
@@ -346,7 +342,7 @@ void main() {
         final skills = await usecase.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
-          filter: SkillLoadFilter.loadable,
+          filter: .loadable,
         );
 
         expect(skills.map((skill) => skill.slug), contains('jina'));
@@ -360,7 +356,7 @@ void main() {
         _FakeSkillsRepository([]),
         _FakeConversationSkillsRepository([]),
         _FakeAppSkillWorkspaceSettingsRepository({'searxng'}),
-        AppSkillRegistry(),
+        .new(),
         null,
         _FakeAppSkillCandidates(),
       );
@@ -368,7 +364,7 @@ void main() {
       final skills = await usecase.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
-        filter: SkillLoadFilter.loadable,
+        filter: .loadable,
       );
 
       expect(skills.map((skill) => skill.slug), isNot(contains('searxng')));
@@ -381,7 +377,7 @@ void main() {
         _FakeSkillsRepository([]),
         _FakeConversationSkillsRepository([]),
         _FakeAppSkillWorkspaceSettingsRepository({'searxng'}),
-        AppSkillRegistry(),
+        .new(),
         null,
         _FakeAppSkillCandidates({'searxng'}),
       );
@@ -389,7 +385,7 @@ void main() {
       final skills = await usecase.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
-        filter: SkillLoadFilter.loadable,
+        filter: .loadable,
       );
 
       expect(skills.map((skill) => skill.slug), contains('searxng'));
@@ -399,7 +395,7 @@ void main() {
 
 CloudSkillStore _cloudStore(List<WorkspaceResource> resources) =>
     CloudSkillStore(
-      CloudWorkspaceResourceStore.forTesting(
+      .forTesting(
         patch: ({required requestId, required operations}) =>
             throw UnimplementedError(),
         watch: (kinds) => Stream.value(
@@ -461,7 +457,7 @@ SkillEntity _skill({
     source: source,
     id: id,
     workspaceId: workspaceId,
-    kind: SkillKind.template,
+    kind: .template,
     title: title,
     slug: slug,
     description: '$title description',

@@ -8,11 +8,11 @@ class AppFlavorConfig {
 
   static String get title {
     switch (appFlavor) {
-      case Flavor.prod:
+      case .prod:
         return 'AuraVibes';
-      case Flavor.dev:
+      case .dev:
         return 'AuraVibes Dev';
-      case Flavor.beta:
+      case .beta:
         return 'AuraVibes Beta';
     }
   }

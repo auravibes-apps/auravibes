@@ -73,10 +73,7 @@ void main() {
       ),
       (
         value: const AntropicResponseModels.error(
-          error: AntropicResponseModelsErrorMessage(
-            message: 'provider-error-secret',
-            type: 'provider_error',
-          ),
+          error: .new(message: 'provider-error-secret', type: 'provider_error'),
           requestId: 'request-id',
           type: 'error',
         ),

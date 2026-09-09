@@ -23,7 +23,7 @@ void main() {
       workspaceId: 'workspace-1',
       toolId: 'calculator',
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAllow,
+      permissionMode: .alwaysAllow,
       createdAt: createdAt,
       updatedAt: createdAt,
     );
@@ -33,7 +33,7 @@ void main() {
       workspaceId: 'workspace-1',
       toolId: 'web_search',
       isEnabled: false,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       createdAt: createdAt,
       updatedAt: createdAt,
     );
@@ -55,7 +55,7 @@ void main() {
             conversationId: 'conv-1',
             toolId: 'tool-1',
             isEnabled: false,
-            permissionMode: ToolPermissionMode.alwaysAsk,
+            permissionMode: .alwaysAsk,
             createdAt: createdAt,
             updatedAt: createdAt,
           ),
@@ -174,7 +174,7 @@ void main() {
 
       final result = await notifier.setToolPermission(
         'tool-1',
-        permissionMode: ToolPermissionMode.alwaysAllow,
+        permissionMode: .alwaysAllow,
       );
       expect(result, isFalse);
     });
@@ -279,7 +279,7 @@ void main() {
 
       final result = await notifier.setToolPermission(
         'tool-1',
-        permissionMode: ToolPermissionMode.alwaysAsk,
+        permissionMode: .alwaysAsk,
       );
       expect(result, isTrue);
 
@@ -384,7 +384,7 @@ void main() {
           conversationId: 'conv-1',
           toolId: 'unknown-tool',
           isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAllow,
+          permissionMode: .alwaysAllow,
           createdAt: createdAt,
           updatedAt: createdAt,
         ),
@@ -508,9 +508,9 @@ void main() {
         workspaceId: 'ws-1',
         toolId: 'calculator',
         isEnabled: true,
-        permissionMode: ToolPermissionMode.alwaysAllow,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        permissionMode: .alwaysAllow,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
       fixture.conversationToolsRepository.availableToolEntities = [entity];
 
@@ -531,9 +531,9 @@ void main() {
         workspaceId: 'ws-1',
         toolId: 'calculator',
         isEnabled: true,
-        permissionMode: ToolPermissionMode.alwaysAllow,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        permissionMode: .alwaysAllow,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
       fixture.conversationToolsRepository.availableToolEntities = [entity1];
 
@@ -555,9 +555,9 @@ void main() {
         workspaceId: 'ws-1',
         toolId: 'search',
         isEnabled: true,
-        permissionMode: ToolPermissionMode.alwaysAllow,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        permissionMode: .alwaysAllow,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
       fixture.conversationToolsRepository.availableToolEntities = [
         entity1,
@@ -588,7 +588,7 @@ class const _ConversationToolsNotifierFixture._({
     return _ConversationToolsNotifierFixture._(
       conversationToolsRepository: conversationToolsRepository,
       workspaceToolsRepository: workspaceToolsRepository,
-      container: ProviderContainer(
+      container: .new(
         overrides: [
           conversationToolsRepositoryProvider('workspace-1')
               .overrideWithValue(conversationToolsRepository),

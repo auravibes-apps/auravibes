@@ -15,13 +15,10 @@ const meta = Meta(AuraContainer.new, argsType: _ContainerInput.new);
 
 final _Defaults containerDefaults = _Defaults(
   builder: (context, args) => AuraContainer(
-    child: const AuraText(
-      child: Text('Basic Container'),
-      style: AuraTextStyle.body,
-    ),
+    child: const AuraText(child: Text('Basic Container'), style: .body),
     padding: args.padding,
     margin: args.margin,
-    variant: AuraContainerVariant.surfaceVariant,
+    variant: .surfaceVariant,
     borderRadius: 8,
     shadow: args.shadow,
   ),
@@ -39,10 +36,10 @@ final $BasicContainer = _Story(
         AuraEdgeInsetsGeometry.large,
       ],
       labelBuilder: (value) => switch (value) {
-        AuraEdgeInsetsGeometry.none => 'none',
-        AuraEdgeInsetsGeometry.small => 'Small',
-        AuraEdgeInsetsGeometry.medium => 'Medium',
-        AuraEdgeInsetsGeometry.large => 'Large',
+        .none => 'none',
+        .small => 'Small',
+        .medium => 'Medium',
+        .large => 'Large',
         _ => value.toString(),
       },
     ),
@@ -56,10 +53,10 @@ final $BasicContainer = _Story(
         AuraEdgeInsetsGeometry.large,
       ],
       labelBuilder: (value) => switch (value) {
-        AuraEdgeInsetsGeometry.none => 'none',
-        AuraEdgeInsetsGeometry.small => 'Small',
-        AuraEdgeInsetsGeometry.medium => 'Medium',
-        AuraEdgeInsetsGeometry.large => 'Large',
+        .none => 'none',
+        .small => 'Small',
+        .medium => 'Medium',
+        .large => 'Large',
         _ => value.toString(),
       },
     ),

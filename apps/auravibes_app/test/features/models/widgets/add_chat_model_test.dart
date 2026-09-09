@@ -24,7 +24,7 @@ void main() {
     test('accepts optional key', () {
       const widget = AddModelProviderWidget(
         workspaceId: 'ws-1',
-        key: Key('test'),
+        key: .new('test'),
       );
       expect(widget.key, const Key('test'));
     });

@@ -11,7 +11,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
-    show SystemChrome, SystemUiMode, SystemUiOverlayStyle, appFlavor;
+    show SystemChrome, SystemUiOverlayStyle, appFlavor;
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -29,7 +29,7 @@ Future<void> main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent),
   );
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setEnabledSystemUIMode(.edgeToEdge);
   final container = ProviderContainer();
 
   runApp(
@@ -63,16 +63,10 @@ class const MyApp({super.key}) extends ConsumerWidget {
     final hue =
         ref.watch(accentHueProvider).asData?.value ?? AccentHue.defaultValue;
     final lightTheme = AuraTheme.light.copyWith(
-      colors: AuraComputedColorScheme(
-        primaryHue: hue,
-        brightness: AuraBrightness.light,
-      ),
+      colors: AuraComputedColorScheme(primaryHue: hue, brightness: .light),
     );
     final darkTheme = AuraTheme.dark.copyWith(
-      colors: AuraComputedColorScheme(
-        primaryHue: hue,
-        brightness: AuraBrightness.dark,
-      ),
+      colors: AuraComputedColorScheme(primaryHue: hue, brightness: .dark),
     );
 
     return Portal(
@@ -82,8 +76,8 @@ class const MyApp({super.key}) extends ConsumerWidget {
           child: AuraText(child: child ?? const SizedBox.shrink()),
         ),
         title: AppFlavorConfig.title,
-        theme: _auraMaterialTheme(lightTheme, Brightness.light),
-        darkTheme: _auraMaterialTheme(darkTheme, Brightness.dark),
+        theme: _auraMaterialTheme(lightTheme, .light),
+        darkTheme: _auraMaterialTheme(darkTheme, .dark),
         themeMode: themeMode,
         locale: context.locale,
         localizationsDelegates: context.localizationDelegates,
@@ -140,10 +134,10 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
     brightness: brightness,
     scaffoldBackgroundColor: colors.background,
     fontFamily: auraTheme.typography.bodyFontFamily,
-    iconTheme: IconThemeData(color: colors.onSurfaceVariant),
+    iconTheme: .new(color: colors.onSurfaceVariant),
     primaryTextTheme: textTheme,
     textTheme: textTheme,
-    chipTheme: ChipThemeData(
+    chipTheme: .new(
       backgroundColor: colors.surfaceVariant,
       disabledColor: colors.outlineVariant,
       selectedColor: colors.primary,
@@ -153,10 +147,8 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
         horizontal: auraTheme.spacing.sm,
       ),
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: colors.outlineVariant),
-        borderRadius: BorderRadius.all(
-          Radius.circular(auraTheme.borderRadius.full),
-        ),
+        side: .new(color: colors.outlineVariant),
+        borderRadius: BorderRadius.all(.circular(auraTheme.borderRadius.full)),
       ),
       labelStyle: textTheme.labelMedium?.copyWith(color: colors.onSurface),
       secondaryLabelStyle: textTheme.labelMedium?.copyWith(
@@ -164,14 +156,12 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
       ),
       brightness: brightness,
     ),
-    dialogTheme: DialogThemeData(
+    dialogTheme: .new(
       backgroundColor: colors.surface,
       shadowColor: colors.shadow,
       surfaceTintColor: colors.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          Radius.circular(auraTheme.borderRadius.xl),
-        ),
+        borderRadius: BorderRadius.all(.circular(auraTheme.borderRadius.xl)),
       ),
       iconColor: colors.primary,
       titleTextStyle: textTheme.titleLarge?.copyWith(color: colors.onSurface),
@@ -180,7 +170,7 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
       ),
       barrierColor: colors.scrim,
     ),
-    iconButtonTheme: IconButtonThemeData(
+    iconButtonTheme: .new(
       style: IconButton.styleFrom(
         foregroundColor: colors.onSurfaceVariant,
         disabledForegroundColor: colors.outline,
@@ -189,20 +179,18 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
         highlightColor: colors.outlineVariant,
       ),
     ),
-    progressIndicatorTheme: ProgressIndicatorThemeData(
+    progressIndicatorTheme: .new(
       color: colors.primary,
       linearTrackColor: colors.outlineVariant,
       circularTrackColor: colors.outlineVariant,
     ),
-    snackBarTheme: SnackBarThemeData(
+    snackBarTheme: .new(
       backgroundColor: colors.onSurface,
       actionTextColor: colors.primary,
       disabledActionTextColor: colors.outline,
       contentTextStyle: textTheme.bodyMedium?.copyWith(color: colors.surface),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          Radius.circular(auraTheme.borderRadius.lg),
-        ),
+        borderRadius: BorderRadius.all(.circular(auraTheme.borderRadius.lg)),
       ),
       behavior: SnackBarBehavior.floating,
     ),

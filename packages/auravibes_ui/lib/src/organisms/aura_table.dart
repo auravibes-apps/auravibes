@@ -97,7 +97,7 @@ class _AuraTableState extends State<AuraTable> {
     final theme = context.auraTheme;
     final sortedRows = _sortedRows(rows);
     final table = SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+      scrollDirection: .horizontal,
       child: Table(
         children: [
           for (final (index, row) in [
@@ -127,10 +127,10 @@ class _AuraTableState extends State<AuraTable> {
             ),
         ],
         defaultColumnWidth: const IntrinsicColumnWidth(),
-        border: TableBorder(
+        border: .new(
           horizontalInside: BorderSide(color: context.auraColors.outline),
         ),
-        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        defaultVerticalAlignment: .middle,
       ),
     );
     final caption = widget.caption;
@@ -140,14 +140,14 @@ class _AuraTableState extends State<AuraTable> {
     }
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
       spacing: theme.spacing.sm,
       children: [
         if (caption case final value?) AuraText(child: value),
         table,
         if (emptyText case final value? when value.isNotEmpty)
-          AuraText(child: Text(value), style: AuraTextStyle.bodySmall),
+          AuraText(child: Text(value), style: .bodySmall),
       ],
     );
   }
@@ -242,9 +242,9 @@ class _AuraTableState extends State<AuraTable> {
     return AuraText(
       child: Text(rendered),
       textAlign: switch (alignment) {
-        AuraTableAlignment.center => TextAlign.center,
-        AuraTableAlignment.end => TextAlign.end,
-        AuraTableAlignment.start => TextAlign.start,
+        .center => TextAlign.center,
+        .end => TextAlign.end,
+        .start => TextAlign.start,
       },
     );
   }

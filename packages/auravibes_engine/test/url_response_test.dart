@@ -6,7 +6,7 @@ UrlResponse _responseForStatus(int statusCode) {
     statusCode: statusCode,
     body: '',
     headers: const {},
-    elapsed: Duration.zero,
+    elapsed: .zero,
   );
 }
 
@@ -18,7 +18,7 @@ void main() {
       headers: {
         'Content-Type': ['text/html'],
       },
-      elapsed: Duration(milliseconds: 100),
+      elapsed: .new(milliseconds: 100),
     );
 
     test('classifies response status boundaries', () {

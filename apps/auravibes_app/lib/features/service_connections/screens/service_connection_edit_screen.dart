@@ -221,7 +221,7 @@ class _ServiceConnectionEditScreenState
           .read(skillCredentialOperationsProvider(widget.workspaceId))
           .update(
             widget.connectionId,
-            SkillCredentialToUpdate(
+            .new(
               name: _nameController.text.trim(),
               nonSecretAttributes: nonSecretAttributes,
               secretAttributes: secretAttributes,
@@ -235,7 +235,7 @@ class _ServiceConnectionEditScreenState
       final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.skill_credentials_save_error),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -250,7 +250,7 @@ class _ServiceConnectionEditScreenState
             modelConnectionStoreProvider(widget.workspaceId).future,
           )).updateModelConnection(
             widget.connectionId,
-            ModelConnectionToUpdate(
+            .new(
               name: _nameController.text.trim(),
               key: _modelKeyController.text.trim().isEmpty
                   ? null
@@ -265,7 +265,7 @@ class _ServiceConnectionEditScreenState
       final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.service_connections_save_error),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -294,7 +294,7 @@ class _ServiceConnectionEditScreenState
       );
       await operations.updateGeneric(
         state.connection,
-        GenericServiceConnectionUpdate(
+        .new(
           name: _nameController.text.trim(),
           secretEdit: secretEdit,
           secret: secretEdit == ServiceConnectionSecretEdit.replace
@@ -309,7 +309,7 @@ class _ServiceConnectionEditScreenState
       final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.service_connections_save_error),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -354,10 +354,7 @@ class const _SkillCredentialEditForm({
         AuraCard(
           child: AuraColumn(
             children: [
-              AuraText(
-                child: Text(state.definition.title),
-                style: AuraTextStyle.heading6,
-              ),
+              AuraText(child: Text(state.definition.title), style: .heading6),
               AuraInput(
                 controller: nameController,
                 label: Text(
@@ -384,8 +381,8 @@ class const _SkillCredentialEditForm({
                 ),
               ),
             ],
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: .md,
+            crossAxisAlignment: .start,
           ),
         ),
       ],
@@ -463,7 +460,7 @@ class const _SecretAttributeInput({
               ),
             )
           : null,
-      keyboardType: TextInputType.visiblePassword,
+      keyboardType: .visiblePassword,
       obscureText: true,
       onChanged: (_) {
         final _ = clearedSecrets.remove(name);
@@ -501,10 +498,7 @@ class const _ModelProviderEditForm({
         AuraCard(
           child: AuraColumn(
             children: [
-              AuraText(
-                child: Text(state.connection.modelId),
-                style: AuraTextStyle.heading6,
-              ),
+              AuraText(child: Text(state.connection.modelId), style: .heading6),
               AuraInput(
                 controller: nameController,
                 label: const TextLocale(
@@ -524,7 +518,7 @@ class const _ModelProviderEditForm({
                 label: const TextLocale(
                   LocaleKeys.models_screens_add_provider_fields_key_label,
                 ),
-                keyboardType: TextInputType.visiblePassword,
+                keyboardType: .visiblePassword,
                 obscureText: true,
                 onChanged: (_) => onChanged(),
               ),
@@ -533,7 +527,7 @@ class const _ModelProviderEditForm({
                 label: const TextLocale(
                   LocaleKeys.models_screens_add_provider_fields_url_label,
                 ),
-                keyboardType: TextInputType.url,
+                keyboardType: .url,
                 onChanged: (_) => onChanged(),
               ),
               Align(
@@ -546,8 +540,8 @@ class const _ModelProviderEditForm({
                 ),
               ),
             ],
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: .md,
+            crossAxisAlignment: .start,
           ),
         ),
       ],
@@ -582,7 +576,7 @@ class const _GenericServiceConnectionEditForm({
             children: [
               AuraText(
                 child: Text(state.connection.serviceId),
-                style: AuraTextStyle.heading6,
+                style: .heading6,
               ),
               AuraInput(
                 controller: nameController,
@@ -609,7 +603,7 @@ class const _GenericServiceConnectionEditForm({
                     context: context,
                   ),
                 ),
-                keyboardType: TextInputType.visiblePassword,
+                keyboardType: .visiblePassword,
                 obscureText: true,
                 onChanged: (_) => onChanged(),
               ),
@@ -623,8 +617,8 @@ class const _GenericServiceConnectionEditForm({
                 ),
               ),
             ],
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: .md,
+            crossAxisAlignment: .start,
           ),
         ),
       ],

@@ -38,7 +38,7 @@ class CloudModelStore(
     );
 
     return _connectionEntity(
-      CloudModelConnection.fromView(created),
+      .fromView(created),
       hasKeyOverride: connection.authMode == ModelProviderAuthMode.apiKey,
     );
   }
@@ -77,7 +77,7 @@ class CloudModelStore(
     );
 
     return _connectionEntity(
-      CloudModelConnection.fromView(updated),
+      .fromView(updated),
       hasKeyOverride: update.key?.isNotEmpty == true ? true : null,
     );
   }
@@ -122,7 +122,7 @@ class CloudModelStore(
     };
 
     return WorkspaceModelSelectionWithConnectionEntity(
-      workspaceModelSelection: WorkspaceModelSelectionEntity(
+      workspaceModelSelection: .new(
         id: selection.id,
         modelId: selection.modelId,
         createdAt: selection.createdAt,
@@ -130,7 +130,7 @@ class CloudModelStore(
         modelConnectionId: selection.connectionId,
         modelName: selection.modelName,
       ),
-      modelConnection: ModelConnectionEntity(
+      modelConnection: .new(
         id: selection.connectionId,
         name: selection.connectionName,
         modelId: selection.providerId,
@@ -141,7 +141,7 @@ class CloudModelStore(
         url: selection.connectionUrl,
         keySuffix: selection.connectionKeySuffix,
       ),
-      modelsProvider: ApiModelProviderEntity(
+      modelsProvider: .new(
         id: selection.providerId,
         name: selection.providerId,
         type: providerType,

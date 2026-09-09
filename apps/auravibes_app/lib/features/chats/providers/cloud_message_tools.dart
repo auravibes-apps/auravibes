@@ -24,7 +24,7 @@ abstract final class CloudMessageTools {
           for (final message in cloudState.messages)
             if (message.id == call.messageId && message.turnRevision != null)
               PendingToolCall(
-                toolCall: MessageToolCallEntity(
+                toolCall: .new(
                   id: call.id,
                   name: call.name,
                   argumentsRaw: call.argumentsJson,

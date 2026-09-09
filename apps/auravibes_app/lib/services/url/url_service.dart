@@ -41,7 +41,7 @@ class UrlService({Dio? dio}) {
     if (requestDio == null) {
       completer.completeError(
         UnsupportedError('HTTP adapter does not support address pinning'),
-        StackTrace.current,
+        .current,
       );
 
       return completer.operation;
@@ -88,7 +88,7 @@ class UrlService({Dio? dio}) {
         request.url,
         data: requestBody,
         cancelToken: cancelToken,
-        options: Options(
+        options: .new(
           method: request.method.value,
           sendTimeout: request.timeout,
           receiveTimeout: request.timeout,

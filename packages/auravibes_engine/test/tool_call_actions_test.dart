@@ -11,7 +11,7 @@ void main() {
       await usecase.call(
         messageId: 'message-1',
         toolCallId: 'tool-1',
-        level: AgentToolGrantLevel.once,
+        level: .once,
       );
 
       expect(provider.updates, [AgentToolResultStatus.toolNotFound]);
@@ -28,7 +28,7 @@ void main() {
       await usecase.call(
         messageId: 'message-1',
         toolCallId: 'tool-1',
-        level: AgentToolGrantLevel.conversation,
+        level: .conversation,
       );
 
       expect(provider.calls, [
@@ -52,7 +52,7 @@ void main() {
       await usecase.call(
         messageId: 'message-1',
         toolCallId: 'tool-1',
-        level: AgentToolGrantLevel.once,
+        level: .once,
       );
 
       expect(provider.didResume, isFalse);
@@ -68,7 +68,7 @@ void main() {
       await usecase.call(
         messageId: 'message-1',
         toolCallId: 'tool-1',
-        level: AgentToolGrantLevel.once,
+        level: .once,
       );
 
       expect(provider.updates, [AgentToolResultStatus.executionError]);

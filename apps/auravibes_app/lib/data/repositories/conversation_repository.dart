@@ -219,12 +219,12 @@ class ConversationRepository(
     ConversationToCreate conversation,
   ) {
     return ConversationsCompanion(
-      workspaceId: Value(conversation.workspaceId),
-      title: Value(conversation.title),
-      modelId: Value(conversation.modelId),
-      agentId: Value(conversation.agentId),
-      parentConversationId: Value(conversation.parentConversationId),
-      isPinned: Value(conversation.isPinned ?? false),
+      workspaceId: .new(conversation.workspaceId),
+      title: .new(conversation.title),
+      modelId: .new(conversation.modelId),
+      agentId: .new(conversation.agentId),
+      parentConversationId: .new(conversation.parentConversationId),
+      isPinned: .new(conversation.isPinned ?? false),
     );
   }
 
@@ -232,12 +232,12 @@ class ConversationRepository(
     ConversationPatch conversation,
   ) {
     return ConversationsCompanion(
-      title: Value.absentIfNull(conversation.title),
-      modelId: Value.absentIfNull(conversation.modelId),
+      title: .absentIfNull(conversation.title),
+      modelId: .absentIfNull(conversation.modelId),
       agentId: conversation.clearAgent
           ? const Value(null)
           : Value.absentIfNull(conversation.agentId),
-      isPinned: Value.absentIfNull(conversation.isPinned),
+      isPinned: .absentIfNull(conversation.isPinned),
     );
   }
 }

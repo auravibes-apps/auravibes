@@ -1,4 +1,3 @@
-import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
@@ -29,7 +28,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(
-            AppDatabase(
+            .new(
               connection: DatabaseConnection.delayed(
                 Future(
                   () => DatabaseConnection(
@@ -54,7 +53,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(
-            AppDatabase(connection: _testConnection()),
+            .new(connection: _testConnection()),
           ),
         ],
       );

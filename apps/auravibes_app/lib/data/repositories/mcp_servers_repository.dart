@@ -40,7 +40,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       return await _database.transaction(() async {
         // 1. Insert the MCP server.
         final mcpServer = await _mcpServersDao.insertMcpServer(
-          McpServersCompanion.insert(
+          .insert(
             workspaceId: workspaceId,
             name: serverToCreate.name,
             url: serverToCreate.url,
@@ -52,7 +52,7 @@ class McpServersRepository implements McpServersRepositoryContract {
 
         // 2. Create a ToolsGroup with the MCP server name.
         final toolsGroup = await _toolsGroupsDao.insertToolsGroup(
-          ToolsGroupsCompanion.insert(
+          .insert(
             workspaceId: workspaceId,
             mcpServerId: Value(mcpServer.id),
             name: serverToCreate.name,
@@ -65,10 +65,10 @@ class McpServersRepository implements McpServersRepositoryContract {
           final toolCompanions = tools.map((tool) {
             return ToolsCompanion.insert(
               workspaceId: workspaceId,
-              workspaceToolsGroupId: Value(toolsGroup.id),
+              workspaceToolsGroupId: .new(toolsGroup.id),
               toolId: tool.toolName,
-              description: Value(tool.description),
-              inputSchema: Value(jsonEncode(tool.inputSchema)),
+              description: .new(tool.description),
+              inputSchema: .new(jsonEncode(tool.inputSchema)),
               isEnabled: const Value(true),
               permissions: const Value(PermissionAccess.ask),
             );
@@ -156,10 +156,10 @@ class McpServersRepository implements McpServersRepositoryContract {
           final toolCompanions = toolsToAdd.map((tool) {
             return ToolsCompanion.insert(
               workspaceId: group.workspaceId,
-              workspaceToolsGroupId: Value(group.id),
+              workspaceToolsGroupId: .new(group.id),
               toolId: tool.toolName,
-              description: Value(tool.description),
-              inputSchema: Value(jsonEncode(tool.inputSchema)),
+              description: .new(tool.description),
+              inputSchema: .new(jsonEncode(tool.inputSchema)),
               isEnabled: const Value(true),
               permissions: const Value(PermissionAccess.ask),
             );

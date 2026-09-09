@@ -21,25 +21,25 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
         children: [
           const AuraText(
             child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
-            style: AuraTextStyle.heading6,
+            style: .heading6,
           ),
           const AuraText(
             child: TextLocale(LocaleKeys.settings_screen_accent_color_subtitle),
-            style: AuraTextStyle.bodySmall,
+            style: .bodySmall,
           ),
           AuraTile(
             child: const AuraText(
               child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
-              style: AuraTextStyle.bodyLarge,
+              style: .bodyLarge,
             ),
             onTap: () => _showAccentDialog(context, ref, hue),
-            variant: AuraTileVariant.ghost,
+            variant: .ghost,
             leading: Icon(
               Icons.color_lens_outlined,
               color: context.auraColors.secondary,
             ),
             trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 _HueSwatch(hue: hue),
                 const SizedBox(width: 8),
@@ -53,7 +53,7 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
           ),
         ],
         spacing: .none,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -80,7 +80,7 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
                 onChanged: (v) => setState(() => working = v),
               ),
             ],
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: .stretch,
           );
         },
       ),
@@ -105,7 +105,7 @@ class const _HueSwatch({required final double hue, final double size = 24})
       decoration: BoxDecoration(
         color: color,
         border: Border.all(color: context.auraColors.outlineVariant),
-        shape: BoxShape.circle,
+        shape: .circle,
       ),
       width: size,
       height: size,
@@ -128,13 +128,13 @@ class const _HueSlider({
       children: [
         Container(
           decoration: BoxDecoration(
-            borderRadius: const BorderRadius.all(Radius.circular(6)),
+            borderRadius: const BorderRadius.all(.circular(6)),
             gradient: LinearGradient(colors: colors),
           ),
           height: 12,
         ),
         SliderTheme(
-          data: SliderThemeData(
+          data: .new(
             trackHeight: 0,
             activeTrackColor: Colors.transparent,
             inactiveTrackColor: Colors.transparent,

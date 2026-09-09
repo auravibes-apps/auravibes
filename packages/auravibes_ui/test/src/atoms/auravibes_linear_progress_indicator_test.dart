@@ -1,6 +1,5 @@
 import 'package:auravibes_ui/src/atoms/aura_linear_progress_indicator.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -64,7 +63,7 @@ void main() {
           home: const Scaffold(
             body: AuraLinearProgressIndicator(
               value: 0.5,
-              tint: AuraTint.error,
+              tint: .error,
               backgroundAlpha: 0.25,
             ),
           ),

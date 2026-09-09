@@ -75,7 +75,7 @@ void main() {
       await _pumpFieldLabel(
         tester,
         child: const Text('Styled Label'),
-        style: AuraTextStyle.heading1,
+        style: .heading1,
       );
 
       expect(find.text('Styled Label'), findsOneWidget);

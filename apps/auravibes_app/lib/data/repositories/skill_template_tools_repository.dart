@@ -36,7 +36,7 @@ class SkillTemplateToolsRepository(AppDatabase database) {
     SkillTemplateToolToCreate tool,
   ) async {
     final table = await _dao.createTool(
-      SkillTemplateToolsCompanion(
+      .new(
         skillId: Value(skillId),
         templateType: Value(_mapTypeToTable(tool.templateType)),
         title: Value(tool.title.trim()),
@@ -58,7 +58,7 @@ class SkillTemplateToolsRepository(AppDatabase database) {
   ) async {
     final table = await _dao.updateTool(
       toolId,
-      SkillTemplateToolsCompanion(
+      .new(
         updatedAt: Value(DateTime.now()),
         title: switch (tool.title) {
           null => const Value.absent(),
@@ -99,13 +99,13 @@ class SkillTemplateToolsRepository(AppDatabase database) {
 
   SkillTemplateToolType _mapType(SkillTemplateToolTypeTable type) {
     return switch (type) {
-      SkillTemplateToolTypeTable.url => SkillTemplateToolType.url,
+      .url => SkillTemplateToolType.url,
     };
   }
 
   SkillTemplateToolTypeTable _mapTypeToTable(SkillTemplateToolType type) {
     return switch (type) {
-      SkillTemplateToolType.url => SkillTemplateToolTypeTable.url,
+      .url => SkillTemplateToolTypeTable.url,
     };
   }
 }

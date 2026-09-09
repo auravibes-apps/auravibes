@@ -66,7 +66,7 @@ final class CloudTurnUsecaseProvider
   }
 }
 
-String _$cloudTurnUsecaseHash() => r'e596d18cb757666008133488774a7f1f4d57fcb3';
+String _$cloudTurnUsecaseHash() => r'0b4c5d8ee7a68e1c2120c542a24d864c1459e972';
 
 final class CloudTurnUsecaseFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<CloudTurnUsecase?>, String> {

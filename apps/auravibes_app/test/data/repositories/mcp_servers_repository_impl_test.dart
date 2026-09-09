@@ -3,12 +3,8 @@ import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
-import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/data/database/drift/tables/tools.dart';
-import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -71,7 +67,7 @@ void main() {
         mcpServerId: mcpServerId,
         name: 'Test Group',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
+        permissions: .ask,
       );
     }
 
@@ -101,7 +97,7 @@ void main() {
           name: 'Test Server',
           url: 'http://localhost:3000',
           transport: McpTransportTypeSSE(),
-          authenticationType: McpAuthenticationType.none(),
+          authenticationType: .none(),
         );
 
         final result = await fixture.repository.addMcpServerWithTools(
@@ -133,7 +129,7 @@ void main() {
           name: 'Test Server',
           url: 'http://localhost:3000',
           transport: McpTransportTypeSSE(),
-          authenticationType: McpAuthenticationType.none(),
+          authenticationType: .none(),
         );
 
         final result = await fixture.repository.addMcpServerWithTools(
@@ -156,7 +152,7 @@ void main() {
           name: 'Test Server',
           url: 'http://localhost:3000',
           transport: McpTransportTypeSSE(),
-          authenticationType: McpAuthenticationType.none(),
+          authenticationType: .none(),
         );
 
         await expectLater(
@@ -203,7 +199,7 @@ void main() {
                 WorkspacesCompanion.insert(
                   id: const Value('ws-1'),
                   name: 'Workspace',
-                  type: WorkspaceType.local,
+                  type: .local,
                 ),
               );
           final _ = await fixture.database
@@ -213,9 +209,8 @@ void main() {
                   id: const Value('service-1'),
                   name: 'MCP Credential',
                   serviceId: 'mcp:test-server',
-                  kind: ServiceConnectionKindTable.mcpServer,
-                  authenticationType:
-                      ServiceAuthenticationTypeTable.bearerToken,
+                  kind: .mcpServer,
+                  authenticationType: .bearerToken,
                   workspaceId: 'ws-1',
                 ),
               );
@@ -259,7 +254,7 @@ void main() {
           workspaceId: 'ws-1',
           toolId: 'old_tool',
           isEnabled: true,
-          permissions: PermissionAccess.ask,
+          permissions: .ask,
         );
 
         when(
@@ -324,7 +319,7 @@ void main() {
           workspaceId: 'ws-1',
           toolId: 'tool1',
           isEnabled: true,
-          permissions: PermissionAccess.ask,
+          permissions: .ask,
         );
 
         when(
@@ -445,7 +440,7 @@ class const _McpServersRepositoryFixture._({
       mockToolsGroupsDao: toolsGroupsDao,
       mockWorkspaceToolsDao: workspaceToolsDao,
       database: database,
-      repository: McpServersRepository(database),
+      repository: .new(database),
     );
   }
 }

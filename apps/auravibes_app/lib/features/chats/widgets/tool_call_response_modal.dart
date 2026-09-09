@@ -38,17 +38,17 @@ class const ToolCallResponseModal({
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+          .circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
-        constraints: BoxConstraints(
+        constraints: .new(
           maxWidth: 600,
           maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             // Header with tool name and close button.
             _ToolCallResponseModalHeader(toolName: toolName),
@@ -58,7 +58,7 @@ class const ToolCallResponseModal({
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
                 child: SizedBox(
-                  width: double.infinity,
+                  width: .infinity,
                   child: AuraText(child: GptMarkdown(content)),
                 ),
               ),
@@ -81,7 +81,7 @@ class const _ToolCallResponseModalHeader({required final String toolName})
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
+          bottom: .new(
             color: context.auraColors.outline.withValues(
               alpha: ToolCallResponseModal._dividerOpacity,
             ),
@@ -90,13 +90,10 @@ class const _ToolCallResponseModalHeader({required final String toolName})
       ),
       child: Row(
         children: [
-          const AuraIcon(Icons.terminal, tint: AuraTint.primary),
+          const AuraIcon(Icons.terminal, tint: .primary),
           const AuraSizedBox(width: .sm),
           Expanded(
-            child: AuraText(
-              child: Text(toolName),
-              style: AuraTextStyle.heading6,
-            ),
+            child: AuraText(child: Text(toolName), style: .heading6),
           ),
           AuraIconButton(
             icon: Icons.close,
@@ -115,7 +112,7 @@ class const _ToolCallResponseModalFooter() extends StatelessWidget {
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
+          top: .new(
             color: context.auraColors.outline.withValues(
               alpha: ToolCallResponseModal._dividerOpacity,
             ),
@@ -123,11 +120,11 @@ class const _ToolCallResponseModalFooter() extends StatelessWidget {
         ),
       ),
       child: SizedBox(
-        width: double.infinity,
+        width: .infinity,
         child: AuraButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const TextLocale(LocaleKeys.common_close),
-          variant: AuraButtonVariant.outlined,
+          variant: .outlined,
         ),
       ),
     );

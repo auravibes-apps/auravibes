@@ -1,7 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -140,9 +139,9 @@ void main() {
         ),
       );
 
-      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      final _ = await tester.sendKeyEvent(.tab);
       await tester.pump();
-      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      final _ = await tester.sendKeyEvent(.enter);
       await tester.pump();
 
       expect(wasTapped, true);

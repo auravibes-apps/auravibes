@@ -48,27 +48,27 @@ enum ContextUsageLevel {
   }
 
   AuraBadgeVariant get badgeVariant => switch (this) {
-    ContextUsageLevel.normal => AuraBadgeVariant.success,
-    ContextUsageLevel.elevated => AuraBadgeVariant.info,
-    ContextUsageLevel.warning => AuraBadgeVariant.warning,
-    ContextUsageLevel.overflow => AuraBadgeVariant.error,
-    ContextUsageLevel.unknown => AuraBadgeVariant.neutral,
+    .normal => AuraBadgeVariant.success,
+    .elevated => AuraBadgeVariant.info,
+    .warning => AuraBadgeVariant.warning,
+    .overflow => AuraBadgeVariant.error,
+    .unknown => AuraBadgeVariant.neutral,
   };
 
   IconData get icon => switch (this) {
-    ContextUsageLevel.normal => Icons.check_circle_outline,
-    ContextUsageLevel.elevated => Icons.info_outline,
-    ContextUsageLevel.warning => Icons.warning_amber_outlined,
-    ContextUsageLevel.overflow => Icons.priority_high,
-    ContextUsageLevel.unknown => Icons.help_outline,
+    .normal => Icons.check_circle_outline,
+    .elevated => Icons.info_outline,
+    .warning => Icons.warning_amber_outlined,
+    .overflow => Icons.priority_high,
+    .unknown => Icons.help_outline,
   };
 
   AuraTint? get iconTint => switch (this) {
-    ContextUsageLevel.normal => AuraTint.success,
-    ContextUsageLevel.elevated => AuraTint.info,
-    ContextUsageLevel.warning => AuraTint.warning,
-    ContextUsageLevel.overflow => AuraTint.error,
-    ContextUsageLevel.unknown => null,
+    .normal => AuraTint.success,
+    .elevated => AuraTint.info,
+    .warning => AuraTint.warning,
+    .overflow => AuraTint.error,
+    .unknown => null,
   };
 }
 
@@ -102,7 +102,7 @@ class const ContextUsageData({
         hasLimit: false,
         percent: 0,
         progress: 0,
-        level: ContextUsageLevel.unknown,
+        level: .unknown,
         overflowTokens: 0,
         usageLabel: usageLabel,
         percentLabel: '--',
@@ -138,4 +138,4 @@ class const ContextUsageData({
 // Ponytail. Top-level compact format; default locale follows Intl.systemLocale.
 // Upgrade path. Thread the app locale through a provider if the device locale
 // differs from the app locale.
-final NumberFormat _compactFormat = NumberFormat.compact();
+final NumberFormat _compactFormat = .compact();

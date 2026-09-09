@@ -83,7 +83,7 @@ Future<void> _pumpSubject(
     await tester.pumpWidget(
       TestableApp(
         child: Theme(
-          data: ThemeData(extensions: [AuraTheme.light]),
+          data: .new(extensions: [AuraTheme.light]),
           child: Scaffold(
             body: CompactAgentSelector(
               workspaceId: 'ws-1',
@@ -111,7 +111,7 @@ AgentEntity _makeAgent(String id, String name) {
     name: name,
     content: 'content',
     skills: const [],
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
   );
 }

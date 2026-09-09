@@ -2,7 +2,6 @@ import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
@@ -24,7 +23,7 @@ specific URLs and wants extracted content.
       description: 'Search the web for a query.',
       inputJsonSchema: _searchInputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://api.search.tinyfish.ai',
           headers: {'X-API-Key': '{{ credential.apiKey }}'},

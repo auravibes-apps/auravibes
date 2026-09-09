@@ -1,8 +1,6 @@
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -13,7 +11,7 @@ void main() {
           child: AuraModal(
             entryPointChild: Text('Open modal'),
             contentChild: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 Text('Modal heading'),
                 Text('Arbitrary modal content'),
@@ -95,9 +93,9 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Modal content'), findsOneWidget);
@@ -119,7 +117,7 @@ void main() {
             ),
             barrierLabel: 'Dismiss modal',
           ),
-          auraTheme: AuraTheme.dark,
+          auraTheme: .dark,
         ),
       );
 
@@ -166,12 +164,12 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       final _ = await tester.pumpAndSettle();
       expect(find.text('Modal content'), findsOneWidget);
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.escape), isTrue);
+      expect(await tester.sendKeyEvent(.escape), isTrue);
       final _ = await tester.pumpAndSettle();
       expect(find.text('Modal content'), findsNothing);
     });
@@ -218,7 +216,7 @@ void main() {
           .getSemantics(find.text('Open modal'))
           .getSemanticsData();
       expect(entryPoint.flagsCollection.isButton, isTrue);
-      expect(entryPoint.hasAction(SemanticsAction.tap), isTrue);
+      expect(entryPoint.hasAction(.tap), isTrue);
 
       await tester.tap(find.text('Open modal'));
       final _ = await tester.pumpAndSettle();
@@ -238,7 +236,7 @@ void main() {
             barrierLabel: 'Dismiss modal',
             title: Text('Details'),
             closeLabel: 'Close details',
-            size: AuraModalSize.large,
+            size: .large,
           ),
         ),
       );
@@ -267,7 +265,7 @@ class const _AuraModalTestApp({
     return MaterialApp(
       home: Scaffold(
         body: Theme(
-          data: ThemeData(extensions: [auraTheme ?? AuraTheme.light]),
+          data: .new(extensions: [auraTheme ?? AuraTheme.light]),
           child: child,
         ),
       ),

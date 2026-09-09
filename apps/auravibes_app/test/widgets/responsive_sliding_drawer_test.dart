@@ -5,9 +5,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -136,7 +134,7 @@ void main() {
                 isDarkMode: isDarkMode,
                 controller: controller,
               ),
-              theme: ThemeData(extensions: [AuraTheme.light]),
+              theme: .new(extensions: [AuraTheme.light]),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,
@@ -361,7 +359,7 @@ void main() {
         (widget) => widget is GestureDetector && widget.child is Stack,
       );
       final scrimRect = tester.getRect(scrim);
-      await tester.tapAt(Offset(scrimRect.left + 1, scrimRect.center.dy));
+      await tester.tapAt(.new(scrimRect.left + 1, scrimRect.center.dy));
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
@@ -378,7 +376,7 @@ void main() {
       final mouseRegion = find.byType(MouseRegion);
       expect(mouseRegion, findsWidgets);
 
-      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      final gesture = await tester.createGesture(kind: .mouse);
       await gesture.addPointer();
       await gesture.moveTo(tester.getCenter(mouseRegion.first));
       final _ = await tester.pumpAndSettle();
@@ -449,14 +447,14 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
 
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       await tester.pump();
 
       expect(firstBodyPressCount, 1);

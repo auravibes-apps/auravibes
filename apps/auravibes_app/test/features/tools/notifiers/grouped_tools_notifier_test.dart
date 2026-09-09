@@ -14,7 +14,6 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
-import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -34,7 +33,7 @@ void main() {
             LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
           ),
         ).overrideWithValue(workspaceToolsRepository),
-        mcpManagerServiceProvider.overrideWithValue(McpManagerService()),
+        mcpManagerServiceProvider.overrideWithValue(.new()),
         mcpServersRepositoryProvider.overrideWithValue(
           _FakeMcpServersRepository(),
         ),
@@ -55,7 +54,7 @@ void main() {
       workspaceId: 'workspace-1',
       toolId: 'calculator',
       isEnabled: true,
-      permissionMode: ToolPermissionMode.alwaysAllow,
+      permissionMode: .alwaysAllow,
       createdAt: createdAt,
       updatedAt: createdAt,
     );
@@ -65,7 +64,7 @@ void main() {
       workspaceId: 'workspace-1',
       toolId: 'search',
       isEnabled: false,
-      permissionMode: ToolPermissionMode.alwaysAsk,
+      permissionMode: .alwaysAsk,
       createdAt: createdAt,
       updatedAt: createdAt,
     );
@@ -75,7 +74,7 @@ void main() {
       workspaceId: 'workspace-1',
       name: 'MCP Server',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
+      permissions: .ask,
       createdAt: createdAt,
       updatedAt: createdAt,
       mcpServerId: 'mcp-server-1',
@@ -96,7 +95,7 @@ void main() {
               LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
             ),
           ).overrideWithValue(workspaceToolsRepository),
-          mcpManagerServiceProvider.overrideWithValue(McpManagerService()),
+          mcpManagerServiceProvider.overrideWithValue(.new()),
           mcpServersRepositoryProvider.overrideWithValue(
             _FakeMcpServersRepository(),
           ),
@@ -181,7 +180,7 @@ void main() {
     });
 
     test('setMcpGroupEnabled ignores another workspace group', () async {
-      toolsGroupsRepository.groupById = ToolsGroupEntity(
+      toolsGroupsRepository.groupById = .new(
         id: 'group-1',
         workspaceId: 'other-workspace',
         name: 'Other',
@@ -204,7 +203,7 @@ void main() {
     });
 
     test('deleteMcpGroup does nothing for non-mcp group', () async {
-      toolsGroupsRepository.groupById = ToolsGroupEntity(
+      toolsGroupsRepository.groupById = .new(
         id: 'group-1',
         workspaceId: 'workspace-1',
         name: 'Non-MCP',

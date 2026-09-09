@@ -150,6 +150,6 @@ WorkspaceResource _resource(
   resourceId: 'resource',
   data: jsonEncode(data),
   revision: 1,
-  createdAt: DateTime.utc(2026),
-  updatedAt: DateTime.utc(2026),
+  createdAt: .utc(2026),
+  updatedAt: .utc(2026),
 );

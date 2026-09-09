@@ -219,7 +219,7 @@ void main() {
 }
 
 Future<void> _flushMicrotasks() async {
-  await Future<void>.delayed(Duration.zero);
+  await Future<void>.delayed(.zero);
 }
 
 LoadLatestMessageToolCallsResult<String> _latestToolCalls() {

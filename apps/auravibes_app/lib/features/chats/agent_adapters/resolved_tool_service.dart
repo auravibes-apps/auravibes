@@ -264,7 +264,7 @@ class const AppResolvedToolProvider({
       workspaceId: workspaceId,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
-      dependencies: _SkillControlToolDependencies(
+      dependencies: .new(
         loadConversationSkillUsecase: loadConversationSkillUsecase,
         unloadConversationSkillUsecase: unloadConversationSkillUsecase,
         listAvailableSkillsUsecase: listAvailableSkillsUsecase,
@@ -375,34 +375,34 @@ agent.AgentResolvedToolExecution<ResolvedTool> _toExecution(ResolvedTool tool) {
 
 agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
   return switch (tool.type) {
-    ResolvedToolType.builtIn => agent.AgentResolvedToolName.builtIn(
+    .builtIn => agent.AgentResolvedToolName.builtIn(
       tableId: tool.tableId,
       toolIdentifier: tool.toolIdentifier,
     ),
-    ResolvedToolType.mcp => agent.AgentResolvedToolName.mcp(
+    .mcp => agent.AgentResolvedToolName.mcp(
       tableId: tool.tableId,
       toolIdentifier: tool.toolIdentifier,
       mcpServerId: tool.mcpServerId ?? '',
       mcpSlug: tool.mcpSlug ?? '',
     ),
-    ResolvedToolType.native => agent.AgentResolvedToolName.native(
+    .native => agent.AgentResolvedToolName.native(
       tableId: tool.tableId,
       toolIdentifier: tool.toolIdentifier,
     ),
-    ResolvedToolType.skillControl => agent.AgentResolvedToolName.skillControl(
+    .skillControl => agent.AgentResolvedToolName.skillControl(
       toolIdentifier: tool.toolIdentifier,
     ),
-    ResolvedToolType.skillCommand =>
+    .skillCommand =>
       tool.target ??
           agent.AgentResolvedToolName.skillControl(
             toolIdentifier: tool.toolIdentifier,
           ),
-    ResolvedToolType.skillNative => agent.AgentResolvedToolName.skillNative(
+    .skillNative => agent.AgentResolvedToolName.skillNative(
       tableId: tool.tableId,
       skillSlug: tool.skillSlug ?? '',
       toolIdentifier: tool.skillToolSlug ?? tool.toolIdentifier,
     ),
-    ResolvedToolType.skillTemplate => agent.AgentResolvedToolName.skillTemplate(
+    .skillTemplate => agent.AgentResolvedToolName.skillTemplate(
       tableId: tool.tableId,
       skillSlug: tool.skillSlug ?? '',
       toolIdentifier: tool.toolIdentifier,
@@ -590,7 +590,7 @@ Future<Object> _listSkillCredentials({
   final loadedSkills = await listSkills.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
-    filter: SkillLoadFilter.loaded,
+    filter: .loaded,
   );
   final skill = loadedSkills
       .where((skill) => skill.slug == skillSlug)
@@ -667,7 +667,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
     ),
     appSkillRegistry: ref.watch(appSkillRegistryProvider),
     skillCredentialsRepository: ref.watch(skillCredentialsRepositoryProvider),
-    subAgentRunner: agent.SubAgentRunner(
+    subAgentRunner: .new(
       agentCatalog: AppSubAgentCatalog(ref.watch(agentsRepositoryProvider)),
       conversationStore: AppSubAgentConversationStore(
         ref.watch(conversationRepositoryProvider),
@@ -684,7 +684,6 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
       onChildStarted: ({required parentId, required childId}) {
         agentCancellationRuntime.registerCleanup(parentId, () {
           if (activeSubAgents.parentOf(childId) != parentId) return;
-
           agentCancellationRuntime.requestStopOnStart(childId);
           activeSubAgents.finish(
             parentId: parentId,

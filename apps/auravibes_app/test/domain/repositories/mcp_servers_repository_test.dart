@@ -54,7 +54,7 @@ void main() {
   group('McpServersRepository', () {
     test('addMcpServerWithTools returns entity', () async {
       final repo = _StubMcpServersRepository();
-      repo.addResult = McpServerEntity(
+      repo.addResult = .new(
         id: 'mcp-1',
         workspaceId: 'ws-1',
         name: 'Test Server',
@@ -68,7 +68,7 @@ void main() {
         name: 'Test Server',
         url: 'https://mcp.example.com',
         transport: McpTransportTypeStreamableHttp(),
-        authenticationType: McpAuthenticationType.none(),
+        authenticationType: .none(),
       );
 
       final result = await repo.addMcpServerWithTools(

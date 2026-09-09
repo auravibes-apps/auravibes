@@ -1,5 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
@@ -21,9 +20,9 @@ WorkspaceToolEntity _tool({
   workspaceId: 'w1',
   toolId: toolId,
   isEnabled: true,
-  permissionMode: ToolPermissionMode.alwaysAsk,
-  createdAt: DateTime(2025),
-  updatedAt: DateTime(2025),
+  permissionMode: .alwaysAsk,
+  createdAt: .new(2025),
+  updatedAt: .new(2025),
   workspaceToolsGroupId: groupId,
 );
 
@@ -35,9 +34,9 @@ void main() {
         workspaceId: 'w1',
         name: 'group',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
         mcpServerId: 'mcp-1',
       ),
       getMcpToolSpec: ({required mcpServerId, required toolName}) {
@@ -108,9 +107,9 @@ void main() {
         workspaceId: 'w1',
         name: 'group',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
         mcpServerId: 'mcp-1',
       ),
       getMcpToolSpec: ({required mcpServerId, required toolName}) => ToolSpec(
@@ -196,9 +195,9 @@ void main() {
         workspaceId: 'w1',
         name: 'group',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
       ),
       getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
     );
@@ -217,9 +216,9 @@ void main() {
         workspaceId: 'w1',
         name: 'group',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
         mcpServerId: 'mcp-1',
       ),
       getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
@@ -254,9 +253,9 @@ void main() {
         workspaceId: 'w1',
         name: groupId,
         isEnabled: true,
-        permissions: PermissionAccess.ask,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
         mcpServerId: groups[groupId],
       ),
       getMcpToolSpec: ({required mcpServerId, required toolName}) => ToolSpec(
@@ -335,9 +334,9 @@ void main() {
         workspaceId: 'w1',
         name: 'group',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
         mcpServerId: 'mcp-1',
       ),
       getMcpToolSpec: ({required mcpServerId, required toolName}) {

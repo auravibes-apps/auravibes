@@ -3,7 +3,6 @@ import 'package:auravibes_app/data/repositories/workspace_compaction_settings_re
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/usecases/should_compact_conversation_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -42,8 +41,8 @@ void main() {
       messageType: messageType,
       isUser: isUser,
       status: status,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       metadata: metadata,
     );
   }
@@ -393,8 +392,8 @@ void main() {
         messageType: messageType,
         isUser: isUser,
         status: status,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         metadata: metadata,
       );
     }
@@ -507,7 +506,7 @@ void main() {
       () async {
         final settings = CompactionSettings(
           usagePercentageThreshold: 1,
-          updatedAt: DateTime(2026),
+          updatedAt: .new(2026),
         );
         when(() => mockSettingsRepo.getEffectiveSettings(any()))
             .thenAnswer((_) async => settings);
@@ -528,7 +527,7 @@ void main() {
                   name: 'test',
                   argumentsRaw: '0123456789',
                   responseRaw: 'ABCDEFGHIJ',
-                  resultStatus: ToolCallResultStatus.success,
+                  resultStatus: .success,
                 ),
               ],
             ),

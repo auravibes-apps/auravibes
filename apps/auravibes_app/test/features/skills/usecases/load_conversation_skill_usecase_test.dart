@@ -143,8 +143,8 @@ class _FakeConversationSkillsRepository
       id: 'conversation-skill-1',
       conversationId: conversationId,
       isLoaded: isLoaded,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       appSkillIdentifier: appSkillIdentifier,
     );
   }

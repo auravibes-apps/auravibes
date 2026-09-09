@@ -1,6 +1,5 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/skill_credential_attribute_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
@@ -46,7 +45,7 @@ workspace credentials.
       description: 'Search a configured SearXNG instance.',
       inputJsonSchema: _inputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: '{{ credential.baseUrl }}/search',
           query: {

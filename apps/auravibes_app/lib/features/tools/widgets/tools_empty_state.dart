@@ -16,24 +16,21 @@ class const ToolsEmptyState({
           children: [
             Opacity(
               opacity: 0.5,
-              child: AuraIcon(
-                Icons.build_circle_outlined,
-                size: AuraIconSize.extraLarge,
-              ),
+              child: AuraIcon(Icons.build_circle_outlined, size: .extraLarge),
             ),
             AuraText(
               child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
-              style: AuraTextStyle.heading6,
-              textAlign: TextAlign.center,
+              style: .heading6,
+              textAlign: .center,
             ),
             AuraText(
               child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
-              style: AuraTextStyle.bodySmall,
-              textAlign: TextAlign.center,
+              style: .bodySmall,
+              textAlign: .center,
             ),
           ],
           spacing: .md,
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
         ),
       ),
     );

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_image.dart';
 import 'package:auravibes_ui/src/atoms/aura_spinner.dart';
@@ -46,10 +44,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraImage(
-              url: 'https://example.com/image.png',
-              fit: BoxFit.cover,
-            ),
+            body: AuraImage(url: 'https://example.com/image.png', fit: .cover),
           ),
         ),
       );
@@ -60,7 +55,7 @@ void main() {
     });
 
     testWidgets('uses a caller-provided image provider', (tester) async {
-      final provider = MemoryImage(Uint8List.fromList(const [0, 1, 2]));
+      final provider = MemoryImage(.fromList(const [0, 1, 2]));
 
       await tester.pumpWidget(
         MaterialApp(

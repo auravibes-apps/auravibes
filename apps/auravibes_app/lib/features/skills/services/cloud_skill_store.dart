@@ -15,12 +15,10 @@ class CloudSkillStore(
   final String workspaceId,
 ) {
   Future<List<SkillCredentialDefinitionEntity>> definitions() async =>
-      (await _active(WorkspaceResourceKind.skillDefinition))
-          .map(_definition)
-          .toList();
+      (await _active(.skillDefinition)).map(_definition).toList();
 
   Future<SkillEntity?> skill(String id) async =>
-      (await _active(WorkspaceResourceKind.skill))
+      (await _active(.skill))
           .where((item) => item.resourceId == id)
           .map(_skill)
           .firstOrNull;
@@ -43,17 +41,13 @@ class CloudSkillStore(
       updatedAt: now,
       credentialDefinitionId: value.credentialDefinitionId,
     );
-    await _store.create(
-      kind: WorkspaceResourceKind.skill,
-      id: id,
-      data: _skillData(entity),
-    );
+    await _store.create(kind: .skill, id: id, data: _skillData(entity));
 
     return entity;
   }
 
   Future<SkillEntity> updateSkill(String id, SkillToUpdate value) async {
-    final resource = await _required(WorkspaceResourceKind.skill, id);
+    final resource = await _required(.skill, id);
     final current = _skill(resource);
     final title = value.title;
     final updated = current.copyWith(
@@ -70,7 +64,7 @@ class CloudSkillStore(
       updatedAt: DateTime.now().toUtc(),
     );
     await _store.update(
-      kind: WorkspaceResourceKind.skill,
+      kind: .skill,
       id: id,
       revision: resource.revision,
       data: _skillData(updated),
@@ -79,17 +73,16 @@ class CloudSkillStore(
     return updated;
   }
 
-  Future<void> deleteSkill(String id) =>
-      _delete(WorkspaceResourceKind.skill, id);
+  Future<void> deleteSkill(String id) => _delete(.skill, id);
 
   Future<List<SkillTemplateToolEntity>> tools(String skillId) async =>
-      (await _active(WorkspaceResourceKind.skillTemplateTool))
+      (await _active(.skillTemplateTool))
           .where((item) => _data(item)['skillId'] == skillId)
           .map(_tool)
           .toList();
 
   Future<SkillTemplateToolEntity?> tool(String id) async =>
-      (await _active(WorkspaceResourceKind.skillTemplateTool))
+      (await _active(.skillTemplateTool))
           .where((item) => item.resourceId == id)
           .map(_tool)
           .firstOrNull;
@@ -98,7 +91,7 @@ class CloudSkillStore(
     String skillId,
     SkillTemplateToolToCreate value,
   ) async {
-    final skill = await _required(WorkspaceResourceKind.skill, skillId);
+    final skill = await _required(.skill, skillId);
     final skillData = _data(skill);
     final now = DateTime.now().toUtc();
     final id = const UuidV7().generate();
@@ -117,7 +110,7 @@ class CloudSkillStore(
       updatedAt: now,
     );
     await _store.create(
-      kind: WorkspaceResourceKind.skillTemplateTool,
+      kind: .skillTemplateTool,
       id: id,
       data: _toolData(entity, skillSlug: skillData['slug'] as String),
     );
@@ -129,12 +122,9 @@ class CloudSkillStore(
     String id,
     SkillTemplateToolToUpdate value,
   ) async {
-    final resource = await _required(
-      WorkspaceResourceKind.skillTemplateTool,
-      id,
-    );
+    final resource = await _required(.skillTemplateTool, id);
     final current = _tool(resource);
-    final skill = await _required(WorkspaceResourceKind.skill, current.skillId);
+    final skill = await _required(.skill, current.skillId);
     final title = value.title;
     final templateJson = value.templateJson;
     final updated = current.copyWith(
@@ -151,7 +141,7 @@ class CloudSkillStore(
       updatedAt: DateTime.now().toUtc(),
     );
     await _store.update(
-      kind: WorkspaceResourceKind.skillTemplateTool,
+      kind: .skillTemplateTool,
       id: id,
       revision: resource.revision,
       data: _toolData(updated, skillSlug: _data(skill)['slug'] as String),
@@ -160,14 +150,13 @@ class CloudSkillStore(
     return updated;
   }
 
-  Future<void> deleteTool(String id) =>
-      _delete(WorkspaceResourceKind.skillTemplateTool, id);
+  Future<void> deleteTool(String id) => _delete(.skillTemplateTool, id);
 
   Future<List<SkillEntity>> skills() async =>
-      (await _active(WorkspaceResourceKind.skill)).map(_skill).toList();
+      (await _active(.skill)).map(_skill).toList();
 
   Future<SkillCredentialDefinitionEntity?> definition(String id) async =>
-      (await _active(WorkspaceResourceKind.skillDefinition))
+      (await _active(.skillDefinition))
           .where((item) => item.resourceId == id)
           .map(_definition)
           .firstOrNull;
@@ -187,7 +176,7 @@ class CloudSkillStore(
       updatedAt: now,
     );
     await _store.create(
-      kind: WorkspaceResourceKind.skillDefinition,
+      kind: .skillDefinition,
       id: id,
       data: _definitionData(entity),
     );
@@ -199,7 +188,7 @@ class CloudSkillStore(
     String id,
     SkillCredentialDefinitionToUpdate value,
   ) async {
-    final resource = await _required(WorkspaceResourceKind.skillDefinition, id);
+    final resource = await _required(.skillDefinition, id);
     final current = _definition(resource);
     final title = value.title;
     final updated = current.copyWith(
@@ -209,7 +198,7 @@ class CloudSkillStore(
       updatedAt: DateTime.now().toUtc(),
     );
     await _store.update(
-      kind: WorkspaceResourceKind.skillDefinition,
+      kind: .skillDefinition,
       id: id,
       revision: resource.revision,
       data: _definitionData(updated),
@@ -218,11 +207,10 @@ class CloudSkillStore(
     return updated;
   }
 
-  Future<void> deleteDefinition(String id) =>
-      _delete(WorkspaceResourceKind.skillDefinition, id);
+  Future<void> deleteDefinition(String id) => _delete(.skillDefinition, id);
 
   Future<List<SkillCredentialEntity>> credentials(String definitionId) async =>
-      (await _active(WorkspaceResourceKind.serviceConnection))
+      (await _active(.serviceConnection))
           .where((item) {
             final data = _data(item);
 
@@ -262,12 +250,12 @@ class CloudSkillStore(
       keySuffix: _suffix(secret.values),
     );
     final response = await _store.mutateCredential(
-      operation: WorkspacePatchOperationKind.create,
-      kind: WorkspaceResourceKind.serviceConnection,
+      operation: .create,
+      kind: .serviceConnection,
       id: id,
       data: _credentialData(entity, secretRevision: null),
-      secretKind: WorkspaceSecretKind.skillCredential,
-      scope: WorkspaceSecretScope.workspace,
+      secretKind: .skillCredential,
+      scope: .workspace,
       secret: secret.isEmpty ? null : jsonEncode(secret),
     );
 
@@ -278,13 +266,11 @@ class CloudSkillStore(
   }
 
   Future<SkillCredentialForEdit?> credentialForEdit(String id) async {
-    final resource = (await _active(WorkspaceResourceKind.serviceConnection))
-        .where((item) {
-          if (item.resourceId != id) return false;
+    final resource = (await _active(.serviceConnection)).where((item) {
+      if (item.resourceId != id) return false;
 
-          return _data(item)['kind'] == 'skillCredential';
-        })
-        .firstOrNull;
+      return _data(item)['kind'] == 'skillCredential';
+    }).firstOrNull;
     if (resource == null) return null;
     final credential = _credential(resource);
     final definition = await this.definition(credential.credentialDefinitionId);
@@ -315,10 +301,7 @@ class CloudSkillStore(
     String id,
     SkillCredentialToUpdate value,
   ) async {
-    final resource = await _required(
-      WorkspaceResourceKind.serviceConnection,
-      id,
-    );
+    final resource = await _required(.serviceConnection, id);
     final current = _credential(resource);
     final updated = current.copyWith(
       name: value.name ?? current.name,
@@ -335,13 +318,13 @@ class CloudSkillStore(
         value.clearSecretAttributeNames.isNotEmpty;
     if (writesSecret) {
       final response = await _store.mutateCredential(
-        operation: WorkspacePatchOperationKind.update,
-        kind: WorkspaceResourceKind.serviceConnection,
+        operation: .update,
+        kind: .serviceConnection,
         id: id,
         data: _credentialData(updated, secretRevision: null),
         resourceRevision: resource.revision,
-        secretKind: WorkspaceSecretKind.skillCredential,
-        scope: WorkspaceSecretScope.workspace,
+        secretKind: .skillCredential,
+        scope: .workspace,
         secret: jsonEncode({
           'set': value.secretAttributes,
           'clear': value.clearSecretAttributeNames.toList(),
@@ -355,7 +338,7 @@ class CloudSkillStore(
       );
     } else {
       await _store.update(
-        kind: WorkspaceResourceKind.serviceConnection,
+        kind: .serviceConnection,
         id: id,
         revision: resource.revision,
         data: _credentialData(updated, secretRevision: currentSecretRevision),
@@ -366,14 +349,11 @@ class CloudSkillStore(
   }
 
   Future<void> deleteCredential(String id) async {
-    final resource = await _required(
-      WorkspaceResourceKind.serviceConnection,
-      id,
-    );
+    final resource = await _required(.serviceConnection, id);
     final secretRevision = _data(resource)['secretRevision'] as int?;
     if (secretRevision == null) {
       await _store.delete(
-        kind: WorkspaceResourceKind.serviceConnection,
+        kind: .serviceConnection,
         id: id,
         revision: resource.revision,
       );
@@ -381,12 +361,12 @@ class CloudSkillStore(
       return;
     }
     final _ = await _store.mutateCredential(
-      operation: WorkspacePatchOperationKind.delete,
-      kind: WorkspaceResourceKind.serviceConnection,
+      operation: .delete,
+      kind: .serviceConnection,
       id: id,
       resourceRevision: resource.revision,
-      secretKind: WorkspaceSecretKind.skillCredential,
-      scope: WorkspaceSecretScope.workspace,
+      secretKind: .skillCredential,
+      scope: .workspace,
       secret: null,
       clearSecret: true,
       secretRevision: secretRevision,
@@ -407,7 +387,7 @@ class CloudSkillStore(
         source: SkillSource.app,
         id: id,
         workspaceId: workspaceId,
-        kind: SkillKind.native,
+        kind: .native,
         title: title ?? id,
         slug: slug ?? id,
         description: description ?? '',
@@ -418,25 +398,21 @@ class CloudSkillStore(
         updatedAt: now,
       );
       await _store.create(
-        kind: WorkspaceResourceKind.skill,
+        kind: .skill,
         id: id,
         data: {..._skillData(appSkill), 'source': SkillSource.app.name},
       );
     }
-    final resources = await _active(WorkspaceResourceKind.skillSetting);
+    final resources = await _active(.skillSetting);
     final existing = resources
         .where((item) => item.resourceId == id)
         .firstOrNull;
     final data = {'id': id, 'skillId': id, 'isEnabled': enabled};
     if (existing == null) {
-      await _store.create(
-        kind: WorkspaceResourceKind.skillSetting,
-        id: id,
-        data: data,
-      );
+      await _store.create(kind: .skillSetting, id: id, data: data);
     } else {
       await _store.update(
-        kind: WorkspaceResourceKind.skillSetting,
+        kind: .skillSetting,
         id: id,
         revision: existing.revision,
         data: data,
@@ -451,13 +427,13 @@ class CloudSkillStore(
     required bool isAppSkill,
   }) async {
     final id = '$conversationId:$skillId';
-    final existing = (await _active(
-      WorkspaceResourceKind.conversationSkillSelection,
-    )).where((item) => item.resourceId == id).firstOrNull;
+    final existing = (await _active(.conversationSkillSelection))
+        .where((item) => item.resourceId == id)
+        .firstOrNull;
     if (!selected) {
       if (existing != null) {
         await _store.delete(
-          kind: WorkspaceResourceKind.conversationSkillSelection,
+          kind: .conversationSkillSelection,
           id: id,
           revision: existing.revision,
         );
@@ -467,7 +443,7 @@ class CloudSkillStore(
     }
     if (existing == null) {
       await _store.create(
-        kind: WorkspaceResourceKind.conversationSkillSelection,
+        kind: .conversationSkillSelection,
         id: id,
         data: {
           'id': id,
@@ -504,14 +480,14 @@ class CloudSkillStore(
   Future<List<({String skillId})>> selectionResources(
     String conversationId,
   ) async =>
-      (await _active(WorkspaceResourceKind.conversationSkillSelection))
+      (await _active(.conversationSkillSelection))
           .map(_data)
           .where((data) => data['conversationId'] == conversationId)
           .map((data) => (skillId: data['skillId'] as String))
           .toList();
 
   Future<bool> isAppSkillEnabled(String id) async {
-    final setting = (await _active(WorkspaceResourceKind.skillSetting))
+    final setting = (await _active(.skillSetting))
         .where((item) => item.resourceId == id)
         .firstOrNull;
 

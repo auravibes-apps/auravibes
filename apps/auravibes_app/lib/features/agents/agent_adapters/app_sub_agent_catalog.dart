@@ -3,7 +3,6 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -46,9 +45,9 @@ class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
 
   List<String> _agentTypes(AgentVisibility visibility) {
     return switch (visibility) {
-      AgentVisibility.chatSelector => const ['main'],
-      AgentVisibility.subAgentList => const ['sub_agent'],
-      AgentVisibility.both => const ['main', 'sub_agent'],
+      .chatSelector => const ['main'],
+      .subAgentList => const ['sub_agent'],
+      .both => const ['main', 'sub_agent'],
     };
   }
 }
@@ -65,7 +64,7 @@ class const AppSubAgentConversationStore(
     required String title,
   }) async {
     final conversation = await _conversationRepository.createConversation(
-      ConversationToCreate(
+      .new(
         title: title,
         workspaceId: workspaceId,
         modelId: modelId,
@@ -107,7 +106,7 @@ class const AppSubAgentMessageStore(final MessageRepository _messageRepository)
     required String prompt,
   }) async {
     final message = await _messageRepository.createMessage(
-      MessageToCreate(
+      .new(
         conversationId: conversationId,
         content: prompt,
         messageType: MessageType.text,

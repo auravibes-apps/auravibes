@@ -1,4 +1,3 @@
-import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -23,7 +22,5 @@ Future<CloudConversationUsecase?> cloudConversationUsecase(
     cloudWorkspaceStateGatewayProvider(session).future,
   );
 
-  return gateway == null
-      ? null
-      : CloudConversationUsecase(CloudChatGateway(gateway));
+  return gateway == null ? null : CloudConversationUsecase(.new(gateway));
 }

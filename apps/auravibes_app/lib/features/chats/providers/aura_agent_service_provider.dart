@@ -54,7 +54,7 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
       resume: agentToolResumeService.provider,
       sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
       cancellationEffects: ref.watch(agentCancellationRuntimeProvider),
-      rateLimitRetryRuntime: agent.AgentRateLimitRetryRuntime(
+      rateLimitRetryRuntime: .new(
         start: ref.watch(conversationRateLimitRetryRuntimeProvider).start,
         clear: ref.watch(conversationRateLimitRetryRuntimeProvider).clear,
       ),

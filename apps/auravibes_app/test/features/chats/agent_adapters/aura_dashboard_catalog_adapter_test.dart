@@ -17,7 +17,7 @@ void main() {
             payloads: _fixture(form: false, progress: {'path': '/missing'}),
           ),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
     await tester.pump();
@@ -120,7 +120,7 @@ void main() {
             ),
           ),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
     await tester.pump();
@@ -144,7 +144,7 @@ void main() {
         testWidgets('dashboard width=$width dark=$dark form=$form', (
           tester,
         ) async {
-          tester.view.physicalSize = Size(width, 1400);
+          tester.view.physicalSize = .new(width, 1400);
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
@@ -152,7 +152,7 @@ void main() {
             MaterialApp(
               home: MediaQuery(
                 data: const MediaQueryData(
-                  textScaler: TextScaler.linear(1.5),
+                  textScaler: .linear(1.5),
                   disableAnimations: true,
                 ),
                 child: Material(
@@ -164,7 +164,7 @@ void main() {
                   ),
                 ),
               ),
-              theme: ThemeData(
+              theme: .new(
                 extensions: [if (dark) AuraTheme.dark else AuraTheme.light],
               ),
             ),

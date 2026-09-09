@@ -9,7 +9,7 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     final id = const UuidV7().generate();
 
     return _gateway.createConversation(
-      CreateConversationRequest(
+      .new(
         workspaceId: 0,
         requestId: id,
         conversationId: id,
@@ -56,7 +56,7 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
 
   Future<void> delete(ConversationEntity conversation) =>
       _gateway.deleteConversation(
-        DeleteConversationRequest(
+        .new(
           workspaceId: 0,
           requestId: const UuidV7().generate(),
           conversationId: conversation.id,

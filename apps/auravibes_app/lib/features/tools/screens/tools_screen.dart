@@ -38,14 +38,14 @@ class const ToolsScreen({required final String workspaceId, super.key})
                         children: [
                           AuraText(
                             child: Icon(Icons.build_circle_outlined),
-                            style: AuraTextStyle.heading3,
-                            tint: AuraTint.primary,
+                            style: .heading3,
+                            tint: .primary,
                           ),
                           AuraText(
                             child: TextLocale(
                               LocaleKeys.tools_screen_workspace_ai_tools,
                             ),
-                            style: AuraTextStyle.heading4,
+                            style: .heading4,
                           ),
                         ],
                       ),
@@ -69,15 +69,15 @@ class const ToolsScreen({required final String workspaceId, super.key})
                                 ),
                               ],
                               spacing: .xs,
-                              mainAxisSize: MainAxisSize.min,
+                              mainAxisSize: .min,
                             ),
-                            variant: AuraBadgeVariant.success,
+                            variant: .success,
                           ),
                         ],
                       ),
                     ],
                     spacing: .sm,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: .start,
                   ),
                 ),
                 Expanded(

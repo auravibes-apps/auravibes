@@ -1,4 +1,3 @@
-import 'package:auravibes_engine/src/tool_calls.dart';
 import 'package:auravibes_engine/src/transcript_context.dart';
 import 'package:auravibes_engine/src/transcript_selection.dart';
 import 'package:test/test.dart';
@@ -23,7 +22,7 @@ void main() {
         ? const [
             AgentTranscriptToolCallSnapshot(
               id: 'tool',
-              lifecycle: AgentToolCallLifecycle.pending,
+              lifecycle: .pending,
               argumentCharacterCount: 0,
               resultCharacterCount: 0,
             ),
@@ -37,27 +36,22 @@ void main() {
 
   test('selects latest valid summary and active user-led tail', () {
     final selection = selectAgentPromptHistory(
-      AgentContextSnapshot([
+      .new([
         message('old'),
-        message(
-          'old-summary',
-          role: AgentTranscriptRole.system,
-          kind: AgentTranscriptKind.system,
-          summary: true,
-        ),
-        message('through', role: AgentTranscriptRole.model),
-        message('orphan', role: AgentTranscriptRole.model),
+        message('old-summary', role: .system, kind: .system, summary: true),
+        message('through', role: .model),
+        message('orphan', role: .model),
         message('excluded'),
         message(
           'summary',
-          role: AgentTranscriptRole.system,
-          kind: AgentTranscriptKind.system,
+          role: .system,
+          kind: .system,
           summary: true,
           throughId: 'through',
           excludedIds: const ['excluded'],
         ),
         message('user'),
-        message('tool', role: AgentTranscriptRole.model),
+        message('tool', role: .model),
       ]),
     );
 
@@ -67,12 +61,12 @@ void main() {
 
   test('selects safe range and reports no-range or unresolved tool', () {
     final selected = selectAgentCompactionRange(
-      AgentContextSnapshot([
-        message('error', status: AgentTranscriptStatus.error),
+      .new([
+        message('error', status: .error),
         message('first'),
-        message('model', role: AgentTranscriptRole.model),
+        message('model', role: .model),
         message('tail-user'),
-        message('tail-model', role: AgentTranscriptRole.model),
+        message('tail-model', role: .model),
       ]),
     ) as AgentCompactionRangeSelected;
 
@@ -81,20 +75,16 @@ void main() {
     expect(selected.fromMessageId, 'first');
     expect(selected.throughMessageId, 'model');
     expect(
-      selectAgentCompactionRange(AgentContextSnapshot([message('one')])),
+      selectAgentCompactionRange(.new([message('one')])),
       isA<AgentCompactionNoRange>(),
     );
     expect(
       selectAgentCompactionRange(
-        AgentContextSnapshot([
+        .new([
           message('first'),
-          message(
-            'pending',
-            role: AgentTranscriptRole.model,
-            pendingTool: true,
-          ),
+          message('pending', role: .model, pendingTool: true),
           message('tail-user'),
-          message('tail-model', role: AgentTranscriptRole.model),
+          message('tail-model', role: .model),
         ]),
       ),
       isA<AgentCompactionUnsafeUnresolvedTool>(),

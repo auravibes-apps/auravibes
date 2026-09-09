@@ -67,7 +67,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
             state: errorText == null
                 ? AuraInputState.normal
                 : AuraInputState.error,
-            textInputAction: TextInputAction.done,
+            textInputAction: .done,
             enabled: !_isCreating,
             onSubmitted: (_) => unawaited(_create()),
           ),
@@ -93,7 +93,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
               AuraButton(
                 onPressed: onAddCloudAccount,
                 child: const TextLocale(LocaleKeys.cloud_accounts_add),
-                variant: AuraButtonVariant.outlined,
+                variant: .outlined,
               )
             else
               const TextLocale('workspace_management.cloud_add_hint'),
@@ -108,7 +108,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
           ),
         ],
         spacing: .md,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: .stretch,
       );
     }
 
@@ -117,7 +117,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
       AsyncError() => const Center(
         child: TextLocale(LocaleKeys.cloud_accounts_load_error),
       ),
-      _ => const SizedBox.shrink(),
+      AsyncData() => const SizedBox.shrink(),
     };
   }
 

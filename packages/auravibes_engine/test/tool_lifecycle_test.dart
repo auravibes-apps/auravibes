@@ -6,18 +6,8 @@ void main() {
   test('lifecycle exposes pending, resolved, stop, and valid transitions', () {
     expect(AgentToolCallLifecycle.pending.isPending, isTrue);
     expect(AgentToolCallLifecycle.pending.isResolved, isFalse);
-    expect(
-      AgentToolCallLifecycle.pending.canTransitionTo(
-        AgentToolCallLifecycle.success,
-      ),
-      isTrue,
-    );
-    expect(
-      AgentToolCallLifecycle.success.canTransitionTo(
-        AgentToolCallLifecycle.failed,
-      ),
-      isFalse,
-    );
+    expect(AgentToolCallLifecycle.pending.canTransitionTo(.success), isTrue);
+    expect(AgentToolCallLifecycle.success.canTransitionTo(.failed), isFalse);
     expect(AgentToolCallLifecycle.stoppedByUser.stopsAgentLoop, isTrue);
   });
 

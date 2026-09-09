@@ -6,6 +6,7 @@ plugins:
     diagnostics:
       always-remove-listener: true
       arguments-ordering: true
+      avoid-banned-imports: true
       avoid-cascade-after-if-null: true
       avoid-collection-methods-with-unrelated-types: true
       avoid-creating-vector-in-update: true
@@ -17,10 +18,13 @@ plugins:
       avoid-missing-enum-constant-in-map: true
       avoid-nested-conditional-expressions: true
       avoid-non-ascii-symbols: true
+      avoid-non-configurable-callbacks-in-init-state: true
+      avoid-non-exhaustive-switch-on-sealed-classes: true
       avoid-non-null-assertion: true
       avoid-passing-async-when-sync-expected: true
       avoid-redundant-async: true
       avoid-redundant-async-on-load: true
+      avoid-returning-widgets: true
       avoid-shrink-wrap-in-lists: true
       avoid-substring: true
       avoid-throw-in-catch-block: true
@@ -29,10 +33,12 @@ plugins:
       avoid-unrelated-type-assertions: true
       avoid-unused-parameters: true
       avoid-wrapping-in-padding: true
+      ban-name: true
       check-for-equals-in-render-object-setters: true
       consistent-update-render-object: true
       list-all-equatable-fields: true
       missing-test-assertion: true
+      member-ordering: true
       no-blank-line-before-single-return: true
       no-empty-block: true
       no-equal-then-else: true
@@ -47,6 +53,7 @@ plugins:
       binary-expression-operand-order: true
       correct-game-instantiating: true
       double-literal-format: true
+      format-comment: true
       no-boolean-literal-compare: true
       only-barrel-import: true
       prefer-async-await: true
@@ -55,6 +62,7 @@ plugins:
       prefer-const-border-radius: true
       prefer-define-hero-tag: true
       prefer-enums-by-name: true
+      prefer-extracting-callbacks: true
       prefer-first: true
       prefer-correct-edge-insets-constructor: true
       prefer-first-or-null: true
@@ -63,9 +71,14 @@ plugins:
       prefer-iterable-of: true
       prefer-last: true
       prefer-media-query-direct-access: true
+      prefer-match-file-name: true
       prefer-named-record-fields: true
       prefer-provide-intl-description: true
+      prefer-correct-test-file-name: true
+      prefer-correct-type-name: true
+      prefer-dot-shorthands: true
       prefer-single-quotes: true
+      prefer-single-widget-per-file: true
       prefer-using-list-view: true
       provide-correct-intl-args: true
       use-design-system-item: true
@@ -95,7 +108,35 @@ plugins:
 
 dart_code_linter:
   rules:
+    avoid-banned-imports:
+      entries:
+        - paths:
+            - packages/auravibes_engine/lib/.*\.dart$
+          deny:
+            - package:flutter/.*
+            - package:auravibes_app/.*
+            - package:auravibes_server_client/.*
+          message: Keep the engine package independent of app and platform code.
+        - paths:
+            - packages/auravibes_ui/lib/.*\.dart$
+          deny:
+            - package:auravibes_app/.*
+            - package:auravibes_engine/.*
+          message: Keep the UI package independent of app and engine code.
+    ban-name:
+      entries:
+        - ident: print
+          description: Use the application logger instead.
     avoid-returning-widgets:
+      exclude:
+        - packages/auravibes_ui/lib/src/organisms/aura_date_time_input.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_table.dart
+        - packages/auravibes_ui/test/src/atoms/auravibes_pressable_test.dart
+        - packages/auravibes_ui/test/src/molecules/auravibes_slider_test.dart
+        - packages/auravibes_ui/test/src/molecules/auravibes_tabs_test.dart
+        - packages/auravibes_ui/test/src/organisms/auravibes_choice_picker_test.dart
+        - widgetbook/lib/aura_ui/story_helpers.dart
+        - widgetbook/lib/main.dart
       ignored-annotations:
         # Widgetbook generator requires annotated top-level widget factories.
         - widgetbook.UseCase
@@ -200,9 +241,30 @@ dart_code_linter:
         - apps/auravibes_app/lib/main.dart
         - apps/auravibes_app/lib/i18n/**
         - apps/auravibes_app/web/**
+        - apps/auravibes_app/lib/features/chats/usecases/conversation_busy_state.dart
+        - apps/auravibes_app/lib/features/cloud_workspaces/models/cloud_workspace_state.dart
+        - apps/auravibes_app/lib/features/skills/usecases/app_skill_credential_candidate.dart
+        - apps/auravibes_app/lib/features/tools/usecases/tool_approval_decision.dart
+        - packages/auravibes_ui/lib/src/atoms/aura_animated_content.dart
+        - packages/auravibes_ui/lib/src/atoms/aura_flex.dart
+        - packages/auravibes_ui/lib/src/atoms/aura_interaction_scope.dart
+        - packages/auravibes_ui/lib/src/molecules/aura_key_value.dart
+        - packages/auravibes_ui/lib/src/molecules/aura_slider.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_accordion.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_chart.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_choice_picker.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_date_time_input.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_stepper.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_timeline.dart
+        - tool/**
     prefer-moving-to-variable:
       allowed-duplicated-chains: 3
     prefer-single-widget-per-file:
+      exclude:
+        - packages/auravibes_ui/lib/src/atoms/aura_flex.dart
+        - packages/auravibes_ui/lib/src/molecules/aura_section.dart
+        - packages/auravibes_ui/lib/src/molecules/aura_slider.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_grid.dart
       ignore-private-widgets: true
     prefer-static-class:
       ignore-private: true

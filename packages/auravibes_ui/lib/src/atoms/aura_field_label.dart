@@ -1,7 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// A customizable field label component following the Aura design system.
@@ -37,14 +36,14 @@ class AuraFieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
         Flexible(
           child: AuraText(
             child: Semantics(
               child: DefaultTextStyle.merge(
-                style: TextStyle(
+                style: .new(
                   fontWeight: context.auraTheme.typography.fontWeightMedium,
                 ),
                 child: child,
@@ -59,13 +58,13 @@ class AuraFieldLabel extends StatelessWidget {
           AuraText(
             child: Text(
               '*',
-              style: TextStyle(
+              style: .new(
                 fontWeight: context.auraTheme.typography.fontWeightMedium,
               ),
               semanticsLabel: requiredLabel,
             ),
             style: style ?? AuraTextStyle.bodySmall,
-            tint: AuraTint.error,
+            tint: .error,
           ),
         ],
       ],

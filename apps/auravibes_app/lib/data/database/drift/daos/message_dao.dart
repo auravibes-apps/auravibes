@@ -78,7 +78,7 @@ class MessageDao(super.attachedDatabase)
               row.read<String>('message_type'),
             ),
             isUser: row.read<bool>('is_user'),
-            status: MessageTableStatus.fromString(row.read<String>('status')),
+            status: .fromString(row.read<String>('status')),
             metadata: row.readNullable<String>('metadata'),
           ),
         )
@@ -95,11 +95,8 @@ class MessageDao(super.attachedDatabase)
                 tbl.isUser.equals(false),
           )
           ..orderBy([
-            (tbl) => OrderingTerm(
-              expression: tbl.createdAt,
-              mode: OrderingMode.desc,
-            ),
-            (tbl) => OrderingTerm(expression: tbl.id, mode: OrderingMode.desc),
+            (tbl) => OrderingTerm(expression: tbl.createdAt, mode: .desc),
+            (tbl) => OrderingTerm(expression: tbl.id, mode: .desc),
           ])
           ..limit(1))
         .watchSingleOrNull();
@@ -131,10 +128,7 @@ class MessageDao(super.attachedDatabase)
                   tbl.messageType.equals(messageType.value),
             )
             ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.createdAt,
-                mode: OrderingMode.desc,
-              ),
+              (tbl) => OrderingTerm(expression: tbl.createdAt, mode: .desc),
             ]))
           .get();
 
@@ -146,10 +140,7 @@ class MessageDao(super.attachedDatabase)
                   tbl.isUser.equals(true),
             )
             ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.createdAt,
-                mode: OrderingMode.desc,
-              ),
+              (tbl) => OrderingTerm(expression: tbl.createdAt, mode: .desc),
             ]))
           .get();
 
@@ -161,10 +152,7 @@ class MessageDao(super.attachedDatabase)
                   tbl.isUser.equals(false),
             )
             ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.createdAt,
-                mode: OrderingMode.desc,
-              ),
+              (tbl) => OrderingTerm(expression: tbl.createdAt, mode: .desc),
             ]))
           .get();
 
@@ -197,10 +185,7 @@ class MessageDao(super.attachedDatabase)
                   tbl.status.equals(status),
             )
             ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.createdAt,
-                mode: OrderingMode.desc,
-              ),
+              (tbl) => OrderingTerm(expression: tbl.createdAt, mode: .desc),
             ]))
           .get();
 
@@ -217,10 +202,7 @@ class MessageDao(super.attachedDatabase)
                     tbl.metadata.isNotNull(),
               )
               ..orderBy([
-                (tbl) => OrderingTerm(
-                  expression: tbl.createdAt,
-                  mode: OrderingMode.desc,
-                ),
+                (tbl) => OrderingTerm(expression: tbl.createdAt, mode: .desc),
               ]))
             .get();
 

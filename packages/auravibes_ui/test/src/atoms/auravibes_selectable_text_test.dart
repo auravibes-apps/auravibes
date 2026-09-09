@@ -2,7 +2,6 @@
 import 'package:auravibes_ui/src/atoms/aura_selectable_text.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -44,10 +43,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Heading 1',
-              style: AuraTextStyle.heading1,
-            ),
+            body: AuraSelectableText('Heading 1', style: .heading1),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
@@ -64,10 +60,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Heading 2',
-              style: AuraTextStyle.heading2,
-            ),
+            body: AuraSelectableText('Heading 2', style: .heading2),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
@@ -83,10 +76,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Heading 3',
-              style: AuraTextStyle.heading3,
-            ),
+            body: AuraSelectableText('Heading 3', style: .heading3),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
@@ -102,10 +92,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Body Large',
-              style: AuraTextStyle.bodyLarge,
-            ),
+            body: AuraSelectableText('Body Large', style: .bodyLarge),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
@@ -121,10 +108,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Body Small',
-              style: AuraTextStyle.bodySmall,
-            ),
+            body: AuraSelectableText('Body Small', style: .bodySmall),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
@@ -140,7 +124,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText('Caption', style: AuraTextStyle.caption),
+            body: AuraSelectableText('Caption', style: .caption),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
@@ -156,7 +140,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText('Code text', style: AuraTextStyle.code),
+            body: AuraSelectableText('Code text', style: .code),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
@@ -172,7 +156,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText('Error text', tint: AuraTint.error),
+            body: AuraSelectableText('Error text', tint: .error),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
@@ -188,10 +172,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Centered text',
-              textAlign: TextAlign.center,
-            ),
+            body: AuraSelectableText('Centered text', textAlign: .center),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
@@ -258,10 +239,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Custom cursor',
-              cursorTint: AuraTint.secondary,
-            ),
+            body: AuraSelectableText('Custom cursor', cursorTint: .secondary),
           ),
           theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),

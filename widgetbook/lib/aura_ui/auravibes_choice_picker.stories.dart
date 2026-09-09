@@ -21,8 +21,8 @@ final $ChoicePicker = _Story(
       name: 'variant',
       values: AuraChoicePickerVariant.values,
       labelBuilder: (value) => switch (value) {
-        AuraChoicePickerVariant.mutuallyExclusive => 'Single selection',
-        AuraChoicePickerVariant.multipleSelection => 'Multiple selection',
+        .mutuallyExclusive => 'Single selection',
+        .multipleSelection => 'Multiple selection',
       },
     ),
     tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
@@ -40,7 +40,7 @@ final $ChoicePicker = _Story(
       name: 'Landscape Phone',
       modes: [ViewportMode(landscapePhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
     _Scenario(
       name: 'Selects Choice',

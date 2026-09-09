@@ -23,11 +23,11 @@ void main() {
 
     test('separates streaming thinking deltas without whitespace', () {
       const first = ChatResult<ChatMessage>(
-        output: ChatMessage(role: ChatMessageRole.model),
+        output: ChatMessage(role: .model),
         thinking: 'First',
       );
       const second = ChatResult<ChatMessage>(
-        output: ChatMessage(role: ChatMessageRole.model),
+        output: ChatMessage(role: .model),
         thinking: 'second',
       );
 
@@ -106,7 +106,7 @@ void main() {
 
     test('persists final result metadata for provider continuation', () {
       const result = ChatResult<ChatMessage>(
-        output: ChatMessage(role: ChatMessageRole.model),
+        output: ChatMessage(role: .model),
         metadata: {'_anthropic_thinking_signature': 'signature'},
       );
 

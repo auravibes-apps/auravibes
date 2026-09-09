@@ -116,10 +116,10 @@ class const _ApprovalCardContent({
         color: auraColors.warning.withValues(alpha: 0.08),
         border: Border.all(color: auraColors.warning.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
+          .circular(context.auraTheme.fromBorderRadius(.lg)),
         ),
       ),
-      width: double.infinity,
+      width: .infinity,
       margin: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       child: AuraColumn(
         children: [
@@ -194,7 +194,7 @@ class const _NavigationHeader({
             LocaleKeys.tool_approval_pending_count.tr(
               args: [(currentIndex + 1).toString(), totalCount.toString()],
             ),
-            style: TextStyle(
+            style: .new(
               color: auraColors.onSurface,
               fontSize: typography.fontSizeSm,
               fontWeight: FontWeight.w600,
@@ -225,7 +225,7 @@ class const _NavButton({
       icon: icon,
       onPressed: onPressed,
       disabled: onPressed == null,
-      size: AuraIconSize.small,
+      size: .small,
     );
   }
 }
@@ -250,16 +250,16 @@ class const _ToolCallInfo({
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant.withValues(alpha: 0.5),
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.sm)),
+          .circular(context.auraTheme.fromBorderRadius(.sm)),
         ),
       ),
-      width: double.infinity,
+      width: .infinity,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Text(
             displayName,
-            style: TextStyle(
+            style: .new(
               color: auraColors.onSurface,
               fontSize: context.auraTheme.typography.fontSizeSm,
               fontWeight: FontWeight.bold,
@@ -268,21 +268,21 @@ class const _ToolCallInfo({
           if (sourceLabel case final sourceLabel? when sourceLabel.isNotEmpty)
             Text(
               sourceLabel,
-              style: TextStyle(
+              style: .new(
                 color: auraColors.onSurfaceVariant,
                 fontSize: typography.fontSizeXs,
               ),
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
             ),
           if (decodedArgs != null) ...[
             const AuraSizedBox(height: .xs),
             Text(
               decodedArgs,
-              style: TextStyle(
+              style: .new(
                 color: auraColors.onSurfaceVariant,
                 fontSize: typography.fontSizeXs,
               ),
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
               maxLines: 3,
             ),
           ],
@@ -292,7 +292,7 @@ class const _ToolCallInfo({
   }
 }
 
-const JsonEncoder _approvalArgumentsEncoder = JsonEncoder.withIndent('  ');
+const JsonEncoder _approvalArgumentsEncoder = .withIndent('  ');
 const _redactedValue = '****';
 const _sensitiveKeyParts = [
   'auth',
@@ -426,8 +426,8 @@ class const _ConfirmationButtons({
                 child: const TextLocale(
                   LocaleKeys.tool_confirmation_allow_once,
                 ),
-                variant: AuraButtonVariant.outlined,
-                size: AuraButtonSize.small,
+                variant: .outlined,
+                size: .small,
               ),
             ),
             if (!isCloudCall)
@@ -437,8 +437,8 @@ class const _ConfirmationButtons({
                   child: const TextLocale(
                     LocaleKeys.tool_confirmation_allow_conversation,
                   ),
-                  variant: AuraButtonVariant.outlined,
-                  size: AuraButtonSize.small,
+                  variant: .outlined,
+                  size: .small,
                 ),
               ),
           ],
@@ -449,18 +449,18 @@ class const _ConfirmationButtons({
               child: AuraButton(
                 onPressed: () => _onSkip(ref, context),
                 child: const TextLocale(LocaleKeys.tool_confirmation_skip),
-                variant: AuraButtonVariant.outlined,
+                variant: .outlined,
                 tint: .primary,
-                size: AuraButtonSize.small,
+                size: .small,
               ),
             ),
             Expanded(
               child: AuraButton(
                 onPressed: () => _onStopAll(ref, context),
                 child: const TextLocale(LocaleKeys.tool_confirmation_stop_all),
-                variant: AuraButtonVariant.outlined,
+                variant: .outlined,
                 tint: .error,
-                size: AuraButtonSize.small,
+                size: .small,
               ),
             ),
           ],
@@ -631,7 +631,7 @@ class const _ConfirmationButtons({
       final _ = AuraSnackBars.show(
         context: context,
         content: TextLocale(errorMessageKey),
-        variant: AuraSnackBarVariant.error,
+        variant: .error,
       );
     }
   }

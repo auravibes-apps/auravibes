@@ -9,18 +9,18 @@ void main() {
         home: const Scaffold(
           body: AuraStepper(
             steps: [
-              AuraStep(title: 'Complete', state: AuraStepState.complete),
+              AuraStep(title: 'Complete', state: .complete),
               AuraStep(
                 title: 'Current',
                 description: 'In progress',
-                state: AuraStepState.current,
+                state: .current,
               ),
-              AuraStep(title: 'Error', state: AuraStepState.error),
+              AuraStep(title: 'Error', state: .error),
               AuraStep(title: 'Pending'),
             ],
           ),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

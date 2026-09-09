@@ -1,6 +1,5 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
@@ -22,7 +21,7 @@ or compact context for grounding an answer. Prefer it for broad web discovery.
       description: 'Search the public web for pages matching a query.',
       inputJsonSchema: _inputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://api.search.brave.com/res/v1/web/search',
           headers: _headers,
@@ -38,7 +37,7 @@ or compact context for grounding an answer. Prefer it for broad web discovery.
       description: 'Get compact web context for grounding an answer.',
       inputJsonSchema: _inputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://api.search.brave.com/res/v1/llm/context',
           headers: _headers,
@@ -54,7 +53,7 @@ or compact context for grounding an answer. Prefer it for broad web discovery.
       description: 'Search current news results for a query.',
       inputJsonSchema: _inputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://api.search.brave.com/res/v1/news/search',
           headers: _headers,
@@ -70,7 +69,7 @@ or compact context for grounding an answer. Prefer it for broad web discovery.
       description: 'Search public image results for a query.',
       inputJsonSchema: _inputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://api.search.brave.com/res/v1/images/search',
           headers: _headers,
@@ -86,7 +85,7 @@ or compact context for grounding an answer. Prefer it for broad web discovery.
       description: 'Search public video results for a query.',
       inputJsonSchema: _inputSchema,
       requiresCredential: true,
-      urlTemplate: AppSkillUrlTemplate(
+      urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://api.search.brave.com/res/v1/videos/search',
           headers: _headers,

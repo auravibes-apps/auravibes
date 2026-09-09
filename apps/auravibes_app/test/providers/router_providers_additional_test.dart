@@ -5,7 +5,7 @@ void main() {
   group('WorkspaceRouteResolver.matchWorkspaceId additional', () {
     test('handles URI with only workspaces segment', () {
       expect(
-        WorkspaceRouteResolver.matchWorkspaceId(Uri.parse('/workspaces')),
+        WorkspaceRouteResolver.matchWorkspaceId(.parse('/workspaces')),
         isNull,
       );
     });
@@ -13,7 +13,7 @@ void main() {
     test('handles URI with encoded characters', () {
       expect(
         WorkspaceRouteResolver.matchWorkspaceId(
-          Uri.parse('/workspaces/ws%20space/chats'),
+          .parse('/workspaces/ws%20space/chats'),
         ),
         'ws space',
       );
@@ -23,7 +23,7 @@ void main() {
   group('_mapLegacyRoute logic', () {
     test('maps chat/new to NewChatRoute', () {
       final result = mapLegacyRoute(
-        Uri.parse('/chat/new'),
+        .parse('/chat/new'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, '/workspaces/ws-1/chat/new');
@@ -31,7 +31,7 @@ void main() {
 
     test('maps chats to ChatsRoute', () {
       final result = mapLegacyRoute(
-        Uri.parse('/chats'),
+        .parse('/chats'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, '/workspaces/ws-1/chats');
@@ -39,7 +39,7 @@ void main() {
 
     test('maps chats/:chatId to ConversationRoute', () {
       final result = mapLegacyRoute(
-        Uri.parse('/chats/chat-123'),
+        .parse('/chats/chat-123'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, '/workspaces/ws-1/chats/chat-123');
@@ -47,7 +47,7 @@ void main() {
 
     test('maps tools to ToolsRoute', () {
       final result = mapLegacyRoute(
-        Uri.parse('/tools'),
+        .parse('/tools'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, '/workspaces/ws-1/more/tools');
@@ -55,7 +55,7 @@ void main() {
 
     test('maps models to ServiceConnectionsRoute', () {
       final result = mapLegacyRoute(
-        Uri.parse('/models'),
+        .parse('/models'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, '/workspaces/ws-1/more/service-connections');
@@ -63,7 +63,7 @@ void main() {
 
     test('maps service-connections to ServiceConnectionsRoute', () {
       final result = mapLegacyRoute(
-        Uri.parse('/service-connections'),
+        .parse('/service-connections'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, '/workspaces/ws-1/more/service-connections');
@@ -71,7 +71,7 @@ void main() {
 
     test('maps settings to SettingsRoute', () {
       final result = mapLegacyRoute(
-        Uri.parse('/settings'),
+        .parse('/settings'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, '/workspaces/ws-1/settings');
@@ -79,23 +79,20 @@ void main() {
 
     test('returns null for unknown paths', () {
       final result = mapLegacyRoute(
-        Uri.parse('/unknown/path'),
+        .parse('/unknown/path'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, isNull);
     });
 
     test('returns null for empty path', () {
-      final result = mapLegacyRoute(
-        Uri.parse('/'),
-        fallbackWorkspaceId: 'ws-1',
-      );
+      final result = mapLegacyRoute(.parse('/'), fallbackWorkspaceId: 'ws-1');
       expect(result, isNull);
     });
 
     test('preserves query parameters', () {
       final result = mapLegacyRoute(
-        Uri.parse('/chat/new?tab=open'),
+        .parse('/chat/new?tab=open'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, contains('tab=open'));
@@ -103,7 +100,7 @@ void main() {
 
     test('preserves fragment', () {
       final result = mapLegacyRoute(
-        Uri.parse('/tools#section'),
+        .parse('/tools#section'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, contains('#section'));
@@ -111,7 +108,7 @@ void main() {
 
     test('preserves both query and fragment', () {
       final result = mapLegacyRoute(
-        Uri.parse('/models?type=gpt#top'),
+        .parse('/models?type=gpt#top'),
         fallbackWorkspaceId: 'ws-1',
       );
       expect(result, contains('type=gpt'));

@@ -4,7 +4,6 @@ import 'package:auravibes_app/features/service_connections/models/service_connec
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'delete_service_connection_usecase.g.dart';
@@ -19,12 +18,11 @@ class DeleteServiceConnectionUsecase({
     required ServiceConnectionListItemKind kind,
   }) {
     return switch (kind) {
-      ServiceConnectionListItemKind.modelProvider =>
-        modelConnectionStore.deleteModelConnection(connectionId),
-      ServiceConnectionListItemKind.skillCredential => deleteSkillCredential(
+      .modelProvider => modelConnectionStore.deleteModelConnection(
         connectionId,
       ),
-      ServiceConnectionListItemKind.mcpServer => throw StateError(
+      .skillCredential => deleteSkillCredential(connectionId),
+      .mcpServer => throw StateError(
         'MCP server service connections cannot be deleted by this action.',
       ),
     };
@@ -51,8 +49,7 @@ Future<DeleteServiceConnectionUsecase> deleteServiceConnectionUsecase(
       ),
       deleteSkillCredential: gateway == null
           ? ref.watch(skillCredentialsRepositoryProvider).deleteCredential
-          : CloudServiceConnectionUsecases(CloudWorkspaceResourceStore(gateway))
-                .deleteById,
+          : CloudServiceConnectionUsecases(.new(gateway)).deleteById,
     );
   } finally {
     link.close();

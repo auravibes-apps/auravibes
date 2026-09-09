@@ -65,10 +65,7 @@ class const RunSkillCommandUsecase({
         ..sort((left, right) => left['slug']!.compareTo(right['slug']!));
     }
 
-    return {
-      'loadable': await list(SkillLoadFilter.loadable),
-      'loaded': await list(SkillLoadFilter.loaded),
-    };
+    return {'loadable': await list(.loadable), 'loaded': await list(.loaded)};
   }
 
   Future<Map<String, Object?>> _load(
@@ -163,13 +160,13 @@ class const RunSkillCommandUsecase({
     }
     final target = targets.single;
     final result = switch (target.kind) {
-      AgentResolvedToolKind.skillTemplate => runSkillTemplateToolUsecase.call(
+      .skillTemplate => runSkillTemplateToolUsecase.call(
         workspaceId: workspaceId,
         skillSlug: command.skill,
         toolSlug: command.tool,
         arguments: Map<String, dynamic>.from(command.args),
       ),
-      AgentResolvedToolKind.skillNative => runAppSkillToolUsecase.call(
+      .skillNative => runAppSkillToolUsecase.call(
         workspaceId: workspaceId,
         skillSlug: command.skill,
         toolSlug: command.tool,

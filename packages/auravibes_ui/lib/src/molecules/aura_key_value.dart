@@ -24,21 +24,18 @@ class AuraKeyValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+    crossAxisAlignment: .stretch,
     spacing: context.auraTheme.spacing.xs,
     children: [
       for (final entry in entries)
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             Expanded(
               child: AuraText(child: Text(entry.label), style: .bodySmall),
             ),
             Expanded(
-              child: AuraText(
-                child: Text(entry.value),
-                textAlign: TextAlign.end,
-              ),
+              child: AuraText(child: Text(entry.value), textAlign: .end),
             ),
           ],
         ),

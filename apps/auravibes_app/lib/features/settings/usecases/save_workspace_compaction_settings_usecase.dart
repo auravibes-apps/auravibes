@@ -78,9 +78,7 @@ saveWorkspaceCompactionSettingsUsecase(Ref ref, String workspaceId) async {
       throw StateError('Cloud workspace gateway is unavailable');
     }
 
-    return SaveWorkspaceCompactionSettingsUsecase(
-      cloudAdapter: CloudSkillSettingsAdapter(gateway),
-    );
+    return SaveWorkspaceCompactionSettingsUsecase(cloudAdapter: .new(gateway));
   }
 
   return SaveWorkspaceCompactionSettingsUsecase(

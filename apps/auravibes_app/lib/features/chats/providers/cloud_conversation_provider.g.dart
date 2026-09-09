@@ -68,7 +68,7 @@ final class CloudConversationUsecaseProvider
 }
 
 String _$cloudConversationUsecaseHash() =>
-    r'fd77d0fce9659d0fc6e1e7340391b1dd20436a1c';
+    r'368d26b8cb02896d07770d52e077de0321f4e7e9';
 
 final class CloudConversationUsecaseFamily extends $Family
     with

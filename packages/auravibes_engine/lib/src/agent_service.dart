@@ -246,7 +246,7 @@ class const AgentService({
       final delay = remaining > const Duration(seconds: 1)
           ? const Duration(seconds: 1)
           : remaining;
-      if (delay > Duration.zero) {
+      if (delay > .zero) {
         await sleep(delay);
       }
     }

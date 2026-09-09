@@ -16,9 +16,9 @@ WorkspaceToolEntity _entity({
     workspaceId: 'ws1',
     toolId: toolId,
     isEnabled: true,
-    permissionMode: ToolPermissionMode.alwaysAsk,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    permissionMode: .alwaysAsk,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
     description: description,
   );
 }

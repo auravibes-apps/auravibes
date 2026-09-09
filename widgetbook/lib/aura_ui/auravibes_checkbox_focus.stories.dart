@@ -24,12 +24,12 @@ final $FocusStates = _Story(
   setup: (context, child, args) => Padding(
     padding: const EdgeInsets.all(16),
     child: Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         DefaultTextStyle.merge(
-          style: TextStyle(color: context.auraColors.onSurface),
+          style: .new(color: context.auraColors.onSurface),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [child, const SizedBox(width: 12), const Text('Focused')],
           ),
         ),
@@ -40,7 +40,7 @@ final $FocusStates = _Story(
   ),
   args: _Args(selected: BoolArg(true, name: 'selected')),
   scenarios: [
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Focuses Checkbox',
       run: (tester, args) async {
@@ -58,11 +58,11 @@ class const _FocusStateRow({
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         AuraCheckbox(value: value, onChanged: _noopCheckboxChanged),
         const SizedBox(width: 12),
-        Text(label, style: TextStyle(color: context.auraColors.onSurface)),
+        Text(label, style: .new(color: context.auraColors.onSurface)),
       ],
     );
   }

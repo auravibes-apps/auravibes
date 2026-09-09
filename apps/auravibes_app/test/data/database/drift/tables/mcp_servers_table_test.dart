@@ -21,7 +21,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -226,7 +226,7 @@ void main() {
 
     test('oauth is a McpAuthenticationType', () {
       final auth = McpAuthenticationTypeOAuth(
-        token: OAuthTokenEntity(accessToken: 'at', issuedAt: DateTime(2026)),
+        token: .new(accessToken: 'at', issuedAt: DateTime(2026)),
         clientId: 'cid',
         authorizationEndpoint: 'https://a.co',
         tokenEndpoint: 'https://t.co',

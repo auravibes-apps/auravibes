@@ -41,7 +41,7 @@ class A2uiStreamDecoder {
     if (utf8.encode(_buffer).length > maxA2uiChatPayloadBytes &&
         _looksLikeCandidate(_buffer)) {
       final event = A2uiInvalidEvent(
-        A2uiIssueCode.oversizedPayload,
+        .oversizedPayload,
         wireSurfaceId: _recoverSurfaceId(_buffer),
       );
       _buffer = '';
@@ -98,7 +98,7 @@ class A2uiStreamDecoder {
       if (_looksLikeCandidate(_buffer)) {
         events.add(
           A2uiInvalidEvent(
-            A2uiIssueCode.malformedPayload,
+            .malformedPayload,
             wireSurfaceId: _recoverSurfaceId(_buffer),
             diagnosticPayloadJson: _diagnosticPayload(_buffer),
           ),
@@ -123,7 +123,7 @@ class A2uiStreamDecoder {
       if (_looksLikeCandidate(candidate)) {
         events.add(
           A2uiInvalidEvent(
-            A2uiIssueCode.malformedPayload,
+            .malformedPayload,
             wireSurfaceId: _recoverSurfaceId(candidate),
             diagnosticPayloadJson: _diagnosticPayload(candidate),
           ),

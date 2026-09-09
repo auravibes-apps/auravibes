@@ -35,7 +35,7 @@ class AuraAlertDialog extends StatelessWidget {
         AuraButton(
           onPressed: Navigator.of(context).pop,
           child: dismissLabel,
-          variant: AuraButtonVariant.text,
+          variant: .text,
           tint: tint,
         ),
       ],

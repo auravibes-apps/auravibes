@@ -5,7 +5,6 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
 import 'package:auravibes_app/features/skills/models/app_skill_credential_candidate.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -111,9 +110,9 @@ final listAppSkillCredentialCandidatesUsecaseProvider =
             throw StateError('Cloud workspace gateway is unavailable.');
           }
 
-          return await CloudServiceConnectionUsecases(
-            CloudWorkspaceResourceStore(gateway),
-          ).watch().first;
+          return await CloudServiceConnectionUsecases(.new(gateway))
+              .watch()
+              .first;
         },
       );
     });

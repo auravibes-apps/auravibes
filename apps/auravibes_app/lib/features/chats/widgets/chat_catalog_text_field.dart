@@ -59,21 +59,21 @@ class _ChatCatalogTextFieldState extends State<ChatCatalogTextField> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(ChatCatalogTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
     final text = widget.value ?? '';
     if (_controller.text == text) return;
 
-    _controller.value = TextEditingValue(
+    _controller.value = .new(
       text: text,
       selection: TextSelection.collapsed(offset: text.length),
     );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override

@@ -9,7 +9,7 @@ void main() {
     return EasyLocalization(
       child: MaterialApp(
         home: Theme(
-          data: ThemeData(extensions: [AuraTheme.light]),
+          data: .new(extensions: [AuraTheme.light]),
           child: Material(child: child),
         ),
       ),

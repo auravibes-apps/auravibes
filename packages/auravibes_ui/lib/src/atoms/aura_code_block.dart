@@ -26,7 +26,7 @@ class AuraCodeBlock extends StatelessWidget {
         ),
       ),
       child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+        scrollDirection: .horizontal,
         padding: EdgeInsets.all(context.auraTheme.spacing.sm),
         child: AuraText(child: SelectableText(code), style: .code),
       ),

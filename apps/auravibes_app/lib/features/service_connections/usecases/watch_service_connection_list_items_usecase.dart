@@ -24,7 +24,7 @@ class const WatchServiceConnectionListItemsUsecase(
   Stream<List<ServiceConnectionListItem>> call(String workspaceId) {
     return Rx.combineLatest4(
       _modelConnectionRepository.watchModelConnections(
-        ModelConnectionFilter(workspaces: [workspaceId]),
+        .new(workspaces: [workspaceId]),
       ),
       _credentialDefinitionsRepository.watchDefinitions(workspaceId),
       _credentialsRepository.watchCredentialsForWorkspace(workspaceId),

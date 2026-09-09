@@ -25,7 +25,7 @@ class const ToolPermissionSelector({
       ],
       selectedValue: value,
       onChanged: onChanged,
-      size: AuraButtonGroupSize.sm,
+      size: .sm,
     );
   }
 }

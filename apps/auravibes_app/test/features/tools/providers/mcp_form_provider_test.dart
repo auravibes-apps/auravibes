@@ -52,16 +52,14 @@ void main() {
       });
 
       test('sse returns all auth types', () {
-        const state = McpFormState(transport: McpTransportTypeOptions.sse);
+        const state = McpFormState(transport: .sse);
         expect(state.availableAuthTypes, McpAuthenticationTypeOptions.values);
       });
     });
 
     group('showOAuthFields', () {
       test('returns true when oauth selected', () {
-        const state = McpFormState(
-          authenticationType: McpAuthenticationTypeOptions.oauth,
-        );
+        const state = McpFormState(authenticationType: .oauth);
         expect(state.showOAuthFields, isTrue);
       });
 
@@ -73,9 +71,7 @@ void main() {
 
     group('showBearerTokenField', () {
       test('returns true when bearerToken selected', () {
-        const state = McpFormState(
-          authenticationType: McpAuthenticationTypeOptions.bearerToken,
-        );
+        const state = McpFormState(authenticationType: .bearerToken);
         expect(state.showBearerTokenField, isTrue);
       });
 
@@ -91,7 +87,7 @@ void main() {
           name: '  My Server  ',
           description: '  A test server  ',
           url: '  https://example.com  ',
-          transport: McpTransportTypeOptions.sse,
+          transport: .sse,
         );
         final entity = state.toCreateEntity();
         expect(entity.name, 'My Server');
@@ -131,7 +127,7 @@ void main() {
         const state = McpFormState(
           name: 'Test',
           url: 'https://example.com',
-          authenticationType: McpAuthenticationTypeOptions.bearerToken,
+          authenticationType: .bearerToken,
         );
         expect(state.isValid, isFalse);
       });
@@ -140,7 +136,7 @@ void main() {
         const state = McpFormState(
           name: 'Test',
           url: 'https://example.com',
-          authenticationType: McpAuthenticationTypeOptions.bearerToken,
+          authenticationType: .bearerToken,
           bearerToken: 'my-token',
         );
         expect(state.isValid, isTrue);
@@ -220,21 +216,21 @@ void main() {
       readNotifier().setUseHttp2(true);
       expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isTrue);
 
-      readNotifier().setTransport(McpTransportTypeOptions.sse);
+      readNotifier().setTransport(.sse);
       expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isFalse);
     });
 
     test('setTransport resets auth when switching to streamableHttp', () {
       readNotifier()
-        ..setTransport(McpTransportTypeOptions.sse)
-        ..setAuthenticationType(McpAuthenticationTypeOptions.bearerToken);
+        ..setTransport(.sse)
+        ..setAuthenticationType(.bearerToken);
 
       expect(
         readContainer().read(mcpFormProvider('ws1')).authenticationType,
         McpAuthenticationTypeOptions.bearerToken,
       );
 
-      readNotifier().setTransport(McpTransportTypeOptions.streamableHttp);
+      readNotifier().setTransport(.streamableHttp);
       expect(
         readContainer().read(mcpFormProvider('ws1')).authenticationType,
         McpAuthenticationTypeOptions.none,
@@ -251,9 +247,7 @@ void main() {
     });
 
     test('setAuthenticationType updates auth type', () {
-      readNotifier().setAuthenticationType(
-        McpAuthenticationTypeOptions.bearerToken,
-      );
+      readNotifier().setAuthenticationType(.bearerToken);
       expect(
         readContainer().read(mcpFormProvider('ws1')).authenticationType,
         McpAuthenticationTypeOptions.bearerToken,
@@ -307,7 +301,7 @@ void main() {
       final subscription = Logger.root.onRecord.listen(records.add);
       addTearDown(subscription.cancel);
       final previousLevel = Logger.root.level;
-      Logger.root.level = Level.ALL;
+      Logger.root.level = .ALL;
       addTearDown(() {
         Logger.root.level = previousLevel;
       });
@@ -334,7 +328,7 @@ void main() {
       readNotifier()
         ..setName('Test')
         ..setUrl('https://example.com')
-        ..setAuthenticationType(McpAuthenticationTypeOptions.none);
+        ..setAuthenticationType(.none);
 
       final result = await readNotifier().submit();
       expect(result, isTrue);
@@ -372,7 +366,7 @@ void main() {
       final subscription = Logger.root.onRecord.listen(records.add);
       addTearDown(subscription.cancel);
       final previousLevel = Logger.root.level;
-      Logger.root.level = Level.ALL;
+      Logger.root.level = .ALL;
       addTearDown(() {
         Logger.root.level = previousLevel;
       });
@@ -380,7 +374,7 @@ void main() {
       readNotifier()
         ..setName('Test')
         ..setUrl('https://example.com')
-        ..setAuthenticationType(McpAuthenticationTypeOptions.none);
+        ..setAuthenticationType(.none);
 
       final result = await readNotifier().submit();
 

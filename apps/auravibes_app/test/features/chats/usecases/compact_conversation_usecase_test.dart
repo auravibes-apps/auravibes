@@ -6,11 +6,9 @@ import 'package:auravibes_app/data/repositories/workspace_model_selection_reposi
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime.dart';
@@ -73,16 +71,16 @@ class _CompactConversationFixture {
       _usecase ?? fail('usecase not initialized');
 
   void reset() {
-    _mockMessageRepo = MockMessageRepository();
-    _mockConversationRepo = MockConversationRepository();
-    _mockModelSelectionRepo = MockWorkspaceModelSelectionRepository();
-    _mockChatbotService = MockChatbotService();
+    _mockMessageRepo = .new();
+    _mockConversationRepo = .new();
+    _mockModelSelectionRepo = .new();
+    _mockChatbotService = .new();
     final container = ProviderContainer();
     _container = container;
     final compactionExecution = container.read(
       compactionExecutionRuntimeProvider,
     );
-    _usecase = CompactConversationUsecase(
+    _usecase = .new(
       compactionExecution: compactionExecution,
       messageRepository: mockMessageRepo,
       conversationRepository: mockConversationRepo,
@@ -101,10 +99,10 @@ class _CompactConversationFixture {
             content: msg.content,
             messageType: msg.messageType,
             isUser: msg.isUser,
-            status: MessageStatus.sending,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
-            metadata: MessageMetadataEntity.fromJsonString(msg.metadata),
+            status: .sending,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
+            metadata: .fromJsonString(msg.metadata),
           );
         });
     when(() => mockMessageRepo.patchMessage(any(), any()))
@@ -115,11 +113,11 @@ class _CompactConversationFixture {
             id: id,
             conversationId: 'conv-1',
             content: '',
-            messageType: MessageType.system,
+            messageType: .system,
             isUser: false,
-            status: MessageStatus.sent,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            status: .sent,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
           );
         });
   }
@@ -165,8 +163,8 @@ void main() {
       messageType: messageType,
       isUser: isUser,
       status: status,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       metadata: metadata,
     );
   }
@@ -585,7 +583,7 @@ void main() {
                   name: 'weather_lookup',
                   argumentsRaw: '{"city":"Bogota"}',
                   responseRaw: '{"temperature":"18C"}',
-                  resultStatus: ToolCallResultStatus.success,
+                  resultStatus: .success,
                 ),
               ],
             ),
@@ -676,22 +674,22 @@ ConversationEntity _makeConversation({String? modelId = 'model-1'}) {
     title: 'Test',
     workspaceId: 'ws-1',
     isPinned: false,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
     modelId: modelId,
   );
 }
 
 WorkspaceModelSelectionWithConnectionEntity _makeModelSelection() {
   return WorkspaceModelSelectionWithConnectionEntity(
-    workspaceModelSelection: WorkspaceModelSelectionEntity(
+    workspaceModelSelection: .new(
       id: 'model-1',
       modelId: 'gpt-4',
       createdAt: DateTime(2026),
       updatedAt: DateTime(2026),
       modelConnectionId: 'conn-1',
     ),
-    modelConnection: ModelConnectionEntity(
+    modelConnection: .new(
       id: 'conn-1',
       name: 'OpenAI',
       modelId: 'gpt-4',
@@ -703,7 +701,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeModelSelection() {
     modelsProvider: const ApiModelProviderEntity(
       id: 'openai',
       name: 'OpenAI',
-      type: ModelProvidersType.openai,
+      type: .openai,
     ),
   );
 }

@@ -86,8 +86,8 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
 
     return Semantics(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
         children: [
           if (label != null)
             AuraFieldLabel(child: label, isRequired: widget.isRequired),
@@ -98,7 +98,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
                 // Color: _getBackgroundColor(auraColors),.
                 border: Border.all(color: _getBorderColor(auraColors)),
                 borderRadius: BorderRadius.all(
-                  Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+                  .circular(context.auraTheme.fromBorderRadius(.xl)),
                 ),
                 boxShadow: _getBoxShadow(auraColors),
               ),
@@ -109,7 +109,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
             decoration: BoxDecoration(
               color: _getBackgroundColor(auraColors),
               borderRadius: BorderRadius.all(
-                Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+                .circular(context.auraTheme.fromBorderRadius(.xl)),
               ),
               // Color: auraColors.primary,.
             ),
@@ -139,11 +139,10 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
     if (!widget.isEnabled) return colors.outlineVariant;
 
     return switch (widget.state) {
-      AuraFieldState.normal =>
-        widget.isFocused ? colors.primary : colors.outline,
-      AuraFieldState.success => colors.success,
-      AuraFieldState.warning => colors.warning,
-      AuraFieldState.error => colors.error,
+      .normal => widget.isFocused ? colors.primary : colors.outline,
+      .success => colors.success,
+      .warning => colors.warning,
+      .error => colors.error,
     };
   }
 

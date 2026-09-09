@@ -42,9 +42,9 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'hello world',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
@@ -72,16 +72,16 @@ void main() {
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'see attachment',
-            messageType: MessageType.text,
+            messageType: .text,
             isUser: true,
-            status: MessageStatus.sent,
+            status: .sent,
             attachments: [
               MessageAttachmentToCreate(
                 localPath: '/tmp/image.png',
                 fileName: 'image.png',
                 displayName: 'image.png',
                 mimeType: 'image/png',
-                modality: MessageAttachmentModality.image,
+                modality: .image,
                 sizeBytes: 10,
               ),
             ],
@@ -109,9 +109,9 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'test',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
@@ -129,9 +129,9 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'test',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
@@ -147,9 +147,9 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'to delete',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
@@ -167,16 +167,16 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'see attachment',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sent,
+          status: .sent,
           attachments: [
             MessageAttachmentToCreate(
               localPath: '/tmp/draft.png',
               fileName: 'draft.png',
               displayName: 'draft.png',
               mimeType: 'image/png',
-              modality: MessageAttachmentModality.image,
+              modality: .image,
               sizeBytes: 10,
             ),
           ],
@@ -197,16 +197,16 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'see attachment',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sent,
+          status: .sent,
           attachments: [
             MessageAttachmentToCreate(
               localPath: '/tmp/draft.png',
               fileName: 'image.png',
               displayName: 'image.png',
               mimeType: 'image/png',
-              modality: MessageAttachmentModality.image,
+              modality: .image,
               sizeBytes: 10,
             ),
           ],
@@ -225,18 +225,18 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'msg1',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
       final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'msg2',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
@@ -248,9 +248,9 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'original',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
@@ -277,9 +277,9 @@ void main() {
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'msg0',
-            messageType: MessageType.text,
+            messageType: .text,
             isUser: true,
-            status: MessageStatus.sending,
+            status: .sending,
           ),
         );
       }
@@ -297,21 +297,18 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'text msg',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
-      final textMessages = await repository.getMessagesByType(
-        'conv-1',
-        MessageType.text,
-      );
+      final textMessages = await repository.getMessagesByType('conv-1', .text);
       expect(textMessages, hasLength(1));
 
       final systemMessages = await repository.getMessagesByType(
         'conv-1',
-        MessageType.system,
+        .system,
       );
       expect(systemMessages, isEmpty);
     });
@@ -321,21 +318,21 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'sent msg',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
       final sentMessages = await repository.getMessagesByStatus(
         'conv-1',
-        MessageStatus.sent,
+        .sent,
       );
       expect(sentMessages, isEmpty);
 
       final sendingMessages = await repository.getMessagesByStatus(
         'conv-1',
-        MessageStatus.sending,
+        .sending,
       );
       expect(sendingMessages, hasLength(1));
     });
@@ -345,9 +342,9 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'hello',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
       expect(valid, isTrue);
@@ -358,9 +355,9 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'hello',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sent,
+          status: .sent,
         ),
       );
       expect(valid, isTrue);
@@ -372,9 +369,9 @@ void main() {
           const MessageToCreate(
             conversationId: 'conv-1',
             content: '',
-            messageType: MessageType.text,
+            messageType: .text,
             isUser: false,
-            status: MessageStatus.sent,
+            status: .sent,
             metadata: '{}',
           ),
         ),
@@ -388,9 +385,9 @@ void main() {
           const MessageToCreate(
             conversationId: 'conv-1',
             content: '   ',
-            messageType: MessageType.text,
+            messageType: .text,
             isUser: false,
-            status: MessageStatus.sent,
+            status: .sent,
             metadata: '{}',
           ),
         ),
@@ -404,9 +401,9 @@ void main() {
           const MessageToCreate(
             conversationId: '',
             content: '',
-            messageType: MessageType.text,
+            messageType: .text,
             isUser: true,
-            status: MessageStatus.sending,
+            status: .sending,
           ),
         ),
         throwsA(isA<MessageValidationException>()),
@@ -418,18 +415,18 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'user msg',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
       final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'ai msg',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
@@ -443,18 +440,18 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'user msg',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
       final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'ai msg',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
@@ -468,15 +465,15 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'test',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
       final patched = await repository.patchMessage(
         created.id,
-        const MessagePatch(status: MessageStatus.sent),
+        const MessagePatch(status: .sent),
       );
       expect(patched.status, MessageStatus.sent);
     });
@@ -495,7 +492,7 @@ void main() {
         );
 
         final created = await repository.createMessage(
-          MessageToCreate(
+          .new(
             conversationId: 'conv-1',
             content: '',
             messageType: MessageType.text,
@@ -507,7 +504,7 @@ void main() {
 
         final patched = await repository.patchMessage(
           created.id,
-          const MessagePatch(status: MessageStatus.sent),
+          const MessagePatch(status: .sent),
         );
 
         expect(patched.status, MessageStatus.sent);
@@ -521,18 +518,15 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: '',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.unfinished,
+          status: .unfinished,
           metadata: '{}',
         ),
       );
 
       await expectLater(
-        repository.patchMessage(
-          created.id,
-          const MessagePatch(status: MessageStatus.sent),
-        ),
+        repository.patchMessage(created.id, const MessagePatch(status: .sent)),
         throwsA(isA<MessageValidationException>()),
       );
     });
@@ -544,9 +538,9 @@ void main() {
           const MessageToCreate(
             conversationId: 'conv-1',
             content: '',
-            messageType: MessageType.text,
+            messageType: .text,
             isUser: false,
-            status: MessageStatus.unfinished,
+            status: .unfinished,
             metadata: '{"thinking":"reasoning"}',
           ),
         );
@@ -554,8 +548,8 @@ void main() {
         final patched = await repository.patchMessage(
           created.id,
           const MessagePatch(
-            metadata: MessageMetadataEntity(thinking: 'reasoning'),
-            status: MessageStatus.sent,
+            metadata: .new(thinking: 'reasoning'),
+            status: .sent,
           ),
         );
 
@@ -570,18 +564,15 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: '   ',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.unfinished,
+          status: .unfinished,
           metadata: '{}',
         ),
       );
 
       await expectLater(
-        repository.patchMessage(
-          created.id,
-          const MessagePatch(status: MessageStatus.sent),
-        ),
+        repository.patchMessage(created.id, const MessagePatch(status: .sent)),
         throwsA(isA<MessageValidationException>()),
       );
     });
@@ -591,9 +582,9 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'test',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: false,
-          status: MessageStatus.sending,
+          status: .sending,
           metadata: '{"promptTokens":10}',
         ),
       );
@@ -625,7 +616,7 @@ void main() {
         );
 
         final created = await repository.createMessage(
-          MessageToCreate(
+          .new(
             conversationId: 'conv-1',
             content: '',
             messageType: MessageType.text,
@@ -650,9 +641,9 @@ void main() {
           const MessageToCreate(
             conversationId: 'conv-1',
             content: '',
-            messageType: MessageType.text,
+            messageType: .text,
             isUser: true,
-            status: MessageStatus.sending,
+            status: .sending,
             metadata: '{"promptTokens":10}',
           ),
         ),
@@ -668,9 +659,9 @@ void main() {
             const MessageToCreate(
               conversationId: 'conv-1',
               content: '',
-              messageType: MessageType.text,
+              messageType: .text,
               isUser: false,
-              status: MessageStatus.unfinished,
+              status: .unfinished,
               metadata: 'not json',
             ),
           ),
@@ -686,9 +677,9 @@ void main() {
           const MessageToCreate(
             conversationId: 'conv-1',
             content: '',
-            messageType: MessageType.text,
+            messageType: .text,
             isUser: false,
-            status: MessageStatus.unfinished,
+            status: .unfinished,
             metadata: '   ',
           ),
         );
@@ -703,9 +694,9 @@ void main() {
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'regular msg',
-          messageType: MessageType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageStatus.sending,
+          status: .sending,
         ),
       );
 
@@ -720,23 +711,23 @@ void main() {
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'user msg',
-            messageType: MessageType.text,
+            messageType: .text,
             isUser: true,
-            status: MessageStatus.sending,
+            status: .sending,
           ),
         );
 
         final compactionMetadata = const MessageMetadataEntity(
           metadataVersion: 2,
           isCompactionSummary: true,
-          compactionKind: CompactionKind.auto,
+          compactionKind: .auto,
           compactedFromMessageId: 'msg-1',
           compactedThroughMessageId: 'msg-2',
           compactedMessageIds: ['msg-1', 'msg-2'],
         ).toJson();
 
         final created = await repository.createMessage(
-          MessageToCreate(
+          .new(
             conversationId: 'conv-1',
             content: 'Compaction summary content',
             messageType: MessageType.system,
@@ -747,7 +738,7 @@ void main() {
         );
         final _ = await repository.patchMessage(
           created.id,
-          const MessagePatch(status: MessageStatus.sent),
+          const MessagePatch(status: .sent),
         );
 
         final summary = await repository.getLatestCompactionSummary('conv-1');
@@ -778,9 +769,9 @@ void main() {
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'system note',
-            messageType: MessageType.system,
+            messageType: .system,
             isUser: false,
-            status: MessageStatus.sending,
+            status: .sending,
           ),
         );
 
@@ -795,9 +786,9 @@ class _FakeAttachmentFileStore extends AttachmentFileStore {
   new({Map<String, String>? persistedPaths})
     : _persistedPaths = persistedPaths ?? const {};
 
-  final Map<String, String> _persistedPaths;
   final persisted = <String>[];
   final deleted = <String>[];
+  final Map<String, String> _persistedPaths;
 
   @override
   Future<String> persistDraftFile(String localPath) async {

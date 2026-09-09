@@ -35,9 +35,7 @@ class const AgentToolResumeService({
 
     await provider.continueAgent(
       conversationId: reference.conversationId,
-      context: const AgentIterationContext(
-        origin: AgentIterationOrigin.toolResume,
-      ),
+      context: const AgentIterationContext(origin: .toolResume),
     );
   }
 }

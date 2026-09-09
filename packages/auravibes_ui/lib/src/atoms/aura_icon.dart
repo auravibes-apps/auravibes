@@ -51,12 +51,12 @@ class AuraIcon extends StatelessWidget {
 
   double _getIconSize() {
     return switch (size) {
-      AuraIconSize.extraSmall => _extraSmallSize,
-      AuraIconSize.small => _smallSize,
-      AuraIconSize.medium => _mediumSize,
-      AuraIconSize.large => _largeSize,
-      AuraIconSize.extraLarge => _extraLargeSize,
-      AuraIconSize.huge => _hugeSize,
+      .extraSmall => _extraSmallSize,
+      .small => _smallSize,
+      .medium => _mediumSize,
+      .large => _largeSize,
+      .extraLarge => _extraLargeSize,
+      .huge => _hugeSize,
     };
   }
 }

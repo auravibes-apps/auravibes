@@ -16,7 +16,7 @@ void main() {
           return Future<void>.value();
         },
         (_) async =>
-            OAuthTokenEntity(accessToken: 'access', issuedAt: DateTime(2026)),
+            OAuthTokenEntity(accessToken: 'access', issuedAt: .new(2026)),
         MockDeleteServiceConnectionUsecase(),
       );
 
@@ -36,10 +36,7 @@ void main() {
         (connectionId) async {
           calls.add('refresh:$connectionId');
 
-          return OAuthTokenEntity(
-            accessToken: 'access',
-            issuedAt: DateTime(2026),
-          );
+          return OAuthTokenEntity(accessToken: 'access', issuedAt: .new(2026));
         },
         MockDeleteServiceConnectionUsecase(),
       );
@@ -63,14 +60,14 @@ void main() {
       final usecase = ServiceConnectionsActionUsecase(
         (_) => Future<void>.value(),
         (_) async =>
-            OAuthTokenEntity(accessToken: 'access', issuedAt: DateTime(2026)),
+            OAuthTokenEntity(accessToken: 'access', issuedAt: .new(2026)),
         deleteUsecase,
       );
 
       await expectLater(
         usecase.deleteConnection(
           connectionId: 'connection-1',
-          kind: ServiceConnectionListItemKind.skillCredential,
+          kind: .skillCredential,
         ),
         completes,
       );

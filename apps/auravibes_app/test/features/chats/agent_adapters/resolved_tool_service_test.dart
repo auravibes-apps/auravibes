@@ -50,7 +50,7 @@ class _MockRunSkillsManagerToolUsecase extends Mock
 class _MockListAvailableSkillsUsecase extends Mock
     implements ListAvailableSkillsUsecase;
 
-class _MockListAppSkillCredentialCandidatesUsecase extends Mock
+class _MockListAppSkillCandidatesUsecase extends Mock
     implements ListAppSkillCredentialCandidatesUsecase;
 
 class _MockSkillCredentialsRepository extends Mock
@@ -155,7 +155,7 @@ AvailableSkill _appAvailableSkill(String slug) {
     title: slug,
     description: '',
     content: '',
-    kind: SkillKind.native,
+    kind: .native,
   );
 }
 
@@ -204,7 +204,7 @@ void main() {
       tool: ResolvedTool.builtIn(
         tableId: 'tool-1',
         toolIdentifier: 'calculator',
-        tooltype: UserToolType.calculator,
+        tooltype: .calculator,
       ),
       arguments: {'input': '2 + 3'},
     );
@@ -219,7 +219,7 @@ void main() {
         tool: ResolvedTool.builtIn(
           tableId: 'tool-1',
           toolIdentifier: 'calculator',
-          tooltype: UserToolType.calculator,
+          tooltype: .calculator,
         ),
         arguments: {},
       ),
@@ -231,10 +231,7 @@ void main() {
     expect(
       () => usecase(
         conversationId: 'conversation-1',
-        tool: ResolvedTool.native(
-          tableId: 'tool-1',
-          nativeToolType: NativeToolType.url,
-        ),
+        tool: ResolvedTool.native(tableId: 'tool-1', nativeToolType: .url),
         arguments: {},
       ),
       throwsA(isA<FormatException>()),
@@ -302,7 +299,7 @@ void main() {
     final descriptors = [
       provider
           .toExecution(
-            ResolvedTool.builtIn(
+            .builtIn(
               tableId: 'calc',
               toolIdentifier: 'calculator',
               tooltype: UserToolType.calculator,
@@ -311,25 +308,18 @@ void main() {
           .descriptor,
       provider
           .toExecution(
-            ResolvedTool.native(
-              tableId: 'url',
-              nativeToolType: NativeToolType.url,
-            ),
+            .native(tableId: 'url', nativeToolType: NativeToolType.url),
           )
           .descriptor,
       provider
-          .toExecution(
-            ResolvedTool.skillControl(toolIdentifier: loadSkillToolName),
-          )
+          .toExecution(.skillControl(toolIdentifier: loadSkillToolName))
+          .descriptor,
+      provider
+          .toExecution(.skillCommand(commandName: callSkillToolName))
           .descriptor,
       provider
           .toExecution(
-            ResolvedTool.skillCommand(commandName: callSkillToolName),
-          )
-          .descriptor,
-      provider
-          .toExecution(
-            ResolvedTool.skillTemplate(
+            .skillTemplate(
               tableId: 'template-1',
               skillSlug: 'skill-1',
               toolIdentifier: 'tool-1',
@@ -338,7 +328,7 @@ void main() {
           .descriptor,
       provider
           .toExecution(
-            ResolvedTool.skillNative(
+            .skillNative(
               tableId: 'native-1',
               skillSlug: 'app-skill',
               toolIdentifier: 'app-tool',
@@ -369,8 +359,8 @@ void main() {
             title: 'Conversation',
             workspaceId: 'workspace-1',
             isPinned: false,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
           ),
         );
     final provider = AppResolvedToolProvider(
@@ -490,7 +480,7 @@ void main() {
 
   test('lists app skill credential ids and names', () async {
     final listSkills = _MockListAvailableSkillsUsecase();
-    final appCandidates = _MockListAppSkillCredentialCandidatesUsecase();
+    final appCandidates = _MockListAppSkillCandidatesUsecase();
     final appSkill = serviceSkillDefinitions.singleWhere(
       (skill) => skill.slug == 'openai',
     );
@@ -498,7 +488,7 @@ void main() {
       () => listSkills.call(
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
-        filter: SkillLoadFilter.loaded,
+        filter: .loaded,
       ),
     ).thenAnswer((_) async => [_appAvailableSkill('openai')]);
     when(
@@ -546,14 +536,14 @@ void main() {
       title: 'Skill',
       description: '',
       content: '',
-      kind: SkillKind.template,
+      kind: .template,
       credentialDefinitionId: 'definition-1',
     );
     when(
       () => listSkills.call(
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
-        filter: SkillLoadFilter.loaded,
+        filter: .loaded,
       ),
     ).thenAnswer((_) async => [skill]);
     when(
@@ -570,8 +560,8 @@ void main() {
           name: 'Credential',
           attributes: const {},
           isEnabled: true,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
         ),
       ],
     );
@@ -606,7 +596,7 @@ void main() {
     'uses the combined skill command runner when fully configured',
     () async {
       final listSkills = _MockListAvailableSkillsUsecase();
-      final appCandidates = _MockListAppSkillCredentialCandidatesUsecase();
+      final appCandidates = _MockListAppSkillCandidatesUsecase();
       final appSkill = serviceSkillDefinitions.singleWhere(
         (skill) => skill.slug == 'openai',
       );
@@ -614,14 +604,14 @@ void main() {
         () => listSkills.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
-          filter: SkillLoadFilter.loadable,
+          filter: .loadable,
         ),
       ).thenAnswer((_) async => const []);
       when(
         () => listSkills.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
-          filter: SkillLoadFilter.loaded,
+          filter: .loaded,
         ),
       ).thenAnswer((_) async => [_appAvailableSkill('openai')]);
       when(
@@ -757,9 +747,7 @@ void main() {
         toolSlug: 'search',
         arguments: {'query': 'dart'},
       ),
-    ).thenReturn(
-      CancelableOperation.fromFuture(Future.value('service result')),
-    );
+    ).thenReturn(CancelableOperation.fromFuture(.value('service result')));
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
       mcpToolCaller: ({
@@ -925,7 +913,7 @@ void main() {
       () => listSkills.call(
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
-        filter: SkillLoadFilter.loaded,
+        filter: .loaded,
       ),
     ).thenAnswer((_) async => [appSkill]);
 
@@ -960,7 +948,7 @@ void main() {
       throwsA(isA<StateError>()),
     );
 
-    final configuredCandidates = _MockListAppSkillCredentialCandidatesUsecase();
+    final configuredCandidates = _MockListAppSkillCandidatesUsecase();
     when(
       () => configuredCandidates.call(
         workspaceId: 'workspace-1',

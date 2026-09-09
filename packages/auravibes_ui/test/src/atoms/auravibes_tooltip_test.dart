@@ -40,7 +40,7 @@ void main() {
             body: AuraTooltip(
               message: 'Tooltip text',
               child: Text('Target'),
-              showDuration: Duration(milliseconds: 100),
+              showDuration: .new(milliseconds: 100),
             ),
           ),
         ),

@@ -6,7 +6,7 @@ class const CloudServiceConnectionUsecases(
   final CloudWorkspaceResourceStore _store,
 ) {
   Stream<List<CloudServiceConnection>> watch() => _store
-      .watch(WorkspaceResourceKind.serviceConnection)
+      .watch(.serviceConnection)
       .map((items) => items.map(CloudServiceConnection.fromResource).toList());
 
   Future<CloudServiceConnection?> getById(String id) async {
@@ -24,8 +24,8 @@ class const CloudServiceConnectionUsecases(
     required String secret,
   }) async {
     final _ = await _store.mutateCredential(
-      operation: WorkspacePatchOperationKind.create,
-      kind: WorkspaceResourceKind.serviceConnection,
+      operation: .create,
+      kind: .serviceConnection,
       id: id,
       data: {
         'id': id,
@@ -58,7 +58,7 @@ class const CloudServiceConnectionUsecases(
     };
     if (!changesSecret) {
       await _store.update(
-        kind: WorkspaceResourceKind.serviceConnection,
+        kind: .serviceConnection,
         id: connection.id,
         revision: connection.revision,
         data: data,
@@ -68,12 +68,12 @@ class const CloudServiceConnectionUsecases(
     }
 
     final _ = await _store.mutateCredential(
-      operation: WorkspacePatchOperationKind.update,
-      kind: WorkspaceResourceKind.serviceConnection,
+      operation: .update,
+      kind: .serviceConnection,
       id: connection.id,
       data: data,
       resourceRevision: connection.revision,
-      secretKind: WorkspaceSecretKind.skillCredential,
+      secretKind: .skillCredential,
       scope: connection.scope,
       secret: replacement,
       clearSecret: update.secretEdit == ServiceConnectionSecretEdit.clear,
@@ -83,11 +83,11 @@ class const CloudServiceConnectionUsecases(
 
   Future<void> delete(CloudServiceConnection connection) =>
       _store.mutateCredential(
-        operation: WorkspacePatchOperationKind.delete,
-        kind: WorkspaceResourceKind.serviceConnection,
+        operation: .delete,
+        kind: .serviceConnection,
         id: connection.id,
         resourceRevision: connection.revision,
-        secretKind: WorkspaceSecretKind.skillCredential,
+        secretKind: .skillCredential,
         scope: connection.scope,
         secret: null,
         clearSecret: true,

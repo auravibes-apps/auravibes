@@ -1,5 +1,3 @@
-import 'dart:ui' show PointerDeviceKind;
-
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
@@ -9,15 +7,14 @@ void main() {
   group('AuraPressable', () {
     testWidgets('uses an 8 percent hover state layer', (tester) async {
       final previousStrategy = FocusManager.instance.highlightStrategy;
-      FocusManager.instance.highlightStrategy =
-          FocusHighlightStrategy.alwaysTraditional;
+      FocusManager.instance.highlightStrategy = .alwaysTraditional;
       addTearDown(
         () => FocusManager.instance.highlightStrategy = previousStrategy,
       );
 
       await tester.pumpWidget(_host());
 
-      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      final gesture = await tester.createGesture(kind: .mouse);
       await gesture.addPointer();
       await gesture.moveTo(tester.getCenter(find.byType(AuraPressable)));
       final _ = await tester.pumpAndSettle();
@@ -70,7 +67,7 @@ Widget _host() {
         ),
       ),
     ),
-    theme: ThemeData(extensions: [AuraTheme.light]),
+    theme: .new(extensions: [AuraTheme.light]),
   );
 }
 

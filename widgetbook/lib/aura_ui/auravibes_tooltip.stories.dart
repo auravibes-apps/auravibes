@@ -30,8 +30,8 @@ final _Defaults tooltipDefaults = _Defaults(
       icon: const Icon(Icons.info_outline),
     ),
     tint: args.tint,
-    showDuration: Duration(milliseconds: args.showDurationMs.toInt()),
-    waitDuration: Duration(milliseconds: args.waitDurationMs.toInt()),
+    showDuration: .new(milliseconds: args.showDurationMs.toInt()),
+    waitDuration: .new(milliseconds: args.waitDurationMs.toInt()),
   ),
 );
 
@@ -64,7 +64,7 @@ final $DefaultTooltip = _Story(
       name: 'Compact Phone',
       modes: [ViewportMode(compactPhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Shows Tooltip',
       run: (tester, args) async {

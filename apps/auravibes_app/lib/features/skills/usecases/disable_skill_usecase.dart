@@ -24,12 +24,12 @@ class const DisableSkillUsecase(
     String? content,
   }) async {
     switch (source) {
-      case SkillSource.user:
+      case .user:
         final cloud = cloudStore;
         if (cloud != null) {
           final _ = await cloud.updateSkill(
             skillId,
-            SkillToUpdate(isEnabled: isEnabled),
+            .new(isEnabled: isEnabled),
           );
           break;
         }
@@ -39,9 +39,9 @@ class const DisableSkillUsecase(
         }
         final _ = await skillsRepository.updateSkill(
           skillId,
-          SkillToUpdate(isEnabled: isEnabled),
+          .new(isEnabled: isEnabled),
         );
-      case SkillSource.app:
+      case .app:
         final cloud = cloudStore;
         if (cloud != null) {
           await cloud.setAppSkillEnabled(

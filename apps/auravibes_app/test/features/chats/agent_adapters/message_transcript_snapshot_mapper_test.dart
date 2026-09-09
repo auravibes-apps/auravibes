@@ -1,6 +1,4 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/message_transcript_snapshot_mapper.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,11 +9,11 @@ void main() {
       id: 'summary-1',
       conversationId: 'conversation-1',
       content: 'summary',
-      messageType: MessageType.system,
+      messageType: .system,
       isUser: false,
-      status: MessageStatus.sent,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      status: .sent,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
       metadata: const MessageMetadataEntity(
         toolCalls: [
           MessageToolCallEntity(
@@ -23,7 +21,7 @@ void main() {
             name: 'native__url',
             argumentsRaw: '{"x":1}',
             responseRaw: 'done',
-            resultStatus: ToolCallResultStatus.running,
+            resultStatus: .running,
           ),
         ],
         promptTokens: 8,

@@ -20,7 +20,7 @@ class const AgentResolvedToolName._({
 }) {
   factory builtIn({required String tableId, required String toolIdentifier}) {
     return AgentResolvedToolName._(
-      kind: AgentResolvedToolKind.builtIn,
+      kind: .builtIn,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
     );
@@ -33,7 +33,7 @@ class const AgentResolvedToolName._({
     required String mcpSlug,
   }) {
     return AgentResolvedToolName._(
-      kind: AgentResolvedToolKind.mcp,
+      kind: .mcp,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
       mcpServerId: mcpServerId,
@@ -43,7 +43,7 @@ class const AgentResolvedToolName._({
 
   factory native({required String tableId, required String toolIdentifier}) {
     return AgentResolvedToolName._(
-      kind: AgentResolvedToolKind.native,
+      kind: .native,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
     );
@@ -51,7 +51,7 @@ class const AgentResolvedToolName._({
 
   factory skillControl({required String toolIdentifier}) {
     return AgentResolvedToolName._(
-      kind: AgentResolvedToolKind.skillControl,
+      kind: .skillControl,
       tableId: toolIdentifier,
       toolIdentifier: toolIdentifier,
     );
@@ -63,7 +63,7 @@ class const AgentResolvedToolName._({
     required String toolIdentifier,
   }) {
     return AgentResolvedToolName._(
-      kind: AgentResolvedToolKind.skillTemplate,
+      kind: .skillTemplate,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
       skillSlug: skillSlug,
@@ -76,7 +76,7 @@ class const AgentResolvedToolName._({
     required String toolIdentifier,
   }) {
     return AgentResolvedToolName._(
-      kind: AgentResolvedToolKind.skillNative,
+      kind: .skillNative,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
       skillSlug: skillSlug,
@@ -86,15 +86,12 @@ class const AgentResolvedToolName._({
 
   String get fullName {
     return switch (kind) {
-      AgentResolvedToolKind.builtIn => 'built_in_${tableId}_$toolIdentifier',
-      AgentResolvedToolKind.mcp =>
-        'mcp_${mcpServerId}_${mcpSlug}_$toolIdentifier',
-      AgentResolvedToolKind.native => 'native_${tableId}_$toolIdentifier',
-      AgentResolvedToolKind.skillControl => toolIdentifier,
-      AgentResolvedToolKind.skillTemplate =>
-        'skill__user__${skillSlug}__$toolIdentifier',
-      AgentResolvedToolKind.skillNative =>
-        'skill__app__${skillSlug}__$toolIdentifier',
+      .builtIn => 'built_in_${tableId}_$toolIdentifier',
+      .mcp => 'mcp_${mcpServerId}_${mcpSlug}_$toolIdentifier',
+      .native => 'native_${tableId}_$toolIdentifier',
+      .skillControl => toolIdentifier,
+      .skillTemplate => 'skill__user__${skillSlug}__$toolIdentifier',
+      .skillNative => 'skill__app__${skillSlug}__$toolIdentifier',
     };
   }
 

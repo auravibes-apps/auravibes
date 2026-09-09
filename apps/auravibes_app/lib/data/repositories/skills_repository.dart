@@ -40,7 +40,7 @@ class SkillsRepository(AppDatabase database) {
     SkillToCreate skill,
   ) async {
     final table = await _dao.createSkill(
-      SkillsCompanion(
+      .new(
         source: const Value(SkillSourceTable.user),
         workspaceId: Value(workspaceId),
         kind: Value(_mapKindToTable(skill.kind)),
@@ -60,7 +60,7 @@ class SkillsRepository(AppDatabase database) {
   Future<SkillEntity> updateSkill(String skillId, SkillToUpdate skill) async {
     final table = await _dao.updateSkill(
       skillId,
-      SkillsCompanion(
+      .new(
         updatedAt: Value(DateTime.now()),
         title: switch (skill.title) {
           null => const Value.absent(),
@@ -101,22 +101,22 @@ class SkillsRepository(AppDatabase database) {
 
   SkillSource _mapSource(SkillSourceTable source) {
     return switch (source) {
-      SkillSourceTable.user => SkillSource.user,
-      SkillSourceTable.app => SkillSource.app,
+      .user => SkillSource.user,
+      .app => SkillSource.app,
     };
   }
 
   SkillKind _mapKind(SkillKindTable kind) {
     return switch (kind) {
-      SkillKindTable.template => SkillKind.template,
-      SkillKindTable.native => SkillKind.native,
+      .template => SkillKind.template,
+      .native => SkillKind.native,
     };
   }
 
   SkillKindTable _mapKindToTable(SkillKind kind) {
     return switch (kind) {
-      SkillKind.template => SkillKindTable.template,
-      SkillKind.native => SkillKindTable.native,
+      .template => SkillKindTable.template,
+      .native => SkillKindTable.native,
     };
   }
 }

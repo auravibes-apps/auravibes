@@ -59,7 +59,7 @@ class const EnhancedModelInput({
   })
   _getFieldData(ModelInputFieldType type, AddModelProviderModel state) {
     switch (type) {
-      case ModelInputFieldType.name:
+      case .name:
         return (
           value: state.name,
           error: state.validateName(),
@@ -70,7 +70,7 @@ class const EnhancedModelInput({
           keyboardType: TextInputType.text,
         );
 
-      case ModelInputFieldType.key:
+      case .key:
         return (
           value: state.key,
           error: state.validateKey(),
@@ -81,7 +81,7 @@ class const EnhancedModelInput({
           keyboardType: TextInputType.visiblePassword,
         );
 
-      case ModelInputFieldType.url:
+      case .url:
         return (
           value: state.url,
           error: state.validateUrl(),
@@ -100,22 +100,22 @@ class const EnhancedModelInput({
     AddModelProviderState notifier,
   ) {
     switch (type) {
-      case ModelInputFieldType.name:
+      case .name:
         notifier.setName(value);
-      case ModelInputFieldType.key:
+      case .key:
         notifier.setKey(value);
-      case ModelInputFieldType.url:
+      case .url:
         notifier.setUrl(value.isEmpty ? null : value);
     }
   }
 
   TextInputAction _getTextInputAction(ModelInputFieldType type) {
     switch (type) {
-      case ModelInputFieldType.name:
+      case .name:
         return TextInputAction.next;
-      case ModelInputFieldType.key:
+      case .key:
         return TextInputAction.next;
-      case ModelInputFieldType.url:
+      case .url:
         return TextInputAction.done;
     }
   }

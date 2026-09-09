@@ -4,7 +4,6 @@ import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/execution/skill_http_client.dart';
 import 'package:auravibes_engine/src/skills/models/skill_credential_attribute_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
-import 'package:auravibes_engine/src/skills/models/url_request.dart';
 import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
 
 const Map<String, Object> searchInputSchema = {
@@ -63,7 +62,7 @@ CancelableOperation<Object?> postJson(
   Map<String, Object?> body,
 ) {
   return request(
-    UrlRequest(
+    .new(
       url: url,
       method: UrlRequestMethod.post,
       headers: {'content-type': 'application/json', ...headers},

@@ -15,24 +15,20 @@ enum AgentToolResultStatus {
 
 extension AgentToolResultStatusX on AgentToolResultStatus {
   AgentToolCallLifecycle get lifecycle => switch (this) {
-    AgentToolResultStatus.success => AgentToolCallLifecycle.success,
-    AgentToolResultStatus.stoppedByUser => AgentToolCallLifecycle.stoppedByUser,
+    .success => AgentToolCallLifecycle.success,
+    .stoppedByUser => AgentToolCallLifecycle.stoppedByUser,
     _ => AgentToolCallLifecycle.failed,
   };
 
   String get modelFallback => switch (this) {
-    AgentToolResultStatus.success => '',
-    AgentToolResultStatus.toolNotFound => 'Tool not found.',
-    AgentToolResultStatus.executionError => 'Tool execution failed.',
-    AgentToolResultStatus.disabledInConversation =>
-      'Tool is disabled for this conversation.',
-    AgentToolResultStatus.disabledByAgent =>
-      'Tool is denied by the selected agent.',
-    AgentToolResultStatus.disabledInWorkspace =>
-      'Tool is disabled in workspace.',
-    AgentToolResultStatus.notConfigured => 'Tool is not configured.',
-    AgentToolResultStatus.stoppedByUser =>
-      'Tool execution was stopped by the user.',
+    .success => '',
+    .toolNotFound => 'Tool not found.',
+    .executionError => 'Tool execution failed.',
+    .disabledInConversation => 'Tool is disabled for this conversation.',
+    .disabledByAgent => 'Tool is denied by the selected agent.',
+    .disabledInWorkspace => 'Tool is disabled in workspace.',
+    .notConfigured => 'Tool is not configured.',
+    .stoppedByUser => 'Tool execution was stopped by the user.',
   };
 }
 
@@ -78,18 +74,14 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         arguments: arguments,
       );
       if (isCancellationRequested(conversationId)) {
-        return const AgentToolExecutionResult(
-          resultStatus: AgentToolResultStatus.stoppedByUser,
-        );
+        return const AgentToolExecutionResult(resultStatus: .stoppedByUser);
       }
       if (result == null) {
-        return const AgentToolExecutionResult(
-          resultStatus: AgentToolResultStatus.toolNotFound,
-        );
+        return const AgentToolExecutionResult(resultStatus: .toolNotFound);
       }
 
       return AgentToolExecutionResult(
-        resultStatus: AgentToolResultStatus.success,
+        resultStatus: .success,
         responseRaw: switch (result) {
           final String value => value,
           final Map<Object?, Object?> value => jsonEncode(value),
@@ -107,7 +99,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
       );
 
       return const AgentToolExecutionResult(
-        resultStatus: AgentToolResultStatus.executionError,
+        resultStatus: .executionError,
         responseRaw: 'Tool execution failed.',
       );
     } on Object catch (error, stackTrace) {
@@ -119,9 +111,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         stackTrace: stackTrace,
       );
 
-      return const AgentToolExecutionResult(
-        resultStatus: AgentToolResultStatus.executionError,
-      );
+      return const AgentToolExecutionResult(resultStatus: .executionError);
     }
   }
 }

@@ -4,19 +4,19 @@ import 'package:test/test.dart';
 void main() {
   test('compares origin and ack message ids by value', () {
     const first = AgentIterationContext(
-      origin: AgentIterationOrigin.manualContinue,
+      origin: .manualContinue,
       ackMessageIds: ['m1', 'm2'],
     );
     const same = AgentIterationContext(
-      origin: AgentIterationOrigin.manualContinue,
+      origin: .manualContinue,
       ackMessageIds: ['m1', 'm2'],
     );
     const differentLength = AgentIterationContext(
-      origin: AgentIterationOrigin.manualContinue,
+      origin: .manualContinue,
       ackMessageIds: ['m1'],
     );
     const differentValue = AgentIterationContext(
-      origin: AgentIterationOrigin.manualContinue,
+      origin: .manualContinue,
       ackMessageIds: ['m2', 'm1'],
     );
 

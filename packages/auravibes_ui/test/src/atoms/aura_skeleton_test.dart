@@ -14,7 +14,7 @@ void main() {
             semanticLabel: 'Loading',
           ),
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

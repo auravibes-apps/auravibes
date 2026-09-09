@@ -1,9 +1,8 @@
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart'
-    show AuraEdgeInsetsGeometry, AuraPadding;
+    show AuraPadding;
 import 'package:auravibes_ui/src/atoms/aura_icon.dart' show AuraIcon;
 import 'package:auravibes_ui/src/atoms/aura_spinner.dart' show AuraSpinner;
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
 import 'package:flutter/widgets.dart';
 
 /// Displays an image loaded from [url] with Aura loading and error states.
@@ -78,8 +77,8 @@ class AuraImage extends StatelessWidget {
         color: context.auraColors.surfaceVariant,
         child: const Center(
           child: AuraPadding(
-            child: AuraIcon(_brokenImageIcon, tint: AuraTint.error),
-            padding: AuraEdgeInsetsGeometry.medium,
+            child: AuraIcon(_brokenImageIcon, tint: .error),
+            padding: .medium,
           ),
         ),
       ),

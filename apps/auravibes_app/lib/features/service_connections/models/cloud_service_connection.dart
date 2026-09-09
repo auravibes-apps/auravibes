@@ -23,7 +23,7 @@ class const CloudServiceConnection({
       name: data['name'] as String,
       serviceId: CloudResourceMapper.string(data, 'serviceId'),
       hasSecret: data['hasSecret'] as bool? ?? data['keySuffix'] != null,
-      scope: WorkspaceSecretScope.fromJson(
+      scope: .fromJson(
         data['scope'] as String? ?? WorkspaceSecretScope.workspace.name,
       ),
       kind: data['kind'] as String? ?? 'appSkillCredential',

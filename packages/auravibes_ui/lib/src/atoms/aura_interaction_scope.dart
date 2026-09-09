@@ -45,14 +45,14 @@ class AuraInteractionPolicy {
       mode != AuraInteractionMode.disabled && allowLocalNavigation;
 
   @override
+  int get hashCode => Object.hash(mode, allowLocalNavigation);
+
+  @override
   bool operator ==(Object other) {
     return other is AuraInteractionPolicy &&
         other.mode == mode &&
         other.allowLocalNavigation == allowLocalNavigation;
   }
-
-  @override
-  int get hashCode => Object.hash(mode, allowLocalNavigation);
 }
 
 /// Inherited interaction policy for a subtree of Aura widgets.

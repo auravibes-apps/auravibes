@@ -28,7 +28,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -52,7 +52,7 @@ void main() {
 
       final workspace = WorkspacesCompanion.insert(
         name: 'Test Workspace',
-        type: WorkspaceType.local,
+        type: .local,
       );
 
       // Insert the workspace.
@@ -69,14 +69,11 @@ void main() {
 
       // Insert test workspaces.
       final _ = await workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
-          name: 'Workspace 1',
-          type: WorkspaceType.local,
-        ),
+        .insert(name: 'Workspace 1', type: WorkspaceType.local),
       );
 
       final _ = await workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
+        .insert(
           name: 'Workspace 2',
           type: WorkspaceType.remote,
           url: const Value('https://example.com'),
@@ -97,16 +94,13 @@ void main() {
 
       // Insert a workspace.
       final idCreated = await workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
-          name: 'Original Name',
-          type: WorkspaceType.local,
-        ),
+        .insert(name: 'Original Name', type: WorkspaceType.local),
       );
 
       // Update the workspace.
       final updated = await workspaceDao.patchWorkspace(
         idCreated.id,
-        WorkspacesCompanion(
+        .new(
           updatedAt: Value(DateTime.now()),
           name: const Value('Updated Name'),
         ),
@@ -127,10 +121,7 @@ void main() {
 
       // Insert a workspace.
       final createdId = await workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
-          name: 'Test Workspace',
-          type: WorkspaceType.local,
-        ),
+        .insert(name: 'Test Workspace', type: WorkspaceType.local),
       );
 
       // Delete the workspace.
@@ -147,14 +138,11 @@ void main() {
 
       // Insert test workspaces.
       final _ = await workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
-          name: 'Development Workspace',
-          type: WorkspaceType.local,
-        ),
+        .insert(name: 'Development Workspace', type: WorkspaceType.local),
       );
 
       final _ = await workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
+        .insert(
           name: 'Production Workspace',
           type: WorkspaceType.remote,
           url: const Value('https://prod.example.com'),
@@ -173,21 +161,15 @@ void main() {
 
       // Insert test workspaces.
       final _ = await workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
-          name: 'Local Workspace 1',
-          type: WorkspaceType.local,
-        ),
+        .insert(name: 'Local Workspace 1', type: WorkspaceType.local),
       );
 
       final _ = await workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
-          name: 'Local Workspace 2',
-          type: WorkspaceType.local,
-        ),
+        .insert(name: 'Local Workspace 2', type: WorkspaceType.local),
       );
 
       final _ = await workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(
+        .insert(
           name: 'Remote Workspace 1',
           type: WorkspaceType.remote,
           url: const Value('https://example.com'),
@@ -195,12 +177,8 @@ void main() {
       );
 
       // Get counts by type.
-      final localCount = await workspaceDao.getWorkspaceCountByType(
-        WorkspaceType.local,
-      );
-      final remoteCount = await workspaceDao.getWorkspaceCountByType(
-        WorkspaceType.remote,
-      );
+      final localCount = await workspaceDao.getWorkspaceCountByType(.local);
+      final remoteCount = await workspaceDao.getWorkspaceCountByType(.remote);
 
       expect(localCount, equals(2));
       expect(remoteCount, equals(1));

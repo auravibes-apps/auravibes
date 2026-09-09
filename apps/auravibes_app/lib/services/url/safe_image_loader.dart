@@ -28,7 +28,7 @@ class SafeImageLoader({
         final response = await client.get<ResponseBody>(
           uri.toString(),
           cancelToken: cancellation,
-          options: Options(
+          options: .new(
             sendTimeout: timeout,
             receiveTimeout: timeout,
             responseType: ResponseType.stream,

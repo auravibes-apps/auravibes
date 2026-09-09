@@ -7,7 +7,6 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -49,7 +48,7 @@ void main() {
             _resource(
               source: SkillSource.app,
               id: 'duckduckgo',
-              kind: SkillKind.native,
+              kind: .native,
               title: 'Workspace Search',
               slug: 'workspace_search',
               description: 'Workspace description.',
@@ -87,7 +86,7 @@ void main() {
               _resource(
                 source: SkillSource.user,
                 id: 'duckduckgo',
-                kind: SkillKind.template,
+                kind: .template,
                 title: 'My Search',
                 slug: 'my_search',
                 description: 'User description.',
@@ -157,7 +156,7 @@ void main() {
 
 CloudSkillStore _cloudStore(List<WorkspaceResource> resources) {
   return CloudSkillStore(
-    CloudWorkspaceResourceStore.forTesting(
+    .forTesting(
       patch: ({required requestId, required operations}) =>
           throw UnimplementedError(),
       watch: (_) => Stream.value(resources),
@@ -197,7 +196,7 @@ WorkspaceResource _resource({
 
   return WorkspaceResource(
     workspaceId: 1,
-    resourceKind: WorkspaceResourceKind.skill,
+    resourceKind: .skill,
     resourceId: id,
     data: jsonEncode({
       'id': id,

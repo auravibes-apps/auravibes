@@ -108,8 +108,8 @@ void main() {
     });
 
     test('hashCode includes right padding', () {
-      const a = AuraEdgeInsetsGeometry.only(right: AuraSpacing.sm);
-      const b = AuraEdgeInsetsGeometry.only(bottom: AuraSpacing.sm);
+      const a = AuraEdgeInsetsGeometry.only(right: .sm);
+      const b = AuraEdgeInsetsGeometry.only(bottom: .sm);
       expect(a.hashCode, isNot(b.hashCode));
     });
   });
@@ -119,7 +119,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(body: AuraPadding(child: Text('Padded'))),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -131,12 +131,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraPadding(
-              child: Text('Large Padded'),
-              padding: AuraEdgeInsetsGeometry.large,
-            ),
+            body: AuraPadding(child: Text('Large Padded'), padding: .large),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -157,10 +154,10 @@ void main() {
           home: const Scaffold(
             body: AuraPadding(
               child: SizedBox(width: 100, height: 100),
-              padding: AuraEdgeInsetsGeometry.medium,
+              padding: .medium,
             ),
           ),
-          theme: ThemeData(extensions: [AuraTheme.light]),
+          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 

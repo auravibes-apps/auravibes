@@ -47,7 +47,7 @@ class const ToolItemRow({
                       ? context.auraColors.primary.withValues(alpha: 0.1)
                       : context.auraColors.surfaceVariant,
                   borderRadius: BorderRadius.all(
-                    Radius.circular(context.auraTheme.fromBorderRadius(.sm)),
+                    .circular(context.auraTheme.fromBorderRadius(.sm)),
                   ),
                 ),
                 width: iconSize,
@@ -66,33 +66,33 @@ class const ToolItemRow({
                     AuraText(child: tool.getNameWidget()),
                     AuraText(
                       child: DefaultTextStyle.merge(
-                        overflow: TextOverflow.ellipsis,
+                        overflow: .ellipsis,
                         maxLines: 1,
                         child: tool.getDescriptionWidget(),
                       ),
-                      style: AuraTextStyle.bodySmall,
+                      style: .bodySmall,
                     ),
                   ],
                   spacing: .xs,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                 ),
               ),
               AuraSwitch(
                 value: isEnabled,
                 onChanged: (value) => _setToolEnabled(ref, value),
-                size: AuraSwitchSize.sm,
+                size: .sm,
               ),
               AuraIconButton.custom(
                 child: AnimatedRotation(
                   child: const AuraIcon(
                     Icons.keyboard_arrow_down,
-                    size: AuraIconSize.small,
+                    size: .small,
                   ),
                   turns: isExpanded.value ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
                 ),
                 onPressed: () => isExpanded.value = !isExpanded.value,
-                size: AuraIconSize.small,
+                size: .small,
               ),
             ],
           ),
@@ -111,7 +111,7 @@ class const ToolItemRow({
               ),
             ),
         ],
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -142,7 +142,7 @@ class const _ToolOptions({
             children: [
               const AuraText(
                 child: TextLocale(LocaleKeys.tools_screen_permission_label),
-                style: AuraTextStyle.bodySmall,
+                style: .bodySmall,
               ),
               AuraButtonGroup<ToolPermissionMode>.single(
                 items: const [
@@ -161,10 +161,10 @@ class const _ToolOptions({
                 ],
                 selectedValue: permissionMode,
                 onChanged: (mode) => _setPermissionMode(ref, mode),
-                size: AuraButtonGroupSize.sm,
+                size: .sm,
               ),
             ],
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: .spaceBetween,
           ),
         if (showDeleteButton && !workspaceTool.isNative)
           Align(
@@ -173,24 +173,20 @@ class const _ToolOptions({
               onPressed: () => _confirmDelete(context, ref, workspaceTool),
               child: const AuraRow(
                 children: [
-                  AuraIcon(
-                    Icons.delete_outline,
-                    size: AuraIconSize.small,
-                    tint: AuraTint.error,
-                  ),
+                  AuraIcon(Icons.delete_outline, size: .small, tint: .error),
                   TextLocale(LocaleKeys.common_remove),
                 ],
                 spacing: .xs,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
               ),
-              variant: AuraButtonVariant.text,
-              tint: AuraTint.error,
-              size: AuraButtonSize.small,
+              variant: .text,
+              tint: .error,
+              size: .small,
             ),
           ),
       ],
       spacing: .sm,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
     );
   }
 

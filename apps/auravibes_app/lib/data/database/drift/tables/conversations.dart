@@ -10,19 +10,16 @@ import 'package:drift/drift.dart';
 @DataClassName('ConversationsTable')
 class Conversations extends Table with TableMixin {
   TextColumn get workspaceId =>
-      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
+      text().references(Workspaces, #id, onDelete: .cascade)();
   TextColumn get title => text()();
   TextColumn get modelId => text().nullable().references(
     WorkspaceModelSelections,
     #id,
-    onDelete: KeyAction.setNull,
+    onDelete: .setNull,
   )();
   TextColumn get agentId =>
-      text().nullable().references(Agents, #id, onDelete: KeyAction.setNull)();
-  TextColumn get parentConversationId => text().nullable().references(
-    Conversations,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+      text().nullable().references(Agents, #id, onDelete: .setNull)();
+  TextColumn get parentConversationId =>
+      text().nullable().references(Conversations, #id, onDelete: .cascade)();
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 }

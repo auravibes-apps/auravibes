@@ -11,7 +11,7 @@ void main() {
       workspaceId: 'ws_1',
       name: 'My Tools',
       isEnabled: true,
-      permissions: PermissionAccess.ask,
+      permissions: .ask,
       createdAt: now,
       updatedAt: now,
     );
@@ -22,7 +22,7 @@ void main() {
         workspaceId: 'ws_1',
         name: 'MCP Tools',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
+        permissions: .ask,
         createdAt: now,
         updatedAt: now,
         mcpServerId: 'mcp_1',
@@ -40,7 +40,7 @@ void main() {
         workspaceId: 'ws_1',
         name: 'Empty MCP',
         isEnabled: true,
-        permissions: PermissionAccess.ask,
+        permissions: .ask,
         createdAt: now,
         updatedAt: now,
         mcpServerId: '',
@@ -55,7 +55,7 @@ void main() {
         workspaceId: 'ws_1',
         name: 'Granted',
         isEnabled: true,
-        permissions: PermissionAccess.granted,
+        permissions: .granted,
         createdAt: now,
         updatedAt: now,
       );
@@ -92,10 +92,7 @@ void main() {
     });
 
     test('permissions can be set to granted', () {
-      const create = ToolsGroupToCreate(
-        name: 'Group',
-        permissions: PermissionAccess.granted,
-      );
+      const create = ToolsGroupToCreate(name: 'Group', permissions: .granted);
       expect(create.permissions, PermissionAccess.granted);
     });
 

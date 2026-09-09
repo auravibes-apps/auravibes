@@ -4,7 +4,6 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
@@ -67,16 +66,13 @@ void main() {
     addTearDown(database.close);
     final workspaceRepository = WorkspaceRepository(database);
     final workspace = await workspaceRepository.createWorkspace(
-      const WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      ),
+      const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
     final skillsRepository = SkillsRepository(database);
     final skill = await skillsRepository.createSkill(
       workspace.id,
       const SkillToCreate(
-        kind: SkillKind.template,
+        kind: .template,
         title: 'Write Summary',
         description: 'Summarize selected content.',
         content: 'Summarize selected content.',

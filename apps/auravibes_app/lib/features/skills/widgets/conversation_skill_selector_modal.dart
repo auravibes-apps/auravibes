@@ -104,8 +104,8 @@ class const _SelectorContent({
             onPressed: onLoad,
           ),
         ],
-        spacing: AuraSpacing.md,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: .md,
+        crossAxisAlignment: .start,
       ),
     );
   }
@@ -122,7 +122,7 @@ class const _SkillSection({
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        AuraText(child: TextLocale(titleKey), style: AuraTextStyle.heading4),
+        AuraText(child: TextLocale(titleKey), style: .heading4),
         if (skills.isEmpty)
           AuraText(child: TextLocale(emptyKey))
         else
@@ -133,18 +133,18 @@ class const _SkillSection({
                   AuraText(child: Text(skill.title)),
                   AuraText(child: Text(skill.description)),
                 ],
-                spacing: AuraSpacing.xs,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: .xs,
+                crossAxisAlignment: .start,
               ),
-              variant: AuraTileVariant.ghost,
+              variant: .ghost,
               trailing: AuraIconButton(
                 icon: actionIcon,
                 onPressed: () => onPressed(skill),
               ),
             ),
       ],
-      spacing: AuraSpacing.sm,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: .sm,
+      crossAxisAlignment: .start,
     );
   }
 }

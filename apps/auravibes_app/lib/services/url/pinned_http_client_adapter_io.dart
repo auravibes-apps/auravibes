@@ -1,4 +1,4 @@
-// Dio 5.x compatibility: preserve the callback until Dio 6 removes it.
+// Preserve the callback for Dio 5.x compatibility until Dio 6 removes it.
 // ignore_for_file: deprecated_member_use
 
 import 'dart:io';

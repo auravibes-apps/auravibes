@@ -25,7 +25,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -42,7 +42,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       final ws = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
@@ -53,7 +53,7 @@ void main() {
 
     test('insertToolsGroup creates and returns group', () async {
       final group = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'Test Group',
           permissions: PermissionAccess.ask,
@@ -65,7 +65,7 @@ void main() {
 
     test('getToolsGroupById returns group', () async {
       final created = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'Group',
           permissions: PermissionAccess.ask,
@@ -90,7 +90,7 @@ void main() {
 
     test('getToolsGroupByName returns non-MCP group by name', () async {
       final created = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'Skills',
           permissions: PermissionAccess.ask,
@@ -107,14 +107,14 @@ void main() {
 
     test('getToolsGroupByName surfaces duplicate non-MCP groups', () async {
       final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'Skills',
           permissions: PermissionAccess.ask,
         ),
       );
       final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'Skills',
           permissions: PermissionAccess.ask,
@@ -132,14 +132,14 @@ void main() {
 
     test('getToolsGroupsForWorkspace returns groups for workspace', () async {
       final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'G1',
           permissions: PermissionAccess.ask,
         ),
       );
       final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'G2',
           permissions: PermissionAccess.ask,
@@ -154,7 +154,7 @@ void main() {
       'getToolsGroupsForWorkspace returns empty for other workspace',
       () async {
         final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(
-          ToolsGroupsCompanion.insert(
+          .insert(
             workspaceId: workspaceId,
             name: 'G1',
             permissions: PermissionAccess.ask,
@@ -168,7 +168,7 @@ void main() {
 
     test('getToolsGroupByMcpServerId returns group linked to server', () async {
       final server = await fixture.database.mcpServersDao.insertMcpServer(
-        McpServersCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'MCP',
           url: 'http://localhost',
@@ -176,7 +176,7 @@ void main() {
         ),
       );
       final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           mcpServerId: Value(server.id),
           name: 'Linked Group',
@@ -200,7 +200,7 @@ void main() {
 
     test('deleteToolsGroupById removes group', () async {
       final created = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'ToDelete',
           permissions: PermissionAccess.ask,
@@ -223,7 +223,7 @@ void main() {
 
     test('setToolsGroupEnabled updates enabled state', () async {
       final created = await fixture.database.toolsGroupsDao.insertToolsGroup(
-        ToolsGroupsCompanion.insert(
+        .insert(
           workspaceId: workspaceId,
           name: 'Group',
           permissions: PermissionAccess.ask,

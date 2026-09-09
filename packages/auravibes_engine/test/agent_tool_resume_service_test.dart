@@ -22,9 +22,7 @@ void main() {
   });
 
   test('continues agent when allowed tools request another turn', () async {
-    final provider = _FakeResumeProvider(
-      decision: AgentIterationDecision.continueIteration,
-    );
+    final provider = _FakeResumeProvider(decision: .continueIteration);
     final service = AgentToolResumeService(provider: provider);
 
     await service.call(messageId: 'm1');

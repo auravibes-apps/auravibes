@@ -20,7 +20,7 @@ final _Defaults typingIndicatorDefaults = _Defaults(
     size: args.size,
     color: args.color,
     showContainer: args.showContainer,
-    animationDuration: Duration(milliseconds: args.animationDurationMs),
+    animationDuration: .new(milliseconds: args.animationDurationMs),
   ),
 );
 
@@ -46,7 +46,7 @@ final $DefaultTypingIndicator = _Story(
       name: 'Compact Phone',
       modes: [ViewportMode(compactPhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Animated Frame',
       run: (tester, args) async {

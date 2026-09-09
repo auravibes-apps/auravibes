@@ -198,7 +198,7 @@ class const _WorkspaceSessionGate({
         navigationShell: navigationShell,
       ),
       AsyncError(:final error) => ErrorWidget(error),
-      _ => const SizedBox.shrink(),
+      AsyncLoading() => const SizedBox.shrink(),
     };
   }
 }
@@ -280,7 +280,7 @@ class const _SubAgentConversationGate({
           chatId: chatId,
           showInputComposer: false,
         ),
-      _ => const SizedBox.shrink(),
+      AsyncData() || AsyncLoading() || AsyncError() => const SizedBox.shrink(),
     };
   }
 }

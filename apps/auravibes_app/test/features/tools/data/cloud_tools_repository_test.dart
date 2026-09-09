@@ -13,7 +13,7 @@ void main() {
     'maps cloud tools and excludes client-native tools without Drift',
     () async {
       final repository = CloudToolsRepository(
-        Future.value(
+        .value(
           _gateway([
             _resource('mcp-tool', {
               'toolId': 'lookup',
@@ -61,7 +61,7 @@ void main() {
 
   test('returns no tools when cloud returns no resource page', () async {
     final repository = CloudToolsRepository(
-      Future.value(
+      .value(
         CloudWorkspaceStateGateway.forTesting(
           workspace: const CloudWorkspaceRef(
             localWorkspaceId: 'workspace',
@@ -109,10 +109,10 @@ CloudWorkspaceStateGateway _gateway(List<WorkspaceResource> resources) =>
 WorkspaceResource _resource(String id, Map<String, Object?> data) =>
     WorkspaceResource(
       workspaceId: 7,
-      resourceKind: WorkspaceResourceKind.tool,
+      resourceKind: .tool,
       resourceId: id,
       data: jsonEncode(data),
       revision: 1,
-      createdAt: DateTime.utc(2026),
-      updatedAt: DateTime.utc(2026),
+      createdAt: .utc(2026),
+      updatedAt: .utc(2026),
     );

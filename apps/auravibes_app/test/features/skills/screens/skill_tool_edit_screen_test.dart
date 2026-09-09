@@ -8,7 +8,6 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
@@ -38,14 +37,11 @@ void main() {
     );
     addTearDown(database.close);
     final workspace = await WorkspaceRepository(database).createWorkspace(
-      const WorkspaceToCreate(
-        name: 'Test Workspace',
-        type: WorkspaceType.local,
-      ),
+      const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
     final definition = await database.skillCredentialDefinitionsDao
         .createDefinition(
-          SkillCredentialDefinitionsCompanion.insert(
+          .insert(
             workspaceId: workspace.id,
             title: 'Example Service',
             slug: 'example_service',
@@ -56,7 +52,7 @@ void main() {
         );
     final skill = await SkillsRepository(database).createSkill(
       workspace.id,
-      SkillToCreate(
+      .new(
         kind: SkillKind.template,
         title: 'Example Services',
         description: 'Call Example APIs',

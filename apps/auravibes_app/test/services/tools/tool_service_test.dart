@@ -29,7 +29,7 @@ void main() {
 
     group('getTool', () {
       test('returns tool by type', () {
-        final tool = ToolService.getTool(UserToolType.calculator);
+        final tool = ToolService.getTool(.calculator);
         expect(tool, isNotNull);
         expect(
           (tool ?? fail('Expected tool to be non-null')).type,
@@ -38,7 +38,7 @@ void main() {
       });
 
       test('returns null for unknown type', () {
-        final tool = ToolService.getTool(UserToolType.calculator);
+        final tool = ToolService.getTool(.calculator);
         expect(tool, isNotNull);
       });
     });

@@ -37,7 +37,7 @@ final $ActionClickable = _Story(
       name: 'Landscape Phone',
       modes: [ViewportMode(landscapePhoneViewport)],
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
     _Scenario(
       name: 'Pressed',
       run: (tester, args) async {
@@ -67,7 +67,7 @@ class _ActionDemoState extends State<ActionDemo> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         AuraButtonGroup<String>.action(
           items: const [
@@ -102,7 +102,7 @@ class _ActionDemoState extends State<ActionDemo> {
         const SizedBox(height: 16),
         Text(
           'Last pressed: $_lastPressed',
-          style: TextStyle(color: context.auraColors.onSurface),
+          style: .new(color: context.auraColors.onSurface),
         ),
       ],
     );

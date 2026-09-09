@@ -2,7 +2,6 @@
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 /// A custom painter for drawing the radio button circles.
@@ -22,7 +21,7 @@ class _RadioPainter({
     if (isFocused) {
       final focusPaint = Paint()
         ..color = color.withValues(alpha: 0.24)
-        ..style = PaintingStyle.stroke
+        ..style = .stroke
         ..strokeWidth = 2;
 
       canvas.drawCircle(center, outerRadius + 1, focusPaint);
@@ -31,7 +30,7 @@ class _RadioPainter({
     // Draw outer circle with border.
     final outerPaint = Paint()
       ..color = borderColor
-      ..style = PaintingStyle.stroke
+      ..style = .stroke
       ..strokeWidth = 2;
 
     canvas.drawCircle(center, outerRadius, outerPaint);
@@ -40,7 +39,7 @@ class _RadioPainter({
     if (isSelected) {
       final innerPaint = Paint()
         ..color = color
-        ..style = PaintingStyle.fill;
+        ..style = .fill;
 
       canvas.drawCircle(center, outerRadius * 0.5, innerPaint);
     }
@@ -158,8 +157,8 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
       child: FocusableActionDetector(
         enabled: !isDisabled,
         shortcuts: const {
-          SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
-          SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+          SingleActivator(.enter): ActivateIntent(),
+          SingleActivator(.space): ActivateIntent(),
         },
         actions: {
           ActivateIntent: CallbackAction<ActivateIntent>(
@@ -198,7 +197,7 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
             ),
           ),
           onTap: isDisabled ? null : _select,
-          behavior: HitTestBehavior.opaque,
+          behavior: .opaque,
           excludeFromSemantics: true,
         ),
       ),

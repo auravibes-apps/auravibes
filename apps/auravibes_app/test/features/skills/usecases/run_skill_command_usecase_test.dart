@@ -183,7 +183,7 @@ class _LoadedSkills implements ListAvailableSkillsUsecase {
         title: 'GitHub',
         description: 'Manage GitHub issues.',
         content: 'Create issues when requested.',
-        kind: SkillKind.template,
+        kind: .template,
       ),
     ];
   }

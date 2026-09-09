@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
-import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
@@ -19,7 +18,6 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
-import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -34,7 +32,7 @@ part 'mcp_connection_status.g.dart';
 
 final _logger = Logger('McpConnectionNotifier');
 
-const Duration _mcpConnectionTimeout = Duration(seconds: 10);
+const Duration _mcpConnectionTimeout = .new(seconds: 10);
 
 // ============================================================.
 // MCP Connection Status.
@@ -260,7 +258,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     Duration? timeout,
   }) async {
     final effectiveTimeout = timeout ?? _mcpConnectionTimeout;
-    if (mcpServerIds.isEmpty || effectiveTimeout <= Duration.zero) {
+    if (mcpServerIds.isEmpty || effectiveTimeout <= .zero) {
       return;
     }
 
@@ -350,7 +348,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     }
     final manager = _requiredMcpManager;
     final serverInfo = await BuildMcpServerToCreateUseCase(
-      authenticator: OAuthAuthenticate(
+      authenticator: .new(
         callbackUrlScheme: 'me-auravibes',
         clientName: 'Aura Vibes MCP Client',
       ),
@@ -362,7 +360,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     final serviceConnectionId = await serviceConnectionRepository
         .createMcpServiceConnection(
           workspaceId: workspaceId,
-          profile: McpServiceConnectionProfile(
+          profile: .new(
             name: serverInfo.name,
             authenticationType: serverInfo.authenticationType,
           ),
@@ -412,7 +410,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       ...state,
       McpConnectionState(
         server: savedServer,
-        status: McpConnectionStatus.connected,
+        status: .connected,
         client: client,
         tools: mcpTools,
       ),
@@ -573,10 +571,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     } else {
       _setState([
         ...state,
-        McpConnectionState(
-          server: server,
-          status: McpConnectionStatus.connecting,
-        ),
+        McpConnectionState(server: server, status: .connecting),
       ]);
     }
 
@@ -742,10 +737,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         server ?? await repository.getMcpServerById(serverId);
     if (resolvedServer == null || _isDisposed) return;
     _upsertConnection(
-      McpConnectionState(
-        server: resolvedServer,
-        status: McpConnectionStatus.connecting,
-      ),
+      .new(server: resolvedServer, status: McpConnectionStatus.connecting),
     );
     try {
       final discovery = await repository.discoverMcpServer(serverId);
@@ -759,7 +751,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         stackTrace,
       );
       _upsertConnection(
-        McpConnectionState(
+        .new(
           server: resolvedServer,
           status: McpConnectionStatus.error,
           errorMessage: LocaleKeys.tools_screen_mcp_error,
@@ -774,7 +766,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   ) {
     final connected = discovery.health == McpServerHealth.healthy;
     _upsertConnection(
-      McpConnectionState(
+      .new(
         server: server,
         status: connected
             ? McpConnectionStatus.connected

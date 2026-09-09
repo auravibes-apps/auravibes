@@ -26,7 +26,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
       _database ?? fail('Database fixture not initialized');
 
   void reset() {
-    _database = AppDatabase(connection: createConnection());
+    _database = .new(connection: createConnection());
   }
 
   Future<void> close() async {
@@ -43,7 +43,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       final ws = await fixture.database.workspaceDao.insertWorkspace(
-        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        .insert(name: 'WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
@@ -54,11 +54,11 @@ void main() {
 
     test('insertWorkspaceModelSelections inserts records', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await fixture.database.modelConnectionsDao
           .insertModelConnection(
-            ServiceConnectionsCompanion.insert(
+            .insert(
               name: 'Conn',
               serviceId: 'openai',
               kind: ServiceConnectionKindTable.modelProvider,
@@ -83,11 +83,11 @@ void main() {
 
     test('watchAllWorkspaceModelSelectionsByWorkspace emits inserts', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await fixture.database.modelConnectionsDao
           .insertModelConnection(
-            ServiceConnectionsCompanion.insert(
+            .insert(
               name: 'Conn',
               serviceId: 'openai',
               kind: ServiceConnectionKindTable.modelProvider,
@@ -132,11 +132,11 @@ void main() {
 
     test('getWorkspaceModelSelectionById returns selection', () async {
       final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
-        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+        .insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await fixture.database.modelConnectionsDao
           .insertModelConnection(
-            ServiceConnectionsCompanion.insert(
+            .insert(
               name: 'Conn',
               serviceId: 'openai',
               kind: ServiceConnectionKindTable.modelProvider,

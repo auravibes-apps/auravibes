@@ -21,7 +21,7 @@ class const MarkdownEditorToolbar({
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+      scrollDirection: .horizontal,
       child: AuraRow(
         children: [
           _ToolbarButton(
@@ -102,7 +102,7 @@ class const MarkdownEditorToolbar({
         .join('\n');
 
     _replace(
-      TextSelection(baseOffset: lineStart, extentOffset: end),
+      .new(baseOffset: lineStart, extentOffset: end),
       replacement,
       lineStart + replacement.length,
     );
@@ -123,7 +123,7 @@ class const MarkdownEditorToolbar({
 
   void _replace(TextSelection selection, String replacement, int cursorOffset) {
     final text = controller.text;
-    controller.value = TextEditingValue(
+    controller.value = .new(
       text: text.replaceRange(selection.start, selection.end, replacement),
       selection: TextSelection.collapsed(offset: cursorOffset),
     );
@@ -144,7 +144,7 @@ class const _ToolbarButton({
       child: AuraIconButton(
         icon: icon,
         onPressed: onPressed,
-        variant: AuraIconButtonVariant.outlined,
+        variant: .outlined,
         semanticLabel: label,
         tooltip: label,
       ),

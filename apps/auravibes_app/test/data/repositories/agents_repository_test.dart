@@ -6,7 +6,6 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/agent_tool_override_entity.dart';
-import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -31,7 +30,7 @@ void main() {
 
     final created = await fixture.agentsRepository.createAgent(
       fixture.workspaceId,
-      AgentToCreate(
+      .new(
         name: '  Helper  ',
         description: '  Use for helper work  ',
         content: '  Prompt  ',
@@ -50,7 +49,7 @@ void main() {
 
     final updated = await fixture.agentsRepository.updateAgent(
       created.id,
-      AgentToUpdate(
+      .new(
         name: 'Updated',
         description: 'Use for updated helper work',
         content: 'New prompt',
@@ -129,7 +128,7 @@ void main() {
     final saved = await fixture.agentToolsRepository.setAgentToolPermission(
       agent.id,
       firstToolId,
-      permissionMode: ToolPermissionMode.alwaysDeny,
+      permissionMode: .alwaysDeny,
     );
 
     expect(saved.permissionMode, ToolPermissionMode.alwaysDeny);
@@ -144,7 +143,7 @@ void main() {
     final _ = await fixture.agentToolsRepository.setAgentToolPermission(
       agent.id,
       secondToolId,
-      permissionMode: ToolPermissionMode.alwaysAllow,
+      permissionMode: .alwaysAllow,
     );
 
     await SaveAgentToolOverridesUsecase(fixture.agentToolsRepository)(
@@ -206,7 +205,7 @@ void main() {
     final skill = await fixture.createSkill('First Skill');
     final agent = await SaveAgentUsecase(fixture.agentsRepository).create(
       fixture.workspaceId,
-      AgentToCreate(
+      .new(
         name: 'Helper',
         description: 'Use for helper work',
         content: 'Prompt',
@@ -221,7 +220,7 @@ void main() {
 
     final updated = await SaveAgentUsecase(fixture.agentsRepository).update(
       agent.id,
-      AgentToUpdate(
+      .new(
         name: 'Updated',
         description: 'Use for updated helper work',
         content: 'Prompt',
@@ -234,7 +233,7 @@ void main() {
     final _ = await fixture.agentToolsRepository.setAgentToolPermission(
       agent.id,
       toolId,
-      permissionMode: ToolPermissionMode.alwaysAllow,
+      permissionMode: .alwaysAllow,
     );
     final overrides = await ListAgentToolOverridesUsecase(
       fixture.agentToolsRepository,
@@ -243,7 +242,7 @@ void main() {
 
     final conversation = await fixture.conversationRepository
         .createConversation(
-          ConversationToCreate(
+          .new(
             title: 'Chat',
             workspaceId: fixture.workspaceId,
             agentId: agent.id,
@@ -259,10 +258,7 @@ void main() {
 
     final noAgentConversation = await fixture.conversationRepository
         .createConversation(
-          ConversationToCreate(
-            title: 'No agent',
-            workspaceId: fixture.workspaceId,
-          ),
+          .new(title: 'No agent', workspaceId: fixture.workspaceId),
         );
     final noAgentSkills =
         await ListConversationAgentSkillsUsecase(
@@ -277,7 +273,7 @@ void main() {
     expect(noAgentSkills, isEmpty);
 
     final otherWorkspace = await fixture.database.workspaceDao.insertWorkspace(
-      WorkspacesCompanion.insert(name: 'Other', type: WorkspaceType.local),
+      .insert(name: 'Other', type: WorkspaceType.local),
     );
     final wrongWorkspaceSkills = await ListConversationAgentSkillsUsecase(
       (conversationId, _) =>
@@ -289,7 +285,7 @@ void main() {
 
     final otherAgent = await fixture.agentsRepository.createAgent(
       otherWorkspace.id,
-      AgentToCreate(
+      .new(
         name: 'Other Agent',
         description: 'Use for other workspace work',
         content: 'Prompt',
@@ -298,7 +294,7 @@ void main() {
     );
     final crossWorkspaceConversation = await fixture.conversationRepository
         .createConversation(
-          ConversationToCreate(
+          .new(
             title: 'Cross workspace agent',
             workspaceId: fixture.workspaceId,
             agentId: otherAgent.id,
@@ -332,12 +328,12 @@ void main() {
       isEnabled: false,
     );
     final otherWorkspace = await fixture.database.workspaceDao.insertWorkspace(
-      WorkspacesCompanion.insert(name: 'Other', type: WorkspaceType.local),
+      .insert(name: 'Other', type: WorkspaceType.local),
     );
     final otherSkill = await fixture.skillsRepository.createSkill(
       otherWorkspace.id,
       const SkillToCreate(
-        kind: SkillKind.template,
+        kind: .template,
         title: 'Other Skill',
         description: 'Description',
         content: 'Content',
@@ -397,21 +393,21 @@ class _AgentsRepositoryFixture({
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     final workspace = await database.workspaceDao.insertWorkspace(
-      WorkspacesCompanion.insert(name: 'Workspace', type: WorkspaceType.local),
+      .insert(name: 'Workspace', type: WorkspaceType.local),
     );
 
     return _AgentsRepositoryFixture(
       database: database,
-      agentsRepository: AgentsRepository(database),
-      agentToolsRepository: AgentToolsRepository(database),
-      appSettingsRepository: AppSkillWorkspaceSettingsRepository(database),
-      conversationRepository: ConversationRepository(database),
-      resolveAgentSkillsUsecase: ResolveAgentSkillsUsecase(
-        SkillsRepository(database),
-        AppSkillWorkspaceSettingsRepository(database),
+      agentsRepository: .new(database),
+      agentToolsRepository: .new(database),
+      appSettingsRepository: .new(database),
+      conversationRepository: .new(database),
+      resolveAgentSkillsUsecase: .new(
+        .new(database),
+        .new(database),
         const AppSkillRegistry(),
       ),
-      skillsRepository: SkillsRepository(database),
+      skillsRepository: .new(database),
       workspaceId: workspace.id,
     );
   }
@@ -421,7 +417,7 @@ class _AgentsRepositoryFixture({
   Future<SkillEntity> createSkill(String title, {bool isEnabled = true}) {
     return skillsRepository.createSkill(
       workspaceId,
-      SkillToCreate(
+      .new(
         kind: SkillKind.template,
         title: title,
         description: 'Description',

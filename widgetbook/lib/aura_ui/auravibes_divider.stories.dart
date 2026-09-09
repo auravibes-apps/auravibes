@@ -66,7 +66,7 @@ final $DividerWithLabel = _WithLabelStory(
     child: child,
   ),
   args: _WithLabelArgs(
-    label: Arg.fixed(const Text('Section 1')),
+    label: .fixed(const Text('Section 1')),
     thickness: DoubleArg(
       1,
       name: 'Thickness',

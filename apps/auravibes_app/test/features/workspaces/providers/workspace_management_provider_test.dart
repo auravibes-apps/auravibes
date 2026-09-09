@@ -1,5 +1,4 @@
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/models/management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,17 +10,17 @@ class _WorkspaceManagementModeFixture {
   ProviderContainer get container =>
       _container ?? fail('container not initialized');
 
+  WorkspaceManagementState get state =>
+      container.read(workspaceManagementModeProvider);
+
   void reset() {
-    _container = ProviderContainer();
+    _container = .new();
   }
 
   void dispose() {
     _container?.dispose();
     _container = null;
   }
-
-  WorkspaceManagementState get state =>
-      container.read(workspaceManagementModeProvider);
 
   void editWorkspace(WorkspaceEntity workspace) {
     container
@@ -55,9 +54,9 @@ void main() {
       final workspace = WorkspaceEntity(
         id: 'ws-1',
         name: 'Test',
-        type: WorkspaceType.local,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        type: .local,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
 
       fixture.editWorkspace(workspace);
@@ -71,9 +70,9 @@ void main() {
       final workspace = WorkspaceEntity(
         id: 'ws-1',
         name: 'Test',
-        type: WorkspaceType.local,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        type: .local,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
       );
 
       fixture

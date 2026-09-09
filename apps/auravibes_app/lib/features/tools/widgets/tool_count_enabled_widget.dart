@@ -27,7 +27,7 @@ class const ToolCountEnabledWidget({
 
       AsyncData(value: final count) => Text(
         LocaleKeys.tools_screen_enabled_count.plural(count),
-        style: TextStyle(
+        style: .new(
           color: context.auraColors.onSuccess,
           fontSize: 14,
           fontWeight: FontWeight.w500,

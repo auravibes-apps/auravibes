@@ -73,8 +73,8 @@ class ModelsDevCatalogValue({
       throw const FormatException('Catalog is empty.');
     }
     return ModelsDevCatalogValue(
-      providers: List.unmodifiable(providers),
-      models: List.unmodifiable(models),
+      providers: .unmodifiable(providers),
+      models: .unmodifiable(models),
     );
   }
 }

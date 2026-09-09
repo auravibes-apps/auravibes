@@ -2,7 +2,6 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_message_sender.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_chat_attachment_usecase.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -17,7 +16,7 @@ void main() {
       final gateway = _Gateway();
       final events = <String>[];
       final snapshot = ConversationSnapshot(
-        conversation: ConversationProjectionView(
+        conversation: .new(
           id: 'conversation-1',
           workspaceId: 7,
           executionState: 'idle',
@@ -53,7 +52,7 @@ void main() {
       final sender = CloudChatMessageSender(
         gateway: () async => gateway,
         attachments: () async => null,
-        capabilities: WorkspaceCapabilities.cloud,
+        capabilities: .cloud,
         invalidateMessages: events.add,
       );
 
@@ -93,7 +92,7 @@ void main() {
       revision: 2,
     );
     final snapshot = ConversationSnapshot(
-      conversation: ConversationProjectionView(
+      conversation: .new(
         id: 'conversation-1',
         workspaceId: 7,
         executionState: 'running',
@@ -126,7 +125,7 @@ void main() {
     final sender = CloudChatMessageSender(
       gateway: () async => gateway,
       attachments: () async => attachments,
-      capabilities: WorkspaceCapabilities.cloud,
+      capabilities: .cloud,
       invalidateMessages: invalidated.add,
     );
 
