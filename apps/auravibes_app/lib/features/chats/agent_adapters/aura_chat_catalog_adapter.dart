@@ -204,6 +204,34 @@ Schema _schemaFor(CatalogItem source, {required bool allowLiteralValues}) {
     a2uiChatComponentSchemas[source.name]!['properties']!
         as Map<Object?, Object?>,
   );
+  final properties = _schemaProperties(
+    source.name,
+    sourceProperties,
+    contractProperties,
+    allowed,
+    allowLiteralValues,
+  );
+  final required = _schemaRequired(
+    sourceSchema,
+    source.name,
+    allowed,
+    allowLiteralValues,
+  );
+
+  return Schema.fromMap({
+    ...sourceSchema,
+    'properties': properties,
+    'required': ?required,
+  });
+}
+
+Map<String, Object?> _schemaProperties(
+  String name,
+  Map<String, Object?> sourceProperties,
+  Map<String, Object?> contractProperties,
+  Set<String> allowed,
+  bool allowLiteralValues,
+) {
   final mergedProperties = allowLiteralValues
       ? {...sourceProperties, ...contractProperties}
       : {...contractProperties, ...sourceProperties};
@@ -212,32 +240,34 @@ Schema _schemaFor(CatalogItem source, {required bool allowLiteralValues}) {
       if (entry.key == 'component' || allowed.contains(entry.key))
         entry.key: entry.value,
   };
-  if (source.name == 'Icon') {
-    properties['name'] = {'type': 'string', 'enum': a2uiChatIconNames};
+  switch (name) {
+    case 'Icon':
+      properties['name'] = {'type': 'string', 'enum': a2uiChatIconNames};
+    case 'Button':
+      properties['variant'] = contractProperties['variant'];
+    case 'Image':
+      properties.addAll(chatCatalogImageProperties);
   }
-  if (source.name == 'Button') {
-    properties['variant'] = contractProperties['variant'];
-  }
-  if (source.name == 'Image') {
-    properties.addAll(chatCatalogImageProperties);
-  }
+  return properties;
+}
+
+List<String>? _schemaRequired(
+  Map<String, Object?> sourceSchema,
+  String name,
+  Set<String> allowed,
+  bool allowLiteralValues,
+) {
   final required = (sourceSchema['required'] as List?)
       ?.whereType<String>()
       .where((name) => name == 'component' || allowed.contains(name))
       .toList();
-  if (source.name == 'Tabs') {
-    if (allowLiteralValues) {
-      final _ = required?.remove('activeTab');
-    } else if (required != null && !required.contains('activeTab')) {
-      required.add('activeTab');
-    }
+  if (name != 'Tabs') return required;
+  if (allowLiteralValues) {
+    final _ = required?.remove('activeTab');
+  } else if (required != null && !required.contains('activeTab')) {
+    required.add('activeTab');
   }
-
-  return Schema.fromMap({
-    ...sourceSchema,
-    'properties': properties,
-    'required': ?required,
-  });
+  return required;
 }
 
 Map<String, Object?> _data(CatalogItemContext context) =>
@@ -511,62 +541,98 @@ Widget _card(CatalogItemContext context) {
 
 Widget _row(CatalogItemContext context) {
   final data = _data(context);
-  final childIds = data['children'] as List?;
-  final hasFlexChild =
-      childIds?.whereType<String>().any(
-        (id) => switch (context.getComponent(id)?.type) {
-          'FlexItem' || 'Spacer' => true,
-          _ => false,
-        },
-      ) ??
-      false;
+  final hasFlexChild = _hasFlexChild(context, data['children']);
 
   return LayoutBuilder(
-    builder: (_, constraints) => _children(
-      context,
-      data['children'],
-      (children) {
-        final alignment =
-            data['align'] == 'stretch' && !constraints.hasBoundedHeight
-            ? CrossAxisAlignment.start
-            : _crossAxis(data['align'] as String?);
-        if (constraints.hasBoundedWidth && !hasFlexChild) {
-          return Wrap(
-            spacing: context.buildContext.auraTheme.spacing.base,
-            runSpacing: context.buildContext.auraTheme.spacing.base,
-            alignment: _wrapAlignment(data['justify'] as String?),
-            crossAxisAlignment: switch (alignment) {
-              CrossAxisAlignment.center => WrapCrossAlignment.center,
-              CrossAxisAlignment.end => WrapCrossAlignment.end,
-              _ => WrapCrossAlignment.start,
-            },
-            children: children,
-          );
-        }
-        return AuraRow(
-          children: children,
-          mainAxisAlignment: _mainAxis(data['justify'] as String?),
-          crossAxisAlignment: alignment,
-          mainAxisSize: MainAxisSize.min,
-        );
-      },
-      decorate: (id, child) {
-        final component = context.getComponent(id);
-        final intrinsic =
-            component?.type == 'Icon' ||
-            (component?.type == 'Divider' &&
-                component?.properties['axis'] == 'vertical');
-        final isFlexChild =
-            component?.type == 'FlexItem' || component?.type == 'Spacer';
-        return constraints.hasBoundedWidth &&
-                hasFlexChild &&
-                !intrinsic &&
-                !isFlexChild
-            ? Flexible(fit: FlexFit.loose, child: child)
-            : child;
-      },
-    ),
+    builder: (_, constraints) =>
+        _buildRow(context, data, constraints, hasFlexChild),
   );
+}
+
+bool _hasFlexChild(CatalogItemContext context, Object? children) {
+  final childIds = children as List?;
+  if (childIds == null) return false;
+  return childIds.whereType<String>().any(
+    (id) => switch (context.getComponent(id)?.type) {
+      'FlexItem' || 'Spacer' => true,
+      _ => false,
+    },
+  );
+}
+
+Widget _buildRow(
+  CatalogItemContext context,
+  Map<String, Object?> data,
+  BoxConstraints constraints,
+  bool hasFlexChild,
+) {
+  final alignment = _rowAlignment(data, constraints);
+  if (constraints.hasBoundedWidth && !hasFlexChild) {
+    return _buildWrappedRow(context, data, constraints, alignment);
+  }
+  return _children(
+    context,
+    data['children'],
+    (children) => AuraRow(
+      children: children,
+      mainAxisAlignment: _mainAxis(data['justify'] as String?),
+      crossAxisAlignment: alignment,
+      mainAxisSize: MainAxisSize.min,
+    ),
+    decorate: (id, child) =>
+        _decorateRowChild(context, constraints, hasFlexChild, id, child),
+  );
+}
+
+Widget _buildWrappedRow(
+  CatalogItemContext context,
+  Map<String, Object?> data,
+  BoxConstraints constraints,
+  CrossAxisAlignment alignment,
+) => _children(
+  context,
+  data['children'],
+  (children) => Wrap(
+    spacing: context.buildContext.auraTheme.spacing.base,
+    runSpacing: context.buildContext.auraTheme.spacing.base,
+    alignment: _wrapAlignment(data['justify'] as String?),
+    crossAxisAlignment: switch (alignment) {
+      CrossAxisAlignment.center => WrapCrossAlignment.center,
+      CrossAxisAlignment.end => WrapCrossAlignment.end,
+      _ => WrapCrossAlignment.start,
+    },
+    children: children,
+  ),
+  decorate: (id, child) =>
+      _decorateRowChild(context, constraints, false, id, child),
+);
+
+CrossAxisAlignment _rowAlignment(
+  Map<String, Object?> data,
+  BoxConstraints constraints,
+) => data['align'] == 'stretch' && !constraints.hasBoundedHeight
+    ? CrossAxisAlignment.start
+    : _crossAxis(data['align'] as String?);
+
+Widget _decorateRowChild(
+  CatalogItemContext context,
+  BoxConstraints constraints,
+  bool hasFlexChild,
+  String id,
+  Widget child,
+) {
+  final component = context.getComponent(id);
+  final type = component?.type;
+  final intrinsic =
+      type == 'Icon' ||
+      (type == 'Divider' && component?.properties['axis'] == 'vertical');
+  final isFlexChild = type == 'FlexItem' || type == 'Spacer';
+  return constraints.hasBoundedWidth &&
+          hasFlexChild &&
+          !intrinsic &&
+          !isFlexChild
+      ? Flexible(fit: FlexFit.loose, child: child)
+      : child;
 }
 
 WrapAlignment _wrapAlignment(String? value) => switch (value) {
@@ -678,10 +744,10 @@ Widget _slider(CatalogItemContext context) {
   final data = _data(context);
   final valueReference = data['value'];
   final path = _path(valueReference, '/${context.id}');
-  final min = (data['min'] as num?)?.toDouble() ?? 0;
-  final max = (data['max'] as num?)?.toDouble() ?? 1;
-  final step = (data['step'] as num?)?.toDouble() ?? 1;
-  final precision = (data['precision'] as num?)?.toInt() ?? 2;
+  final min = _sliderNumber(data['min'], 0);
+  final max = _sliderNumber(data['max'], 1);
+  final step = _sliderNumber(data['step'], 1);
+  final precision = _sliderPrecision(data['precision']);
 
   return _fieldScope(
     data,
@@ -692,9 +758,7 @@ Widget _slider(CatalogItemContext context) {
         dataContext: context.dataContext,
         value: data['label'],
         builder: (_, label) => AuraLabeledSlider(
-          value: (value ?? (valueReference is num ? valueReference : min))
-              .toDouble()
-              .clamp(min, max),
+          value: _sliderValue(value, valueReference, min, max),
           onChanged: (next) => _updateData(context, path, next),
           min: min,
           max: max,
@@ -709,18 +773,38 @@ Widget _slider(CatalogItemContext context) {
             unit: _string(data['unit']),
             format: data['valueFormat'] as String?,
           ),
-          marks: [
-            for (final mark in data['marks'] as List? ?? const <Object?>[])
-              if (mark is Map && mark['value'] is num)
-                AuraSliderMark(
-                  value: (mark['value']! as num).toDouble(),
-                  label: _nullableString(mark['label']),
-                ),
-          ],
+          marks: _sliderMarks(data['marks']),
         ),
       ),
     ),
   );
+}
+
+double _sliderNumber(Object? value, double fallback) =>
+    (value as num?)?.toDouble() ?? fallback;
+
+int _sliderPrecision(Object? value) => (value as num?)?.toInt() ?? 2;
+
+double _sliderValue(
+  num? value,
+  Object? valueReference,
+  double min,
+  double max,
+) => (value ?? (valueReference is num ? valueReference : min)).toDouble().clamp(
+  min,
+  max,
+);
+
+List<AuraSliderMark> _sliderMarks(Object? value) {
+  final marks = value as List? ?? const <Object?>[];
+  return [
+    for (final mark in marks)
+      if (mark is Map && mark['value'] is num)
+        AuraSliderMark(
+          value: (mark['value']! as num).toDouble(),
+          label: _nullableString(mark['label']),
+        ),
+  ];
 }
 
 Widget _textField(CatalogItemContext context) {
@@ -859,63 +943,116 @@ Widget _tabs(CatalogItemContext context) {
   final data = _data(context);
   final tabs = data['tabs'];
   if (tabs is Map<Object?, Object?>) {
-    final templateId = tabs['componentId'];
-    final template = templateId is String
-        ? context.getComponent(templateId)
-        : null;
-    final content = template?.properties['content'];
-    final label = template?.properties['label'];
-    if (template?.type != 'Tab' || content is! String || label == null) {
-      return const SizedBox.shrink();
-    }
-    final activeTab = data['activeTab'];
-    return BoundNumber(
-      dataContext: context.dataContext,
-      value: activeTab,
-      builder: (_, active) => BoundObject(
-        dataContext: context.dataContext,
-        value: tabs,
-        builder: (_, resolved) {
-          final values = resolved is List
-              ? resolved
-              : resolved is Map
-              ? resolved.values.toList()
-              : const <Object?>[];
-          final keys = resolved is Map
-              ? resolved.keys.map((key) => '$key').toList()
-              : List.generate(values.length, (index) => '$index');
-          final path = _path(tabs, '');
-          return AuraTabs<void>(
-            selectedIndex: active?.toInt(),
-            items: [
-              for (var index = 0; index < values.length; index++)
-                AuraTabItem(
-                  title: BoundString(
-                    dataContext: context.dataContext.nested(
-                      DataPath('$path/${keys[index]}'),
-                    ),
-                    value: label,
-                    builder: (_, value) => AuraText(child: Text(value ?? '')),
-                  ),
-                  child: context.buildChild(
-                    content,
-                    context.dataContext.nested(
-                      DataPath('$path/${keys[index]}'),
-                    ),
-                  ),
-                ),
-            ],
-            onChanged: (next) {
-              if (activeTab is Map<Object?, Object?>) {
-                _updateData(context, _path(activeTab, '/activeTab'), next);
-              }
-            },
-          );
-        },
-      ),
-    );
+    return _templateTabs(context, data, tabs);
   }
   if (tabs is! List || tabs.isEmpty) return const SizedBox.shrink();
+  return _literalTabs(context, data, tabs);
+}
+
+Widget _templateTabs(
+  CatalogItemContext context,
+  Map<String, Object?> data,
+  Map<Object?, Object?> tabs,
+) {
+  final template = _findTabTemplate(context, tabs);
+  if (template == null) return const SizedBox.shrink();
+  final content = template.properties['content']! as String;
+  final label = template.properties['label'];
+  final activeTab = data['activeTab'];
+  return BoundNumber(
+    dataContext: context.dataContext,
+    value: activeTab,
+    builder: (_, active) => BoundObject(
+      dataContext: context.dataContext,
+      value: tabs,
+      builder: (_, resolved) => _buildTemplateTabs(
+        context,
+        tabs,
+        activeTab,
+        active,
+        content,
+        label,
+        resolved,
+      ),
+    ),
+  );
+}
+
+Component? _findTabTemplate(
+  CatalogItemContext context,
+  Map<Object?, Object?> tabs,
+) {
+  final templateId = tabs['componentId'];
+  if (templateId is! String) return null;
+  final template = context.getComponent(templateId);
+  if (template == null) return null;
+  if (template.type != 'Tab') return null;
+  if (template.properties['content'] is! String) return null;
+  if (template.properties['label'] == null) return null;
+  return template;
+}
+
+Widget _buildTemplateTabs(
+  CatalogItemContext context,
+  Map<Object?, Object?> tabs,
+  Object? activeTab,
+  num? active,
+  String content,
+  Object? label,
+  Object? resolved,
+) {
+  final values = _tabValues(resolved);
+  final keys = _tabKeys(resolved, values.length);
+  final path = _path(tabs, '');
+  return AuraTabs<void>(
+    selectedIndex: active?.toInt(),
+    items: [
+      for (var index = 0; index < values.length; index++)
+        AuraTabItem(
+          title: BoundString(
+            dataContext: context.dataContext.nested(
+              DataPath('$path/${keys[index]}'),
+            ),
+            value: label,
+            builder: (_, value) => AuraText(child: Text(value ?? '')),
+          ),
+          child: context.buildChild(
+            content,
+            context.dataContext.nested(DataPath('$path/${keys[index]}')),
+          ),
+        ),
+    ],
+    onChanged: (next) => _updateTemplateTabData(context, activeTab, next),
+  );
+}
+
+List<Object?> _tabValues(Object? resolved) {
+  if (resolved is List) return resolved.cast<Object?>();
+  if (resolved is Map) return resolved.values.cast<Object?>().toList();
+  return const <Object?>[];
+}
+
+List<String> _tabKeys(Object? resolved, int length) {
+  if (resolved is Map) {
+    return resolved.keys.map((key) => '$key').toList();
+  }
+  return List.generate(length, (index) => '$index');
+}
+
+void _updateTemplateTabData(
+  CatalogItemContext context,
+  Object? activeTab,
+  int next,
+) {
+  if (activeTab is! Map<Object?, Object?>) return;
+  _updateData(context, _path(activeTab, '/activeTab'), next);
+}
+
+Widget _literalTabs(
+  CatalogItemContext context,
+  Map<String, Object?> data,
+  List tabs,
+) {
   final items = [
     for (final tab in tabs.whereType<Map<Object?, Object?>>())
       AuraTabItem(
