@@ -8,6 +8,7 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
 const _choicePickerTapTarget = 48.0;
+const _disabledOpacity = 0.6;
 
 /// A labeled value that can be selected by [AuraChoicePicker].
 class AuraChoiceOption<T> {
@@ -222,7 +223,7 @@ class const _AuraChoicePickerOption<T>({
                   child: ExcludeSemantics(
                     excluding: option.semanticLabel != null,
                     child: Opacity(
-                      opacity: _isInteractive ? 1 : 0.6,
+                      opacity: _isInteractive ? 1 : _disabledOpacity,
                       child: option.label,
                     ),
                   ),
@@ -292,7 +293,7 @@ class const _AuraChoicePickerOption<T>({
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Opacity(
-                    opacity: _isInteractive ? 1 : 0.6,
+                    opacity: _isInteractive ? 1 : _disabledOpacity,
                     child: label,
                   ),
                 ),

@@ -82,6 +82,8 @@ class AuraDateTimeInputLabels {
 /// A controlled date and/or time input using a widgets-only picker.
 class AuraDateTimeInput extends StatelessWidget {
   static const _daysPerWeek = 7;
+  static const _yearWidth = 4;
+  static const _twoDigitWidth = 2;
   static const _pickerMaxWidth = 360.0;
   static const _pickerPadding = 16.0;
   static const _pickerControlHeight = 48.0;
@@ -90,6 +92,8 @@ class AuraDateTimeInput extends StatelessWidget {
   static const _pickerActionFontSize = 14.0;
   static const _pickerControlFontSize = 18.0;
   static const _pickerDayFontSize = 14.0;
+  static const _pickerShadowBlurRadius = 16.0;
+  static const _calendarGridSpacing = 2.0;
 
   /// Creates a date and/or time input.
   new({
@@ -204,17 +208,17 @@ class AuraDateTimeInput extends StatelessWidget {
     final formatter = dateFormatter;
     if (formatter != null) return formatter(value);
 
-    return '${value.year.toString().padLeft(4, '0')}-'
-        '${value.month.toString().padLeft(2, '0')}-'
-        '${value.day.toString().padLeft(2, '0')}';
+    return '${value.year.toString().padLeft(_yearWidth, '0')}-'
+        '${value.month.toString().padLeft(_twoDigitWidth, '0')}-'
+        '${value.day.toString().padLeft(_twoDigitWidth, '0')}';
   }
 
   String _formatTime(DateTime value) {
     final formatter = timeFormatter;
     if (formatter != null) return formatter(value);
 
-    return '${value.hour.toString().padLeft(2, '0')}:'
-        '${value.minute.toString().padLeft(2, '0')}';
+    return '${value.hour.toString().padLeft(_twoDigitWidth, '0')}:'
+        '${value.minute.toString().padLeft(_twoDigitWidth, '0')}';
   }
 
   String _placeholder() {
@@ -316,7 +320,7 @@ class AuraDateTimeInput extends StatelessWidget {
                   boxShadow: [
                     BoxShadow(
                       color: colors.shadow.withValues(alpha: 0.2),
-                      blurRadius: 16,
+                      blurRadius: _pickerShadowBlurRadius,
                     ),
                   ],
                 ),
@@ -511,8 +515,8 @@ class AuraDateTimeInput extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           shrinkWrap: true,
           crossAxisCount: _daysPerWeek,
-          mainAxisSpacing: 2,
-          crossAxisSpacing: 2,
+          mainAxisSpacing: _calendarGridSpacing,
+          crossAxisSpacing: _calendarGridSpacing,
           children: days,
         ),
       ],
@@ -680,11 +684,11 @@ class AuraDateTimeInput extends StatelessWidget {
   }
 
   String _formatMonth(DateTime value) {
-    return '${value.year.toString().padLeft(4, '0')}-'
-        '${value.month.toString().padLeft(2, '0')}';
+    return '${value.year.toString().padLeft(_yearWidth, '0')}-'
+        '${value.month.toString().padLeft(_twoDigitWidth, '0')}';
   }
 
-  String _twoDigits(int value) => value.toString().padLeft(2, '0');
+  String _twoDigits(int value) => value.toString().padLeft(_twoDigitWidth, '0');
 
   DateTime _changeMonth(DateTime value, int delta) {
     final month = DateTime(value.year, value.month + delta);

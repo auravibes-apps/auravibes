@@ -73,6 +73,7 @@ class _AuraAccordionState extends State<AuraAccordion> {
                             ),
                           ),
                           Icon(
+                            // ignore: prefer-moving-to-variable, repeated state lookup.
                             _expanded.contains(index)
                                 ? Icons.expand_less
                                 : Icons.expand_more,
@@ -92,8 +93,10 @@ class _AuraAccordionState extends State<AuraAccordion> {
                   ),
                   enabled: navigable,
                   button: true,
+                  // ignore: prefer-moving-to-variable, repeated state lookup.
                   expanded: _expanded.contains(index),
                 ),
+                // ignore: prefer-moving-to-variable, repeated state lookup.
                 if (_expanded.contains(index))
                   Padding(
                     padding: EdgeInsets.only(

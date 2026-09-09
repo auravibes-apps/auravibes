@@ -10,6 +10,12 @@ const _controlHeight = 48.0;
 const _trackHeight = 4.0;
 const _thumbRadius = 10.0;
 const double _thumbDiameter = _thumbRadius * 2;
+const _defaultPrecision = 2;
+const _maximumPrecision = 20;
+const _markLabelHeight = 20.0;
+const _alignmentRange = 2.0;
+const _focusRingOffset = 3.0;
+const _half = 2.0;
 
 class const _AuraSliderIncreaseIntent() extends Intent;
 
@@ -37,7 +43,7 @@ class AuraLabeledSlider extends StatelessWidget {
     this.min = 0,
     this.max = 1,
     this.step = 1,
-    this.precision = 2,
+    this.precision = _defaultPrecision,
     this.enabled = true,
     this.label,
     this.semanticLabel,
@@ -47,7 +53,7 @@ class AuraLabeledSlider extends StatelessWidget {
   }) : assert(min <= max, 'min must be less than or equal to max'),
        assert(step > 0, 'step must be greater than zero'),
        assert(precision >= 0, 'precision must not be negative'),
-       assert(precision <= 20, 'precision must not exceed 20');
+       assert(precision <= _maximumPrecision, 'precision must not exceed 20');
 
   /// Current controlled value.
   final double value;
@@ -124,7 +130,7 @@ class AuraLabeledSlider extends StatelessWidget {
         if (marks.isNotEmpty) ...[
           SizedBox(height: spacing.xs),
           SizedBox(
-            height: 20,
+            height: _markLabelHeight,
             child: Stack(
               clipBehavior: .none,
               children: [
@@ -133,7 +139,9 @@ class AuraLabeledSlider extends StatelessWidget {
                     alignment: Alignment(
                       min == max
                           ? 0
-                          : ((mark.value - min) / (max - min)) * 2 - 1,
+                          : ((mark.value - min) / (max - min)) *
+                                    _alignmentRange -
+                                1,
                       0,
                     ),
                     child: AuraText(
@@ -167,14 +175,14 @@ class AuraSlider extends StatefulWidget {
     this.min = 0,
     this.max = 1,
     this.step = 1,
-    this.precision = 2,
+    this.precision = _defaultPrecision,
     this.enabled = true,
     this.semanticLabel,
     this.tint = AuraTint.primary,
   }) : assert(min <= max, 'min must be less than or equal to max'),
        assert(step > 0, 'step must be greater than zero'),
        assert(precision >= 0, 'precision must not be negative'),
-       assert(precision <= 20, 'precision must not exceed 20');
+       assert(precision <= _maximumPrecision, 'precision must not exceed 20');
 
   /// Current controlled value.
   final double value;
@@ -481,8 +489,8 @@ class const _AuraSliderFocusRingPainter({
       ..strokeWidth = 2;
 
     canvas.drawCircle(
-      .new(thumbX, size.height / 2),
-      _thumbRadius + 3,
+      .new(thumbX, size.height / _half),
+      _thumbRadius + _focusRingOffset,
       focusPaint,
     );
   }
