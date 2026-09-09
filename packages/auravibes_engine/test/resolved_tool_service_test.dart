@@ -182,34 +182,17 @@ class const _FakeResolvedToolProvider()
   }
 
   @override
-  Future<Object?> runSkillControlTool({
-    required String conversationId,
-    required String workspaceId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  }) async {
-    return 'control:$workspaceId:$toolIdentifier';
+  Future<Object?> runSkillControlTool(SkillControlToolRequest request) async {
+    return 'control:${request.workspaceId}:${request.toolIdentifier}';
   }
 
   @override
-  Future<Object?> runSkillTemplateTool({
-    required String conversationId,
-    required String workspaceId,
-    required String skillSlug,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  }) async {
-    return 'template:$workspaceId:$skillSlug:$toolSlug';
+  Future<Object?> runSkillTemplateTool(SkillTemplateToolRequest request) async {
+    return 'template:${request.workspaceId}:${request.skillSlug}:${request.toolSlug}';
   }
 
   @override
-  Future<Object?> runSkillNativeTool({
-    required String conversationId,
-    required String workspaceId,
-    required String skillSlug,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  }) async {
-    return 'native-skill:$workspaceId:$skillSlug:$toolSlug';
+  Future<Object?> runSkillNativeTool(SkillNativeToolRequest request) async {
+    return 'native-skill:${request.workspaceId}:${request.skillSlug}:${request.toolSlug}';
   }
 }
