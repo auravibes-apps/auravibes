@@ -54,25 +54,39 @@ class const CompactConversationUsecase({
   }) async {
     final cloud = cloudCompaction;
     if (cloud != null) {
-      final getCloudConversation = cloudConversation;
-      if (getCloudConversation == null) {
-        throw StateError('Cloud conversation dependency unavailable');
-      }
-      final conversation = await getCloudConversation(conversationId);
-      if (conversation == null) throw const CompactionUnavailableException();
+      return await _compactCloud(
+        cloud: cloud,
+        conversationId: conversationId,
+        trigger: trigger,
+      );
+    }
 
-      return await cloud(conversation: conversation, trigger: trigger);
+    return await _compactLocal(
+      conversationId: conversationId,
+      trigger: trigger,
+    );
+  }
+
+  Future<CompactionExecutionState> _compactCloud({
+    required CloudCompactionUsecase cloud,
+    required String conversationId,
+    required CompactionTrigger trigger,
+  }) async {
+    final getCloudConversation = cloudConversation;
+    if (getCloudConversation == null) {
+      throw StateError('Cloud conversation dependency unavailable');
     }
-    final conversations = conversationRepository;
-    final getModelStore = modelSelectionStore;
-    final messagesRepository = messageRepository;
-    final selectRange = selectCompactionRangeUsecase;
-    if (conversations == null ||
-        getModelStore == null ||
-        messagesRepository == null ||
-        selectRange == null) {
-      throw StateError('Local compaction dependencies unavailable');
-    }
+    final conversation = await getCloudConversation(conversationId);
+    if (conversation == null) throw const CompactionUnavailableException();
+
+    return await cloud(conversation: conversation, trigger: trigger);
+  }
+
+  Future<CompactionExecutionState> _compactLocal({
+    required String conversationId,
+    required CompactionTrigger trigger,
+  }) async {
+    final dependencies = _requiredLocalDependencies();
     final startedAt = DateTime.now();
     compactionExecution.markRunning(
       .new(
@@ -84,57 +98,12 @@ class const CompactConversationUsecase({
     );
 
     try {
-      final conversation = await conversations.getConversationById(
-        conversationId,
-      );
-      if (conversation == null) {
-        throw const CompactionUnavailableException();
-      }
-
-      final modelId = conversation.modelId;
-      if (modelId == null) {
-        throw const CompactionUnavailableException();
-      }
-
-      final foundModel = await (await getModelStore(conversation.workspaceId))
-          .getById(modelId);
-      if (foundModel == null) {
-        throw const CompactionUnavailableException();
-      }
-
-      final messages = await messagesRepository.getMessagesByConversation(
-        conversationId,
-      );
-
-      final range = selectRange(messages);
-      if (range == null) {
-        throw const CompactionUnsafeException();
-      }
-
-      final compactableMessages = messages
-          .where((m) => range.messageIds.contains(m.id))
-          .toList();
-
-      final chatHistory = await _buildCompactionPrompt(compactableMessages);
-
-      String summaryText;
-      try {
-        summaryText = await _generateSummary(foundModel, chatHistory);
-      } on Exception catch (e, stackTrace) {
-        if (trigger == CompactionTrigger.auto) {
-          await _persistRequiredFailureMessage(conversationId: conversationId);
-        }
-
-        Error.throwWithStackTrace(
-          CompactionFailedException(cause: e),
-          stackTrace,
-        );
-      }
-
-      await _persistCompactionSummary(
+      await _executeLocalCompaction(
+        conversations: dependencies.conversations,
+        getModelStore: dependencies.getModelStore,
+        messagesRepository: dependencies.messagesRepository,
+        selectRange: dependencies.selectRange,
         conversationId: conversationId,
-        summaryText: summaryText,
-        range: range,
         trigger: trigger,
       );
 
@@ -149,6 +118,106 @@ class const CompactConversationUsecase({
     } on Exception {
       compactionExecution.markFailure(conversationId);
       rethrow;
+    }
+  }
+
+  ({
+    ConversationRepository conversations,
+    MessageRepository messagesRepository,
+    Future<ModelSelectionStore> Function(String workspaceId) getModelStore,
+    SelectCompactionRangeUsecase selectRange,
+  })
+  _requiredLocalDependencies() {
+    final conversations = conversationRepository;
+    final getModelStore = modelSelectionStore;
+    final messagesRepository = messageRepository;
+    final selectRange = selectCompactionRangeUsecase;
+    if (conversations == null ||
+        getModelStore == null ||
+        messagesRepository == null ||
+        selectRange == null) {
+      throw StateError('Local compaction dependencies unavailable');
+    }
+
+    return (
+      conversations: conversations,
+      messagesRepository: messagesRepository,
+      getModelStore: getModelStore,
+      selectRange: selectRange,
+    );
+  }
+
+  Future<void> _executeLocalCompaction({
+    required ConversationRepository conversations,
+    required Future<ModelSelectionStore> Function(String workspaceId)
+    getModelStore,
+    required MessageRepository messagesRepository,
+    required SelectCompactionRangeUsecase selectRange,
+    required String conversationId,
+    required CompactionTrigger trigger,
+  }) async {
+    final conversation = await conversations.getConversationById(
+      conversationId,
+    );
+    if (conversation == null) {
+      throw const CompactionUnavailableException();
+    }
+
+    final modelId = conversation.modelId;
+    if (modelId == null) {
+      throw const CompactionUnavailableException();
+    }
+
+    final foundModel = await (await getModelStore(conversation.workspaceId))
+        .getById(modelId);
+    if (foundModel == null) {
+      throw const CompactionUnavailableException();
+    }
+
+    final messages = await messagesRepository.getMessagesByConversation(
+      conversationId,
+    );
+    final range = selectRange(messages);
+    if (range == null) {
+      throw const CompactionUnsafeException();
+    }
+
+    final compactableMessages = messages
+        .where((m) => range.messageIds.contains(m.id))
+        .toList();
+    final chatHistory = await _buildCompactionPrompt(compactableMessages);
+
+    final summaryText = await _generateCompactionSummary(
+      foundModel,
+      chatHistory,
+      conversationId: conversationId,
+      trigger: trigger,
+    );
+    await _persistCompactionSummary(
+      conversationId: conversationId,
+      summaryText: summaryText,
+      range: range,
+      trigger: trigger,
+    );
+  }
+
+  Future<String> _generateCompactionSummary(
+    WorkspaceModelSelectionWithConnectionEntity model,
+    List<ChatMessage> chatHistory, {
+    required String conversationId,
+    required CompactionTrigger trigger,
+  }) async {
+    try {
+      return await _generateSummary(model, chatHistory);
+    } on Exception catch (error, stackTrace) {
+      if (trigger == CompactionTrigger.auto) {
+        await _persistRequiredFailureMessage(conversationId: conversationId);
+      }
+
+      Error.throwWithStackTrace(
+        CompactionFailedException(cause: error),
+        stackTrace,
+      );
     }
   }
 
