@@ -37,7 +37,7 @@ class AuraScreenStory extends Story<AuraScreen, _ScreenInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _ScreenInputArgs(),
-         builder: builder ?? screenDefaults.builder!,
+         builder: builder ?? _screenDefaults.builder!,
        );
 }
 

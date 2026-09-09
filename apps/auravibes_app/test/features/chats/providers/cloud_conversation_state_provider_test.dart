@@ -89,7 +89,7 @@ void main() {
       _snapshot(sequence: 4, assistantContent: 'R1'),
     ).apply(_event(sequence: 4, delta: 'R2'))!;
 
-    final messages = readCloudConversationMessagesForTesting(state);
+    final messages = CloudConversationMessages.readForTesting(state);
 
     expect(messages.single.content, 'R1R2');
   });
@@ -154,7 +154,7 @@ void main() {
     final applied = state.apply(event)!;
 
     expect(
-      readCloudConversationMessagesForTesting(applied)
+      CloudConversationMessages.readForTesting(applied)
           .single
           .metadata
           ?.a2uiMessages,

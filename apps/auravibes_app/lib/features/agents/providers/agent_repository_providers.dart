@@ -31,7 +31,7 @@ final ProviderFamily<AgentRepository, String> agentRepositoryProvider =
         ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
       );
 
-      return cloudAgentRepositoryFromStore(
+      return CloudAgentRepository.fromStore(
         workspaceId: session.workspace.localWorkspaceId,
         store: store,
       );
@@ -47,7 +47,7 @@ AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
       ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
     );
 
-    return cloudAgentToolsRepositoryFromStore(store: store);
+    return CloudAgentToolsRepository.fromStore(store: store);
   }
 
   return AgentToolsRepository(ref.watch(appDatabaseProvider));

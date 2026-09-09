@@ -41,7 +41,7 @@ class AuraButtonStory extends Story<AuraButton, _ButtonInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _ButtonInputArgs(),
-         builder: builder ?? buttonDefaults.builder!,
+         builder: builder ?? _buttonDefaults.builder!,
        );
 }
 

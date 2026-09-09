@@ -4,14 +4,15 @@ import 'package:flutter/widgets.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_checkbox_focus.stories.bridge.g.dart';
 part 'auravibes_checkbox_focus.stories.g.dart';
 
 class const _FocusInput({required final bool selected});
 
-const component = ComponentMeta(name: 'AuraCheckbox');
-const meta = Meta(AuraCheckbox.new, argsType: _FocusInput.new);
+const _component = ComponentMeta(name: 'AuraCheckbox');
+const _meta = Meta(AuraCheckbox.new, argsType: _FocusInput.new);
 
-final _Defaults focusDefaults = _Defaults(
+final _Defaults _focusDefaults = _Defaults(
   builder: (context, args) => AuraCheckbox(
     value: args.selected,
     onChanged: _noopCheckboxChanged,
@@ -19,37 +20,43 @@ final _Defaults focusDefaults = _Defaults(
   ),
 );
 
-final $FocusStates = _Story(
-  name: 'Focus States',
-  setup: (context, child, args) => Padding(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      mainAxisSize: .min,
-      children: [
-        DefaultTextStyle.merge(
-          style: .new(color: context.auraColors.onSurface),
-          child: Row(
-            mainAxisSize: .min,
-            children: [child, const SizedBox(width: 12), const Text('Focused')],
+abstract final class _StorybookDefinitions {
+  static final $FocusStates = _Story(
+    name: 'Focus States',
+    setup: (context, child, args) => Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          DefaultTextStyle.merge(
+            style: .new(color: context.auraColors.onSurface),
+            child: Row(
+              mainAxisSize: .min,
+              children: [
+                child,
+                const SizedBox(width: 12),
+                const Text('Focused'),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        _FocusStateRow(label: 'Not focused', value: args.selected),
-      ],
+          const SizedBox(height: 16),
+          _FocusStateRow(label: 'Not focused', value: args.selected),
+        ],
+      ),
     ),
-  ),
-  args: _Args(selected: BoolArg(true, name: 'selected')),
-  scenarios: [
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Focuses Checkbox',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraCheckbox).first);
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    args: _Args(selected: BoolArg(true, name: 'selected')),
+    scenarios: [
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Focuses Checkbox',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraCheckbox).first);
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 class const _FocusStateRow({
   required final String label,

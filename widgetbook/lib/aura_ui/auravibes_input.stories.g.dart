@@ -17,9 +17,9 @@ typedef _Defaults = AuraInputDefaults;
 typedef _Story = AuraInputStory;
 typedef _Args = _InputControlsArgs;
 final AuraInputComponent = Component<AuraInput, StoryArgs<AuraInput>>(
-  name: component.name ?? 'AuraInput',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'AuraInput',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment:
       r'''A customizable input field component following the Aura design system.
 
@@ -42,7 +42,7 @@ class AuraInputStory extends Story<AuraInput, _InputControlsArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _InputControlsArgs(),
-         builder: builder ?? inputDefaults.builder!,
+         builder: builder ?? _inputDefaults.builder!,
        );
 }
 

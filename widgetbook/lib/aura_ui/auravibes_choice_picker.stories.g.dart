@@ -18,9 +18,9 @@ typedef _Story = ChoicePickerDemoStory;
 typedef _Args = ChoicePickerDemoArgs;
 final ChoicePickerDemoComponent =
     Component<ChoicePickerDemo, StoryArgs<ChoicePickerDemo>>(
-      name: component.name ?? 'ChoicePickerDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'ChoicePickerDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates controlled single- and multiple-selection choices.''',
       stories: [$ChoicePicker..$generatedName = 'ChoicePicker'],
     );

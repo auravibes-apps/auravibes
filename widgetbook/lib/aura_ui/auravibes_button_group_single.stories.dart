@@ -4,49 +4,52 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_button_group_single.stories.bridge.g.dart';
 part 'auravibes_button_group_single.stories.g.dart';
 
-const component = ComponentMeta(name: 'AuraButtonGroup');
-const meta = Meta(SingleSelectionDemo.new);
+const _component = ComponentMeta(name: 'AuraButtonGroup');
+const _meta = Meta(SingleSelectionDemo.new);
 
-final $SingleSelectionRadio = _Story(
-  name: 'Single Selection (Radio)',
-  setup: (context, child, args) =>
-      Padding(padding: const EdgeInsets.all(16), child: child),
-  args: _Args(
-    size: EnumArg(
-      AuraButtonGroupSize.base,
-      name: 'size',
-      values: AuraButtonGroupSize.values,
+abstract final class _StorybookDefinitions {
+  static final $SingleSelectionRadio = _Story(
+    name: 'Single Selection (Radio)',
+    setup: (context, child, args) =>
+        Padding(padding: const EdgeInsets.all(16), child: child),
+    args: _Args(
+      size: EnumArg(
+        AuraButtonGroupSize.base,
+        name: 'size',
+        values: AuraButtonGroupSize.values,
+      ),
+      variant: EnumArg(
+        AuraButtonGroupVariant.outlined,
+        name: 'variant',
+        values: AuraButtonGroupVariant.values,
+      ),
+      orientation: EnumArg(
+        Axis.horizontal,
+        name: 'orientation',
+        values: Axis.values,
+      ),
+      disabled: BoolArg(false, name: 'disabled'),
+      isLoading: BoolArg(false, name: 'isLoading'),
     ),
-    variant: EnumArg(
-      AuraButtonGroupVariant.outlined,
-      name: 'variant',
-      values: AuraButtonGroupVariant.values,
-    ),
-    orientation: EnumArg(
-      Axis.horizontal,
-      name: 'orientation',
-      values: Axis.values,
-    ),
-    disabled: BoolArg(false, name: 'disabled'),
-    isLoading: BoolArg(false, name: 'isLoading'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Landscape Phone',
-      modes: [ViewportMode(landscapePhoneViewport)],
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Selects Option',
-      run: (tester, args) async {
-        await tester.tap(find.text('Option 2'));
-        await tester.pump(const Duration(milliseconds: 1000));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Landscape Phone',
+        modes: [ViewportMode(StoryHelpers.landscapePhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Selects Option',
+        run: (tester, args) async {
+          await tester.tap(find.text('Option 2'));
+          await tester.pump(const Duration(milliseconds: 1000));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates a single-selection button group.
 class const SingleSelectionDemo({

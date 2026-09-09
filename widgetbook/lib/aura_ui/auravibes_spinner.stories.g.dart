@@ -37,7 +37,7 @@ class AuraSpinnerStory extends Story<AuraSpinner, _SpinnerInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _SpinnerInputArgs(),
-         builder: builder ?? spinnerDefaults.builder!,
+         builder: builder ?? _spinnerDefaults.builder!,
        );
 }
 

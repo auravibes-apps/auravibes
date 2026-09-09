@@ -7,46 +7,14 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:genui/genui.dart';
 
-/// Adds app-rendered dashboard items to either chat catalog.
-List<CatalogItem> auraDashboardCatalogItems({
-  required IconData Function(String?) resolveIcon,
-}) => [
-  for (final entry in {
-    ..._AuraDashboardCatalogAdapter._builders,
-    'EmptyState': (CatalogItemContext context, Map<String, Object?> data) =>
-        AuraEmptyState(
-          title: Text(data['title']! as String),
-          description: switch (data['description']) {
-            final String description => Text(description),
-            _ => null,
-          },
-          icon: AuraIcon(resolveIcon(data['icon'] as String? ?? 'info')),
-        ),
-  }.entries)
-    CatalogItem(
-      name: entry.key,
-      dataSchema: .fromMap({
-        ...a2uiChatComponentSchemas[entry.key]!,
-        'required': [
-          for (final property
-              in a2uiChatComponentSchemas[entry.key]!['required']! as List)
-            if (property != 'id') property,
-        ],
-      }),
-      widgetBuilder: (context) =>
-          _AuraDashboardCatalogAdapter._boundData(context, entry.value),
-      exampleData: [
-        () => jsonEncode([a2uiChatComponentExamples[entry.key]]),
-      ],
-    ),
-];
+const _percentageScale = 100.0;
 
 typedef _DashboardBuilder = Widget Function(
   CatalogItemContext context,
   Map<String, Object?> data,
 );
 
-abstract final class _AuraDashboardCatalogAdapter {
+abstract final class AuraDashboardCatalogAdapter {
   static final _builders = <String, _DashboardBuilder>{
     'Progress': _progress,
     'Badge': _badge,
@@ -57,6 +25,39 @@ abstract final class _AuraDashboardCatalogAdapter {
     'LoadingIndicator': _loading,
     'AnimatedContent': _animated,
   };
+
+  /// Adds app-rendered dashboard items to either chat catalog.
+  static List<CatalogItem> items({
+    required IconData Function(String?) resolveIcon,
+  }) => [
+    for (final entry in {
+      ..._builders,
+      'EmptyState': (CatalogItemContext context, Map<String, Object?> data) =>
+          AuraEmptyState(
+            title: Text(data['title']! as String),
+            description: switch (data['description']) {
+              final String description => Text(description),
+              _ => null,
+            },
+            icon: AuraIcon(resolveIcon(data['icon'] as String? ?? 'info')),
+          ),
+    }.entries)
+      CatalogItem(
+        name: entry.key,
+        dataSchema: .fromMap({
+          ...a2uiChatComponentSchemas[entry.key]!,
+          'required': [
+            for (final property
+                in a2uiChatComponentSchemas[entry.key]!['required']! as List)
+              if (property != 'id') property,
+          ],
+        }),
+        widgetBuilder: (context) => _boundData(context, entry.value),
+        exampleData: [
+          () => jsonEncode([a2uiChatComponentExamples[entry.key]]),
+        ],
+      ),
+  ];
 
   static Widget _boundData(
     CatalogItemContext context,
@@ -134,14 +135,16 @@ abstract final class _AuraDashboardCatalogAdapter {
             children: [
               if (label != null) AuraText(child: Text(label)),
               if (data['showValue'] == true && value != null)
-                AuraText(child: Text('${(value * 100).round()}%')),
+                AuraText(child: Text('${(value * _percentageScale).round()}%')),
             ],
           ),
         AuraLinearProgressIndicator(
           value: value,
           tint: _tone(data['tone']),
           semanticLabel: label,
-          semanticValue: value == null ? null : '${(value * 100).round()}%',
+          semanticValue: value == null
+              ? null
+              : '${(value * _percentageScale).round()}%',
         ),
       ],
       crossAxisAlignment: .stretch,

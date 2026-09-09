@@ -9,32 +9,35 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
 
-/// Image properties shared by the response and form catalogs.
-final chatCatalogImageProperties = <String, Object?>{
-  for (final entry
-      in (a2uiChatComponentSchemas['Image']!['properties']!
-              as Map<String, Object?>)
-          .entries)
-    if (const [
-      'fit',
-      'variant',
-      'label',
-      'width',
-      'height',
-      'fallbackText',
-      'fallbackIcon',
-    ].contains(entry.key))
-      entry.key: entry.value,
-};
+const _compactImageStatusWidth = 96.0;
+const _compactImageStatusHeight = 48.0;
 
-/// A literal image example valid in both catalogs.
-String chatCatalogImageExample() => '''
+/// Binds image content while keeping presentation separate from its label.
+abstract final class ChatCatalogImageAdapter {
+  /// Image properties shared by the response and form catalogs.
+  static final properties = <String, Object?>{
+    for (final entry
+        in (a2uiChatComponentSchemas['Image']!['properties']!
+                as Map<String, Object?>)
+            .entries)
+      if (const [
+        'fit',
+        'variant',
+        'label',
+        'width',
+        'height',
+        'fallbackText',
+        'fallbackIcon',
+      ].contains(entry.key))
+        entry.key: entry.value,
+  };
+
+  /// A literal image example valid in both catalogs.
+  static String example() => '''
 [{"id":"root","component":"Image","url":"https://picsum.photos/320/200",
 "variant":"normal","label":"Landscape","width":320,"height":200}]
 ''';
 
-/// Binds image content while keeping presentation separate from its label.
-abstract final class ChatCatalogImageAdapter {
   static Widget build(
     CatalogItemContext context, {
     required IconData Function(String?) resolveIcon,
@@ -211,7 +214,9 @@ class _ImageStatus extends StatelessWidget {
         color: context.auraColors.surfaceVariant,
         child: LayoutBuilder(
           builder: (_, constraints) => Center(
-            child: constraints.maxWidth < 96 || constraints.maxHeight < 48
+            child:
+                constraints.maxWidth < _compactImageStatusWidth ||
+                    constraints.maxHeight < _compactImageStatusHeight
                 ? FittedBox(child: AuraIcon(icon))
                 : Text(
                     text,

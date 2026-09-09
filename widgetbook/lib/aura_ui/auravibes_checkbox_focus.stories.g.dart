@@ -17,9 +17,9 @@ typedef _Defaults = AuraCheckboxDefaults;
 typedef _Story = AuraCheckboxStory;
 typedef _Args = _FocusInputArgs;
 final AuraCheckboxComponent = Component<AuraCheckbox, StoryArgs<AuraCheckbox>>(
-  name: component.name ?? 'AuraCheckbox',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'AuraCheckbox',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment:
       r'''An Aura checkbox that follows the const-first design system.''',
   stories: [$FocusStates..$generatedName = 'FocusStates'],
@@ -39,7 +39,7 @@ class AuraCheckboxStory extends Story<AuraCheckbox, _FocusInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _FocusInputArgs(),
-         builder: builder ?? focusDefaults.builder!,
+         builder: builder ?? _focusDefaults.builder!,
        );
 }
 

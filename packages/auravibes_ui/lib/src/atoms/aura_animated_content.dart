@@ -1,20 +1,7 @@
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-/// Supported content transitions.
-enum AuraContentTransition {
-  /// Replace content immediately.
-  none,
-
-  /// Briefly fade between keyed children.
-  fade,
-
-  /// Slide between keyed children.
-  slide,
-
-  /// Scale between keyed children.
-  scale,
-}
+part 'aura_content_transition.dart';
 
 /// A brief fade between keyed children, disabled for reduced motion.
 class AuraAnimatedContent extends StatelessWidget {

@@ -2,15 +2,18 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:widgetbook/widgetbook.dart';
 
+part 'auravibes_animated_content.stories.bridge.g.dart';
 part 'auravibes_animated_content.stories.g.dart';
 
-const meta = Meta(AuraAnimatedContent.new);
+const _meta = Meta(AuraAnimatedContent.new);
 
-final $Example = _Story(
-  name: 'AuraAnimatedContent',
-  setup: (context, child, args) => SizedBox(width: 320, child: child),
-  args: _Args(child: .fixed(const _FadeDemo())),
-);
+abstract final class _StorybookDefinitions {
+  static final $Example = _Story(
+    name: 'AuraAnimatedContent',
+    setup: (context, child, args) => SizedBox(width: 320, child: child),
+    args: _Args(child: .fixed(const _FadeDemo())),
+  );
+}
 
 class _FadeDemo extends StatefulWidget {
   const new();

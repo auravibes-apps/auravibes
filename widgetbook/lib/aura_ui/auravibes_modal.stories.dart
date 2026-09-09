@@ -3,17 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_modal.stories.bridge.g.dart';
 part 'auravibes_modal.stories.g.dart';
 
 class const _ModalInput();
 
-const component = ComponentMeta(name: 'AuraModal');
-const meta = Meta(AuraModal.new, argsType: _ModalInput.new);
+const _component = ComponentMeta(name: 'AuraModal');
+const _meta = Meta(AuraModal.new, argsType: _ModalInput.new);
 
-final _Defaults modalDefaults = _Defaults(
+final _Defaults _modalDefaults = _Defaults(
   builder: (context, args) => AuraModal(
     entryPointChild: const AuraButton(
-      onPressed: noopCallback,
+      onPressed: StoryHelpers.noopCallback,
       child: Text('Open Modal'),
     ),
     contentChild: Builder(
@@ -40,26 +41,28 @@ final _Defaults modalDefaults = _Defaults(
   ),
 );
 
-final $Modal = _Story(
-  name: 'Modal',
-  setup: (context, child, args) => ConstrainedBox(
-    constraints: const BoxConstraints(maxWidth: 420, maxHeight: 500),
-    child: child,
-  ),
-  args: _Args(),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
+abstract final class _StorybookDefinitions {
+  static final $Modal = _Story(
+    name: 'Modal',
+    setup: (context, child, args) => ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420, maxHeight: 500),
+      child: child,
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Opens Modal',
-      run: (tester, args) async {
-        await tester.tap(find.text('Open Modal'));
-        await tester.pump(const Duration(milliseconds: 300));
-        expect(find.text('Modal content'), findsOneWidget);
-      },
-    ),
-  ],
-);
+    args: _Args(),
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Opens Modal',
+        run: (tester, args) async {
+          await tester.tap(find.text('Open Modal'));
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(find.text('Modal content'), findsOneWidget);
+        },
+      ),
+    ],
+  );
+}

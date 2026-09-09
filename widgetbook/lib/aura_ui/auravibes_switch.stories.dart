@@ -4,41 +4,44 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_switch.stories.bridge.g.dart';
 part 'auravibes_switch.stories.g.dart';
 
-const component = ComponentMeta(name: 'AuraSwitch');
-const meta = Meta(SwitchDemo.new);
+const _component = ComponentMeta(name: 'AuraSwitch');
+const _meta = Meta(SwitchDemo.new);
 
-final $Default = _Story(
-  name: 'Default',
-  setup: (context, child, args) => constrainStoryWidth(
-    Padding(padding: const EdgeInsets.all(16), child: child),
-  ),
-  args: _Args(
-    size: EnumArg(
-      AuraSwitchSize.base,
-      name: 'size',
-      values: AuraSwitchSize.values,
+abstract final class _StorybookDefinitions {
+  static final $Default = _Story(
+    name: 'Default',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(
+      Padding(padding: const EdgeInsets.all(16), child: child),
     ),
-    disabled: BoolArg(false, name: 'disabled'),
-    isLoading: BoolArg(false, name: 'isLoading'),
-    semanticLabel: StringArg('Switch', name: 'Semantic Label'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
+    args: _Args(
+      size: EnumArg(
+        AuraSwitchSize.base,
+        name: 'size',
+        values: AuraSwitchSize.values,
+      ),
+      disabled: BoolArg(false, name: 'disabled'),
+      isLoading: BoolArg(false, name: 'isLoading'),
+      semanticLabel: StringArg('Switch', name: 'Semantic Label'),
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Toggles Switch',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraSwitch));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Toggles Switch',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraSwitch));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates a controlled switch with size, loading, and disabled states.
 class const SwitchDemo({

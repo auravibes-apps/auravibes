@@ -17,9 +17,9 @@ typedef _Defaults = CardDemoDefaults;
 typedef _Story = CardDemoStory;
 typedef _Args = _CardInputArgs;
 final CardDemoComponent = Component<CardDemo, StoryArgs<CardDemo>>(
-  name: component.name ?? 'CardDemo',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'CardDemo',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment:
       r'''Demonstrates editable card content and the optional tap callback.''',
   stories: [$BasicCard..$generatedName = 'BasicCard'],
@@ -37,7 +37,7 @@ class CardDemoStory extends Story<CardDemo, _CardInputArgs> {
     StoryWidgetBuilder<CardDemo, _CardInputArgs>? builder,
     super.scenarios,
     super.excludeFromTests,
-  }) : super(builder: builder ?? cardDefaults.builder!);
+  }) : super(builder: builder ?? _cardDefaults.builder!);
 }
 
 class _CardInputArgs extends StoryArgs<CardDemo> {

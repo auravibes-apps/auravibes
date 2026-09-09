@@ -17,9 +17,9 @@ typedef _Defaults = SidebarDemoDefaults;
 typedef _Story = SidebarDemoStory;
 typedef _Args = _SidebarInputArgs;
 final SidebarDemoComponent = Component<SidebarDemo, StoryArgs<SidebarDemo>>(
-  name: component.name ?? 'SidebarDemo',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
+  name: _component.name ?? 'SidebarDemo',
+  path: _component.path ?? 'aura_ui',
+  docsBuilder: _component.docsBuilder,
   docComment:
       r'''Demonstrates expanded and compact directional navigation sidebars.''',
   stories: [$Sidebar..$generatedName = 'Sidebar'],
@@ -39,7 +39,7 @@ class SidebarDemoStory extends Story<SidebarDemo, _SidebarInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _SidebarInputArgs(),
-         builder: builder ?? sidebarDefaults.builder!,
+         builder: builder ?? _sidebarDefaults.builder!,
        );
 }
 

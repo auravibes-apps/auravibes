@@ -4,39 +4,8 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// Display state for an [AuraStep].
-enum AuraStepState {
-  /// Not yet reached.
-  pending,
-
-  /// Current step.
-  current,
-
-  /// Finished successfully.
-  complete,
-
-  /// Finished with an error.
-  error,
-}
-
-/// One read-only step.
-class AuraStep {
-  /// Creates a step.
-  const new({
-    required this.title,
-    this.description,
-    this.state = AuraStepState.pending,
-  });
-
-  /// Caller-localized title.
-  final String title;
-
-  /// Optional supporting text.
-  final String? description;
-
-  /// Display state.
-  final AuraStepState state;
-}
+part 'aura_step_state.dart';
+part 'aura_step.dart';
 
 /// A read-only sequence of progress steps.
 class AuraStepper extends StatelessWidget {

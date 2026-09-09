@@ -18,9 +18,9 @@ typedef _Story = MessageBubbleDemoStory;
 typedef _Args = _MessageBubbleInputArgs;
 final MessageBubbleDemoComponent =
     Component<MessageBubbleDemo, StoryArgs<MessageBubbleDemo>>(
-      name: component.name ?? 'MessageBubbleDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'MessageBubbleDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates message content, delivery state, sizing, and callbacks.''',
       stories: [$AuraMessageBubble..$generatedName = 'AuraMessageBubble'],
     );
@@ -42,7 +42,7 @@ class MessageBubbleDemoStory
     super.excludeFromTests,
   }) : super(
          args: args ?? _MessageBubbleInputArgs(),
-         builder: builder ?? messageBubbleDefaults.builder!,
+         builder: builder ?? _messageBubbleDefaults.builder!,
        );
 }
 

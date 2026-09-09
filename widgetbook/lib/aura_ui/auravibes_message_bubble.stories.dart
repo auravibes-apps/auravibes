@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_message_bubble.stories.bridge.g.dart';
 part 'auravibes_message_bubble.stories.g.dart';
 
 class const _MessageBubbleInput({
@@ -17,10 +18,10 @@ class const _MessageBubbleInput({
   required final bool enableLongPress,
 });
 
-const component = ComponentMeta(name: 'AuraMessageBubble');
-const meta = Meta(MessageBubbleDemo.new, argsType: _MessageBubbleInput.new);
+const _component = ComponentMeta(name: 'AuraMessageBubble');
+const _meta = Meta(MessageBubbleDemo.new, argsType: _MessageBubbleInput.new);
 
-final _Defaults messageBubbleDefaults = _Defaults(
+final _Defaults _messageBubbleDefaults = _Defaults(
   builder: (context, args) => MessageBubbleDemo(
     content: args.content,
     isUser: args.isUser,
@@ -30,73 +31,75 @@ final _Defaults messageBubbleDefaults = _Defaults(
     maxWidth: args.maxWidth,
     enableTap: args.enableTap,
     enableLongPress: args.enableLongPress,
-    imageProvider: auraSampleImageProvider(),
+    imageProvider: StoryHelpers.auraSampleImageProvider(),
     now: () => DateTime(2026, 8, 28, 12),
   ),
 );
 
-final $AuraMessageBubble = _Story(
-  name: 'Aura Message Bubble',
-  setup: (context, child, args) => constrainStoryWidth(
-    Padding(padding: const EdgeInsets.all(16), child: child),
-  ),
-  args: _Args(
-    content: StringArg(
-      'Hello! How can you help me with my Flutter project today?',
-      name: 'Content',
+abstract final class _StorybookDefinitions {
+  static final $AuraMessageBubble = _Story(
+    name: 'Aura Message Bubble',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(
+      Padding(padding: const EdgeInsets.all(16), child: child),
     ),
-    isUser: BoolArg(true, name: 'Is User'),
-    status: EnumArg(
-      AuraMessageDeliveryStatus.values.first,
-      name: 'Status',
-      values: AuraMessageDeliveryStatus.values,
+    args: _Args(
+      content: StringArg(
+        'Hello! How can you help me with my Flutter project today?',
+        name: 'Content',
+      ),
+      isUser: BoolArg(true, name: 'Is User'),
+      status: EnumArg(
+        AuraMessageDeliveryStatus.values.first,
+        name: 'Status',
+        values: AuraMessageDeliveryStatus.values,
+      ),
+      timestamp: NullableDateTimeArg(
+        .new(2026, 8, 28, 12, 0),
+        name: 'Show Timestamp',
+        start: .new(2023),
+        end: .new(2030),
+      ),
+      contentType: EnumArg(
+        AuraMessageContentType.values.first,
+        name: 'Content Type',
+        values: AuraMessageContentType.values,
+      ),
+      maxWidth: NullableDoubleArg(
+        null,
+        name: 'Max Width',
+        style: const SliderDoubleArgStyle(min: 160, max: 420, divisions: 26),
+      ),
+      enableTap: BoolArg(true, name: 'Enable Tap'),
+      enableLongPress: BoolArg(true, name: 'Enable Long Press'),
     ),
-    timestamp: NullableDateTimeArg(
-      .new(2026, 8, 28, 12, 0),
-      name: 'Show Timestamp',
-      start: .new(2023),
-      end: .new(2030),
-    ),
-    contentType: EnumArg(
-      AuraMessageContentType.values.first,
-      name: 'Content Type',
-      values: AuraMessageContentType.values,
-    ),
-    maxWidth: NullableDoubleArg(
-      null,
-      name: 'Max Width',
-      style: const SliderDoubleArgStyle(min: 160, max: 420, divisions: 26),
-    ),
-    enableTap: BoolArg(true, name: 'Enable Tap'),
-    enableLongPress: BoolArg(true, name: 'Enable Long Press'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
-    ),
-    _Scenario(
-      name: 'Landscape Phone',
-      modes: [ViewportMode(landscapePhoneViewport)],
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
-    _Scenario(
-      name: 'Tapped',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraMessageBubble));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-    _Scenario(
-      name: 'Long Pressed',
-      run: (tester, args) async {
-        await tester.longPress(find.byType(AuraMessageBubble));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(
+        name: 'Landscape Phone',
+        modes: [ViewportMode(StoryHelpers.landscapePhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
+      _Scenario(
+        name: 'Tapped',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraMessageBubble));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+      _Scenario(
+        name: 'Long Pressed',
+        run: (tester, args) async {
+          await tester.longPress(find.byType(AuraMessageBubble));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates message content, delivery state, sizing, and callbacks.
 class const MessageBubbleDemo({

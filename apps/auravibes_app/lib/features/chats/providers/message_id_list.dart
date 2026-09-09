@@ -50,6 +50,12 @@ extension MessageIdListCompaction
       overrideWith((_, _) => value);
 }
 
+abstract final class CloudConversationMessages {
+  @visibleForTesting
+  static List<MessageEntity> readForTesting(CloudConversationState state) =>
+      _readCloudConversationMessages(state);
+}
+
 @riverpod
 Stream<List<MessageEntity>> chatMessagesByConversation(
   Ref ref,
@@ -96,11 +102,6 @@ Stream<List<MessageEntity>> _cloudMessages(
 
   return controller.stream;
 }
-
-@visibleForTesting
-List<MessageEntity> readCloudConversationMessagesForTesting(
-  CloudConversationState state,
-) => _readCloudConversationMessages(state);
 
 List<MessageEntity> _readCloudConversationMessages(
   CloudConversationState state,

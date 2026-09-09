@@ -7,48 +7,12 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
+part 'aura_choice_option.dart';
+part 'aura_choice_picker_variant.dart';
+part 'aura_choice_picker_presentation.dart';
+
 const _choicePickerTapTarget = 48.0;
-
-/// A labeled value that can be selected by [AuraChoicePicker].
-class AuraChoiceOption<T> {
-  /// Creates a choice option.
-  const new({
-    required this.value,
-    required this.label,
-    this.disabled = false,
-    this.semanticLabel,
-  });
-
-  /// The stable value associated with the option.
-  final T value;
-
-  /// The content displayed for the option.
-  final Widget label;
-
-  /// Whether the option cannot be selected.
-  final bool disabled;
-
-  /// An optional accessibility label for the option.
-  final String? semanticLabel;
-}
-
-/// Defines how an [AuraChoicePicker] handles selections.
-enum AuraChoicePickerVariant {
-  /// Allow at most one selected value.
-  mutuallyExclusive,
-
-  /// Allow multiple selected values.
-  multipleSelection,
-}
-
-/// Visual layout, independent of single or multiple selection behavior.
-enum AuraChoicePickerPresentation {
-  /// Vertically arranged radio or checkbox options.
-  list,
-
-  /// Wrapping, keyboard-accessible choice chips.
-  chips,
-}
+const _disabledOpacity = 0.6;
 
 /// A controlled list of labeled choices supporting single or multiple values.
 ///
@@ -273,7 +237,7 @@ class const _AuraChoicePickerChip<T>({
                 child: ExcludeSemantics(
                   excluding: option.semanticLabel != null,
                   child: Opacity(
-                    opacity: isInteractive ? 1 : 0.6,
+                    opacity: isInteractive ? 1 : _disabledOpacity,
                     child: option.label,
                   ),
                 ),
@@ -354,7 +318,7 @@ class const _AuraChoicePickerListOption<T>({
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Opacity(
-                    opacity: isInteractive ? 1 : 0.6,
+                    opacity: isInteractive ? 1 : _disabledOpacity,
                     child: label,
                   ),
                 ),

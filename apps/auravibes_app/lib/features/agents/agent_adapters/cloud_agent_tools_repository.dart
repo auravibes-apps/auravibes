@@ -18,6 +18,9 @@ class const CloudAgentToolsRepository({
   required final ReadCloudAgentTools read,
   required final PatchCloudAgentTools patch,
 }) implements AgentToolsRepositoryContract {
+  new fromStore({required CloudWorkspaceResourceStore store})
+    : this(patch: store.patch, read: () => _readCloudAgentTools(store));
+
   @override
   Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId) async =>
       (await read())
@@ -110,13 +113,6 @@ class const CloudAgentToolsRepository({
   Map<String, dynamic> _data(WorkspaceResource resource) =>
       CloudResourceMapper.decode(resource);
 }
-
-CloudAgentToolsRepository cloudAgentToolsRepositoryFromStore({
-  required CloudWorkspaceResourceStore store,
-}) => CloudAgentToolsRepository(
-  patch: store.patch,
-  read: () => _readCloudAgentTools(store),
-);
 
 Future<List<WorkspaceResource>> _readCloudAgentTools(
   CloudWorkspaceResourceStore store,

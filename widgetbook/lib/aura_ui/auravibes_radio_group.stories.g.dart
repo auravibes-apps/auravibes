@@ -18,9 +18,9 @@ typedef _Story = RadioGroupDemoStory;
 typedef _Args = RadioGroupDemoArgs;
 final RadioGroupDemoComponent =
     Component<RadioGroupDemo, StoryArgs<RadioGroupDemo>>(
-      name: component.name ?? 'RadioGroupDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'RadioGroupDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates a controlled radio group in vertical and horizontal layouts.''',
       stories: [$RadioGroup..$generatedName = 'RadioGroup'],
     );

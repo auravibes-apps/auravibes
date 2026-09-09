@@ -19,9 +19,9 @@ typedef _Story = A2uiCatalogShowcaseStory;
 typedef _Args = A2uiCatalogShowcaseArgs;
 final A2uiCatalogShowcaseComponent =
     Component<A2uiCatalogShowcase, StoryArgs<A2uiCatalogShowcase>>(
-      name: component.name ?? 'A2uiCatalogShowcase',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'A2uiCatalogShowcase',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''One visual fixture for the reusable controls exposed to A2UI catalogs.''',
       stories: [$Showcase..$generatedName = 'Showcase'],
     );

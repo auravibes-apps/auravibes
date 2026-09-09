@@ -44,7 +44,7 @@ class AuraMessageStatusStory
     super.excludeFromTests,
   }) : super(
          args: args ?? _MessageStatusInputArgs(),
-         builder: builder ?? messageStatusDefaults.builder!,
+         builder: builder ?? _messageStatusDefaults.builder!,
        );
 }
 

@@ -3,33 +3,36 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_tabs_selector.stories.bridge.g.dart';
 part 'auravibes_tabs_selector.stories.g.dart';
 
-const component = ComponentMeta(name: 'AuraTabs');
-const meta = Meta(SelectorTabsDemo.new);
+const _component = ComponentMeta(name: 'AuraTabs');
+const _meta = Meta(SelectorTabsDemo.new);
 
-final $SelectorTabs = _Story(
-  name: 'Selector Tabs',
-  args: _Args(),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
-      run: (tester, args) async {
-        await tester.ensureVisible(find.text('Activity').first);
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Selects Details',
-      run: (tester, args) async {
-        await tester.tap(find.text('Details'));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+abstract final class _StorybookDefinitions {
+  static final $SelectorTabs = _Story(
+    name: 'Selector Tabs',
+    args: _Args(),
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+        run: (tester, args) async {
+          await tester.ensureVisible(find.text('Activity').first);
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Selects Details',
+        run: (tester, args) async {
+          await tester.tap(find.text('Details'));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 enum _SelectorTab { overview, details, activity }
 
@@ -44,7 +47,7 @@ class _SelectorTabsDemoState extends State<SelectorTabsDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return constrainStoryWidth(
+    return StoryHelpers.constrainStoryWidth(
       AuraTabs<_SelectorTab>.selector(
         options: const [
           AuraTabOption(

@@ -6,32 +6,35 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_confirm_dialog.stories.bridge.g.dart';
 part 'auravibes_confirm_dialog.stories.g.dart';
 
-const component = ComponentMeta(name: 'AuraConfirmDialog');
-const meta = Meta(ConfirmDialogDemo.new);
+const _component = ComponentMeta(name: 'AuraConfirmDialog');
+const _meta = Meta(ConfirmDialogDemo.new);
 
-final $ConfirmDialog = _Story(
-  name: 'Confirm Dialog',
-  args: _Args(
-    isDestructive: BoolArg(false, name: 'isDestructive'),
-    tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
+abstract final class _StorybookDefinitions {
+  static final $ConfirmDialog = _Story(
+    name: 'Confirm Dialog',
+    args: _Args(
+      isDestructive: BoolArg(false, name: 'isDestructive'),
+      tint: NullableEnumArg(null, name: 'tint', values: AuraTint.values),
     ),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(
-      name: 'Opens Dialog',
-      run: (tester, args) async {
-        await tester.tap(find.text('Show Confirm Dialog'));
-        await tester.pump(const Duration(milliseconds: 300));
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(
+        name: 'Opens Dialog',
+        run: (tester, args) async {
+          await tester.tap(find.text('Show Confirm Dialog'));
+          await tester.pump(const Duration(milliseconds: 300));
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates a confirmation dialog with destructive and tinted states.
 class const ConfirmDialogDemo({

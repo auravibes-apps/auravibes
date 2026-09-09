@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_dropdown_selector.stories.bridge.g.dart';
 part 'auravibes_dropdown_selector.stories.g.dart';
 
 class const _DropdownInput({
@@ -13,10 +14,10 @@ class const _DropdownInput({
   required final String label,
 });
 
-const component = ComponentMeta(name: 'AuraDropdownSelector');
-const meta = Meta(DropdownDemo.new, argsType: _DropdownInput.new);
+const _component = ComponentMeta(name: 'AuraDropdownSelector');
+const _meta = Meta(DropdownDemo.new, argsType: _DropdownInput.new);
 
-final _Defaults dropdownDefaults = _Defaults(
+final _Defaults _dropdownDefaults = _Defaults(
   builder: (context, args) => DropdownDemo(
     selectedIndex: args.selectedIndex,
     enabled: args.enabled,
@@ -26,35 +27,40 @@ final _Defaults dropdownDefaults = _Defaults(
   ),
 );
 
-final $Dropdown = _Story(
-  name: 'Dropdown',
-  setup: (context, child, args) => constrainStoryWidth(child),
-  args: _Args(
-    selectedIndex: NullableIntArg(0, name: 'Selected Index'),
-    enabled: BoolArg(true, name: 'Enabled'),
-    isRequired: BoolArg(false, name: 'Required'),
-    showError: BoolArg(false, name: 'Show Error'),
-    label: StringArg('Plan', name: 'Label'),
-  ),
-  scenarios: [
-    _Scenario(
-      name: 'Compact Phone',
-      modes: [ViewportMode(compactPhoneViewport)],
+abstract final class _StorybookDefinitions {
+  static final $Dropdown = _Story(
+    name: 'Dropdown',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(child),
+    args: _Args(
+      selectedIndex: NullableIntArg(0, name: 'Selected Index'),
+      enabled: BoolArg(true, name: 'Enabled'),
+      isRequired: BoolArg(false, name: 'Required'),
+      showError: BoolArg(false, name: 'Show Error'),
+      label: StringArg('Plan', name: 'Label'),
     ),
-    _Scenario(name: 'Tablet', modes: [ViewportMode(tabletViewport)]),
-    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
-    _Scenario(name: 'Arabic', modes: [AuraArabicLocaleMode()]),
-    _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
-    _Scenario(
-      name: 'Opens Menu',
-      run: (tester, args) async {
-        await tester.tap(find.byType(AuraDropdownSelector<String>));
-        await tester.pump(const Duration(milliseconds: 300));
-        expect(find.text('Enterprise'), findsOneWidget);
-      },
-    ),
-  ],
-);
+    scenarios: [
+      _Scenario(
+        name: 'Compact Phone',
+        modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
+      ),
+      _Scenario(
+        name: 'Tablet',
+        modes: [ViewportMode(StoryHelpers.tabletViewport)],
+      ),
+      _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(.rtl)]),
+      _Scenario(name: 'Arabic', modes: [AuraArabicLocaleMode()]),
+      _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
+      _Scenario(
+        name: 'Opens Menu',
+        run: (tester, args) async {
+          await tester.tap(find.byType(AuraDropdownSelector<String>));
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(find.text('Enterprise'), findsOneWidget);
+        },
+      ),
+    ],
+  );
+}
 
 /// Demonstrates the Aura dropdown with selection, validation, and keyboard
 /// focus behavior.

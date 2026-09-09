@@ -27,6 +27,9 @@ class const CompactionSettingsSection({
 
 class _CompactionSettingsSectionState
     extends ConsumerState<CompactionSettingsSection> {
+  static const _minUsagePercentage = 5;
+  static const _maxUsagePercentage = 100;
+
   TextEditingController? _remainingController;
   int _usagePercentageThreshold =
       CompactionSettings.defaults.usagePercentageThreshold;
@@ -49,7 +52,10 @@ class _CompactionSettingsSectionState
       compactionSettingsProvider(widget.workspaceId),
     );
     final settings = settingsAsync.asData?.value ?? CompactionSettings.defaults;
-    _usagePercentageThreshold = settings.usagePercentageThreshold.clamp(5, 100);
+    _usagePercentageThreshold = settings.usagePercentageThreshold.clamp(
+      _minUsagePercentage,
+      _maxUsagePercentage,
+    );
     _remainingController = .new(text: '${settings.remainingTokenThreshold}');
     _autoEnabled = settings.autoCompactionEnabled;
   }
@@ -68,8 +74,8 @@ class _CompactionSettingsSectionState
       _requiredRemainingController.text = '${settings.remainingTokenThreshold}';
       setState(() {
         _usagePercentageThreshold = settings.usagePercentageThreshold.clamp(
-          5,
-          100,
+          _minUsagePercentage,
+          _maxUsagePercentage,
         );
         _autoEnabled = settings.autoCompactionEnabled;
       });
@@ -146,8 +152,8 @@ class _CompactionSettingsSectionState
                 value: _usagePercentageThreshold.toDouble(),
                 onChanged: (value) =>
                     setState(() => _usagePercentageThreshold = value.round()),
-                min: 5,
-                max: 100,
+                min: _minUsagePercentage.toDouble(),
+                max: _maxUsagePercentage.toDouble(),
                 semanticLabel: LocaleKeys.compaction_settings_usage_threshold
                     .tr(),
               ),
@@ -279,8 +285,8 @@ class _CompactionSettingsSectionState
     if (!mounted) return;
     setState(() {
       _usagePercentageThreshold = defaults.usagePercentageThreshold.clamp(
-        5,
-        100,
+        _minUsagePercentage,
+        _maxUsagePercentage,
       );
       _autoEnabled = defaults.autoCompactionEnabled;
       _requiredRemainingController.text = '${defaults.remainingTokenThreshold}';

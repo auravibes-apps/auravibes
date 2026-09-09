@@ -176,8 +176,8 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
             : SystemMouseCursors.click,
         child: GestureDetector(
           child: SizedBox(
-            width: 48,
-            height: 48,
+            width: DesignInputSizes.heightLg,
+            height: DesignInputSizes.heightLg,
             child: Center(
               child: Opacity(
                 opacity: isDisabled ? 0.6 : 1.0,

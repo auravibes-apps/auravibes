@@ -19,9 +19,9 @@ typedef _Story = CheckboxListTileDemoStory;
 typedef _Args = CheckboxListTileDemoArgs;
 final CheckboxListTileDemoComponent =
     Component<CheckboxListTileDemo, StoryArgs<CheckboxListTileDemo>>(
-      name: component.name ?? 'CheckboxListTileDemo',
-      path: component.path ?? 'aura_ui',
-      docsBuilder: component.docsBuilder,
+      name: _component.name ?? 'CheckboxListTileDemo',
+      path: _component.path ?? 'aura_ui',
+      docsBuilder: _component.docsBuilder,
       docComment: r'''Demonstrates a settings-style checkbox tile with optional supporting text.''',
       stories: [$CheckboxListTile..$generatedName = 'CheckboxListTile'],
     );

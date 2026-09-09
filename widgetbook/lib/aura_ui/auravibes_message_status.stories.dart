@@ -3,6 +3,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
+part 'auravibes_message_status.stories.bridge.g.dart';
 part 'auravibes_message_status.stories.g.dart';
 
 class const _MessageStatusInput({
@@ -13,9 +14,9 @@ class const _MessageStatusInput({
   required final String? semanticLabel,
 });
 
-const meta = Meta(AuraMessageStatus.new, argsType: _MessageStatusInput.new);
+const _meta = Meta(AuraMessageStatus.new, argsType: _MessageStatusInput.new);
 
-final _Defaults messageStatusDefaults = _Defaults(
+final _Defaults _messageStatusDefaults = _Defaults(
   builder: (context, args) => AuraMessageStatus(
     status: args.status,
     size: args.size,
@@ -25,22 +26,24 @@ final _Defaults messageStatusDefaults = _Defaults(
   ),
 );
 
-final $SendingStatus = _Story(
-  name: 'Sending Status',
-  setup: (context, child, args) => constrainStoryWidth(child),
-  args: _Args(
-    status: EnumArg(
-      AuraMessageDeliveryStatus.values.first,
-      name: 'Status',
-      values: AuraMessageDeliveryStatus.values,
+abstract final class _StorybookDefinitions {
+  static final $SendingStatus = _Story(
+    name: 'Sending Status',
+    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(child),
+    args: _Args(
+      status: EnumArg(
+        AuraMessageDeliveryStatus.values.first,
+        name: 'Status',
+        values: AuraMessageDeliveryStatus.values,
+      ),
+      size: EnumArg(
+        AuraMessageStatusSize.values.first,
+        name: 'Size',
+        values: AuraMessageStatusSize.values,
+      ),
+      tint: NullableEnumArg(null, name: 'Tint', values: AuraTint.values),
+      showAnimation: BoolArg(true, name: 'Show Animation'),
+      semanticLabel: NullableStringArg(null, name: 'Semantic Label'),
     ),
-    size: EnumArg(
-      AuraMessageStatusSize.values.first,
-      name: 'Size',
-      values: AuraMessageStatusSize.values,
-    ),
-    tint: NullableEnumArg(null, name: 'Tint', values: AuraTint.values),
-    showAnimation: BoolArg(true, name: 'Show Animation'),
-    semanticLabel: NullableStringArg(null, name: 'Semantic Label'),
-  ),
-);
+  );
+}

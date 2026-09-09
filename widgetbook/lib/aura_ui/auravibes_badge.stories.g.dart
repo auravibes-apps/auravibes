@@ -58,7 +58,7 @@ class AuraBadgeTextStory extends Story<AuraBadge, _TextBadgeInputArgs> {
     super.excludeFromTests,
   }) : super(
          args: args ?? _TextBadgeInputArgs(),
-         builder: builder ?? textDefaults.builder!,
+         builder: builder ?? _textDefaults.builder!,
        );
 }
 
