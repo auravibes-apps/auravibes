@@ -17,6 +17,17 @@ import 'package:drift/drift.dart';
 
 export 'mcp_servers_repository_contract.dart';
 
+final _mcpServerTemplate = McpServerEntity(
+  id: '',
+  workspaceId: '',
+  name: '',
+  url: '',
+  transport: const McpTransportTypeSSE(),
+  authenticationType: const McpAuthenticationTypeNone(),
+  createdAt: .new(0),
+  updatedAt: .new(0),
+);
+
 class McpServersRepository implements McpServersRepositoryContract {
   /// Creates a new [McpServersRepository] instance.
   new(this._database)
@@ -37,48 +48,9 @@ class McpServersRepository implements McpServersRepositoryContract {
   }) async {
     try {
       // Use a transaction to ensure atomicity.
-      return await _database.transaction(() async {
-        // 1. Insert the MCP server.
-        final mcpServer = await _mcpServersDao.insertMcpServer(
-          .insert(
-            workspaceId: workspaceId,
-            name: serverToCreate.name,
-            url: serverToCreate.url,
-            transport: serverToCreate.transport,
-            serviceConnectionId: Value(serverToCreate.serviceConnectionId),
-            description: Value(serverToCreate.description),
-          ),
-        );
-
-        // 2. Create a ToolsGroup with the MCP server name.
-        final toolsGroup = await _toolsGroupsDao.insertToolsGroup(
-          .insert(
-            workspaceId: workspaceId,
-            mcpServerId: Value(mcpServer.id),
-            name: serverToCreate.name,
-            permissions: PermissionAccess.ask,
-          ),
-        );
-
-        // 3. Insert all tools with the group ID.
-        if (tools.isNotEmpty) {
-          final toolCompanions = tools.map((tool) {
-            return ToolsCompanion.insert(
-              workspaceId: workspaceId,
-              workspaceToolsGroupId: .new(toolsGroup.id),
-              toolId: tool.toolName,
-              description: .new(tool.description),
-              inputSchema: .new(jsonEncode(tool.inputSchema)),
-              isEnabled: const Value(true),
-              permissions: const Value(PermissionAccess.ask),
-            );
-          }).toList();
-
-          await _workspaceToolsDao.insertToolsBatch(toolCompanions);
-        }
-
-        return _tableToEntity(mcpServer);
-      });
+      return await _database.transaction(
+        () => _addMcpServerWithTools(workspaceId, serverToCreate, tools),
+      );
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException('Failed to add MCP server with tools.', e),
@@ -90,27 +62,7 @@ class McpServersRepository implements McpServersRepositoryContract {
   @override
   Future<bool> deleteMcpServer(String serverId) async {
     try {
-      return await _database.transaction(() async {
-        final server = await _mcpServersDao.getMcpServerById(serverId);
-        if (server == null) return false;
-
-        // The cascade delete will handle ToolsGroup and Tools.
-        final deleted = await _mcpServersDao.deleteMcpServer(serverId);
-        final serviceConnectionId = server.serviceConnectionId;
-        if (deleted && serviceConnectionId != null) {
-          final _ =
-              await (_database.delete(_database.serviceConnections)..where(
-                    (tbl) =>
-                        tbl.id.equals(serviceConnectionId) &
-                        tbl.kind.equals(
-                          ServiceConnectionKindTable.mcpServer.name,
-                        ),
-                  ))
-                  .go();
-        }
-
-        return deleted;
-      });
+      return await _database.transaction(() => _deleteMcpServer(serverId));
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException('Failed to delete MCP server.', e),
@@ -125,54 +77,9 @@ class McpServersRepository implements McpServersRepositoryContract {
     required List<McpToolInfo> currentTools,
   }) async {
     try {
-      await _database.transaction(() async {
-        // 1. Get the tools group for this MCP.
-        final group = await _toolsGroupsDao.getToolsGroupByMcpServerId(
-          mcpServerId,
-        );
-        if (group == null) {
-          throw McpServerNotFoundException(mcpServerId);
-        }
-
-        // 2. Get existing tools for this group.
-        final existingTools = await _workspaceToolsDao.getToolsByGroupId(
-          group.id,
-        );
-        final existingToolIds = existingTools.map((t) => t.toolId).toSet();
-        final currentToolIds = currentTools.map((t) => t.toolName).toSet();
-
-        // 3. Find tools to add (in current but not in existing).
-        final toolsToAdd = currentTools
-            .where((t) => !existingToolIds.contains(t.toolName))
-            .toList();
-
-        // 4. Find tools to remove (in existing but not in current).
-        final toolsToRemove = existingTools
-            .where((t) => !currentToolIds.contains(t.toolId))
-            .toList();
-
-        // 5. Add new tools (enabled by default, permission = ask).
-        if (toolsToAdd.isNotEmpty) {
-          final toolCompanions = toolsToAdd.map((tool) {
-            return ToolsCompanion.insert(
-              workspaceId: group.workspaceId,
-              workspaceToolsGroupId: .new(group.id),
-              toolId: tool.toolName,
-              description: .new(tool.description),
-              inputSchema: .new(jsonEncode(tool.inputSchema)),
-              isEnabled: const Value(true),
-              permissions: const Value(PermissionAccess.ask),
-            );
-          }).toList();
-
-          await _workspaceToolsDao.insertToolsBatch(toolCompanions);
-        }
-
-        // 6. Remove old tools.
-        for (final tool in toolsToRemove) {
-          final _ = await _workspaceToolsDao.deleteWorkspaceToolById(tool.id);
-        }
-      });
+      await _database.transaction(
+        () => _syncMcpTools(mcpServerId, currentTools),
+      );
 
       // Note: Existing tools are NOT modified - user customizations preserved.
     } on McpServerNotFoundException {
@@ -239,15 +146,193 @@ class McpServersRepository implements McpServersRepositoryContract {
     }
   }
 
+  Future<McpServersTable> _insertMcpServer(
+    String workspaceId,
+    McpServerToCreate serverToCreate,
+  ) {
+    return _mcpServersDao.insertMcpServer(
+      .insert(
+        workspaceId: workspaceId,
+        name: serverToCreate.name,
+        url: serverToCreate.url,
+        transport: serverToCreate.transport,
+        serviceConnectionId: Value(serverToCreate.serviceConnectionId),
+        description: Value(serverToCreate.description),
+      ),
+    );
+  }
+
+  Future<McpServerEntity> _addMcpServerWithTools(
+    String workspaceId,
+    McpServerToCreate serverToCreate,
+    List<McpToolInfo> tools,
+  ) async {
+    final mcpServer = await _insertMcpServer(workspaceId, serverToCreate);
+    final toolsGroup = await _insertToolsGroup(mcpServer, serverToCreate);
+    await _insertTools(workspaceId, toolsGroup.id, tools);
+
+    return _tableToEntity(mcpServer);
+  }
+
+  Future<bool> _deleteMcpServer(String serverId) async {
+    final server = await _mcpServersDao.getMcpServerById(serverId);
+    if (server == null) return false;
+
+    final deleted = await _mcpServersDao.deleteMcpServer(serverId);
+    await _deleteServiceConnection(server, deleted);
+
+    return deleted;
+  }
+
+  Future<void> _deleteServiceConnection(
+    McpServersTable server,
+    bool serverDeleted,
+  ) async {
+    final serviceConnectionId = server.serviceConnectionId;
+    if (!serverDeleted || serviceConnectionId == null) return;
+
+    await _deleteServiceConnectionById(serviceConnectionId);
+  }
+
+  Future<void> _deleteServiceConnectionById(String serviceConnectionId) async {
+    final statement = _database.delete(_database.serviceConnections)
+      ..where((tbl) => _isMcpServiceConnection(tbl, serviceConnectionId));
+    final _ = await statement.go();
+  }
+
+  Expression<bool> _isMcpServiceConnection(
+    ServiceConnections table,
+    String serviceConnectionId,
+  ) {
+    return table.id.equals(serviceConnectionId) &
+        table.kind.equals(ServiceConnectionKindTable.mcpServer.name);
+  }
+
+  Future<void> _syncMcpTools(
+    String mcpServerId,
+    List<McpToolInfo> currentTools,
+  ) async {
+    final group = await _toolsGroupsDao.getToolsGroupByMcpServerId(mcpServerId);
+    if (group == null) throw McpServerNotFoundException(mcpServerId);
+
+    await _syncToolsForGroup(group, currentTools);
+  }
+
+  Future<ToolsGroupsTable> _insertToolsGroup(
+    McpServersTable server,
+    McpServerToCreate serverToCreate,
+  ) {
+    return _toolsGroupsDao.insertToolsGroup(
+      .insert(
+        workspaceId: server.workspaceId,
+        mcpServerId: Value(server.id),
+        name: serverToCreate.name,
+        permissions: PermissionAccess.ask,
+      ),
+    );
+  }
+
+  Future<void> _insertTools(
+    String workspaceId,
+    String toolsGroupId,
+    List<McpToolInfo> tools,
+  ) async {
+    if (tools.isEmpty) return;
+
+    await _workspaceToolsDao.insertToolsBatch(
+      _toolCompanions(workspaceId, toolsGroupId, tools),
+    );
+  }
+
+  List<ToolsCompanion> _toolCompanions(
+    String workspaceId,
+    String toolsGroupId,
+    List<McpToolInfo> tools,
+  ) {
+    return tools
+        .map((tool) => _toolCompanion(workspaceId, toolsGroupId, tool))
+        .toList();
+  }
+
+  ToolsCompanion _toolCompanion(
+    String workspaceId,
+    String toolsGroupId,
+    McpToolInfo tool,
+  ) {
+    return ToolsCompanion.insert(
+      workspaceId: workspaceId,
+      workspaceToolsGroupId: .new(toolsGroupId),
+      toolId: tool.toolName,
+      description: .new(tool.description),
+      inputSchema: .new(jsonEncode(tool.inputSchema)),
+      isEnabled: const Value(true),
+      permissions: const Value(PermissionAccess.ask),
+    );
+  }
+
+  Future<void> _syncToolsForGroup(
+    ToolsGroupsTable group,
+    List<McpToolInfo> currentTools,
+  ) async {
+    final existingTools = await _workspaceToolsDao.getToolsByGroupId(group.id);
+    final toolsToAdd = _toolsToAdd(existingTools, currentTools);
+    final toolsToRemove = _toolsToRemove(existingTools, currentTools);
+
+    await _insertTools(group.workspaceId, group.id, toolsToAdd);
+    await _removeTools(toolsToRemove);
+  }
+
+  List<McpToolInfo> _toolsToAdd(
+    List<ToolsTable> existingTools,
+    List<McpToolInfo> currentTools,
+  ) {
+    final existingToolIds = existingTools.map((tool) => tool.toolId).toSet();
+
+    return currentTools
+        .where((tool) => !existingToolIds.contains(tool.toolName))
+        .toList();
+  }
+
+  List<ToolsTable> _toolsToRemove(
+    List<ToolsTable> existingTools,
+    List<McpToolInfo> currentTools,
+  ) {
+    final currentToolIds = currentTools.map((tool) => tool.toolName).toSet();
+
+    return existingTools
+        .where((tool) => !currentToolIds.contains(tool.toolId))
+        .toList();
+  }
+
+  Future<void> _removeTools(List<ToolsTable> tools) async {
+    for (final tool in tools) {
+      final _ = await _workspaceToolsDao.deleteWorkspaceToolById(tool.id);
+    }
+  }
+
   /// Convert a database table row to an entity.
   McpServerEntity _tableToEntity(McpServersTable table) {
-    return McpServerEntity(
-      id: table.id,
-      workspaceId: table.workspaceId,
-      name: table.name,
-      url: table.url,
-      transport: table.transport,
-      authenticationType: const McpAuthenticationTypeNone(),
+    return _copyServerDetails(table);
+  }
+
+  McpServerEntity _copyServerDetails(McpServersTable table) {
+    return _copyServerDates(
+      _mcpServerTemplate.copyWith(
+        id: table.id,
+        workspaceId: table.workspaceId,
+        name: table.name,
+        url: table.url,
+        transport: table.transport,
+      ),
+      table,
+    );
+  }
+
+  McpServerEntity _copyServerDates(
+    McpServerEntity entity,
+    McpServersTable table,
+  ) {
+    return entity.copyWith(
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
       serviceConnectionId: table.serviceConnectionId,
