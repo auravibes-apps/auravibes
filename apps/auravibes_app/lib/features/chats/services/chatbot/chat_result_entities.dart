@@ -50,17 +50,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
   }
 
   MessageMetadataEntity? get entityMetadata {
-    final hasUsage =
-        usage?.promptTokens != null ||
-        usage?.responseTokens != null ||
-        usage?.totalTokens != null;
-
-    if (entityTools.isEmpty &&
-        !hasUsage &&
-        entityThinking == null &&
-        entityModelMetadata.isEmpty) {
-      return null;
-    }
+    if (!_hasEntityMetadata) return null;
 
     return MessageMetadataEntity(
       toolCalls: entityTools,
@@ -71,4 +61,15 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
       modelMetadata: entityModelMetadata,
     );
   }
+
+  bool get _hasEntityMetadata =>
+      entityTools.isNotEmpty ||
+      _hasUsage ||
+      entityThinking != null ||
+      entityModelMetadata.isNotEmpty;
+
+  bool get _hasUsage =>
+      usage?.promptTokens != null ||
+      usage?.responseTokens != null ||
+      usage?.totalTokens != null;
 }
