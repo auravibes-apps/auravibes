@@ -40,6 +40,14 @@ class const CreateSkillUsecase(
       );
     }
 
+    return await _createSkill(workspaceId, skill);
+  }
+
+  Future<SkillEntity> _createSkill(
+    String workspaceId,
+    SkillToCreate skill,
+  ) async {
+    final cloud = cloudStore;
     if (cloud != null) return await cloud.createSkill(skill);
     final repository = _skillsRepository;
     if (repository == null) throw StateError('Skill store is unavailable');
