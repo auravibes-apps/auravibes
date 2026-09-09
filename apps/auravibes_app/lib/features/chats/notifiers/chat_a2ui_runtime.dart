@@ -31,6 +31,11 @@ const String chatA2uiProtocolVersion = a2uiChatProtocolVersion;
 final _logger = Logger('chat_a2ui_runtime');
 
 typedef ChatUiAction = A2uiChatAction;
+typedef _PendingSurfaceContext = ({
+  String wireSurfaceId,
+  String scopedSurfaceId,
+  ChatA2uiSurfaceState surface,
+});
 
 class ChatA2uiRuntime extends ChangeNotifier {
   new({required this.conversationId, this.enabled = false}) {
@@ -352,37 +357,67 @@ class ChatA2uiRuntime extends ChangeNotifier {
   }) {
     if (!enabled) return;
     final messageId = _restoringMessageId ?? _currentMessageId;
-    if (messageId != null && (_messageStates[messageId]?.closed ?? false)) {
-      return;
-    }
+    if (_isClosedMessage(messageId)) return;
     if (messageId == null) {
-      final _ = _unboundIssues.add(issue);
-      if (!kReleaseMode && diagnosticPayloadJson != null) {
-        final _ = _unboundDiagnosticPayloads.add(diagnosticPayloadJson);
-      }
+      _recordUnboundIssue(issue, diagnosticPayloadJson);
 
       return;
-    } else {
-      if (diagnosticPayloadJson != null) {
-        _recordDiagnosticPayload(messageId, diagnosticPayloadJson);
-      }
-      final state = _messageState(messageId);
-      final _ = state.issues.add(issue);
-      if (surfaceId != null && surfaceId.isNotEmpty) {
-        final scopedSurfaceId = _scopedSurfaceIdFor(messageId, surfaceId);
-        final order = state.surfaceOrder;
-        if (!order.contains(scopedSurfaceId)) order.add(scopedSurfaceId);
-        final _ = _surfaceStates[scopedSurfaceId]!.issues.add(issue);
-      } else {
-        final _ = state.messageIssues.add(issue);
-      }
-      _logger.warning(
-        'A2UI surface rejected issue=$issue conversation=$conversationId '
-        'message=$messageId${surfaceId == null ? '' : ' surface=$surfaceId'}',
-      );
-      _recomputeBlocking(messageId);
-      notifyListeners();
     }
+    _recordBoundIssue(
+      messageId,
+      issue,
+      surfaceId: surfaceId,
+      diagnosticPayloadJson: diagnosticPayloadJson,
+    );
+  }
+
+  bool _isClosedMessage(String? messageId) =>
+      messageId != null && (_messageStates[messageId]?.closed ?? false);
+
+  void _recordUnboundIssue(
+    ChatA2uiSurfaceIssue issue,
+    String? diagnosticPayloadJson,
+  ) {
+    final _ = _unboundIssues.add(issue);
+    if (!kReleaseMode && diagnosticPayloadJson != null) {
+      final _ = _unboundDiagnosticPayloads.add(diagnosticPayloadJson);
+    }
+  }
+
+  void _recordBoundIssue(
+    String messageId,
+    ChatA2uiSurfaceIssue issue, {
+    required String? surfaceId,
+    required String? diagnosticPayloadJson,
+  }) {
+    if (diagnosticPayloadJson != null) {
+      _recordDiagnosticPayload(messageId, diagnosticPayloadJson);
+    }
+    final state = _messageState(messageId);
+    final _ = state.issues.add(issue);
+    if (surfaceId != null && surfaceId.isNotEmpty) {
+      _recordSurfaceIssue(messageId, surfaceId, issue);
+    } else {
+      final _ = state.messageIssues.add(issue);
+    }
+    _logger.warning(
+      'A2UI surface rejected issue=$issue conversation=$conversationId '
+      'message=$messageId${surfaceId == null ? '' : ' surface=$surfaceId'}',
+    );
+    _recomputeBlocking(messageId);
+    notifyListeners();
+  }
+
+  void _recordSurfaceIssue(
+    String messageId,
+    String surfaceId,
+    ChatA2uiSurfaceIssue issue,
+  ) {
+    final state = _messageState(messageId);
+    final scopedSurfaceId = _scopedSurfaceIdFor(messageId, surfaceId);
+    final order = state.surfaceOrder;
+    if (!order.contains(scopedSurfaceId)) order.add(scopedSurfaceId);
+    final _ = _surfaceStates[scopedSurfaceId]!.issues.add(issue);
   }
 
   void _recomputeBlocking(String messageId) {
@@ -438,64 +473,14 @@ class ChatA2uiRuntime extends ChangeNotifier {
       }),
     );
     final surfaceId = _surfaceId(message);
-    if (!a2uiChatInteractionModes.contains(interactionMode)) {
-      recordIssue(
-        ChatA2uiSurfaceIssue.invalidInteractionMode,
-        surfaceId: surfaceId,
-      );
-
-      return;
-    }
-    final contractIssue = A2uiChatContract.validateMessage(
-      Map<String, Object?>.from(message.toJson()),
-      interactionMode: interactionMode,
+    final issue = _incomingMessageIssue(
+      message,
+      interactionMode,
+      owner,
+      surfaceId,
     );
-    if (contractIssue != null) {
-      recordIssue(contractIssue, surfaceId: surfaceId);
-
-      return;
-    }
-    if (!_isSupported(message)) {
-      recordIssue(
-        message is core.UpdateComponentsMessage
-            ? ChatA2uiSurfaceIssue.unsupportedComponent
-            : ChatA2uiSurfaceIssue.unsupportedCatalog,
-        surfaceId: surfaceId,
-      );
-
-      return;
-    }
-    if (surfaceId != null && message is! core.CreateSurfaceMessage) {
-      final ownerState = _messageStates[owner];
-      final scopedSurfaceId = ownerState?.scopedSurfaceIds[surfaceId];
-      final pendingCreate = ownerState?.pendingMessages.any(
-        (pending) =>
-            pending.message is core.CreateSurfaceMessage &&
-            chatA2uiSurfaceId(pending.message) == surfaceId,
-      );
-      if (scopedSurfaceId == null && pendingCreate != true) {
-        recordIssue(
-          ChatA2uiSurfaceIssue.malformedPayload,
-          surfaceId: surfaceId,
-        );
-
-        return;
-      }
-      if (scopedSurfaceId != null &&
-          _surfaceStates[scopedSurfaceId]?.interactionMode != interactionMode) {
-        recordIssue(
-          ChatA2uiSurfaceIssue.invalidInteractionMode,
-          surfaceId: surfaceId,
-        );
-
-        return;
-      }
-    }
-    if (!_isCatalogModeAllowed(message, interactionMode)) {
-      recordIssue(
-        ChatA2uiSurfaceIssue.invalidInteractionMode,
-        surfaceId: surfaceId,
-      );
+    if (issue != null) {
+      recordIssue(issue, surfaceId: surfaceId);
 
       return;
     }
@@ -520,6 +505,76 @@ class ChatA2uiRuntime extends ChangeNotifier {
     notifyListeners();
   }
 
+  ChatA2uiSurfaceIssue? _incomingMessageIssue(
+    core.A2uiMessage message,
+    String interactionMode,
+    String owner,
+    String? surfaceId,
+  ) {
+    if (!a2uiChatInteractionModes.contains(interactionMode)) {
+      return ChatA2uiSurfaceIssue.invalidInteractionMode;
+    }
+    final contractIssue = A2uiChatContract.validateMessage(
+      Map<String, Object?>.from(message.toJson()),
+      interactionMode: interactionMode,
+    );
+    if (contractIssue != null) return contractIssue;
+    if (!_isSupported(message)) {
+      return message is core.UpdateComponentsMessage
+          ? ChatA2uiSurfaceIssue.unsupportedComponent
+          : ChatA2uiSurfaceIssue.unsupportedCatalog;
+    }
+    final surfaceIssue = _surfaceReferenceIssue(
+      message,
+      interactionMode,
+      owner,
+      surfaceId,
+    );
+    if (surfaceIssue != null) return surfaceIssue;
+    if (!_isCatalogModeAllowed(message, interactionMode)) {
+      return ChatA2uiSurfaceIssue.invalidInteractionMode;
+    }
+    return null;
+  }
+
+  ChatA2uiSurfaceIssue? _surfaceReferenceIssue(
+    core.A2uiMessage message,
+    String interactionMode,
+    String owner,
+    String? surfaceId,
+  ) {
+    if (surfaceId == null || message is core.CreateSurfaceMessage) return null;
+    final ownerState = _messageStates[owner];
+    final scopedSurfaceId = ownerState?.scopedSurfaceIds[surfaceId];
+    if (!_hasSurfaceReference(ownerState, scopedSurfaceId, surfaceId)) {
+      return ChatA2uiSurfaceIssue.malformedPayload;
+    }
+    if (_hasMismatchedSurfaceMode(scopedSurfaceId, interactionMode)) {
+      return ChatA2uiSurfaceIssue.invalidInteractionMode;
+    }
+    return null;
+  }
+
+  bool _hasSurfaceReference(
+    ChatA2uiMessageState? ownerState,
+    String? scopedSurfaceId,
+    String surfaceId,
+  ) =>
+      scopedSurfaceId != null ||
+      ownerState?.pendingMessages.any(
+            (pending) =>
+                pending.message is core.CreateSurfaceMessage &&
+                chatA2uiSurfaceId(pending.message) == surfaceId,
+          ) ==
+          true;
+
+  bool _hasMismatchedSurfaceMode(
+    String? scopedSurfaceId,
+    String interactionMode,
+  ) =>
+      scopedSurfaceId != null &&
+      _surfaceStates[scopedSurfaceId]?.interactionMode != interactionMode;
+
   void _recordDiagnosticPayload(String messageId, String payload) {
     if (kReleaseMode) return;
     final payloads = _messageState(messageId).diagnosticPayloads;
@@ -534,133 +589,15 @@ class ChatA2uiRuntime extends ChangeNotifier {
     if (pending.isEmpty) return;
 
     final savedPayloads = <String>[];
-    final scopedSurfaceIds = state.scopedSurfaceIds;
     for (final pendingMessage in pending) {
-      final wireSurfaceId = chatA2uiSurfaceId(pendingMessage.message);
-      if (wireSurfaceId == null) continue;
-      final existingSurfaceId = scopedSurfaceIds[wireSurfaceId];
-      if (pendingMessage.message is core.CreateSurfaceMessage &&
-          existingSurfaceId != null) {
-        continue;
-      }
-      final scopedSurfaceId = existingSurfaceId ?? '$messageId:$wireSurfaceId';
-      scopedSurfaceIds[wireSurfaceId] = scopedSurfaceId;
-      final surface = _surfaceStates.putIfAbsent(
-        scopedSurfaceId,
-        () => ChatA2uiSurfaceState(
-          ownerMessageId: messageId,
-          wireSurfaceId: wireSurfaceId,
-          scopedSurfaceId: scopedSurfaceId,
-        ),
+      final savedPayload = _commitPendingMessage(
+        messageId,
+        state,
+        pendingMessage,
       );
-      final surfaceOrder = state.surfaceOrder;
-      if (!surfaceOrder.contains(scopedSurfaceId)) {
-        surfaceOrder.add(scopedSurfaceId);
-      }
-      if (_surfaceStates[scopedSurfaceId]?.deleted ?? false) continue;
-
-      final scopedMessage = scopeChatA2uiMessage(
-        pendingMessage.message,
-        scopedSurfaceId: scopedSurfaceId,
-      );
-      if (scopedMessage == null) continue;
-      final surfaceId = _surfaceId(scopedMessage);
-      final previousComponents = Map<String, Map<String, dynamic>>.from(
-        surface.components,
-      );
-      final previouslyHadRoot = surface.hasRoot;
-      final componentsBySurface = <String, Map<String, Map<String, dynamic>>>{
-        scopedSurfaceId: Map.of(surface.components),
-      };
-      final surfacesWithRoot = <String>{if (surface.hasRoot) scopedSurfaceId};
-      final normalizedMessage = ChatA2uiRuntime.normalizeChatA2uiMessage(
-        scopedMessage,
-        componentsBySurface: componentsBySurface,
-        surfacesWithRoot: surfacesWithRoot,
-      );
-      surface.components
-        ..clear()
-        ..addAll(componentsBySurface[scopedSurfaceId] ?? const {});
-      surface.hasRoot = surfacesWithRoot.contains(scopedSurfaceId);
-      if (normalizedMessage is core.UpdateComponentsMessage &&
-          !_isRenderableComponentGraph(surfaceId)) {
-        if (surfaceId == null) continue;
-        final issue = surface.components.containsKey('root')
-            ? ChatA2uiSurfaceIssue.malformedPayload
-            : ChatA2uiSurfaceIssue.missingRoot;
-        surface.components
-          ..clear()
-          ..addAll(previousComponents);
-        surface.hasRoot = previouslyHadRoot;
-        recordIssue(issue, surfaceId: wireSurfaceId);
-        continue;
-      }
-      if (normalizedMessage is core.CreateSurfaceMessage) {
-        if (_controller.activeSurfaceIds.contains(scopedSurfaceId)) continue;
-        surface
-          ..catalogId = normalizedMessage.catalogId
-          ..interactionMode = pendingMessage.interactionMode
-          ..deleted = false;
-      }
-      if (normalizedMessage is core.DeleteSurfaceMessage) {
-        surface
-          ..components.clear()
-          ..hasRoot = false
-          ..deleted = true;
-      }
-      try {
-        _controller.handleMessage(normalizedMessage);
-        if (surface.catalogId == a2uiChatFormCatalogId &&
-            normalizedMessage is core.UpdateDataModelMessage &&
-            normalizedMessage.path == '/' &&
-            surface.initialDataModel == null) {
-          surface.initialDataModel = _jsonObject(normalizedMessage.value);
-        }
-        if (surface.catalogId == a2uiChatFormCatalogId &&
-            surface.initialDataModel == null &&
-            surface.hasRoot) {
-          surface.initialDataModel = _jsonObject(
-            _controller
-                .contextFor(scopedSurfaceId)
-                .dataModel
-                .getValue<Object?>(DataPath.root),
-          );
-        }
-        savedPayloads.add(pendingMessage.payloadJson);
-        if (surfaceId != null) {
-          _surfaceStates[surfaceId]?.acceptedMessages.add(pendingMessage);
-        }
-        if (surfaceId != null && surface.hasRoot) {
-          _clearReadinessIssues(messageId, surfaceId);
-        }
-      } on Object catch (_) {
-        surface.components
-          ..clear()
-          ..addAll(previousComponents);
-        surface.hasRoot = previouslyHadRoot;
-        _restoreSurfaceFromHistory(surfaceId);
-        recordIssue(
-          ChatA2uiSurfaceIssue.renderFailure,
-          surfaceId: wireSurfaceId,
-        );
-      }
+      if (savedPayload != null) savedPayloads.add(savedPayload);
     }
-    for (final entry in scopedSurfaceIds.entries.toList(growable: false)) {
-      final wireSurfaceId = entry.key;
-      final surfaceId = entry.value;
-      if (_surfaceStates[surfaceId]?.ownerMessageId != messageId ||
-          !_controller.activeSurfaceIds.contains(surfaceId) ||
-          (_surfaceStates[surfaceId]?.hasRoot ?? false) ||
-          _surfaceStates[surfaceId]?.issues.isNotEmpty == true) {
-        continue;
-      }
-      recordIssue(
-        (_surfaceStates[surfaceId]?.components.isEmpty ?? true)
-            ? ChatA2uiSurfaceIssue.emptySurface
-            : ChatA2uiSurfaceIssue.missingRoot,
-        surfaceId: wireSurfaceId,
-      );
-    }
+    _recordUnreadySurfaces(messageId, state.scopedSurfaceIds);
     if (savedPayloads.isNotEmpty) {
       state.payloads.addAll(savedPayloads);
     }
@@ -668,34 +605,274 @@ class ChatA2uiRuntime extends ChangeNotifier {
     notifyListeners();
   }
 
+  _PendingSurfaceContext? _preparePendingSurface(
+    String messageId,
+    ChatA2uiMessageState state,
+    ChatA2uiProtocolMessage pendingMessage,
+  ) {
+    final wireSurfaceId = chatA2uiSurfaceId(pendingMessage.message);
+    if (wireSurfaceId == null) return null;
+    final existingSurfaceId = state.scopedSurfaceIds[wireSurfaceId];
+    if (pendingMessage.message is core.CreateSurfaceMessage &&
+        existingSurfaceId != null) {
+      return null;
+    }
+    final scopedSurfaceId = existingSurfaceId ?? '$messageId:$wireSurfaceId';
+    state.scopedSurfaceIds[wireSurfaceId] = scopedSurfaceId;
+    final surface = _surfaceStates.putIfAbsent(
+      scopedSurfaceId,
+      () => ChatA2uiSurfaceState(
+        ownerMessageId: messageId,
+        wireSurfaceId: wireSurfaceId,
+        scopedSurfaceId: scopedSurfaceId,
+      ),
+    );
+    final surfaceOrder = state.surfaceOrder;
+    if (!surfaceOrder.contains(scopedSurfaceId)) {
+      surfaceOrder.add(scopedSurfaceId);
+    }
+    if (surface.deleted) return null;
+    return (
+      wireSurfaceId: wireSurfaceId,
+      scopedSurfaceId: scopedSurfaceId,
+      surface: surface,
+    );
+  }
+
+  String? _commitPendingMessage(
+    String messageId,
+    ChatA2uiMessageState state,
+    ChatA2uiProtocolMessage pendingMessage,
+  ) {
+    final context = _preparePendingSurface(messageId, state, pendingMessage);
+    if (context == null) return null;
+    final scopedMessage = scopeChatA2uiMessage(
+      pendingMessage.message,
+      scopedSurfaceId: context.scopedSurfaceId,
+    );
+    if (scopedMessage == null) return null;
+    final surfaceId = _surfaceId(scopedMessage);
+    final previousComponents = Map<String, Map<String, dynamic>>.from(
+      context.surface.components,
+    );
+    final previouslyHadRoot = context.surface.hasRoot;
+    final componentsBySurface = <String, Map<String, Map<String, dynamic>>>{
+      context.scopedSurfaceId: Map.of(context.surface.components),
+    };
+    final surfacesWithRoot = <String>{
+      if (context.surface.hasRoot) context.scopedSurfaceId,
+    };
+    final normalizedMessage = ChatA2uiRuntime.normalizeChatA2uiMessage(
+      scopedMessage,
+      componentsBySurface: componentsBySurface,
+      surfacesWithRoot: surfacesWithRoot,
+    );
+    _replaceSurfaceComponents(
+      context.surface,
+      componentsBySurface[context.scopedSurfaceId] ?? const {},
+      surfacesWithRoot.contains(context.scopedSurfaceId),
+    );
+    if (normalizedMessage is core.UpdateComponentsMessage &&
+        !_isRenderableComponentGraph(surfaceId)) {
+      if (surfaceId == null) return null;
+      final issue = context.surface.components.containsKey('root')
+          ? ChatA2uiSurfaceIssue.malformedPayload
+          : ChatA2uiSurfaceIssue.missingRoot;
+      _restoreSurfaceComponents(
+        context.surface,
+        previousComponents,
+        previouslyHadRoot,
+      );
+      recordIssue(issue, surfaceId: context.wireSurfaceId);
+      return null;
+    }
+    if (!_applySurfaceLifecycle(context, pendingMessage, normalizedMessage)) {
+      return null;
+    }
+    return _renderPendingMessage(
+      messageId,
+      context,
+      pendingMessage,
+      normalizedMessage,
+      surfaceId,
+      previousComponents,
+      previouslyHadRoot,
+    );
+  }
+
+  void _replaceSurfaceComponents(
+    ChatA2uiSurfaceState surface,
+    Map<String, Map<String, dynamic>> components,
+    bool hasRoot,
+  ) {
+    surface.components
+      ..clear()
+      ..addAll(components);
+    surface.hasRoot = hasRoot;
+  }
+
+  void _restoreSurfaceComponents(
+    ChatA2uiSurfaceState surface,
+    Map<String, Map<String, dynamic>> components,
+    bool hadRoot,
+  ) {
+    surface.components
+      ..clear()
+      ..addAll(components);
+    surface.hasRoot = hadRoot;
+  }
+
+  bool _applySurfaceLifecycle(
+    _PendingSurfaceContext context,
+    ChatA2uiProtocolMessage pendingMessage,
+    core.A2uiMessage normalizedMessage,
+  ) {
+    if (normalizedMessage is core.CreateSurfaceMessage) {
+      if (_controller.activeSurfaceIds.contains(context.scopedSurfaceId)) {
+        return false;
+      }
+      context.surface
+        ..catalogId = normalizedMessage.catalogId
+        ..interactionMode = pendingMessage.interactionMode
+        ..deleted = false;
+    }
+    if (normalizedMessage is core.DeleteSurfaceMessage) {
+      context.surface
+        ..components.clear()
+        ..hasRoot = false
+        ..deleted = true;
+    }
+    return true;
+  }
+
+  String? _renderPendingMessage(
+    String messageId,
+    _PendingSurfaceContext context,
+    ChatA2uiProtocolMessage pendingMessage,
+    core.A2uiMessage normalizedMessage,
+    String? surfaceId,
+    Map<String, Map<String, dynamic>> previousComponents,
+    bool previouslyHadRoot,
+  ) {
+    try {
+      _controller.handleMessage(normalizedMessage);
+      _captureInitialDataModel(context.surface, normalizedMessage);
+      _recordAcceptedMessage(messageId, context, pendingMessage, surfaceId);
+      return pendingMessage.payloadJson;
+    } on Object catch (_) {
+      _restoreSurfaceComponents(
+        context.surface,
+        previousComponents,
+        previouslyHadRoot,
+      );
+      _restoreSurfaceFromHistory(surfaceId);
+      recordIssue(
+        ChatA2uiSurfaceIssue.renderFailure,
+        surfaceId: context.wireSurfaceId,
+      );
+      return null;
+    }
+  }
+
+  void _captureInitialDataModel(
+    ChatA2uiSurfaceState surface,
+    core.A2uiMessage normalizedMessage,
+  ) {
+    if (surface.catalogId != a2uiChatFormCatalogId) return;
+    if (normalizedMessage is core.UpdateDataModelMessage &&
+        normalizedMessage.path == '/' &&
+        surface.initialDataModel == null) {
+      surface.initialDataModel = _jsonObject(normalizedMessage.value);
+    }
+    if (surface.initialDataModel == null && surface.hasRoot) {
+      surface.initialDataModel = _jsonObject(
+        _controller
+            .contextFor(surface.scopedSurfaceId)
+            .dataModel
+            .getValue<Object?>(DataPath.root),
+      );
+    }
+  }
+
+  void _recordAcceptedMessage(
+    String messageId,
+    _PendingSurfaceContext context,
+    ChatA2uiProtocolMessage pendingMessage,
+    String? surfaceId,
+  ) {
+    if (surfaceId != null) {
+      _surfaceStates[surfaceId]?.acceptedMessages.add(pendingMessage);
+    }
+    if (surfaceId == null || !context.surface.hasRoot) return;
+    _clearReadinessIssues(messageId, surfaceId);
+  }
+
+  void _recordUnreadySurfaces(
+    String messageId,
+    Map<String, String> scopedSurfaceIds,
+  ) {
+    for (final entry in scopedSurfaceIds.entries.toList(growable: false)) {
+      final wireSurfaceId = entry.key;
+      final surfaceId = entry.value;
+      if (!_needsReadinessIssue(messageId, surfaceId)) continue;
+      recordIssue(
+        (_surfaceStates[surfaceId]?.components.isEmpty ?? true)
+            ? ChatA2uiSurfaceIssue.emptySurface
+            : ChatA2uiSurfaceIssue.missingRoot,
+        surfaceId: wireSurfaceId,
+      );
+    }
+  }
+
+  bool _needsReadinessIssue(String messageId, String surfaceId) {
+    final surface = _surfaceStates[surfaceId];
+    return surface?.ownerMessageId == messageId &&
+        _controller.activeSurfaceIds.contains(surfaceId) &&
+        !(surface?.hasRoot ?? false) &&
+        surface?.issues.isNotEmpty != true;
+  }
+
   void _clearReadinessIssues(String messageId, String surfaceId) {
-    final surfaceIssues = _surfaceStates[surfaceId]?.issues;
-    surfaceIssues?.removeAll(const [
+    _clearSurfaceReadinessIssues(surfaceId);
+    final issues = _messageStates[messageId]?.issues;
+    if (issues == null) return;
+    _clearMessageReadinessIssues(messageId, issues);
+    if (issues.isEmpty) _messageStates[messageId]?.issues.clear();
+  }
+
+  void _clearSurfaceReadinessIssues(String surfaceId) {
+    final surface = _surfaceStates[surfaceId];
+    if (surface == null) return;
+    surface.issues.removeAll(const [
       ChatA2uiSurfaceIssue.missingRoot,
       ChatA2uiSurfaceIssue.emptySurface,
       ChatA2uiSurfaceIssue.renderFailure,
     ]);
-    if (surfaceIssues?.isEmpty ?? false) {
-      _surfaceStates[surfaceId]?.issues.clear();
-    }
-    final issues = _messageStates[messageId]?.issues;
-    if (issues == null) return;
+    if (surface.issues.isEmpty) surface.issues.clear();
+  }
+
+  void _clearMessageReadinessIssues(
+    String messageId,
+    Set<ChatA2uiSurfaceIssue> issues,
+  ) {
     for (final issue in const [
       ChatA2uiSurfaceIssue.missingRoot,
       ChatA2uiSurfaceIssue.emptySurface,
       ChatA2uiSurfaceIssue.renderFailure,
     ]) {
-      final remainsOnAnotherSurface = _surfaceStates.values.any(
-        (surface) =>
-            surface.ownerMessageId == messageId &&
-            surface.issues.contains(issue),
-      );
-      if (!remainsOnAnotherSurface) {
+      if (!_hasReadinessIssueOnAnotherSurface(messageId, issue)) {
         final _ = issues.remove(issue);
       }
     }
-    if (issues.isEmpty) _messageStates[messageId]?.issues.clear();
   }
+
+  bool _hasReadinessIssueOnAnotherSurface(
+    String messageId,
+    ChatA2uiSurfaceIssue issue,
+  ) => _surfaceStates.values.any(
+    (surface) =>
+        surface.ownerMessageId == messageId && surface.issues.contains(issue),
+  );
 
   static core.A2uiMessage normalizeChatA2uiMessage(
     core.A2uiMessage message, {
@@ -791,21 +968,38 @@ class ChatA2uiRuntime extends ChangeNotifier {
     if (surface == null) return;
     final turnId = surface.ownerMessageId;
     if (!isInteractiveSurface(turnId, surfaceId)) return;
+    final action = _buildFormAction(surfaceId, surface, turnId, messageText);
+    if (action == null) {
+      _recordSubmissionIssue(surfaceId);
+
+      return;
+    }
+    if (!A2uiChatContract.isValidAction(
+      action.toJson(),
+      conversationId: conversationId,
+    )) {
+      _recordSubmissionIssue(surfaceId);
+
+      return;
+    }
+    final actionKey = _formSubmissionKey(turnId, surfaceId);
+    final accepted = _submittedActions.add(actionKey);
+    if (!accepted) return;
+    _acceptFormSubmission(surfaceId, turnId, action);
+  }
+
+  ChatUiAction? _buildFormAction(
+    String surfaceId,
+    ChatA2uiSurfaceState surface,
+    String turnId,
+    String messageText,
+  ) {
     final data = _controller
         .contextFor(surfaceId)
         .dataModel
         .getValue<Object?>(DataPath.root);
-    if (data is! Map) {
-      _recordSubmissionIssue(surfaceId);
-
-      return;
-    }
     final answers = _jsonObject(data);
-    if (answers == null) {
-      _recordSubmissionIssue(surfaceId);
-
-      return;
-    }
+    if (answers == null) return null;
     final components = surface.components.values.map(
       (component) => Map<String, Object?>.from(component),
     );
@@ -814,15 +1008,9 @@ class ChatA2uiRuntime extends ChangeNotifier {
       values: answers,
     );
     final validation = formValidationFor(surfaceId);
-    if (validation == null || !validation.isValid) {
-      _recordSubmissionIssue(surfaceId);
-
-      return;
-    }
+    if (validation == null || !validation.isValid) return null;
     final wireSurfaceId = _wireSurfaceId(surfaceId, turnId);
-    final actionKey =
-        '$conversationId:$turnId:$surfaceId:$a2uiChatFormSubmitActionName';
-    final action = ChatUiAction(
+    return ChatUiAction(
       protocolVersion: chatA2uiProtocolVersion,
       conversationId: conversationId,
       turnId: turnId,
@@ -838,16 +1026,16 @@ class ChatA2uiRuntime extends ChangeNotifier {
       unansweredPaths: validation.unansweredPaths,
       submittedAtUtc: DateTime.now().toUtc().toIso8601String(),
     );
-    if (!A2uiChatContract.isValidAction(
-      action.toJson(),
-      conversationId: conversationId,
-    )) {
-      _recordSubmissionIssue(surfaceId);
+  }
 
-      return;
-    }
-    final accepted = _submittedActions.add(actionKey);
-    if (!accepted) return;
+  String _formSubmissionKey(String turnId, String surfaceId) =>
+      '$conversationId:$turnId:$surfaceId:$a2uiChatFormSubmitActionName';
+
+  void _acceptFormSubmission(
+    String surfaceId,
+    String turnId,
+    ChatUiAction action,
+  ) {
     final replayPayload = chatA2uiSubmittedAnswersReplayPayload(action);
     if (replayPayload != null) {
       _messageState(turnId).payloads.add(replayPayload);
@@ -912,35 +1100,41 @@ class ChatA2uiRuntime extends ChangeNotifier {
     final history = surface?.acceptedMessages;
     if (history == null || history.isEmpty) return;
     try {
-      _controller.handleMessage(
-        core.DeleteSurfaceMessage(surfaceId: surfaceId),
-      );
-      final componentsBySurface = <String, Map<String, Map<String, dynamic>>>{};
-      final surfacesWithRoot = <String>{};
-      for (final accepted in history) {
-        final scoped = scopeChatA2uiMessage(
-          accepted.message,
-          scopedSurfaceId: surfaceId,
-        );
-        if (scoped == null) continue;
-        final normalized = normalizeChatA2uiMessage(
-          scoped,
-          componentsBySurface: componentsBySurface,
-          surfacesWithRoot: surfacesWithRoot,
-        );
-        _controller.handleMessage(normalized);
-      }
-      surface?.components
-        ?..clear()
-        ..addAll(componentsBySurface[surfaceId] ?? const {});
-      if (surface != null) {
-        surface.hasRoot = surfacesWithRoot.contains(surfaceId);
-      }
+      _replaySurfaceHistory(surfaceId, surface, history);
     } on Object catch (_) {
       _logger.warning(
         'A2UI surface restore failed conversation=$conversationId '
         'surface=$surfaceId',
       );
+    }
+  }
+
+  void _replaySurfaceHistory(
+    String surfaceId,
+    ChatA2uiSurfaceState? surface,
+    Iterable<ChatA2uiProtocolMessage> history,
+  ) {
+    _controller.handleMessage(core.DeleteSurfaceMessage(surfaceId: surfaceId));
+    final componentsBySurface = <String, Map<String, Map<String, dynamic>>>{};
+    final surfacesWithRoot = <String>{};
+    for (final accepted in history) {
+      final scoped = scopeChatA2uiMessage(
+        accepted.message,
+        scopedSurfaceId: surfaceId,
+      );
+      if (scoped == null) continue;
+      final normalized = normalizeChatA2uiMessage(
+        scoped,
+        componentsBySurface: componentsBySurface,
+        surfacesWithRoot: surfacesWithRoot,
+      );
+      _controller.handleMessage(normalized);
+    }
+    surface?.components
+      ?..clear()
+      ..addAll(componentsBySurface[surfaceId] ?? const {});
+    if (surface != null) {
+      surface.hasRoot = surfacesWithRoot.contains(surfaceId);
     }
   }
 
