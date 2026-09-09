@@ -1,11 +1,10 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
-import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
@@ -103,6 +102,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
     WorkspaceModelSelectionWithConnection withProvider,
   ) {
     final apiModel = withProvider.apiModel;
+
     return .new(
       id: withProvider.model.id,
       modelId: withProvider.model.modelId,
@@ -122,6 +122,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
     String serviceId,
   ) {
     final connection = withProvider.modelConnection;
+
     return .new(
       id: connection.id,
       name: connection.name,
@@ -160,6 +161,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
     final name = provider?.name;
     if (name != null) return name;
     if (isCodex) return ModelProviderOAuthProfiles.displayName;
+
     return serviceId;
   }
 
@@ -169,6 +171,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
   ) {
     if (providerType != null) return providerType;
     if (isCodex) return ModelProvidersType.openai;
+
     return null;
   }
 
