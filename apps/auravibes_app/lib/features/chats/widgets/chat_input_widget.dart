@@ -112,9 +112,10 @@ class const ChatInputWidget({
     final supportsAudio =
         supportsLocalAttachments &&
         ChatAttachmentModality.supports(.audio, modalitiesInput);
-    final supportsImage =
-        (workspaceCapabilities?.attachments ?? false) &&
-        ChatAttachmentModality.supports(.image, modalitiesInput);
+    final supportsImage = _supportsImageAttachment(
+      workspaceCapabilities?.attachments,
+      modalitiesInput,
+    );
     final supportsFile =
         supportsLocalAttachments &&
         ChatAttachmentModality.supportsFiles(modalitiesInput);
@@ -202,6 +203,9 @@ class const _ChatInputActions({
   required final bool disabled,
   required final bool isEmpty,
 }) {
+  bool get _isSendBlocked =>
+      disabled || isSending.value || isEmpty && !isRecording.value;
+
   void disposeDraft() {
     if (isRecording.value || isStartingRecording.value) {
       unawaited(
@@ -229,49 +233,18 @@ class const _ChatInputActions({
   }
 
   Future<void> sendMessage() async {
-    if (disabled || isSending.value || isEmpty && !isRecording.value) return;
+    if (_isSendBlocked) return;
 
     isSending.value = true;
     try {
       final message = controller.text.trim();
-      final draftAttachments = [...attachments.value];
-      if (isRecording.value) {
-        final attachment = await _stopRecordingAttachment();
-        if (attachment != null) {
-          draftAttachments.add(
-            _withVoiceDisplayName(attachment, draftAttachments),
-          );
-        }
-      }
+      final draftAttachments = await _collectDraftAttachments();
 
       if (message.isEmpty && draftAttachments.isEmpty) return;
 
-      final draft = ChatDraft(text: message, attachments: draftAttachments);
-      FutureOr<void> sendResult;
-      try {
-        sendResult = onSendMessage(draft);
-      } on Object catch (error, stackTrace) {
-        attachments.value = draftAttachments;
-        _logger.warning('Failed to send draft', error, stackTrace);
-
-        return;
-      }
-      controller.clear();
-      attachments.value = const [];
-      try {
-        await sendResult;
-      } on Object catch (error, stackTrace) {
-        _logger.warning('Failed to send draft', error, stackTrace);
-        if (!ref.context.mounted) return;
-        if (controller.text.isEmpty && attachments.value.isEmpty) {
-          controller.text = message;
-          attachments.value = draftAttachments;
-        }
-
-        return;
-      }
+      await _sendDraft(.new(text: message, attachments: draftAttachments));
     } finally {
-      if (ref.context.mounted) isSending.value = false;
+      _resetSendingState();
     }
   }
 
@@ -399,6 +372,47 @@ class const _ChatInputActions({
     );
   }
 
+  Future<List<MessageAttachmentToCreate>> _collectDraftAttachments() async {
+    final draftAttachments = [...attachments.value];
+    if (!isRecording.value) return draftAttachments;
+
+    final attachment = await _stopRecordingAttachment();
+    if (attachment == null) return draftAttachments;
+
+    draftAttachments.add(_withVoiceDisplayName(attachment, draftAttachments));
+
+    return draftAttachments;
+  }
+
+  Future<void> _sendDraft(ChatDraft draft) async {
+    FutureOr<void> sendResult;
+    try {
+      sendResult = onSendMessage(draft);
+    } on Object catch (error, stackTrace) {
+      attachments.value = draft.attachments;
+      _logger.warning('Failed to send draft', error, stackTrace);
+
+      return;
+    }
+
+    controller.clear();
+    attachments.value = const [];
+    try {
+      await sendResult;
+    } on Object catch (error, stackTrace) {
+      _logger.warning('Failed to send draft', error, stackTrace);
+      if (!ref.context.mounted) return;
+      if (controller.text.isEmpty && attachments.value.isEmpty) {
+        controller.text = draft.text;
+        attachments.value = draft.attachments;
+      }
+    }
+  }
+
+  void _resetSendingState() {
+    if (ref.context.mounted) isSending.value = false;
+  }
+
   Future<MessageAttachmentToCreate?> _stopRecordingAttachment() async {
     if (isStartingRecording.value) {
       try {
@@ -480,6 +494,13 @@ Future<void> _showSelectorSheet({
     useSafeArea: true,
   );
 }
+
+bool _supportsImageAttachment(
+  bool? supportsAttachments,
+  List<String> modalitiesInput,
+) =>
+    (supportsAttachments ?? false) &&
+    ChatAttachmentModality.supports(.image, modalitiesInput);
 
 AuraPopupMenuItem _attachmentMenuItem({
   required String titleKey,
