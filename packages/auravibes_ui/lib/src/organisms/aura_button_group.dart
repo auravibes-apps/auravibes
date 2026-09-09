@@ -3,6 +3,7 @@
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 
 /// A customizable button group component following the Aura design system.
@@ -103,67 +104,11 @@ class AuraButtonGroup<T> extends StatelessWidget {
   final _ButtonGroupMode _mode;
 
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final auraTheme = context.auraTheme;
-    final borderRadius = auraTheme.fromBorderRadius(.md);
-
-    final children = <Widget>[];
-
-    for (var i = 0; i < items.length; i++) {
-      final item = items[i];
-      final isFirst = i == 0;
-      final isLast = i == items.length - 1;
-
-      final isSelected = _isSelected(item.value);
-      final isItemDisabled = disabled || item.disabled;
-      final isItemLoading = isLoading || item.isLoading;
-
-      // Use Transform.translate to collapse double borders between items.
-      // By shifting non-first items back by 1px (the border width).
-      Widget child = _AuraButtonGroupItem(
-        item: item,
-        isSelected: isSelected,
-        isFirst: isFirst,
-        isLast: isLast,
-        size: size,
-        variant: variant,
-        orientation: orientation,
-        disabled: isItemDisabled,
-        isLoading: isItemLoading,
-        mode: _mode,
-        onTap: isItemDisabled || isItemLoading ? null : () => _onTap(item),
-        auraColors: auraColors,
-        auraTheme: auraTheme,
-      );
-
-      // Shift non-first items to collapse the double border.
-      if (!isFirst && variant != AuraButtonGroupVariant.ghost) {
-        child = Transform.translate(
-          offset: orientation == Axis.horizontal
-              ? const Offset(-1, 0)
-              : const Offset(0, -1),
-          child: child,
-        );
-      }
-
-      children.add(child);
-    }
-
-    final content = orientation == Axis.horizontal
-        ? Row(mainAxisSize: .min, children: children)
-        : Column(
-            mainAxisSize: .min,
-            crossAxisAlignment: .stretch,
-            children: children,
-          );
-
-    // Wrap entire group in ClipRRect for rounded corners.
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: content,
-    );
-  }
+  Widget build(BuildContext context) => _AuraButtonGroupLayout(
+    group: this,
+    auraColors: context.auraColors,
+    auraTheme: context.auraTheme,
+  );
 
   bool _isSelected(T value) {
     return switch (_mode) {
@@ -173,39 +118,160 @@ class AuraButtonGroup<T> extends StatelessWidget {
     };
   }
 
-  void _onTap(AuraButtonGroupItem<T> item) {
-    switch (_mode) {
-      case .single:
-        onChanged?.call(item.value);
-      case .multi:
-        final currentSet = Set<T>.from(selectedValues ?? {});
-        if (currentSet.contains(item.value)) {
-          final _ = currentSet.remove(item.value);
-        } else {
-          final _ = currentSet.add(item.value);
-        }
-        onMultiChanged?.call(currentSet);
-      case .action:
-        onPressed?.call(item.value);
+  void _onTap(AuraButtonGroupItem<T> item) => switch (_mode) {
+    .single => _onSingleTap(item.value),
+    .multi => _onMultiTap(item.value),
+    .action => _onActionTap(item.value),
+  };
+
+  void _onSingleTap(T value) => onChanged?.call(value);
+
+  void _onActionTap(T value) => onPressed?.call(value);
+
+  void _onMultiTap(T value) {
+    final currentSet = Set<T>.from(selectedValues ?? {});
+    _toggleValue(currentSet, value);
+    onMultiChanged?.call(currentSet);
+  }
+
+  void _toggleValue(Set<T> values, T value) {
+    if (values.contains(value)) {
+      final _ = values.remove(value);
+    } else {
+      final _ = values.add(value);
     }
   }
 }
 
-class const _AuraButtonGroupItem<T>({
-  required final AuraButtonGroupItem<T> item,
-  required final bool isSelected,
-  required final bool isFirst,
-  required final bool isLast,
-  required final AuraButtonGroupSize size,
-  required final AuraButtonGroupVariant variant,
-  required final Axis orientation,
-  required final bool disabled,
-  required final bool isLoading,
-  required final _ButtonGroupMode mode,
-  required final VoidCallback? onTap,
+class const _AuraButtonGroupLayout<T>({
+  required final AuraButtonGroup<T> group,
   required final AuraColorScheme auraColors,
   required final AuraTheme auraTheme,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraButtonGroupFrame(
+    children: _AuraButtonGroupChildren<T>(
+      group: group,
+      auraColors: auraColors,
+      auraTheme: auraTheme,
+    ).children,
+    orientation: group.orientation,
+    borderRadius: auraTheme.fromBorderRadius(.md),
+  );
+}
+
+class const _AuraButtonGroupFrame({
+  required final List<Widget> children,
+  required final Axis orientation,
+  required final double borderRadius,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(borderRadius),
+    child: orientation == Axis.horizontal
+        ? Row(mainAxisSize: .min, children: children)
+        : Column(
+            mainAxisSize: .min,
+            crossAxisAlignment: .stretch,
+            children: children,
+          ),
+  );
+}
+
+class const _AuraButtonGroupChildren<T>({
+  required final AuraButtonGroup<T> group,
+  required final AuraColorScheme auraColors,
+  required final AuraTheme auraTheme,
+}) {
+  List<Widget> get children => [
+    for (var index = 0; index < group.items.length; index++)
+      _item(index, group.items[index]),
+  ];
+
+  Widget _item(int index, AuraButtonGroupItem<T> item) {
+    final data = _AuraButtonGroupItemData<T>(
+      group: group,
+      item: item,
+      index: index,
+      auraColors: auraColors,
+      auraTheme: auraTheme,
+    );
+
+    return _AuraButtonGroupItemSlot(
+      child: _AuraButtonGroupItem(data: data),
+      shifted: data.isShifted,
+      orientation: group.orientation,
+    );
+  }
+}
+
+class const _AuraButtonGroupItemData<T>({
+  required final AuraButtonGroup<T> group,
+  required final AuraButtonGroupItem<T> item,
+  required final int index,
+  required final AuraColorScheme auraColors,
+  required final AuraTheme auraTheme,
+}) {
+  bool get isSelected => group._isSelected(item.value);
+
+  bool get isFirst => index == 0;
+
+  bool get isLast => index == group.items.length - 1;
+
+  bool get disabled => group.disabled || item.disabled;
+
+  bool get isLoading => group.isLoading || item.isLoading;
+
+  _ButtonGroupMode get mode => group._mode;
+
+  AuraButtonGroupSize get size => group.size;
+
+  AuraButtonGroupVariant get variant => group.variant;
+
+  Axis get orientation => group.orientation;
+
+  VoidCallback? get onTap => disabled || isLoading ? null : _handleTap;
+
+  bool get isShifted => !isFirst && variant != AuraButtonGroupVariant.ghost;
+
+  void _handleTap() => group._onTap(item);
+}
+
+class const _AuraButtonGroupItemSlot({
+  required final Widget child,
+  required final bool shifted,
+  required final Axis orientation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!shifted) return child;
+
+    return Transform.translate(
+      offset: orientation == Axis.horizontal
+          ? const Offset(-1, 0)
+          : const Offset(0, -1),
+      child: child,
+    );
+  }
+}
+
+class const _AuraButtonGroupItem<T>({
+  required final _AuraButtonGroupItemData<T> data,
 }) extends StatefulWidget {
+  AuraButtonGroupItem<T> get item => data.item;
+  bool get isSelected => data.isSelected;
+  bool get isFirst => data.isFirst;
+  bool get isLast => data.isLast;
+  AuraButtonGroupSize get size => data.size;
+  AuraButtonGroupVariant get variant => data.variant;
+  Axis get orientation => data.orientation;
+  bool get disabled => data.disabled;
+  bool get isLoading => data.isLoading;
+  _ButtonGroupMode get mode => data.mode;
+  VoidCallback? get onTap => data.onTap;
+  AuraColorScheme get auraColors => data.auraColors;
+  AuraTheme get auraTheme => data.auraTheme;
+
   @override
   State<_AuraButtonGroupItem<T>> createState() =>
       _AuraButtonGroupItemState<T>();
@@ -219,88 +285,47 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   bool _isPressed = false;
 
   @override
-  Widget build(BuildContext context) {
-    final padding = _getPadding();
-    final backgroundColor = _getBackgroundColor();
-    final foregroundColor = _getForegroundColor();
-    final border = _getBorder();
+  Widget build(BuildContext context) =>
+      _AuraButtonGroupItemView(data: _getPresentation());
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
-      cursor: widget.disabled || widget.isLoading
-          ? SystemMouseCursors.basic
-          : SystemMouseCursors.click,
-      child: Semantics(
-        child: SizedBox(
-          height: 48,
-          child: Center(
-            child: GestureDetector(
-              child: AnimatedContainer(
-                padding: padding,
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  border: border,
-                ),
-                child: widget.isLoading
-                    ? AuraLoadingCircle(
-                        tint: .primary,
-                        size: _getLoadingSize(),
-                        itemBuilder: (context, _) => DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: _getForegroundColor(),
-                            shape: .circle,
-                          ),
-                        ),
-                      )
-                    : DefaultTextStyle(
-                        style: .new(
-                          color: foregroundColor,
-                          fontSize: _getFontSize(),
-                          fontWeight:
-                              widget.auraTheme.typography.fontWeightMedium,
-                        ),
-                        child: IconTheme(
-                          data: .new(
-                            size: _getIconSize(),
-                            color: foregroundColor,
-                          ),
-                          child: widget.item.child,
-                        ),
-                      ),
-                duration: widget.auraTheme.animation.normal,
-              ),
-              onTapDown: (_) => setState(() => _isPressed = true),
-              onTapUp: (_) => setState(() => _isPressed = false),
-              onTap: widget.onTap,
-              onTapCancel: () => setState(() => _isPressed = false),
-              excludeFromSemantics: true,
-            ),
-          ),
-        ),
-        container: true,
-        excludeSemantics: true,
-        enabled: !widget.disabled && !widget.isLoading,
-        selected: widget.isSelected,
-        button: widget.mode == _ButtonGroupMode.action,
-        label: widget.item.semanticLabel ?? 'Button',
-        onTap: widget.onTap,
-      ),
-    );
-  }
+  _AuraButtonGroupItemPresentation<T> _getPresentation() =>
+      _AuraButtonGroupItemPresentation(
+        item: widget,
+        colors: _getColors(),
+        dimensions: _getDimensions(),
+        onHover: _setHovering,
+        onPressed: _setPressed,
+      );
 
-  EdgeInsets _getPadding() {
-    final spacing = widget.auraTheme.spacing;
+  void _setHovering(bool value) => setState(() => _isHovering = value);
 
-    return switch (widget.size) {
-      .sm => EdgeInsets.symmetric(vertical: spacing.xs, horizontal: spacing.sm),
-      .base => EdgeInsets.symmetric(
-        vertical: spacing.sm,
-        horizontal: spacing.md,
-      ),
-      .lg => EdgeInsets.symmetric(vertical: spacing.md, horizontal: spacing.lg),
-    };
-  }
+  void _setPressed(bool value) => setState(() => _isPressed = value);
+
+  _AuraButtonGroupItemColors _getColors() => _AuraButtonGroupItemColors(
+    backgroundColor: _getBackgroundColor(),
+    foregroundColor: _getForegroundColor(),
+    border: _getBorder(),
+  );
+
+  _AuraButtonGroupItemDimensions _getDimensions() =>
+      _AuraButtonGroupItemDimensions(
+        padding: _getPadding(),
+        fontSize: _getFontSize(),
+        iconSize: _getIconSize(),
+        loadingSize: _getLoadingSize(),
+      );
+
+  EdgeInsets _getPadding() =>
+      _paddingForSize(widget.size, widget.auraTheme.spacing);
+
+  EdgeInsets _paddingForSize(
+    AuraButtonGroupSize size,
+    AuraSpacingScale spacing,
+  ) => switch (size) {
+    .sm => EdgeInsets.symmetric(vertical: spacing.xs, horizontal: spacing.sm),
+    .base => EdgeInsets.symmetric(vertical: spacing.sm, horizontal: spacing.md),
+    .lg => EdgeInsets.symmetric(vertical: spacing.md, horizontal: spacing.lg),
+  };
 
   Color _getBackgroundColor() {
     final colors = widget.auraColors;
@@ -309,27 +334,34 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
       return colors.outlineVariant.withValues(alpha: 0.5);
     }
 
-    final isActive = widget.isSelected || _isPressed;
-    final isHovered = _isHovering && !_isPressed;
-
-    return switch (widget.variant) {
-      .filled => _getFilledBackgroundColor(
-        colors,
-        isActive: isActive,
-        isHovered: isHovered,
-      ),
-      .outlined => _getOutlinedBackgroundColor(
-        colors,
-        isActive: isActive,
-        isHovered: isHovered,
-      ),
-      .ghost => _getGhostBackgroundColor(
-        colors,
-        isActive: isActive,
-        isHovered: isHovered,
-      ),
-    };
+    return _getVariantBackgroundColor(
+      colors,
+      isActive: widget.isSelected || _isPressed,
+      isHovered: _isHovering && !_isPressed,
+    );
   }
+
+  Color _getVariantBackgroundColor(
+    AuraColorScheme colors, {
+    required bool isActive,
+    required bool isHovered,
+  }) => switch (widget.variant) {
+    .filled => _getFilledBackgroundColor(
+      colors,
+      isActive: isActive,
+      isHovered: isHovered,
+    ),
+    .outlined => _getOutlinedBackgroundColor(
+      colors,
+      isActive: isActive,
+      isHovered: isHovered,
+    ),
+    .ghost => _getGhostBackgroundColor(
+      colors,
+      isActive: isActive,
+      isHovered: isHovered,
+    ),
+  };
 
   Color _getFilledBackgroundColor(
     AuraColorScheme colors, {
@@ -371,14 +403,22 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
       return colors.onSurfaceVariant;
     }
 
-    final isActive = widget.isSelected || _isPressed;
-
-    return switch (widget.variant) {
-      .filled => colors.onTint(.primary),
-      .outlined => isActive ? colors.onTint(.primary) : colors.primary,
-      .ghost => colors.primary,
-    };
+    return _foregroundForVariant(
+      colors,
+      widget.variant,
+      widget.isSelected || _isPressed,
+    );
   }
+
+  Color _foregroundForVariant(
+    AuraColorScheme colors,
+    AuraButtonGroupVariant variant,
+    bool isActive,
+  ) => switch (variant) {
+    .filled => colors.onTint(.primary),
+    .outlined => isActive ? colors.onTint(.primary) : colors.primary,
+    .ghost => colors.primary,
+  };
 
   Border? _getBorder() {
     final colors = widget.auraColors;
@@ -422,6 +462,172 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
       .lg => 22.0,
     };
   }
+}
+
+class const _AuraButtonGroupItemColors({
+  required final Color backgroundColor,
+  required final Color foregroundColor,
+  required final Border? border,
+});
+
+class const _AuraButtonGroupItemDimensions({
+  required final EdgeInsets padding,
+  required final double fontSize,
+  required final double iconSize,
+  required final double loadingSize,
+});
+
+class const _AuraButtonGroupItemPresentation<T>({
+  required final _AuraButtonGroupItem<T> item,
+  required final _AuraButtonGroupItemColors colors,
+  required final _AuraButtonGroupItemDimensions dimensions,
+  required final ValueChanged<bool> onHover,
+  required final ValueChanged<bool> onPressed,
+});
+
+class const _AuraButtonGroupItemView<T>({
+  required final _AuraButtonGroupItemPresentation<T> data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    onEnter: (_) => data.onHover(true),
+    onExit: (_) => data.onHover(false),
+    cursor: _itemCursor(data.item),
+    child: _AuraButtonGroupItemSemantics(data: data),
+  );
+}
+
+MouseCursor _itemCursor(_AuraButtonGroupItem<dynamic> item) =>
+    item.disabled || item.isLoading
+    ? SystemMouseCursors.basic
+    : SystemMouseCursors.click;
+
+class const _AuraButtonGroupItemSemantics<T>({
+  required final _AuraButtonGroupItemPresentation<T> data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraButtonGroupSemanticsContainer(
+    child: _AuraButtonGroupItemGesture(data: data),
+    data: data,
+  );
+}
+
+class const _AuraButtonGroupSemanticsContainer<T>({
+  required final Widget child,
+  required final _AuraButtonGroupItemPresentation<T> data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics.fromProperties(
+    child: child,
+    container: true,
+    excludeSemantics: true,
+    properties: _buttonSemanticsProperties(data),
+  );
+}
+
+SemanticsProperties _buttonSemanticsProperties(
+  _AuraButtonGroupItemPresentation<dynamic> data,
+) => _itemSemanticsProperties(data.item);
+
+SemanticsProperties _itemSemanticsProperties(
+  _AuraButtonGroupItem<dynamic> item,
+) => SemanticsProperties(
+  enabled: !item.disabled && !item.isLoading,
+  selected: item.isSelected,
+  button: item.mode == _ButtonGroupMode.action,
+  label: item.item.semanticLabel ?? 'Button',
+  onTap: item.onTap,
+);
+
+class const _AuraButtonGroupItemGesture<T>({
+  required final _AuraButtonGroupItemPresentation<T> data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 48,
+    child: Center(child: _AuraButtonGroupGestureDetector(data: data)),
+  );
+}
+
+class const _AuraButtonGroupGestureDetector<T>({
+  required final _AuraButtonGroupItemPresentation<T> data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    child: _AuraButtonGroupAnimatedContent(data: data),
+    onTapDown: (_) => data.onPressed(true),
+    onTapUp: (_) => data.onPressed(false),
+    onTap: data.item.onTap,
+    onTapCancel: () => data.onPressed(false),
+    excludeFromSemantics: true,
+  );
+}
+
+class const _AuraButtonGroupAnimatedContent<T>({
+  required final _AuraButtonGroupItemPresentation<T> data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AnimatedContainer(
+    padding: data.dimensions.padding,
+    decoration: BoxDecoration(
+      color: data.colors.backgroundColor,
+      border: data.colors.border,
+    ),
+    child: _AuraButtonGroupItemContent(data: data),
+    duration: data.item.auraTheme.animation.normal,
+  );
+}
+
+class const _AuraButtonGroupItemContent<T>({
+  required final _AuraButtonGroupItemPresentation<T> data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => data.item.isLoading
+      ? _AuraButtonGroupLoading(
+          item: data.item,
+          size: data.dimensions.loadingSize,
+        )
+      : _AuraButtonGroupLabel(
+          item: data.item,
+          colors: data.colors,
+          dimensions: data.dimensions,
+        );
+}
+
+class const _AuraButtonGroupLoading<T>({
+  required final _AuraButtonGroupItem<T> item,
+  required final double size,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraLoadingCircle(
+    tint: .primary,
+    size: size,
+    itemBuilder: (context, _) => DecoratedBox(
+      decoration: BoxDecoration(
+        color: item.auraColors.onTint(.primary),
+        shape: .circle,
+      ),
+    ),
+  );
+}
+
+class const _AuraButtonGroupLabel<T>({
+  required final _AuraButtonGroupItem<T> item,
+  required final _AuraButtonGroupItemColors colors,
+  required final _AuraButtonGroupItemDimensions dimensions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DefaultTextStyle(
+    style: .new(
+      color: colors.foregroundColor,
+      fontSize: dimensions.fontSize,
+      fontWeight: item.auraTheme.typography.fontWeightMedium,
+    ),
+    child: IconTheme(
+      data: .new(size: dimensions.iconSize, color: colors.foregroundColor),
+      child: item.item.child,
+    ),
+  );
 }
 
 /// Represents an item in an [AuraButtonGroup].
