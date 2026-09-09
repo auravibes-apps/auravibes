@@ -110,6 +110,15 @@ dart_code_linter:
   metrics:
     cyclomatic-complexity: 10
     halstead-volume: 150
+    lines-of-code: 100
+    source-lines-of-code: 50
+    maximum-nesting-level: 3
+    number-of-parameters: 4
+    number-of-methods: 10
+    maintainability-index: 50
+    weight-of-class: 0.33
+    technical-debt:
+      threshold: 0
   rules:
     avoid-banned-imports:
       entries:
