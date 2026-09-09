@@ -395,6 +395,13 @@ Map<String, String>? _urlRequestSummary(Object? arguments) {
   final uri = Uri.tryParse(url);
   if (uri == null || uri.host.isEmpty) return null;
 
+  return _formatUrlRequestSummary(request.cast<Object?, Object?>(), uri);
+}
+
+Map<String, String> _formatUrlRequestSummary(
+  Map<Object?, Object?> request,
+  Uri uri,
+) {
   final method = request['method'];
 
   return {
