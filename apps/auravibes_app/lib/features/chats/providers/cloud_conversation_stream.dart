@@ -57,29 +57,7 @@ abstract final class CloudConversationStream {
           key.conversationId,
           afterSequence: state.sequence,
         )) {
-          _logger.info(
-            'Cloud conversation event: workspaceId=${key.workspaceId}, '
-            'conversationId=${key.conversationId}, sequence=${event.sequence}, '
-            'kind=${event.kind.name}, '
-            'transientDelta=${event.transientTextDelta != null}.',
-          );
-          final next = state.apply(event);
-          final isA2ui = event.kind == ConversationEventType.a2uiMessage;
-          final needsSnapshot =
-              next == null || (event.transientTextDelta == null && !isA2ui);
-          if (needsSnapshot) {
-            _logger.info(
-              'Cloud conversation snapshot recovery: '
-              'conversationId=${key.conversationId}, '
-              'eventSequence=${event.sequence}, '
-              'stateSequence=${state.sequence}.',
-            );
-          }
-          state = needsSnapshot
-              ? CloudConversationState.fromSnapshot(
-                  await chat.getConversationSnapshot(key.conversationId),
-                ).preserveTransientA2uiFrom(state)
-              : next;
+          state = await _applyEvent(chat, key, state, event);
           retryCount = 0;
           yield state;
         }
@@ -103,5 +81,37 @@ abstract final class CloudConversationStream {
       yield state;
       await wait(.new(seconds: retryCount.clamp(1, 8)));
     }
+  }
+
+  static Future<CloudConversationState> _applyEvent(
+    CloudChatGateway chat,
+    CloudConversationKey key,
+    CloudConversationState state,
+    ConversationStreamEvent event,
+  ) async {
+    _logger.info(
+      'Cloud conversation event: workspaceId=${key.workspaceId}, '
+      'conversationId=${key.conversationId}, sequence=${event.sequence}, '
+      'kind=${event.kind.name}, '
+      'transientDelta=${event.transientTextDelta != null}.',
+    );
+    final next = state.apply(event);
+    final isA2ui = event.kind == ConversationEventType.a2uiMessage;
+    final needsSnapshot =
+        next == null || (event.transientTextDelta == null && !isA2ui);
+    if (needsSnapshot) {
+      _logger.info(
+        'Cloud conversation snapshot recovery: '
+        'conversationId=${key.conversationId}, '
+        'eventSequence=${event.sequence}, '
+        'stateSequence=${state.sequence}.',
+      );
+    }
+
+    return needsSnapshot
+        ? CloudConversationState.fromSnapshot(
+            await chat.getConversationSnapshot(key.conversationId),
+          ).preserveTransientA2uiFrom(state)
+        : next;
   }
 }
