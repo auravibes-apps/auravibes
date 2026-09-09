@@ -236,7 +236,7 @@ final class ChatMessagesProvider
   }
 }
 
-String _$chatMessagesHash() => r'a4ce67ca9d5b070ad6f3f4ee0d660213df143ab5';
+String _$chatMessagesHash() => r'f4285ccf46d8099706bdd6c83d13ddb1aaa19c23';
 
 final class ChatMessagesFamily extends $Family
     with
@@ -351,7 +351,7 @@ final class MessageConversationByIdProvider
     with $Provider<MessageEntity?> {
   MessageConversationByIdProvider._({
     required MessageConversationByIdFamily super.from,
-    required (String, String, String) super.argument,
+    required _MessageLookupRequest super.argument,
   }) : super(
          retry: null,
          name: r'messageConversationByIdProvider',
@@ -367,7 +367,7 @@ final class MessageConversationByIdProvider
   String toString() {
     return r'messageConversationByIdProvider'
         ''
-        '$argument';
+        '($argument)';
   }
 
   @$internal
@@ -377,8 +377,8 @@ final class MessageConversationByIdProvider
 
   @override
   MessageEntity? create(Ref ref) {
-    final argument = this.argument as (String, String, String);
-    return messageConversationById(ref, argument.$1, argument.$2, argument.$3);
+    final argument = this.argument as _MessageLookupRequest;
+    return messageConversationById(ref, argument);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -402,10 +402,10 @@ final class MessageConversationByIdProvider
 }
 
 String _$messageConversationByIdHash() =>
-    r'0db0999ea1c75f1d0ac51132767ec9d1a3029098';
+    r'df6ab9dd43fbfcda0e04bdba22009226cf441543';
 
 final class MessageConversationByIdFamily extends $Family
-    with $FunctionalFamilyOverride<MessageEntity?, (String, String, String)> {
+    with $FunctionalFamilyOverride<MessageEntity?, _MessageLookupRequest> {
   MessageConversationByIdFamily._()
     : super(
         retry: null,
@@ -415,14 +415,8 @@ final class MessageConversationByIdFamily extends $Family
         isAutoDispose: true,
       );
 
-  MessageConversationByIdProvider call(
-    String workspaceId,
-    String conversationId,
-    String messageId,
-  ) => MessageConversationByIdProvider._(
-    argument: (workspaceId, conversationId, messageId),
-    from: this,
-  );
+  MessageConversationByIdProvider call(_MessageLookupRequest request) =>
+      MessageConversationByIdProvider._(argument: request, from: this);
 
   @override
   String toString() => r'messageConversationByIdProvider';
@@ -564,7 +558,7 @@ final class ConversationBusyStateProvider
 }
 
 String _$conversationBusyStateHash() =>
-    r'2ccd444f8c0f64261bb91b714fac7bc685193e3a';
+    r'2b9cd92474095e6218f8f66f43866a2f7dad9fe6';
 
 final class ConversationBusyStateFamily extends $Family
     with
@@ -841,7 +835,7 @@ final class ConversationUsedTokensProvider
 }
 
 String _$conversationUsedTokensHash() =>
-    r'f51bcf227a52727e2c61b2b9965805ebac5fb42e';
+    r'af1c79483bb343d561a87a3df94cdd6bea73a815';
 
 final class ConversationUsedTokensFamily extends $Family
     with $FunctionalFamilyOverride<int, (String, String)> {
@@ -917,7 +911,7 @@ final class ConversationContextLimitProvider
 }
 
 String _$conversationContextLimitHash() =>
-    r'f1f4331faf73756615c717d818e3fd7c67fc3a42';
+    r'c7bec428155947e62bce7086c6f19c500a857efb';
 
 final class ConversationContextLimitFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<int?>, (String, String)> {
@@ -999,7 +993,7 @@ final class PendingToolCallsProvider
   }
 }
 
-String _$pendingToolCallsHash() => r'14af85a9fb3c354b535d70c03d0fda8b93c6abb3';
+String _$pendingToolCallsHash() => r'71765d7f0fb3c6e8253618245e2d6400855f02b7';
 
 final class PendingToolCallsFamily extends $Family
     with
