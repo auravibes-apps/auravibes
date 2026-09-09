@@ -124,32 +124,51 @@ List<_DuckDuckGoResult> _parseHtmlResults(String html) {
   );
 
   for (final blockMatch in blockRegex.allMatches(html)) {
-    final block = blockMatch.group(1) ?? '';
-    final titleMatch = titleRegex.firstMatch(block);
-    if (titleMatch == null) continue;
-
-    final url = _unwrapResultUrl(titleMatch.group(1) ?? '');
-    if (url == null || seen.contains(url)) continue;
-
-    final title = _decodeHtmlText(titleMatch.group(2) ?? '');
-    if (title.isEmpty) continue;
-
-    final snippetMatch = snippetRegex.firstMatch(block);
-    final snippet = snippetMatch == null
-        ? null
-        : _decodeHtmlText(snippetMatch.group(1) ?? '');
-
-    seen.add(url);
-    results.add(
-      _DuckDuckGoResult(
-        title: title,
-        url: url,
-        snippet: snippet == null || snippet.isEmpty ? null : snippet,
-      ),
+    final result = _parseHtmlResult(
+      blockMatch.group(1) ?? '',
+      seen: seen,
+      titleRegex: titleRegex,
+      snippetRegex: snippetRegex,
     );
+    if (result == null) continue;
+    results.add(result);
   }
 
   return results;
+}
+
+_DuckDuckGoResult? _parseHtmlResult(
+  String block, {
+  required Set<String> seen,
+  required RegExp titleRegex,
+  required RegExp snippetRegex,
+}) {
+  final titleMatch = titleRegex.firstMatch(block);
+  if (titleMatch == null) return null;
+
+  final url = _unwrapResultUrl(titleMatch.group(1) ?? '');
+  if (url == null || seen.contains(url)) return null;
+
+  final title = _decodeHtmlText(titleMatch.group(2) ?? '');
+  if (title.isEmpty) return null;
+
+  final snippet = _parseSnippet(block, snippetRegex);
+  seen.add(url);
+
+  return _DuckDuckGoResult(
+    title: title,
+    url: url,
+    snippet: snippet == null || snippet.isEmpty ? null : snippet,
+  );
+}
+
+String? _parseSnippet(String block, RegExp snippetRegex) {
+  final snippetMatch = snippetRegex.firstMatch(block);
+  if (snippetMatch == null) return null;
+
+  final snippet = _decodeHtmlText(snippetMatch.group(1) ?? '');
+
+  return snippet.isEmpty ? null : snippet;
 }
 
 String _decodeHtmlText(String value) {
