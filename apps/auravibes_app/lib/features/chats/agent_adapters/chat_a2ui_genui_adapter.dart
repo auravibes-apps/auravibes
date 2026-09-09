@@ -83,12 +83,7 @@ List<ChatA2uiProtocolMessage> scopeChatA2uiMessages(
     final wireId = chatA2uiSurfaceId(pending.message);
     if (wireId == null) continue;
     final existingId = scopedIds[wireId];
-    if (pending.message is! core.CreateSurfaceMessage && existingId == null) {
-      continue;
-    }
-    if (pending.message is core.CreateSurfaceMessage && existingId != null) {
-      continue;
-    }
+    if (!_canScopeChatA2uiMessage(pending.message, existingId)) continue;
     final scopedId = existingId ?? '$owner:$wireId';
     scopedIds[wireId] = scopedId;
     if (deletedIds.contains(scopedId)) continue;
@@ -106,6 +101,11 @@ List<ChatA2uiProtocolMessage> scopeChatA2uiMessages(
   }
 
   return result;
+}
+
+bool _canScopeChatA2uiMessage(core.A2uiMessage message, String? existingId) {
+  final isCreate = message is core.CreateSurfaceMessage;
+  return isCreate ? existingId == null : existingId != null;
 }
 
 String? chatA2uiSurfaceId(core.A2uiMessage message) => switch (message) {
