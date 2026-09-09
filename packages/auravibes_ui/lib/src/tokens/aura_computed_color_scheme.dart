@@ -3,6 +3,67 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
+typedef _ComputedBrandValues = ({
+  _ComputedBrandPair primary,
+  _ComputedBrandPair secondary,
+  _ComputedBrandPair tertiary,
+});
+
+typedef _ComputedSurfaceValues = ({
+  AuraComputedColor surface,
+  AuraComputedColor surfaceVariant,
+  AuraComputedColor background,
+  AuraComputedColor outline,
+  AuraComputedColor outlineVariant,
+});
+
+typedef _ComputedSemanticValues = ({
+  AuraComputedColor error,
+  AuraComputedColor warning,
+  AuraComputedColor success,
+  AuraComputedColor info,
+});
+
+typedef _ComputedBrandForegrounds = ({
+  Color onPrimary,
+  Color onSecondary,
+  Color onTertiary,
+});
+
+typedef _ComputedSurfaceForegrounds = ({
+  Color onSurface,
+  Color onSurfaceVariant,
+  Color onBackground,
+});
+
+typedef _ComputedSemanticForegrounds = ({
+  Color onError,
+  Color onWarning,
+  Color onSuccess,
+  Color onInfo,
+});
+
+typedef _ComputedForegroundValues = ({
+  _ComputedBrandForegrounds brand,
+  _ComputedSurfaceForegrounds surface,
+  _ComputedSemanticForegrounds semantic,
+});
+
+typedef _ComputedPaletteValues = ({
+  _ComputedBrandValues brand,
+  _ComputedSurfaceValues surface,
+  _ComputedSemanticValues semantic,
+});
+
+typedef _ComputedSchemeValues = ({
+  _ComputedBrandValues brand,
+  _ComputedSurfaceValues surface,
+  _ComputedSemanticValues semantic,
+  _ComputedForegroundValues foreground,
+  Color shadow,
+  Color scrim,
+});
+
 /// AuraColorScheme subclass whose 24 fields are derived from a single hue
 /// and a brightness preset, via OKLCH + APCA (WCAG 3.0 draft).
 ///
@@ -21,138 +82,213 @@ import 'package:flutter/widgets.dart';
 ///   brightness: AuraBrightness.dark,
 /// );
 /// ```
-class const AuraComputedColorScheme._({
-  required super.primary,
-  required super.primaryVariant,
-  required super.onPrimary,
-  required super.secondary,
-  required super.secondaryVariant,
-  required super.onSecondary,
-  required super.tertiary,
-  required super.tertiaryVariant,
-  required super.onTertiary,
-  required super.surface,
-  required super.surfaceVariant,
-  required super.onSurface,
-  required super.onSurfaceVariant,
-  required super.background,
-  required super.onBackground,
-  required super.error,
-  required super.onError,
-  required super.warning,
-  required super.onWarning,
-  required super.success,
-  required super.onSuccess,
-  required super.info,
-  required super.onInfo,
-  required super.outline,
-  required super.outlineVariant,
-  required super.shadow,
-  required super.scrim,
-}) extends AuraColorScheme {
+class AuraComputedColorScheme extends AuraColorScheme {
   /// Computes a full 24-field scheme from [primaryHue] and [brightness].
-  factory({required double primaryHue, required AuraBrightness brightness}) {
-    final isLight = brightness == AuraBrightness.light;
-
-    double l(double lightL, double darkL) => isLight ? lightL : darkL;
-
-    AuraComputedColor color(double hue, double lightness, double chroma) {
-      var safeChroma = chroma;
-      while (safeChroma > 0) {
-        final candidate = AuraComputedColor.withLightness(
-          hue: hue,
-          lightness: lightness,
-          chroma: safeChroma,
-        );
-        if (candidate.toOklab().toLrgb().isValid) return candidate;
-        safeChroma -= 0.01;
-      }
-
-      return AuraComputedColor.withLightness(
-        hue: hue,
-        lightness: lightness,
-        chroma: 0,
+  factory({required double primaryHue, required AuraBrightness brightness}) =>
+      AuraComputedColorScheme._fromValues(
+        _computedSchemeValues(primaryHue, brightness),
       );
-    }
 
-    AuraComputedColor brand(double lightL, double darkL, double chroma) =>
-        color(primaryHue, l(lightL, darkL), chroma);
-    final primary = brand(0.4, 0.78, 0.17);
-    final primaryVariant = brand(0.3, 0.68, 0.15);
-    final secondaryHue = (primaryHue + 180) % 360;
-    AuraComputedColor brandSecondary(
-      double lightL,
-      double darkL,
-      double chroma,
-    ) => color(secondaryHue, l(lightL, darkL), chroma);
-    final secondary = brandSecondary(0.4, 0.78, 0.17);
-    final secondaryVariant = brandSecondary(0.3, 0.68, 0.15);
-    final tertiaryHue = (primaryHue + 60) % 360;
-    AuraComputedColor brandTertiary(
-      double lightL,
-      double darkL,
-      double chroma,
-    ) => color(tertiaryHue, l(lightL, darkL), chroma);
-    final tertiary = brandTertiary(0.4, 0.78, 0.17);
-    final tertiaryVariant = brandTertiary(0.3, 0.68, 0.15);
+  new _fromValues(_ComputedSchemeValues values)
+    : super(
+        primary: values.brand.primary.primary.toColor(),
+        primaryVariant: values.brand.primary.variant.toColor(),
+        onPrimary: values.foreground.brand.onPrimary,
+        secondary: values.brand.secondary.primary.toColor(),
+        secondaryVariant: values.brand.secondary.variant.toColor(),
+        onSecondary: values.foreground.brand.onSecondary,
+        tertiary: values.brand.tertiary.primary.toColor(),
+        tertiaryVariant: values.brand.tertiary.variant.toColor(),
+        onTertiary: values.foreground.brand.onTertiary,
+        surface: values.surface.surface.toColor(),
+        surfaceVariant: values.surface.surfaceVariant.toColor(),
+        onSurface: values.foreground.surface.onSurface,
+        onSurfaceVariant: values.foreground.surface.onSurfaceVariant,
+        background: values.surface.background.toColor(),
+        onBackground: values.foreground.surface.onBackground,
+        error: values.semantic.error.toColor(),
+        onError: values.foreground.semantic.onError,
+        warning: values.semantic.warning.toColor(),
+        onWarning: values.foreground.semantic.onWarning,
+        success: values.semantic.success.toColor(),
+        onSuccess: values.foreground.semantic.onSuccess,
+        info: values.semantic.info.toColor(),
+        onInfo: values.foreground.semantic.onInfo,
+        outline: values.surface.outline.toColor(),
+        outlineVariant: values.surface.outlineVariant.toColor(),
+        shadow: values.shadow,
+        scrim: values.scrim,
+      );
+}
 
-    AuraComputedColor neutral(double lightL, double darkL) =>
-        color(primaryHue, l(lightL, darkL), 0);
-    const surfaceLightness = 0.98;
-    final surface = neutral(surfaceLightness, 0.18);
-    final surfaceVariant = neutral(0.96, 0.22);
-    final background = neutral(0.94, 0.15);
-    final outline = neutral(0.65, 0.45);
-    const outlineVariantLightness = 0.8;
-    const outlineVariantDarkLightness = 0.3;
-    final outlineVariant = neutral(
-      outlineVariantLightness,
-      outlineVariantDarkLightness,
+_ComputedSchemeValues _computedSchemeValues(
+  double primaryHue,
+  AuraBrightness brightness,
+) {
+  final isLight = brightness == AuraBrightness.light;
+  final palette = _computedPaletteValues(primaryHue, isLight);
+
+  return _computedSchemeValuesFromPalette(palette, isLight);
+}
+
+_ComputedPaletteValues _computedPaletteValues(
+  double primaryHue,
+  bool isLight,
+) => (
+  brand: _computedBrandValues(primaryHue, isLight),
+  surface: _computedSurfaceValues(primaryHue, isLight),
+  semantic: _computedSemanticValues(isLight),
+);
+
+_ComputedSchemeValues _computedSchemeValuesFromPalette(
+  _ComputedPaletteValues palette,
+  bool isLight,
+) {
+  final foreground = _computedForegroundValues(
+    brand: palette.brand,
+    surface: palette.surface,
+    semantic: palette.semantic,
+    isLight: isLight,
+  );
+
+  return (
+    brand: palette.brand,
+    surface: palette.surface,
+    semantic: palette.semantic,
+    foreground: foreground,
+    shadow: _computedShadow,
+    scrim: _computedScrim(isLight),
+  );
+}
+
+const _computedShadow = Color(0xFF000000);
+
+Color _computedScrim(bool isLight) =>
+    isLight ? const Color(0x80000000) : const Color(0xB3000000);
+
+_ComputedBrandValues _computedBrandValues(double primaryHue, bool isLight) {
+  final secondaryHue = (primaryHue + 180) % 360;
+  final tertiaryHue = (primaryHue + 60) % 360;
+  final primary = _computedBrandPair(primaryHue, isLight);
+  final secondary = _computedBrandPair(secondaryHue, isLight);
+  final tertiary = _computedBrandPair(tertiaryHue, isLight);
+
+  return (primary: primary, secondary: secondary, tertiary: tertiary);
+}
+
+typedef _ComputedBrandPair = ({
+  AuraComputedColor primary,
+  AuraComputedColor variant,
+});
+
+_ComputedBrandPair _computedBrandPair(double hue, bool isLight) => (
+  primary: _brandColor(hue, isLight, 0.4, 0.78, 0.17),
+  variant: _brandColor(hue, isLight, 0.3, 0.68, 0.15),
+);
+
+AuraComputedColor _brandColor(
+  double hue,
+  bool isLight,
+  double lightLightness,
+  double darkLightness,
+  double chroma,
+) => _computedColor(hue, isLight ? lightLightness : darkLightness, chroma);
+
+_ComputedSurfaceValues _computedSurfaceValues(double primaryHue, bool isLight) {
+  AuraComputedColor neutral(double lightLightness, double darkLightness) =>
+      _computedColor(primaryHue, isLight ? lightLightness : darkLightness, 0);
+
+  return (
+    surface: neutral(0.98, 0.18),
+    surfaceVariant: neutral(0.96, 0.22),
+    background: neutral(0.94, 0.15),
+    outline: neutral(0.65, 0.45),
+    outlineVariant: neutral(0.8, 0.3),
+  );
+}
+
+_ComputedSemanticValues _computedSemanticValues(bool isLight) {
+  AuraComputedColor semantic(double hue) =>
+      _computedColor(hue, isLight ? 0.3 : 0.82, 0.2);
+
+  return (
+    error: semantic(HueColorValues.error),
+    warning: semantic(HueColorValues.warning),
+    success: semantic(HueColorValues.success),
+    info: semantic(HueColorValues.info),
+  );
+}
+
+_ComputedForegroundValues _computedForegroundValues({
+  required _ComputedBrandValues brand,
+  required _ComputedSurfaceValues surface,
+  required _ComputedSemanticValues semantic,
+  required bool isLight,
+}) => (
+  brand: _computedBrandForegrounds(brand),
+  surface: _computedSurfaceForegrounds(surface, isLight),
+  semantic: _computedSemanticForegrounds(semantic),
+);
+
+_ComputedBrandForegrounds _computedBrandForegrounds(
+  _ComputedBrandValues brand,
+) => (
+  onPrimary: brand.primary.primary.onColor(),
+  onSecondary: brand.secondary.primary.onColor(),
+  onTertiary: brand.tertiary.primary.onColor(),
+);
+
+_ComputedSemanticForegrounds _computedSemanticForegrounds(
+  _ComputedSemanticValues semantic,
+) => (
+  onError: semantic.error.onColor(),
+  onWarning: semantic.warning.onColor(),
+  onSuccess: semantic.success.onColor(),
+  onInfo: semantic.info.onColor(),
+);
+
+_ComputedSurfaceForegrounds _computedSurfaceForegrounds(
+  _ComputedSurfaceValues surface,
+  bool isLight,
+) => (
+  onSurface: _computedForegroundColor(
+    DesignColors.neutral900,
+    surface.surface,
+    isLight,
+  ),
+  onSurfaceVariant: _computedForegroundColor(
+    DesignColors.neutral700,
+    surface.surfaceVariant,
+    isLight,
+  ),
+  onBackground: _computedForegroundColor(
+    DesignColors.neutral900,
+    surface.background,
+    isLight,
+  ),
+);
+
+Color _computedForegroundColor(
+  Color lightColor,
+  AuraComputedColor darkSurface,
+  bool isLight,
+) => isLight ? lightColor : darkSurface.onColor();
+
+AuraComputedColor _computedColor(double hue, double lightness, double chroma) {
+  var safeChroma = chroma;
+  while (safeChroma > 0) {
+    final candidate = AuraComputedColor.withLightness(
+      hue: hue,
+      lightness: lightness,
+      chroma: safeChroma,
     );
-
-    const semanticLightness = 0.3;
-    AuraComputedColor semantic(double hue) =>
-        color(hue, l(semanticLightness, 0.82), 0.2);
-    final error = semantic(HueColorValues.error);
-    final warning = semantic(HueColorValues.warning);
-    final success = semantic(HueColorValues.success);
-    final info = semantic(HueColorValues.info);
-
-    Color on(AuraComputedColor c) => c.onColor();
-    Color foreground(Color lightColor, AuraComputedColor darkSurface) =>
-        isLight ? lightColor : on(darkSurface);
-
-    const shadow = Color(0xFF000000);
-    final scrim = isLight ? const Color(0x80000000) : const Color(0xB3000000);
-
-    return AuraComputedColorScheme._(
-      primary: primary.toColor(),
-      primaryVariant: primaryVariant.toColor(),
-      onPrimary: on(primary),
-      secondary: secondary.toColor(),
-      secondaryVariant: secondaryVariant.toColor(),
-      onSecondary: on(secondary),
-      tertiary: tertiary.toColor(),
-      tertiaryVariant: tertiaryVariant.toColor(),
-      onTertiary: on(tertiary),
-      surface: surface.toColor(),
-      surfaceVariant: surfaceVariant.toColor(),
-      onSurface: foreground(DesignColors.neutral900, surface),
-      onSurfaceVariant: foreground(DesignColors.neutral700, surfaceVariant),
-      background: background.toColor(),
-      onBackground: foreground(DesignColors.neutral900, background),
-      error: error.toColor(),
-      onError: on(error),
-      warning: warning.toColor(),
-      onWarning: on(warning),
-      success: success.toColor(),
-      onSuccess: on(success),
-      info: info.toColor(),
-      onInfo: on(info),
-      outline: outline.toColor(),
-      outlineVariant: outlineVariant.toColor(),
-      shadow: shadow,
-      scrim: scrim,
-    );
+    if (candidate.toOklab().toLrgb().isValid) return candidate;
+    safeChroma -= 0.01;
   }
+
+  return AuraComputedColor.withLightness(
+    hue: hue,
+    lightness: lightness,
+    chroma: 0,
+  );
 }
