@@ -727,6 +727,12 @@ class _AuraDateTimeInputHostState extends State<_AuraDateTimeInputHost> {
   ValueNotifier<_PickerEnvironment>? _environment;
 
   @override
+  void dispose() {
+    _environment?.dispose();
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
@@ -740,16 +746,8 @@ class _AuraDateTimeInputHostState extends State<_AuraDateTimeInputHost> {
   }
 
   @override
-  void dispose() {
-    _environment?.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final environment = _environment ??= .new(
-      _PickerEnvironment.from(context),
-    );
+    final environment = _environment ??= .new(_PickerEnvironment.from(context));
     final input = widget.input;
     final isEnabled =
         input.enabled && AuraInteractionScope.of(context).allowsValueChanges;
@@ -779,6 +777,9 @@ class const _PickerEnvironment({
   }
 
   @override
+  int get hashCode => Object.hash(theme, mediaQuery, textDirection, locale);
+
+  @override
   bool operator ==(Object other) {
     return other is _PickerEnvironment &&
         theme == other.theme &&
@@ -786,7 +787,4 @@ class const _PickerEnvironment({
         textDirection == other.textDirection &&
         locale == other.locale;
   }
-
-  @override
-  int get hashCode => Object.hash(theme, mediaQuery, textDirection, locale);
 }

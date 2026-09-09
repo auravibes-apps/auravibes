@@ -76,7 +76,7 @@ final class GroupedConversationToolsNotifierProvider
 }
 
 String _$groupedConversationToolsNotifierHash() =>
-    r'650274aa81d7bc57c2fe60d229fc025cc47efc94';
+    r'956f9af938de829d81e0fa646615262bcb079210';
 
 /// Provider that groups conversation tools by their workspaceToolsGroupId.
 ///

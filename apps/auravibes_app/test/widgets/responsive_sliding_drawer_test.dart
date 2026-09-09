@@ -6,7 +6,6 @@ import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart'
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -4,7 +4,6 @@ import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show AuraTint, DesignColors;
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 export 'aura_checkbox_list_tile.dart';

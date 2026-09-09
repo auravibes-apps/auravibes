@@ -70,7 +70,7 @@ final class SaveWorkspaceCompactionSettingsUsecaseProvider
 }
 
 String _$saveWorkspaceCompactionSettingsUsecaseHash() =>
-    r'a2990577dc7338cef060b593192559ee95753f0e';
+    r'96c869003aa38862aee4717b21191df4f37f5703';
 
 final class SaveWorkspaceCompactionSettingsUsecaseFamily extends $Family
     with

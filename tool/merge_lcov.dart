@@ -17,7 +17,7 @@ Future<void> mergeLcovReports({
     throw const FormatException('Expected report count must be positive');
   }
 
-  final reports = await _reports(Directory(inputRoot));
+  final reports = await _reports(.new(inputRoot));
   if (reports.length != expectedReports) {
     throw FormatException(
       'Expected $expectedReports LCOV reports but found ${reports.length}',

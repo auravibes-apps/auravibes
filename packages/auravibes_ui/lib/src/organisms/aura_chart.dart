@@ -299,6 +299,9 @@ class _AuraChartPainter extends CustomPainter {
     }
   }
 
+  @override
+  bool shouldRepaint(_AuraChartPainter oldDelegate) => true;
+
   void _paintPie(Canvas canvas, Size size) {
     final values = series.single.values;
     final total = values.fold<double>(0, (sum, value) => sum + value);
@@ -329,7 +332,4 @@ class _AuraChartPainter extends CustomPainter {
         ..restore();
     }
   }
-
-  @override
-  bool shouldRepaint(_AuraChartPainter oldDelegate) => true;
 }

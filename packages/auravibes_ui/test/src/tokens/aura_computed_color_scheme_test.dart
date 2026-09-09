@@ -25,8 +25,7 @@ void main() {
 
     test('light scheme: on* meet APCA Lc 60 against their surface', () {
       final s = AuraComputedColorScheme(primaryHue: 200, brightness: .light);
-      // Polarity-agnostic: the on color must clear the perceptual target
-      // regardless of whether it is light-on-dark or dark-on-light.
+      // The on color must clear the perceptual target regardless of polarity.
       expect(
         ColorContrast.apcaLc(
           foreground: s.onPrimary,

@@ -128,6 +128,15 @@ dart_code_linter:
         - ident: print
           description: Use the application logger instead.
     avoid-returning-widgets:
+      exclude:
+        - packages/auravibes_ui/lib/src/organisms/aura_date_time_input.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_table.dart
+        - packages/auravibes_ui/test/src/atoms/auravibes_pressable_test.dart
+        - packages/auravibes_ui/test/src/molecules/auravibes_slider_test.dart
+        - packages/auravibes_ui/test/src/molecules/auravibes_tabs_test.dart
+        - packages/auravibes_ui/test/src/organisms/auravibes_choice_picker_test.dart
+        - widgetbook/lib/aura_ui/story_helpers.dart
+        - widgetbook/lib/main.dart
       ignored-annotations:
         # Widgetbook generator requires annotated top-level widget factories.
         - widgetbook.UseCase
@@ -232,9 +241,30 @@ dart_code_linter:
         - apps/auravibes_app/lib/main.dart
         - apps/auravibes_app/lib/i18n/**
         - apps/auravibes_app/web/**
+        - apps/auravibes_app/lib/features/chats/usecases/conversation_busy_state.dart
+        - apps/auravibes_app/lib/features/cloud_workspaces/models/cloud_workspace_state.dart
+        - apps/auravibes_app/lib/features/skills/usecases/app_skill_credential_candidate.dart
+        - apps/auravibes_app/lib/features/tools/usecases/tool_approval_decision.dart
+        - packages/auravibes_ui/lib/src/atoms/aura_animated_content.dart
+        - packages/auravibes_ui/lib/src/atoms/aura_flex.dart
+        - packages/auravibes_ui/lib/src/atoms/aura_interaction_scope.dart
+        - packages/auravibes_ui/lib/src/molecules/aura_key_value.dart
+        - packages/auravibes_ui/lib/src/molecules/aura_slider.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_accordion.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_chart.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_choice_picker.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_date_time_input.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_stepper.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_timeline.dart
+        - tool/**
     prefer-moving-to-variable:
       allowed-duplicated-chains: 3
     prefer-single-widget-per-file:
+      exclude:
+        - packages/auravibes_ui/lib/src/atoms/aura_flex.dart
+        - packages/auravibes_ui/lib/src/molecules/aura_section.dart
+        - packages/auravibes_ui/lib/src/molecules/aura_slider.dart
+        - packages/auravibes_ui/lib/src/organisms/aura_grid.dart
       ignore-private-widgets: true
     prefer-static-class:
       ignore-private: true

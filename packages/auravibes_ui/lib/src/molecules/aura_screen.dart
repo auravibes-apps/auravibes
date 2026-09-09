@@ -1,8 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: UI components keep related private widgets together.
 
-import 'dart:ui';
-
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';

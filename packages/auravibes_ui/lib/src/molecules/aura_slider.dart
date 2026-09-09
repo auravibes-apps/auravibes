@@ -4,7 +4,6 @@ import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 const _controlHeight = 48.0;

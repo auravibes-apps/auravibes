@@ -50,7 +50,7 @@ class _MockRunSkillsManagerToolUsecase extends Mock
 class _MockListAvailableSkillsUsecase extends Mock
     implements ListAvailableSkillsUsecase;
 
-class _MockListAppSkillCredentialCandidatesUsecase extends Mock
+class _MockListAppSkillCandidatesUsecase extends Mock
     implements ListAppSkillCredentialCandidatesUsecase;
 
 class _MockSkillCredentialsRepository extends Mock
@@ -480,7 +480,7 @@ void main() {
 
   test('lists app skill credential ids and names', () async {
     final listSkills = _MockListAvailableSkillsUsecase();
-    final appCandidates = _MockListAppSkillCredentialCandidatesUsecase();
+    final appCandidates = _MockListAppSkillCandidatesUsecase();
     final appSkill = serviceSkillDefinitions.singleWhere(
       (skill) => skill.slug == 'openai',
     );
@@ -596,7 +596,7 @@ void main() {
     'uses the combined skill command runner when fully configured',
     () async {
       final listSkills = _MockListAvailableSkillsUsecase();
-      final appCandidates = _MockListAppSkillCredentialCandidatesUsecase();
+      final appCandidates = _MockListAppSkillCandidatesUsecase();
       final appSkill = serviceSkillDefinitions.singleWhere(
         (skill) => skill.slug == 'openai',
       );
@@ -948,7 +948,7 @@ void main() {
       throwsA(isA<StateError>()),
     );
 
-    final configuredCandidates = _MockListAppSkillCredentialCandidatesUsecase();
+    final configuredCandidates = _MockListAppSkillCandidatesUsecase();
     when(
       () => configuredCandidates.call(
         workspaceId: 'workspace-1',

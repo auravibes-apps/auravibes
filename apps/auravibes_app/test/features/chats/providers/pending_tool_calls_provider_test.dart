@@ -140,7 +140,7 @@ class _FakeResolveToolApprovalDecisionUsecase(
   }
 }
 
-class _ThrowingResolveToolApprovalDecisionUsecase()
+class _ThrowingToolApprovalUsecase()
     extends ResolveToolApprovalDecisionUsecase {
   this
     : super(
@@ -1054,7 +1054,7 @@ void main() {
             ),
           ),
           resolveToolApprovalDecisionUsecaseProvider('ws-1')
-              .overrideWithValue(_ThrowingResolveToolApprovalDecisionUsecase()),
+              .overrideWithValue(_ThrowingToolApprovalUsecase()),
         ],
       );
 
