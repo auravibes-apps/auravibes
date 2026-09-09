@@ -199,117 +199,24 @@ class const _AuraChoicePickerOption<T>({
   @override
   Widget build(BuildContext context) {
     if (presentation == AuraChoicePickerPresentation.chips) {
-      final theme = context.auraTheme;
-      final colors = context.auraColors;
-      final accent = colors.colorFor(tint ?? AuraTint.primary);
-
-      return MergeSemantics(
-        child: Semantics(
-          child: AuraPressable(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minWidth: _choicePickerTapTarget,
-                minHeight: _choicePickerTapTarget,
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: theme.spacing.sm,
-                  horizontal: theme.spacing.md,
-                ),
-                child: Center(
-                  widthFactor: 1,
-                  heightFactor: 1,
-                  child: ExcludeSemantics(
-                    excluding: option.semanticLabel != null,
-                    child: Opacity(
-                      opacity: _isInteractive ? 1 : 0.6,
-                      child: option.label,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            color: accent,
-            decoration: BoxDecoration(
-              color: _isSelected ? accent.withValues(alpha: 0.12) : null,
-              border: Border.all(color: _isSelected ? accent : colors.outline),
-              borderRadius: BorderRadius.circular(
-                theme.fromBorderRadius(.full),
-              ),
-            ),
-            onPressed: _isInteractive ? _handleChange : null,
-            semanticLabel: option.semanticLabel,
-            isButtonSemantics: true,
-          ),
-          enabled: _isInteractive,
-          checked: _isSelected,
-          inMutuallyExclusiveGroup:
-              variant == AuraChoicePickerVariant.mutuallyExclusive,
-        ),
+      return _AuraChoicePickerChip<T>(
+        option: option,
+        variant: variant,
+        isSelected: _isSelected,
+        isInteractive: _isInteractive,
+        tint: tint,
+        onChanged: _handleChange,
       );
     }
-    final label = option.semanticLabel == null
-        ? option.label
-        : ExcludeSemantics(child: option.label);
-    final control = switch (variant) {
-      .mutuallyExclusive => AuraRadio<T>(
-        value: option.value,
-        groupValue: _mutuallyExclusiveValue,
-        onChanged: _isInteractive ? (_) => _handleChange() : null,
-        tint: tint,
-        disabled: option.disabled,
-        semanticLabel: option.semanticLabel ?? 'Choice',
-      ),
-      .multipleSelection => AuraCheckbox(
-        value: _isSelected,
-        onChanged: _isInteractive ? (_) => _handleChange() : null,
-        tint: tint,
-        disabled: option.disabled,
-        semanticLabel: option.semanticLabel ?? 'Choice',
-      ),
-    };
 
-    return Semantics(
-      child: Row(
-        children: [
-          GestureDetector(
-            child: SizedBox(
-              width: _choicePickerTapTarget,
-              height: _choicePickerTapTarget,
-              child: Center(child: ExcludeSemantics(child: control)),
-            ),
-            onTap: _isInteractive ? _handleChange : null,
-            behavior: .opaque,
-            excludeFromSemantics: true,
-          ),
-          const AuraSizedBox(width: .sm),
-          Expanded(
-            child: GestureDetector(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minHeight: _choicePickerTapTarget,
-                ),
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Opacity(
-                    opacity: _isInteractive ? 1 : 0.6,
-                    child: label,
-                  ),
-                ),
-              ),
-              onTap: _isInteractive ? _handleChange : null,
-              behavior: .opaque,
-              excludeFromSemantics: true,
-            ),
-          ),
-        ],
-      ),
-      enabled: _isInteractive,
-      checked: _isSelected,
-      inMutuallyExclusiveGroup:
-          variant == AuraChoicePickerVariant.mutuallyExclusive,
-      label: option.semanticLabel,
-      onTap: _isInteractive ? _handleChange : null,
+    return _AuraChoicePickerListOption<T>(
+      option: option,
+      mutuallyExclusiveValue: _mutuallyExclusiveValue,
+      variant: variant,
+      isSelected: _isSelected,
+      isInteractive: _isInteractive,
+      tint: tint,
+      onChanged: _handleChange,
     );
   }
 
@@ -330,5 +237,141 @@ class const _AuraChoicePickerOption<T>({
     }
 
     onChanged?.call(nextValues);
+  }
+}
+
+class const _AuraChoicePickerChip<T>({
+  required final AuraChoiceOption<T> option,
+  required final AuraChoicePickerVariant variant,
+  required final bool isSelected,
+  required final bool isInteractive,
+  required final AuraTint? tint,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.auraTheme;
+    final colors = context.auraColors;
+    final accent = colors.colorFor(tint ?? AuraTint.primary);
+
+    return MergeSemantics(
+      child: Semantics(
+        child: AuraPressable(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: _choicePickerTapTarget,
+              minHeight: _choicePickerTapTarget,
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: theme.spacing.sm,
+                horizontal: theme.spacing.md,
+              ),
+              child: Center(
+                widthFactor: 1,
+                heightFactor: 1,
+                child: ExcludeSemantics(
+                  excluding: option.semanticLabel != null,
+                  child: Opacity(
+                    opacity: isInteractive ? 1 : 0.6,
+                    child: option.label,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          color: accent,
+          decoration: BoxDecoration(
+            color: isSelected ? accent.withValues(alpha: 0.12) : null,
+            border: Border.all(color: isSelected ? accent : colors.outline),
+            borderRadius: BorderRadius.circular(theme.fromBorderRadius(.full)),
+          ),
+          onPressed: isInteractive ? onChanged : null,
+          semanticLabel: option.semanticLabel,
+          isButtonSemantics: true,
+        ),
+        enabled: isInteractive,
+        checked: isSelected,
+        inMutuallyExclusiveGroup:
+            variant == AuraChoicePickerVariant.mutuallyExclusive,
+      ),
+    );
+  }
+}
+
+class const _AuraChoicePickerListOption<T>({
+  required final AuraChoiceOption<T> option,
+  required final T? mutuallyExclusiveValue,
+  required final AuraChoicePickerVariant variant,
+  required final bool isSelected,
+  required final bool isInteractive,
+  required final AuraTint? tint,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label = option.semanticLabel == null
+        ? option.label
+        : ExcludeSemantics(child: option.label);
+    final control = switch (variant) {
+      .mutuallyExclusive => AuraRadio<T>(
+        value: option.value,
+        groupValue: mutuallyExclusiveValue,
+        onChanged: isInteractive ? (_) => onChanged() : null,
+        tint: tint,
+        disabled: option.disabled,
+        semanticLabel: option.semanticLabel ?? 'Choice',
+      ),
+      .multipleSelection => AuraCheckbox(
+        value: isSelected,
+        onChanged: isInteractive ? (_) => onChanged() : null,
+        tint: tint,
+        disabled: option.disabled,
+        semanticLabel: option.semanticLabel ?? 'Choice',
+      ),
+    };
+
+    return Semantics(
+      child: Row(
+        children: [
+          GestureDetector(
+            child: SizedBox(
+              width: _choicePickerTapTarget,
+              height: _choicePickerTapTarget,
+              child: Center(child: ExcludeSemantics(child: control)),
+            ),
+            onTap: isInteractive ? onChanged : null,
+            behavior: .opaque,
+            excludeFromSemantics: true,
+          ),
+          const AuraSizedBox(width: .sm),
+          Expanded(
+            child: GestureDetector(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: _choicePickerTapTarget,
+                ),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Opacity(
+                    opacity: isInteractive ? 1 : 0.6,
+                    child: label,
+                  ),
+                ),
+              ),
+              onTap: isInteractive ? onChanged : null,
+              behavior: .opaque,
+              excludeFromSemantics: true,
+            ),
+          ),
+        ],
+      ),
+      enabled: isInteractive,
+      checked: isSelected,
+      inMutuallyExclusiveGroup:
+          variant == AuraChoicePickerVariant.mutuallyExclusive,
+      label: option.semanticLabel,
+      onTap: isInteractive ? onChanged : null,
+    );
   }
 }
