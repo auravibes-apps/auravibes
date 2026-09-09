@@ -54,33 +54,62 @@ class const BuildAppSkillNativeToolSpecsUsecase(
     final isUnknownConversation =
         _conversationRepository != null && conversation == null;
     final isSubAgentConversation = conversation?.parentConversationId != null;
+    final runtimeSkills = _runtimeSkills(loadedSkills, extraSkills);
+
+    return <ToolSpec>[
+      ..._skillsManagerToolSpecs(runtimeSkills),
+      ..._subAgentToolSpecs(
+        runtimeSkills,
+        isUnknownConversation: isUnknownConversation,
+        isSubAgentConversation: isSubAgentConversation,
+      ),
+      ...await _serviceSkillToolSpecs(runtimeSkills, workspaceId),
+    ];
+  }
+
+  List<AvailableSkill> _runtimeSkills(
+    List<AvailableSkill> loadedSkills,
+    List<AvailableSkill> extraSkills,
+  ) {
     final skillKeys = <String>{};
-    final runtimeSkills = [...loadedSkills, ...extraSkills]
+
+    return [...loadedSkills, ...extraSkills]
         .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
         .toList();
-    final hasSkillsManager = runtimeSkills.any(
-      (skill) =>
-          skill.source == SkillSource.app &&
-          skill.slug == SkillToolSlugs.skillsManager,
-    );
-    final specs = <ToolSpec>[if (hasSkillsManager) ...skillsManagerToolSpecs];
-    final hasSubAgents = runtimeSkills.any(
-      (skill) =>
-          skill.source == SkillSource.app && skill.slug == agentsSkillSlug,
-    );
-    if (hasSubAgents && !isUnknownConversation && !isSubAgentConversation) {
-      final subAgentsSkill = _appSkillRegistry.getBySlug(agentsSkillSlug);
-      if (subAgentsSkill != null) {
-        specs.addAll(_appSkillToolSpecs(subAgentsSkill, const []));
-      }
+  }
+
+  List<ToolSpec> _skillsManagerToolSpecs(List<AvailableSkill> runtimeSkills) {
+    if (!_hasAppSkill(runtimeSkills, SkillToolSlugs.skillsManager)) {
+      return const [];
     }
 
+    return skillsManagerToolSpecs;
+  }
+
+  List<ToolSpec> _subAgentToolSpecs(
+    List<AvailableSkill> runtimeSkills, {
+    required bool isUnknownConversation,
+    required bool isSubAgentConversation,
+  }) {
+    if (!_hasAppSkill(runtimeSkills, agentsSkillSlug) ||
+        isUnknownConversation ||
+        isSubAgentConversation) {
+      return const [];
+    }
+
+    final subAgentsSkill = _appSkillRegistry.getBySlug(agentsSkillSlug);
+    if (subAgentsSkill == null) return const [];
+
+    return _appSkillToolSpecs(subAgentsSkill, const []);
+  }
+
+  Future<List<ToolSpec>> _serviceSkillToolSpecs(
+    List<AvailableSkill> runtimeSkills,
+    String workspaceId,
+  ) async {
+    final specs = <ToolSpec>[];
     for (final skill in serviceSkillDefinitions) {
-      final isLoaded = runtimeSkills.any(
-        (loaded) =>
-            loaded.source == SkillSource.app && loaded.slug == skill.slug,
-      );
-      if (!isLoaded) continue;
+      if (!_hasAppSkill(runtimeSkills, skill.slug)) continue;
       final candidates = await _listAppSkillCredentialCandidatesUsecase.call(
         workspaceId: workspaceId,
         skill: skill,
@@ -91,6 +120,10 @@ class const BuildAppSkillNativeToolSpecsUsecase(
     return specs;
   }
 }
+
+bool _hasAppSkill(Iterable<AvailableSkill> skills, String slug) => skills.any(
+  (skill) => skill.source == SkillSource.app && skill.slug == slug,
+);
 
 List<ToolSpec> _appSkillToolSpecs(
   AppSkillDefinition skill,
