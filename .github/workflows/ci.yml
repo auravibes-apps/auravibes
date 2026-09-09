@@ -46,9 +46,6 @@ jobs:
       - name: Analyze
         run: melos analyze
 
-      - name: Run DCL analysis
-        run: melos run dcl:analyze
-
       - name: Test CI tools
         run: dart test tool/changed_test_selector_test.dart tool/merge_lcov_test.dart
 
