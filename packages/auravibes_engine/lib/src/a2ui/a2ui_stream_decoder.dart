@@ -94,21 +94,28 @@ class A2uiStreamDecoder {
       _buffer = _buffer.substring(end);
     }
 
-    if (complete && _buffer.isNotEmpty) {
-      if (_looksLikeCandidate(_buffer)) {
-        events.add(
-          A2uiInvalidEvent(
-            .malformedPayload,
-            wireSurfaceId: _recoverSurfaceId(_buffer),
-            diagnosticPayloadJson: _diagnosticPayload(_buffer),
-          ),
-        );
-      } else {
-        events.add(A2uiTextEvent(_buffer));
-      }
-      _buffer = '';
-    }
+    _flushRemainingBuffer(events, complete: complete);
     return events;
+  }
+
+  void _flushRemainingBuffer(
+    List<A2uiStreamEvent> events, {
+    required bool complete,
+  }) {
+    if (!complete || _buffer.isEmpty) return;
+
+    if (_looksLikeCandidate(_buffer)) {
+      events.add(
+        A2uiInvalidEvent(
+          .malformedPayload,
+          wireSurfaceId: _recoverSurfaceId(_buffer),
+          diagnosticPayloadJson: _diagnosticPayload(_buffer),
+        ),
+      );
+    } else {
+      events.add(A2uiTextEvent(_buffer));
+    }
+    _buffer = '';
   }
 
   void _emitCandidate(
