@@ -43,6 +43,15 @@ class const _NewChatContent({required final String workspaceId})
     if (availability case AsyncData(value: WorkspaceAuthenticationRequired())) {
       return _NewChatUnavailable(workspaceId: workspaceId);
     }
+
+    return _NewChatAvailable(workspaceId: workspaceId);
+  }
+}
+
+class const _NewChatAvailable({required final String workspaceId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(newChatProvider(workspaceId));
     final groupedModelsAsync = ref.watch(
       listModelsGroupedByProviderProvider(workspaceId: workspaceId),
@@ -60,16 +69,6 @@ class const _NewChatContent({required final String workspaceId})
         );
       }
     }
-
-    final selectedModelId = state.modelId;
-    final selectedModelAsync = selectedModelId == null
-        ? null
-        : ref.watch(
-            workspaceModelSelectionByIdProvider(workspaceId, selectedModelId),
-          );
-    final modalitiesInput =
-        selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
-        const <String>[];
 
     Future<void> handleSendMessage(ChatDraft draft) async {
       try {
@@ -105,9 +104,48 @@ class const _NewChatContent({required final String workspaceId})
       }
     }
 
+    return _NewChatBody(
+      workspaceId: workspaceId,
+      isLoading: state.isLoading,
+      hasNoProviders: hasNoProviders,
+      modelId: state.modelId,
+      agentId: state.agentId,
+      onSendMessage: handleSendMessage,
+      onToolsPress: onToolsPress,
+      onModelChanged: (modelId) =>
+          ref.read(newChatProvider(workspaceId).notifier).setModelId(modelId),
+      onAgentChanged: (agentId) =>
+          ref.read(newChatProvider(workspaceId).notifier).setAgentId(agentId),
+    );
+  }
+}
+
+class const _NewChatBody({
+  required final String workspaceId,
+  required final bool isLoading,
+  required final bool hasNoProviders,
+  required final String? modelId,
+  required final String? agentId,
+  required final Future<void> Function(ChatDraft) onSendMessage,
+  required final VoidCallback onToolsPress,
+  required final ValueChanged<String?> onModelChanged,
+  required final ValueChanged<String?> onAgentChanged,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedModelAsync = switch (modelId) {
+      null => null,
+      final selectedModelId => ref.watch(
+        workspaceModelSelectionByIdProvider(workspaceId, selectedModelId),
+      ),
+    };
+    final modalitiesInput =
+        selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
+        const <String>[];
+
     return AuraScreen(
       child: AuraLoadingOverlay(
-        isLoading: state.isLoading,
+        isLoading: isLoading,
         child: AuraColumn(
           children: [
             Expanded(
@@ -117,42 +155,34 @@ class const _NewChatContent({required final String workspaceId})
             ),
             ChatInputWidget(
               workspaceId: workspaceId,
-              onSendMessage: handleSendMessage,
+              onSendMessage: onSendMessage,
               onToolsPress: onToolsPress,
               modelSheetControl: CompactWorkspaceModelSelector(
                 workspaceId: workspaceId,
-                workspaceModelSelectionId: state.modelId,
-                onChanged: (modelId) => ref
-                    .read(newChatProvider(workspaceId).notifier)
-                    .setModelId(modelId),
+                workspaceModelSelectionId: modelId,
+                onChanged: onModelChanged,
                 sheetMode: true,
               ),
               agentSheetControl: CompactAgentSelector(
                 workspaceId: workspaceId,
-                agentId: state.agentId,
-                onChanged: (agentId) => ref
-                    .read(newChatProvider(workspaceId).notifier)
-                    .setAgentId(agentId),
+                agentId: agentId,
+                onChanged: onAgentChanged,
                 sheetMode: true,
               ),
               modelCompactControl: CompactWorkspaceModelSelector(
                 workspaceId: workspaceId,
-                workspaceModelSelectionId: state.modelId,
-                onChanged: (modelId) => ref
-                    .read(newChatProvider(workspaceId).notifier)
-                    .setModelId(modelId),
+                workspaceModelSelectionId: modelId,
+                onChanged: onModelChanged,
                 compactMode: true,
               ),
               agentCompactControl: CompactAgentSelector(
                 workspaceId: workspaceId,
-                agentId: state.agentId,
-                onChanged: (agentId) => ref
-                    .read(newChatProvider(workspaceId).notifier)
-                    .setAgentId(agentId),
+                agentId: agentId,
+                onChanged: onAgentChanged,
                 compactMode: true,
               ),
               modalitiesInput: modalitiesInput,
-              disabled: state.isLoading || state.modelId == null,
+              disabled: isLoading || modelId == null,
             ),
           ],
         ),
