@@ -15,6 +15,12 @@ export 'responsive_sliding_drawer_provider.dart';
 
 enum _DrawerDragDirection { opening, closing }
 
+typedef _MobileDragCallbacks = ({
+  GestureDragStartCallback? onDragStart,
+  GestureDragUpdateCallback? onDragUpdate,
+  GestureDragEndCallback? onDragEnd,
+});
+
 class ResponsiveSlidingDrawerController {
   _ResponsiveSlidingDrawerState? _state;
   bool get isDesktop => _state?.isDesktop ?? false;
@@ -65,6 +71,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   static const _desktopDragAreaMidpoint = 0.5;
   static const _gradientMiddleOpacity = 0.5;
   static const _gradientTrailingOpacity = 0.2;
+  static const _drawerFullyOpenThreshold = 0.001;
   static const Color _scrimColorLightMode = DesignColors.neutral900;
   static const Color _scrimColorDarkMode = DesignColors.neutral50;
   static const _scrimColorOpacityLightMode = 0.36;
@@ -128,6 +135,12 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         : _openRatio * screenWidth;
   }
 
+  bool get _drawerFullyOpen =>
+      _requiredController.value >= 1.0 - _drawerFullyOpenThreshold;
+
+  bool get _isDividerHighlighted =>
+      _isHoveringDivider || _isResizing || _resizeOvershoot != 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -168,47 +181,9 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   @override
-  Widget build(BuildContext context) {
-    final drawerWidth = _currentDrawerWidth;
-    final drawerFullyOpen = _requiredController.value >= 1.0 - 0.001;
-    if (isDesktop) {
-      return _DesktopDrawerLayout(
-        animation: _requiredController,
-        drawer: widget.drawer,
-        body: widget.body,
-        drawerWidth: drawerWidth,
-        drawerFullyOpen: drawerFullyOpen,
-        isHoveringDivider: _isHoveringDivider,
-        isResizing: _isResizing,
-        resizeOvershoot: _resizeOvershoot,
-        onDragStart: _handleDragStart,
-        onDragUpdate: _handleDragUpdate,
-        onDragEnd: _handleDragEnd,
-        onDividerHover: (value) => setState(() => _isHoveringDivider = value),
-        onStartResizing: () => _setResizing(true),
-        onStopResizing: () => _setResizing(false),
-        onDividerPanUpdate: _handleDividerPanUpdate,
-      );
-    }
-
-    final enableGestures = _isMobilePlatform(context);
-
-    return _MobileDrawerLayout(
-      animation: _requiredController,
-      drawer: widget.drawer,
-      body: widget.body,
-      drawerWidth: drawerWidth,
-      drawerFullyOpen: drawerFullyOpen,
-      isDarkMode: widget.isDarkMode,
-      scrimColor: _scrimColor,
-      scrimOpacity: _scrimOpacity,
-      gradientStartOpacity: _gradientStartOpacity,
-      onClose: () => _closeIfFullyOpen(drawerFullyOpen),
-      onDragStart: enableGestures ? _handleDragStart : null,
-      onDragUpdate: enableGestures ? _handleDragUpdate : null,
-      onDragEnd: enableGestures ? _handleDragEnd : null,
-    );
-  }
+  Widget build(BuildContext context) => isDesktop
+      ? _DesktopDrawerLayout(state: this)
+      : _MobileDrawerLayout(state: this);
 
   void _closeDrawer() {
     const settledThreshold = 0.001;
@@ -273,26 +248,36 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   void _applyOvershootRecovery(double delta) {
-    final reversingOvershoot =
-        (_resizeOvershoot > 0 && delta < 0) ||
-        (_resizeOvershoot < 0 && delta > 0);
-    if (!reversingOvershoot) {
+    if (!_isReversingOvershoot(delta)) {
       _resizeOvershoot += delta;
 
       return;
     }
 
-    if (delta.abs() < _resizeOvershoot.abs()) {
+    if (_isDeltaWithinOvershoot(delta)) {
       _resizeOvershoot += delta;
 
       return;
     }
 
+    _applyRemainingResize(delta);
+  }
+
+  bool _isReversingOvershoot(double delta) =>
+      (_resizeOvershoot > 0 && delta < 0) ||
+      (_resizeOvershoot < 0 && delta > 0);
+
+  bool _isDeltaWithinOvershoot(double delta) =>
+      delta.abs() < _resizeOvershoot.abs();
+
+  void _applyRemainingResize(double delta) {
     final remaining = delta.abs() - _resizeOvershoot.abs();
     _resizeOvershoot = 0.0;
-    _desktopDrawerWidth =
-        (_requiredDesktopDrawerWidth + (delta > 0 ? remaining : -remaining))
-            .clamp(_desktopMinDrawerWidth, _desktopMaxDrawerWidth);
+    final direction = delta > 0 ? remaining : -remaining;
+    _desktopDrawerWidth = (_requiredDesktopDrawerWidth + direction).clamp(
+      _desktopMinDrawerWidth,
+      _desktopMaxDrawerWidth,
+    );
   }
 
   void _clampDesktopDrawerWidth() {
@@ -305,19 +290,37 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   void _handleDragEnd(DragEndDetails details) {
     if (_isResizing || _dragDirection == null) return;
     final velocity = details.velocity.pixelsPerSecond.dx;
+    _settleDrag(velocity);
+    _resetDrag();
+  }
+
+  void _settleDrag(double velocity) {
     if (velocity.abs() >= _swipeVelocityThreshold) {
-      if (velocity > 0) {
-        _openDrawer();
-      } else {
-        _closeDrawer();
-      }
-    } else {
-      if (_requiredController.value >= _dragPercentageThreshold) {
-        _openDrawer();
-      } else {
-        _closeDrawer();
-      }
+      _settleByVelocity(velocity);
+
+      return;
     }
+
+    _settleByProgress();
+  }
+
+  void _settleByVelocity(double velocity) {
+    if (velocity > 0) {
+      _openDrawer();
+    } else {
+      _closeDrawer();
+    }
+  }
+
+  void _settleByProgress() {
+    if (_requiredController.value >= _dragPercentageThreshold) {
+      _openDrawer();
+    } else {
+      _closeDrawer();
+    }
+  }
+
+  void _resetDrag() {
     _dragStartedWhenOpen = null;
     _dragDirection = null;
   }
@@ -329,33 +332,64 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     });
   }
 
+  void _setDividerHover(bool value) =>
+      setState(() => _isHoveringDivider = value);
+
   bool _isMobilePlatform(BuildContext context) {
     final platform = Theme.of(context).platform;
 
     return platform == TargetPlatform.android || platform == TargetPlatform.iOS;
   }
 
+  _MobileDragCallbacks _mobileDragCallbacks(BuildContext context) {
+    if (!_isMobilePlatform(context)) {
+      return (onDragStart: null, onDragUpdate: null, onDragEnd: null);
+    }
+
+    return (
+      onDragStart: _handleDragStart,
+      onDragUpdate: _handleDragUpdate,
+      onDragEnd: _handleDragEnd,
+    );
+  }
+
   void _closeIfFullyOpen(bool drawerFullyOpen) {
     if (drawerFullyOpen) _closeDrawer();
   }
+
+  void _closeIfFullyOpenCurrent() => _closeIfFullyOpen(_drawerFullyOpen);
 
   void _handleDragUpdate(DragUpdateDetails details) {
     if (_isResizing) return;
     final primaryDelta = details.primaryDelta;
     if (primaryDelta == null) return;
 
-    if (_dragDirection == null) {
-      if (_dragStartedWhenOpen == false && primaryDelta > 0) {
-        _dragDirection = .opening;
-      } else if ((_dragStartedWhenOpen ?? false) && primaryDelta < 0) {
-        _dragDirection = .closing;
-      } else {
-        return;
-      }
-    }
+    if (!_updateDragDirection(primaryDelta)) return;
     final effectiveWidth = _currentDrawerWidth;
     final delta = primaryDelta / effectiveWidth;
     _requiredController.value += delta;
+  }
+
+  bool _updateDragDirection(double primaryDelta) {
+    if (_dragDirection != null) return true;
+
+    final direction = _dragDirectionFor(primaryDelta);
+    if (direction == null) return false;
+    _dragDirection = direction;
+
+    return true;
+  }
+
+  _DrawerDragDirection? _dragDirectionFor(double primaryDelta) {
+    if (_dragStartedWhenOpen == false && primaryDelta > 0) {
+      return .opening;
+    }
+
+    if ((_dragStartedWhenOpen ?? false) && primaryDelta < 0) {
+      return .closing;
+    }
+
+    return null;
   }
 
   void _toggleDrawer() {
@@ -377,266 +411,486 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 }
 
 class const _DesktopDrawerLayout({
-  required final Animation<double> animation,
-  required final Widget drawer,
-  required final Widget body,
-  required final double drawerWidth,
-  required final bool drawerFullyOpen,
-  required final bool isHoveringDivider,
-  required final bool isResizing,
-  required final double resizeOvershoot,
-  required final GestureDragStartCallback onDragStart,
-  required final GestureDragUpdateCallback onDragUpdate,
-  required final GestureDragEndCallback onDragEnd,
-  required final ValueChanged<bool> onDividerHover,
-  required final VoidCallback onStartResizing,
-  required final VoidCallback onStopResizing,
-  required final GestureDragUpdateCallback onDividerPanUpdate,
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      _DesktopDrawerBody(state: state),
+      _DesktopDrawerPanel(state: state),
+      _DesktopDrawerDragArea(state: state),
+      if (state._drawerFullyOpen) _DesktopDrawerDivider(state: state),
+    ],
+  );
+}
+
+class const _DesktopDrawerBody({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: state._requiredController,
+    builder: (context, _) => _DesktopBodyPosition(state: state),
+  );
+}
+
+class const _DesktopBodyPosition({
+  required final _ResponsiveSlidingDrawerState state,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            final leftOffset = drawerWidth * animation.value;
+    final animation = state._requiredController;
+    final drawerWidth = state._currentDrawerWidth;
 
-            return Positioned(
-              left: leftOffset,
-              top: 0,
-              right: 0,
-              bottom: 0,
-              child: body,
-            );
-          },
-        ),
-        AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            final dx = -drawerWidth * (1 - animation.value);
-
-            return Transform.translate(
-              offset: .new(dx, 0),
-              child: GestureDetector(
-                child: SizedBox(
-                  width: drawerWidth,
-                  height: MediaQuery.sizeOf(context).height,
-                  child: FocusScope(
-                    child: drawer,
-                    canRequestFocus: drawerFullyOpen,
-                    descendantsAreFocusable: drawerFullyOpen,
-                    descendantsAreTraversable: drawerFullyOpen,
-                  ),
-                ),
-                onHorizontalDragStart: onDragStart,
-                onHorizontalDragUpdate: onDragUpdate,
-                onHorizontalDragEnd: onDragEnd,
-              ),
-            );
-          },
-        ),
-        Positioned(
-          left:
-              animation.value <
-                  _ResponsiveSlidingDrawerState._desktopDragAreaMidpoint
-              ? 0
-              : drawerWidth,
-          top: 0,
-          bottom: 0,
-          width: _ResponsiveSlidingDrawerState._desktopDragAreaWidth,
-          child: GestureDetector(
-            onHorizontalDragStart: onDragStart,
-            onHorizontalDragUpdate: onDragUpdate,
-            onHorizontalDragEnd: onDragEnd,
-            behavior: .opaque,
-          ),
-        ),
-        if (drawerFullyOpen)
-          Positioned(
-            left: drawerWidth - _ResponsiveSlidingDrawerState._dividerWidth / 2,
-            top: 0,
-            bottom: 0,
-            width: _ResponsiveSlidingDrawerState._dividerWidth,
-            child: MouseRegion(
-              onEnter: (_) => onDividerHover(true),
-              onExit: (_) => onDividerHover(false),
-              cursor: SystemMouseCursors.resizeColumn,
-              child: AuraTooltip(
-                message: LocaleKeys.navigation_drawer_resize_handle_tooltip.tr(
-                  context: context,
-                ),
-                child: Semantics(
-                  child: AnimatedOpacity(
-                    child: GestureDetector(
-                      child: SizedBox(
-                        width: _ResponsiveSlidingDrawerState._dividerWidth,
-                        child: Center(
-                          child: Container(
-                            color: isHoveringDivider || isResizing
-                                ? context.auraColors.primary
-                                : context.auraColors.outlineVariant,
-                            width: _ResponsiveSlidingDrawerState
-                                ._dividerVisibleWidth,
-                            height: .infinity,
-                          ),
-                        ),
-                      ),
-                      onPanStart: (_) => onStartResizing(),
-                      onPanUpdate: onDividerPanUpdate,
-                      onPanEnd: (_) => onStopResizing(),
-                      onPanCancel: onStopResizing,
-                      behavior: .opaque,
-                    ),
-                    opacity:
-                        isHoveringDivider ||
-                            isResizing ||
-                            resizeOvershoot != 0.0
-                        ? 1.0
-                        : _ResponsiveSlidingDrawerState._dividerIdleOpacity,
-                    duration: const Duration(milliseconds: 200),
-                  ),
-                  label: LocaleKeys.navigation_drawer_resize_handle_tooltip.tr(
-                    context: context,
-                  ),
-                  hint: LocaleKeys.navigation_drawer_resize_handle_hint.tr(
-                    context: context,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+    return Positioned(
+      left: drawerWidth * animation.value,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      child: state.widget.body,
     );
   }
 }
 
-class const _MobileDrawerLayout({
-  required final Animation<double> animation,
-  required final Widget drawer,
-  required final Widget body,
-  required final double drawerWidth,
-  required final bool drawerFullyOpen,
-  required final bool isDarkMode,
-  required final Color scrimColor,
-  required final double scrimOpacity,
-  required final double gradientStartOpacity,
-  required final VoidCallback onClose,
-  required final GestureDragStartCallback? onDragStart,
-  required final GestureDragUpdateCallback? onDragUpdate,
-  required final GestureDragEndCallback? onDragEnd,
+class const _DesktopDrawerPanel({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: state._requiredController,
+    builder: (context, _) => _DesktopPanelPosition(state: state),
+  );
+}
+
+class const _DesktopPanelPosition({
+  required final _ResponsiveSlidingDrawerState state,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            final dx = drawerWidth * animation.value;
+    final animation = state._requiredController;
+    final drawerWidth = state._currentDrawerWidth;
 
-            return Transform.translate(
-              offset: .new(dx, 0),
-              child: GestureDetector(
-                child: body,
-                onTap: onClose,
-                onHorizontalDragStart: onDragStart,
-                onHorizontalDragUpdate: onDragUpdate,
-                onHorizontalDragEnd: onDragEnd,
-              ),
-            );
-          },
-        ),
-        AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            final dx = drawerWidth * animation.value;
-            final gradientOpacity = gradientStartOpacity * animation.value;
-            final gradientColor = isDarkMode ? Colors.black : scrimColor;
+    return Transform.translate(
+      offset: .new(-drawerWidth * (1 - animation.value), 0),
+      child: _DrawerPanelGesture(state: state),
+    );
+  }
+}
 
-            return Transform.translate(
-              offset: .new(dx, 0),
-              child: IgnorePointer(
-                ignoring: animation.value == 0,
-                child: GestureDetector(
-                  child: Stack(
-                    children: [
-                      Container(
-                        color: scrimColor.withValues(
-                          alpha: scrimOpacity * animation.value,
-                        ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width:
-                            _ResponsiveSlidingDrawerState._scrimGradientWidth,
-                        child: IgnorePointer(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  gradientColor.withValues(
-                                    alpha: gradientOpacity,
-                                  ),
-                                  gradientColor.withValues(
-                                    alpha:
-                                        gradientOpacity *
-                                        _ResponsiveSlidingDrawerState
-                                            ._gradientMiddleOpacity,
-                                  ),
-                                  gradientColor.withValues(
-                                    alpha:
-                                        gradientOpacity *
-                                        _ResponsiveSlidingDrawerState
-                                            ._gradientTrailingOpacity,
-                                  ),
-                                  gradientColor.withValues(alpha: 0),
-                                ],
-                                stops: const [0.0, 0.2, 0.6, 1.0],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  onTap: onClose,
-                  onHorizontalDragStart: onDragStart,
-                  onHorizontalDragUpdate: onDragUpdate,
-                  onHorizontalDragEnd: onDragEnd,
-                ),
-              ),
-            );
-          },
-        ),
-        AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            final dx = -drawerWidth * (1 - animation.value);
+class const _DrawerPanelGesture({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    child: _DrawerFocusBox(state: state),
+    onHorizontalDragStart: state._handleDragStart,
+    onHorizontalDragUpdate: state._handleDragUpdate,
+    onHorizontalDragEnd: state._handleDragEnd,
+  );
+}
 
-            return Transform.translate(
-              offset: .new(dx, 0),
-              child: GestureDetector(
-                child: SizedBox(
-                  width: drawerWidth,
-                  height: MediaQuery.sizeOf(context).height,
-                  child: FocusScope(
-                    child: drawer,
-                    canRequestFocus: drawerFullyOpen,
-                    descendantsAreFocusable: drawerFullyOpen,
-                    descendantsAreTraversable: drawerFullyOpen,
-                  ),
-                ),
-                onHorizontalDragStart: onDragStart,
-                onHorizontalDragUpdate: onDragUpdate,
-                onHorizontalDragEnd: onDragEnd,
-              ),
-            );
-          },
-        ),
-      ],
+class const _DrawerFocusBox({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final drawerFullyOpen = state._drawerFullyOpen;
+
+    return SizedBox(
+      width: state._currentDrawerWidth,
+      height: MediaQuery.sizeOf(context).height,
+      child: FocusScope(
+        child: state.widget.drawer,
+        canRequestFocus: drawerFullyOpen,
+        descendantsAreFocusable: drawerFullyOpen,
+        descendantsAreTraversable: drawerFullyOpen,
+      ),
+    );
+  }
+}
+
+class const _DesktopDrawerDragArea({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: state._requiredController,
+    builder: (context, _) => _DesktopDragAreaPosition(state: state),
+  );
+}
+
+class const _DesktopDragAreaPosition({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  double get _left =>
+      state._requiredController.value <
+          _ResponsiveSlidingDrawerState._desktopDragAreaMidpoint
+      ? 0
+      : state._currentDrawerWidth;
+
+  @override
+  Widget build(BuildContext context) => Positioned(
+    left: _left,
+    top: 0,
+    bottom: 0,
+    width: _ResponsiveSlidingDrawerState._desktopDragAreaWidth,
+    child: _DesktopDragAreaGesture(state: state),
+  );
+}
+
+class const _DesktopDragAreaGesture({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onHorizontalDragStart: state._handleDragStart,
+    onHorizontalDragUpdate: state._handleDragUpdate,
+    onHorizontalDragEnd: state._handleDragEnd,
+    behavior: .opaque,
+  );
+}
+
+class const _DesktopDrawerDivider({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned(
+    left:
+        state._currentDrawerWidth -
+        _ResponsiveSlidingDrawerState._dividerWidth / 2,
+    top: 0,
+    bottom: 0,
+    width: _ResponsiveSlidingDrawerState._dividerWidth,
+    child: _DesktopDividerInteraction(state: state),
+  );
+}
+
+class const _DesktopDividerInteraction({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    onEnter: (_) => state._setDividerHover(true),
+    onExit: (_) => state._setDividerHover(false),
+    cursor: SystemMouseCursors.resizeColumn,
+    child: _DesktopDividerTooltip(state: state),
+  );
+}
+
+class const _DesktopDividerTooltip({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final tooltip = LocaleKeys.navigation_drawer_resize_handle_tooltip.tr(
+      context: context,
+    );
+
+    return AuraTooltip(
+      message: tooltip,
+      child: _DesktopDividerSemantics(state: state, tooltip: tooltip),
+    );
+  }
+}
+
+class const _DesktopDividerSemantics({
+  required final _ResponsiveSlidingDrawerState state,
+  required final String tooltip,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final hint = LocaleKeys.navigation_drawer_resize_handle_hint.tr(
+      context: context,
+    );
+
+    return Semantics(
+      child: _DesktopDividerVisual(state: state),
+      label: tooltip,
+      hint: hint,
+    );
+  }
+}
+
+class const _DesktopDividerVisual({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _DesktopDividerOpacity(state: state);
+}
+
+class const _DesktopDividerOpacity({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AnimatedOpacity(
+    child: _DesktopDividerGesture(state: state),
+    opacity: state._isDividerHighlighted
+        ? 1.0
+        : _ResponsiveSlidingDrawerState._dividerIdleOpacity,
+    duration: const Duration(milliseconds: 200),
+  );
+}
+
+class const _DesktopDividerGesture({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      child: _DesktopDividerIndicator(color: _color(context)),
+      onPanStart: (_) => state._setResizing(true),
+      onPanUpdate: state._handleDividerPanUpdate,
+      onPanEnd: (_) => state._setResizing(false),
+      onPanCancel: () => state._setResizing(false),
+      behavior: .opaque,
+    );
+  }
+
+  Color _color(BuildContext context) =>
+      state._isHoveringDivider || state._isResizing
+      ? context.auraColors.primary
+      : context.auraColors.outlineVariant;
+}
+
+class const _DesktopDividerIndicator({required final Color color})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: _ResponsiveSlidingDrawerState._dividerWidth,
+    child: Center(
+      child: Container(
+        color: color,
+        width: _ResponsiveSlidingDrawerState._dividerVisibleWidth,
+        height: .infinity,
+      ),
+    ),
+  );
+}
+
+class const _MobileDrawerLayout({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      _MobileDrawerBody(state: state),
+      _MobileDrawerScrim(state: state),
+      _MobileDrawerPanel(state: state),
+    ],
+  );
+}
+
+class const _MobileDrawerBody({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: state._requiredController,
+    builder: (context, _) => _MobileBodyPosition(state: state),
+  );
+}
+
+class const _MobileBodyPosition({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final animation = state._requiredController;
+    final drawerWidth = state._currentDrawerWidth;
+
+    return Transform.translate(
+      offset: .new(drawerWidth * animation.value, 0),
+      child: _MobileBodyGesture(state: state),
+    );
+  }
+}
+
+class const _MobileBodyGesture({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final callbacks = state._mobileDragCallbacks(context);
+
+    return GestureDetector(
+      child: state.widget.body,
+      onTap: state._closeIfFullyOpenCurrent,
+      onHorizontalDragStart: callbacks.onDragStart,
+      onHorizontalDragUpdate: callbacks.onDragUpdate,
+      onHorizontalDragEnd: callbacks.onDragEnd,
+    );
+  }
+}
+
+class const _MobileDrawerScrim({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: state._requiredController,
+    builder: (context, _) => _MobileScrimPosition(state: state),
+  );
+}
+
+class const _MobileScrimPosition({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final animation = state._requiredController;
+    final drawerWidth = state._currentDrawerWidth;
+
+    return Transform.translate(
+      offset: .new(drawerWidth * animation.value, 0),
+      child: _MobileScrimGesture(state: state),
+    );
+  }
+}
+
+class const _MobileScrimGesture({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    ignoring: state._requiredController.value == 0,
+    child: _MobileScrimInteraction(state: state),
+  );
+}
+
+class const _MobileScrimInteraction({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final callbacks = state._mobileDragCallbacks(context);
+
+    return GestureDetector(
+      child: _MobileScrimSurface(state: state),
+      onTap: state._closeIfFullyOpenCurrent,
+      onHorizontalDragStart: callbacks.onDragStart,
+      onHorizontalDragUpdate: callbacks.onDragUpdate,
+      onHorizontalDragEnd: callbacks.onDragEnd,
+    );
+  }
+}
+
+class _MobileScrimSurface extends Stack {
+  new({required this.state})
+    : super(
+        children: [
+          _MobileScrimColor(state: state),
+          _MobileScrimGradient(state: state),
+        ],
+      );
+
+  final _ResponsiveSlidingDrawerState state;
+}
+
+class const _MobileScrimColor({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final value = state._requiredController.value;
+
+    return Container(
+      color: state._scrimColor.withValues(alpha: state._scrimOpacity * value),
+    );
+  }
+}
+
+class const _MobileScrimGradient({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned(
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: _ResponsiveSlidingDrawerState._scrimGradientWidth,
+    child: _MobileScrimGradientLayer(state: state),
+  );
+}
+
+class const _MobileScrimGradientLayer({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final value = state._requiredController.value;
+    final color = state.widget.isDarkMode ? Colors.black : state._scrimColor;
+    final opacity = state._gradientStartOpacity * value;
+
+    return IgnorePointer(
+      child: _MobileScrimGradientFill(color: color, opacity: opacity),
+    );
+  }
+}
+
+class const _MobileScrimGradientFill({
+  required final Color color,
+  required final double opacity,
+}) extends StatelessWidget {
+  LinearGradient get _gradient => LinearGradient(
+    colors: _gradientColors,
+    stops: const [0.0, 0.2, 0.6, 1.0],
+  );
+
+  List<Color> get _gradientColors => [
+    _withOpacity(opacity),
+    _withOpacity(
+      opacity * _ResponsiveSlidingDrawerState._gradientMiddleOpacity,
+    ),
+    _withOpacity(
+      opacity * _ResponsiveSlidingDrawerState._gradientTrailingOpacity,
+    ),
+    _withOpacity(0),
+  ];
+
+  @override
+  Widget build(BuildContext context) =>
+      Container(decoration: BoxDecoration(gradient: _gradient));
+
+  Color _withOpacity(double alpha) => color.withValues(alpha: alpha);
+}
+
+class const _MobileDrawerPanel({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: state._requiredController,
+    builder: (context, _) => _MobilePanelPosition(state: state),
+  );
+}
+
+class const _MobilePanelPosition({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final animation = state._requiredController;
+    final drawerWidth = state._currentDrawerWidth;
+
+    return Transform.translate(
+      offset: .new(-drawerWidth * (1 - animation.value), 0),
+      child: _MobilePanelGesture(state: state),
+    );
+  }
+}
+
+class const _MobilePanelGesture({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final callbacks = state._mobileDragCallbacks(context);
+
+    return GestureDetector(
+      child: _DrawerFocusBox(state: state),
+      onHorizontalDragStart: callbacks.onDragStart,
+      onHorizontalDragUpdate: callbacks.onDragUpdate,
+      onHorizontalDragEnd: callbacks.onDragEnd,
     );
   }
 }
