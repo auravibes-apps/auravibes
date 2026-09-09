@@ -86,7 +86,20 @@ class _AuraTableState extends State<AuraTable> {
     _validateRows(columns, rows);
     final theme = context.auraTheme;
     final sortedRows = _sortedRows(rows);
-    final table = _table(context, columns, sortedRows, theme);
+    final table = _AuraTableTable(
+      columns: columns,
+      sortedRows: sortedRows,
+      theme: theme,
+      columnFormats: widget.columnFormats,
+      columnAlignments: widget.columnAlignments,
+      sortableColumns: widget.sortableColumns,
+      rowTints: widget.rowTints,
+      noValueLabel: widget.noValueLabel,
+      onSort: (columnIndex) => setState(() {
+        _ascending = _sortIndex != columnIndex || !_ascending;
+        _sortIndex = columnIndex;
+      }),
+    );
     final caption = widget.caption;
     final emptyText = rows.isEmpty ? widget.emptyText : null;
     if (caption == null && (emptyText == null || emptyText.isEmpty)) {
@@ -118,71 +131,6 @@ class _AuraTableState extends State<AuraTable> {
         throw ArgumentError('Table cells must be finite scalar values.');
       }
     }
-  }
-
-  Widget _table(
-    BuildContext context,
-    List<String> columns,
-    List<({int index, List<Object?> cells})> sortedRows,
-    AuraTheme theme,
-  ) {
-    return SingleChildScrollView(
-      scrollDirection: .horizontal,
-      child: Table(
-        children: [
-          for (final (index, row) in [
-            columns,
-            ...sortedRows.map((row) => row.cells),
-          ].indexed)
-            TableRow(
-              decoration: index == 0
-                  ? BoxDecoration(color: context.auraColors.surfaceVariant)
-                  : _rowDecoration(context, sortedRows[index - 1].index),
-              children: [
-                for (final (columnIndex, cell) in row.indexed)
-                  Semantics(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: theme.spacing.sm,
-                        horizontal: theme.spacing.md,
-                      ),
-                      child: _AuraTableCell(
-                        isHeader: index == 0,
-                        header: columns[columnIndex],
-                        cell: cell,
-                        format: columnIndex < widget.columnFormats.length
-                            ? widget.columnFormats[columnIndex]
-                            : AuraTableValueFormat.plain,
-                        alignment: columnIndex < widget.columnAlignments.length
-                            ? widget.columnAlignments[columnIndex]
-                            : AuraTableAlignment.start,
-                        onSort:
-                            index == 0 &&
-                                columnIndex < widget.sortableColumns.length &&
-                                widget.sortableColumns[columnIndex]
-                            ? () => setState(() {
-                                _ascending =
-                                    _sortIndex != columnIndex || !_ascending;
-                                _sortIndex = columnIndex;
-                              })
-                            : null,
-                      ),
-                    ),
-                    header: index == 0,
-                    label: index == 0 || cell != null
-                        ? null
-                        : widget.noValueLabel,
-                  ),
-              ],
-            ),
-        ],
-        defaultColumnWidth: const IntrinsicColumnWidth(),
-        border: .new(
-          horizontalInside: BorderSide(color: context.auraColors.outline),
-        ),
-        defaultVerticalAlignment: .middle,
-      ),
-    );
   }
 
   List<({int index, List<Object?> cells})> _sortedRows(
@@ -221,15 +169,90 @@ class _AuraTableState extends State<AuraTable> {
 
     return left.toString().compareTo(right.toString());
   }
+}
+
+class _AuraTableTable extends StatelessWidget {
+  const new({
+    required this.columns,
+    required this.sortedRows,
+    required this.theme,
+    required this.columnFormats,
+    required this.columnAlignments,
+    required this.sortableColumns,
+    required this.rowTints,
+    required this.noValueLabel,
+    required this.onSort,
+  });
+
+  final List<String> columns;
+  final List<({int index, List<Object?> cells})> sortedRows;
+  final AuraTheme theme;
+  final List<AuraTableValueFormat> columnFormats;
+  final List<AuraTableAlignment> columnAlignments;
+  final List<bool> sortableColumns;
+  final List<AuraTint?> rowTints;
+  final String noValueLabel;
+  final ValueChanged<int> onSort;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: .horizontal,
+      child: Table(
+        children: [
+          for (final (index, row) in [
+            columns,
+            ...sortedRows.map((row) => row.cells),
+          ].indexed)
+            TableRow(
+              decoration: index == 0
+                  ? BoxDecoration(color: context.auraColors.surfaceVariant)
+                  : _rowDecoration(context, sortedRows[index - 1].index),
+              children: [
+                for (final (columnIndex, cell) in row.indexed)
+                  Semantics(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: theme.spacing.sm,
+                        horizontal: theme.spacing.md,
+                      ),
+                      child: _AuraTableCell(
+                        isHeader: index == 0,
+                        header: columns[columnIndex],
+                        cell: cell,
+                        format: columnIndex < columnFormats.length
+                            ? columnFormats[columnIndex]
+                            : AuraTableValueFormat.plain,
+                        alignment: columnIndex < columnAlignments.length
+                            ? columnAlignments[columnIndex]
+                            : AuraTableAlignment.start,
+                        onSort:
+                            index == 0 &&
+                                columnIndex < sortableColumns.length &&
+                                sortableColumns[columnIndex]
+                            ? () => onSort(columnIndex)
+                            : null,
+                      ),
+                    ),
+                    header: index == 0,
+                    label: index == 0 || cell != null ? null : noValueLabel,
+                  ),
+              ],
+            ),
+        ],
+        defaultColumnWidth: const IntrinsicColumnWidth(),
+        border: .new(
+          horizontalInside: BorderSide(color: context.auraColors.outline),
+        ),
+        defaultVerticalAlignment: .middle,
+      ),
+    );
+  }
 
   BoxDecoration? _rowDecoration(BuildContext context, int rowIndex) {
-    if (rowIndex >= widget.rowTints.length) {
-      return null;
-    }
-    final tint = widget.rowTints[rowIndex];
-    if (tint == null) {
-      return null;
-    }
+    if (rowIndex >= rowTints.length) return null;
+    final tint = rowTints[rowIndex];
+    if (tint == null) return null;
 
     return BoxDecoration(
       color: context.auraColors.colorFor(tint).withValues(alpha: 0.08),
