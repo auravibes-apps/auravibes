@@ -212,7 +212,6 @@ class _AuraSliderState extends State<AuraSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
     final onChanged = widget.onChanged;
     final isEnabled =
         widget.enabled &&
@@ -258,101 +257,171 @@ class _AuraSliderState extends State<AuraSlider> {
     void increase() => changeValue(increasedValue);
     void decrease() => changeValue(decreasedValue);
 
-    return Semantics(
-      child: FocusableActionDetector(
+    return _AuraSliderSemantics(
+      child: _AuraSliderInteraction(
         enabled: isEnabled,
-        shortcuts: const {
-          SingleActivator(.arrowRight): _AuraSliderIncreaseIntent(),
-          SingleActivator(.arrowUp): _AuraSliderIncreaseIntent(),
-          SingleActivator(.arrowLeft): _AuraSliderDecreaseIntent(),
-          SingleActivator(.arrowDown): _AuraSliderDecreaseIntent(),
-        },
-        actions: {
-          _AuraSliderIncreaseIntent: CallbackAction<_AuraSliderIncreaseIntent>(
-            onInvoke: (_) {
-              increase();
-
-              return null;
-            },
-          ),
-          _AuraSliderDecreaseIntent: CallbackAction<_AuraSliderDecreaseIntent>(
-            onInvoke: (_) {
-              decrease();
-
-              return null;
-            },
-          ),
-        },
+        value: effectiveValue,
+        min: widget.min,
+        max: widget.max,
+        tint: widget.tint,
+        isFocused: _isFocused,
+        onChanged: changeValue,
+        onIncrease: increase,
+        onDecrease: decrease,
         onShowFocusHighlight: (value) => setState(() => _isFocused = value),
-        mouseCursor: isEnabled
-            ? SystemMouseCursors.click
-            : SystemMouseCursors.forbidden,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
-            final activeColor = auraColors.colorFor(widget.tint);
-            final inactiveColor = auraColors.outlineVariant;
-            final thumbX = _thumbPosition(
-              effectiveValue,
-              width,
-              widget.min,
-              widget.max,
-            );
-
-            return GestureDetector(
-              child: SizedBox(
-                height: _controlHeight,
-                child: CustomPaint(
-                  painter: _AuraSliderPainter(
-                    value: effectiveValue,
-                    min: widget.min,
-                    max: widget.max,
-                    activeColor: isEnabled ? activeColor : inactiveColor,
-                    inactiveColor: inactiveColor,
-                  ),
-                  foregroundPainter: isEnabled && _isFocused
-                      ? _AuraSliderFocusRingPainter(
-                          thumbX: thumbX,
-                          color: activeColor,
-                        )
-                      : null,
-                ),
-              ),
-              onTapDown: isEnabled
-                  ? (details) => changeValue(
-                      _valueAtPosition(
-                        details.localPosition.dx,
-                        width,
-                        widget.min,
-                        widget.max,
-                        effectiveValue,
-                      ),
-                    )
-                  : null,
-              onHorizontalDragUpdate: isEnabled
-                  ? (details) => changeValue(
-                      _valueAtPosition(
-                        details.localPosition.dx,
-                        width,
-                        widget.min,
-                        widget.max,
-                        effectiveValue,
-                      ),
-                    )
-                  : null,
-              behavior: .opaque,
-            );
-          },
-        ),
       ),
       enabled: isEnabled,
-      slider: true,
       label: widget.semanticLabel,
-      value: effectiveValue.toString(),
-      increasedValue: isEnabled ? increasedValue.toString() : null,
-      decreasedValue: isEnabled ? decreasedValue.toString() : null,
-      onIncrease: isEnabled ? increase : null,
-      onDecrease: isEnabled ? decrease : null,
+      value: effectiveValue,
+      increasedValue: increasedValue,
+      decreasedValue: decreasedValue,
+      onIncrease: increase,
+      onDecrease: decrease,
+    );
+  }
+}
+
+class const _AuraSliderSemantics({
+  required final Widget child,
+  required final bool enabled,
+  required final String? label,
+  required final double value,
+  required final double increasedValue,
+  required final double decreasedValue,
+  required final VoidCallback onIncrease,
+  required final VoidCallback onDecrease,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: child,
+    enabled: enabled,
+    slider: true,
+    label: label,
+    value: value.toString(),
+    increasedValue: enabled ? increasedValue.toString() : null,
+    decreasedValue: enabled ? decreasedValue.toString() : null,
+    onIncrease: enabled ? onIncrease : null,
+    onDecrease: enabled ? onDecrease : null,
+  );
+}
+
+class const _AuraSliderInteraction({
+  required final bool enabled,
+  required final double value,
+  required final double min,
+  required final double max,
+  required final AuraTint tint,
+  required final bool isFocused,
+  required final ValueChanged<double> onChanged,
+  required final VoidCallback onIncrease,
+  required final VoidCallback onDecrease,
+  required final ValueChanged<bool> onShowFocusHighlight,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FocusableActionDetector(
+    enabled: enabled,
+    shortcuts: const {
+      SingleActivator(.arrowRight): _AuraSliderIncreaseIntent(),
+      SingleActivator(.arrowUp): _AuraSliderIncreaseIntent(),
+      SingleActivator(.arrowLeft): _AuraSliderDecreaseIntent(),
+      SingleActivator(.arrowDown): _AuraSliderDecreaseIntent(),
+    },
+    actions: {
+      _AuraSliderIncreaseIntent: CallbackAction<_AuraSliderIncreaseIntent>(
+        onInvoke: (_) {
+          onIncrease();
+
+          return null;
+        },
+      ),
+      _AuraSliderDecreaseIntent: CallbackAction<_AuraSliderDecreaseIntent>(
+        onInvoke: (_) {
+          onDecrease();
+
+          return null;
+        },
+      ),
+    },
+    onShowFocusHighlight: onShowFocusHighlight,
+    mouseCursor: enabled
+        ? SystemMouseCursors.click
+        : SystemMouseCursors.forbidden,
+    child: _AuraSliderTrack(
+      enabled: enabled,
+      value: value,
+      min: min,
+      max: max,
+      tint: tint,
+      isFocused: isFocused,
+      onChanged: onChanged,
+    ),
+  );
+}
+
+class const _AuraSliderTrack({
+  required final bool enabled,
+  required final double value,
+  required final double min,
+  required final double max,
+  required final AuraTint tint,
+  required final bool isFocused,
+  required final ValueChanged<double> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final activeColor = auraColors.colorFor(tint);
+        final inactiveColor = auraColors.outlineVariant;
+        final thumbX = _thumbPosition(value, width, min, max);
+
+        return GestureDetector(
+          child: SizedBox(
+            height: _controlHeight,
+            child: CustomPaint(
+              painter: _AuraSliderPainter(
+                value: value,
+                min: min,
+                max: max,
+                activeColor: enabled ? activeColor : inactiveColor,
+                inactiveColor: inactiveColor,
+              ),
+              foregroundPainter: enabled && isFocused
+                  ? _AuraSliderFocusRingPainter(
+                      thumbX: thumbX,
+                      color: activeColor,
+                    )
+                  : null,
+            ),
+          ),
+          onTapDown: enabled
+              ? (details) => onChanged(
+                  _valueAtPosition(
+                    details.localPosition.dx,
+                    width,
+                    min,
+                    max,
+                    value,
+                  ),
+                )
+              : null,
+          onHorizontalDragUpdate: enabled
+              ? (details) => onChanged(
+                  _valueAtPosition(
+                    details.localPosition.dx,
+                    width,
+                    min,
+                    max,
+                    value,
+                  ),
+                )
+              : null,
+          behavior: .opaque,
+        );
+      },
     );
   }
 }
