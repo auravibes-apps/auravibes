@@ -47,24 +47,32 @@ class const ListConversationAgentSkillsUsecase(
     required String workspaceId,
   }) async {
     final conversation = await _loadConversation(conversationId, workspaceId);
-    if (conversation?.workspaceId != workspaceId) return null;
+    if (conversation == null || conversation.workspaceId != workspaceId) {
+      return null;
+    }
 
-    final agentId = conversation?.agentId;
+    final agentId = conversation.agentId;
     if (agentId == null) return null;
 
     final agent = await _agentRepositoryForWorkspace(workspaceId)
         .getAgentById(agentId);
-    if (agent == null || agent.workspaceId != workspaceId) return null;
-    if (!agent.isEnabled) return null;
-
-    final isSubAgentConversation = conversation?.parentConversationId != null;
-    if (isSubAgentConversation) {
-      if (!agent.appearsInSubAgentList) return null;
-    } else if (!agent.appearsInChatSelector) {
-      return null;
-    }
+    if (agent == null) return null;
+    if (!_isAvailableAgent(agent, workspaceId)) return null;
+    if (!_isVisibleInConversation(conversation, agent)) return null;
 
     return agent;
+  }
+
+  bool _isAvailableAgent(AgentEntity agent, String workspaceId) =>
+      agent.workspaceId == workspaceId && agent.isEnabled;
+
+  bool _isVisibleInConversation(
+    ConversationEntity conversation,
+    AgentEntity agent,
+  ) {
+    return conversation.parentConversationId != null
+        ? agent.appearsInSubAgentList
+        : agent.appearsInChatSelector;
   }
 }
 
