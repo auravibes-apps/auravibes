@@ -4,6 +4,7 @@
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/widgets/tool_permission_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -11,6 +12,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+const _kToolItemIconSize = 36.0;
 
 /// A simplified tool row widget for display inside tool groups.
 ///
@@ -28,98 +31,115 @@ class const ToolItemRow({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const iconSize = 36.0;
     final isExpanded = useState(false);
-    final isEnabled = tool.isEnabled;
-    final permissionMode = tool.permissionMode;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.fromSpacing(.xs),
-      ),
-      child: AuraColumn(
-        children: [
-          AuraRow(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: isEnabled
-                      ? context.auraColors.primary.withValues(alpha: 0.1)
-                      : context.auraColors.surfaceVariant,
-                  borderRadius: BorderRadius.all(
-                    .circular(context.auraTheme.fromBorderRadius(.sm)),
-                  ),
-                ),
-                width: iconSize,
-                height: iconSize,
-                child: Center(
-                  child: AuraText(
-                    child: tool.getIconWidget(),
-                    tint: isEnabled ? AuraTint.primary : null,
-                  ),
-                ),
-              ),
-              const AuraSizedBox(width: .sm),
-              Expanded(
-                child: AuraColumn(
-                  children: [
-                    AuraText(child: tool.getNameWidget()),
-                    AuraText(
-                      child: DefaultTextStyle.merge(
-                        overflow: .ellipsis,
-                        maxLines: 1,
-                        child: tool.getDescriptionWidget(),
-                      ),
-                      style: .bodySmall,
-                    ),
-                  ],
-                  spacing: .xs,
-                  crossAxisAlignment: .start,
-                ),
-              ),
-              AuraSwitch(
-                value: isEnabled,
-                onChanged: (value) => _setToolEnabled(ref, value),
-                size: .sm,
-              ),
-              AuraIconButton.custom(
-                child: AnimatedRotation(
-                  child: const AuraIcon(
-                    Icons.keyboard_arrow_down,
-                    size: .small,
-                  ),
-                  turns: isExpanded.value ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 200),
-                ),
-                onPressed: () => isExpanded.value = !isExpanded.value,
-                size: .small,
-              ),
-            ],
-          ),
-          if (isExpanded.value)
-            Padding(
-              padding: EdgeInsets.only(
-                left: iconSize + context.auraTheme.fromSpacing(.sm),
-                top: context.auraTheme.fromSpacing(.sm),
-              ),
-              child: _ToolOptions(
-                tool: tool,
-                workspaceId: workspaceId,
-                isEnabled: isEnabled,
-                permissionMode: permissionMode,
-                showDeleteButton: showDeleteButton,
-              ),
-            ),
-        ],
-        crossAxisAlignment: .start,
-      ),
+    return _ToolItemBody(
+      tool: tool,
+      workspaceId: workspaceId,
+      showDeleteButton: showDeleteButton,
+      isExpanded: isExpanded.value,
+      onEnabledChanged: _enabledChanged(ref),
+      onToggleExpanded: _toggleExpanded(isExpanded),
     );
   }
+
+  ValueChanged<bool> _enabledChanged(WidgetRef ref) =>
+      (value) => _setToolEnabled(ref, value);
+
+  VoidCallback _toggleExpanded(ValueNotifier<bool> isExpanded) =>
+      () => isExpanded.value = !isExpanded.value;
 
   void _setToolEnabled(WidgetRef ref, bool value) {
     ref
         .read(workspaceToolsProvider(workspaceId).notifier)
         .setToolEnabled(tool.id, isEnabled: value);
+  }
+}
+
+class const _ToolItemBody({
+  required final WorkspaceToolEntity tool,
+  required final String workspaceId,
+  required final bool showDeleteButton,
+  required final bool isExpanded,
+  required final ValueChanged<bool> onEnabledChanged,
+  required final VoidCallback onToggleExpanded,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraPadding(
+      padding: const .symmetric(vertical: .xs),
+      child: _ToolItemColumn(
+        tool: tool,
+        workspaceId: workspaceId,
+        showDeleteButton: showDeleteButton,
+        isExpanded: isExpanded,
+        onEnabledChanged: onEnabledChanged,
+        onToggleExpanded: onToggleExpanded,
+      ),
+    );
+  }
+}
+
+class const _ToolItemColumn({
+  required final WorkspaceToolEntity tool,
+  required final String workspaceId,
+  required final bool showDeleteButton,
+  required final bool isExpanded,
+  required final ValueChanged<bool> onEnabledChanged,
+  required final VoidCallback onToggleExpanded,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: _children(),
+      crossAxisAlignment: .start,
+    );
+  }
+
+  List<Widget> _children() {
+    final isEnabled = tool.isEnabled;
+    return [
+      _ToolItemHeader(
+        tool: tool,
+        isEnabled: isEnabled,
+        isExpanded: isExpanded,
+        onEnabledChanged: onEnabledChanged,
+        onToggleExpanded: onToggleExpanded,
+      ),
+      if (isExpanded)
+        _ExpandedToolOptions(
+          tool: tool,
+          workspaceId: workspaceId,
+          isEnabled: isEnabled,
+          permissionMode: tool.permissionMode,
+          showDeleteButton: showDeleteButton,
+        ),
+    ];
+  }
+}
+
+class const _ExpandedToolOptions({
+  required final WorkspaceToolEntity tool,
+  required final String workspaceId,
+  required final bool isEnabled,
+  required final ToolPermissionMode permissionMode,
+  required final bool showDeleteButton,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: _kToolItemIconSize + context.auraTheme.fromSpacing(.sm),
+        top: context.auraTheme.fromSpacing(.sm),
+      ),
+      child: _ToolOptions(
+        tool: tool,
+        workspaceId: workspaceId,
+        isEnabled: isEnabled,
+        permissionMode: permissionMode,
+        showDeleteButton: showDeleteButton,
+      ),
+    );
   }
 }
 
@@ -133,56 +153,16 @@ class const _ToolOptions({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workspaceTool = tool;
-
     return AuraColumn(
       children: [
         if (isEnabled)
-          AuraRow(
-            children: [
-              const AuraText(
-                child: TextLocale(LocaleKeys.tools_screen_permission_label),
-                style: .bodySmall,
-              ),
-              AuraButtonGroup<ToolPermissionMode>.single(
-                items: const [
-                  AuraButtonGroupItem(
-                    value: ToolPermissionMode.alwaysAsk,
-                    child: TextLocale(
-                      LocaleKeys.tools_screen_permission_always_ask,
-                    ),
-                  ),
-                  AuraButtonGroupItem(
-                    value: ToolPermissionMode.alwaysAllow,
-                    child: TextLocale(
-                      LocaleKeys.tools_screen_permission_always_allow,
-                    ),
-                  ),
-                ],
-                selectedValue: permissionMode,
-                onChanged: (mode) => _setPermissionMode(ref, mode),
-                size: .sm,
-              ),
-            ],
-            mainAxisAlignment: .spaceBetween,
+          _ToolPermissionModeRow(
+            permissionMode: permissionMode,
+            onChanged: (mode) => _setPermissionMode(ref, mode),
           ),
-        if (showDeleteButton && !workspaceTool.isNative)
-          Align(
-            alignment: Alignment.centerRight,
-            child: AuraButton(
-              onPressed: () => _confirmDelete(context, ref, workspaceTool),
-              child: const AuraRow(
-                children: [
-                  AuraIcon(Icons.delete_outline, size: .small, tint: .error),
-                  TextLocale(LocaleKeys.common_remove),
-                ],
-                spacing: .xs,
-                mainAxisSize: .min,
-              ),
-              variant: .text,
-              tint: .error,
-              size: .small,
-            ),
+        if (showDeleteButton && !tool.isNative)
+          _RemoveToolButton(
+            onPressed: () => _confirmDelete(context, ref, tool),
           ),
       ],
       spacing: .sm,
@@ -203,21 +183,186 @@ class const _ToolOptions({
     WidgetRef ref,
     WorkspaceToolEntity workspaceTool,
   ) async {
-    final confirmed = await AuraDialogs.confirm(
-      context: context,
-      title: const TextLocale(LocaleKeys.tools_screen_remove_tool_title),
-      message: const TextLocale(LocaleKeys.tools_screen_remove_tool_confirm),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.common_remove),
-        cancelLabel: TextLocale(LocaleKeys.common_cancel),
-      ),
-      isDestructive: true,
-    );
+    final confirmed = await _showDeleteConfirmation(context);
+    if (confirmed != true) return;
 
-    if (confirmed ?? false) {
-      final _ = await ref
-          .read(workspaceToolsProvider(workspaceId).notifier)
-          .removeToolById(workspaceTool.id);
-    }
+    final _ = await ref
+        .read(workspaceToolsProvider(workspaceId).notifier)
+        .removeToolById(workspaceTool.id);
   }
+}
+
+class const _ToolItemHeader({
+  required final WorkspaceToolEntity tool,
+  required final bool isEnabled,
+  required final bool isExpanded,
+  required final ValueChanged<bool> onEnabledChanged,
+  required final VoidCallback onToggleExpanded,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraRow(
+      children: [
+        _ToolItemIcon(tool: tool, isEnabled: isEnabled),
+        const AuraSizedBox(width: .sm),
+        Expanded(child: _ToolItemDescription(tool: tool)),
+        _ToolItemActions(
+          isEnabled: isEnabled,
+          isExpanded: isExpanded,
+          onEnabledChanged: onEnabledChanged,
+          onToggleExpanded: onToggleExpanded,
+        ),
+      ],
+    );
+  }
+}
+
+class const _ToolItemIcon({
+  required final WorkspaceToolEntity tool,
+  required final bool isEnabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isEnabled
+            ? context.auraColors.primary.withValues(alpha: 0.1)
+            : context.auraColors.surfaceVariant,
+        borderRadius: BorderRadius.all(
+          .circular(context.auraTheme.fromBorderRadius(.sm)),
+        ),
+      ),
+      width: _kToolItemIconSize,
+      height: _kToolItemIconSize,
+      child: _ToolIconContent(tool: tool, isEnabled: isEnabled),
+    );
+  }
+}
+
+class const _ToolIconContent({
+  required final WorkspaceToolEntity tool,
+  required final bool isEnabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: AuraText(
+        child: tool.getIconWidget(),
+        tint: isEnabled ? AuraTint.primary : null,
+      ),
+    );
+  }
+}
+
+class const _ToolItemDescription({required final WorkspaceToolEntity tool})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        AuraText(child: tool.getNameWidget()),
+        AuraText(
+          child: DefaultTextStyle.merge(
+            overflow: .ellipsis,
+            maxLines: 1,
+            child: tool.getDescriptionWidget(),
+          ),
+          style: .bodySmall,
+        ),
+      ],
+      spacing: .xs,
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+class const _ToolItemActions({
+  required final bool isEnabled,
+  required final bool isExpanded,
+  required final ValueChanged<bool> onEnabledChanged,
+  required final VoidCallback onToggleExpanded,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraRow(
+      children: [
+        AuraSwitch(value: isEnabled, onChanged: onEnabledChanged, size: .sm),
+        _ToolExpandButton(isExpanded: isExpanded, onPressed: onToggleExpanded),
+      ],
+    );
+  }
+}
+
+class const _ToolExpandButton({
+  required final bool isExpanded,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraIconButton.custom(
+      child: AnimatedRotation(
+        child: const AuraIcon(Icons.keyboard_arrow_down, size: .small),
+        turns: isExpanded ? 0.5 : 0,
+        duration: const Duration(milliseconds: 200),
+      ),
+      onPressed: onPressed,
+      size: .small,
+    );
+  }
+}
+
+class const _ToolPermissionModeRow({
+  required final ToolPermissionMode permissionMode,
+  required final ValueChanged<ToolPermissionMode?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraRow(
+      children: [
+        const AuraText(
+          child: TextLocale(LocaleKeys.tools_screen_permission_label),
+          style: .bodySmall,
+        ),
+        ToolPermissionSelector(value: permissionMode, onChanged: onChanged),
+      ],
+      mainAxisAlignment: .spaceBetween,
+    );
+  }
+}
+
+class const _RemoveToolButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: AuraButton(
+        onPressed: onPressed,
+        child: const AuraRow(
+          children: [
+            AuraIcon(Icons.delete_outline, size: .small, tint: .error),
+            TextLocale(LocaleKeys.common_remove),
+          ],
+          spacing: .xs,
+          mainAxisSize: .min,
+        ),
+        variant: .text,
+        tint: .error,
+        size: .small,
+      ),
+    );
+  }
+}
+
+Future<bool?> _showDeleteConfirmation(BuildContext context) {
+  return AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(LocaleKeys.tools_screen_remove_tool_title),
+    message: const TextLocale(LocaleKeys.tools_screen_remove_tool_confirm),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.common_remove),
+      cancelLabel: TextLocale(LocaleKeys.common_cancel),
+    ),
+    isDestructive: true,
+  );
 }
