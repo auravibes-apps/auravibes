@@ -1,4 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
@@ -52,85 +53,11 @@ class GroupedConversationToolsNotifier
     // Watch MCP connections for status enrichment.
     final mcpConnections = ref.watch(mcpConnectionProvider);
 
-    // Group tools by their workspaceToolsGroupId.
-    final toolsByGroupId = <String?, List<ConversationToolState>>{};
-    for (final toolState in conversationTools) {
-      final groupId = toolState.tool.workspaceToolsGroupId;
-      toolsByGroupId.putIfAbsent(groupId, () => []).add(toolState);
-    }
-
-    // Build result list.
-    final result = <ConversationToolsGroupWithTools>[];
-
-    // 1. Default groups (tools with null groupId).
-    final defaultTools = toolsByGroupId[null] ?? [];
-    final builtInTools = defaultTools
-        .where((toolState) => !toolState.tool.isNative)
-        .toList();
-    final nativeTools = defaultTools
-        .where((toolState) => toolState.tool.isNative)
-        .toList();
-
-    if (builtInTools.isNotEmpty) {
-      result.add(
-        ConversationToolsGroupWithTools(
-          group: null,
-          tools: builtInTools,
-          defaultGroupType: .builtIn,
-        ),
-      );
-    }
-
-    if (nativeTools.isNotEmpty) {
-      result.add(
-        ConversationToolsGroupWithTools(
-          group: null,
-          tools: nativeTools,
-          defaultGroupType: .native,
-        ),
-      );
-    }
-
-    // 2. MCP and custom groups (only include non-empty groups).
-    for (final group in groups) {
-      final tools = toolsByGroupId[group.id] ?? [];
-
-      // Skip empty groups.
-      if (tools.isEmpty) continue;
-
-      // Find MCP connection state if this is an MCP group.
-      McpConnectionState? mcpState;
-      if (group.isMcpGroup && group.mcpServerId != null) {
-        mcpState = mcpConnections
-            .where((c) => c.server.id == group.mcpServerId)
-            .firstOrNull;
-      }
-
-      result.add(
-        ConversationToolsGroupWithTools(
-          group: group,
-          tools: tools,
-          mcpConnectionState: mcpState,
-        ),
-      );
-    }
-
-    // Sort: Default first, then by priority (errors first), then by
-    // CreatedAt desc.
-    result.sort((a, b) {
-      final priorityCompare = a.sortPriority.compareTo(b.sortPriority);
-      if (priorityCompare != 0) return priorityCompare;
-
-      // Same priority. Sort by createdAt descending, with newest first.
-      // The default group has no createdAt, so use a far-future date to keep it
-      // first.
-      final aDate = a.group?.createdAt ?? DateTime(2099);
-      final bDate = b.group?.createdAt ?? DateTime(2099);
-
-      return bDate.compareTo(aDate);
-    });
-
-    return result;
+    return _buildGroups(
+      conversationTools: conversationTools,
+      groups: groups,
+      mcpConnections: mcpConnections,
+    );
   }
 
   /// Toggle all tools in a group at once.
@@ -177,5 +104,110 @@ class GroupedConversationToolsNotifier
     await ref
         .read(mcpConnectionProvider.notifier)
         .reconnectMcpServer(mcpServerId);
+  }
+
+  List<ConversationToolsGroupWithTools> _buildGroups({
+    required List<ConversationToolState> conversationTools,
+    required List<ToolsGroupEntity> groups,
+    required List<McpConnectionState> mcpConnections,
+  }) {
+    final toolsByGroupId = _groupToolsById(conversationTools);
+
+    return _buildDefaultGroups(toolsByGroupId[null] ?? [])
+      ..addAll(
+        _buildCustomGroups(
+          groups: groups,
+          toolsByGroupId: toolsByGroupId,
+          mcpConnections: mcpConnections,
+        ),
+      )
+      ..sort(_compareGroups);
+  }
+
+  Map<String?, List<ConversationToolState>> _groupToolsById(
+    List<ConversationToolState> conversationTools,
+  ) {
+    final toolsByGroupId = <String?, List<ConversationToolState>>{};
+    for (final toolState in conversationTools) {
+      final groupId = toolState.tool.workspaceToolsGroupId;
+      toolsByGroupId.putIfAbsent(groupId, () => []).add(toolState);
+    }
+
+    return toolsByGroupId;
+  }
+
+  List<ConversationToolsGroupWithTools> _buildDefaultGroups(
+    List<ConversationToolState> defaultTools,
+  ) {
+    final builtInTools = defaultTools
+        .where((toolState) => !toolState.tool.isNative)
+        .toList();
+    final nativeTools = defaultTools
+        .where((toolState) => toolState.tool.isNative)
+        .toList();
+
+    return [
+      if (builtInTools.isNotEmpty)
+        ConversationToolsGroupWithTools(
+          group: null,
+          tools: builtInTools,
+          defaultGroupType: .builtIn,
+        ),
+      if (nativeTools.isNotEmpty)
+        ConversationToolsGroupWithTools(
+          group: null,
+          tools: nativeTools,
+          defaultGroupType: .native,
+        ),
+    ];
+  }
+
+  List<ConversationToolsGroupWithTools> _buildCustomGroups({
+    required List<ToolsGroupEntity> groups,
+    required Map<String?, List<ConversationToolState>> toolsByGroupId,
+    required List<McpConnectionState> mcpConnections,
+  }) {
+    final result = <ConversationToolsGroupWithTools>[];
+    for (final group in groups) {
+      final tools = toolsByGroupId[group.id] ?? [];
+      if (tools.isEmpty) continue;
+
+      result.add(
+        ConversationToolsGroupWithTools(
+          group: group,
+          tools: tools,
+          mcpConnectionState: _findMcpConnection(group, mcpConnections),
+        ),
+      );
+    }
+
+    return result;
+  }
+
+  McpConnectionState? _findMcpConnection(
+    ToolsGroupEntity group,
+    List<McpConnectionState> mcpConnections,
+  ) {
+    if (!group.isMcpGroup || group.mcpServerId == null) return null;
+
+    return mcpConnections
+        .where((connection) => connection.server.id == group.mcpServerId)
+        .firstOrNull;
+  }
+
+  int _compareGroups(
+    ConversationToolsGroupWithTools a,
+    ConversationToolsGroupWithTools b,
+  ) {
+    final priorityCompare = a.sortPriority.compareTo(b.sortPriority);
+    if (priorityCompare != 0) return priorityCompare;
+
+    // Same priority. Sort by createdAt descending, with newest first.
+    // The default group has no createdAt, so use a far-future date to keep it
+    // first.
+    final aDate = a.group?.createdAt ?? DateTime(2099);
+    final bDate = b.group?.createdAt ?? DateTime(2099);
+
+    return bDate.compareTo(aDate);
   }
 }
