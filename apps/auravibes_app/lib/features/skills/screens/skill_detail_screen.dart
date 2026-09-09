@@ -122,40 +122,15 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
 
     return AuraScreen(
       child: child,
-      appBar: AuraAppBar(
-        title: TextLocale(
-          _isCreate
-              ? LocaleKeys.skills_screen_create_title
-              : LocaleKeys.skills_screen_detail_title,
-        ),
-        actions: [
-          if (!_isCreate && userSkillDetail != null) ...[
-            AuraIconButton(
-              icon: Icons.copy_outlined,
-              onPressed: _isSaving
-                  ? null
-                  : () => _duplicateSkill(context, userSkillDetail),
-              tooltip: LocaleKeys.skills_screen_duplicate.tr(context: context),
-            ),
-            AuraIconButton(
-              icon: Icons.delete_outline,
-              onPressed: _isSaving
-                  ? null
-                  : () => _confirmDelete(context, userSkillDetail),
-              tooltip: LocaleKeys.skills_screen_delete.tr(context: context),
-            ),
-          ],
-          if (_isCreate || currentDetail?.isUserSkill == true)
-            AuraIconButton(
-              icon: Icons.save_outlined,
-              onPressed: _isSaving ? null : () => _save(context),
-              tooltip: LocaleKeys.skills_screen_save.tr(context: context),
-            ),
-        ],
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      appBar: _SkillDetailAppBar(
+        isCreate: _isCreate,
+        currentDetail: currentDetail,
+        userSkillDetail: userSkillDetail,
+        isSaving: _isSaving,
+        onDuplicate: (detail) => _duplicateSkill(context, detail),
+        onDelete: (detail) => _confirmDelete(context, detail),
+        onSave: () => _save(context),
+        onBack: () => Navigator.of(context).pop(),
       ),
     );
   }
@@ -316,6 +291,54 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   }
 }
 
+class const _SkillDetailAppBar({
+  required final bool isCreate,
+  required final SkillDetail? currentDetail,
+  required final SkillDetail? userSkillDetail,
+  required final bool isSaving,
+  required final Future<void> Function(SkillDetail) onDuplicate,
+  required final Future<void> Function(SkillDetail) onDelete,
+  required final VoidCallback onSave,
+  required final VoidCallback onBack,
+}) extends StatelessWidget implements PreferredSizeWidget {
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final userSkillDetail = this.userSkillDetail;
+
+    return AuraAppBar(
+      title: TextLocale(
+        isCreate
+            ? LocaleKeys.skills_screen_create_title
+            : LocaleKeys.skills_screen_detail_title,
+      ),
+      actions: [
+        if (!isCreate && userSkillDetail != null) ...[
+          AuraIconButton(
+            icon: Icons.copy_outlined,
+            onPressed: isSaving ? null : () => onDuplicate(userSkillDetail),
+            tooltip: LocaleKeys.skills_screen_duplicate.tr(context: context),
+          ),
+          AuraIconButton(
+            icon: Icons.delete_outline,
+            onPressed: isSaving ? null : () => onDelete(userSkillDetail),
+            tooltip: LocaleKeys.skills_screen_delete.tr(context: context),
+          ),
+        ],
+        if (isCreate || currentDetail?.isUserSkill == true)
+          AuraIconButton(
+            icon: Icons.save_outlined,
+            onPressed: isSaving ? null : onSave,
+            tooltip: LocaleKeys.skills_screen_save.tr(context: context),
+          ),
+      ],
+      leading: AuraIconButton(icon: Icons.arrow_back, onPressed: onBack),
+    );
+  }
+}
+
 class const _SkillDetailForm({
   required final SkillDetail? detail,
   required final String workspaceId,
@@ -440,6 +463,22 @@ class const _SkillDetailForm({
             crossAxisAlignment: .start,
           ),
         ),
+        _SkillDetailRelatedContent(workspaceId: workspaceId, detail: detail),
+      ],
+    );
+  }
+}
+
+class const _SkillDetailRelatedContent({
+  required final String workspaceId,
+  required final SkillDetail? detail,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final detail = this.detail;
+
+    return Column(
+      children: [
         if (detail != null &&
             !detail.isUserSkill &&
             detail.appTools.any((tool) => tool.requiresCredential)) ...[
