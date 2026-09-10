@@ -19,6 +19,12 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'grouped_tools_notifier.g.dart';
 
+typedef _McpGroupOperation = ({
+  ToolsGroupsRepositoryContract repository,
+  ToolsGroupEntity group,
+  bool isCloud,
+});
+
 /// Provider for the tools groups repository.
 @riverpod
 ToolsGroupsRepositoryContract toolsGroupsRepository(
@@ -77,18 +83,12 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
     final operation = await _groupOperation(groupId);
     if (operation == null) return;
 
-    final didUpdate = await operation.repository.setToolsGroupEnabled(
-      groupId,
+    final didUpdate = await _updateMcpGroup(ref, (
+      groupId: groupId,
+      operation: operation,
       isEnabled: isEnabled,
-    );
-    if (!didUpdate) {
-      return;
-    }
-
-    await _syncMcpGroup(ref, operation.group, (
-      isEnabled: isEnabled,
-      isCloud: operation.isCloud,
     ));
+    if (!didUpdate) return;
 
     ref.invalidateSelf();
   }
@@ -124,14 +124,7 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
         .reconnectMcpServer(mcpServerId);
   }
 
-  Future<
-    ({
-      ToolsGroupsRepositoryContract repository,
-      ToolsGroupEntity group,
-      bool isCloud,
-    })?
-  >
-  _groupOperation(String groupId) async {
+  Future<_McpGroupOperation?> _groupOperation(String groupId) async {
     final repository = ref.read(
       toolsGroupsRepositoryProvider(_requiredSession),
     );
@@ -164,6 +157,24 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
 
     return true;
   }
+}
+
+Future<bool> _updateMcpGroup(
+  Ref ref,
+  ({String groupId, _McpGroupOperation operation, bool isEnabled}) request,
+) async {
+  final operation = request.operation;
+  final didUpdate = await operation.repository.setToolsGroupEnabled(
+    request.groupId,
+    isEnabled: request.isEnabled,
+  );
+  if (!didUpdate) return false;
+
+  await _syncMcpGroup(ref, operation.group, (
+    isEnabled: request.isEnabled,
+    isCloud: operation.isCloud,
+  ));
+  return true;
 }
 
 Future<List<ToolsGroupWithTools>> _loadGroupedTools(

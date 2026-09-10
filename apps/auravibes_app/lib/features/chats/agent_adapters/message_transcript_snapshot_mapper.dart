@@ -14,19 +14,41 @@ abstract final class MessageTranscriptSnapshotMapper {
   ) {
     final metadata = message.metadata;
 
+    return _snapshotFor(message, metadata);
+  }
+
+  static AgentTranscriptMessageSnapshot _snapshotFor(
+    MessageEntity message,
+    MessageMetadataEntity? metadata,
+  ) {
+    final data = _snapshotData(message, metadata);
+
     return AgentTranscriptMessageSnapshot(
-      id: message.id,
-      role: _roleFor(message),
-      kind: _kindFor(message),
-      status: _statusFor(message),
-      textCharacterCount: message.content.length,
-      toolCalls: _toolCallSnapshots(metadata),
-      latestCumulativeTokenCount: metadata?.usedTokens,
-      isCompactionSummary: metadata?.isCompactionSummary ?? false,
-      compactedThroughMessageId: metadata?.compactedThroughMessageId,
-      excludedMessageIds: metadata?.compactedMessageIds ?? const [],
+      id: data.id,
+      role: data.role,
+      kind: data.kind,
+      status: data.status,
+      textCharacterCount: data.textCharacterCount,
+      toolCalls: data.toolCalls,
+      latestCumulativeTokenCount: data.latestCumulativeTokenCount,
+      isCompactionSummary: data.isCompactionSummary,
+      compactedThroughMessageId: data.compactedThroughMessageId,
+      excludedMessageIds: data.excludedMessageIds,
     );
   }
+
+  static _SnapshotData _snapshotData(
+    MessageEntity message,
+    MessageMetadataEntity? metadata,
+  ) => _snapshotDataFromDetails(message, _snapshotDetails(metadata));
+
+  static _SnapshotDetails _snapshotDetails(MessageMetadataEntity? metadata) => (
+    toolCalls: _toolCallSnapshots(metadata),
+    latestCumulativeTokenCount: metadata?.usedTokens,
+    isCompactionSummary: metadata?.isCompactionSummary ?? false,
+    compactedThroughMessageId: metadata?.compactedThroughMessageId,
+    excludedMessageIds: metadata?.compactedMessageIds ?? const [],
+  );
 
   static Iterable<MessageToolCallEntity> _toolCallsFor(
     MessageMetadataEntity? metadata,
@@ -67,3 +89,40 @@ abstract final class MessageTranscriptSnapshotMapper {
       ),
   ];
 }
+
+typedef _SnapshotData = ({
+  String id,
+  AgentTranscriptRole role,
+  AgentTranscriptKind kind,
+  AgentTranscriptStatus status,
+  int textCharacterCount,
+  List<AgentTranscriptToolCallSnapshot> toolCalls,
+  int? latestCumulativeTokenCount,
+  bool isCompactionSummary,
+  String? compactedThroughMessageId,
+  List<String> excludedMessageIds,
+});
+
+typedef _SnapshotDetails = ({
+  List<AgentTranscriptToolCallSnapshot> toolCalls,
+  int? latestCumulativeTokenCount,
+  bool isCompactionSummary,
+  String? compactedThroughMessageId,
+  List<String> excludedMessageIds,
+});
+
+_SnapshotData _snapshotDataFromDetails(
+  MessageEntity message,
+  _SnapshotDetails details,
+) => (
+  id: message.id,
+  role: MessageTranscriptSnapshotMapper._roleFor(message),
+  kind: MessageTranscriptSnapshotMapper._kindFor(message),
+  status: MessageTranscriptSnapshotMapper._statusFor(message),
+  textCharacterCount: message.content.length,
+  toolCalls: details.toolCalls,
+  latestCumulativeTokenCount: details.latestCumulativeTokenCount,
+  isCompactionSummary: details.isCompactionSummary,
+  compactedThroughMessageId: details.compactedThroughMessageId,
+  excludedMessageIds: details.excludedMessageIds,
+);

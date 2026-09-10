@@ -7,6 +7,7 @@ part 'tools_group_entity.freezed.dart';
 ///
 /// Tools groups organize related tools together, such as tools from
 /// a single MCP server.
+@immutable
 @freezed
 abstract class const ToolsGroupEntity._() with _$ToolsGroupEntity {
   /// Creates a new ToolsGroupEntity instance.
@@ -37,11 +38,23 @@ abstract class const ToolsGroupEntity._() with _$ToolsGroupEntity {
     String? mcpServerId,
   }) = _ToolsGroupEntity;
 
+  @override
+  int get hashCode;
+
   /// Returns true if this group is linked to an MCP server.
   bool get isMcpGroup => mcpServerId?.isNotEmpty ?? false;
+
+  bool isForWorkspace(String workspaceId) => this.workspaceId == workspaceId;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
 /// Entity for creating/updating tools group settings.
+@immutable
 @freezed
 abstract class const ToolsGroupToCreate._() with _$ToolsGroupToCreate {
   /// Creates a new ToolsGroupToCreate instance.
@@ -59,9 +72,20 @@ abstract class const ToolsGroupToCreate._() with _$ToolsGroupToCreate {
     String? mcpServerId,
   }) = _ToolsGroupToCreate;
 
+  @override
+  int get hashCode;
+
   /// Returns true if the name is valid.
   bool get hasValidName => name.isNotEmpty;
 
   /// Returns true if the configuration is valid.
   bool get isValid => hasValidName;
+
+  bool hasServerLink() => mcpServerId?.isNotEmpty == true;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }

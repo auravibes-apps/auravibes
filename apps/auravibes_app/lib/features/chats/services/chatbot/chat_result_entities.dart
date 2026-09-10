@@ -18,31 +18,9 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
         .toList();
   }
 
-  int get entityPromptTokens => usage?.promptTokens ?? 0;
-
-  int get entityCompletionTokens => usage?.responseTokens ?? 0;
-
-  int get entityTotalTokens {
-    return usage?.totalTokens ?? (entityPromptTokens + entityCompletionTokens);
-  }
-
   String get entityText => output.text;
 
-  String? get entityThinking {
-    final resultThinking = thinking?.trim().isNotEmpty ?? false;
-    final chunks = <String>[
-      if (thinking case final value? when resultThinking) value,
-      if (!resultThinking)
-        for (final part in output.parts)
-          if (part.reasoning case final reasoning?
-              when reasoning.trim().isNotEmpty)
-            reasoning,
-    ];
-
-    if (chunks.isEmpty) return null;
-
-    return chunks.reduce(joinThinking).trim();
-  }
+  String? get entityThinking => _entityThinking(this);
 
   Map<String, dynamic> get entityModelMetadata {
     return <String, dynamic>{...metadata, ...output.metadata}
@@ -50,26 +28,85 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
   }
 
   MessageMetadataEntity? get entityMetadata {
-    if (!_hasEntityMetadata) return null;
-
-    return MessageMetadataEntity(
-      toolCalls: entityTools,
-      promptTokens: usage?.promptTokens,
-      completionTokens: usage?.responseTokens,
-      totalTokens: usage?.totalTokens,
-      thinking: entityThinking,
-      modelMetadata: entityModelMetadata,
-    );
+    return _toEntityMetadata(this);
   }
 
-  bool get _hasEntityMetadata =>
-      entityTools.isNotEmpty ||
-      _hasUsage ||
-      entityThinking != null ||
-      entityModelMetadata.isNotEmpty;
+  int entityPromptTokens() => usage?.promptTokens ?? 0;
 
-  bool get _hasUsage =>
-      usage?.promptTokens != null ||
-      usage?.responseTokens != null ||
-      usage?.totalTokens != null;
+  int entityCompletionTokens() => usage?.responseTokens ?? 0;
+
+  int entityTotalTokens() =>
+      usage?.totalTokens ?? (entityPromptTokens() + entityCompletionTokens());
 }
+
+MessageMetadataEntity? _toEntityMetadata(ChatResult<ChatMessage> result) {
+  final toolCalls = result.entityTools;
+  final thinking = result.entityThinking;
+  final modelMetadata = result.entityModelMetadata;
+  if (!_hasEntityMetadata(toolCalls, thinking, modelMetadata, result)) {
+    return null;
+  }
+
+  return _newEntityMetadata(
+    result,
+    toolCalls: toolCalls,
+    thinking: thinking,
+    modelMetadata: modelMetadata,
+  );
+}
+
+bool _hasEntityMetadata(
+  List<MessageToolCallEntity> toolCalls,
+  String? thinking,
+  Map<String, dynamic> modelMetadata,
+  ChatResult<ChatMessage> result,
+) =>
+    toolCalls.isNotEmpty ||
+    _hasUsage(result) ||
+    thinking != null ||
+    modelMetadata.isNotEmpty;
+
+MessageMetadataEntity _newEntityMetadata(
+  ChatResult<ChatMessage> result, {
+  required List<MessageToolCallEntity> toolCalls,
+  required String? thinking,
+  required Map<String, dynamic> modelMetadata,
+}) => MessageMetadataEntity(
+  toolCalls: toolCalls,
+  promptTokens: result.usage?.promptTokens,
+  completionTokens: result.usage?.responseTokens,
+  totalTokens: result.usage?.totalTokens,
+  thinking: thinking,
+  modelMetadata: modelMetadata,
+);
+
+bool _hasUsage(ChatResult<ChatMessage> result) =>
+    result.usage?.promptTokens != null ||
+    result.usage?.responseTokens != null ||
+    result.usage?.totalTokens != null;
+
+String? _entityThinking(ChatResult<ChatMessage> result) {
+  final chunks = _thinkingChunks(result);
+  if (chunks.isEmpty) return null;
+
+  return chunks.reduce(joinThinking).trim();
+}
+
+List<String> _thinkingChunks(ChatResult<ChatMessage> result) => [
+  ..._resultThinking(result),
+  ..._partThinking(result),
+];
+
+List<String> _resultThinking(ChatResult<ChatMessage> result) {
+  final thinking = result.thinking;
+  if (thinking == null || thinking.trim().isEmpty) return [];
+
+  return [thinking];
+}
+
+List<String> _partThinking(ChatResult<ChatMessage> result) => [
+  if (result.thinking?.trim().isEmpty ?? true)
+    for (final part in result.output.parts)
+      if (part.reasoning case final reasoning? when reasoning.trim().isNotEmpty)
+        reasoning,
+];

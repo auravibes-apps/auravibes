@@ -14,7 +14,7 @@ class const CloudAccountUseCases({
   invalidateAccount,
 }) {}
 
-extension on CloudAccountUseCases {
+extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
   Future<CloudAccountSession> login({
     required String email,
     required String password,
@@ -64,7 +64,7 @@ extension on CloudAccountUseCases {
   }
 }
 
-extension on CloudAccountUseCases {
+extension CloudAccountUseCasesPasswordRecovery on CloudAccountUseCases {
   Future<UuidValue> startRegistration({required String email}) {
     return _newCloudClient().emailIdp.startRegistration(email: email);
   }

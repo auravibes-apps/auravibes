@@ -159,13 +159,10 @@ ToolSpec? _appSkillToolSpec(
   AppSkillToolDefinition tool,
   List<AppSkillCredentialCandidate> candidates,
 ) {
+  final name = _appSkillToolName(skill, tool);
   return materializeSkillTool(
     .new(
-      name: AgentResolvedToolName.skillNative(
-        tableId: tool.slug,
-        skillSlug: skill.slug,
-        toolIdentifier: tool.slug,
-      ).fullName,
+      name: name,
       description: tool.description,
       schema: tool.inputJsonSchema,
       requiresCredential: tool.requiresCredential,
@@ -173,6 +170,15 @@ ToolSpec? _appSkillToolSpec(
     ),
   );
 }
+
+String _appSkillToolName(
+  AppSkillDefinition skill,
+  AppSkillToolDefinition tool,
+) => AgentResolvedToolName.skillNative(
+  tableId: tool.slug,
+  skillSlug: skill.slug,
+  toolIdentifier: tool.slug,
+).fullName;
 
 final buildAppSkillNativeToolSpecsUsecaseProvider =
     Provider<BuildAppSkillNativeToolSpecsUsecase>((ref) {

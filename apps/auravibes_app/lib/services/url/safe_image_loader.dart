@@ -18,28 +18,45 @@ class SafeImageLoader({
   Future<Uint8List> load(String url) => _loadImage(this, url);
 }
 
-Future<Uint8List> _loadImage(SafeImageLoader loader, String url) async {
+Future<Uint8List> _loadImage(SafeImageLoader loader, String url) {
   final client = loader._dio ?? _pinnedClient();
-  final cancellation = CancelToken();
-  StreamIterator<Uint8List>? activeBody;
+
+  return _loadWithClient(loader, url, client);
+}
+
+Future<Uint8List> _loadWithClient(
+  SafeImageLoader loader,
+  String url,
+  Dio client,
+) async {
+  final state = _imageLoadState(loader, url, client);
 
   try {
-    return await _fetchImage((
-      client: client,
-      url: url,
-      cancellation: cancellation,
-      timeout: loader.timeout,
-      onActiveBodyChanged: (value) => activeBody = value,
-    )).timeout(loader.timeout);
+    return await _fetchImage(_fetchRequest(state)).timeout(loader.timeout);
   } finally {
-    await _cleanupImage((
-      client: client,
-      cancellation: cancellation,
-      activeBody: activeBody,
-      closeClient: loader._dio == null,
-    ));
+    await _cleanupImage(_cleanupRequest(state));
   }
 }
+
+_ImageLoadState _imageLoadState(
+  SafeImageLoader loader,
+  String url,
+  Dio client,
+) => (
+  loader: loader,
+  url: url,
+  client: client,
+  cancellation: CancelToken(),
+  activeBody: _ActiveImageBody(),
+);
+
+typedef _ImageLoadState = ({
+  SafeImageLoader loader,
+  String url,
+  Dio client,
+  CancelToken cancellation,
+  _ActiveImageBody activeBody,
+});
 
 typedef _ImageFetchRequest = ({
   Dio client,
@@ -71,29 +88,69 @@ typedef _RedirectRequest = ({
   void Function(StreamIterator<Uint8List>?) onActiveBodyChanged,
 });
 
-Future<Uint8List> _fetchImage(_ImageFetchRequest request) async {
-  var destination = request.url;
-  for (var redirects = 0; ; redirects++) {
-    final fetched = await _fetchResponse((
-      client: request.client,
-      destination: destination,
-      cancellation: request.cancellation,
-      timeout: request.timeout,
-    ));
-    request.onActiveBodyChanged(fetched.stream);
-    if (!_isRedirect(fetched.response.statusCode)) {
-      _ensureSuccess(fetched.response.statusCode);
+_ImageFetchRequest _fetchRequest(_ImageLoadState state) => (
+  client: state.client,
+  url: state.url,
+  cancellation: state.cancellation,
+  timeout: state.loader.timeout,
+  onActiveBodyChanged: (next) => state.activeBody.value = next,
+);
 
-      return _readBody(fetched.response, fetched.stream);
-    }
-    destination = await _followRedirect((
-      uri: fetched.uri,
-      response: fetched.response,
-      redirects: redirects,
-      stream: fetched.stream,
-      onActiveBodyChanged: request.onActiveBodyChanged,
-    ));
+_ImageCleanupRequest _cleanupRequest(_ImageLoadState state) => (
+  client: state.client,
+  cancellation: state.cancellation,
+  activeBody: state.activeBody.value,
+  closeClient: state.loader._dio == null,
+);
+
+Future<Uint8List> _fetchImage(_ImageFetchRequest request) =>
+    _fetchImageAt(request, request.url, 0);
+
+Future<Uint8List> _fetchImageAt(
+  _ImageFetchRequest request,
+  String destination,
+  int redirects,
+) async {
+  final fetched = await _fetchResponse(_imageRequest(request, destination));
+  request.onActiveBodyChanged(fetched.stream);
+  if (_isRedirect(fetched.response.statusCode)) {
+    return await _fetchRedirected(request, fetched, redirects);
   }
+
+  return await _readFetchedImage(fetched);
+}
+
+_ImageRequest _imageRequest(_ImageFetchRequest request, String destination) => (
+  client: request.client,
+  destination: destination,
+  cancellation: request.cancellation,
+  timeout: request.timeout,
+);
+
+Future<Uint8List> _fetchRedirected(
+  _ImageFetchRequest request,
+  ({Uri uri, Response<ResponseBody> response, StreamIterator<Uint8List> stream})
+  fetched,
+  int redirects,
+) async {
+  final nextDestination = await _followRedirect((
+    uri: fetched.uri,
+    response: fetched.response,
+    redirects: redirects,
+    stream: fetched.stream,
+    onActiveBodyChanged: request.onActiveBodyChanged,
+  ));
+
+  return await _fetchImageAt(request, nextDestination, redirects + 1);
+}
+
+Future<Uint8List> _readFetchedImage(
+  ({Uri uri, Response<ResponseBody> response, StreamIterator<Uint8List> stream})
+  fetched,
+) {
+  _ensureSuccess(fetched.response.statusCode);
+
+  return _readBody(fetched.response, fetched.stream);
 }
 
 Future<
@@ -135,52 +192,74 @@ void _ensureSuccess(int? status) {
 }
 
 Future<String> _followRedirect(_RedirectRequest request) async {
+  final location = _redirectLocation(request);
+  // Same relative-resolution and public HTTPS guard as UrlService.
+  final destination = request.uri.resolve(location).toString();
+  await _cancelRedirectStream(request);
+
+  return destination;
+}
+
+String _redirectLocation(_RedirectRequest request) {
   final location = request.response.headers.value('location');
   if (location == null ||
       location.isEmpty ||
       request.redirects >= SafeImageLoader.maxRedirects) {
     throw const FormatException('Invalid image redirect');
   }
-  // Same relative-resolution and public HTTPS guard as UrlService.
-  final destination = request.uri.resolve(location).toString();
+
+  return location;
+}
+
+Future<void> _cancelRedirectStream(_RedirectRequest request) async {
   final _ = await request.stream.cancel();
   request.onActiveBodyChanged(null);
-
-  return destination;
 }
 
 Future<Uint8List> _readBody(
   Response<ResponseBody> response,
   StreamIterator<Uint8List> stream,
 ) async {
-  final length = int.tryParse(
-    response.headers.value(Headers.contentLengthHeader) ?? '',
-  );
-  if (length != null && length > SafeImageLoader.maxBytes) {
-    throw const FormatException('Image exceeds byte limit');
-  }
+  _ensureBodyLength(response);
   final bytes = await _readChunks(stream);
   if (bytes.isEmpty) throw const FormatException('Empty image body');
 
   return bytes.takeBytes();
 }
 
+void _ensureBodyLength(Response<ResponseBody> response) {
+  final length = int.tryParse(
+    response.headers.value(Headers.contentLengthHeader) ?? '',
+  );
+  if (length != null && length > SafeImageLoader.maxBytes) {
+    throw const FormatException('Image exceeds byte limit');
+  }
+}
+
 Future<BytesBuilder> _readChunks(StreamIterator<Uint8List> stream) async {
   final bytes = BytesBuilder(copy: false);
   while (await stream.moveNext()) {
-    final chunk = stream.current;
-    if (chunk.length > SafeImageLoader.maxBytes - bytes.length) {
-      throw const FormatException('Image exceeds byte limit');
-    }
-    bytes.add(chunk);
+    _addChunk(bytes, stream.current);
   }
+
   return bytes;
+}
+
+void _addChunk(BytesBuilder bytes, Uint8List chunk) {
+  if (chunk.length > SafeImageLoader.maxBytes - bytes.length) {
+    throw const FormatException('Image exceeds byte limit');
+  }
+  bytes.add(chunk);
 }
 
 Future<void> _cleanupImage(_ImageCleanupRequest request) async {
   request.cancellation.cancel();
   final _ = await request.activeBody?.cancel();
   if (request.closeClient) request.client.close(force: true);
+}
+
+class _ActiveImageBody {
+  StreamIterator<Uint8List>? value;
 }
 
 Dio _pinnedClient() => Dio()

@@ -6,14 +6,17 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:crypto/crypto.dart';
 import 'package:uuid/v7.dart';
 
-typedef BeginCloudAttachmentUpload = Future<BeginUploadResult> Function({
-  required String requestId,
-  required String purpose,
-  required String displayName,
-  required String mimeType,
-  required int sizeBytes,
-  required String checksumSha256,
-});
+typedef BeginCloudAttachmentUpload = Future<BeginUploadResult> Function(
+  ({
+    String requestId,
+    String purpose,
+    String displayName,
+    String mimeType,
+    int sizeBytes,
+    String checksumSha256,
+  })
+  request,
+);
 typedef UploadCloudAttachmentBytes = Future<void> Function(
   BeginUploadResult upload,
   Uint8List bytes,
@@ -144,14 +147,14 @@ extension on CloudChatAttachmentUsecase {
     MessageAttachmentToCreate attachment,
     int sizeBytes,
     String checksum,
-  ) => _beginUpload(
+  ) => _beginUpload((
     requestId: const UuidV7().generate(),
     purpose: 'message_attachment',
     displayName: attachment.displayName,
     mimeType: attachment.mimeType,
     sizeBytes: sizeBytes,
     checksumSha256: checksum,
-  );
+  ));
 
   Future<ObjectResult> _completeAttachmentUpload(
     BeginUploadResult upload,

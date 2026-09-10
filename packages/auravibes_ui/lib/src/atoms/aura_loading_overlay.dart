@@ -70,145 +70,195 @@ class const _AuraLoadingOverlayView({
   required final String? semanticLabel,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final overlay = _AuraLoadingOverlayLayer(
-      message: message,
-      backgroundColor: backgroundColor,
-      spinnerSize: spinnerSize,
-      spinnerTint: spinnerTint,
-      spinnerColor: spinnerColor,
-      semanticLabel: semanticLabel,
-    );
-    final child = this.child;
-
-    return child == null ? overlay : Stack(children: [child, overlay]);
-  }
-}
-
-class const _AuraLoadingOverlayLayer({
-  required final String? message,
-  required final Color? backgroundColor,
-  required final AuraSpinnerSize spinnerSize,
-  required final AuraTint? spinnerTint,
-  required final Color? spinnerColor,
-  required final String? semanticLabel,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.auraColors;
-
-    return Semantics(
-      child: ColoredBox(
-        color: backgroundColor ?? colors.scrim,
-        child: Center(
-          child: _AuraLoadingPanel(
-            message: message,
-            spinnerSize: spinnerSize,
-            spinnerTint: spinnerTint,
-            spinnerColor: spinnerColor,
-          ),
-        ),
-      ),
-      container: true,
-      liveRegion: true,
-      label: semanticLabel ?? message ?? 'Loading',
-    );
-  }
-}
-
-class const _AuraLoadingPanel({
-  required final String? message,
-  required final AuraSpinnerSize spinnerSize,
-  required final AuraTint? spinnerTint,
-  required final Color? spinnerColor,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.auraTheme;
-    final colors = context.auraColors;
-
-    return Container(
-      padding: EdgeInsets.all(theme.fromSpacing(.xl)),
-      decoration: _loadingPanelDecoration(colors, theme),
-      child: _AuraLoadingPanelContent(
-        message: message,
-        spinnerSize: spinnerSize,
-        spinnerTint: spinnerTint,
-        spinnerColor: spinnerColor,
-      ),
-    );
-  }
-}
-
-class const _AuraLoadingPanelContent({
-  required final String? message,
-  required final AuraSpinnerSize spinnerSize,
-  required final AuraTint? spinnerTint,
-  required final Color? spinnerColor,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final message = this.message;
-    if (message == null) {
-      return AuraSpinner(
-        size: spinnerSize,
-        tint: spinnerTint,
-        color: spinnerColor,
-      );
-    }
-
-    return _AuraLoadingMessage(
-      message: message,
-      spinnerSize: spinnerSize,
-      spinnerTint: spinnerTint,
-      spinnerColor: spinnerColor,
-    );
-  }
-}
-
-class const _AuraLoadingMessage({
-  required final String message,
-  required final AuraSpinnerSize spinnerSize,
-  required final AuraTint? spinnerTint,
-  required final Color? spinnerColor,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _AuraLoadingMessageBody(
-    message: message,
-    spinnerSize: spinnerSize,
-    spinnerTint: spinnerTint,
-    spinnerColor: spinnerColor,
+  Widget build(BuildContext context) => _AuraLoadingOverlayFrame.fromView(
+    view: this,
     theme: context.auraTheme,
     colors: context.auraColors,
   );
 }
 
-class const _AuraLoadingMessageBody({
-  required final String message,
-  required final AuraSpinnerSize spinnerSize,
-  required final AuraTint? spinnerTint,
-  required final Color? spinnerColor,
-  required final AuraTheme theme,
-  required final AuraColorScheme colors,
+class _AuraLoadingOverlayFrame extends StatelessWidget {
+  _AuraLoadingOverlayFrame.fromView({
+    required _AuraLoadingOverlayView view,
+    required AuraTheme theme,
+    required AuraColorScheme colors,
+  }) : _child = _AuraLoadingOverlayStack(
+         child: view.child,
+         overlay: _AuraLoadingOverlayLayer(
+           message: view.message,
+           backgroundColor: view.backgroundColor,
+           spinnerSize: view.spinnerSize,
+           spinnerTint: view.spinnerTint,
+           spinnerColor: view.spinnerColor,
+           semanticLabel: view.semanticLabel,
+           theme: theme,
+           colors: colors,
+         ),
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AuraLoadingOverlayStack({
+  required final Widget? child,
+  required final Widget overlay,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final typography = theme.typography;
+    final child = this.child;
+    if (child == null) return overlay;
 
-    return Column(
-      mainAxisAlignment: .center,
-      mainAxisSize: .min,
-      children: [
-        AuraSpinner(size: spinnerSize, tint: spinnerTint, color: spinnerColor),
-        SizedBox(height: theme.fromSpacing(.md)),
-        _AuraLoadingMessageText(
-          message: message,
-          color: colors.onSurfaceVariant,
-          typography: typography,
-        ),
-      ],
-    );
+    return Stack(children: [child, overlay]);
   }
+}
+
+class _AuraLoadingOverlayLayer extends StatelessWidget {
+  _AuraLoadingOverlayLayer({
+    required String? message,
+    required Color? backgroundColor,
+    required AuraSpinnerSize spinnerSize,
+    required AuraTint? spinnerTint,
+    required Color? spinnerColor,
+    required String? semanticLabel,
+    required AuraTheme theme,
+    required AuraColorScheme colors,
+  }) : _child = Semantics(
+         child: ColoredBox(
+           color: backgroundColor ?? colors.scrim,
+           child: Center(
+             child: _AuraLoadingPanel(
+               message: message,
+               spinnerSize: spinnerSize,
+               spinnerTint: spinnerTint,
+               spinnerColor: spinnerColor,
+               theme: theme,
+               colors: colors,
+             ),
+           ),
+         ),
+         container: true,
+         liveRegion: true,
+         label: semanticLabel ?? message ?? 'Loading',
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class _AuraLoadingPanel extends StatelessWidget {
+  _AuraLoadingPanel({
+    required String? message,
+    required AuraSpinnerSize spinnerSize,
+    required AuraTint? spinnerTint,
+    required Color? spinnerColor,
+    required AuraTheme theme,
+    required AuraColorScheme colors,
+  }) : _child = Container(
+         padding: EdgeInsets.all(theme.fromSpacing(.xl)),
+         decoration: _loadingPanelDecoration(colors, theme),
+         child: _AuraLoadingPanelContent(
+           message: message,
+           spinnerSize: spinnerSize,
+           spinnerTint: spinnerTint,
+           spinnerColor: spinnerColor,
+           theme: theme,
+           colors: colors,
+         ),
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class _AuraLoadingPanelContent extends StatelessWidget {
+  _AuraLoadingPanelContent({
+    required String? message,
+    required AuraSpinnerSize spinnerSize,
+    required AuraTint? spinnerTint,
+    required Color? spinnerColor,
+    required AuraTheme theme,
+    required AuraColorScheme colors,
+  }) : _child = message == null
+           ? AuraSpinner(
+               size: spinnerSize,
+               tint: spinnerTint,
+               color: spinnerColor,
+             )
+           : _AuraLoadingMessage(
+               message: message,
+               spinnerSize: spinnerSize,
+               spinnerTint: spinnerTint,
+               spinnerColor: spinnerColor,
+               theme: theme,
+               colors: colors,
+             );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class _AuraLoadingMessage extends StatelessWidget {
+  _AuraLoadingMessage({
+    required String message,
+    required AuraSpinnerSize spinnerSize,
+    required AuraTint? spinnerTint,
+    required Color? spinnerColor,
+    required AuraTheme theme,
+    required AuraColorScheme colors,
+  }) : _child = _AuraLoadingMessageBody(
+         message: message,
+         spinnerSize: spinnerSize,
+         spinnerTint: spinnerTint,
+         spinnerColor: spinnerColor,
+         theme: theme,
+         colors: colors,
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class _AuraLoadingMessageBody extends StatelessWidget {
+  _AuraLoadingMessageBody({
+    required String message,
+    required AuraSpinnerSize spinnerSize,
+    required AuraTint? spinnerTint,
+    required Color? spinnerColor,
+    required AuraTheme theme,
+    required AuraColorScheme colors,
+  }) : _child = Column(
+         mainAxisAlignment: .center,
+         mainAxisSize: .min,
+         children: [
+           AuraSpinner(
+             size: spinnerSize,
+             tint: spinnerTint,
+             color: spinnerColor,
+           ),
+           SizedBox(height: theme.fromSpacing(.md)),
+           _AuraLoadingMessageText(
+             message: message,
+             color: colors.onSurfaceVariant,
+             typography: theme.typography,
+           ),
+         ],
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 BoxDecoration _loadingPanelDecoration(

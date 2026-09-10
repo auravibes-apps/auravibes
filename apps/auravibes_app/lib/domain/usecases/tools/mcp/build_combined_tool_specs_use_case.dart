@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 class const BuildCombinedToolSpecsUseCase({
@@ -51,15 +52,7 @@ class const BuildCombinedToolSpecsUseCase({
     final userTool = ToolService.getTool(toolType);
     if (userTool == null) return null;
 
-    return ToolCatalogCandidate.external(
-      spec: userTool.getTool(),
-      target: ResolvedTool.builtIn(
-        tableId: workspaceTool.id,
-        toolIdentifier: workspaceTool.toolId,
-        tooltype: toolType,
-      ),
-      sourceId: 'user:${workspaceTool.id}',
-    );
+    return _builtInCandidate(workspaceTool, toolType, userTool);
   }
 
   ToolCatalogCandidate<ResolvedTool>? _buildNativeCandidate(
@@ -92,7 +85,7 @@ class const BuildCombinedToolSpecsUseCase({
     final mcpServerId = toolGroup?.mcpServerId;
     if (mcpServerId == null) return null;
 
-    return _buildMcpServerCandidate(workspaceTool, mcpServerId);
+    return await _buildMcpServerCandidate(workspaceTool, mcpServerId);
   }
 
   Future<ToolCatalogCandidate<ResolvedTool>?> _buildMcpServerCandidate(
@@ -113,25 +106,70 @@ class const BuildCombinedToolSpecsUseCase({
     String mcpServerId,
     ToolSpec originalSpec,
   ) {
-    final legacyTarget = const AgentToolNameResolver().resolve(
-      originalSpec.name,
-    );
     // Ponytail: Legacy spec names carry slug; server ID is safe fallback.
-    final mcpSlug = legacyTarget?.mcpSlug ?? mcpServerId;
+    final mcpSlug = _mcpSlug(originalSpec, mcpServerId);
 
-    return ToolCatalogCandidate.external(
-      spec: .new(
-        name: 'mcp_${workspaceTool.toolId}',
-        description: originalSpec.description,
-        inputJsonSchema: originalSpec.inputJsonSchema,
-      ),
-      target: ResolvedTool.mcp(
-        tableId: workspaceTool.id,
-        toolIdentifier: workspaceTool.toolId,
-        mcpServerId: mcpServerId,
-        mcpSlug: mcpSlug,
-      ),
-      sourceId: 'mcp:$mcpServerId:${workspaceTool.id}:${workspaceTool.toolId}',
-    );
+    return _mcpCandidate((
+      workspaceTool: workspaceTool,
+      mcpServerId: mcpServerId,
+      originalSpec: originalSpec,
+      mcpSlug: mcpSlug,
+    ));
   }
+}
+
+ToolCatalogCandidate<ResolvedTool> _builtInCandidate(
+  WorkspaceToolEntity workspaceTool,
+  UserToolType toolType,
+  UserToolEntity<Object, Object, Object> userTool,
+) => ToolCatalogCandidate.external(
+  spec: userTool.getTool(),
+  target: ResolvedTool.builtIn(
+    tableId: workspaceTool.id,
+    toolIdentifier: workspaceTool.toolId,
+    tooltype: toolType,
+  ),
+  sourceId: 'user:${workspaceTool.id}',
+);
+
+ResolvedTool _mcpTarget(
+  WorkspaceToolEntity workspaceTool,
+  String mcpServerId,
+  String mcpSlug,
+) => ResolvedTool.mcp(
+  tableId: workspaceTool.id,
+  toolIdentifier: workspaceTool.toolId,
+  mcpServerId: mcpServerId,
+  mcpSlug: mcpSlug,
+);
+
+ToolSpec _mcpSpec(WorkspaceToolEntity workspaceTool, ToolSpec originalSpec) =>
+    .new(
+      name: 'mcp_${workspaceTool.toolId}',
+      description: originalSpec.description,
+      inputJsonSchema: originalSpec.inputJsonSchema,
+    );
+
+String _mcpSlug(ToolSpec originalSpec, String mcpServerId) {
+  final legacyTarget = const AgentToolNameResolver().resolve(originalSpec.name);
+  return legacyTarget?.mcpSlug ?? mcpServerId;
+}
+
+ToolCatalogCandidate<ResolvedTool> _mcpCandidate(
+  ({
+    WorkspaceToolEntity workspaceTool,
+    String mcpServerId,
+    ToolSpec originalSpec,
+    String mcpSlug,
+  })
+  request,
+) {
+  final workspaceTool = request.workspaceTool;
+
+  return ToolCatalogCandidate.external(
+    spec: _mcpSpec(workspaceTool, request.originalSpec),
+    target: _mcpTarget(workspaceTool, request.mcpServerId, request.mcpSlug),
+    sourceId:
+        'mcp:${request.mcpServerId}:${workspaceTool.id}:${workspaceTool.toolId}',
+  );
 }

@@ -144,27 +144,45 @@ class const _AuroraBlobLayer() extends StatelessWidget {
 
     return Stack(
       children: [
-        _AuroraBlobPlacement(
-          left: _AuroraBackground._outerOffset,
-          top: _AuroraBackground._outerOffset,
-          color: colors.primary.withAlpha(_AuroraBackground._primaryAlpha),
-          size: _AuroraBackground._topBlobSize,
-        ),
-        _AuroraBlobPlacement(
-          top: 200,
-          right: _AuroraBackground._outerOffset,
-          color: colors.secondary.withAlpha(_AuroraBackground._primaryAlpha),
-          size: _AuroraBackground._rightBlobSize,
-        ),
-        _AuroraBlobPlacement(
-          left: _AuroraBackground._bottomOffset,
-          bottom: _AuroraBackground._bottomOffset,
-          color: colors.primary.withAlpha(_AuroraBackground._accentAlpha),
-          size: _AuroraBackground._bottomBlobSize,
-        ),
+        _AuroraTopBlob(colors: colors),
+        _AuroraRightBlob(colors: colors),
+        _AuroraBottomBlob(colors: colors),
       ],
     );
   }
+}
+
+class const _AuroraTopBlob({required final AuraColorScheme colors})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuroraBlobPlacement(
+    color: colors.primary.withAlpha(_AuroraBackground._primaryAlpha),
+    size: _AuroraBackground._topBlobSize,
+    left: _AuroraBackground._outerOffset,
+    top: _AuroraBackground._outerOffset,
+  );
+}
+
+class const _AuroraRightBlob({required final AuraColorScheme colors})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuroraBlobPlacement(
+    color: colors.secondary.withAlpha(_AuroraBackground._primaryAlpha),
+    size: _AuroraBackground._rightBlobSize,
+    right: _AuroraBackground._outerOffset,
+    top: 200,
+  );
+}
+
+class const _AuroraBottomBlob({required final AuraColorScheme colors})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuroraBlobPlacement(
+    color: colors.primary.withAlpha(_AuroraBackground._accentAlpha),
+    size: _AuroraBackground._bottomBlobSize,
+    left: _AuroraBackground._bottomOffset,
+    bottom: _AuroraBackground._bottomOffset,
+  );
 }
 
 class const _AuroraBlobPlacement({
@@ -178,8 +196,8 @@ class const _AuroraBlobPlacement({
   @override
   Widget build(BuildContext context) => Positioned(
     left: left,
-    right: right,
     top: top,
+    right: right,
     bottom: bottom,
     child: _Blob(color: color, size: size),
   );

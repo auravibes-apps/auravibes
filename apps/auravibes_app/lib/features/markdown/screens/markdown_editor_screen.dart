@@ -77,36 +77,21 @@ class const _MarkdownEditorView({
   required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    return AuraScreen(
-      child: _MarkdownEditorBody(
-        controller: controller,
-        focusNode: focusNode,
-        isFocused: isFocused,
-      ),
-      appBar: _MarkdownEditorAppBar(
-        controller: controller,
-        maxCharacters: maxCharacters,
-        onUnfocus: onUnfocus,
-        onCancel: onCancel,
-        onSave: onSave,
-      ),
-    );
-  }
+  Widget build(BuildContext _) => AuraScreen(
+    child: _MarkdownEditorBody(view: this),
+    appBar: _MarkdownEditorAppBar(view: this),
+  );
 }
 
-class const _MarkdownEditorBody({
-  required final TextEditingController controller,
-  required final FocusNode focusNode,
-  required final bool isFocused,
-}) extends StatelessWidget {
+class const _MarkdownEditorBody({required final _MarkdownEditorView view})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
     return TextFieldTapRegion(
       child: _MarkdownEditorSurface(
-        controller: controller,
-        focusNode: focusNode,
-        isFocused: isFocused,
+        controller: view.controller,
+        focusNode: view.focusNode,
+        isFocused: view.isFocused,
       ),
     );
   }
@@ -204,17 +189,25 @@ class const _MarkdownEditorInputList({
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.symmetric(vertical: 12),
     children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: AuraColumn(
-          children: [
-            _MarkdownTextField(controller: controller, focusNode: focusNode),
-          ],
-          spacing: .md,
-          crossAxisAlignment: .start,
-        ),
-      ),
+      _MarkdownEditorInputContent(controller: controller, focusNode: focusNode),
     ],
+  );
+}
+
+class const _MarkdownEditorInputContent({
+  required final TextEditingController controller,
+  required final FocusNode focusNode,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: AuraColumn(
+      children: [
+        _MarkdownTextField(controller: controller, focusNode: focusNode),
+      ],
+      spacing: .md,
+      crossAxisAlignment: .start,
+    ),
   );
 }
 
@@ -287,37 +280,37 @@ class const _MarkdownEditorToolbar({
   }
 }
 
-class const _MarkdownEditorAppBar({
-  required final TextEditingController controller,
-  required final int? maxCharacters,
-  required final VoidCallback onUnfocus,
-  required final VoidCallback onCancel,
-  required final VoidCallback onSave,
-}) extends StatelessWidget implements PreferredSizeWidget {
+class _MarkdownEditorAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
+  new({required _MarkdownEditorView view})
+    : _maxCharacters = view.maxCharacters,
+      _appBar = AuraAppBar(
+        title: _MarkdownEditorTitle(onUnfocus: view.onUnfocus),
+        actions: [
+          _MarkdownSaveButton(
+            controller: view.controller,
+            maxCharacters: view.maxCharacters,
+            onSave: view.onSave,
+          ),
+        ],
+        bottom: _MarkdownOptionalLimitCounter(
+          controller: view.controller,
+          maxCharacters: view.maxCharacters,
+          onTap: view.onUnfocus,
+        ),
+        leading: _MarkdownEditorCancelButton(onCancel: view.onCancel),
+      );
+
+  final int? _maxCharacters;
+  final AuraAppBar _appBar;
+
   @override
   Size get preferredSize => Size.fromHeight(
-    kToolbarHeight + (maxCharacters == null ? 0 : _limitCounterHeight),
+    kToolbarHeight + (_maxCharacters == null ? 0 : _limitCounterHeight),
   );
 
   @override
-  Widget build(BuildContext context) {
-    return AuraAppBar(
-      title: _MarkdownEditorTitle(onUnfocus: onUnfocus),
-      actions: [
-        _MarkdownSaveButton(
-          controller: controller,
-          maxCharacters: maxCharacters,
-          onSave: onSave,
-        ),
-      ],
-      bottom: _MarkdownOptionalLimitCounter(
-        controller: controller,
-        maxCharacters: maxCharacters,
-        onTap: onUnfocus,
-      ),
-      leading: _MarkdownEditorCancelButton(onCancel: onCancel),
-    );
-  }
+  Widget build(BuildContext context) => _appBar;
 }
 
 class const _MarkdownSaveButton({

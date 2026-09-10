@@ -7,6 +7,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+typedef _AgentSheetHookState = ({
+  TextEditingController controller,
+  List<AgentEntity> agents,
+  ValueChanged<String> onSearchChanged,
+});
+
+_AgentSheetHookState _useAgentSheetState(List<AgentEntity> agents) {
+  final controller = useTextEditingController();
+  final searchValue = useState<String>('');
+
+  return (
+    controller: controller,
+    agents: _filterAgents(agents, searchValue.value),
+    onSearchChanged: (value) => searchValue.value = value,
+  );
+}
+
 class const CompactAgentSelector({
   required final String workspaceId,
   required final String? agentId,
@@ -29,33 +46,35 @@ class const CompactAgentSelector({
   }
 }
 
-class const _CompactAgentSelectorContent({
-  required final AsyncValue<List<AgentEntity>> agentsAsync,
-  required final String? agentId,
-  required final ValueChanged<String?> onChanged,
-  required final bool compactMode,
-  required final bool sheetMode,
-}) extends StatelessWidget {
+class _CompactAgentSelectorContent extends StatelessWidget {
+  const new({
+    required this.agentsAsync,
+    required this.agentId,
+    required this.onChanged,
+    required this.compactMode,
+    required this.sheetMode,
+  });
+
+  final AsyncValue<List<AgentEntity>> agentsAsync;
+  final String? agentId;
+  final ValueChanged<String?> onChanged;
+  final bool compactMode;
+  final bool sheetMode;
+
   @override
-  Widget build(BuildContext context) {
-    if (sheetMode) {
-      return _AgentSheetMode(
-        agentsAsync: agentsAsync,
-        agentId: agentId,
-        onChanged: onChanged,
-      );
-    }
-
-    if (compactMode) {
-      return _AgentCompactMode(agentsAsync: agentsAsync, agentId: agentId);
-    }
-
-    return _AgentDropdownMode(
-      agentsAsync: agentsAsync,
-      agentId: agentId,
-      onChanged: onChanged,
-    );
-  }
+  Widget build(BuildContext _) => sheetMode
+      ? _AgentSheetMode(
+          agentsAsync: agentsAsync,
+          agentId: agentId,
+          onChanged: onChanged,
+        )
+      : compactMode
+      ? _AgentCompactMode(agentsAsync: agentsAsync, agentId: agentId)
+      : _AgentDropdownMode(
+          agentsAsync: agentsAsync,
+          agentId: agentId,
+          onChanged: onChanged,
+        );
 }
 
 class const _AgentSheetMode({
@@ -77,28 +96,32 @@ class const _AgentSheetMode({
   };
 }
 
-class const _AgentCompactMode({
-  required final AsyncValue<List<AgentEntity>> agentsAsync,
-  required final String? agentId,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => switch (agentsAsync) {
-    AsyncLoading() => const _AgentChip(label: AuraSpinner(size: .small)),
-    AsyncError() => const _AgentChip(
-      label: TextLocale(LocaleKeys.agents_selector_placeholder),
-    ),
-    AsyncData(:final value) => _AgentChip(
-      label: switch (_selectedAgentName(value, agentId)) {
-        null => const TextLocale(
-          LocaleKeys.agents_selector_none,
-          softWrap: false,
-          overflow: .ellipsis,
-          maxLines: 1,
+class _AgentCompactMode extends StatelessWidget {
+  _AgentCompactMode({required this.agentsAsync, required this.agentId})
+    : _child = switch (agentsAsync) {
+        AsyncLoading() => const _AgentChip(label: AuraSpinner(size: .small)),
+        AsyncError() => const _AgentChip(
+          label: TextLocale(LocaleKeys.agents_selector_placeholder),
         ),
-        final name => Text(name, overflow: .ellipsis, maxLines: 1),
-      },
-    ),
-  };
+        AsyncData(:final value) => _AgentChip(
+          label: switch (_selectedAgentName(value, agentId)) {
+            null => const TextLocale(
+              LocaleKeys.agents_selector_none,
+              softWrap: false,
+              overflow: .ellipsis,
+              maxLines: 1,
+            ),
+            final name => Text(name, overflow: .ellipsis, maxLines: 1),
+          },
+        ),
+      };
+
+  final AsyncValue<List<AgentEntity>> agentsAsync;
+  final String? agentId;
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext _) => _child;
 }
 
 class const _AgentDropdownMode({
@@ -117,25 +140,33 @@ class const _AgentDropdownMode({
   );
 }
 
-class const _AgentDropdownStateView({
-  required final AsyncValue<List<AgentEntity>> agentsAsync,
-  required final String? agentId,
-  required final ValueChanged<String?> onChanged,
-}) extends StatelessWidget {
+class _AgentDropdownStateView extends StatelessWidget {
+  _AgentDropdownStateView({
+    required this.agentsAsync,
+    required this.agentId,
+    required this.onChanged,
+  }) : _child = switch (agentsAsync) {
+         AsyncLoading() => const _DisabledAgentDropdown(
+           placeholder: AuraSpinner(size: .small),
+         ),
+         AsyncError() => const _DisabledAgentDropdown(
+           placeholder: TextLocale(LocaleKeys.agents_selector_placeholder),
+         ),
+         AsyncData(:final value) => _AgentDropdownOptions(
+           agents: value,
+           agentId: agentId,
+           onValueChanged: (value) =>
+               onChanged(value?.isEmpty ?? true ? null : value),
+         ),
+       };
+
+  final AsyncValue<List<AgentEntity>> agentsAsync;
+  final String? agentId;
+  final ValueChanged<String?> onChanged;
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => switch (agentsAsync) {
-    AsyncLoading() => const _DisabledAgentDropdown(
-      placeholder: AuraSpinner(size: .small),
-    ),
-    AsyncError() => const _DisabledAgentDropdown(
-      placeholder: TextLocale(LocaleKeys.agents_selector_placeholder),
-    ),
-    AsyncData(:final value) => _AgentDropdownOptions(
-      agents: value,
-      agentId: agentId,
-      onChanged: onChanged,
-    ),
-  };
+  Widget build(BuildContext _) => _child;
 }
 
 class const _DisabledAgentDropdown({required final Widget placeholder})
@@ -148,23 +179,32 @@ class const _DisabledAgentDropdown({required final Widget placeholder})
   );
 }
 
-class const _AgentDropdownOptions({
-  required final List<AgentEntity> agents,
-  required final String? agentId,
-  required final ValueChanged<String?> onChanged,
-}) extends StatelessWidget {
+class _AgentDropdownOptions extends StatelessWidget {
+  _AgentDropdownOptions({
+    required this.agents,
+    required this.agentId,
+    required this.onValueChanged,
+  }) : _options = [
+         const AuraDropdownOption(
+           value: '',
+           child: TextLocale(LocaleKeys.agents_selector_none),
+         ),
+         for (final agent in agents.where(
+           (agent) => agent.appearsInChatSelector,
+         ))
+           AuraDropdownOption(value: agent.id, child: Text(agent.name)),
+       ];
+
+  final List<AgentEntity> agents;
+  final String? agentId;
+  final ValueChanged<String?> onValueChanged;
+  final List<AuraDropdownOption<String>> _options;
+
   @override
-  Widget build(BuildContext context) => AuraDropdownSelector<String>(
-    options: [
-      const AuraDropdownOption(
-        value: '',
-        child: TextLocale(LocaleKeys.agents_selector_none),
-      ),
-      for (final agent in agents.where((agent) => agent.appearsInChatSelector))
-        AuraDropdownOption(value: agent.id, child: Text(agent.name)),
-    ],
+  Widget build(BuildContext _) => AuraDropdownSelector<String>(
+    options: _options,
     value: agentId ?? '',
-    onChanged: (value) => onChanged(value?.isEmpty ?? true ? null : value),
+    onChanged: onValueChanged,
     placeholder: const TextLocale(LocaleKeys.agents_selector_placeholder),
   );
 }
@@ -195,16 +235,14 @@ class const _AgentSheetSelector({
   required final ValueChanged<String?> onChanged,
 }) extends HookWidget {
   @override
-  Widget build(BuildContext context) {
-    final controller = useTextEditingController();
-    final searchValue = useState<String>('');
-    final filteredAgents = _filterAgents(agents, searchValue.value);
+  Widget build(BuildContext _) {
+    final sheetState = _useAgentSheetState(agents);
 
     return _AgentSheetBody(
-      controller: controller,
-      agents: filteredAgents,
+      controller: sheetState.controller,
+      agents: sheetState.agents,
       agentId: agentId,
-      onSearchChanged: (value) => searchValue.value = value,
+      onSearchChanged: sheetState.onSearchChanged,
       onSelect: _select,
     );
   }
@@ -224,50 +262,66 @@ List<AgentEntity> _filterAgents(List<AgentEntity> agents, String searchValue) {
       .toList();
 }
 
-class const _AgentSheetBody({
-  required final TextEditingController controller,
-  required final List<AgentEntity> agents,
-  required final String? agentId,
-  required final ValueChanged<String> onSearchChanged,
-  required final void Function(BuildContext, String?) onSelect,
-}) extends StatelessWidget {
+class _AgentSheetBody extends StatelessWidget {
+  _AgentSheetBody({
+    required this.controller,
+    required this.agents,
+    required this.agentId,
+    required this.onSearchChanged,
+    required this.onSelect,
+  }) : _child = Column(
+         mainAxisSize: .min,
+         children: [
+           AuraInput(
+             controller: controller,
+             prefixIcon: const AuraIcon(Icons.search),
+             onChanged: onSearchChanged,
+           ),
+           const AuraSizedBox(height: .sm),
+           Flexible(
+             child: _AgentSheetList(
+               agents: agents,
+               agentId: agentId,
+               onSelect: onSelect,
+             ),
+           ),
+         ],
+       );
+
+  final TextEditingController controller;
+  final List<AgentEntity> agents;
+  final String? agentId;
+  final ValueChanged<String> onSearchChanged;
+  final void Function(BuildContext, String?) onSelect;
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: .min,
-    children: [
-      AuraInput(
-        controller: controller,
-        prefixIcon: const AuraIcon(Icons.search),
-        onChanged: onSearchChanged,
-      ),
-      const AuraSizedBox(height: .sm),
-      Flexible(
-        child: _AgentSheetList(
-          agents: agents,
-          agentId: agentId,
-          onSelect: onSelect,
-        ),
-      ),
-    ],
-  );
+  Widget build(BuildContext _) => _child;
 }
 
-class const _AgentSheetList({
-  required final List<AgentEntity> agents,
-  required final String? agentId,
-  required final void Function(BuildContext, String?) onSelect,
-}) extends StatelessWidget {
+class _AgentSheetList extends StatelessWidget {
+  _AgentSheetList({
+    required this.agents,
+    required this.agentId,
+    required this.onSelect,
+  }) : _child = ListView.separated(
+         itemBuilder: (context, index) => _AgentSheetListItem(
+           agents: agents,
+           agentId: agentId,
+           index: index,
+           onSelect: onSelect,
+         ),
+         separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
+         itemCount: agents.length + 1,
+       );
+
+  final List<AgentEntity> agents;
+  final String? agentId;
+  final void Function(BuildContext, String?) onSelect;
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => ListView.separated(
-    itemBuilder: (context, index) => _AgentSheetListItem(
-      agents: agents,
-      agentId: agentId,
-      index: index,
-      onSelect: onSelect,
-    ),
-    separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
-    itemCount: agents.length + 1,
-  );
+  Widget build(BuildContext _) => _child;
 }
 
 class const _AgentSheetListItem({

@@ -1,7 +1,6 @@
 // Required: Existing argument values intentionally repeat.
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
@@ -9,11 +8,34 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 
+typedef _AvailableWorkspaceToolsInput = ({
+  String conversationId,
+  String workspaceId,
+  List<WorkspaceToolEntity> workspaceEnabledTools,
+  Set<String> disabledWorkspaceToolIds,
+});
+
+typedef _ChildPermissionPrecedence = ({
+  ToolPermissionResult? agentResult,
+  ToolPermissionResult? parentResult,
+});
+
+typedef _ChildPermissionFallbackInput = ({
+  ToolPermissionResult? childResult,
+  ToolPermissionResult? agentResult,
+  ToolPermissionResult? parentResult,
+  WorkspaceToolEntity workspaceTool,
+});
+
 /// Implementation of the ConversationToolsRepository.
 class ConversationToolsRepository(
   final AppDatabase _database,
   final WorkspaceToolsRepository _workspaceToolsRepository,
-) {
+) with
+    _ConversationToolsRepositoryBasicApi,
+    _ConversationToolsRepositoryBasicStateApi,
+    _ConversationToolsRepositorySecondaryApi,
+    _ConversationToolsAvailabilityApi {
   final ConversationToolsDao _dao = _database.conversationToolsDao;
 
   Future<List<ConversationToolEntity>> getConversationTools(
@@ -21,12 +43,129 @@ class ConversationToolsRepository(
   ) async {
     final results = await _dao.getConversationTools(conversationId);
 
-    return results.map(this._tableToEntity).toList();
+    return results.map(_tableToEntity).toList();
   }
 }
 
-extension ConversationToolsRepositoryBasicOperations
-    on ConversationToolsRepository {
+mixin _ConversationToolsRepositoryBasicApi {
+  Future<List<ConversationToolEntity>> getEnabledConversationTools(
+    String conversationId,
+  ) =>
+      ConversationToolsRepositoryBasic(this as ConversationToolsRepository)
+          .getEnabledConversationTools(conversationId);
+
+  Future<ConversationToolEntity?> getConversationTool(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsRepositoryBasic(this as ConversationToolsRepository)
+          .getConversationTool(conversationId, toolId);
+
+  Future<bool> setConversationToolEnabled(
+    String conversationId,
+    String toolId, {
+    required bool isEnabled,
+  }) => ConversationToolsRepositoryBasic(this as ConversationToolsRepository)
+      .setConversationToolEnabled(conversationId, toolId, isEnabled: isEnabled);
+
+  Future<void> setConversationToolsDisabled(
+    String conversationId,
+    List<String> toolTypes,
+  ) =>
+      ConversationToolsRepositoryBasic(this as ConversationToolsRepository)
+          .setConversationToolsDisabled(conversationId, toolTypes);
+
+  Future<bool> setConversationToolPermission(
+    String conversationId,
+    String toolId, {
+    required ToolPermissionMode permissionMode,
+  }) => ConversationToolsRepositoryBasic(this as ConversationToolsRepository)
+      .setConversationToolPermission(
+        conversationId,
+        toolId,
+        permissionMode: permissionMode,
+      );
+}
+
+mixin _ConversationToolsRepositoryBasicStateApi {
+  Future<bool> toggleConversationTool(String conversationId, String toolId) =>
+      ConversationToolsRepositoryBasicState(this as ConversationToolsRepository)
+          .toggleConversationTool(conversationId, toolId);
+
+  Future<bool> isConversationToolEnabled(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsRepositoryBasicState(this as ConversationToolsRepository)
+          .isConversationToolEnabled(conversationId, toolId);
+
+  Future<bool> removeConversationTool(String conversationId, String toolId) =>
+      ConversationToolsRepositoryBasicState(this as ConversationToolsRepository)
+          .removeConversationTool(conversationId, toolId);
+
+  Future<int> getConversationToolsCount(String conversationId) =>
+      ConversationToolsRepositoryBasicState(this as ConversationToolsRepository)
+          .getConversationToolsCount(conversationId);
+}
+
+mixin _ConversationToolsRepositorySecondaryApi {
+  Future<int> getEnabledConversationToolsCount(String conversationId) =>
+      ConversationToolsRepositorySecondary(this as ConversationToolsRepository)
+          .getEnabledConversationToolsCount(conversationId);
+
+  Future<void> copyConversationTools(
+    String sourceConversationId,
+    String targetConversationId,
+  ) =>
+      ConversationToolsRepositorySecondary(this as ConversationToolsRepository)
+          .copyConversationTools(sourceConversationId, targetConversationId);
+
+  Future<bool> validateConversationToolSetting(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsRepositorySecondary(this as ConversationToolsRepository)
+          .validateConversationToolSetting(conversationId, toolId);
+}
+
+mixin _ConversationToolsAvailabilityApi {
+  Future<bool> isToolAvailableForConversation(
+    String conversationId,
+    String workspaceId,
+    String toolId,
+  ) => ConversationToolsRepositoryAvailability(
+    this as ConversationToolsRepository,
+  ).isToolAvailableForConversation(conversationId, workspaceId, toolId);
+
+  Future<List<String>> getAvailableToolsForConversation(
+    String conversationId,
+    String workspaceId,
+  ) => ConversationToolsRepositoryAvailability(
+    this as ConversationToolsRepository,
+  ).getAvailableToolsForConversation(conversationId, workspaceId);
+
+  Future<List<WorkspaceToolEntity>> getAvailableToolEntitiesForConversation(
+    String conversationId,
+    String workspaceId,
+  ) => ConversationToolsRepositoryAvailability(
+    this as ConversationToolsRepository,
+  ).getAvailableToolEntitiesForConversation(conversationId, workspaceId);
+
+  Future<ToolPermissionResult> checkToolPermission({
+    required String conversationId,
+    required String workspaceId,
+    required String toolId,
+  }) =>
+      ConversationToolsRepositoryAvailability(
+        this as ConversationToolsRepository,
+      ).checkToolPermission(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        toolId: toolId,
+      );
+}
+
+extension ConversationToolsRepositoryBasic on ConversationToolsRepository {
   Future<List<ConversationToolEntity>> getEnabledConversationTools(
     String conversationId,
   ) async {
@@ -39,7 +178,7 @@ extension ConversationToolsRepositoryBasicOperations
 
     // Get available tools for the conversation by computing:.
     // Available tools = Workspace enabled tools - Conversation disabled tools.
-    return _buildEnabledConversationTools(
+    return await _buildEnabledConversationTools(
       conversationId,
       conversation.workspaceId,
     );
@@ -89,7 +228,9 @@ extension ConversationToolsRepositoryBasicOperations
 
     return true;
   }
+}
 
+extension ConversationToolsRepositoryBasicState on ConversationToolsRepository {
   Future<bool> toggleConversationTool(String conversationId, String toolId) {
     return _dao.toggleConversationTool(conversationId, toolId);
   }
@@ -107,15 +248,14 @@ extension ConversationToolsRepositoryBasicOperations
   }
 }
 
-extension ConversationToolsRepositorySecondaryOperations
-    on ConversationToolsRepository {
+extension ConversationToolsRepositorySecondary on ConversationToolsRepository {
   Future<int> getEnabledConversationToolsCount(String conversationId) async {
     final conversation = await _database.conversationDao.getConversationById(
       conversationId,
     );
     if (conversation == null) return 0;
 
-    return _availableToolCount(conversationId, conversation.workspaceId);
+    return await _availableToolCount(conversationId, conversation.workspaceId);
   }
 
   Future<void> copyConversationTools(
@@ -132,36 +272,60 @@ extension ConversationToolsRepositorySecondaryOperations
     String conversationId,
     String toolId,
   ) async {
-    // Check if conversation exists.
-    final conversation = await _database.conversationDao.getConversationById(
-      conversationId,
-    );
-    if (conversation == null) {
-      throw ConversationToolsValidationException.conversationNotFound(
-        conversationId,
-      );
-    }
-
-    final tool = await _workspaceToolsRepository.getWorkspaceTool(
-      conversation.workspaceId,
-      toolId,
-    );
-    if (tool == null) {
-      throw ConversationToolsValidationException.toolNotFound(toolId);
-    }
+    await _requireConversationToolSetting(conversationId, toolId);
 
     return true;
   }
 }
 
-extension ConversationToolsRepositoryAvailabilityOperations
+extension on ConversationToolsRepository {
+  Future<void> _requireConversationToolSetting(
+    String conversationId,
+    String toolId,
+  ) async {
+    final conversation = await _requireConversation(conversationId);
+    await _requireWorkspaceTool(conversation.workspaceId, toolId);
+  }
+
+  Future<ConversationsTable> _requireConversation(String conversationId) async {
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+
+    if (conversation == null) {
+      throw ConversationToolsValidationException(
+        'Conversation not found: $conversationId',
+        localizationKey:
+            LocaleKeys.chats_screens_chat_conversation_error_not_found,
+      );
+    }
+
+    return conversation;
+  }
+
+  Future<void> _requireWorkspaceTool(String workspaceId, String toolId) async {
+    final tool = await _workspaceToolsRepository.getWorkspaceTool(
+      workspaceId,
+      toolId,
+    );
+
+    if (tool == null) {
+      throw ConversationToolsValidationException(
+        'Tool not found: $toolId',
+        localizationKey: LocaleKeys.tool_call_status_tool_not_found,
+      );
+    }
+  }
+}
+
+extension ConversationToolsRepositoryAvailability
     on ConversationToolsRepository {
   Future<bool> isToolAvailableForConversation(
     String conversationId,
     String workspaceId,
     String toolId,
   ) async {
-    return _isAvailableWorkspaceTool(
+    return await _isAvailableWorkspaceTool(
       conversationId: conversationId,
       workspaceId: workspaceId,
       toolId: toolId,
@@ -204,7 +368,7 @@ extension ConversationToolsRepositoryAvailabilityOperations
       return ToolPermissionResult.notConfigured;
     }
 
-    return _conversationToolPermission(
+    return await _conversationToolPermission(
       conversationId: conversationId,
       workspaceTool: workspaceTool,
     );
@@ -219,19 +383,31 @@ extension on ConversationToolsRepository {
     final conversation = await _database.conversationDao.getConversationById(
       conversationId,
     );
-    final permissionConversationId =
-        conversation?.parentConversationId ?? conversationId;
-    if (conversation?.parentConversationId != null) {
+
+    return await _conversationPermissionResult(
+      conversationId: conversationId,
+      conversation: conversation,
+      workspaceTool: workspaceTool,
+    );
+  }
+
+  Future<ToolPermissionResult> _conversationPermissionResult({
+    required String conversationId,
+    required ConversationsTable? conversation,
+    required WorkspaceToolEntity workspaceTool,
+  }) {
+    final parentConversationId = conversation?.parentConversationId;
+    if (parentConversationId != null) {
       return _childConversationToolPermissionResult(
         conversationId: conversationId,
-        parentConversationId: permissionConversationId,
+        parentConversationId: parentConversationId,
         workspaceTool: workspaceTool,
       );
     }
 
     return _rootConversationToolPermissionResult(
       conversationId: conversationId,
-      permissionConversationId: permissionConversationId,
+      permissionConversationId: conversationId,
       workspaceTool: workspaceTool,
     );
   }
@@ -247,17 +423,22 @@ extension on ConversationToolsRepository {
       workspaceId,
     );
 
-    return availableToolTypes.map((toolId) {
-      return ConversationToolEntity(
-        conversationId: conversationId,
-        toolId: toolId,
-        isEnabled: true,
-        permissionMode: .alwaysAsk,
-        createdAt: .now(),
-        updatedAt: .now(),
-      );
-    }).toList();
+    return availableToolTypes
+        .map((toolId) => _enabledConversationTool(conversationId, toolId))
+        .toList();
   }
+
+  ConversationToolEntity _enabledConversationTool(
+    String conversationId,
+    String toolId,
+  ) => ConversationToolEntity(
+    conversationId: conversationId,
+    toolId: toolId,
+    isEnabled: true,
+    permissionMode: .alwaysAsk,
+    createdAt: .now(),
+    updatedAt: .now(),
+  );
 
   Future<int> _availableToolCount(
     String conversationId,
@@ -302,12 +483,12 @@ extension on ConversationToolsRepository {
       conversationId,
     );
 
-    return _filterAvailableWorkspaceTools(
+    return await _filterAvailableWorkspaceTools((
       conversationId: conversationId,
       workspaceId: workspaceId,
       workspaceEnabledTools: workspaceEnabledTools,
       disabledWorkspaceToolIds: disabledWorkspaceToolIds,
-    );
+    ));
   }
 
   Future<Set<String>> _disabledWorkspaceToolIds(String conversationId) async {
@@ -321,32 +502,59 @@ extension on ConversationToolsRepository {
         .toSet();
   }
 
-  Future<List<WorkspaceToolEntity>> _filterAvailableWorkspaceTools({
-    required String conversationId,
-    required String workspaceId,
-    required List<WorkspaceToolEntity> workspaceEnabledTools,
-    required Set<String> disabledWorkspaceToolIds,
-  }) async {
-    final permissionEntries = await Future.wait(
-      workspaceEnabledTools.map((tool) async {
-        if (disabledWorkspaceToolIds.contains(tool.id)) return null;
-
-        final isAvailable = await _isAvailableWorkspaceTool(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          toolId: tool.toolId,
-        );
-
-        return (tool: tool, isAvailable: isAvailable);
-      }),
+  Future<List<WorkspaceToolEntity>> _filterAvailableWorkspaceTools(
+    _AvailableWorkspaceToolsInput input,
+  ) async {
+    final permissionEntries = await _checkWorkspaceToolsAvailability(
+      conversationId: input.conversationId,
+      workspaceId: input.workspaceId,
+      candidateTools: input.workspaceEnabledTools.where(
+        (tool) => !input.disabledWorkspaceToolIds.contains(tool.id),
+      ),
     );
 
-    return permissionEntries.nonNulls
-        .where((entry) => entry.isAvailable)
-        .map((entry) => entry.tool)
-        .toList();
+    return _availableWorkspaceTools(permissionEntries);
   }
 
+  Future<List<({WorkspaceToolEntity tool, bool isAvailable})>>
+  _checkWorkspaceToolsAvailability({
+    required String conversationId,
+    required String workspaceId,
+    required Iterable<WorkspaceToolEntity> candidateTools,
+  }) => Future.wait(
+    candidateTools.map(
+      (tool) => _checkWorkspaceToolAvailability(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        tool: tool,
+      ),
+    ),
+  );
+
+  List<WorkspaceToolEntity> _availableWorkspaceTools(
+    List<({WorkspaceToolEntity tool, bool isAvailable})> permissionEntries,
+  ) => permissionEntries
+      .where((entry) => entry.isAvailable)
+      .map((entry) => entry.tool)
+      .toList();
+
+  Future<({WorkspaceToolEntity tool, bool isAvailable})>
+  _checkWorkspaceToolAvailability({
+    required String conversationId,
+    required String workspaceId,
+    required WorkspaceToolEntity tool,
+  }) async {
+    final isAvailable = await _isAvailableWorkspaceTool(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      toolId: tool.toolId,
+    );
+
+    return (tool: tool, isAvailable: isAvailable);
+  }
+}
+
+extension on ConversationToolsRepository {
   Future<ToolPermissionResult> _rootConversationToolPermissionResult({
     required String conversationId,
     required String permissionConversationId,
@@ -360,6 +568,16 @@ extension on ConversationToolsRepository {
       return _conversationToolPermissionResult(conversationTool);
     }
 
+    return await _rootPermissionFallback(
+      conversationId: conversationId,
+      workspaceTool: workspaceTool,
+    );
+  }
+
+  Future<ToolPermissionResult> _rootPermissionFallback({
+    required String conversationId,
+    required WorkspaceToolEntity workspaceTool,
+  }) async {
     final agentResult = await _agentToolPermissionResult(
       conversationId: conversationId,
       toolId: workspaceTool.id,
@@ -415,36 +633,95 @@ extension on ConversationToolsRepository {
     required String parentConversationId,
     required WorkspaceToolEntity workspaceTool,
   }) async {
-    final agentResult = await _agentToolPermissionResult(
+    final precedence = await _childPermissionPrecedence(
       conversationId: conversationId,
+      parentConversationId: parentConversationId,
       toolId: workspaceTool.id,
     );
-    if (agentResult == ToolPermissionResult.disabledByAgent) {
-      return ToolPermissionResult.disabledByAgent;
-    }
 
-    final parentResult = await _conversationToolResult(
-      conversationId: parentConversationId,
-      toolId: workspaceTool.id,
+    return await _childPermissionResult(
+      conversationId: conversationId,
+      precedence: precedence,
+      workspaceTool: workspaceTool,
     );
-    if (parentResult == ToolPermissionResult.disabledInConversation) {
-      return ToolPermissionResult.disabledInConversation;
-    }
+  }
+
+  Future<ToolPermissionResult> _childPermissionResult({
+    required String conversationId,
+    required _ChildPermissionPrecedence precedence,
+    required WorkspaceToolEntity workspaceTool,
+  }) async {
+    final override = _childPermissionOverride(precedence);
+    if (override != null) return override;
 
     final childResult = await _conversationToolResult(
       conversationId: conversationId,
       toolId: workspaceTool.id,
     );
+
+    return _childConversationPermissionFallback((
+      childResult: childResult,
+      agentResult: precedence.agentResult,
+      parentResult: precedence.parentResult,
+      workspaceTool: workspaceTool,
+    ));
+  }
+
+  ToolPermissionResult? _childPermissionOverride(
+    _ChildPermissionPrecedence precedence,
+  ) {
+    if (precedence.agentResult == ToolPermissionResult.disabledByAgent) {
+      return ToolPermissionResult.disabledByAgent;
+    }
+    if (precedence.parentResult ==
+        ToolPermissionResult.disabledInConversation) {
+      return ToolPermissionResult.disabledInConversation;
+    }
+
+    return null;
+  }
+
+  Future<_ChildPermissionPrecedence> _childPermissionPrecedence({
+    required String conversationId,
+    required String parentConversationId,
+    required String toolId,
+  }) async {
+    final agentResult = await _agentToolPermissionResult(
+      conversationId: conversationId,
+      toolId: toolId,
+    );
+    if (agentResult == ToolPermissionResult.disabledByAgent) {
+      return (agentResult: agentResult, parentResult: null);
+    }
+
+    final parentResult = await _conversationToolResult(
+      conversationId: parentConversationId,
+      toolId: toolId,
+    );
+
+    return (agentResult: agentResult, parentResult: parentResult);
+  }
+
+  ToolPermissionResult _childConversationPermissionFallback(
+    _ChildPermissionFallbackInput input,
+  ) {
+    final childResult = input.childResult;
     if (childResult != null) return childResult;
+
+    final agentResult = input.agentResult;
     if (agentResult != null) return agentResult;
+
+    final parentResult = input.parentResult;
     if (parentResult != null) return parentResult;
 
     return _permissionModeResult(
-      workspaceTool.permissionMode,
+      input.workspaceTool.permissionMode,
       denyResult: .disabledInWorkspace,
     );
   }
+}
 
+extension on ConversationToolsRepository {
   Future<ToolPermissionResult?> _conversationToolResult({
     required String conversationId,
     required String toolId,
@@ -473,18 +750,7 @@ extension on ConversationToolsRepository {
     required String conversationId,
     required String toolId,
   }) async {
-    final conversation = await _database.conversationDao.getConversationById(
-      conversationId,
-    );
-    final agentId = conversation?.agentId;
-    if (agentId == null) {
-      return null;
-    }
-
-    final agentTool = await _database.agentToolsDao.getAgentTool(
-      agentId,
-      toolId,
-    );
+    final agentTool = await _agentTool(conversationId, toolId);
     if (agentTool == null) {
       return null;
     }
@@ -493,6 +759,24 @@ extension on ConversationToolsRepository {
       _mapPermissionAccess(agentTool.permissions),
       denyResult: .disabledByAgent,
     );
+  }
+
+  Future<AgentToolsTable?> _agentTool(
+    String conversationId,
+    String toolId,
+  ) async {
+    final agentId = await _conversationAgentId(conversationId);
+    if (agentId == null) return null;
+
+    return await _database.agentToolsDao.getAgentTool(agentId, toolId);
+  }
+
+  Future<String?> _conversationAgentId(String conversationId) async {
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+
+    return conversation?.agentId;
   }
 
   Future<String> _conversationPermissionConversationId(
@@ -544,21 +828,6 @@ class ConversationToolsValidationException extends ConversationToolsException {
   /// Creates a new ConversationToolsValidationException.
   const new(super.message, {super.localizationKey, super.cause});
 
-  /// Creates a validation exception for a missing conversation.
-  const new conversationNotFound(String conversationId)
-    : super(
-        'Conversation not found: $conversationId',
-        localizationKey:
-            LocaleKeys.chats_screens_chat_conversation_error_not_found,
-      );
-
-  /// Creates a validation exception for a missing tool.
-  const new toolNotFound(String toolId)
-    : super(
-        'Tool not found: $toolId',
-        localizationKey: LocaleKeys.tool_call_status_tool_not_found,
-      );
-
   @override
-  String toString() => super.toString();
+  String toString() => StringBuffer(super.toString()).toString();
 }

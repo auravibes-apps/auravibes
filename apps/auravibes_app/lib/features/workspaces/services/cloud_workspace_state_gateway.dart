@@ -38,6 +38,187 @@ typedef WorkspaceCredentialCall =
     });
 typedef WorkspaceReconnectDelay = Future<void> Function(Duration duration);
 
+typedef _PutSecretInput = ({
+  String requestId,
+  WorkspaceSecretKind secretKind,
+  WorkspaceSecretScope scope,
+  String resourceId,
+  String? secret,
+  int? expectedRevision,
+});
+typedef _PutSecretContext = ({
+  CloudWorkspaceRef workspace,
+  Client? client,
+  WorkspaceSecretPut? putSecret,
+  _PutSecretInput input,
+});
+typedef _MutateCredentialInput = ({
+  String requestId,
+  WorkspacePatchOperation resourceOperation,
+  WorkspaceSecretKind secretKind,
+  WorkspaceSecretScope scope,
+  String? secret,
+  bool clearSecret,
+  int? expectedSecretRevision,
+});
+typedef _MutateCredentialContext = ({
+  CloudWorkspaceRef workspace,
+  Client? client,
+  WorkspaceCredentialMutation? mutateCredential,
+  _MutateCredentialInput input,
+});
+typedef _WatchUpdatesInput<T> = ({
+  Set<String> resourceKinds,
+  Future<({T value, int currentSequence})> Function() load,
+  int lastSequence,
+});
+typedef _ConsumeEventsInput<T> = ({
+  StreamIterator<WorkspaceStreamEnvelope> events,
+  Set<String> resourceKinds,
+  Future<({T value, int currentSequence})> Function() load,
+  int lastSequence,
+});
+typedef _ConsumeEventInput<T> = ({
+  WorkspaceStreamEnvelope event,
+  int sequence,
+  Set<String> resourceKinds,
+  Future<({T value, int currentSequence})> Function() load,
+});
+typedef _CurrentEventInput<T> = ({
+  _ConsumeEventsInput<T> input,
+  WorkspaceStreamEnvelope event,
+  int sequence,
+});
+typedef _ReadKindInput = ({
+  WorkspaceResourceKind kind,
+  int pageSize,
+  List<WorkspaceResource> resources,
+  Set<String> seenResourceIds,
+  int? sequence,
+});
+typedef _ReadKindPageInput = ({
+  _ReadKindInput input,
+  String? cursor,
+  int? currentSequence,
+  Set<String> cursors,
+});
+typedef _ReadKindPageCursorInput = ({
+  String? cursor,
+  int? currentSequence,
+  Set<String> cursors,
+});
+typedef _AppendResourcesInput = ({
+  WorkspaceResourceKind kind,
+  WorkspaceResourcePage page,
+  List<WorkspaceResource> resources,
+  Set<String> seenResourceIds,
+});
+
+class _WatchState {
+  new(this.sequence, this.reconnectDelay);
+
+  int sequence;
+  Duration reconnectDelay;
+}
+
+class _ReadKindsInput {
+  new(this.kinds, this.pageSize);
+
+  final List<WorkspaceResourceKind> kinds;
+  final int pageSize;
+  final resources = <WorkspaceResource>[];
+  final seenResourceIds = <String>{};
+}
+
+class _GatewayCallHandlers {
+  new({
+    required CloudWorkspaceRef workspace,
+    required Client? client,
+    required WorkspaceSecretPut? putSecret,
+    required WorkspaceCredentialMutation? mutateCredential,
+  }) : putSecretCall = _GatewaySecretCallHandler(
+         workspace: workspace,
+         client: client,
+         putSecret: putSecret,
+       ).call,
+       mutateCredentialCall = _GatewayCredentialCallHandler(
+         workspace: workspace,
+         client: client,
+         mutateCredential: mutateCredential,
+       ).call;
+
+  final WorkspaceSecretCall putSecretCall;
+  final WorkspaceCredentialCall mutateCredentialCall;
+}
+
+class _GatewaySecretCallHandler {
+  new({
+    required CloudWorkspaceRef workspace,
+    required Client? client,
+    required WorkspaceSecretPut? putSecret,
+  }) : call =
+           (({
+             required requestId,
+             required secretKind,
+             required scope,
+             required resourceId,
+             secret,
+             expectedRevision,
+           }) => _putSecretRequest((
+             workspace: workspace,
+             client: client,
+             putSecret: putSecret,
+             input: (
+               requestId: requestId,
+               secretKind: secretKind,
+               scope: scope,
+               resourceId: resourceId,
+               secret: secret,
+               expectedRevision: expectedRevision,
+             ),
+           )));
+
+  final WorkspaceSecretCall call;
+}
+
+class _GatewayCredentialCallHandler {
+  new({
+    required CloudWorkspaceRef workspace,
+    required Client? client,
+    required WorkspaceCredentialMutation? mutateCredential,
+  }) : _workspace = workspace,
+       _client = client,
+       _mutateCredential = mutateCredential;
+
+  late final WorkspaceCredentialCall call =
+      ({
+        required requestId,
+        required resourceOperation,
+        required secretKind,
+        required scope,
+        required secret,
+        required clearSecret,
+        expectedSecretRevision,
+      }) => _mutateCredentialRequest((
+        workspace: _workspace,
+        client: _client,
+        mutateCredential: _mutateCredential,
+        input: (
+          requestId: requestId,
+          resourceOperation: resourceOperation,
+          secretKind: secretKind,
+          scope: scope,
+          secret: secret,
+          clearSecret: clearSecret,
+          expectedSecretRevision: expectedSecretRevision,
+        ),
+      ));
+
+  final CloudWorkspaceRef _workspace;
+  final Client? _client;
+  final WorkspaceCredentialMutation? _mutateCredential;
+}
+
 class CloudWorkspaceStateGateway {
   static const _pageSize = 100;
   static const _stateReadTimeout = Duration(seconds: 15);
@@ -45,68 +226,47 @@ class CloudWorkspaceStateGateway {
   static const _maxReconnectDelay = Duration(seconds: 8);
   new({
     required Client client,
-    required this._workspace,
+    required CloudWorkspaceRef workspace,
     this.readTimeout = _stateReadTimeout,
-  }) : _client = client,
+  }) : _workspace = workspace,
+       _client = client,
        _readState = client.workspaceState.read,
        _subscribe = client.workspaceStream.subscribe,
-       _putSecret = null,
-       _mutateCredential = null,
-       _delay = _defaultDelay;
+       _delay = _defaultDelay,
+       _calls = _GatewayCallHandlers(
+         workspace: workspace,
+         client: client,
+         putSecret: null,
+         mutateCredential: null,
+       );
 
   new forTesting({
     required this._workspace,
     required this._readState,
     required this._subscribe,
-    this._putSecret,
-    this._mutateCredential,
+    WorkspaceSecretPut? putSecret,
+    WorkspaceCredentialMutation? mutateCredential,
     this._delay = _defaultDelay,
     this.readTimeout = _stateReadTimeout,
-  }) : _client = null;
+  }) : _client = null,
+       _calls = _GatewayCallHandlers(
+         workspace: _workspace,
+         client: null,
+         putSecret: putSecret,
+         mutateCredential: mutateCredential,
+       );
 
-  @override
   final Duration readTimeout;
-  @override
-  final WorkspaceSecretPut? _putSecret;
-  @override
   final CloudWorkspaceRef _workspace;
-  @override
   final WorkspaceStateRead _readState;
-  @override
   final WorkspaceStreamSubscribe _subscribe;
-  @override
-  final WorkspaceCredentialMutation? _mutateCredential;
-  @override
   final WorkspaceReconnectDelay _delay;
 
-  @override
   final Client? _client;
-  @override
+  final _GatewayCallHandlers _calls;
   Future<void> _readTail = .value();
-  @override
   bool _disposed = false;
-  @override
   final _disposedSignal = Completer<bool>();
-
-  static Future<void> _defaultDelay(Duration duration) =>
-      Future<void>.delayed(duration);
-}
-
-extension CloudWorkspaceStateGatewayCore on CloudWorkspaceStateGateway {
-  bool get isDisposed => _disposed;
-
-  Client get client => _requiredClient;
-
-  CloudWorkspaceRef get workspace => _workspace;
-
-  Client get _requiredClient {
-    final client = _client;
-    if (client == null) {
-      throw StateError('Client operations are unavailable in test gateways');
-    }
-
-    return client;
-  }
 
   void dispose() {
     if (_disposed) return;
@@ -143,143 +303,56 @@ extension CloudWorkspaceStateGatewayCore on CloudWorkspaceStateGateway {
       ),
     ),
   );
+
+  static Future<void> _defaultDelay(Duration duration) =>
+      Future<void>.delayed(duration);
 }
 
-extension CloudWorkspaceStateGatewaySecrets on CloudWorkspaceStateGateway {
-  WorkspaceSecretCall get putSecret =>
-      ({
-        required requestId,
-        required secretKind,
-        required scope,
-        required resourceId,
-        secret,
-        expectedRevision,
-      }) => _putSecretRequest((
-        requestId: requestId,
-        secretKind: secretKind,
-        scope: scope,
-        resourceId: resourceId,
-        secret: secret,
-        expectedRevision: expectedRevision,
-      ));
+extension CloudWorkspaceStateGatewayWatchCalls on CloudWorkspaceStateGateway {
+  bool isDisposed() => _disposed;
 
-  Future<PutWorkspaceSecretResponse> _putSecretRequest(
-    ({
-      String requestId,
-      WorkspaceSecretKind secretKind,
-      WorkspaceSecretScope scope,
-      String resourceId,
-      String? secret,
-      int? expectedRevision,
-    })
-    input,
-  ) {
-    final request = _buildPutSecretRequest(input);
-    final putSecret = _putSecret;
+  Client get client => _requiredClient;
 
-    return CloudAppErrors.guardCall(
-      .state,
-      () =>
-          putSecret?.call(request) ??
-          _requiredClient.workspaceSecret.put(request),
-    );
-  }
+  CloudWorkspaceRef get workspace => _workspace;
 
-  PutWorkspaceSecretRequest _buildPutSecretRequest(
-    ({
-      String requestId,
-      WorkspaceSecretKind secretKind,
-      WorkspaceSecretScope scope,
-      String resourceId,
-      String? secret,
-      int? expectedRevision,
-    })
-    input,
-  ) => PutWorkspaceSecretRequest(
-    workspaceId: _workspace.cloudWorkspaceId,
-    requestId: input.requestId,
-    secretKind: input.secretKind,
-    scope: input.scope,
-    resourceId: input.resourceId,
-    secret: input.secret,
-    expectedRevision: input.expectedRevision,
-  );
+  WorkspaceSecretCall get putSecret => _calls.putSecretCall;
 
-  WorkspaceCredentialCall get mutateCredential =>
-      ({
-        required requestId,
-        required resourceOperation,
-        required secretKind,
-        required scope,
-        required secret,
-        required clearSecret,
-        expectedSecretRevision,
-      }) => _mutateCredentialRequest((
-        requestId: requestId,
-        resourceOperation: resourceOperation,
-        secretKind: secretKind,
-        scope: scope,
-        secret: secret,
-        clearSecret: clearSecret,
-        expectedSecretRevision: expectedSecretRevision,
-      ));
+  WorkspaceCredentialCall get mutateCredential => _calls.mutateCredentialCall;
 
-  Future<MutateWorkspaceCredentialResponse> _mutateCredentialRequest(
-    ({
-      String requestId,
-      WorkspacePatchOperation resourceOperation,
-      WorkspaceSecretKind secretKind,
-      WorkspaceSecretScope scope,
-      String? secret,
-      bool clearSecret,
-      int? expectedSecretRevision,
-    })
-    input,
-  ) {
-    final request = _credentialRequest(input);
-    final mutateCredential = _mutateCredential;
-
-    return CloudAppErrors.guardCall(
-      .state,
-      () =>
-          mutateCredential?.call(request) ??
-          _requiredClient.workspaceState.mutateCredential(request),
-    );
-  }
-
-  MutateWorkspaceCredentialRequest _credentialRequest(
-    ({
-      String requestId,
-      WorkspacePatchOperation resourceOperation,
-      WorkspaceSecretKind secretKind,
-      WorkspaceSecretScope scope,
-      String? secret,
-      bool clearSecret,
-      int? expectedSecretRevision,
-    })
-    input,
-  ) => MutateWorkspaceCredentialRequest(
-    workspaceId: _workspace.cloudWorkspaceId,
-    requestId: input.requestId,
-    resourceOperation: input.resourceOperation,
-    secretKind: input.secretKind,
-    scope: input.scope,
-    secret: input.secret,
-    clearSecret: input.clearSecret,
-    expectedSecretRevision: input.expectedSecretRevision,
-  );
-}
-
-extension CloudWorkspaceStateGatewayWatch on CloudWorkspaceStateGateway {
   Stream<List<WorkspaceResource>> watchResources(
     List<WorkspaceResourceKind> kinds, {
     int limit = CloudWorkspaceStateGateway._pageSize,
   }) => watch(
     kinds.map((kind) => kind.name).toSet(),
-    () => _loadResources(kinds, limit),
+    () => _readResources(kinds, limit),
   );
 
-  Future<({List<WorkspaceResource> value, int currentSequence})> _loadResources(
+  Stream<T> watch<T>(
+    Set<String> resourceKinds,
+    Future<({T value, int currentSequence})> Function() load,
+  ) async* {
+    if (_disposed) return;
+    final snapshot = await load();
+    yield snapshot.value;
+    yield* _watchUpdates<T>((
+      resourceKinds: resourceKinds,
+      load: load,
+      lastSequence: snapshot.currentSequence,
+    ));
+  }
+
+  Client get _requiredClient {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Client operations are unavailable in test gateways');
+    }
+
+    return client;
+  }
+}
+
+extension on CloudWorkspaceStateGateway {
+  Future<({List<WorkspaceResource> value, int currentSequence})> _readResources(
     List<WorkspaceResourceKind> kinds,
     int limit,
   ) async {
@@ -293,74 +366,102 @@ extension CloudWorkspaceStateGatewayWatch on CloudWorkspaceStateGateway {
       currentSequence: snapshot.currentSequence,
     );
   }
+}
 
-  Stream<T> watch<T>(
-    Set<String> resourceKinds,
-    Future<({T value, int currentSequence})> Function() load,
-  ) async* {
-    if (_disposed) return;
-    final snapshot = await load();
-    yield snapshot.value;
-    yield* _watchUpdates(
-      resourceKinds: resourceKinds,
-      load: load,
-      lastSequence: snapshot.currentSequence,
+Future<PutWorkspaceSecretResponse> _putSecretRequest(
+  _PutSecretContext context,
+) {
+  return _guardPutSecret(context, _putSecretRequestBody(context));
+}
+
+PutWorkspaceSecretRequest _putSecretRequestBody(_PutSecretContext context) {
+  final input = context.input;
+
+  return PutWorkspaceSecretRequest(
+    workspaceId: context.workspace.cloudWorkspaceId,
+    requestId: input.requestId,
+    secretKind: input.secretKind,
+    scope: input.scope,
+    resourceId: input.resourceId,
+    secret: input.secret,
+    expectedRevision: input.expectedRevision,
+  );
+}
+
+Future<PutWorkspaceSecretResponse> _guardPutSecret(
+  _PutSecretContext context,
+  PutWorkspaceSecretRequest request,
+) {
+  final putSecret = context.putSecret;
+
+  return CloudAppErrors.guardCall(
+    .state,
+    () =>
+        putSecret?.call(request) ??
+        _requireClient(context.client).workspaceSecret.put(request),
+  );
+}
+
+Future<MutateWorkspaceCredentialResponse> _mutateCredentialRequest(
+  _MutateCredentialContext context,
+) {
+  return _guardMutateCredential(context, _mutateCredentialRequestBody(context));
+}
+
+MutateWorkspaceCredentialRequest _mutateCredentialRequestBody(
+  _MutateCredentialContext context,
+) {
+  final input = context.input;
+
+  return MutateWorkspaceCredentialRequest(
+    workspaceId: context.workspace.cloudWorkspaceId,
+    requestId: input.requestId,
+    resourceOperation: input.resourceOperation,
+    secretKind: input.secretKind,
+    scope: input.scope,
+    secret: input.secret,
+    clearSecret: input.clearSecret,
+    expectedSecretRevision: input.expectedSecretRevision,
+  );
+}
+
+Future<MutateWorkspaceCredentialResponse> _guardMutateCredential(
+  _MutateCredentialContext context,
+  MutateWorkspaceCredentialRequest request,
+) {
+  final mutateCredential = context.mutateCredential;
+
+  return CloudAppErrors.guardCall(
+    .state,
+    () =>
+        mutateCredential?.call(request) ??
+        _requireClient(context.client).workspaceState.mutateCredential(request),
+  );
+}
+
+Client _requireClient(Client? client) =>
+    client ??
+    (throw StateError('Client operations are unavailable in test gateways'));
+
+extension CloudWorkspaceStateGatewayWatch on CloudWorkspaceStateGateway {
+  Stream<T> _watchUpdates<T>(_WatchUpdatesInput<T> input) async* {
+    final watchState = _WatchState(
+      input.lastSequence,
+      CloudWorkspaceStateGateway._initialReconnectDelay,
     );
-  }
-
-  Stream<T> _watchUpdates<T>({
-    required Set<String> resourceKinds,
-    required Future<({T value, int currentSequence})> Function() load,
-    required int lastSequence,
-  }) async* {
-    var reconnectDelay = CloudWorkspaceStateGateway._initialReconnectDelay;
-    var sequence = lastSequence;
     while (!_disposed) {
-      final cycle = _watchCycle<T>(
-        resourceKinds: resourceKinds,
-        load: load,
-        lastSequence: sequence,
-      );
-      await for (final update in cycle) {
-        final next = _nextWatchState(update);
-        sequence = next.sequence;
-        reconnectDelay = next.reconnectDelay;
-        if (next.shouldYield) yield next.value as T;
-      }
-      await _waitForReconnect(reconnectDelay);
-      reconnectDelay = _nextReconnectDelay(reconnectDelay);
+      yield* _watchUpdateCycle(input, watchState);
     }
   }
 
-  ({int sequence, Duration reconnectDelay, T? value, bool shouldYield})
-  _nextWatchState(({T? value, bool shouldYield, int lastSequence}) update) => (
-    sequence: update.lastSequence,
-    reconnectDelay: CloudWorkspaceStateGateway._initialReconnectDelay,
-    value: update.value,
-    shouldYield: update.shouldYield,
-  );
-
-  Stream<({T? value, bool shouldYield, int lastSequence})> _watchCycle<T>({
-    required Set<String> resourceKinds,
-    required Future<({T value, int currentSequence})> Function() load,
-    required int lastSequence,
-  }) async* {
-    final events = StreamIterator(_subscribeToWorkspace(lastSequence));
+  Stream<({T? value, bool shouldYield, int lastSequence})> _watchCycle<T>(
+    _WatchUpdatesInput<T> input,
+  ) async* {
+    final events = StreamIterator(_subscribeToWorkspace(input.lastSequence));
     try {
-      await for (final update in _consumeEvents<T>(
-        events: events,
-        resourceKinds: resourceKinds,
-        load: load,
-        lastSequence: lastSequence,
-      )) {
-        yield update;
-      }
-    } on CloudWorkspaceException catch (error) {
-      _handleCloudWorkspaceException(error);
-    } on CloudAppException catch (error) {
-      _handleCloudAppException(error);
-    } on Object catch (_) {
-      _handleOtherWatchException();
+      yield* _consumeEvents<T>(_consumeEventsInput(input, events));
+    } on Object catch (error) {
+      _handleWatchError(error);
     } finally {
       final _ = await events.cancel();
     }
@@ -396,52 +497,133 @@ extension CloudWorkspaceStateGatewayWatch on CloudWorkspaceStateGateway {
     if (_disposed) return;
   }
 
-  Future<void> _waitForReconnect(Duration reconnectDelay) {
-    if (_disposed) return Future.value();
+  Future<void> _waitForReconnect(Duration reconnectDelay) async {
+    if (_disposed) return;
 
-    return Future.any([_delay(reconnectDelay), _disposedSignal.future]);
+    await Future.any([_delay(reconnectDelay), _disposedSignal.future]);
   }
 }
 
+Stream<T> _yieldWatchValues<T>(
+  Stream<({T? value, bool shouldYield, int lastSequence})> cycle,
+  _WatchState state,
+) async* {
+  await for (final update in cycle) {
+    state
+      ..sequence = update.lastSequence
+      ..reconnectDelay = CloudWorkspaceStateGateway._initialReconnectDelay;
+    if (!update.shouldYield) continue;
+    yield update.value as T;
+  }
+}
+
+({T? value, bool shouldYield, int lastSequence}) _ignoredEvent<T>(
+  int sequence,
+) => (value: null, shouldYield: false, lastSequence: sequence);
+
+({T? value, bool shouldYield, int lastSequence}) _loadedEvent<T>(
+  ({T value, int currentSequence}) snapshot,
+) => (
+  value: snapshot.value,
+  shouldYield: true,
+  lastSequence: snapshot.currentSequence,
+);
+
 extension on CloudWorkspaceStateGateway {
-  Stream<({T? value, bool shouldYield, int lastSequence})> _consumeEvents<T>({
-    required StreamIterator<WorkspaceStreamEnvelope> events,
-    required Set<String> resourceKinds,
-    required Future<({T value, int currentSequence})> Function() load,
-    required int lastSequence,
-  }) async* {
-    var sequence = lastSequence;
-    while (await Future.any([events.moveNext(), _disposedSignal.future])) {
-      final event = events.current;
-      if (_isStaleEvent(event, sequence)) continue;
-      final update = await _consumeEvent(
-        event: event,
-        sequence: sequence,
-        resourceKinds: resourceKinds,
-        load: load,
-      );
+  Stream<T> _watchUpdateCycle<T>(
+    _WatchUpdatesInput<T> input,
+    _WatchState watchState,
+  ) async* {
+    await for (final value in _yieldWatchValues(
+      _watchCycle<T>(_watchCycleInput(input, watchState.sequence)),
+      watchState,
+    )) {
+      yield value;
+    }
+    await _waitForReconnect(watchState.reconnectDelay);
+    _advanceReconnect(watchState);
+  }
+
+  _WatchUpdatesInput<T> _watchCycleInput<T>(
+    _WatchUpdatesInput<T> input,
+    int lastSequence,
+  ) => (
+    resourceKinds: input.resourceKinds,
+    load: input.load,
+    lastSequence: lastSequence,
+  );
+
+  void _advanceReconnect(_WatchState watchState) {
+    watchState.reconnectDelay = _nextReconnectDelay(watchState.reconnectDelay);
+  }
+
+  _ConsumeEventsInput<T> _consumeEventsInput<T>(
+    _WatchUpdatesInput<T> input,
+    StreamIterator<WorkspaceStreamEnvelope> events,
+  ) => (
+    events: events,
+    resourceKinds: input.resourceKinds,
+    load: input.load,
+    lastSequence: input.lastSequence,
+  );
+
+  void _handleWatchError(Object error) {
+    switch (error) {
+      case final CloudWorkspaceException error:
+        _handleCloudWorkspaceException(error);
+      case final CloudAppException error:
+        _handleCloudAppException(error);
+      default:
+        _handleOtherWatchException();
+    }
+  }
+
+  Future<bool> _hasNextEvent(StreamIterator<WorkspaceStreamEnvelope> events) =>
+      Future.any([events.moveNext(), _disposedSignal.future]);
+
+  Future<({T? value, bool shouldYield, int lastSequence})?> _nextEventUpdate<T>(
+    _ConsumeEventsInput<T> input,
+    int sequence,
+  ) => _consumeCurrentEvent<T>((
+    input: input,
+    event: input.events.current,
+    sequence: sequence,
+  ));
+
+  Stream<({T? value, bool shouldYield, int lastSequence})> _consumeEvents<T>(
+    _ConsumeEventsInput<T> input,
+  ) async* {
+    var sequence = input.lastSequence;
+    while (await _hasNextEvent(input.events)) {
+      final update = await _nextEventUpdate(input, sequence);
+      if (update == null) continue;
       sequence = update.lastSequence;
       yield update;
     }
   }
 
-  Future<({T? value, bool shouldYield, int lastSequence})> _consumeEvent<T>({
-    required WorkspaceStreamEnvelope event,
-    required int sequence,
-    required Set<String> resourceKinds,
-    required Future<({T value, int currentSequence})> Function() load,
-  }) async {
-    final hasGap = event.sequence != sequence + 1;
-    if (!hasGap && !_affectsResources(event, resourceKinds)) {
-      return (value: null, shouldYield: false, lastSequence: event.sequence);
+  Future<({T? value, bool shouldYield, int lastSequence})?>
+  _consumeCurrentEvent<T>(_CurrentEventInput<T> input) async {
+    if (_isStaleEvent(input.event, input.sequence)) return null;
+
+    return await _consumeEvent<T>((
+      event: input.event,
+      sequence: input.sequence,
+      resourceKinds: input.input.resourceKinds,
+      load: input.input.load,
+    ));
+  }
+
+  Future<({T? value, bool shouldYield, int lastSequence})> _consumeEvent<T>(
+    _ConsumeEventInput<T> input,
+  ) async {
+    final event = input.event;
+    if (event.sequence == input.sequence + 1 &&
+        !_affectsResources(event, input.resourceKinds)) {
+      return _ignoredEvent(event.sequence);
     }
 
-    final snapshot = await load();
-    return (
-      value: snapshot.value,
-      shouldYield: true,
-      lastSequence: snapshot.currentSequence,
-    );
+    return _loadedEvent(await input.load());
   }
 
   bool _isStaleEvent(WorkspaceStreamEnvelope event, int sequence) =>
@@ -488,34 +670,19 @@ extension on CloudWorkspaceStateGateway {
 
   Future<({List<WorkspaceResource> resources, int currentSequence})?>
   _readAttempt(List<WorkspaceResourceKind> kinds, int pageSize) async {
-    final resources = <WorkspaceResource>[];
-    final seenResourceIds = <String>{};
-    final result = await _readKinds(
-      kinds,
-      pageSize,
-      resources,
-      seenResourceIds,
-    );
+    final input = _ReadKindsInput(kinds, pageSize);
+    final result = await _readKinds(input);
     if (!result.coherent) return null;
 
-    return (resources: resources, currentSequence: result.sequence ?? 0);
+    return (resources: input.resources, currentSequence: result.sequence ?? 0);
   }
 
   Future<({int? sequence, bool coherent})> _readKinds(
-    List<WorkspaceResourceKind> kinds,
-    int pageSize,
-    List<WorkspaceResource> resources,
-    Set<String> seenResourceIds,
+    _ReadKindsInput input,
   ) async {
     int? sequence;
-    for (final kind in kinds) {
-      final result = await _readKind((
-        kind: kind,
-        pageSize: pageSize,
-        resources: resources,
-        seenResourceIds: seenResourceIds,
-        sequence: sequence,
-      ));
+    for (final kind in input.kinds) {
+      final result = await _readKind(_readKindInput(input, kind, sequence));
       sequence = result.sequence;
       if (!result.coherent) return (sequence: sequence, coherent: false);
     }
@@ -523,64 +690,106 @@ extension on CloudWorkspaceStateGateway {
     return (sequence: sequence, coherent: true);
   }
 
-  Future<({int? sequence, bool coherent})> _readKind(
-    ({
-      WorkspaceResourceKind kind,
-      int pageSize,
-      List<WorkspaceResource> resources,
-      Set<String> seenResourceIds,
-      int? sequence,
-    })
-    input,
-  ) async {
-    final cursors = <String>{};
-    var currentSequence = input.sequence;
-    String? cursor;
-    do {
-      final result = await _readKindPage(
-        input: input,
-        cursor: cursor,
-        currentSequence: currentSequence,
-        cursors: cursors,
-      );
-      currentSequence = result.sequence;
-      cursor = result.cursor;
-      if (!result.coherent) return (sequence: currentSequence, coherent: false);
-    } while (cursor != null);
+  _ReadKindInput _readKindInput(
+    _ReadKindsInput input,
+    WorkspaceResourceKind kind,
+    int? sequence,
+  ) => (
+    kind: kind,
+    pageSize: input.pageSize,
+    resources: input.resources,
+    seenResourceIds: input.seenResourceIds,
+    sequence: sequence,
+  );
 
-    return (sequence: currentSequence, coherent: true);
+  Future<({int? sequence, bool coherent})> _readKind(_ReadKindInput input) =>
+      _readKindPages(input, <String>{});
+
+  _ReadKindPageInput _readKindPageInput(
+    _ReadKindInput input,
+    _ReadKindPageCursorInput cursorInput,
+  ) => (
+    input: input,
+    cursor: cursorInput.cursor,
+    currentSequence: cursorInput.currentSequence,
+    cursors: cursorInput.cursors,
+  );
+
+  Future<({int? sequence, String? cursor, bool coherent})> _readKindPage(
+    _ReadKindPageInput input,
+  ) async {
+    final state = await _readPage(
+      input.input.kind,
+      input.cursor,
+      input.input.pageSize,
+    );
+
+    return _processReadKindPage(input, state);
   }
 
-  Future<({int? sequence, String? cursor, bool coherent})> _readKindPage({
-    required ({
-      WorkspaceResourceKind kind,
-      int pageSize,
-      List<WorkspaceResource> resources,
-      Set<String> seenResourceIds,
-      int? sequence,
-    })
-    input,
-    required String? cursor,
-    required int? currentSequence,
-    required Set<String> cursors,
-  }) async {
-    final state = await _readPage(input.kind, cursor, input.pageSize);
-    final nextSequence = currentSequence ?? state.currentSequence;
-    if (state.currentSequence != nextSequence) {
-      return (sequence: nextSequence, cursor: cursor, coherent: false);
+  Future<({int? sequence, bool coherent})> _readKindPages(
+    _ReadKindInput input,
+    Set<String> cursors,
+  ) async {
+    var result = await _readKindPage(
+      _readKindPageInput(input, (
+        cursor: null,
+        currentSequence: input.sequence,
+        cursors: cursors,
+      )),
+    );
+    while (result.coherent && result.cursor != null) {
+      result = await _readKindPage(
+        _readKindPageInput(input, (
+          cursor: result.cursor,
+          currentSequence: result.sequence,
+          cursors: cursors,
+        )),
+      );
     }
 
-    final page = _validatedPage(state, input.kind);
-    _appendResources(
-      kind: input.kind,
-      page: page,
-      resources: input.resources,
-      seenResourceIds: input.seenResourceIds,
-    );
-    final nextCursor = page.nextResourceId;
-    _validateCursor(nextCursor, cursors);
+    return (sequence: result.sequence, coherent: result.coherent);
+  }
 
-    return (sequence: nextSequence, cursor: nextCursor, coherent: true);
+  ({int? sequence, String? cursor, bool coherent}) _processReadKindPage(
+    _ReadKindPageInput input,
+    ReadWorkspaceStateResponse state,
+  ) {
+    final nextSequence = input.currentSequence ?? state.currentSequence;
+    if (state.currentSequence != nextSequence) {
+      return _incoherentPage(nextSequence, input.cursor);
+    }
+
+    final page = _validatedPage(state, input.input.kind);
+    final nextCursor = _appendPageResources(input, page);
+
+    return _coherentPage(nextSequence, nextCursor);
+  }
+
+  ({int? sequence, String? cursor, bool coherent}) _incoherentPage(
+    int sequence,
+    String? cursor,
+  ) => (sequence: sequence, cursor: cursor, coherent: false);
+
+  ({int? sequence, String? cursor, bool coherent}) _coherentPage(
+    int sequence,
+    String? cursor,
+  ) => (sequence: sequence, cursor: cursor, coherent: true);
+
+  String? _appendPageResources(
+    _ReadKindPageInput input,
+    WorkspaceResourcePage page,
+  ) {
+    _appendResources((
+      kind: input.input.kind,
+      page: page,
+      resources: input.input.resources,
+      seenResourceIds: input.input.seenResourceIds,
+    ));
+    final nextCursor = page.nextResourceId;
+    _validateCursor(nextCursor, input.cursors);
+
+    return nextCursor;
   }
 }
 
@@ -610,20 +819,25 @@ extension on CloudWorkspaceStateGateway {
     return state.pages.single;
   }
 
-  void _appendResources({
-    required WorkspaceResourceKind kind,
-    required WorkspaceResourcePage page,
-    required List<WorkspaceResource> resources,
-    required Set<String> seenResourceIds,
-  }) {
-    for (final resource in page.resources) {
-      if (resource.resourceKind != kind) {
-        _malformedSnapshot('unexpectedKind');
-      }
-      if (seenResourceIds.add('${kind.name}/${resource.resourceId}')) {
-        resources.add(resource);
-      }
+  void _appendResources(_AppendResourcesInput input) {
+    for (final resource in input.page.resources) {
+      _appendResource(input, resource);
     }
+  }
+
+  void _appendResource(
+    _AppendResourcesInput input,
+    WorkspaceResource resource,
+  ) {
+    if (resource.resourceKind != input.kind) {
+      _malformedSnapshot('unexpectedKind');
+    }
+    if (!input.seenResourceIds.add(
+      '${input.kind.name}/${resource.resourceId}',
+    )) {
+      return;
+    }
+    input.resources.add(resource);
   }
 
   void _validateCursor(String? cursor, Set<String> cursors) {

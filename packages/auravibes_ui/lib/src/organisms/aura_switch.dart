@@ -68,107 +68,144 @@ class _AuraSwitchState extends State<AuraSwitch> {
   bool _isFocused = false;
 
   @override
-  Widget build(BuildContext context) {
-    final isDisabled = _isDisabled(context);
-
-    return _AuraSwitchPresentation(
-      enabled: _isInteractive(isDisabled),
-      value: widget.value,
-      label: widget.semanticLabel,
-      onToggle: _toggle,
-      onShowFocusHighlight: _setFocus,
-      track: _trackData(context, isDisabled),
-    );
-  }
-
-  bool _isInteractive(bool isDisabled) =>
-      !isDisabled && !widget.isLoading && widget.onChanged != null;
+  Widget build(BuildContext context) =>
+      _AuraSwitchBuildData(this, context).child;
 
   void _toggle() => widget.onChanged?.call(!widget.value);
 
   void _setFocus(bool value) => setState(() => _isFocused = value);
+}
 
-  _AuraSwitchTrackData _trackData(BuildContext context, bool isDisabled) {
-    final colors = context.auraColors;
+class _AuraSwitchBuildData {
+  _AuraSwitchBuildData(_AuraSwitchState state, BuildContext context)
+    : child = _AuraSwitchPresentationData(
+        state,
+        _AuraSwitchTrackDataBuilder(state, context).value,
+      ).child;
 
-    return _AuraSwitchTrackData(
-      colors,
-      context.auraTheme.animation.normal,
-      _trackDimensions(),
-      _trackPalette(colors, isDisabled),
-      _trackState(isDisabled),
-    );
-  }
+  final Widget child;
+}
 
-  _AuraSwitchDimensions _trackDimensions() {
-    final trackWidth = _getTrackWidth();
-    final thumbSize = _getThumbSize();
-    final thumbPadding = _getThumbPadding();
-
-    return _AuraSwitchDimensions(
-      trackWidth,
-      _getTrackHeight(),
-      thumbSize,
-      thumbPadding,
-      widget.value
-          ? trackWidth - thumbSize - thumbPadding * _thumbPaddingMultiplier
-          : 0.0,
-    );
-  }
-
-  _AuraSwitchPalette _trackPalette(AuraColorScheme colors, bool isDisabled) =>
-      _AuraSwitchPalette(
-        _getTrackColor(colors, disabled: isDisabled),
-        _getThumbColor(colors),
-        _getLoadingTint(),
+class _AuraSwitchPresentationData {
+  _AuraSwitchPresentationData(
+    _AuraSwitchState state,
+    _AuraSwitchTrackData track,
+  ) : child = _AuraSwitchPresentation(
+        enabled: _switchIsInteractive(state.widget, track.state.isDisabled),
+        value: state.widget.value,
+        label: state.widget.semanticLabel,
+        onToggle: state._toggle,
+        onShowFocusHighlight: state._setFocus,
+        track: track,
       );
 
-  _AuraSwitchStateData _trackState(bool isDisabled) => _AuraSwitchStateData(
+  final Widget child;
+}
+
+class _AuraSwitchTrackDataBuilder {
+  _AuraSwitchTrackDataBuilder(_AuraSwitchState state, BuildContext context)
+    : value = _switchTrackDataForState(state, context);
+
+  final _AuraSwitchTrackData value;
+}
+
+_AuraSwitchTrackData _switchTrackDataForState(
+  _AuraSwitchState state,
+  BuildContext context,
+) {
+  final widget = state.widget;
+  final isDisabled = _switchIsDisabled(widget, context);
+
+  return _switchTrackData((
+    widget: widget,
+    colors: context.auraColors,
+    animation: context.auraTheme.animation.normal,
     isDisabled: isDisabled,
-    isLoading: widget.isLoading,
-    isFocused: _isFocused,
+    isFocused: state._isFocused,
+  ));
+}
+
+typedef _AuraSwitchBuildRequest = ({
+  AuraSwitch widget,
+  AuraColorScheme colors,
+  Duration animation,
+  bool isDisabled,
+  bool isFocused,
+});
+
+bool _switchIsInteractive(AuraSwitch widget, bool isDisabled) =>
+    !isDisabled && !widget.isLoading && widget.onChanged != null;
+
+bool _switchIsDisabled(AuraSwitch widget, BuildContext context) =>
+    widget.disabled || !AuraInteractionScope.of(context).allowsValueChanges;
+
+_AuraSwitchTrackData _switchTrackData(_AuraSwitchBuildRequest request) {
+  final widget = request.widget;
+
+  return _AuraSwitchTrackData(
+    request.colors,
+    request.animation,
+    _switchDimensions(widget),
+    _switchPalette(widget, request.colors, request.isDisabled),
+    _AuraSwitchStateData(
+      isDisabled: request.isDisabled,
+      isLoading: widget.isLoading,
+      isFocused: request.isFocused,
+    ),
   );
+}
 
-  bool _isDisabled(BuildContext context) =>
-      widget.disabled || !AuraInteractionScope.of(context).allowsValueChanges;
+_AuraSwitchDimensions _switchDimensions(AuraSwitch widget) =>
+    _AuraSwitchDimensions(
+      _switchTrackWidth(widget.size),
+      _switchTrackHeight(widget.size),
+      _switchThumbSize(widget.size),
+      AuraSwitch._thumbPadding,
+      _switchThumbOffset(widget),
+    );
 
-  double _getTrackWidth() {
-    return switch (widget.size) {
-      .sm => _smallTrackWidth,
-      .base => _baseTrackWidth,
-      .lg => _largeTrackWidth,
-    };
-  }
+double _switchThumbOffset(AuraSwitch widget) => widget.value
+    ? _switchTrackWidth(widget.size) -
+          _switchThumbSize(widget.size) -
+          AuraSwitch._thumbPadding * _AuraSwitchState._thumbPaddingMultiplier
+    : 0.0;
 
-  double _getTrackHeight() {
-    return switch (widget.size) {
-      .sm => _smallTrackHeight,
-      .base => _baseTrackHeight,
-      .lg => _largeTrackHeight,
-    };
-  }
+_AuraSwitchPalette _switchPalette(
+  AuraSwitch widget,
+  AuraColorScheme colors,
+  bool isDisabled,
+) => _AuraSwitchPalette(
+  _switchTrackColor(widget, colors, isDisabled),
+  colors.surface,
+  AuraTint.primary,
+);
 
-  double _getThumbSize() {
-    return switch (widget.size) {
-      .sm => _smallThumbSize,
-      .base => _baseThumbSize,
-      .lg => _largeThumbSize,
-    };
-  }
+double _switchTrackWidth(AuraSwitchSize size) => switch (size) {
+  .sm => _AuraSwitchState._smallTrackWidth,
+  .base => _AuraSwitchState._baseTrackWidth,
+  .lg => _AuraSwitchState._largeTrackWidth,
+};
 
-  double _getThumbPadding() => AuraSwitch._thumbPadding;
+double _switchTrackHeight(AuraSwitchSize size) => switch (size) {
+  .sm => _AuraSwitchState._smallTrackHeight,
+  .base => _AuraSwitchState._baseTrackHeight,
+  .lg => _AuraSwitchState._largeTrackHeight,
+};
 
-  Color _getTrackColor(AuraColorScheme colors, {required bool disabled}) {
-    if (disabled) {
-      return colors.outlineVariant;
-    }
+double _switchThumbSize(AuraSwitchSize size) => switch (size) {
+  .sm => _AuraSwitchState._smallThumbSize,
+  .base => _AuraSwitchState._baseThumbSize,
+  .lg => _AuraSwitchState._largeThumbSize,
+};
 
-    return widget.value ? colors.primary : colors.outline;
-  }
+Color _switchTrackColor(
+  AuraSwitch widget,
+  AuraColorScheme colors,
+  bool isDisabled,
+) {
+  if (isDisabled) return colors.outlineVariant;
 
-  Color _getThumbColor(AuraColorScheme colors) => colors.surface;
-
-  AuraTint _getLoadingTint() => AuraTint.primary;
+  return widget.value ? colors.primary : colors.outline;
 }
 
 class const _AuraSwitchDimensions(

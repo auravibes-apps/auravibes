@@ -79,7 +79,7 @@ class RunAppSkillToolUsecase(
   ));
 }
 
-extension on RunAppSkillToolUsecase {
+extension _RunAppSkillCredentialOperations on RunAppSkillToolUsecase {
   Future<_ResolvedTool> _resolveCredentialForTool(_RunRequest request) async {
     final target = _requiredTool(request.skillSlug, request.toolSlug);
     final skill = target.skill;
@@ -219,27 +219,32 @@ extension on RunAppSkillToolUsecase {
       metadata: metadata,
     ));
   }
+}
 
+extension _RunAppSkillSecretOperations on RunAppSkillToolUsecase {
   Future<Map<String, String>> _secretAttributes(
     _SecretAttributesRequest request,
   ) async {
-    final connectionRequest = request.request;
-
     return switch (request.secret) {
       ServiceConnectionSecretApiKey(:final apiKey) => _apiKeyAttributes(
-        connectionRequest.skill,
+        request.request.skill,
         apiKey,
       ),
       ServiceConnectionSecretBearerToken(:final bearerToken) =>
         _bearerAttributes(bearerToken),
       ServiceConnectionSecretOAuth2(:final accessToken) =>
-        await _oauthAttributes(
-          connectionRequest.connectionId,
-          accessToken,
-          request.metadata,
-        ),
+        _oauthSecretAttributes(request, accessToken),
     };
   }
+
+  Future<Map<String, String>> _oauthSecretAttributes(
+    _SecretAttributesRequest request,
+    String accessToken,
+  ) => _oauthAttributes(
+    request.request.connectionId,
+    accessToken,
+    request.metadata,
+  );
 
   Map<String, String> _apiKeyAttributes(
     AppSkillDefinition skill,
@@ -307,10 +312,16 @@ class _CancelableToolOperation {
     try {
       await _completeSuccess(completer);
     } on Object catch (error, stackTrace) {
-      if (!completer.isCanceled) {
-        completer.completeError(error, stackTrace);
-      }
+      _completeError(completer, error, stackTrace);
     }
+  }
+
+  void _completeError(
+    CancelableCompleter<Object?> completer,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (!completer.isCanceled) completer.completeError(error, stackTrace);
   }
 
   Future<void> _completeSuccess(CancelableCompleter<Object?> completer) async {

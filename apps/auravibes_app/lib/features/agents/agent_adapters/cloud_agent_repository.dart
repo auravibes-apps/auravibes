@@ -35,10 +35,24 @@ typedef _AgentUpdateData = ({
   Map<String, int> revisions,
 });
 
+typedef _AgentEntityInput = ({
+  WorkspaceResource resource,
+  String workspaceId,
+  Map<String, dynamic> data,
+  List<AgentSkillRef> skills,
+});
+
+typedef _AgentUpdateResponse = ({
+  String agentId,
+  String workspaceId,
+  PatchWorkspaceStateResponse response,
+  Map<String, int> revisions,
+});
+
 class CloudAgentRepository({
-  required final String workspaceId,
-  required final ReadCloudAgents read,
-  required final PatchCloudAgents patch,
+  @override required final String workspaceId,
+  @override required final ReadCloudAgents read,
+  @override required final PatchCloudAgents patch,
 }) with _CloudAgentRepositoryRead, _CloudAgentRepositoryWrite
     implements AgentRepository {
   new fromStore({
@@ -50,6 +64,7 @@ class CloudAgentRepository({
          read: () => _readCloudAgentResources(store),
        );
 
+  @override
   final Map<String, int> _revisions = {};
 
   @override
@@ -61,13 +76,17 @@ List<WorkspaceResource> _agentAssociations(
   Iterable<WorkspaceResource> resources,
   String agentId,
 ) => resources
-    .where(
-      (resource) =>
-          resource.resourceKind == WorkspaceResourceKind.agentAssociation &&
-          resource.deletedAt == null &&
-          CloudResourceMapper.decode(resource)['agentId'] == agentId,
-    )
+    .where((resource) => _isAgentAssociation(resource, agentId))
     .toList();
+
+bool _isAgentAssociation(WorkspaceResource resource, String agentId) {
+  if (resource.resourceKind != WorkspaceResourceKind.agentAssociation ||
+      resource.deletedAt != null) {
+    return false;
+  }
+
+  return CloudResourceMapper.decode(resource)['agentId'] == agentId;
+}
 
 List<WorkspaceResource> _agentSkillAssociations(
   Iterable<WorkspaceResource> resources,
@@ -85,31 +104,48 @@ AgentEntity _decodeAgent(
 ) {
   final data = CloudResourceMapper.decode(resource);
 
-  return _agentEntity(
-    resource,
-    workspaceId,
-    data,
-    _decodeAgentSkills(resources, resource.resourceId),
+  return _agentEntity((
+    resource: resource,
+    workspaceId: workspaceId,
+    data: data,
+    skills: _decodeAgentSkills(resources, resource.resourceId),
+  ));
+}
+
+AgentEntity _agentEntity(_AgentEntityInput input) {
+  return _baseAgentEntity(input).copyWith(
+    description: input._description,
+    isEnabled: input._isEnabled,
+    visibility: input._visibility,
   );
 }
 
-AgentEntity _agentEntity(
-  WorkspaceResource resource,
-  String workspaceId,
-  Map<String, dynamic> data,
-  List<AgentSkillRef> skills,
-) => AgentEntity(
-  id: resource.resourceId,
-  workspaceId: workspaceId,
-  name: data['name'] as String,
-  content: data['content'] as String,
-  skills: skills,
-  createdAt: resource.createdAt,
-  updatedAt: resource.updatedAt,
-  description: data['description'] as String? ?? '',
-  isEnabled: data['isEnabled'] as bool? ?? true,
-  visibility: CloudResourceMapper.visibility(data['visibility']),
-);
+AgentEntity _baseAgentEntity(_AgentEntityInput input) {
+  final resource = input.resource;
+
+  return AgentEntity(
+    id: resource.resourceId,
+    workspaceId: input.workspaceId,
+    name: input._name,
+    content: input._content,
+    skills: input.skills,
+    createdAt: resource.createdAt,
+    updatedAt: resource.updatedAt,
+  );
+}
+
+extension on _AgentEntityInput {
+  String get _name => data['name'] as String;
+
+  String get _content => data['content'] as String;
+
+  String get _description => data['description'] as String? ?? '';
+
+  bool get _isEnabled => data['isEnabled'] as bool? ?? true;
+
+  AgentVisibility get _visibility =>
+      CloudResourceMapper.visibility(data['visibility']);
+}
 
 AgentSkillRef _decodeSkill(WorkspaceResource resource) {
   final data = CloudResourceMapper.decode(resource);
@@ -193,22 +229,8 @@ mixin _CloudAgentRepositoryWrite {
     );
   }
 
-  Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async {
-    final resources = await read();
-    final response = await _patchAgentState(
-      patch,
-      _updateAgentOperations((
-        resources: resources,
-        agentId: agentId,
-        agent: agent,
-        revisions: _revisions,
-      )),
-    );
-    final resource = _agentResourceFromResponse(response);
-    _revisions[agentId] = resource.revision;
-
-    return _decodeAgent(resource, response.resources, workspaceId);
-  }
+  Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) =>
+      _updateAgentResponse(agentId, agent).then(_decodeUpdatedAgent);
 
   Future<bool> deleteAgent(String agentId) async {
     final resources = await read();
@@ -219,6 +241,48 @@ mixin _CloudAgentRepositoryWrite {
 
     return true;
   }
+}
+
+extension on _CloudAgentRepositoryWrite {
+  Future<_AgentUpdateResponse> _updateAgentResponse(
+    String agentId,
+    AgentToUpdate agent,
+  ) async {
+    final request = await _updateAgentRequest(agentId, agent);
+    final response = await _patchAgentState(
+      patch,
+      _updateAgentOperations(request),
+    );
+
+    return _updatedAgentData(agentId, response);
+  }
+
+  Future<_AgentUpdateData> _updateAgentRequest(
+    String agentId,
+    AgentToUpdate agent,
+  ) async => (
+    resources: await read(),
+    agentId: agentId,
+    agent: agent,
+    revisions: _revisions,
+  );
+
+  _AgentUpdateResponse _updatedAgentData(
+    String agentId,
+    PatchWorkspaceStateResponse response,
+  ) => (
+    agentId: agentId,
+    workspaceId: workspaceId,
+    response: response,
+    revisions: _revisions,
+  );
+}
+
+AgentEntity _decodeUpdatedAgent(_AgentUpdateResponse data) {
+  final resource = _agentResourceFromResponse(data.response);
+  data.revisions[data.agentId] = resource.revision;
+
+  return _decodeAgent(resource, data.response.resources, data.workspaceId);
 }
 
 void _recordAgentRevisions(
@@ -241,36 +305,30 @@ WorkspacePatchOperation _agentOperation(_AgentOperationData data) =>
     );
 
 Map<String, Object> _agentDataFor(Object agent) => switch (agent) {
-  AgentToCreate(
-    :final name,
-    :final description,
-    :final content,
-    :final isEnabled,
-    :final visibility,
-  ) =>
-    _agentData((
-      name: name,
-      description: description,
-      content: content,
-      isEnabled: isEnabled,
-      visibility: visibility,
-    )),
-  AgentToUpdate(
-    :final name,
-    :final description,
-    :final content,
-    :final isEnabled,
-    :final visibility,
-  ) =>
-    _agentData((
-      name: name,
-      description: description,
-      content: content,
-      isEnabled: isEnabled,
-      visibility: visibility,
-    )),
+  AgentToCreate value => _agentData(value._data),
+  AgentToUpdate value => _agentData(value._data),
   _ => throw ArgumentError.value(agent),
 };
+
+extension on AgentToCreate {
+  _AgentData get _data => (
+    name: name,
+    description: description,
+    content: content,
+    isEnabled: isEnabled,
+    visibility: visibility,
+  );
+}
+
+extension on AgentToUpdate {
+  _AgentData get _data => (
+    name: name,
+    description: description,
+    content: content,
+    isEnabled: isEnabled,
+    visibility: visibility,
+  );
+}
 
 Map<String, Object> _agentData(_AgentData data) => {
   'name': data.name.trim(),
@@ -342,20 +400,27 @@ WorkspaceResource _agentResourceFromResponse(
 );
 
 List<WorkspacePatchOperation> _updateAgentOperations(_AgentUpdateData data) {
+  final agentId = data.agentId;
   final associations = _agentSkillAssociations(data.resources, data.agentId);
   _recordAgentRevisions(data.revisions, data.resources);
 
-  return [
-    _agentOperation((
-      kind: .update,
-      id: data.agentId,
-      agent: data.agent,
-      expectedRevision: data.revisions[data.agentId],
-    )),
-    ..._deleteAgentAssociations(associations),
-    ..._agentSkillPatchOperations(data.agentId, data.agent.skills, .create),
-  ];
+  return _updatedAgentOperations(data, associations, agentId);
 }
+
+List<WorkspacePatchOperation> _updatedAgentOperations(
+  _AgentUpdateData data,
+  List<WorkspaceResource> associations,
+  String agentId,
+) => [
+  _agentOperation((
+    kind: .update,
+    id: agentId,
+    agent: data.agent,
+    expectedRevision: data.revisions[agentId],
+  )),
+  ..._deleteAgentAssociations(associations),
+  ..._agentSkillPatchOperations(agentId, data.agent.skills, .create),
+];
 
 List<WorkspacePatchOperation> _deleteAgentOperations(
   Iterable<WorkspaceResource> resources,

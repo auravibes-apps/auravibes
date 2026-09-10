@@ -75,13 +75,13 @@ class _ToolsGroupCardCallbacks {
       ? _handleDelete
       : null;
 
-  late final VoidCallback? onViewError = groupWithTools.hasMcpError
+  late final VoidCallback? onViewError = groupWithTools.hasMcpError()
       ? _showErrorDetails
       : null;
 
   late final bool _shouldShowReconnect =
       groupWithTools.isMcpGroup &&
-      (groupWithTools.hasMcpError || groupWithTools.isMcpDisconnected);
+      (groupWithTools.hasMcpError() || groupWithTools.isMcpDisconnected());
 
   void _handleToggleEnabled(bool enabled) {
     final group = groupWithTools.group;

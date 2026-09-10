@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/services/mcp_service/o_auth_discovery_result.dart';
 import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 
 class const BuildMcpServerToCreateUseCase({
@@ -55,12 +56,17 @@ class const BuildMcpServerToCreateUseCase({
     final token = await _authenticator.authenticate(discover);
 
     return serverInfo.copyWith(
-      authenticationType: McpAuthenticationTypeOAuth(
-        token: token.toEntity(),
-        clientId: discover.clientId ?? 'app-client-id',
-        authorizationEndpoint: discover.authorizationUrl,
-        tokenEndpoint: discover.tokenUrl,
-      ),
+      authenticationType: _oauthAuthentication(discover, token.toEntity()),
     );
   }
 }
+
+McpAuthenticationType _oauthAuthentication(
+  OAuthDiscoveryResult discover,
+  OAuthTokenEntity token,
+) => McpAuthenticationTypeOAuth(
+  token: token,
+  clientId: discover.clientId ?? 'app-client-id',
+  authorizationEndpoint: discover.authorizationUrl,
+  tokenEndpoint: discover.tokenUrl,
+);

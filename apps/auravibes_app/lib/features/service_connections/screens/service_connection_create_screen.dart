@@ -169,31 +169,37 @@ Future<void> _saveAppSkillCredentialRequest(
     await _createAppSkillCredential(state, data);
     await _closeAfterSave(state, resetModelMutation: false);
   } on Object catch (error, stackTrace) {
-    _logAppSkillCredentialSaveFailure((
+    _handleAppSkillCredentialSaveFailure((
       state: state,
       data: data,
       error: error,
       stackTrace: stackTrace,
     ));
-    _showCredentialSaveError(state);
   } finally {
     _finishSaving(state);
   }
 }
 
+void _handleAppSkillCredentialSaveFailure(
+  _AppSkillCredentialFailureLogRequest request,
+) {
+  _logAppSkillCredentialSaveFailure(request);
+  _showCredentialSaveError(request.state);
+}
+
 _AppSkillCredentialSaveData? _appSkillCredentialSaveData(
   _ServiceConnectionCreateScreenState state,
 ) {
-  return switch ((
-    appSkillId: state._appSkillId,
-    apiKey: state._attributeControllers['apiKey']?.text.trim(),
-    name: state._nameController.text.trim(),
-  )) {
-    (appSkillId: final appSkillId?, apiKey: final apiKey?, name: final name)
-        when apiKey.isNotEmpty && name.isNotEmpty =>
-      (appSkillId: appSkillId, apiKey: apiKey, name: name),
-    _ => null,
-  };
+  final appSkillId = state._appSkillId;
+  if (appSkillId == null) return null;
+
+  final apiKey = state._apiKeyController.text.trim();
+  if (apiKey.isEmpty) return null;
+
+  final name = state._nameController.text.trim();
+  if (name.isEmpty) return null;
+
+  return (appSkillId: appSkillId, apiKey: apiKey, name: name);
 }
 
 Future<void> _createAppSkillCredential(
@@ -258,11 +264,7 @@ Future<void> _executeSkillCredentialSave(
   String definitionId,
 ) async {
   final attributes = _attributeValues(state);
-  final credential = await _createAndLogSkillCredential(
-    state,
-    definitionId,
-    attributes,
-  );
+  await _createAndLogSkillCredential(state, definitionId, attributes);
   await _closeAfterSave(
     state,
     refreshServiceConnections: false,
@@ -295,11 +297,17 @@ String? _skillCredentialDefinitionId(
 ) {
   if (state._isSaving) {
     _logSkillCredentialSaveIgnored(state);
+
     return null;
   }
 
   final definitionId = state._definitionId;
-  if (definitionId == null) _logSkillCredentialSaveBlocked(state);
+  if (definitionId == null) {
+    _logSkillCredentialSaveBlocked(state);
+
+    return null;
+  }
+
   return definitionId;
 }
 
@@ -477,9 +485,8 @@ class const _ServiceConnectionCreateForm({
   required final VoidCallback onSkillCredentialSave,
   required final VoidCallback onAppSkillCredentialSave,
 }) {
-  _ServiceConnectionCreateForm.fromState(
-    _ServiceConnectionCreateScreenState state,
-  ) : this(
+  new fromState(_ServiceConnectionCreateScreenState state)
+    : this(
         workspaceId: state.widget.workspaceId,
         type: state._type,
         selectedDefinitionId: state._definitionId,
@@ -696,7 +703,8 @@ List<SkillCredentialDefinitionEntity>? _credentialDefinitions(
 ) => switch (value) {
   AsyncData(:final value) => value,
   AsyncLoading(value: final value?, hasValue: true) => value,
-  _ => null,
+  AsyncLoading() => null,
+  AsyncError() => null,
 };
 
 class const _CredentialForm({
@@ -754,7 +762,7 @@ class const _AppSkillCredentialCard({
   required final ValueChanged<String> onApiKeyChanged,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
-  _AppSkillCredentialCard._fromForm(_AppSkillCredentialForm form)
+  new _fromForm(_AppSkillCredentialForm form)
     : this(
         selectedAppSkillId: form.selectedAppSkillId,
         nameController: form.nameController,
@@ -775,7 +783,7 @@ class const _AppSkillCredentialCard({
           _AppSkillCredentialSelector.fromCard(this),
           _CredentialNameField._fromAppSkillCard(this),
           _AppSkillCredentialValueField.fromCard(this),
-          _CredentialSaveAction.fromAppSkillCard(this),
+          _CredentialSaveAction._fromAppSkillCard(this),
         ],
         spacing: .md,
         crossAxisAlignment: .start,
@@ -788,7 +796,7 @@ class const _AppSkillCredentialSelector({
   required final String? value,
   required final ValueChanged<String?> onChanged,
 }) extends StatelessWidget {
-  _AppSkillCredentialSelector.fromCard(_AppSkillCredentialCard card)
+  new fromCard(_AppSkillCredentialCard card)
     : this(value: card.selectedAppSkillId, onChanged: card.onAppSkillChanged);
 
   @override
@@ -813,10 +821,10 @@ class const _CredentialNameField({
   required final TextEditingController controller,
   required final ValueChanged<String> onChanged,
 }) extends StatelessWidget {
-  _CredentialNameField._fromAppSkillCard(_AppSkillCredentialCard card)
+  new _fromAppSkillCard(_AppSkillCredentialCard card)
     : this(controller: card.nameController, onChanged: card.onNameChanged);
 
-  _CredentialNameField._fromCredentialCard(_CredentialFormCard card)
+  new _fromCredentialCard(_CredentialFormCard card)
     : this(controller: card.nameController, onChanged: card.onNameChanged);
 
   @override
@@ -834,7 +842,7 @@ class const _AppSkillCredentialValueField({
   required final TextEditingController controller,
   required final ValueChanged<String> onChanged,
 }) extends StatelessWidget {
-  _AppSkillCredentialValueField.fromCard(_AppSkillCredentialCard card)
+  new fromCard(_AppSkillCredentialCard card)
     : this(
         appSkillId: card.selectedAppSkillId,
         controller: card.apiKeyController,
@@ -858,14 +866,14 @@ class const _CredentialSaveAction({
   required final bool isSaving,
   required final bool disabled,
 }) extends StatelessWidget {
-  _CredentialSaveAction._fromAppSkillCard(_AppSkillCredentialCard card)
+  new _fromAppSkillCard(_AppSkillCredentialCard card)
     : this(
         onSave: card.onSave,
         isSaving: card.isSaving,
         disabled: !card.canSave,
       );
 
-  _CredentialSaveAction._fromCredentialCard(_CredentialFormCard card)
+  new _fromCredentialCard(_CredentialFormCard card)
     : this(
         onSave: card.onSave,
         isSaving: card.isSaving,
@@ -927,7 +935,7 @@ class const _CredentialFormContent({
   required final ValueChanged<String?> onDefinitionChanged,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
-  _CredentialFormContent.fromCredentialForm(
+  new fromCredentialForm(
     _CredentialForm form,
     List<SkillCredentialDefinitionEntity> definitions,
   ) : this(
@@ -960,7 +968,7 @@ class const _CredentialFormCard({
   required final ValueChanged<String?> onDefinitionChanged,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
-  _CredentialFormCard.fromContent(_CredentialFormContent content)
+  new fromContent(_CredentialFormContent content)
     : this(
         definitions: content.definitions,
         selectedDefinitionId: content.selectedDefinitionId,
@@ -1040,14 +1048,14 @@ class const _CredentialFormFieldsColumn({
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      mainAxisSize: .min,
-      spacing: .md,
-      crossAxisAlignment: .start,
       children: [
         _CredentialNameField._fromCredentialCard(card),
         _CredentialAttributesFields._fromCredentialCard(card, definition),
         _CredentialSaveAction._fromCredentialCard(card),
       ],
+      mainAxisSize: .min,
+      spacing: .md,
+      crossAxisAlignment: .start,
     );
   }
 }
@@ -1057,6 +1065,13 @@ class const _DefinitionSelector({
   required final String? selectedDefinitionId,
   required final ValueChanged<String?> onChanged,
 }) extends StatelessWidget {
+  new _fromCard(_CredentialFormCard card)
+    : this(
+        definitions: card.definitions,
+        selectedDefinitionId: card.selectedDefinitionId,
+        onChanged: card.onDefinitionChanged,
+      );
+
   @override
   Widget build(BuildContext context) {
     return AuraDropdownSelector<String>(
@@ -1078,7 +1093,7 @@ class const _CredentialAttributesFields({
   required final SkillCredentialDefinitionEntity definition,
   required final Map<String, TextEditingController> controllers,
 }) extends StatelessWidget {
-  _CredentialAttributesFields._fromCredentialCard(
+  new _fromCredentialCard(
     _CredentialFormCard card,
     SkillCredentialDefinitionEntity definition,
   ) : this(definition: definition, controllers: card.attributeControllers);

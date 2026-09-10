@@ -40,7 +40,7 @@ typedef _RequestFailure = ({Object error, StackTrace stackTrace});
 
 class UrlService({Dio? dio}) {
   final Dio _dio = dio ?? Dio();
-  final _UrlResponseBodyReader _bodyReader = _UrlResponseBodyReader();
+  final _UrlResponseBodyReader _bodyReader = .new();
 
   // Null means use the existing Dio adapter.
   // ignore: unnecessary-nullable
@@ -137,7 +137,7 @@ _RequestExecution? _createExecution(UrlRequest request, _RequestSetup setup) {
 void _completeUnsupportedRequest(CancelableCompleter<UrlResponse> completer) {
   completer.completeError(
     UnsupportedError('HTTP adapter does not support address pinning'),
-    StackTrace.current,
+    .current,
   );
 }
 
@@ -243,6 +243,7 @@ Future<void> _handleRequestError(
   stopwatch.stop();
   if (error is! DioException) {
     completer.completeError(error, stackTrace);
+
     return;
   }
   await _handleDioError(bodyReader, error, requestError);
@@ -255,6 +256,7 @@ Future<void> _handleDioError(
 ) async {
   if (error.type == DioExceptionType.cancel) {
     final _ = requestError.completer.operation.cancel();
+
     return;
   }
 
@@ -362,7 +364,7 @@ class _UrlResponseBodyReader {
 }
 
 class _BodyStreamReader {
-  _BodyStreamReader(this._responseBody);
+  new(this._responseBody);
 
   final ResponseBody _responseBody;
   final _bytes = <int>[];
@@ -386,6 +388,7 @@ class _BodyStreamReader {
     final remainingBytes = _maxResponseSize - _bytes.length;
     if (chunk.length <= remainingBytes) {
       _bytes.addAll(chunk);
+
       return;
     }
 

@@ -2,6 +2,7 @@
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -82,27 +83,45 @@ class const _ConversationGroupTitleRow({
   @override
   Widget build(BuildContext context) => AuraRow(
     children: [
-      Expanded(
-        child: AuraText(
-          child: Text(
-            groupWithTools.localizedDisplayNameKey?.tr() ??
-                groupWithTools.group?.name ??
-                '',
-            overflow: .ellipsis,
-            maxLines: 2,
-          ),
-          style: .heading6,
-        ),
-      ),
-      AuraIconButton.custom(
-        child: AnimatedRotation(
-          child: const AuraIcon(Icons.keyboard_arrow_down),
-          turns: isExpanded ? 0.5 : 0,
-          duration: const Duration(milliseconds: 200),
-        ),
-        onPressed: onToggleExpand,
+      _ConversationGroupTitle(groupWithTools: groupWithTools),
+      _ConversationGroupExpandButton(
+        isExpanded: isExpanded,
+        onToggleExpand: onToggleExpand,
       ),
     ],
+  );
+}
+
+class const _ConversationGroupTitle({
+  required final ConversationToolsGroupWithTools groupWithTools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: AuraText(
+      child: Text(
+        groupWithTools.localizedDisplayNameKey?.tr() ??
+            groupWithTools.group?.name ??
+            '',
+        overflow: .ellipsis,
+        maxLines: 2,
+      ),
+      style: .heading6,
+    ),
+  );
+}
+
+class const _ConversationGroupExpandButton({
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton.custom(
+    child: AnimatedRotation(
+      child: const AuraIcon(Icons.keyboard_arrow_down),
+      turns: isExpanded ? 0.5 : 0,
+      duration: const Duration(milliseconds: 200),
+    ),
+    onPressed: onToggleExpand,
   );
 }
 
@@ -179,7 +198,7 @@ class const _GroupIcon({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final hasEnabledTools = groupWithTools.areAnyToolsEnabled;
+    final hasEnabledTools = groupWithTools.areAnyToolsEnabled();
     final isMcp = groupWithTools.isMcpGroup;
 
     return _GroupIconSurface(
@@ -226,18 +245,29 @@ class const _McpStatusBadge({
   final VoidCallback? onViewError,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => switch (groupWithTools.mcpStatus) {
-    null => const SizedBox.shrink(),
-    .connecting => const SizedBox(
-      width: 16,
-      height: 16,
-      child: AuraSpinner(size: .small),
-    ),
-    .connected => AuraBadge.text(
-      child: Text(LocaleKeys.tools_screen_mcp_connected.tr()),
-      variant: .success,
-      size: .small,
-    ),
+  Widget build(BuildContext context) {
+    final status = groupWithTools.mcpStatus();
+    if (status == null) return const SizedBox.shrink();
+
+    return _McpStatusBadgeState(
+      groupWithTools: groupWithTools,
+      status: status,
+      onReconnect: onReconnect,
+      onViewError: onViewError,
+    );
+  }
+}
+
+class const _McpStatusBadgeState({
+  required final ConversationToolsGroupWithTools groupWithTools,
+  required final McpConnectionStatus status,
+  final VoidCallback? onReconnect,
+  final VoidCallback? onViewError,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (status) {
+    .connecting => const _ConnectingBadge(),
+    .connected => const _ConnectedBadge(),
     .error => _ErrorBadge(
       groupWithTools: groupWithTools,
       onReconnect: onReconnect,
@@ -295,26 +325,56 @@ class const _ErrorBadgeActions({
   final VoidCallback? onViewError,
   final VoidCallback? onReconnect,
 }) extends StatelessWidget {
+  bool get _canViewError =>
+      onViewError != null && groupWithTools.mcpErrorMessage != null;
+
   @override
   Widget build(BuildContext context) => AuraRow(
     children: [
-      if (onViewError != null && groupWithTools.mcpErrorMessage != null)
-        AuraIconButton(
+      if (_canViewError)
+        _ErrorBadgeAction(
           icon: Icons.visibility_outlined,
           onPressed: onViewError,
-          size: .small,
           tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
         ),
       if (onReconnect != null)
-        AuraIconButton(
+        _ErrorBadgeAction(
           icon: Icons.refresh,
           onPressed: onReconnect,
-          size: .small,
           tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
         ),
     ],
     spacing: .sm,
     mainAxisSize: .min,
+  );
+}
+
+class const _ConnectingBadge() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      const SizedBox(width: 16, height: 16, child: AuraSpinner(size: .small));
+}
+
+class const _ConnectedBadge() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraBadge.text(
+    child: Text(LocaleKeys.tools_screen_mcp_connected.tr()),
+    variant: .success,
+    size: .small,
+  );
+}
+
+class const _ErrorBadgeAction({
+  required final IconData icon,
+  required final VoidCallback? onPressed,
+  required final String tooltip,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: icon,
+    onPressed: onPressed,
+    size: .small,
+    tooltip: tooltip,
   );
 }
 

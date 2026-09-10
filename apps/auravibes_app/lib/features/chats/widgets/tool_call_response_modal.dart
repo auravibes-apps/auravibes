@@ -34,99 +34,123 @@ class const ToolCallResponseModal({
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          .circular(context.auraTheme.fromBorderRadius(.xl)),
-        ),
-      ),
-      child: Container(
-        width: MediaQuery.sizeOf(context).width * 0.9,
-        constraints: .new(
-          maxWidth: 600,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
-        ),
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            // Header with tool name and close button.
-            _ToolCallResponseModalHeader(toolName: toolName),
-
-            // Scrollable markdown content.
-            Flexible(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-                child: SizedBox(
-                  width: .infinity,
-                  child: AuraText(child: GptMarkdown(content)),
-                ),
-              ),
-            ),
-
-            // Footer with close button.
-            const _ToolCallResponseModalFooter(),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Dialog(
+    shape: _toolCallResponseDialogShape(context),
+    child: _ToolCallResponseModalBody(toolName: toolName, content: content),
+  );
 }
 
-class const _ToolCallResponseModalHeader({required final String toolName})
-    extends StatelessWidget {
+ShapeBorder _toolCallResponseDialogShape(BuildContext context) =>
+    RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(
+        .circular(context.auraTheme.fromBorderRadius(.xl)),
+      ),
+    );
+
+class const _ToolCallResponseModalBody({
+  required final String toolName,
+  required final String content,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+
     return Container(
-      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: .new(
-            color: context.auraColors.outline.withValues(
-              alpha: ToolCallResponseModal._dividerOpacity,
-            ),
-          ),
-        ),
-      ),
-      child: Row(
+      width: size.width * 0.9,
+      constraints: .new(maxWidth: 600, maxHeight: size.height * 0.85),
+      child: Column(
+        mainAxisSize: .min,
         children: [
-          const AuraIcon(Icons.terminal, tint: .primary),
-          const AuraSizedBox(width: .sm),
-          Expanded(
-            child: AuraText(child: Text(toolName), style: .heading6),
-          ),
-          AuraIconButton(
-            icon: Icons.close,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+          _ToolCallResponseModalHeader(toolName: toolName),
+          _ToolCallResponseModalMarkdown(content: content),
+          const _ToolCallResponseModalFooter(),
         ],
       ),
     );
   }
 }
 
+class const _ToolCallResponseModalMarkdown({required final String content})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Flexible(
+    child: SingleChildScrollView(
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+      child: SizedBox(
+        width: .infinity,
+        child: AuraText(child: GptMarkdown(content)),
+      ),
+    ),
+  );
+}
+
+class const _ToolCallResponseModalHeader({required final String toolName})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+    decoration: _toolCallResponseHeaderDecoration(context),
+    child: _ToolCallResponseModalHeaderRow(toolName: toolName),
+  );
+}
+
+class const _ToolCallResponseModalHeaderRow({required final String toolName})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      const AuraIcon(Icons.terminal, tint: .primary),
+      const AuraSizedBox(width: .sm),
+      Expanded(
+        child: AuraText(child: Text(toolName), style: .heading6),
+      ),
+      AuraIconButton(
+        icon: Icons.close,
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+    ],
+  );
+}
+
 class const _ToolCallResponseModalFooter() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-      decoration: BoxDecoration(
-        border: Border(
-          top: .new(
-            color: context.auraColors.outline.withValues(
-              alpha: ToolCallResponseModal._dividerOpacity,
-            ),
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+    decoration: _toolCallResponseFooterDecoration(context),
+    child: const _ToolCallResponseModalCloseButton(),
+  );
+}
+
+class const _ToolCallResponseModalCloseButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: .infinity,
+    child: AuraButton(
+      onPressed: () => Navigator.of(context).pop(),
+      child: const TextLocale(LocaleKeys.common_close),
+      variant: .outlined,
+    ),
+  );
+}
+
+BoxDecoration _toolCallResponseHeaderDecoration(BuildContext context) =>
+    BoxDecoration(
+      border: Border(
+        bottom: .new(
+          color: context.auraColors.outline.withValues(
+            alpha: ToolCallResponseModal._dividerOpacity,
           ),
         ),
       ),
-      child: SizedBox(
-        width: .infinity,
-        child: AuraButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const TextLocale(LocaleKeys.common_close),
-          variant: .outlined,
+    );
+
+BoxDecoration _toolCallResponseFooterDecoration(BuildContext context) =>
+    BoxDecoration(
+      border: Border(
+        top: .new(
+          color: context.auraColors.outline.withValues(
+            alpha: ToolCallResponseModal._dividerOpacity,
+          ),
         ),
       ),
     );
-  }
-}

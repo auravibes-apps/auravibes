@@ -27,17 +27,26 @@ class AuraLink extends StatelessWidget {
     final enabled =
         AuraInteractionScope.of(context).allowsNavigation && onPressed != null;
 
-    return Semantics(
+    return _AuraLinkSemantics(
+      label: semanticLabel,
+      enabled: enabled,
       child: _AuraLinkInteraction(
         label: label,
         enabled: enabled,
         onPressed: onPressed,
       ),
-      enabled: enabled,
-      link: true,
-      label: semanticLabel,
     );
   }
+}
+
+class const _AuraLinkSemantics({
+  required final String? label,
+  required final bool enabled,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Semantics(child: child, enabled: enabled, link: true, label: label);
 }
 
 class const _AuraLinkInteraction({
@@ -46,19 +55,51 @@ class const _AuraLinkInteraction({
   required final VoidCallback? onPressed,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => _AuraLinkMouseRegion(
+    label: label,
+    enabled: enabled,
+    onPressed: onPressed,
+  );
+}
+
+class const _AuraLinkMouseRegion({
+  required final String label,
+  required final bool enabled,
+  required final VoidCallback? onPressed,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) => MouseRegion(
     cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-    child: GestureDetector(
-      child: AuraText(
-        child: Text(
-          label,
-          style: .new(
-            color: context.auraColors.primary,
-            decoration: TextDecoration.underline,
-          ),
-        ),
+    child: _AuraLinkGesture(
+      label: label,
+      enabled: enabled,
+      onPressed: onPressed,
+    ),
+  );
+}
+
+class const _AuraLinkGesture({
+  required final String label,
+  required final bool enabled,
+  required final VoidCallback? onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    child: _AuraLinkLabel(label: label),
+    onTap: enabled ? onPressed : null,
+  );
+}
+
+class const _AuraLinkLabel({required final String label})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      label,
+      style: .new(
+        color: context.auraColors.primary,
+        decoration: TextDecoration.underline,
       ),
-      onTap: enabled ? onPressed : null,
     ),
   );
 }

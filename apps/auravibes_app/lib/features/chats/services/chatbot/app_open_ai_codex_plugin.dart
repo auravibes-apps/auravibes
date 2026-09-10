@@ -36,58 +36,92 @@ extension on AppOpenAICodexPlugin {
     fn: (request, context) => _generateModel(modelName, request, context),
   );
 
-  Future<dynamic> _generateModel(
+  Future<ModelResponse> _generateModel(
     String modelName,
-    dynamic request,
-    dynamic context,
+    ModelRequest? request,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) async {
     if (request == null) throw ArgumentError.notNull('request');
-    final body = codec.buildRequestBody(
-      modelName: modelName,
-      request: request,
-      stream: context.streamingRequested,
-    );
+
+    final body = _requestBody(modelName, request, context.streamingRequested);
     if (!context.streamingRequested) {
-      return codec.complete(_transport, body);
+      return await codec.complete(_transport, body);
     }
 
+    return _streamWithRetry(body, context);
+  }
+
+  Map<String, dynamic> _requestBody(
+    String modelName,
+    ModelRequest request,
+    bool streamingRequested,
+  ) => codec.buildRequestBody(
+    modelName: modelName,
+    request: request,
+    stream: streamingRequested,
+  );
+
+  Future<ModelResponse> _streamWithRetry(
+    Map<String, dynamic> body,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) => _streamAttempt(body, context, 0);
+
+  Future<ModelResponse> _streamAttempt(
+    Map<String, dynamic> body,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+    int attempt,
+  ) async {
     var sentChunks = false;
-    for (var attempt = 0; ; attempt++) {
-      try {
-        return codec.stream(_transport, body, (chunk) {
-          sentChunks = true;
-          context.sendChunk(chunk);
-        });
-      } on GenkitException catch (error) {
-        if (!isRetryableCodexError(error) || attempt > 0 || sentChunks) {
-          rethrow;
-        }
+    try {
+      return await codec.stream(_transport, body, (chunk) {
+        sentChunks = true;
+        context.sendChunk(chunk);
+      });
+    } on GenkitException catch (error) {
+      if (!isRetryableCodexError(error) || attempt > 0 || sentChunks) {
+        rethrow;
       }
+
+      return _streamAttempt(body, context, attempt + 1);
     }
   }
 
   Future<ProviderTransportResponse> _transport(
     Map<String, dynamic> body,
   ) async {
-    if (accessToken.trim().isEmpty) {
-      throw GenkitException(
-        '[openai_codex] OAuth access token is required.',
-        status: .INVALID_ARGUMENT,
-      );
-    }
-    final request = http.Request('POST', .parse(baseUrl))
-      ..headers.addAll({
-        'authorization': 'Bearer ${accessToken.trim()}',
-        'content-type': 'application/json',
-        'originator': 'auravibes',
-        'user-agent': 'AuraVibes',
-        if (accountId case final value? when value.isNotEmpty)
-          'ChatGPT-Account-Id': value,
-        if (sessionId case final value? when value.isNotEmpty)
-          'session-id': value,
-      })
-      ..body = jsonEncode(body);
+    _ensureAccessToken();
+    final request = _request(body);
     final client = httpClient ?? http.Client();
+    return _sendRequest(client, request);
+  }
+
+  void _ensureAccessToken() {
+    if (accessToken.trim().isNotEmpty) return;
+
+    throw GenkitException(
+      '[openai_codex] OAuth access token is required.',
+      status: .INVALID_ARGUMENT,
+    );
+  }
+
+  http.Request _request(Map<String, dynamic> body) =>
+      http.Request('POST', .parse(baseUrl))
+        ..headers.addAll({
+          'authorization': 'Bearer ${accessToken.trim()}',
+          'content-type': 'application/json',
+          'originator': 'auravibes',
+          'user-agent': 'AuraVibes',
+          if (accountId case final value? when value.isNotEmpty)
+            'ChatGPT-Account-Id': value,
+          if (sessionId case final value? when value.isNotEmpty)
+            'session-id': value,
+        })
+        ..body = jsonEncode(body);
+
+  Future<ProviderTransportResponse> _sendRequest(
+    http.Client client,
+    http.Request request,
+  ) async {
     try {
       final response = await client.send(request).timeout(requestTimeout);
 

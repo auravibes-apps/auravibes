@@ -132,30 +132,30 @@ class const _AuraDropdownOptionLeading<T>({
   };
 }
 
-class const _AuraDropdownOptionTrailing<T>({
-  required final AuraDropdownOption<T> option,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    if (option.trailing case final trailing?) {
-      return Row(
-        mainAxisSize: .min,
-        children: [
-          const AuraSizedBox(width: .sm),
-          trailing,
-        ],
-      );
-    }
-    if (!option.isSelected) return const SizedBox.shrink();
+class _AuraDropdownOptionTrailing<T> extends StatelessWidget {
+  _AuraDropdownOptionTrailing({required AuraDropdownOption<T> option})
+    : _child = switch (option.trailing) {
+        final trailing? => Row(
+          mainAxisSize: .min,
+          children: [
+            const AuraSizedBox(width: .sm),
+            trailing,
+          ],
+        ),
+        null when option.isSelected => const Row(
+          mainAxisSize: .min,
+          children: [
+            AuraSizedBox(width: .sm),
+            AuraIcon(Icons.check, size: .small, tint: .primary),
+          ],
+        ),
+        null => const SizedBox.shrink(),
+      };
 
-    return const Row(
-      mainAxisSize: .min,
-      children: [
-        AuraSizedBox(width: .sm),
-        AuraIcon(Icons.check, size: .small, tint: .primary),
-      ],
-    );
-  }
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraDropdownOptionLabel<T>({

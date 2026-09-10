@@ -44,6 +44,7 @@ class OAuthDiscoveryService {
       _oauthDiscoveryLogger.info(
         'Discovering OAuth configuration for MCP server',
       );
+
       return await _discoverFromEndpoints(registrer);
     } on Exception catch (error, stackTrace) {
       _oauthDiscoveryLogger.warning(
@@ -57,22 +58,13 @@ class OAuthDiscoveryService {
   }
 
   /// Try RFC 8414 OAuth 2.0 Authorization Server Metadata.
-  static Future<OAuthDiscoveryResult?> _tryWellKnownEndpoint({
-    required String baseUrl,
-    required String redirectUrl,
-    required String clientName,
-  }) async {
+  static Future<OAuthDiscoveryResult?> _tryWellKnownEndpoint(
+    OAuthConnector connector,
+  ) async {
     try {
-      final wellKnownUrl = '$baseUrl/.well-known/oauth-authorization-server';
       _oauthDiscoveryLogger.info('Trying well-known OAuth endpoint');
 
-      final response = await _requestWellKnown(wellKnownUrl);
-
-      return _wellKnownResponse(
-        response,
-        redirectUrl: redirectUrl,
-        clientName: clientName,
-      );
+      return await _wellKnownDiscovery(connector);
     } on Exception catch (error, stackTrace) {
       _oauthDiscoveryLogger.fine(
         'Well-known endpoint not available',
@@ -84,25 +76,17 @@ class OAuthDiscoveryService {
     return null;
   }
 
-  static Future<OAuthDiscoveryResult?> _parseWellKnownMetadata(
-    Map<String, dynamic> metadata, {
-    required String redirectUrl,
-    required String clientName,
-  }) async {
-    final endpoints = _wellKnownEndpoints(metadata);
-    if (endpoints == null) return null;
-    final registrationEndpoint = metadata['registration_endpoint'] as String?;
-    final clientId = await _wellKnownClientId(
-      metadata: metadata,
-      registrationEndpoint: registrationEndpoint,
-      redirectUrl: redirectUrl,
-      clientName: clientName,
+  static Future<OAuthDiscoveryResult?> _wellKnownDiscovery(
+    OAuthConnector connector,
+  ) async {
+    final response = await _requestWellKnown(
+      _wellKnownUrl(_baseUrl(connector.serverUrl)),
     );
-    return OAuthDiscoveryResult(
-      authorizationUrl: endpoints.authorizationUrl,
-      tokenUrl: endpoints.tokenUrl,
-      clientId: clientId,
-      scope: metadata['scope'] as String?,
+
+    return await _wellKnownResponse(
+      response,
+      redirectUrl: connector.redirectUrl,
+      clientName: connector.clientName,
     );
   }
 
@@ -115,9 +99,7 @@ class OAuthDiscoveryService {
       final uri = _probeUri(serverUrl);
       if (uri == null) return null;
 
-      final response = await _requestDirectProbe(uri);
-
-      return _parseDirectProbeResponse(response);
+      return _parseDirectProbeResponse(await _requestDirectProbe(uri));
     } on Exception catch (error, stackTrace) {
       _oauthDiscoveryLogger.fine(
         'Direct server probe failed',
@@ -148,6 +130,7 @@ class OAuthDiscoveryService {
     if (!_hasBearerChallenge(response)) return null;
 
     _oauthDiscoveryLogger.info('Server requires OAuth authentication');
+
     return _headerChallengeResult(response);
   }
 
@@ -166,6 +149,7 @@ class OAuthDiscoveryService {
       _oauthDiscoveryLogger.info('Trying OAuth metadata endpoint');
 
       final response = await _requestOAuthMetadata(metadataUrl);
+
       return _metadataResponse(response);
     } on Exception catch (error, stackTrace) {
       _oauthDiscoveryLogger.fine(
@@ -177,35 +161,10 @@ class OAuthDiscoveryService {
 
     return null;
   }
-
-  /// Try dynamic client registration (RFC 7591).
-  static Future<String?> _tryDynamicClientRegistration({
-    required String registrationEndpoint,
-    required String redirectUrl,
-    required String clientName,
-  }) async {
-    try {
-      _oauthDiscoveryLogger.info(
-        'Attempting dynamic OAuth client registration',
-      );
-      final response = await _postDynamicClientRegistration(
-        registrationEndpoint: registrationEndpoint,
-        redirectUrl: redirectUrl,
-        clientName: clientName,
-      );
-
-      return _registeredClientId(response);
-    } on Exception catch (error, stackTrace) {
-      _oauthDiscoveryLogger.warning(
-        'Dynamic client registration error',
-        error,
-        stackTrace,
-      );
-    }
-
-    return null;
-  }
 }
+
+String _wellKnownUrl(String baseUrl) =>
+    '$baseUrl/.well-known/oauth-authorization-server';
 
 Future<OAuthDiscoveryResult?> _wellKnownResponse(
   http.Response response, {
@@ -214,28 +173,44 @@ Future<OAuthDiscoveryResult?> _wellKnownResponse(
 }) {
   if (response.statusCode != HttpStatus.ok) return Future.value();
 
-  return OAuthDiscoveryService._parseWellKnownMetadata(
+  return _parseWellKnownMetadata(
     json.decode(response.body) as Map<String, dynamic>,
     redirectUrl: redirectUrl,
     clientName: clientName,
   );
 }
 
+Future<OAuthDiscoveryResult?> _parseWellKnownMetadata(
+  Map<String, dynamic> metadata, {
+  required String redirectUrl,
+  required String clientName,
+}) async {
+  final endpoints = _wellKnownEndpoints(metadata);
+  if (endpoints == null) return null;
+
+  return await _completeWellKnownMetadata((
+    endpoints: endpoints,
+    metadata: metadata,
+    redirectUrl: redirectUrl,
+    clientName: clientName,
+  ));
+}
+
 Future<OAuthDiscoveryResult?> _discoverFromEndpoints(
   OAuthConnector registrer,
 ) async {
-  final baseUrl = _baseUrl(registrer.serverUrl);
-  final wellKnown = await OAuthDiscoveryService._tryWellKnownEndpoint(
-    baseUrl: baseUrl,
-    redirectUrl: registrer.redirectUrl,
-    clientName: registrer.clientName,
+  final discovered = await OAuthDiscoveryService._tryWellKnownEndpoint(
+    registrer,
   );
-  if (wellKnown != null) return wellKnown;
+  if (discovered != null) return discovered;
   final direct = await OAuthDiscoveryService._tryDirectServerProbe(
     registrer.serverUrl,
   );
   if (direct != null) return direct;
-  return OAuthDiscoveryService._tryOAuthMetadataEndpoint(baseUrl);
+
+  return await OAuthDiscoveryService._tryOAuthMetadataEndpoint(
+    _baseUrl(registrer.serverUrl),
+  );
 }
 
 OAuthDiscoveryResult? _parseMetadataResponse(String body) {
@@ -246,6 +221,7 @@ OAuthDiscoveryResult? _parseMetadataMap(Map<String, dynamic> metadata) {
   final authUrl = metadata['authorization_url'] as String?;
   final tokenUrl = metadata['token_url'] as String?;
   if (authUrl == null || tokenUrl == null) return null;
+
   return OAuthDiscoveryResult(
     authorizationUrl: authUrl,
     tokenUrl: tokenUrl,
@@ -262,6 +238,26 @@ String _baseUrl(String serverUrl) {
 
 typedef _WellKnownEndpoints = ({String authorizationUrl, String tokenUrl});
 
+typedef _WellKnownClientRequest = ({
+  Map<String, dynamic> metadata,
+  String? registrationEndpoint,
+  String redirectUrl,
+  String clientName,
+});
+
+typedef _WellKnownMetadataInput = ({
+  _WellKnownEndpoints endpoints,
+  Map<String, dynamic> metadata,
+  String redirectUrl,
+  String clientName,
+});
+
+typedef _DynamicClientRegistrationRequest = ({
+  String registrationEndpoint,
+  String redirectUrl,
+  String clientName,
+});
+
 _WellKnownEndpoints? _wellKnownEndpoints(Map<String, dynamic> metadata) {
   final authorizationUrl = metadata['authorization_endpoint'] as String?;
   final tokenUrl = metadata['token_endpoint'] as String?;
@@ -270,25 +266,96 @@ _WellKnownEndpoints? _wellKnownEndpoints(Map<String, dynamic> metadata) {
   return (authorizationUrl: authorizationUrl, tokenUrl: tokenUrl);
 }
 
+Future<OAuthDiscoveryResult> _completeWellKnownMetadata(
+  _WellKnownMetadataInput input,
+) async {
+  final clientId = await _wellKnownClientId(_wellKnownClientRequest(input));
+
+  return OAuthDiscoveryResult(
+    authorizationUrl: input.endpoints.authorizationUrl,
+    tokenUrl: input.endpoints.tokenUrl,
+    clientId: clientId,
+    scope: input.metadata['scope'] as String?,
+  );
+}
+
+_WellKnownClientRequest _wellKnownClientRequest(
+  _WellKnownMetadataInput input,
+) => (
+  metadata: input.metadata,
+  registrationEndpoint: input.metadata['registration_endpoint'] as String?,
+  redirectUrl: input.redirectUrl,
+  clientName: input.clientName,
+);
+
 Future<http.Response> _requestWellKnown(String url) => http
     .get(.parse(url), headers: _jsonAcceptHeader)
     .timeout(const Duration(seconds: 5));
 
-Future<String?> _wellKnownClientId({
-  required Map<String, dynamic> metadata,
-  required String? registrationEndpoint,
+Future<String?> _wellKnownClientId(_WellKnownClientRequest request) async {
+  final clientId = request.metadata['client_id'] as String?;
+  final registrationEndpoint = request.registrationEndpoint;
+  if (clientId != null || registrationEndpoint == null) {
+    return clientId;
+  }
+
+  return await _tryDynamicClientRegistration(
+    registrationEndpoint: registrationEndpoint,
+    redirectUrl: request.redirectUrl,
+    clientName: request.clientName,
+  );
+}
+
+Future<String?> _tryDynamicClientRegistration({
+  required String registrationEndpoint,
   required String redirectUrl,
   required String clientName,
-}) async {
-  final clientId = metadata['client_id'] as String?;
-  if (clientId != null || registrationEndpoint == null) return clientId;
+}) => _performDynamicClientRegistrationSafely((
+  registrationEndpoint: registrationEndpoint,
+  redirectUrl: redirectUrl,
+  clientName: clientName,
+));
 
-  return OAuthDiscoveryService._tryDynamicClientRegistration(
+Future<String?> _performDynamicClientRegistrationSafely(
+  _DynamicClientRegistrationRequest request,
+) async {
+  try {
+    _oauthDiscoveryLogger.info('Attempting dynamic OAuth client registration');
+
+    return await _performDynamicClientRegistration(
+      registrationEndpoint: request.registrationEndpoint,
+      redirectUrl: request.redirectUrl,
+      clientName: request.clientName,
+    );
+  } on Exception catch (error, stackTrace) {
+    return _dynamicClientRegistrationError(error, stackTrace);
+  }
+}
+
+String? _dynamicClientRegistrationError(
+  Exception error,
+  StackTrace stackTrace,
+) {
+  _oauthDiscoveryLogger.warning(
+    'Dynamic client registration error',
+    error,
+    stackTrace,
+  );
+
+  return null;
+}
+
+Future<String?> _performDynamicClientRegistration({
+  required String registrationEndpoint,
+  required String redirectUrl,
+  required String clientName,
+}) async => _registeredClientId(
+  await _postDynamicClientRegistration(
     registrationEndpoint: registrationEndpoint,
     redirectUrl: redirectUrl,
     clientName: clientName,
-  );
-}
+  ),
+);
 
 Future<http.Response> _requestDirectProbe(Uri uri) => http
     .get(uri, headers: {'Accept': 'text/event-stream'})
@@ -344,17 +411,24 @@ OAuthDiscoveryResult? _decodeOAuthBody(String body) {
 }
 
 OAuthDiscoveryResult? _oauthBodyResult(Map<String, dynamic>? bodyJson) {
-  final authUrl = bodyJson?['authorization_url'] as String?;
-  final tokenUrl = bodyJson?['token_url'] as String?;
+  if (bodyJson == null) return null;
+  final authUrl = bodyJson['authorization_url'] as String?;
+  final tokenUrl = bodyJson['token_url'] as String?;
   if (authUrl == null || tokenUrl == null) return null;
 
-  return OAuthDiscoveryResult(
-    authorizationUrl: authUrl,
-    tokenUrl: tokenUrl,
-    clientId: bodyJson?['client_id'] as String?,
-    scope: bodyJson?['scope'] as String?,
-  );
+  return _oauthDiscoveryResult(bodyJson, authUrl, tokenUrl);
 }
+
+OAuthDiscoveryResult _oauthDiscoveryResult(
+  Map<String, dynamic> json,
+  String authorizationUrl,
+  String tokenUrl,
+) => OAuthDiscoveryResult(
+  authorizationUrl: authorizationUrl,
+  tokenUrl: tokenUrl,
+  clientId: json['client_id'] as String?,
+  scope: json['scope'] as String?,
+);
 
 Future<http.Response> _requestOAuthMetadata(String url) => http
     .get(.parse(url), headers: _jsonAcceptHeader)
@@ -371,14 +445,7 @@ Future<http.Response> _postDynamicClientRegistration({
   required String redirectUrl,
   required String clientName,
 }) {
-  final clientMetadata = {
-    'client_name': clientName,
-    'redirect_uris': [redirectUrl],
-    'grant_types': ['authorization_code', 'refresh_token'],
-    'response_types': ['code'],
-    'token_endpoint_auth_method': 'none',
-    'application_type': 'web',
-  };
+  final clientMetadata = _dynamicClientMetadata(clientName, redirectUrl);
 
   return http
       .post(
@@ -389,20 +456,24 @@ Future<http.Response> _postDynamicClientRegistration({
       .timeout(const Duration(seconds: 10));
 }
 
-String? _registeredClientId(http.Response response) {
-  if (response.statusCode != HttpStatus.ok &&
-      response.statusCode != HttpStatus.created) {
-    _oauthDiscoveryLogger.warning(
-      'Dynamic client registration '
-      'failed with status ${response.statusCode}',
-    );
+Map<String, Object> _dynamicClientMetadata(
+  String clientName,
+  String redirectUrl,
+) => {
+  'client_name': clientName,
+  'redirect_uris': [redirectUrl],
+  'grant_types': ['authorization_code', 'refresh_token'],
+  'response_types': ['code'],
+  'token_endpoint_auth_method': 'none',
+  'application_type': 'web',
+};
 
-    return null;
+String? _registeredClientId(http.Response response) {
+  if (!_isRegistrationSuccess(response.statusCode)) {
+    return _logRegistrationFailure(response.statusCode);
   }
 
-  final registrationResponse =
-      json.decode(response.body) as Map<String, dynamic>;
-  final clientId = registrationResponse['client_id'] as String?;
+  final clientId = _registrationClientId(response.body);
   if (clientId == null) return null;
 
   _oauthDiscoveryLogger.info(
@@ -410,4 +481,21 @@ String? _registeredClientId(http.Response response) {
   );
 
   return clientId;
+}
+
+bool _isRegistrationSuccess(int statusCode) =>
+    statusCode == HttpStatus.ok || statusCode == HttpStatus.created;
+
+String? _logRegistrationFailure(int statusCode) {
+  _oauthDiscoveryLogger.warning(
+    'Dynamic client registration failed with status $statusCode',
+  );
+
+  return null;
+}
+
+String? _registrationClientId(String body) {
+  final registrationResponse = json.decode(body) as Map<String, dynamic>;
+
+  return registrationResponse['client_id'] as String?;
 }

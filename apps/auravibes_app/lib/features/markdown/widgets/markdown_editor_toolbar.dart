@@ -39,14 +39,15 @@ extension on MarkdownEditorToolbar {
 
   void _wrapSelection(String before, String after) {
     final selection = _safeSelection;
-    final text = controller.text;
-    final selected = selection.textInside(text);
-    final replacement = '$before$selected$after';
-    final cursorOffset = selected.isEmpty
-        ? selection.start + before.length
-        : selection.start + replacement.length;
+    final selected = selection.textInside(controller.text);
+    final result = _wrapSelectionResult((
+      selection: selection,
+      selected: selected,
+      before: before,
+      after: after,
+    ));
 
-    _replace(selection, replacement, cursorOffset);
+    _replace(selection, result.replacement, result.cursorOffset);
   }
 
   void _prefixLines(String prefix) {
@@ -59,16 +60,38 @@ extension on MarkdownEditorToolbar {
   }
 
   TextSelection _lineRange(TextSelection selection, String text) {
-    final selectionStart = selection.start.clamp(0, text.length);
-    final selectionEnd = selection.end.clamp(selectionStart, text.length);
-    final lineEnd = _toolbarLineEnd(text, selectionEnd);
+    final bounds = _selectionBounds(selection, text);
+    final lineEnd = _toolbarLineEnd(text, bounds.end);
 
     return TextSelection(
-      baseOffset: _toolbarLineStart(text, selectionStart),
+      baseOffset: _toolbarLineStart(text, bounds.start),
       extentOffset: lineEnd == -1 ? text.length : lineEnd,
     );
   }
 
+  ({String replacement, int cursorOffset}) _wrapSelectionResult(
+    ({TextSelection selection, String selected, String before, String after})
+    input,
+  ) {
+    final replacement = '${input.before}${input.selected}${input.after}';
+    final cursorOffset = input.selected.isEmpty
+        ? input.selection.start + input.before.length
+        : input.selection.start + replacement.length;
+
+    return (replacement: replacement, cursorOffset: cursorOffset);
+  }
+
+  ({int start, int end}) _selectionBounds(
+    TextSelection selection,
+    String text,
+  ) {
+    final start = selection.start.clamp(0, text.length);
+
+    return (start: start, end: selection.end.clamp(start, text.length));
+  }
+}
+
+extension on MarkdownEditorToolbar {
   String _prefixReplacement(String selected, String prefix) => selected
       .split('\n')
       .map((line) => line.startsWith(prefix) ? line : '$prefix$line')
@@ -148,7 +171,7 @@ enum _ToolbarActionKind {
   code(Icons.code, LocaleKeys.markdown_editor_toolbar_code),
   quote(Icons.format_quote, LocaleKeys.markdown_editor_toolbar_quote);
 
-  const _ToolbarActionKind(this.icon, this.labelKey);
+  new(this.icon, this.labelKey);
 
   final IconData icon;
   final String labelKey;

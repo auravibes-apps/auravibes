@@ -51,12 +51,17 @@ typedef _TypographySizes = ({
   _TypographyLargeSizes large,
 });
 
+typedef _TypographyWeightCore = ({
+  FontWeight light,
+  FontWeight regular,
+  FontWeight medium,
+});
+
+typedef _TypographyWeightStrong = ({FontWeight semibold, FontWeight bold});
+
 typedef _TypographyWeights = ({
-  FontWeight fontWeightLight,
-  FontWeight fontWeightRegular,
-  FontWeight fontWeightMedium,
-  FontWeight fontWeightSemibold,
-  FontWeight fontWeightBold,
+  _TypographyWeightCore core,
+  _TypographyWeightStrong strong,
 });
 
 typedef _TypographySmallLineHeights = ({
@@ -79,10 +84,11 @@ typedef _TypographyLineHeights = ({
   _TypographyLargeLineHeights large,
 });
 
+typedef _TypographyLetterSpacingCore = ({double tight, double normal});
+
 typedef _TypographyLetterSpacing = ({
-  double letterSpacingTight,
-  double letterSpacingNormal,
-  double letterSpacingWide,
+  _TypographyLetterSpacingCore core,
+  double wide,
 });
 
 typedef _ColorTripletLerpValues = ({
@@ -123,6 +129,12 @@ typedef _StatusPrimaryLerpValues = ({
 typedef _StatusSecondaryLerpValues = ({
   _ColorPairLerpValues success,
   _ColorPairLerpValues info,
+});
+
+typedef _StatusLerpRequest = ({
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
 });
 
 typedef _StatusLerpValues = ({
@@ -191,8 +203,97 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     animation: _standardAnimation,
   );
 
-  static final _lightColors = AuraColorScheme._light();
-  static final _darkColors = AuraColorScheme._dark();
+  static final _lightColors = AuraColorScheme(
+    primary: DesignColors.primaryBase,
+    primaryVariant: DesignColors.primaryDark,
+    onPrimary: DesignColors.primaryContrast,
+    secondary: DesignColors.secondaryBase,
+    secondaryVariant: DesignColors.secondaryDark,
+    onSecondary: DesignColors.secondaryContrast,
+    tertiary: DesignColors.accentBase,
+    tertiaryVariant: DesignColors.accentDark,
+    onTertiary: DesignColors.accentContrast,
+    surface: DesignColors.neutral50,
+    surfaceVariant: const Color(0xFFFFFFFF),
+    onSurface: DesignColors.neutral900,
+    onSurfaceVariant: DesignColors.neutral700,
+    background: DesignColors.neutral100,
+    onBackground: DesignColors.neutral900,
+    error: OKLCHColor(
+      hue: HueColorValues.error,
+      lightness: AuraColorScheme._lightnessLight,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onError: const Color(0xFFFFFFFF),
+    warning: OKLCHColor(
+      hue: HueColorValues.warning,
+      lightness: AuraColorScheme._lightnessLight,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onWarning: const Color(0xFFFFFFFF),
+    success: OKLCHColor(
+      hue: HueColorValues.success,
+      lightness: AuraColorScheme._lightnessLight,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onSuccess: const Color(0xFFFFFFFF),
+    info: OKLCHColor(
+      hue: HueColorValues.info,
+      lightness: AuraColorScheme._lightnessLight,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onInfo: const Color(0xFFFFFFFF),
+    outline: DesignColors.neutral300,
+    outlineVariant: DesignColors.neutral200,
+    shadow: DesignColors.neutral900,
+    scrim: const Color(0x80000000),
+  );
+
+  static final _darkColors = AuraColorScheme(
+    primary: DesignColors.primaryLight,
+    primaryVariant: DesignColors.primaryBase,
+    onPrimary: Colors.black,
+    secondary: DesignColors.secondaryLight,
+    secondaryVariant: DesignColors.secondaryBase,
+    onSecondary: Colors.black,
+    tertiary: DesignColors.accentLight,
+    tertiaryVariant: DesignColors.accentBase,
+    onTertiary: Colors.black,
+    surface: DesignColors.neutral800,
+    surfaceVariant: DesignColors.neutral700,
+    onSurface: DesignColors.neutral100,
+    onSurfaceVariant: DesignColors.neutral300,
+    background: DesignColors.neutral900,
+    onBackground: DesignColors.neutral100,
+    error: OKLCHColor(
+      hue: HueColorValues.error,
+      lightness: AuraColorScheme._lightnessDark,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onError: Colors.white,
+    warning: OKLCHColor(
+      hue: HueColorValues.warning,
+      lightness: AuraColorScheme._lightnessDark,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onWarning: Colors.white,
+    success: OKLCHColor(
+      hue: HueColorValues.success,
+      lightness: AuraColorScheme._lightnessDark,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onSuccess: Colors.white,
+    info: OKLCHColor(
+      hue: HueColorValues.info,
+      lightness: AuraColorScheme._lightnessDark,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onInfo: Colors.white,
+    outline: DesignColors.neutral600,
+    outlineVariant: DesignColors.neutral700,
+    shadow: const Color(0xFF000000),
+    scrim: const Color(0xB3000000),
+  );
 
   /// Creates a Aura theme extension.
   const new({
@@ -519,11 +620,11 @@ class AuraTypographyScale {
        fontSize3Xl = sizes.large.fontSize3Xl,
        fontSize4Xl = sizes.large.fontSize4Xl,
        fontSize5Xl = sizes.large.fontSize5Xl,
-       fontWeightLight = weights.fontWeightLight,
-       fontWeightRegular = weights.fontWeightRegular,
-       fontWeightMedium = weights.fontWeightMedium,
-       fontWeightSemibold = weights.fontWeightSemibold,
-       fontWeightBold = weights.fontWeightBold,
+       fontWeightLight = weights.core.light,
+       fontWeightRegular = weights.core.regular,
+       fontWeightMedium = weights.core.medium,
+       fontWeightSemibold = weights.strong.semibold,
+       fontWeightBold = weights.strong.bold,
        lineHeightXs = lineHeights.small.lineHeightXs,
        lineHeightSm = lineHeights.small.lineHeightSm,
        lineHeightBase = lineHeights.small.lineHeightBase,
@@ -533,9 +634,9 @@ class AuraTypographyScale {
        lineHeight3Xl = lineHeights.large.lineHeight3Xl,
        lineHeight4Xl = lineHeights.large.lineHeight4Xl,
        lineHeight5Xl = lineHeights.large.lineHeight5Xl,
-       letterSpacingTight = letterSpacing.letterSpacingTight,
-       letterSpacingNormal = letterSpacing.letterSpacingNormal,
-       letterSpacingWide = letterSpacing.letterSpacingWide;
+       letterSpacingTight = letterSpacing.core.tight,
+       letterSpacingNormal = letterSpacing.core.normal,
+       letterSpacingWide = letterSpacing.wide;
 
   /// Design-system standard typography scale.
   const new _standard()
@@ -815,27 +916,31 @@ _TypographyWeights _lerpTypographyWeights(
   AuraTypographyScale end,
   double t,
 ) => (
-  fontWeightLight: _lerpFontWeight(
-    begin.fontWeightLight,
-    end.fontWeightLight,
-    t,
-  ),
-  fontWeightRegular: _lerpFontWeight(
-    begin.fontWeightRegular,
-    end.fontWeightRegular,
-    t,
-  ),
-  fontWeightMedium: _lerpFontWeight(
-    begin.fontWeightMedium,
-    end.fontWeightMedium,
-    t,
-  ),
-  fontWeightSemibold: _lerpFontWeight(
+  core: _lerpTypographyWeightCore(begin, end, t),
+  strong: _lerpTypographyWeightStrong(begin, end, t),
+);
+
+_TypographyWeightCore _lerpTypographyWeightCore(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  light: _lerpFontWeight(begin.fontWeightLight, end.fontWeightLight, t),
+  regular: _lerpFontWeight(begin.fontWeightRegular, end.fontWeightRegular, t),
+  medium: _lerpFontWeight(begin.fontWeightMedium, end.fontWeightMedium, t),
+);
+
+_TypographyWeightStrong _lerpTypographyWeightStrong(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  semibold: _lerpFontWeight(
     begin.fontWeightSemibold,
     end.fontWeightSemibold,
     t,
   ),
-  fontWeightBold: _lerpFontWeight(begin.fontWeightBold, end.fontWeightBold, t),
+  bold: _lerpFontWeight(begin.fontWeightBold, end.fontWeightBold, t),
 );
 
 _TypographyLineHeights _lerpTypographyLineHeights(
@@ -875,21 +980,17 @@ _TypographyLetterSpacing _lerpTypographyLetterSpacing(
   AuraTypographyScale end,
   double t,
 ) => (
-  letterSpacingTight: _lerpDouble(
-    begin.letterSpacingTight,
-    end.letterSpacingTight,
-    t,
-  ),
-  letterSpacingNormal: _lerpDouble(
-    begin.letterSpacingNormal,
-    end.letterSpacingNormal,
-    t,
-  ),
-  letterSpacingWide: _lerpDouble(
-    begin.letterSpacingWide,
-    end.letterSpacingWide,
-    t,
-  ),
+  core: _lerpTypographyLetterSpacingCore(begin, end, t),
+  wide: _lerpDouble(begin.letterSpacingWide, end.letterSpacingWide, t),
+);
+
+_TypographyLetterSpacingCore _lerpTypographyLetterSpacingCore(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  tight: _lerpDouble(begin.letterSpacingTight, end.letterSpacingTight, t),
+  normal: _lerpDouble(begin.letterSpacingNormal, end.letterSpacingNormal, t),
 );
 
 FontWeight _lerpFontWeight(FontWeight a, FontWeight b, double t) {
@@ -1011,43 +1112,58 @@ _StatusPrimaryLerpValues _lerpStatusPrimaryValues(
   AuraColorScheme begin,
   AuraColorScheme end,
   double t,
-) => (
-  error: _lerpPair((
-    value: begin.error,
-    onValue: begin.onError,
-    otherValue: end.error,
-    otherOnValue: end.onError,
-    t: t,
-  )),
-  warning: _lerpPair((
-    value: begin.warning,
-    onValue: begin.onWarning,
-    otherValue: end.warning,
-    otherOnValue: end.onWarning,
-    t: t,
-  )),
-);
+) {
+  final request = (begin: begin, end: end, t: t);
+
+  return (
+    error: _lerpStatusError(request),
+    warning: _lerpStatusWarning(request),
+  );
+}
 
 _StatusSecondaryLerpValues _lerpStatusSecondaryValues(
   AuraColorScheme begin,
   AuraColorScheme end,
   double t,
-) => (
-  success: _lerpPair((
-    value: begin.success,
-    onValue: begin.onSuccess,
-    otherValue: end.success,
-    otherOnValue: end.onSuccess,
-    t: t,
-  )),
-  info: _lerpPair((
-    value: begin.info,
-    onValue: begin.onInfo,
-    otherValue: end.info,
-    otherOnValue: end.onInfo,
-    t: t,
-  )),
-);
+) {
+  final request = (begin: begin, end: end, t: t);
+
+  return (success: _lerpStatusSuccess(request), info: _lerpStatusInfo(request));
+}
+
+_ColorPairLerpValues _lerpStatusError(_StatusLerpRequest request) => _lerpPair((
+  value: request.begin.error,
+  onValue: request.begin.onError,
+  otherValue: request.end.error,
+  otherOnValue: request.end.onError,
+  t: request.t,
+));
+
+_ColorPairLerpValues _lerpStatusWarning(_StatusLerpRequest request) =>
+    _lerpPair((
+      value: request.begin.warning,
+      onValue: request.begin.onWarning,
+      otherValue: request.end.warning,
+      otherOnValue: request.end.onWarning,
+      t: request.t,
+    ));
+
+_ColorPairLerpValues _lerpStatusSuccess(_StatusLerpRequest request) =>
+    _lerpPair((
+      value: request.begin.success,
+      onValue: request.begin.onSuccess,
+      otherValue: request.end.success,
+      otherOnValue: request.end.onSuccess,
+      t: request.t,
+    ));
+
+_ColorPairLerpValues _lerpStatusInfo(_StatusLerpRequest request) => _lerpPair((
+  value: request.begin.info,
+  onValue: request.begin.onInfo,
+  otherValue: request.end.info,
+  otherOnValue: request.end.onInfo,
+  t: request.t,
+));
 
 Color _lerpColor(Color begin, Color end, double t) =>
     Color.lerp(begin, end, t) ?? begin;
@@ -1118,98 +1234,6 @@ class AuraColorScheme {
       outlineVariant = values.chrome.outlineVariant,
       shadow = values.chrome.shadow,
       scrim = values.chrome.scrim;
-
-  /// Creates a light color scheme.
-  new _light()
-    : primary = DesignColors.primaryBase,
-      primaryVariant = DesignColors.primaryDark,
-      onPrimary = DesignColors.primaryContrast,
-      secondary = DesignColors.secondaryBase,
-      secondaryVariant = DesignColors.secondaryDark,
-      onSecondary = DesignColors.secondaryContrast,
-      tertiary = DesignColors.accentBase,
-      tertiaryVariant = DesignColors.accentDark,
-      onTertiary = DesignColors.accentContrast,
-      surface = DesignColors.neutral50,
-      surfaceVariant = const Color(0xFFFFFFFF),
-      onSurface = DesignColors.neutral900,
-      onSurfaceVariant = DesignColors.neutral700,
-      background = DesignColors.neutral100,
-      onBackground = DesignColors.neutral900,
-      error = OKLCHColor(
-        hue: HueColorValues.error,
-        lightness: _lightnessLight,
-        chroma: _standardChroma,
-      ).toColor(),
-      onError = const Color(0xFFFFFFFF),
-      warning = OKLCHColor(
-        hue: HueColorValues.warning,
-        lightness: _lightnessLight,
-        chroma: _standardChroma,
-      ).toColor(),
-      onWarning = const Color(0xFFFFFFFF),
-      success = OKLCHColor(
-        hue: HueColorValues.success,
-        lightness: _lightnessLight,
-        chroma: _standardChroma,
-      ).toColor(),
-      onSuccess = const Color(0xFFFFFFFF),
-      info = OKLCHColor(
-        hue: HueColorValues.info,
-        lightness: _lightnessLight,
-        chroma: _standardChroma,
-      ).toColor(),
-      onInfo = const Color(0xFFFFFFFF),
-      outline = DesignColors.neutral300,
-      outlineVariant = DesignColors.neutral200,
-      shadow = DesignColors.neutral900,
-      scrim = const Color(0x80000000);
-
-  /// Creates a dark color scheme.
-  new _dark()
-    : primary = DesignColors.primaryLight,
-      primaryVariant = DesignColors.primaryBase,
-      onPrimary = Colors.black,
-      secondary = DesignColors.secondaryLight,
-      secondaryVariant = DesignColors.secondaryBase,
-      onSecondary = Colors.black,
-      tertiary = DesignColors.accentLight,
-      tertiaryVariant = DesignColors.accentBase,
-      onTertiary = Colors.black,
-      surface = DesignColors.neutral800,
-      surfaceVariant = DesignColors.neutral700,
-      onSurface = DesignColors.neutral100,
-      onSurfaceVariant = DesignColors.neutral300,
-      background = DesignColors.neutral900,
-      onBackground = DesignColors.neutral100,
-      error = OKLCHColor(
-        hue: HueColorValues.error,
-        lightness: _lightnessDark,
-        chroma: _standardChroma,
-      ).toColor(),
-      onError = Colors.white,
-      warning = OKLCHColor(
-        hue: HueColorValues.warning,
-        lightness: _lightnessDark,
-        chroma: _standardChroma,
-      ).toColor(),
-      onWarning = Colors.white,
-      success = OKLCHColor(
-        hue: HueColorValues.success,
-        lightness: _lightnessDark,
-        chroma: _standardChroma,
-      ).toColor(),
-      onSuccess = Colors.white,
-      info = OKLCHColor(
-        hue: HueColorValues.info,
-        lightness: _lightnessDark,
-        chroma: _standardChroma,
-      ).toColor(),
-      onInfo = Colors.white,
-      outline = DesignColors.neutral600,
-      outlineVariant = DesignColors.neutral700,
-      shadow = const Color(0xFF000000),
-      scrim = const Color(0xB3000000);
 
   /// Variant of the tertiary color.
   final Color tertiaryVariant;
@@ -1378,6 +1402,10 @@ extension AuraThemeExtension on BuildContext {
   /// Resolves the Aura theme attached to [context].
   static AuraTheme resolve(BuildContext context) =>
       Theme.of(context).extension<AuraTheme>() ?? AuraTheme.light;
+
+  /// Resolves the Aura color scheme attached to [context].
+  static AuraColorScheme resolveColors(BuildContext context) =>
+      resolve(context).colors;
 
   /// Get the current Aura theme.
   AuraTheme get auraTheme => AuraThemeExtension.resolve(this);

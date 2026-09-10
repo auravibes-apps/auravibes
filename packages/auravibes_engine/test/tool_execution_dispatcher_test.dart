@@ -10,13 +10,7 @@ void main() {
         required arguments,
       }) async => result,
       isCancellationRequested: (_) => false,
-      logToolExecutionError: ({
-        required conversationId,
-        required toolCallId,
-        required tool,
-        required error,
-        required stackTrace,
-      }) {},
+      logToolExecutionError: (request) {},
     ).call(
       conversationId: 'conversation-1',
       toolCallId: 'call-1',

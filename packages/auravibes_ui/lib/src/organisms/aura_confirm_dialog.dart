@@ -10,6 +10,12 @@ import 'package:flutter/material.dart';
 
 export 'aura_alert_dialog.dart';
 
+typedef _AuraDialogRequest = ({
+  BuildContext context,
+  Widget child,
+  bool barrierDismissible,
+});
+
 /// A custom confirmation dialog with customizable title, message, and actions.
 ///
 /// Provides both a widget for composition and helper function
@@ -53,22 +59,31 @@ class AuraConfirmDialog extends StatelessWidget {
   final AuraTint? tint;
 
   @override
-  Widget build(BuildContext context) {
-    return AuraDialogShell(
-      title: title,
-      message: message,
-      actions: [
-        _AuraConfirmCancelButton(label: cancelLabel, onCancel: onCancel),
-        const SizedBox(width: 8),
-        _AuraConfirmButton(
-          label: confirmLabel,
-          onConfirm: onConfirm,
-          isDestructive: isDestructive,
-          tint: tint,
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) =>
+      _AuraConfirmDialogData(dialog: this).child;
+}
+
+class _AuraConfirmDialogData {
+  _AuraConfirmDialogData({required AuraConfirmDialog dialog})
+    : child = AuraDialogShell(
+        title: dialog.title,
+        message: dialog.message,
+        actions: [
+          _AuraConfirmCancelButton(
+            label: dialog.cancelLabel,
+            onCancel: dialog.onCancel,
+          ),
+          const SizedBox(width: 8),
+          _AuraConfirmButton(
+            label: dialog.confirmLabel,
+            onConfirm: dialog.onConfirm,
+            isDestructive: dialog.isDestructive,
+            tint: dialog.tint,
+          ),
+        ],
+      );
+
+  final Widget child;
 }
 
 class const _AuraConfirmCancelButton({
@@ -133,67 +148,161 @@ class AuraConfirmDialogActions {
 /// `null` if dismissed (e.g., by tapping outside).
 abstract final class AuraDialogs {
   /// Shows a confirmation dialog and returns the user's selection.
-  static Future<bool?> confirm({
+  static final Future<bool?> Function({
     required BuildContext context,
     required Widget title,
     required Widget message,
-    AuraConfirmDialogActions actions = const AuraConfirmDialogActions(),
-    bool isDestructive = false,
-    bool barrierDismissible = true,
+    AuraConfirmDialogActions actions,
+    bool isDestructive,
+    bool barrierDismissible,
     AuraTint? tint,
-  }) {
-    return _showAuraDialog<bool>(
-      context: context,
-      child: AuraConfirmDialog(
-        title: title,
-        message: message,
-        confirmLabel: actions.confirmLabel ?? const Text('Confirm'),
-        cancelLabel: actions.cancelLabel ?? const Text('Cancel'),
-        isDestructive: isDestructive,
-        tint: tint,
-      ),
-      barrierDismissible: barrierDismissible,
-    );
-  }
+  })
+  confirm =
+      ({
+        required context,
+        required title,
+        required message,
+        actions = const AuraConfirmDialogActions(),
+        isDestructive = false,
+        barrierDismissible = true,
+        tint,
+      }) => _showConfirmationDialog(
+        _AuraConfirmationRequest(
+          context: context,
+          title: title,
+          message: message,
+          actions: actions,
+          isDestructive: isDestructive,
+          barrierDismissible: barrierDismissible,
+          tint: tint,
+        ),
+      );
 
   /// Shows an alert dialog and dismisses on button tap.
-  static Future<void> alert({
+  static final Future<void> Function({
     required BuildContext context,
     required Widget title,
     required Widget message,
     Widget? dismissLabel,
     AuraTint? tint,
-    bool barrierDismissible = true,
-  }) async {
-    await _showAuraDialog<void>(
-      context: context,
-      child: AuraAlertDialog(
-        title: title,
-        message: message,
-        dismissLabel: dismissLabel ?? const Text('OK'),
-        tint: tint,
-      ),
-      barrierDismissible: barrierDismissible,
-    );
-  }
+    bool barrierDismissible,
+  })
+  alert =
+      ({
+        required context,
+        required title,
+        required message,
+        dismissLabel,
+        tint,
+        barrierDismissible = true,
+      }) => _showAlertDialog(
+        _AuraAlertRequest(
+          context: context,
+          title: title,
+          message: message,
+          dismissLabel: dismissLabel,
+          tint: tint,
+          barrierDismissible: barrierDismissible,
+        ),
+      );
+
+  const AuraDialogs._();
+
+  @override
+  String toString() => 'AuraDialogs';
 }
 
-Future<T?> _showAuraDialog<T>({
-  required BuildContext context,
-  required Widget child,
-  required bool barrierDismissible,
-}) {
-  final pageBuilder = _auraDialogPageBuilder(child);
+class _AuraConfirmationRequest {
+  const _AuraConfirmationRequest({
+    required this.context,
+    required this.title,
+    required this.message,
+    required this.actions,
+    required this.isDestructive,
+    required this.barrierDismissible,
+    this.tint,
+  });
 
-  return showGeneralDialog<T>(
-    context: context,
-    pageBuilder: pageBuilder,
-    barrierDismissible: barrierDismissible,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: context.auraColors.scrim,
-    transitionBuilder: (_, animation, _, child) =>
-        _AuraDialogTransition(animation: animation, child: child),
-  );
+  final BuildContext context;
+  final Widget title;
+  final Widget message;
+  final AuraConfirmDialogActions actions;
+  final bool isDestructive;
+  final bool barrierDismissible;
+  final AuraTint? tint;
+}
+
+Future<bool?> _showConfirmationDialog(_AuraConfirmationRequest request) =>
+    _showAuraDialog<bool>(_AuraConfirmationDialogData(request).value);
+
+class _AuraConfirmationDialogData {
+  _AuraConfirmationDialogData(_AuraConfirmationRequest request)
+    : value = (
+        context: request.context,
+        child: AuraConfirmDialog(
+          title: request.title,
+          message: request.message,
+          confirmLabel: request.actions.confirmLabel ?? const Text('Confirm'),
+          cancelLabel: request.actions.cancelLabel ?? const Text('Cancel'),
+          isDestructive: request.isDestructive,
+          tint: request.tint,
+        ),
+        barrierDismissible: request.barrierDismissible,
+      );
+
+  final _AuraDialogRequest value;
+}
+
+class _AuraAlertRequest {
+  const _AuraAlertRequest({
+    required this.context,
+    required this.title,
+    required this.message,
+    required this.dismissLabel,
+    required this.tint,
+    required this.barrierDismissible,
+  });
+
+  final BuildContext context;
+  final Widget title;
+  final Widget message;
+  final Widget? dismissLabel;
+  final AuraTint? tint;
+  final bool barrierDismissible;
+}
+
+Future<void> _showAlertDialog(_AuraAlertRequest request) =>
+    _showAuraDialog<void>((
+      context: request.context,
+      child: AuraAlertDialog(
+        title: request.title,
+        message: request.message,
+        dismissLabel: request.dismissLabel ?? const Text('OK'),
+        tint: request.tint,
+      ),
+      barrierDismissible: request.barrierDismissible,
+    ));
+
+Future<T?> _showAuraDialog<T>(_AuraDialogRequest request) =>
+    _showGeneralDialog(request);
+
+Future<T?> _showGeneralDialog<T>(_AuraDialogRequest request) =>
+    _AuraGeneralDialogData<T>(request).future;
+
+class _AuraGeneralDialogData<T> {
+  _AuraGeneralDialogData(_AuraDialogRequest request)
+    : future = showGeneralDialog<T>(
+        context: request.context,
+        pageBuilder: _auraDialogPageBuilder(request.child),
+        barrierDismissible: request.barrierDismissible,
+        barrierLabel: MaterialLocalizations.of(request.context)
+            .modalBarrierDismissLabel,
+        barrierColor: request.context.auraColors.scrim,
+        transitionBuilder: (_, animation, _, child) =>
+            _AuraDialogTransition(animation: animation, child: child),
+      );
+
+  final Future<T?> future;
 }
 
 typedef _AuraDialogPageBuilder = Widget Function(

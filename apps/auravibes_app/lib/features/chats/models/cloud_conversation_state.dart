@@ -22,6 +22,24 @@ class const CloudConversationState({
   final Map<String, int> transientA2uiSequenceByAssistantMessageId = const {},
   final Set<String> appliedTransientEventKeys = const {},
 }) {
+  const CloudConversationState._copy(
+    CloudConversationState source, {
+    required this.sequence,
+    required this.activeAssistantContent,
+    required this.activeAssistantTransientContent,
+    required this.transientA2uiSequenceByAssistantMessageId,
+    required this.appliedTransientEventKeys,
+  }) : conversation = source.conversation,
+       messages = source.messages,
+       pendingMessages = source.pendingMessages,
+       activeExecution = source.activeExecution,
+       toolCalls = source.toolCalls,
+       a2uiMessagesByAssistantMessageId =
+           source.a2uiMessagesByAssistantMessageId,
+       a2uiIssuesByAssistantMessageId = source.a2uiIssuesByAssistantMessageId,
+       a2uiMessageIssuesByAssistantMessageId =
+           source.a2uiMessageIssuesByAssistantMessageId;
+
   factory fromSnapshot(ConversationSnapshot snapshot) => CloudConversationState(
     conversation: snapshot.conversation,
     messages: snapshot.messages,
@@ -76,7 +94,9 @@ class const CloudConversationState({
 
     return _applyTextEvent(event);
   }
+}
 
+extension on CloudConversationState {
   CloudConversationState? _applyA2uiMessage(ConversationStreamEvent event) {
     if (event.sequence != sequence) return null;
     final assistantMessageId =
@@ -86,29 +106,7 @@ class const CloudConversationState({
     final messages = a2uiMessagesByAssistantMessageId[assistantMessageId];
     if (messages?.contains(event.payloadJson) ?? false) return this;
 
-    return CloudConversationState(
-      conversation: conversation,
-      messages: this.messages,
-      pendingMessages: pendingMessages,
-      activeExecution: activeExecution,
-      toolCalls: toolCalls,
-      sequence: sequence,
-      activeAssistantContent: activeAssistantContent,
-      activeAssistantTransientContent: activeAssistantTransientContent,
-      a2uiMessagesByAssistantMessageId: _appendA2uiMessage(
-        a2uiMessagesByAssistantMessageId,
-        assistantMessageId,
-        event.payloadJson,
-      ),
-      a2uiIssuesByAssistantMessageId: a2uiIssuesByAssistantMessageId,
-      a2uiMessageIssuesByAssistantMessageId:
-          a2uiMessageIssuesByAssistantMessageId,
-      transientA2uiSequenceByAssistantMessageId: {
-        ...transientA2uiSequenceByAssistantMessageId,
-        assistantMessageId: sequence,
-      },
-      appliedTransientEventKeys: appliedTransientEventKeys,
-    );
+    return _withA2uiMessage(event, assistantMessageId);
   }
 
   CloudConversationState? _applyTextEvent(ConversationStreamEvent event) {
@@ -123,35 +121,73 @@ class const CloudConversationState({
       return this;
     }
 
-    final textContent = _textContent((
-      isTransientDelta: isTransientDelta,
+    return _applyExpectedTextEvent((
+      event: event,
       delta: delta,
-      baseContent: isTransientDelta ? _activeAssistantBaseContent() : '',
+      isTransientDelta: isTransientDelta,
+      transientEventKey: transientEventKey,
+    ));
+  }
+
+  CloudConversationState _applyExpectedTextEvent(_TextEventRequest request) {
+    final textContent = _textContent((
+      isTransientDelta: request.isTransientDelta,
+      delta: request.delta,
+      baseContent: request.isTransientDelta
+          ? _activeAssistantBaseContent()
+          : '',
       transientContent: activeAssistantTransientContent,
     ));
 
-    return CloudConversationState(
-      conversation: conversation,
-      messages: messages,
-      pendingMessages: pendingMessages,
-      activeExecution: activeExecution,
-      toolCalls: toolCalls,
-      sequence: event.sequence,
-      activeAssistantContent: textContent.active,
-      activeAssistantTransientContent: textContent.transient,
-      a2uiMessagesByAssistantMessageId: a2uiMessagesByAssistantMessageId,
-      a2uiIssuesByAssistantMessageId: a2uiIssuesByAssistantMessageId,
-      a2uiMessageIssuesByAssistantMessageId:
-          a2uiMessageIssuesByAssistantMessageId,
-      transientA2uiSequenceByAssistantMessageId: isTransientDelta
-          ? transientA2uiSequenceByAssistantMessageId
-          : const {},
-      appliedTransientEventKeys: _eventKeysForTextEvent(
-        isTransientDelta,
-        transientEventKey,
-      ),
-    );
+    return _withTextEvent((
+      event: request.event,
+      textContent: textContent,
+      isTransientDelta: request.isTransientDelta,
+      transientEventKey: request.transientEventKey,
+    ));
   }
+
+  CloudConversationState _withA2uiMessage(
+    ConversationStreamEvent event,
+    String assistantMessageId,
+  ) => CloudConversationState(
+    conversation: conversation,
+    messages: messages,
+    pendingMessages: pendingMessages,
+    activeExecution: activeExecution,
+    toolCalls: toolCalls,
+    sequence: sequence,
+    activeAssistantContent: activeAssistantContent,
+    activeAssistantTransientContent: activeAssistantTransientContent,
+    a2uiMessagesByAssistantMessageId: _appendA2uiMessage(
+      a2uiMessagesByAssistantMessageId,
+      assistantMessageId,
+      event.payloadJson,
+    ),
+    a2uiIssuesByAssistantMessageId: a2uiIssuesByAssistantMessageId,
+    a2uiMessageIssuesByAssistantMessageId:
+        a2uiMessageIssuesByAssistantMessageId,
+    transientA2uiSequenceByAssistantMessageId: {
+      ...transientA2uiSequenceByAssistantMessageId,
+      assistantMessageId: sequence,
+    },
+    appliedTransientEventKeys: appliedTransientEventKeys,
+  );
+
+  CloudConversationState _withTextEvent(_TextEventStateRequest request) =>
+      CloudConversationState._copy(
+        this,
+        sequence: request.event.sequence,
+        activeAssistantContent: request.textContent.active,
+        activeAssistantTransientContent: request.textContent.transient,
+        transientA2uiSequenceByAssistantMessageId: request.isTransientDelta
+            ? transientA2uiSequenceByAssistantMessageId
+            : const {},
+        appliedTransientEventKeys: _eventKeysForTextEvent(
+          request.isTransientDelta,
+          request.transientEventKey,
+        ),
+      );
 
   String? _transientEventKey(ConversationStreamEvent event, String? delta) {
     if (delta == null) return null;
@@ -179,6 +215,20 @@ typedef _TextContentRequest = ({
 });
 
 typedef _TextContent = ({String active, String transient});
+
+typedef _TextEventRequest = ({
+  ConversationStreamEvent event,
+  String? delta,
+  bool isTransientDelta,
+  String? transientEventKey,
+});
+
+typedef _TextEventStateRequest = ({
+  ConversationStreamEvent event,
+  _TextContent textContent,
+  bool isTransientDelta,
+  String? transientEventKey,
+});
 
 Map<String, List<String>> _appendA2uiMessage(
   Map<String, List<String>> messages,
@@ -300,6 +350,13 @@ Set<String> _preservedEventKeys(
         ...current.appliedTransientEventKeys,
       }
     : current.appliedTransientEventKeys;
+
+Set<String> _eventKeysForTextEvent(
+  bool isTransientDelta,
+  String? transientEventKey,
+) => isTransientDelta && transientEventKey != null
+    ? {transientEventKey}
+    : const {};
 
 List<String> _a2uiMessages(String? metadataJson) {
   if (metadataJson == null) return const [];

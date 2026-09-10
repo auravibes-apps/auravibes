@@ -58,22 +58,34 @@ class const _AuraDialogShellContent({required final AuraDialogShell shell})
 class const _AuraDialogShellTitle({required final Widget title})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final theme = context.auraTheme;
-    final spacing = theme.fromSpacing(.md);
+  Widget build(BuildContext context) => _AuraDialogShellTitleContent(
+    title: title,
+    theme: context.auraTheme,
+    colors: context.auraColors,
+  );
+}
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: spacing,
-        top: theme.fromSpacing(.lg),
-        right: spacing,
-      ),
-      child: DefaultTextStyle(
-        style: _dialogShellTitleStyle(context),
-        child: title,
-      ),
-    );
-  }
+class _AuraDialogShellTitleContent extends StatelessWidget {
+  _AuraDialogShellTitleContent({
+    required Widget title,
+    required AuraTheme theme,
+    required AuraColorScheme colors,
+  }) : _child = Padding(
+         padding: _dialogShellTitlePadding(theme),
+         child: DefaultTextStyle(
+           style: TextStyle(
+             color: colors.onSurface,
+             fontSize: theme.typography.fontSizeLg,
+             fontWeight: theme.typography.fontWeightSemibold,
+           ),
+           child: title,
+         ),
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraDialogShellMessage({required final Widget message})
@@ -111,13 +123,13 @@ BoxDecoration _dialogShellDecoration(BuildContext context) => BoxDecoration(
   boxShadow: const [DesignShadows.lg],
 );
 
-TextStyle _dialogShellTitleStyle(BuildContext context) {
-  final theme = context.auraTheme;
+EdgeInsets _dialogShellTitlePadding(AuraTheme theme) {
+  final spacing = theme.fromSpacing(.md);
 
-  return TextStyle(
-    color: context.auraColors.onSurface,
-    fontSize: theme.typography.fontSizeLg,
-    fontWeight: theme.typography.fontWeightSemibold,
+  return EdgeInsets.only(
+    left: spacing,
+    top: theme.fromSpacing(.lg),
+    right: spacing,
   );
 }
 

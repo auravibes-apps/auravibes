@@ -31,6 +31,8 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
 }
 
 void main() {
+  final transportTypeConverter = McpServers().transportTypeConverter;
+
   group('McpServers table converters', () {
     group('transportTypeConverter', () {
       test('converts SSE from JSON', () {

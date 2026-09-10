@@ -11,7 +11,29 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' show AppSkillDefinition;
 
+import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
+
+typedef _UserSkillLoadRequest = ({
+  String conversationId,
+  String workspaceId,
+  SkillEntity skill,
+  CloudSkillStore? cloud,
+});
+
+typedef _AppSkillLoadRequest = ({
+  String conversationId,
+  String workspaceId,
+  AppSkillDefinition skill,
+  CloudSkillStore? cloud,
+});
+
+typedef _AppSkillSlugLoadRequest = ({
+  String conversationId,
+  String workspaceId,
+  String slug,
+  CloudSkillStore? cloud,
+});
 
 class const LoadConversationSkillException(final String localizationKey)
     implements Exception {
@@ -34,27 +56,52 @@ class const LoadConversationSkillUsecase(
     required String conversationId,
     required String workspaceId,
     required String slug,
-  }) async {
-    final cloud = cloudStore;
-    final userSkill = await _findUserSkill(workspaceId, slug, cloud);
-    if (userSkill != null) {
-      await _loadUserSkill(conversationId, workspaceId, userSkill, cloud);
-
-      return;
-    }
-
-    final appSkill = _appSkillRegistry.getBySlug(slug);
-    if (appSkill != null) {
-      await _loadAppSkill(conversationId, workspaceId, appSkill, cloud);
-
-      return;
-    }
-
-    throw StateError('Skill not found for slug: $slug');
-  }
+  }) => _loadConversationSkill((
+    conversationId: conversationId,
+    workspaceId: workspaceId,
+    slug: slug,
+    cloud: cloudStore,
+  ));
 }
 
 extension on LoadConversationSkillUsecase {
+  Future<void> _loadConversationSkill(_AppSkillSlugLoadRequest request) async {
+    final userSkill = await _findUserSkill(
+      request.workspaceId,
+      request.slug,
+      request.cloud,
+    );
+    if (userSkill == null) return _loadAppSkillBySlug(request);
+
+    return _loadUserSkillFromRequest(request, userSkill);
+  }
+
+  Future<void> _loadUserSkillFromRequest(
+    _AppSkillSlugLoadRequest request,
+    SkillEntity skill,
+  ) => _loadUserSkill((
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    skill: skill,
+    cloud: request.cloud,
+  ));
+}
+
+extension on LoadConversationSkillUsecase {
+  Future<void> _loadAppSkillBySlug(_AppSkillSlugLoadRequest request) async {
+    final appSkill = _appSkillRegistry.getBySlug(request.slug);
+    if (appSkill == null) {
+      throw StateError('Skill not found for slug: ${request.slug}');
+    }
+
+    await _loadAppSkill((
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      skill: appSkill,
+      cloud: request.cloud,
+    ));
+  }
+
   Future<SkillEntity?> _findUserSkill(
     String workspaceId,
     String slug,
@@ -82,14 +129,17 @@ extension on LoadConversationSkillUsecase {
       .where((item) => item.source == SkillSource.user && item.slug == slug)
       .firstOrNull;
 
-  Future<void> _loadUserSkill(
-    String conversationId,
-    String workspaceId,
-    SkillEntity skill,
-    CloudSkillStore? cloud,
-  ) async {
-    await _ensureUserSkillReady(workspaceId, skill, cloud);
-    await _persistUserSkill(conversationId, skill.id, cloud);
+  Future<void> _loadUserSkill(_UserSkillLoadRequest request) async {
+    await _ensureUserSkillReady(
+      request.workspaceId,
+      request.skill,
+      request.cloud,
+    );
+    await _persistUserSkill(
+      request.conversationId,
+      request.skill.id,
+      request.cloud,
+    );
   }
 
   Future<void> _ensureUserSkillReady(
@@ -110,16 +160,31 @@ extension on LoadConversationSkillUsecase {
     CloudSkillStore? cloud,
   ) async {
     if (cloud != null) {
-      final _ = await cloud.setConversationSkill(
-        conversationId,
-        skillId,
-        selected: true,
-        isAppSkill: false,
-      );
+      await _persistCloudUserSkill(cloud, conversationId, skillId);
 
       return;
     }
 
+    await _persistLocalUserSkill(conversationId, skillId);
+  }
+
+  Future<void> _persistCloudUserSkill(
+    CloudSkillStore cloud,
+    String conversationId,
+    String skillId,
+  ) async {
+    await cloud.setConversationSkill(
+      conversationId,
+      skillId,
+      selected: true,
+      isAppSkill: false,
+    );
+  }
+
+  Future<void> _persistLocalUserSkill(
+    String conversationId,
+    String skillId,
+  ) async {
     final repository = _conversationSkillsRepository;
     if (repository == null) {
       throw StateError('Conversation skill store is unavailable');
@@ -146,15 +211,15 @@ extension on LoadConversationSkillUsecase {
         await readinessUsecase.call(workspaceId: workspaceId, skill: skill);
   }
 
-  Future<void> _loadAppSkill(
-    String conversationId,
-    String workspaceId,
-    AppSkillDefinition skill,
-    CloudSkillStore? cloud,
-  ) async {
-    await _ensureAppSkillEnabled(workspaceId, skill, cloud);
-    await _ensureAppSkillCredentials(workspaceId, skill);
-    await _persistAppSkill(conversationId, skill.identifier, cloud);
+  Future<void> _loadAppSkill(_AppSkillLoadRequest request) async {
+    final skill = request.skill;
+    await _ensureAppSkillEnabled(request.workspaceId, skill, request.cloud);
+    await _ensureAppSkillCredentials(request.workspaceId, skill);
+    await _persistAppSkill(
+      request.conversationId,
+      skill.identifier,
+      request.cloud,
+    );
   }
 
   Future<void> _persistAppSkill(
@@ -163,16 +228,31 @@ extension on LoadConversationSkillUsecase {
     CloudSkillStore? cloud,
   ) async {
     if (cloud != null) {
-      final _ = await cloud.setConversationSkill(
-        conversationId,
-        skillId,
-        selected: true,
-        isAppSkill: true,
-      );
+      await _persistCloudAppSkill(cloud, conversationId, skillId);
 
       return;
     }
 
+    await _persistLocalAppSkill(conversationId, skillId);
+  }
+
+  Future<void> _persistCloudAppSkill(
+    CloudSkillStore cloud,
+    String conversationId,
+    String skillId,
+  ) async {
+    await cloud.setConversationSkill(
+      conversationId,
+      skillId,
+      selected: true,
+      isAppSkill: true,
+    );
+  }
+
+  Future<void> _persistLocalAppSkill(
+    String conversationId,
+    String skillId,
+  ) async {
     final repository = _conversationSkillsRepository;
     if (repository == null) {
       throw StateError('Conversation skill store is unavailable');

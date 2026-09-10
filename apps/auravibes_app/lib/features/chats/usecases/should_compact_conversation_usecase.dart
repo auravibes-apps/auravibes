@@ -10,119 +10,205 @@ import 'package:auravibes_app/features/settings/providers/workspace_compaction_s
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
+typedef _CompactionCheckInput = ({
+  String conversationId,
+  String workspaceId,
+  String selectedModelId,
+  String selectedProviderId,
+  int maxOutputTokens,
+  int? contextLimit,
+  CompactionTrigger trigger,
+});
+
 class const ShouldCompactConversationUsecase({
   required final MessageRepository messageRepository,
   required final WorkspaceCompactionSettingsRepository settingsRepository,
 }) {
-  Future<CompactionDecision> call({
-    required String conversationId,
-    required String workspaceId,
-    required String selectedModelId,
-    required String selectedProviderId,
-    required int maxOutputTokens,
-    int? contextLimit,
-    CompactionTrigger trigger = CompactionTrigger.auto,
-  }) async {
-    final settings = await settingsRepository.getEffectiveSettings(workspaceId);
+  Future<CompactionDecision> call(_CompactionCheckInput request) =>
+      _shouldCompactConversation((
+        usecase: this,
+        conversationId: request.conversationId,
+        workspaceId: request.workspaceId,
+        selectedModelId: request.selectedModelId,
+        selectedProviderId: request.selectedProviderId,
+        maxOutputTokens: request.maxOutputTokens,
+        contextLimit: request.contextLimit,
+        trigger: request.trigger,
+      ));
+}
 
-    if (trigger == CompactionTrigger.auto && !settings.autoCompactionEnabled) {
-      return CompactionDecision(
-        shouldCompact: false,
-        reason: .disabled,
-        trigger: trigger,
-        settings: settings,
-      );
-    }
+typedef _CompactionCheckRequest = ({
+  ShouldCompactConversationUsecase usecase,
+  String conversationId,
+  String workspaceId,
+  String selectedModelId,
+  String selectedProviderId,
+  int maxOutputTokens,
+  int? contextLimit,
+  CompactionTrigger trigger,
+});
 
-    if (trigger == CompactionTrigger.auto && contextLimit == null) {
-      return CompactionDecision(
-        shouldCompact: false,
-        reason: .unknownContextLimit,
-        trigger: trigger,
-        settings: settings,
-      );
-    }
+Future<CompactionDecision> _shouldCompactConversation(
+  _CompactionCheckRequest request,
+) async {
+  final settings = await _loadCompactionSettings(request);
+  final blocked = _blockedCompactionDecision(
+    settings: settings,
+    trigger: request.trigger,
+    contextLimit: request.contextLimit,
+  );
+  if (blocked != null) return blocked;
 
-    final messages = await messageRepository.getMessagesByConversation(
-      conversationId,
-    );
+  return await _decideForMessages(request, settings);
+}
 
-    final context = MessageTranscriptSnapshotMapper.toAgentContextSnapshot(
-      messages,
-    );
-    if (!isContextSafeForCompaction(context)) {
-      return CompactionDecision(
-        shouldCompact: false,
-        reason: .unsafeState,
-        trigger: trigger,
-        settings: settings,
-      );
-    }
+Future<CompactionSettings> _loadCompactionSettings(
+  _CompactionCheckRequest request,
+) => request.usecase.settingsRepository.getEffectiveSettings(
+  request.workspaceId,
+);
 
-    if (trigger == CompactionTrigger.manual) {
-      return CompactionDecision(
-        shouldCompact: true,
-        reason: .eligible,
-        trigger: trigger,
-        settings: settings,
-      );
-    }
+Future<CompactionDecision> _decideForMessages(
+  _CompactionCheckRequest request,
+  CompactionSettings settings,
+) async {
+  final messages = await request.usecase.messageRepository
+      .getMessagesByConversation(request.conversationId);
+  final context = MessageTranscriptSnapshotMapper.toAgentContextSnapshot(
+    messages,
+  );
 
-    final effectiveContextLimit = contextLimit;
-    if (effectiveContextLimit == null) {
-      return CompactionDecision(
-        shouldCompact: false,
-        reason: .unknownContextLimit,
-        trigger: trigger,
-        settings: settings,
-      );
-    }
+  return _decideForContext(request, settings, context);
+}
 
-    final effectiveRemainingThreshold =
-        settings.remainingTokenThreshold ==
-            CompactionSettings.defaults.remainingTokenThreshold
-        ? defaultRemainingTokenThreshold(
-            maxOutputTokens: maxOutputTokens,
-            contextLimit: effectiveContextLimit,
-          )
-        : settings.remainingTokenThreshold;
-    final evaluation = evaluateContextCompaction(
-      context: context,
-      usagePercentageThreshold: settings.usagePercentageThreshold,
-      remainingTokenThreshold: effectiveRemainingThreshold,
-      contextLimit: effectiveContextLimit,
-    );
-    final usage = evaluation.usage;
-    final estimate = ConversationPromptEstimate(
-      conversationId: conversationId,
-      selectedModelId: selectedModelId,
-      selectedProviderId: selectedProviderId,
-      estimatedPromptTokens: usage.usedTokens,
-      maxOutputTokens: maxOutputTokens,
-      contextLimit: usage.contextLimit,
-      remainingTokens: usage.remainingTokens,
-      usagePercentage: usage.usagePercentage,
-    );
+CompactionDecision _decideForContext(
+  _CompactionCheckRequest request,
+  CompactionSettings settings,
+  AgentContextSnapshot context,
+) {
+  if (!isContextSafeForCompaction(context)) {
+    return _unsafeCompactionDecision(request, settings);
+  }
+  if (request.trigger == CompactionTrigger.manual) {
+    return _manualCompactionDecision(request, settings);
+  }
 
-    if (evaluation.shouldCompact) {
-      return CompactionDecision(
-        shouldCompact: true,
-        reason: .eligible,
-        trigger: trigger,
-        estimate: estimate,
-        settings: settings,
-      );
-    }
+  return _evaluateCompaction(request, settings, context);
+}
 
+CompactionDecision _unsafeCompactionDecision(
+  _CompactionCheckRequest request,
+  CompactionSettings settings,
+) => CompactionDecision(
+  shouldCompact: false,
+  reason: .unsafeState,
+  trigger: request.trigger,
+  settings: settings,
+);
+
+CompactionDecision _manualCompactionDecision(
+  _CompactionCheckRequest request,
+  CompactionSettings settings,
+) => CompactionDecision(
+  shouldCompact: true,
+  reason: .eligible,
+  trigger: request.trigger,
+  settings: settings,
+);
+
+CompactionDecision? _blockedCompactionDecision({
+  required CompactionSettings settings,
+  required CompactionTrigger trigger,
+  required int? contextLimit,
+}) {
+  if (trigger == CompactionTrigger.auto && !settings.autoCompactionEnabled) {
     return CompactionDecision(
       shouldCompact: false,
-      reason: .belowPercentageThreshold,
+      reason: .disabled,
       trigger: trigger,
-      estimate: estimate,
       settings: settings,
     );
   }
+  if (trigger == CompactionTrigger.auto && contextLimit == null) {
+    return CompactionDecision(
+      shouldCompact: false,
+      reason: .unknownContextLimit,
+      trigger: trigger,
+      settings: settings,
+    );
+  }
+
+  return null;
 }
+
+CompactionDecision _evaluateCompaction(
+  _CompactionCheckRequest request,
+  CompactionSettings settings,
+  AgentContextSnapshot context,
+) {
+  final contextLimit = request.contextLimit;
+  if (contextLimit == null) {
+    return CompactionDecision(
+      shouldCompact: false,
+      reason: .unknownContextLimit,
+      trigger: request.trigger,
+      settings: settings,
+    );
+  }
+  final evaluation = evaluateContextCompaction(
+    context: context,
+    usagePercentageThreshold: settings.usagePercentageThreshold,
+    remainingTokenThreshold: _remainingTokenThreshold(
+      request,
+      settings,
+      contextLimit,
+    ),
+    contextLimit: contextLimit,
+  );
+
+  return _evaluatedCompactionDecision(request, settings, evaluation);
+}
+
+int _remainingTokenThreshold(
+  _CompactionCheckRequest request,
+  CompactionSettings settings,
+  int contextLimit,
+) =>
+    settings.remainingTokenThreshold ==
+        CompactionSettings.defaults.remainingTokenThreshold
+    ? defaultRemainingTokenThreshold(
+        maxOutputTokens: request.maxOutputTokens,
+        contextLimit: contextLimit,
+      )
+    : settings.remainingTokenThreshold;
+
+CompactionDecision _evaluatedCompactionDecision(
+  _CompactionCheckRequest request,
+  CompactionSettings settings,
+  AgentCompactionEvaluation evaluation,
+) => CompactionDecision(
+  shouldCompact: evaluation.shouldCompact,
+  reason: evaluation.shouldCompact
+      ? CompactionDecisionReason.eligible
+      : CompactionDecisionReason.belowPercentageThreshold,
+  trigger: request.trigger,
+  estimate: _promptEstimate(request, evaluation.usage),
+  settings: settings,
+);
+
+ConversationPromptEstimate _promptEstimate(
+  _CompactionCheckRequest request,
+  AgentContextWindowUsage usage,
+) => ConversationPromptEstimate(
+  conversationId: request.conversationId,
+  selectedModelId: request.selectedModelId,
+  selectedProviderId: request.selectedProviderId,
+  estimatedPromptTokens: usage.usedTokens,
+  maxOutputTokens: request.maxOutputTokens,
+  contextLimit: usage.contextLimit,
+  remainingTokens: usage.remainingTokens,
+  usagePercentage: usage.usagePercentage,
+);
 
 final shouldCompactConversationUsecaseProvider =
     Provider<ShouldCompactConversationUsecase>((ref) {

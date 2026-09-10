@@ -5,6 +5,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'model_connection_entity.freezed.dart';
 
+@immutable
 @freezed
 abstract class ModelConnectionEntity with _$ModelConnectionEntity {
   const factory({
@@ -20,8 +21,18 @@ abstract class ModelConnectionEntity with _$ModelConnectionEntity {
     String? keySuffix,
     ServiceConnectionMetadata? oauthMetadata,
   }) = _ModelConnectionEntity;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @Freezed(toStringOverride: false)
 abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
   @Assert(
@@ -39,8 +50,18 @@ abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
     ServiceConnectionMetadata? oauthMetadata,
     @Default([]) List<String> modelIds,
   }) = _ModelConnectionToCreate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
   const factory({
@@ -53,18 +74,47 @@ abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
     String? url,
     String? keySuffix,
   }) = _ModelConnectionForEdit;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @Freezed(toStringOverride: false)
 abstract class ModelConnectionToUpdate with _$ModelConnectionToUpdate {
   // Null means preserve the existing persisted value for that field.
   // ignore: unnecessary-nullable
   const factory({String? name, String? key, String? url}) =
       _ModelConnectionToUpdate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class ModelConnectionFilter with _$ModelConnectionFilter {
   const factory({@Default([]) List<String> workspaces}) =
       _ModelConnectionFilter;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }

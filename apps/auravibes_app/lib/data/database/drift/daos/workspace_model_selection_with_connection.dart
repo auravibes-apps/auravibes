@@ -19,7 +19,48 @@ class WorkspaceModelSelectionWithConnection({
 )
 class WorkspaceModelSelectionsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$WorkspaceModelSelectionsDaoMixin;
+    with
+        _$WorkspaceModelSelectionsDaoMixin,
+        _WorkspaceModelSelectionsDaoWriteApi,
+        _WorkspaceModelSelectionsDaoReadApi;
+
+mixin _WorkspaceModelSelectionsDaoWriteApi {
+  Future<void> insertWorkspaceModelSelections(
+    List<WorkspaceModelSelectionsCompanion> modelProvidersToInsert,
+  ) =>
+      WorkspaceModelSelectionsDaoWrites(this as WorkspaceModelSelectionsDao)
+          .insertWorkspaceModelSelections(modelProvidersToInsert);
+
+  Future<List<WorkspaceModelSelectionTable>> getByModelConnectionId(
+    String modelConnectionId,
+  ) =>
+      WorkspaceModelSelectionsDaoWrites(this as WorkspaceModelSelectionsDao)
+          .getByModelConnectionId(modelConnectionId);
+
+  Future<int> deleteByIds(Set<String> ids) =>
+      WorkspaceModelSelectionsDaoWrites(this as WorkspaceModelSelectionsDao)
+          .deleteByIds(ids);
+}
+
+mixin _WorkspaceModelSelectionsDaoReadApi {
+  Future<List<WorkspaceModelSelectionWithConnection>>
+  getAllWorkspaceModelSelectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) => WorkspaceModelSelectionsDaoReads(this as WorkspaceModelSelectionsDao)
+      .getAllWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds);
+
+  Stream<List<WorkspaceModelSelectionWithConnection>>
+  watchAllWorkspaceModelSelectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) => WorkspaceModelSelectionsDaoReads(this as WorkspaceModelSelectionsDao)
+      .watchAllWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds);
+
+  Future<WorkspaceModelSelectionWithConnection?> getWorkspaceModelSelectionById(
+    String id,
+  ) =>
+      WorkspaceModelSelectionsDaoReads(this as WorkspaceModelSelectionsDao)
+          .getWorkspaceModelSelectionById(id);
+}
 
 extension WorkspaceModelSelectionsDaoWrites on WorkspaceModelSelectionsDao {
   Future<void> insertWorkspaceModelSelections(

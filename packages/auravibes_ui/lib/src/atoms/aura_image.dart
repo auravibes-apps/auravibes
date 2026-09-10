@@ -43,48 +43,78 @@ class AuraImage extends StatelessWidget {
   final Widget? errorChild;
 
   @override
-  Widget build(BuildContext context) {
-    return Image(
-      image: imageProvider ?? NetworkImage(url),
-      frameBuilder: _frameBuilder,
-      errorBuilder: _errorBuilder,
-      semanticLabel: semanticLabel,
-      fit: fit,
-    );
-  }
+  Widget build(BuildContext context) => Image(
+    image: imageProvider ?? NetworkImage(url),
+    loadingBuilder: _loadingBuilder,
+    errorBuilder: _errorBuilder,
+    semanticLabel: semanticLabel,
+    fit: fit,
+  );
 
-  Widget _frameBuilder(
+  Widget _loadingBuilder(
     BuildContext _,
     Widget child,
-    int? frame,
-    bool wasSynchronouslyLoaded,
+    ImageChunkEvent? loadingProgress,
   ) {
-    if (wasSynchronouslyLoaded || frame != null) return child;
+    if (loadingProgress == null) return child;
 
-    return loadingChild ??
-        Semantics(
-          child: const Center(child: AuraSpinner()),
-          image: true,
-          label: semanticLabel,
-        );
+    return loadingChild ?? _AuraImageLoading(label: semanticLabel);
   }
 
-  Widget _errorBuilder(BuildContext context, Object _, StackTrace? _) {
-    if (errorChild case final child?) return child;
+  Widget _errorBuilder(BuildContext context, Object _, StackTrace? _) =>
+      _AuraImageError(
+        child: errorChild,
+        backgroundColor: context.auraColors.surfaceVariant,
+        semanticLabel: errorSemanticLabel,
+      );
+}
 
-    return Semantics(
-      child: ColoredBox(
-        color: context.auraColors.surfaceVariant,
-        child: const Center(
-          child: AuraPadding(
-            child: AuraIcon(_brokenImageIcon, tint: .error),
-            padding: .medium,
-          ),
-        ),
-      ),
-      container: true,
-      image: true,
-      label: errorSemanticLabel,
-    );
-  }
+class const _AuraImageLoading({required final String? label})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: const Center(child: AuraSpinner()),
+    image: true,
+    label: label,
+  );
+}
+
+class const _AuraImageError({
+  required final Widget? child,
+  required final Color backgroundColor,
+  required final String? semanticLabel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      child ??
+      _AuraImageErrorFallback(
+        backgroundColor: backgroundColor,
+        semanticLabel: semanticLabel,
+      );
+}
+
+class const _AuraImageErrorFallback({
+  required final Color backgroundColor,
+  required final String? semanticLabel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: ColoredBox(
+      color: backgroundColor,
+      child: const Center(child: _AuraBrokenImage()),
+    ),
+    container: true,
+    image: true,
+    label: semanticLabel,
+  );
+}
+
+class _AuraBrokenImage extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) => const AuraPadding(
+    child: AuraIcon(AuraImage._brokenImageIcon, tint: .error),
+    padding: .medium,
+  );
 }

@@ -59,7 +59,7 @@ class const UpdateSkillTemplateToolUsecase(
   }
 }
 
-extension UpdateSkillTemplateToolUsecaseOperations
+extension _UpdateSkillTemplateValidationOperations
     on UpdateSkillTemplateToolUsecase {
   bool _requiresValidation(String? templateJson, String? inputsJson) =>
       templateJson != null || inputsJson != null;
@@ -82,8 +82,13 @@ extension UpdateSkillTemplateToolUsecaseOperations
   }
 
   Future<SkillTemplateToolEntity?> _existingTool(String toolId) {
-    return cloudStore?.tool(toolId) ??
-        _skillTemplateToolsRepository?.getToolById(toolId);
+    final cloud = cloudStore;
+    if (cloud != null) return cloud.tool(toolId);
+
+    final repository = _skillTemplateToolsRepository;
+    if (repository == null) return Future.value();
+
+    return repository.getToolById(toolId);
   }
 
   Future<SkillTemplateToolEntity> _updateTool(
@@ -101,7 +106,10 @@ extension UpdateSkillTemplateToolUsecaseOperations
 
     return await repository.updateTool(toolId, tool);
   }
+}
 
+extension _UpdateSkillTemplateCredentialOperations
+    on UpdateSkillTemplateToolUsecase {
   Future<Map<String, SkillCredentialAttributeDefinition>>
   _credentialDefinitions(String skillId) async {
     final cloud = cloudStore;
@@ -126,15 +134,24 @@ extension UpdateSkillTemplateToolUsecaseOperations
   Future<Map<String, SkillCredentialAttributeDefinition>>
   _localCredentialDefinitions(String skillId) async {
     final skillsRepository = this.skillsRepository;
-    final credentialDefinitionsRepository =
-        skillCredentialDefinitionsRepository;
-    if (skillsRepository == null || credentialDefinitionsRepository == null) {
+    final definitionsRepository = this.skillCredentialDefinitionsRepository;
+    if (skillsRepository == null || definitionsRepository == null) {
       return const {};
     }
     final skill = await skillsRepository.getSkillById(skillId);
-    final credentialDefinitionId = skill?.credentialDefinitionId;
+    return _credentialDefinitionValues(
+      definitionsRepository,
+      skill?.credentialDefinitionId,
+    );
+  }
+
+  Future<Map<String, SkillCredentialAttributeDefinition>>
+  _credentialDefinitionValues(
+    SkillCredentialDefinitionsRepository repository,
+    String? credentialDefinitionId,
+  ) async {
     if (credentialDefinitionId == null) return const {};
-    final definition = await credentialDefinitionsRepository.getDefinitionById(
+    final definition = await repository.getDefinitionById(
       credentialDefinitionId,
     );
     if (definition == null) return const {};

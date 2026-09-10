@@ -9,11 +9,11 @@ abstract final class McpSdkAdapter {
   );
 
   static McpContent _contentFromSdk(mcp.Content content) => switch (content) {
-    mcp.TextContent value => _textContent(value),
-    mcp.ImageContent value => _imageContent(value),
-    mcp.AudioContent value => _audioContent(value),
-    mcp.ResourceContent value => _resourceContent(value),
-    mcp.ResourceLinkContent value => _resourceLinkContent(value),
+    final mcp.TextContent value => _textContent(value),
+    final mcp.ImageContent value => _imageContent(value),
+    final mcp.AudioContent value => _audioContent(value),
+    final mcp.ResourceContent value => _resourceContent(value),
+    final mcp.ResourceLinkContent value => _resourceLinkContent(value),
     _ => throw UnsupportedError(
       'Unsupported MCP content: ${content.runtimeType}',
     ),

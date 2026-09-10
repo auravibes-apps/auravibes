@@ -27,11 +27,26 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
+        ChatResult,
         ChatMessage,
         conversationCompactionRequestPrompt,
         conversationCompactionSystemPrompt,
         requireCompactionSummary;
 import 'package:riverpod/src/providers/provider.dart';
+
+typedef _LocalCompactionRequest = ({
+  ConversationRepository conversations,
+  Future<ModelSelectionStore> Function(String workspaceId) getModelStore,
+  MessageRepository messagesRepository,
+  SelectCompactionRangeUsecase selectRange,
+  String conversationId,
+  CompactionTrigger trigger,
+});
+
+typedef _CompactionInput = ({
+  List<ChatMessage> chatHistory,
+  CompactionRange range,
+});
 
 class const CompactConversationUsecase({
   required final CompactionExecutionRuntime compactionExecution,
@@ -67,6 +82,131 @@ class const CompactConversationUsecase({
     );
   }
 
+  Future<List<ChatMessage>> _buildCompactionPrompt(
+    List<MessageEntity> messages,
+  ) async {
+    return [
+      ChatMessage.system(conversationCompactionSystemPrompt),
+      ...await _buildPromptChatMessages.call(messages),
+      ChatMessage.user(conversationCompactionRequestPrompt),
+    ];
+  }
+
+  Future<String> _generateSummary(
+    WorkspaceModelSelectionWithConnectionEntity model,
+    List<ChatMessage> chatHistory,
+  ) async {
+    final service = chatbotService;
+    if (service == null) {
+      throw StateError('Local chatbot service unavailable');
+    }
+    final stream = service.sendMessage(model, chatHistory);
+
+    return requireCompactionSummary(await _collectSummaryText(stream));
+  }
+
+  Future<String> _collectSummaryText(
+    Stream<ChatResult<ChatMessage>> stream,
+  ) async {
+    final chunks = <String>[];
+    await for (final chunk in stream) {
+      chunks.add(chunk.output.text);
+    }
+
+    return chunks.join();
+  }
+
+  Future<void> _persistCompactionSummary({
+    required String conversationId,
+    required String summaryText,
+    required CompactionRange range,
+    required CompactionTrigger trigger,
+  }) async {
+    final metadata = _compactionSummaryMetadata(range, trigger);
+
+    final repository = messageRepository;
+    if (repository == null) {
+      throw StateError('Local message repository unavailable');
+    }
+    final created = await _createCompactionSummaryMessage(
+      repository,
+      conversationId,
+      summaryText,
+      metadata,
+    );
+    await _markCompactionMessageSent(repository, created.id);
+  }
+
+  Future<MessageEntity> _createCompactionSummaryMessage(
+    MessageRepository repository,
+    String conversationId,
+    String summaryText,
+    MessageMetadataEntity metadata,
+  ) => repository.createMessage(
+    .new(
+      conversationId: conversationId,
+      content: summaryText,
+      messageType: MessageType.system,
+      isUser: false,
+      status: MessageStatus.sending,
+      metadata: jsonEncode(metadata.toJson()),
+    ),
+  );
+
+  MessageMetadataEntity _compactionSummaryMetadata(
+    CompactionRange range,
+    CompactionTrigger trigger,
+  ) => MessageMetadataEntity(
+    metadataVersion: 2,
+    isCompactionSummary: true,
+    compactionKind: trigger == CompactionTrigger.auto
+        ? CompactionKind.auto
+        : CompactionKind.manual,
+    compactedFromMessageId: range.fromMessageId,
+    compactedThroughMessageId: range.throughMessageId,
+    compactedMessageIds: range.messageIds,
+    compactionCreatedAt: .now(),
+  );
+
+  Future<void> _markCompactionMessageSent(
+    MessageRepository repository,
+    String messageId,
+  ) async {
+    final _ = await repository.patchMessage(
+      messageId,
+      const MessagePatch(status: .sent),
+    );
+  }
+
+  Future<void> _persistRequiredFailureMessage({
+    required String conversationId,
+  }) async {
+    final repository = messageRepository;
+    if (repository == null) {
+      throw StateError('Local message repository unavailable');
+    }
+    final created = await _createFailureMessage(repository, conversationId);
+    final _ = await repository.patchMessage(
+      created.id,
+      const MessagePatch(status: .error),
+    );
+  }
+
+  Future<MessageEntity> _createFailureMessage(
+    MessageRepository repository,
+    String conversationId,
+  ) => repository.createMessage(
+    .new(
+      conversationId: conversationId,
+      content: _failureMessageKey,
+      messageType: MessageType.system,
+      isUser: false,
+      status: MessageStatus.sending,
+    ),
+  );
+}
+
+extension on CompactConversationUsecase {
   Future<CompactionExecutionState> _compactCloud({
     required CloudCompactionUsecase cloud,
     required String conversationId,
@@ -79,7 +219,7 @@ class const CompactConversationUsecase({
     final conversation = await getCloudConversation(conversationId);
     if (conversation == null) throw const CompactionUnavailableException();
 
-    return await cloud(conversation: conversation, trigger: trigger);
+    return cloud(conversation: conversation, trigger: trigger);
   }
 
   Future<CompactionExecutionState> _compactLocal({
@@ -88,38 +228,33 @@ class const CompactConversationUsecase({
   }) async {
     final dependencies = _requiredLocalDependencies();
     final startedAt = DateTime.now();
-    compactionExecution.markRunning(
-      .new(
-        conversationId: conversationId,
-        trigger: trigger,
-        startedAt: startedAt,
-        status: CompactionExecutionStatus.running,
-      ),
-    );
+    _markCompactionRunning(conversationId, trigger, startedAt);
 
     try {
       await _executeLocalCompaction(
-        conversations: dependencies.conversations,
-        getModelStore: dependencies.getModelStore,
-        messagesRepository: dependencies.messagesRepository,
-        selectRange: dependencies.selectRange,
-        conversationId: conversationId,
-        trigger: trigger,
+        _localCompactionRequest(dependencies, conversationId, trigger),
       );
-
       compactionExecution.markSuccess(conversationId);
 
-      return CompactionExecutionState(
-        conversationId: conversationId,
-        trigger: trigger,
-        startedAt: startedAt,
-        status: .success,
-      );
+      return _successState(conversationId, trigger, startedAt);
     } on Exception {
       compactionExecution.markFailure(conversationId);
       rethrow;
     }
   }
+
+  void _markCompactionRunning(
+    String conversationId,
+    CompactionTrigger trigger,
+    DateTime startedAt,
+  ) => compactionExecution.markRunning(
+    .new(
+      conversationId: conversationId,
+      trigger: trigger,
+      startedAt: startedAt,
+      status: CompactionExecutionStatus.running,
+    ),
+  );
 
   ({
     ConversationRepository conversations,
@@ -147,59 +282,78 @@ class const CompactConversationUsecase({
     );
   }
 
-  Future<void> _executeLocalCompaction({
-    required ConversationRepository conversations,
-    required Future<ModelSelectionStore> Function(String workspaceId)
-    getModelStore,
-    required MessageRepository messagesRepository,
-    required SelectCompactionRangeUsecase selectRange,
-    required String conversationId,
-    required CompactionTrigger trigger,
-  }) async {
-    final conversation = await conversations.getConversationById(
-      conversationId,
+  Future<void> _executeLocalCompaction(_LocalCompactionRequest request) async {
+    final conversation = await request.conversations.getConversationById(
+      request.conversationId,
     );
     if (conversation == null) {
       throw const CompactionUnavailableException();
     }
 
+    final foundModel = await _findCompactionModel(request, conversation);
+    final input = await _buildCompactionInput(request, conversation);
+    await _persistGeneratedSummary(request, foundModel, input);
+  }
+
+  Future<void> _persistGeneratedSummary(
+    _LocalCompactionRequest request,
+    WorkspaceModelSelectionWithConnectionEntity model,
+    _CompactionInput input,
+  ) async {
+    final summaryText = await _generateCompactionSummary(
+      model,
+      input.chatHistory,
+      conversationId: request.conversationId,
+      trigger: request.trigger,
+    );
+    await _persistCompactionSummary(
+      conversationId: request.conversationId,
+      summaryText: summaryText,
+      range: input.range,
+      trigger: request.trigger,
+    );
+  }
+
+  Future<_CompactionInput> _buildCompactionInput(
+    _LocalCompactionRequest request,
+    ConversationEntity conversation,
+  ) async {
+    final messages = await request.messagesRepository.getMessagesByConversation(
+      conversation.id,
+    );
+    final range = request.selectRange(messages);
+    if (range == null) throw const CompactionUnsafeException();
+
+    return (
+      chatHistory: await _buildCompactionPrompt(
+        _compactableMessages(messages, range),
+      ),
+      range: range,
+    );
+  }
+
+  Future<WorkspaceModelSelectionWithConnectionEntity> _findCompactionModel(
+    _LocalCompactionRequest request,
+    ConversationEntity conversation,
+  ) async {
     final modelId = conversation.modelId;
     if (modelId == null) {
       throw const CompactionUnavailableException();
     }
 
-    final foundModel = await (await getModelStore(conversation.workspaceId))
+    final model = await (await request.getModelStore(conversation.workspaceId))
         .getById(modelId);
-    if (foundModel == null) {
-      throw const CompactionUnavailableException();
-    }
+    if (model == null) throw const CompactionUnavailableException();
 
-    final messages = await messagesRepository.getMessagesByConversation(
-      conversationId,
-    );
-    final range = selectRange(messages);
-    if (range == null) {
-      throw const CompactionUnsafeException();
-    }
-
-    final compactableMessages = messages
-        .where((m) => range.messageIds.contains(m.id))
-        .toList();
-    final chatHistory = await _buildCompactionPrompt(compactableMessages);
-
-    final summaryText = await _generateCompactionSummary(
-      foundModel,
-      chatHistory,
-      conversationId: conversationId,
-      trigger: trigger,
-    );
-    await _persistCompactionSummary(
-      conversationId: conversationId,
-      summaryText: summaryText,
-      range: range,
-      trigger: trigger,
-    );
+    return model;
   }
+
+  List<MessageEntity> _compactableMessages(
+    List<MessageEntity> messages,
+    CompactionRange range,
+  ) => messages
+      .where((message) => range.messageIds.contains(message.id))
+      .toList();
 
   Future<String> _generateCompactionSummary(
     WorkspaceModelSelectionWithConnectionEntity model,
@@ -220,103 +374,37 @@ class const CompactConversationUsecase({
       );
     }
   }
-
-  Future<List<ChatMessage>> _buildCompactionPrompt(
-    List<MessageEntity> messages,
-  ) async {
-    return [
-      ChatMessage.system(conversationCompactionSystemPrompt),
-      ...await _buildPromptChatMessages.call(messages),
-      ChatMessage.user(conversationCompactionRequestPrompt),
-    ];
-  }
-
-  Future<String> _generateSummary(
-    WorkspaceModelSelectionWithConnectionEntity model,
-    List<ChatMessage> chatHistory,
-  ) async {
-    final service = chatbotService;
-    if (service == null) {
-      throw StateError('Local chatbot service unavailable');
-    }
-    final stream = service.sendMessage(model, chatHistory);
-
-    final chunks = <String>[];
-    await for (final chunk in stream) {
-      chunks.add(chunk.output.text);
-    }
-
-    return requireCompactionSummary(chunks.join());
-  }
-
-  Future<void> _persistCompactionSummary({
-    required String conversationId,
-    required String summaryText,
-    required CompactionRange range,
-    required CompactionTrigger trigger,
-  }) async {
-    final metadata = MessageMetadataEntity(
-      metadataVersion: 2,
-      isCompactionSummary: true,
-      compactionKind: trigger == CompactionTrigger.auto
-          ? CompactionKind.auto
-          : CompactionKind.manual,
-      compactedFromMessageId: range.fromMessageId,
-      compactedThroughMessageId: range.throughMessageId,
-      compactedMessageIds: range.messageIds,
-      compactionCreatedAt: .now(),
-    );
-
-    final repository = messageRepository;
-    if (repository == null) {
-      throw StateError('Local message repository unavailable');
-    }
-    final created = await repository.createMessage(
-      .new(
-        conversationId: conversationId,
-        content: summaryText,
-        messageType: MessageType.system,
-        isUser: false,
-        status: MessageStatus.sending,
-        metadata: jsonEncode(metadata.toJson()),
-      ),
-    );
-
-    switch (await repository.patchMessage(
-      created.id,
-      const MessagePatch(status: .sent),
-    )) {
-      case _:
-        return;
-    }
-  }
-
-  Future<void> _persistRequiredFailureMessage({
-    required String conversationId,
-  }) async {
-    final repository = messageRepository;
-    if (repository == null) {
-      throw StateError('Local message repository unavailable');
-    }
-    final created = await repository.createMessage(
-      .new(
-        conversationId: conversationId,
-        content: _failureMessageKey,
-        messageType: MessageType.system,
-        isUser: false,
-        status: MessageStatus.sending,
-      ),
-    );
-
-    switch (await repository.patchMessage(
-      created.id,
-      const MessagePatch(status: .error),
-    )) {
-      case _:
-        return;
-    }
-  }
 }
+
+_LocalCompactionRequest _localCompactionRequest(
+  ({
+    ConversationRepository conversations,
+    MessageRepository messagesRepository,
+    Future<ModelSelectionStore> Function(String workspaceId) getModelStore,
+    SelectCompactionRangeUsecase selectRange,
+  })
+  dependencies,
+  String conversationId,
+  CompactionTrigger trigger,
+) => (
+  conversations: dependencies.conversations,
+  getModelStore: dependencies.getModelStore,
+  messagesRepository: dependencies.messagesRepository,
+  selectRange: dependencies.selectRange,
+  conversationId: conversationId,
+  trigger: trigger,
+);
+
+CompactionExecutionState _successState(
+  String conversationId,
+  CompactionTrigger trigger,
+  DateTime startedAt,
+) => CompactionExecutionState(
+  conversationId: conversationId,
+  trigger: trigger,
+  startedAt: startedAt,
+  status: .success,
+);
 
 final ProviderFamily<CompactConversationUsecase, String>
 compactConversationUsecaseProvider =

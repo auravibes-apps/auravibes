@@ -1,5 +1,4 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository_contract.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -9,6 +8,7 @@ import 'package:auravibes_app/services/tools/tool_service.dart';
 export 'workspace_tools_repository_contract.dart';
 
 class WorkspaceToolsRepository(final AppDatabase _database)
+    with _WorkspaceToolsRepositoryExtrasApi
     implements WorkspaceToolsRepositoryContract {
   final WorkspaceToolsDao _dao = _database.workspaceToolsDao;
 
@@ -16,20 +16,20 @@ class WorkspaceToolsRepository(final AppDatabase _database)
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(
     String workspaceId,
   ) async {
-    await this._ensureNativeTools(workspaceId);
+    await _ensureNativeTools(workspaceId);
     final results = await _dao.getWorkspaceTools(workspaceId);
 
-    return results.map(this._tableToEntity).toList();
+    return results.map(_tableToEntity).toList();
   }
 
   @override
   Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
     String workspaceId,
   ) async {
-    await this._ensureNativeTools(workspaceId);
+    await _ensureNativeTools(workspaceId);
     final results = await _dao.getEnabledWorkspaceTools(workspaceId);
 
-    return results.map(this._tableToEntity).toList();
+    return results.map(_tableToEntity).toList();
   }
 
   @override
@@ -37,13 +37,13 @@ class WorkspaceToolsRepository(final AppDatabase _database)
     String workspaceId,
     String toolId,
   ) async {
-    await this._ensureNativeTools(workspaceId);
+    await _ensureNativeTools(workspaceId);
     final result =
         await _dao.getWorkspaceToolByToolId(workspaceId, toolId) ??
         await _dao.getWorkspaceTool(workspaceId, toolId);
     if (result == null) return null;
 
-    return this._tableToEntity(result);
+    return _tableToEntity(result);
   }
 
   @override
@@ -58,7 +58,7 @@ class WorkspaceToolsRepository(final AppDatabase _database)
       isEnabled: isEnabled,
     );
 
-    return this._tableToEntity(table);
+    return _tableToEntity(table);
   }
 
   @override
@@ -71,8 +71,87 @@ class WorkspaceToolsRepository(final AppDatabase _database)
       isEnabled: isEnabled,
     );
 
-    return this._tableToEntity(table);
+    return _tableToEntity(table);
   }
+
+  @override
+  Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
+    String workspaceId,
+    String toolType,
+    String? config,
+  ) async {
+    try {
+      final tables = await _dao.patchWorkspaceToolConfig(
+        workspaceId,
+        toolType,
+        config,
+      );
+
+      return tables.map(_tableToEntity).toList();
+    } catch (e, stackTrace) {
+      Error.throwWithStackTrace(
+        WorkspaceToolsException(
+          'Failed to patch workspace tool config.',
+          e is Exception ? e : null,
+        ),
+        stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<WorkspaceToolEntity> setToolPermissionMode(
+    String id, {
+    required ToolPermissionMode permissionMode,
+  }) async {
+    final table = await _dao.setWorkspaceToolPermission(
+      id,
+      permission: _mapPermissionMode(permissionMode),
+    );
+
+    return _tableToEntity(table);
+  }
+
+  @override
+  Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
+    required String toolGroupId,
+    required String toolName,
+  }) async {
+    final table = await _dao.getEnabledToolByToolName(
+      toolGroupId: toolGroupId,
+      toolName: toolName,
+    );
+    if (table == null) return null;
+
+    return _tableToEntity(table);
+  }
+
+  @override
+  Future<bool> removeWorkspaceToolById(String id) {
+    return _dao.deleteWorkspaceToolById(id);
+  }
+}
+
+mixin _WorkspaceToolsRepositoryExtrasApi {
+  Future<bool> isWorkspaceToolEnabled(String workspaceId, String toolType) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .isWorkspaceToolEnabled(workspaceId, toolType);
+
+  Future<bool> removeWorkspaceTool(String workspaceId, String toolType) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .removeWorkspaceTool(workspaceId, toolType);
+
+  Future<int> getWorkspaceToolsCount(String workspaceId) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .getWorkspaceToolsCount(workspaceId);
+
+  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .getEnabledWorkspaceToolsCount(workspaceId);
+
+  Future<String?> getWorkspaceToolConfig(String workspaceId, String toolType) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .getWorkspaceToolConfig(workspaceId, toolType);
 }
 
 extension WorkspaceToolsRepositoryExtras on WorkspaceToolsRepository {
@@ -88,11 +167,6 @@ extension WorkspaceToolsRepositoryExtras on WorkspaceToolsRepository {
     }
 
     return await _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
-  }
-
-  @override
-  Future<bool> removeWorkspaceToolById(String id) {
-    return _dao.deleteWorkspaceToolById(id);
   }
 
   Future<int> getWorkspaceToolsCount(String workspaceId) {
@@ -133,58 +207,6 @@ extension WorkspaceToolsRepositoryExtras on WorkspaceToolsRepository {
 }
 
 extension on WorkspaceToolsRepository {
-  @override
-  Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
-    String workspaceId,
-    String toolType,
-    String? config,
-  ) async {
-    try {
-      final tables = await _dao.patchWorkspaceToolConfig(
-        workspaceId,
-        toolType,
-        config,
-      );
-
-      return tables.map(this._tableToEntity).toList();
-    } catch (e, stackTrace) {
-      Error.throwWithStackTrace(
-        WorkspaceToolsException(
-          'Failed to patch workspace tool config.',
-          e is Exception ? e : null,
-        ),
-        stackTrace,
-      );
-    }
-  }
-
-  @override
-  Future<WorkspaceToolEntity> setToolPermissionMode(
-    String id, {
-    required ToolPermissionMode permissionMode,
-  }) async {
-    final table = await _dao.setWorkspaceToolPermission(
-      id,
-      permission: this._mapPermissionMode(permissionMode),
-    );
-
-    return this._tableToEntity(table);
-  }
-
-  @override
-  Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
-    required String toolGroupId,
-    required String toolName,
-  }) async {
-    final table = await _dao.getEnabledToolByToolName(
-      toolGroupId: toolGroupId,
-      toolName: toolName,
-    );
-    if (table == null) return null;
-
-    return this._tableToEntity(table);
-  }
-
   Future<void> _ensureNativeTools(String workspaceId) async {
     await _database.transaction(() async {
       final workspaceTools = await _dao.getWorkspaceTools(workspaceId);
@@ -274,5 +296,8 @@ class WorkspaceToolsValidationException extends WorkspaceToolsException {
   const new(super.message, [super.cause]);
 
   @override
-  String toString() => super.toString();
+  String toString() {
+    final value = super.toString();
+    return value;
+  }
 }

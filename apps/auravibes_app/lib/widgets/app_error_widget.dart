@@ -36,22 +36,27 @@ class const _AppErrorContent<T extends Object>({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
-    child: AuraColumn(
-      children: [
-        const AuraIcon(Icons.error_outline, size: .large, tint: .error),
-        const AuraText(
-          child: _AppErrorText(LocaleKeys.common_error_title),
-          style: .heading6,
-          textAlign: .center,
-        ),
-        _AppErrorMessage(error: error),
-        ?action,
-      ],
-      spacing: .sm,
-      mainAxisSize: .min,
-      padding: .base,
-    ),
+    child: _AppErrorColumn(error: error, action: action),
   );
+}
+
+class _AppErrorColumn extends AuraColumn {
+  new({required Object error, required Widget? action})
+    : super(
+        children: <Widget>[
+          const AuraIcon(Icons.error_outline, size: .large, tint: .error),
+          const AuraText(
+            child: _AppErrorText(LocaleKeys.common_error_title),
+            style: .heading6,
+            textAlign: .center,
+          ),
+          _AppErrorMessage(error: error),
+          ?action,
+        ],
+        spacing: .sm,
+        mainAxisSize: .min,
+        padding: .base,
+      );
 }
 
 class const _AppErrorMessage({required final Object error})

@@ -69,7 +69,10 @@ class const _AuraContainerBody({required final AuraContainer container})
   @override
   Widget build(BuildContext context) => _AuraContainerMargins(
     container: container,
-    child: _AuraContainerDecorated(container: container),
+    child: _AuraContainerDecorated(
+      container: container,
+      theme: context.auraTheme,
+    ),
   );
 }
 
@@ -91,23 +94,28 @@ class const _AuraContainerMargins({
   }
 }
 
-class const _AuraContainerDecorated({required final AuraContainer container})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final padding = container.padding;
-    final content = padding == null
-        ? container.child
-        : AuraPadding(child: container.child, padding: padding);
+class _AuraContainerDecorated extends StatelessWidget {
+  _AuraContainerDecorated({
+    required AuraContainer container,
+    required AuraTheme theme,
+  }) : _child = Container(
+         alignment: container.alignment,
+         decoration: _containerDecoration(container, theme),
+         width: container.width,
+         height: container.height,
+         child: switch (container.padding) {
+           final padding? => AuraPadding(
+             child: container.child,
+             padding: padding,
+           ),
+           null => container.child,
+         },
+       );
 
-    return Container(
-      alignment: container.alignment,
-      decoration: _containerDecoration(container, context.auraTheme),
-      width: container.width,
-      height: container.height,
-      child: content,
-    );
-  }
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 BoxDecoration _containerDecoration(AuraContainer container, AuraTheme theme) =>

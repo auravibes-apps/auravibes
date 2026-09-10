@@ -51,7 +51,12 @@ class const _CreateWorkspaceContent({required final String workspaceId})
   }
 }
 
-class const _CreateWorkspaceAppBar() extends StatelessWidget {
+class const _CreateWorkspaceAppBar()
+    extends StatelessWidget
+    implements PreferredSizeWidget {
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
   @override
   Widget build(BuildContext context) => AuraAppBar(
     title: const TextLocale(LocaleKeys.workspace_management_create_title),

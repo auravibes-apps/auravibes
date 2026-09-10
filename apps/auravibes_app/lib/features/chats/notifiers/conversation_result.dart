@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_result.g.dart';
@@ -53,60 +54,78 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(_workspaceId).future,
+    state = AsyncData(
+      ConversationFound(await _updateModel(result.conversation, modelId)),
     );
-    if (cloud != null) {
-      final updated = await cloud.updateModel(result.conversation, modelId);
-
-      state = AsyncData(
-        ConversationFound(
-          result.conversation.copyWith(
-            modelId: updated.modelId,
-            revision: updated.revision,
-            updatedAt: updated.updatedAt,
-          ),
-        ),
-      );
-
-      return;
-    }
-    final updatedConversation = await ref
-        .read(conversationRepositoryProvider)
-        .patchConversation(result.conversation.id, .new(modelId: modelId));
-
-    state = AsyncData(ConversationFound(updatedConversation));
   }
 
   Future<void> setAgent(String? agentId) async {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final patch = agentId == null
-        ? const ConversationPatch(clearAgent: true)
-        : ConversationPatch(agentId: agentId);
+    state = AsyncData(
+      ConversationFound(await _updateAgent(result.conversation, agentId)),
+    );
+  }
+
+  Future<ConversationEntity> _updateModel(
+    ConversationEntity conversation,
+    String modelId,
+  ) async {
     final cloud = await ref.read(
       cloudConversationUsecaseProvider(_workspaceId).future,
     );
     if (cloud != null) {
-      final updated = await cloud.update(result.conversation, patch);
-
-      state = AsyncData(
-        ConversationFound(
-          result.conversation.copyWith(
-            agentId: updated.agentId,
-            revision: updated.revision,
-            updatedAt: updated.updatedAt,
-          ),
-        ),
+      return _updatedModelConversation(
+        conversation,
+        await cloud.updateModel(conversation, modelId),
       );
-
-      return;
     }
-    final updatedConversation = await ref
-        .read(conversationRepositoryProvider)
-        .patchConversation(result.conversation.id, patch);
 
-    state = AsyncData(ConversationFound(updatedConversation));
+    return ref
+        .read(conversationRepositoryProvider)
+        .patchConversation(conversation.id, .new(modelId: modelId));
   }
+
+  Future<ConversationEntity> _updateAgent(
+    ConversationEntity conversation,
+    String? agentId,
+  ) async {
+    final patch = _agentPatch(agentId);
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(_workspaceId).future,
+    );
+    if (cloud != null) {
+      return _updatedAgentConversation(
+        conversation,
+        await cloud.update(conversation, patch),
+      );
+    }
+
+    return ref
+        .read(conversationRepositoryProvider)
+        .patchConversation(conversation.id, patch);
+  }
+
+  ConversationEntity _updatedAgentConversation(
+    ConversationEntity conversation,
+    ConversationSummary updated,
+  ) => conversation.copyWith(
+    agentId: updated.agentId,
+    revision: updated.revision,
+    updatedAt: updated.updatedAt,
+  );
+
+  ConversationEntity _updatedModelConversation(
+    ConversationEntity conversation,
+    ConversationSummary updated,
+  ) => conversation.copyWith(
+    modelId: updated.modelId,
+    revision: updated.revision,
+    updatedAt: updated.updatedAt,
+  );
+
+  ConversationPatch _agentPatch(String? agentId) => agentId == null
+      ? const ConversationPatch(clearAgent: true)
+      : ConversationPatch(agentId: agentId);
 }

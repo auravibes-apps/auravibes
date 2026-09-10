@@ -26,6 +26,34 @@ typedef _TemplateExecutionRequest = ({
   Map<String, SkillCredentialAttributeDefinition> credentialDefinitions,
 });
 
+typedef _TemplateToolRequest = ({
+  String workspaceId,
+  SkillEntity skill,
+  SkillTemplateToolEntity tool,
+  Map<String, dynamic> arguments,
+});
+
+typedef _TemplateInvocationRequest = ({
+  String workspaceId,
+  String skillSlug,
+  String toolSlug,
+  Map<String, dynamic> arguments,
+});
+
+typedef _CredentialResolutionRequest = ({
+  String workspaceId,
+  String? credentialDefinitionId,
+  String? credentialId,
+  bool requiresCredential,
+});
+
+typedef _TemplateInputRequest = ({
+  SkillTemplateToolEntity tool,
+  Map<String, dynamic> arguments,
+  Map<String, String> credentials,
+  Map<String, SkillCredentialAttributeDefinition> credentialDefinitions,
+});
+
 class const RunSkillTemplateToolUsecase(
   final SkillTemplateToolsRepository _skillTemplateToolsRepository,
   final SkillsRepository _skillsRepository,
@@ -43,13 +71,39 @@ class const RunSkillTemplateToolUsecase(
   }) async {
     final session = await _workspaceSession(workspaceId);
     _ensureLocalSession(session);
-    final skill = await _loadEnabledSkill(workspaceId, skillSlug);
+    return _runEnabledTool((
+      workspaceId: workspaceId,
+      skillSlug: skillSlug,
+      toolSlug: toolSlug,
+      arguments: arguments,
+    ));
+  }
+}
+
+extension on RunSkillTemplateToolUsecase {
+  Future<Object?> _runEnabledTool(_TemplateInvocationRequest request) async {
+    final skill = await _loadEnabledSkill(
+      request.workspaceId,
+      request.skillSlug,
+    );
     if (skill == null) return null;
 
-    final tool = await _loadEnabledTool(skill.id, toolSlug);
+    return _runEnabledToolForSkill(request, skill);
+  }
+
+  Future<Object?> _runEnabledToolForSkill(
+    _TemplateInvocationRequest request,
+    SkillEntity skill,
+  ) async {
+    final tool = await _loadEnabledTool(skill.id, request.toolSlug);
     if (tool == null) return null;
 
-    return _runTool(workspaceId, skill, tool, arguments);
+    return _runTool((
+      workspaceId: request.workspaceId,
+      skill: skill,
+      tool: tool,
+      arguments: request.arguments,
+    ));
   }
 }
 
@@ -86,30 +140,35 @@ extension on RunSkillTemplateToolUsecase {
     return tool == null || !tool.isEnabled ? null : tool;
   }
 
-  Future<Object?> _runTool(
-    String workspaceId,
-    SkillEntity skill,
-    SkillTemplateToolEntity tool,
-    Map<String, dynamic> arguments,
+  Future<Object?> _runTool(_TemplateToolRequest request) async {
+    return _executeTemplate(await _templateExecutionRequest(request));
+  }
+
+  Future<_TemplateExecutionRequest> _templateExecutionRequest(
+    _TemplateToolRequest request,
   ) async {
-    final credential = await _resolveCredential(
-      workspaceId: workspaceId,
-      credentialDefinitionId: skill.credentialDefinitionId,
-      credentialId: arguments['credentialId'] as String?,
-      requiresCredential: tool.requiresCredential,
-    );
+    final credential = await _resolveCredential(_credentialRequest(request));
     final credentialDefinitions = await _credentialDefinitions(
-      skill.credentialDefinitionId,
+      request.skill.credentialDefinitionId,
     );
     final credentialAttributes = await _credentialAttributes(credential);
 
-    return _runTemplate(
-      tool,
-      arguments,
-      credentialAttributes,
-      credentialDefinitions,
-    );
+    return _templateRequest((
+      tool: request.tool,
+      arguments: request.arguments,
+      credentials: credentialAttributes,
+      credentialDefinitions: credentialDefinitions,
+    ));
   }
+
+  _CredentialResolutionRequest _credentialRequest(
+    _TemplateToolRequest request,
+  ) => (
+    workspaceId: request.workspaceId,
+    credentialDefinitionId: request.skill.credentialDefinitionId,
+    credentialId: request.arguments['credentialId'] as String?,
+    requiresCredential: request.tool.requiresCredential,
+  );
 
   Future<Map<String, String>> _credentialAttributes(
     SkillCredentialEntity? credential,
@@ -119,26 +178,14 @@ extension on RunSkillTemplateToolUsecase {
     return _skillCredentialsRepository.readCredentialAttributes(credential.id);
   }
 
-  Future<Object?> _runTemplate(
-    SkillTemplateToolEntity tool,
-    Map<String, dynamic> arguments,
-    Map<String, String> credentials,
-    Map<String, SkillCredentialAttributeDefinition> credentialDefinitions,
-  ) => _executeTemplate(
-    _templateRequest(tool, arguments, credentials, credentialDefinitions),
-  );
-
-  _TemplateExecutionRequest _templateRequest(
-    SkillTemplateToolEntity tool,
-    Map<String, dynamic> arguments,
-    Map<String, String> credentials,
-    Map<String, SkillCredentialAttributeDefinition> credentialDefinitions,
-  ) => (
-    template: SkillUrlTemplate.fromJsonString(tool.templateJson),
-    inputs: arguments,
-    credentials: credentials,
-    inputDefinitions: SkillTemplateInputDefinition.parseMap(tool.inputsJson),
-    credentialDefinitions: credentialDefinitions,
+  _TemplateExecutionRequest _templateRequest(_TemplateInputRequest request) => (
+    template: SkillUrlTemplate.fromJsonString(request.tool.templateJson),
+    inputs: request.arguments,
+    credentials: request.credentials,
+    inputDefinitions: SkillTemplateInputDefinition.parseMap(
+      request.tool.inputsJson,
+    ),
+    credentialDefinitions: request.credentialDefinitions,
   );
 
   Future<Object?> _executeTemplate(_TemplateExecutionRequest request) async {
@@ -158,37 +205,43 @@ extension on RunSkillTemplateToolUsecase {
           )
           .value;
 
-  Future<SkillCredentialEntity?> _resolveCredential({
-    required String workspaceId,
-    required String? credentialDefinitionId,
-    required String? credentialId,
-    required bool requiresCredential,
-  }) async {
+  Future<SkillCredentialEntity?> _resolveCredential(
+    _CredentialResolutionRequest request,
+  ) async {
+    final credentialDefinitionId = request.credentialDefinitionId;
     if (credentialDefinitionId == null) {
-      return _missingCredentialDefinition(requiresCredential);
+      if (request.requiresCredential) {
+        throw StateError('Skill tool requires a credential definition.');
+      }
+
+      return null;
     }
-    final normalizedCredentialId = credentialId?.trim();
-    if (normalizedCredentialId == null || normalizedCredentialId.isEmpty) {
-      return _missingCredentialId(requiresCredential);
-    }
+
+    final normalizedCredentialId = _credentialId(request);
+    if (normalizedCredentialId == null) return null;
 
     final credential = await _skillCredentialsRepository.getCredentialById(
       normalizedCredentialId,
     );
-    _ensureCredentialAvailable(credential, workspaceId, credentialDefinitionId);
+    _ensureCredentialAvailable(
+      credential,
+      request.workspaceId,
+      credentialDefinitionId,
+    );
 
     return credential;
   }
 
-  SkillCredentialEntity? _missingCredentialDefinition(bool isRequired) {
-    if (isRequired) {
-      throw StateError('Skill tool requires a credential definition.');
+  String? _credentialId(_CredentialResolutionRequest request) {
+    final normalizedCredentialId = request.credentialId?.trim();
+    if (normalizedCredentialId == null || normalizedCredentialId.isEmpty) {
+      return _missingCredentialId(request.requiresCredential);
     }
 
-    return null;
+    return normalizedCredentialId;
   }
 
-  SkillCredentialEntity? _missingCredentialId(bool isRequired) {
+  String? _missingCredentialId(bool isRequired) {
     if (isRequired) {
       throw StateError('Skill tool requires a credentialId argument.');
     }

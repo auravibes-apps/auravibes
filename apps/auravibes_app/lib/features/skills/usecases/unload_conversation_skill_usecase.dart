@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 
+import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
 
 class const UnloadConversationSkillUsecase(
@@ -28,7 +29,9 @@ class const UnloadConversationSkillUsecase(
     }
     await _unloadAppSkillBySlug(cloud, conversationId, slug);
   }
+}
 
+extension on UnloadConversationSkillUsecase {
   Future<void> _unloadAppSkillBySlug(
     CloudSkillStore? cloud,
     String conversationId,
@@ -80,6 +83,13 @@ class const UnloadConversationSkillUsecase(
       return;
     }
 
+    await _unloadLocalUserSkill(conversationId, skillId);
+  }
+
+  Future<void> _unloadLocalUserSkill(
+    String conversationId,
+    String skillId,
+  ) async {
     final repository = _conversationSkillsRepository;
     if (repository == null) {
       throw StateError('Conversation skill store is unavailable');
@@ -106,6 +116,13 @@ class const UnloadConversationSkillUsecase(
       return;
     }
 
+    await _unloadLocalAppSkill(conversationId, skillId);
+  }
+
+  Future<void> _unloadLocalAppSkill(
+    String conversationId,
+    String skillId,
+  ) async {
     final repository = _conversationSkillsRepository;
     if (repository == null) {
       throw StateError('Conversation skill store is unavailable');

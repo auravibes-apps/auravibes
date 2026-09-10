@@ -28,8 +28,6 @@ class const ToolCountEnabledWidget({
 
 class const _ToolCountState({required final AsyncValue<int> countAsync})
     extends StatelessWidget {
-  final AsyncValue<int> countAsync;
-
   @override
   Widget build(BuildContext context) {
     return switch (countAsync) {

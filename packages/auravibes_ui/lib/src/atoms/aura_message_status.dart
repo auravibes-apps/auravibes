@@ -78,6 +78,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
   @override
   Widget build(BuildContext context) => _AuraMessageStatusView(
     status: widget,
+    colors: context.auraColors,
     rotationController: _rotationController,
     rotationAnimation: _rotationAnimation,
     scaleController: _scaleController,
@@ -91,6 +92,7 @@ extension on _AuraMessageStatusState {
 
     if (widget.status == AuraMessageDeliveryStatus.sending) {
       _startRotationAnimation();
+
       return;
     }
 
@@ -133,53 +135,99 @@ extension on _AuraMessageStatusState {
   }
 }
 
-class const _AuraMessageStatusView({
-  required final AuraMessageStatus status,
-  required final AnimationController? rotationController,
-  required final Animation<double>? rotationAnimation,
-  required final AnimationController? scaleController,
-  required final Animation<double>? scaleAnimation,
-}) extends StatelessWidget {
+class _AuraMessageStatusView extends StatelessWidget {
+  _AuraMessageStatusView({
+    required AuraMessageStatus status,
+    required AuraColorScheme colors,
+    required AnimationController? rotationController,
+    required Animation<double>? rotationAnimation,
+    required AnimationController? scaleController,
+    required Animation<double>? scaleAnimation,
+  }) : _child = Container(
+         padding: EdgeInsets.all(_statusPadding(status.size)),
+         child: _AuraMessageStatusIcon(
+           status: status,
+           colors: colors,
+           rotationController: rotationController,
+           rotationAnimation: rotationAnimation,
+           scaleController: scaleController,
+           scaleAnimation: scaleAnimation,
+         ),
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.all(_statusPadding(status.size)),
-    child: _AuraMessageStatusIcon(
-      status: status,
-      colors: context.auraColors,
-      rotationController: rotationController,
-      rotationAnimation: rotationAnimation,
-      scaleController: scaleController,
-      scaleAnimation: scaleAnimation,
-    ),
+  Widget build(BuildContext context) => _child;
+}
+
+class _AuraMessageStatusIcon extends StatelessWidget {
+  _AuraMessageStatusIcon({
+    required AuraMessageStatus status,
+    required AuraColorScheme colors,
+    required AnimationController? rotationController,
+    required Animation<double>? rotationAnimation,
+    required AnimationController? scaleController,
+    required Animation<double>? scaleAnimation,
+  }) : _child = _AuraMessageStatusAnimation(
+         status: status.status,
+         showAnimation: status.showAnimation,
+         icon: Icon(
+           _statusIcon(status.status),
+           size: _statusIconSize(status.size),
+           color: _statusColor(status, colors),
+           semanticLabel: _statusSemanticLabel(status),
+         ),
+         rotationController: rotationController,
+         rotationAnimation: rotationAnimation,
+         scaleController: scaleController,
+         scaleAnimation: scaleAnimation,
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class _AuraMessageStatusAnimation extends StatelessWidget {
+  _AuraMessageStatusAnimation({
+    required AuraMessageDeliveryStatus status,
+    required bool showAnimation,
+    required Widget icon,
+    required AnimationController? rotationController,
+    required Animation<double>? rotationAnimation,
+    required AnimationController? scaleController,
+    required Animation<double>? scaleAnimation,
+  }) : _status = status,
+       _showAnimation = showAnimation,
+       _icon = icon,
+       _rotationController = rotationController,
+       _rotationAnimation = rotationAnimation,
+       _scaleController = scaleController,
+       _scaleAnimation = scaleAnimation;
+
+  final AuraMessageDeliveryStatus _status;
+  final bool _showAnimation;
+  final Widget _icon;
+  final AnimationController? _rotationController;
+  final Animation<double>? _rotationAnimation;
+  final AnimationController? _scaleController;
+  final Animation<double>? _scaleAnimation;
+
+  @override
+  Widget build(BuildContext context) => _AuraMessageStatusAnimationChoice(
+    status: _status,
+    showAnimation: _showAnimation,
+    icon: _icon,
+    rotationController: _rotationController,
+    rotationAnimation: _rotationAnimation,
+    scaleController: _scaleController,
+    scaleAnimation: _scaleAnimation,
   );
 }
 
-class const _AuraMessageStatusIcon({
-  required final AuraMessageStatus status,
-  required final AuraColorScheme colors,
-  required final AnimationController? rotationController,
-  required final Animation<double>? rotationAnimation,
-  required final AnimationController? scaleController,
-  required final Animation<double>? scaleAnimation,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _AuraMessageStatusAnimation(
-    status: status.status,
-    showAnimation: status.showAnimation,
-    icon: Icon(
-      _statusIcon(status.status),
-      size: _statusIconSize(status.size),
-      color: _statusColor(status, colors),
-      semanticLabel: _statusSemanticLabel(status),
-    ),
-    rotationController: rotationController,
-    rotationAnimation: rotationAnimation,
-    scaleController: scaleController,
-    scaleAnimation: scaleAnimation,
-  );
-}
-
-class const _AuraMessageStatusAnimation({
+class const _AuraMessageStatusAnimationChoice({
   required final AuraMessageDeliveryStatus status,
   required final bool showAnimation,
   required final Widget icon,
@@ -189,22 +237,81 @@ class const _AuraMessageStatusAnimation({
   required final Animation<double>? scaleAnimation,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    if (!showAnimation) return icon;
+  Widget build(BuildContext context) => showAnimation
+      ? _AuraMessageStatusRotationChoice(
+          status: status,
+          icon: icon,
+          rotationController: rotationController,
+          rotationAnimation: rotationAnimation,
+          scaleController: scaleController,
+          scaleAnimation: scaleAnimation,
+        )
+      : icon;
+}
 
+class _AuraMessageStatusRotationChoice extends StatelessWidget {
+  _AuraMessageStatusRotationChoice({
+    required AuraMessageDeliveryStatus status,
+    required Widget icon,
+    required AnimationController? rotationController,
+    required Animation<double>? rotationAnimation,
+    required AnimationController? scaleController,
+    required Animation<double>? scaleAnimation,
+  }) : _child = switch (status) {
+         AuraMessageDeliveryStatus.sending => _AuraMessageStatusRotationOrScale(
+           icon: icon,
+           rotationController: rotationController,
+           rotationAnimation: rotationAnimation,
+           scaleController: scaleController,
+           scaleAnimation: scaleAnimation,
+         ),
+         _ => _AuraMessageStatusScaleChoice(
+           icon: icon,
+           scaleController: scaleController,
+           scaleAnimation: scaleAnimation,
+         ),
+       };
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AuraMessageStatusRotationOrScale({
+  required final Widget icon,
+  required final AnimationController? rotationController,
+  required final Animation<double>? rotationAnimation,
+  required final AnimationController? scaleController,
+  required final Animation<double>? scaleAnimation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final rotation = rotationAnimation;
-    if (status == AuraMessageDeliveryStatus.sending &&
-        rotationController != null &&
-        rotation != null) {
+    if (rotationController != null && rotation != null) {
       return _AuraMessageStatusRotation(icon: icon, animation: rotation);
     }
 
-    final scale = scaleAnimation;
-    if (scaleController != null && scale != null) {
-      return _AuraMessageStatusScale(icon: icon, animation: scale);
-    }
+    return _AuraMessageStatusScaleChoice(
+      icon: icon,
+      scaleController: scaleController,
+      scaleAnimation: scaleAnimation,
+    );
+  }
+}
 
-    return icon;
+class const _AuraMessageStatusScaleChoice({
+  required final Widget icon,
+  required final AnimationController? scaleController,
+  required final Animation<double>? scaleAnimation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = scaleController;
+    final animation = scaleAnimation;
+    if (controller == null || animation == null) return icon;
+
+    return _AuraMessageStatusScale(icon: icon, animation: animation);
   }
 }
 

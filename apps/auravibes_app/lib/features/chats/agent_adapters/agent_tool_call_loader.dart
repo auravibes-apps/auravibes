@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -80,19 +81,27 @@ Future<ResolvedTool?> _resolveTool(_ToolResolutionRequest request) async {
   final conversation = await request.conversationRepository.getConversationById(
     request.conversationId,
   );
-  final catalog = conversation == null
-      ? agent.buildToolCatalog<ResolvedTool>([])
-      : await request
-            .loadConversationToolSpecsUsecaseForWorkspace(
-              conversation.workspaceId,
-            )
-            .buildCatalog(
-              conversationId: request.conversationId,
-              workspaceId: conversation.workspaceId,
-            );
+  final catalog = await _catalog(request, conversation);
 
   return request.toolResolverService.resolveTool(request.toolName, catalog);
 }
+
+Future<agent.ToolCatalog<ResolvedTool>> _catalog(
+  _ToolResolutionRequest request,
+  ConversationEntity? conversation,
+) => conversation == null
+    ? Future.value(agent.buildToolCatalog<ResolvedTool>([]))
+    : _conversationCatalog(request, conversation);
+
+Future<agent.ToolCatalog<ResolvedTool>> _conversationCatalog(
+  _ToolResolutionRequest request,
+  ConversationEntity conversation,
+) => request
+    .loadConversationToolSpecsUsecaseForWorkspace(conversation.workspaceId)
+    .buildCatalog(
+      conversationId: request.conversationId,
+      workspaceId: conversation.workspaceId,
+    );
 
 agent.AgentToolMessage _toAgentToolMessage(MessageEntity message) {
   return agent.AgentToolMessage(

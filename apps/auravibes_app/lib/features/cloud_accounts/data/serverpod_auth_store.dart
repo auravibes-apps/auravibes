@@ -89,11 +89,14 @@ extension _ServerpodAuthStoreAccountReads on ServerpodAuthStore {
     String? raw,
     String? legacyServerUrl,
   ) async {
-    if (!_shouldMigrateLegacyAccounts(raw, legacyServerUrl)) return raw;
+    final serverUrl = legacyServerUrl;
+    if (!_shouldMigrateLegacyAccounts(raw, serverUrl) || serverUrl == null) {
+      return raw;
+    }
     final legacy = await _legacyAccountIndex();
     if (legacy == null) return raw;
 
-    return _migrateAccountIndex(legacy, legacyServerUrl!);
+    return await _migrateAccountIndex(legacy, serverUrl);
   }
 
   bool _shouldMigrateLegacyAccounts(String? raw, String? legacyServerUrl) =>
@@ -140,14 +143,22 @@ extension _ServerpodAuthStoreAccountReads on ServerpodAuthStore {
 extension _ServerpodAuthStoreAccountWrites on ServerpodAuthStore {
   Future<String> _migrateAccountIndex(String legacy, String serverUrl) async {
     final migrated = _decodeLegacyAccounts(legacy, serverUrl);
-    final raw = jsonEncode([for (final item in migrated) item.toJson()]);
+    final raw = _encodeAccounts(migrated);
+    await _writeMigratedAccounts(raw);
+    await _migrateLegacyPreferredAccount(serverUrl);
+
+    return raw;
+  }
+
+  String _encodeAccounts(List<CloudAccountSession> accounts) =>
+      jsonEncode([for (final item in accounts) item.toJson()]);
+
+  Future<void> _writeMigratedAccounts(String raw) async {
     await _secureStorage.write(
       key: ServerpodAuthStore._accountIndexKey,
       value: raw,
     );
     await _secureStorage.delete(key: ServerpodAuthStore._legacyAccountIndexKey);
-    await _migrateLegacyPreferredAccount(serverUrl);
-    return raw;
   }
 
   Future<void> _migrateLegacyPreferredAccount(String serverUrl) async {
@@ -166,6 +177,7 @@ extension _ServerpodAuthStoreAccountWrites on ServerpodAuthStore {
     String serverUrl,
   ) {
     final decoded = jsonDecode(raw) as List<dynamic>;
+
     return [
       for (final item in decoded)
         CloudAccountSession(
@@ -252,7 +264,7 @@ class const _SecureKeyValueStorage({
     final value = await _secureStorage.read(key: storageKey);
     if (value != null) return value;
 
-    return _readLegacy(key, storageKey);
+    return await _readLegacy(key, storageKey);
   }
 
   @override
@@ -275,6 +287,7 @@ class const _SecureKeyValueStorage({
     if (legacyValue == null) return null;
     await _secureStorage.write(key: storageKey, value: legacyValue);
     await _secureStorage.delete(key: legacyKey);
+
     return legacyValue;
   }
 }

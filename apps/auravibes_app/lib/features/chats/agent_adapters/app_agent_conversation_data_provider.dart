@@ -61,21 +61,6 @@ class const AppAgentConversationDataProvider({
     return AgentCreatedMessage(id: message.id);
   }
 
-  ChatDraft _chatDraft(String content, Object? payload) {
-    return payload is ChatDraft ? payload : ChatDraft(text: content);
-  }
-
-  MessageToCreate _queuedUserMessage(String conversationId, ChatDraft draft) =>
-      .new(
-        conversationId: conversationId,
-        content: draft.text,
-        messageType: MessageType.text,
-        isUser: true,
-        status: MessageStatus.sending,
-        metadata: draft.metadataJson,
-        attachments: draft.attachments,
-      );
-
   @override
   Future<void> markMessagesSent(List<String> messageIds) async {
     final _ = await Future.wait(
@@ -96,16 +81,49 @@ class const AppAgentConversationDataProvider({
     final latestAssistantMessage = _latestAssistantMessage(messages);
     if (latestAssistantMessage == null) return;
 
-    final metadata =
-        latestAssistantMessage.metadata ?? const MessageMetadataEntity();
+    final metadata = _messageMetadata(latestAssistantMessage);
     final updatedToolCalls = _stoppedPendingToolCalls(metadata.toolCalls);
     if (updatedToolCalls == null) return;
 
-    final _ = await messageRepository.patchMessage(
+    await _persistStoppedTools(
+      messageRepository,
       latestAssistantMessage.id,
-      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      metadata,
+      updatedToolCalls,
     );
   }
+}
+
+extension on AppAgentConversationDataProvider {
+  MessageMetadataEntity _messageMetadata(MessageEntity message) =>
+      message.metadata ?? const MessageMetadataEntity();
+
+  Future<void> _persistStoppedTools(
+    MessageRepository messageRepository,
+    String messageId,
+    MessageMetadataEntity metadata,
+    List<MessageToolCallEntity> toolCalls,
+  ) async {
+    final _ = await messageRepository.patchMessage(
+      messageId,
+      .new(metadata: metadata.copyWith(toolCalls: toolCalls)),
+    );
+  }
+
+  ChatDraft _chatDraft(String content, Object? payload) {
+    return payload is ChatDraft ? payload : ChatDraft(text: content);
+  }
+
+  MessageToCreate _queuedUserMessage(String conversationId, ChatDraft draft) =>
+      .new(
+        conversationId: conversationId,
+        content: draft.text,
+        messageType: MessageType.text,
+        isUser: true,
+        status: MessageStatus.sending,
+        metadata: draft.metadataJson,
+        attachments: draft.attachments,
+      );
 
   List<MessageToolCallEntity>? _stoppedPendingToolCalls(
     List<MessageToolCallEntity> toolCalls,

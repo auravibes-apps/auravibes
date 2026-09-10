@@ -16,6 +16,7 @@ const double _loConThreshold = 0.1;
 const double _loConOffset = 0.027;
 const double _loConScale = 0.75;
 const double _maxContrast = 108;
+const double _wcagOffset = 0.05;
 
 double _channelToLinear(double c) =>
     c <= 0.04045 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
@@ -56,16 +57,17 @@ abstract final class ColorContrast {
   /// or non-text UI (1.4.11), 7.0 for text AAA (1.4.6), and 4.5 for large
   /// text AAA (1.4.6).
   static double wcagContrastRatio(Color a, Color b) {
-    final luminanceA = _relativeLuminance(a);
-    final luminanceB = _relativeLuminance(b);
-    final higherLuminance = luminanceA > luminanceB ? luminanceA : luminanceB;
-    final lowerLuminance = luminanceA > luminanceB ? luminanceB : luminanceA;
+    final luminances = (a: _relativeLuminance(a), b: _relativeLuminance(b));
 
-    const luminanceOffset = 0.05;
-
-    return (higherLuminance + luminanceOffset) /
-        (lowerLuminance + luminanceOffset);
+    return _wcagRatio(luminances);
   }
+}
+
+double _wcagRatio(({double a, double b}) luminances) {
+  final higher = math.max(luminances.a, luminances.b);
+  final lower = math.min(luminances.a, luminances.b);
+
+  return (higher + _wcagOffset) / (lower + _wcagOffset);
 }
 
 double _softClamp(double luminance) {
@@ -84,16 +86,22 @@ double _contrastValue({
 }) {
   if ((backgroundLuminance - textLuminance).abs() < _deltaYMin) return 0;
 
-  final value = backgroundLuminance > textLuminance
-      ? _positiveContrast(textLuminance, backgroundLuminance)
-      : _negativeContrast(textLuminance, backgroundLuminance);
+  final value = _polarityContrast(
+    textLuminance: textLuminance,
+    backgroundLuminance: backgroundLuminance,
+  );
 
-  final scaled = value * 100;
-  if (scaled < -_maxContrast) return -_maxContrast;
-  if (scaled > _maxContrast) return _maxContrast;
-
-  return scaled;
+  return _clampContrast(value * 100);
 }
+
+double _polarityContrast({
+  required double textLuminance,
+  required double backgroundLuminance,
+}) => backgroundLuminance > textLuminance
+    ? _positiveContrast(textLuminance, backgroundLuminance)
+    : _negativeContrast(textLuminance, backgroundLuminance);
+
+double _clampContrast(double value) => value.clamp(-_maxContrast, _maxContrast);
 
 double _positiveContrast(double textLuminance, double backgroundLuminance) {
   final value =

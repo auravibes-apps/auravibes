@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'workspace_model_selection_entity.freezed.dart';
 
+@immutable
 @freezed
 abstract class WorkspaceModelSelectionEntity
     with _$WorkspaceModelSelectionEntity {
@@ -19,8 +20,18 @@ abstract class WorkspaceModelSelectionEntity
     @Default(false) bool supportsReasoning,
     @Default(true) bool supportsToolCalls,
   }) = _WorkspaceModelSelectionEntity;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class WorkspaceModelSelectionWithConnectionEntity
     with _$WorkspaceModelSelectionWithConnectionEntity {
@@ -29,18 +40,47 @@ abstract class WorkspaceModelSelectionWithConnectionEntity
     required ModelConnectionEntity modelConnection,
     required ApiModelProviderEntity modelsProvider,
   }) = _WorkspaceModelSelectionWithConnectionEntity;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class WorkspaceModelSelectionFilter
     with _$WorkspaceModelSelectionFilter {
   const factory({@Default([]) List<String> workspaces}) =
       _WorkspaceModelSelectionFilter;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class WorkspaceModelSelectionToCreate
     with _$WorkspaceModelSelectionToCreate {
   const factory({required String modelId, required String modelConnectionId}) =
       _WorkspaceModelSelectionToCreate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }

@@ -48,6 +48,12 @@ typedef _ToolExecutionErrorRequest = ({
   StackTrace stackTrace,
 });
 
+typedef _AgentToolApprovalRequest =
+    agent.AgentToolApprovalRequest<ResolvedTool>;
+
+typedef _AgentToolExecutionErrorRequest =
+    agent.AgentToolExecutionErrorRequest<ResolvedTool>;
+
 typedef _ToolResultsRequest = ({
   String messageId,
   List<agent.AgentToolResultUpdate> updates,
@@ -56,26 +62,26 @@ typedef _ToolResultsRequest = ({
 class AgentToolExecutionService({
   required AgentToolCallLoader loadLatestMessageToolCallsUsecase,
   required MessageRepository messageRepository,
+  required ResolvedToolService runResolvedToolUsecase,
+  required AgentToolDecisionService getAgentIterationDecisionUsecase,
+  required AgentCancellationRuntime agentCancellationRuntime,
   ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecision,
   ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolveToolApprovalDecisionForWorkspace,
   ResolveSkillCommandTarget? resolveSkillCommandTarget,
-  required ResolvedToolService runResolvedToolUsecase,
-  required AgentToolDecisionService getAgentIterationDecisionUsecase,
-  required AgentCancellationRuntime agentCancellationRuntime,
 }) extends agent.AgentToolExecutionRunner<ResolvedTool> {
   this
     : super(
         provider: AppAllowedToolsDataProvider(
           messageRepository: messageRepository,
           loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+          resolvedToolService: runResolvedToolUsecase,
+          toolDecisionService: getAgentIterationDecisionUsecase,
+          agentCancellationRuntime: agentCancellationRuntime,
           resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
           resolveToolApprovalDecisionUsecaseForWorkspace:
               resolveToolApprovalDecisionForWorkspace,
           resolveSkillCommandTarget: resolveSkillCommandTarget,
-          resolvedToolService: runResolvedToolUsecase,
-          toolDecisionService: getAgentIterationDecisionUsecase,
-          agentCancellationRuntime: agentCancellationRuntime,
         ),
       );
 }
@@ -83,64 +89,31 @@ class AgentToolExecutionService({
 class const AppAllowedToolsDataProvider({
   required final MessageRepository messageRepository,
   required final AgentToolCallLoader loadLatestMessageToolCallsService,
+  required final ResolvedToolService resolvedToolService,
+  required final AgentToolDecisionService toolDecisionService,
+  required final AgentCancellationRuntime agentCancellationRuntime,
   final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase,
   final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolveToolApprovalDecisionUsecaseForWorkspace,
   final ResolveSkillCommandTarget? resolveSkillCommandTarget,
-  required final ResolvedToolService resolvedToolService,
-  required final AgentToolDecisionService toolDecisionService,
-  required final AgentCancellationRuntime agentCancellationRuntime,
 }) implements agent.AgentToolExecutionProvider<ResolvedTool> {
-  late final Future<agent.AgentToolApprovalDecision> Function({
-    required String conversationId,
-    required String workspaceId,
-    required String toolCallId,
-    required ResolvedTool resolvedTool,
-    String argumentsRaw,
-  })
-  resolveToolApprovalDecision =
-      ({
-        required conversationId,
-        required workspaceId,
-        required toolCallId,
-        required resolvedTool,
-        argumentsRaw = '{}',
-      }) {
-        return _resolveToolApprovalDecision((
-          resolver: resolveToolApprovalDecisionUsecase,
-          resolverForWorkspace: resolveToolApprovalDecisionUsecaseForWorkspace,
-          resolveSkillCommandTarget: resolveSkillCommandTarget,
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          toolCallId: toolCallId,
-          resolvedTool: resolvedTool,
-          argumentsRaw: argumentsRaw,
-        ));
-      };
+  @override
+  Future<agent.AgentToolApprovalDecision> resolveToolApprovalDecision(
+    _AgentToolApprovalRequest request,
+  ) => _resolveToolApprovalDecision((
+    resolver: resolveToolApprovalDecisionUsecase,
+    resolverForWorkspace: resolveToolApprovalDecisionUsecaseForWorkspace,
+    resolveSkillCommandTarget: resolveSkillCommandTarget,
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    toolCallId: request.toolCallId,
+    resolvedTool: request.resolvedTool,
+    argumentsRaw: request.argumentsRaw ?? '{}',
+  ));
 
-  late final void Function({
-    required String conversationId,
-    required String toolCallId,
-    required ResolvedTool tool,
-    required Object error,
-    required StackTrace stackTrace,
-  })
-  logToolExecutionError =
-      ({
-        required conversationId,
-        required toolCallId,
-        required tool,
-        required error,
-        required stackTrace,
-      }) {
-        _logToolExecutionError((
-          conversationId: conversationId,
-          toolCallId: toolCallId,
-          tool: tool,
-          error: error,
-          stackTrace: stackTrace,
-        ));
-      };
+  @override
+  void logToolExecutionError(_AgentToolExecutionErrorRequest request) =>
+      _logToolExecutionError(request);
 
   @override
   Future<agent.LoadLatestMessageToolCallsResult<ResolvedTool>>
@@ -200,9 +173,7 @@ class const AppAllowedToolsDataProvider({
 Future<agent.AgentToolApprovalDecision> _resolveToolApprovalDecision(
   _ToolApprovalRequest request,
 ) async {
-  final resolver =
-      request.resolverForWorkspace?.call(request.workspaceId) ??
-      request.resolver;
+  final resolver = _approvalResolver(request);
   if (resolver == null) {
     throw StateError('No tool approval resolver is configured');
   }
@@ -210,50 +181,87 @@ Future<agent.AgentToolApprovalDecision> _resolveToolApprovalDecision(
   final approvalTool = await _resolveApprovalTool(request);
   if (approvalTool == null) return _notConfiguredApprovalDecision();
 
-  final decision = await resolver.call(
-    conversationId: request.conversationId,
-    workspaceId: request.workspaceId,
-    toolCallId: request.toolCallId,
-    resolvedTool: approvalTool,
-  );
+  final decision = await _resolvePermission(resolver, request, approvalTool);
 
-  return agent.AgentToolApprovalDecision(
-    permissionResult: AgentToolStatusMapper.toPermissionResult(
-      decision.permissionResult,
-    ),
-  );
+  return _toApprovalDecision(decision);
 }
 
-Future<ResolvedTool?> _resolveApprovalTool(_ToolApprovalRequest request) async {
+ResolveToolApprovalDecisionUsecase? _approvalResolver(
+  _ToolApprovalRequest request,
+) =>
+    request.resolverForWorkspace?.call(request.workspaceId) ?? request.resolver;
+
+Future<ToolApprovalDecision> _resolvePermission(
+  ResolveToolApprovalDecisionUsecase resolver,
+  _ToolApprovalRequest request,
+  ResolvedTool approvalTool,
+) => resolver.call(
+  conversationId: request.conversationId,
+  workspaceId: request.workspaceId,
+  toolCallId: request.toolCallId,
+  resolvedTool: approvalTool,
+);
+
+agent.AgentToolApprovalDecision _toApprovalDecision(
+  ToolApprovalDecision decision,
+) => agent.AgentToolApprovalDecision(
+  permissionResult: AgentToolStatusMapper.toPermissionResult(
+    decision.permissionResult,
+  ),
+);
+
+Future<ResolvedTool?> _resolveApprovalTool(_ToolApprovalRequest request) {
   final tool = request.resolvedTool;
-  if (!tool.isSkillCommand || tool.toolIdentifier != agent.callSkillToolName) {
-    return tool;
+  if (!_requiresSkillApproval(tool)) {
+    return Future<ResolvedTool?>.value(tool);
   }
 
   final decoded = _decodeArguments(request.argumentsRaw);
-  if (decoded == null) return null;
+  if (decoded == null) return Future<ResolvedTool?>.value();
 
-  final effective = await agent.resolveEffectiveToolApprovalTarget(
-    requestedTarget: .skillControl(toolIdentifier: tool.toolIdentifier),
-    arguments: decoded,
-    resolveSkillTarget: (command) {
-      final resolveTarget = request.resolveSkillCommandTarget;
-      if (resolveTarget == null) {
-        return Future<agent.AgentResolvedToolName?>.value();
-      }
+  return _resolveSkillApprovalTool(request, tool, decoded);
+}
 
-      return resolveTarget(
-        conversationId: request.conversationId,
-        workspaceId: request.workspaceId,
-        command: command,
-      );
-    },
-  );
+bool _requiresSkillApproval(ResolvedTool tool) =>
+    tool.isSkillCommand && tool.toolIdentifier == agent.callSkillToolName;
+
+Future<ResolvedTool?> _resolveSkillApprovalTool(
+  _ToolApprovalRequest request,
+  ResolvedTool tool,
+  Map<String, Object?> decoded,
+) async {
+  final effective = await _resolveEffectiveSkillTarget(request, tool, decoded);
   if (effective == null) return null;
 
   return ResolvedTool.skillCommand(
     commandName: tool.toolIdentifier,
     target: effective,
+  );
+}
+
+Future<agent.AgentResolvedToolName?> _resolveEffectiveSkillTarget(
+  _ToolApprovalRequest request,
+  ResolvedTool tool,
+  Map<String, Object?> decoded,
+) => agent.resolveEffectiveToolApprovalTarget(
+  requestedTarget: .skillControl(toolIdentifier: tool.toolIdentifier),
+  arguments: decoded,
+  resolveSkillTarget: (command) => _resolveSkillTarget(request, command),
+);
+
+Future<agent.AgentResolvedToolName?> _resolveSkillTarget(
+  _ToolApprovalRequest request,
+  agent.SkillCommandTarget command,
+) {
+  final resolveTarget = request.resolveSkillCommandTarget;
+  if (resolveTarget == null) {
+    return Future<agent.AgentResolvedToolName?>.value();
+  }
+
+  return resolveTarget(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    command: command,
   );
 }
 
@@ -264,6 +272,7 @@ Map<String, Object?>? _decodeArguments(String argumentsRaw) {
   } on FormatException {
     return null;
   }
+
   return decoded is Map<String, Object?> ? decoded : null;
 }
 
@@ -282,15 +291,37 @@ Future<void> _stopPendingTools(
   if (message == null) return;
 
   final metadata = message.metadata ?? const MessageMetadataEntity();
-  var didUpdate = false;
-  final updatedToolCalls = metadata.toolCalls.map((toolCall) {
-    if (!toolCall.isPending) return toolCall;
+  final updated = _stoppedPendingToolCalls(metadata.toolCalls);
+  if (updated == null) return;
 
-    didUpdate = true;
-    return toolCall.copyWith(resultStatus: ToolCallResultStatus.stoppedByUser);
-  }).toList();
-  if (!didUpdate) return;
+  await _persistStoppedToolCalls(
+    messageRepository,
+    messageId,
+    metadata,
+    updated,
+  );
+}
 
+List<MessageToolCallEntity>? _stoppedPendingToolCalls(
+  List<MessageToolCallEntity> toolCalls,
+) {
+  if (!toolCalls.any((toolCall) => toolCall.isPending)) return null;
+
+  return [
+    for (final toolCall in toolCalls)
+      if (toolCall.isPending)
+        toolCall.copyWith(resultStatus: ToolCallResultStatus.stoppedByUser)
+      else
+        toolCall,
+  ];
+}
+
+Future<void> _persistStoppedToolCalls(
+  MessageRepository messageRepository,
+  String messageId,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> updatedToolCalls,
+) async {
   final _ = await messageRepository.patchMessage(
     messageId,
     .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
@@ -318,7 +349,12 @@ Future<void> _updateToolResults(
 List<MessageToolCallEntity> _toolCallsWithResults(
   List<MessageToolCallEntity> toolCalls,
   List<agent.AgentToolResultUpdate> updates,
-) => toolCalls.map((toolCall) {
+) => [for (final toolCall in toolCalls) _toolCallWithResult(toolCall, updates)];
+
+MessageToolCallEntity _toolCallWithResult(
+  MessageToolCallEntity toolCall,
+  List<agent.AgentToolResultUpdate> updates,
+) {
   final update = updates
       .where((candidate) => candidate.toolCallId == toolCall.id)
       .firstOrNull;
@@ -328,7 +364,7 @@ List<MessageToolCallEntity> _toolCallsWithResults(
     resultStatus: AgentToolStatusMapper.toResultStatus(update.resultStatus),
     responseRaw: update.responseRaw,
   );
-}).toList();
+}
 
 void _logToolExecutionError(_ToolExecutionErrorRequest request) {
   _logger.severe(
@@ -347,6 +383,11 @@ agentToolExecutionServiceProvider = Provider<AgentToolExecutionService>((ref) {
   return AgentToolExecutionService(
     loadLatestMessageToolCallsUsecase: ref.watch(agentToolCallLoaderProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
+    runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
+    getAgentIterationDecisionUsecase: ref.watch(
+      agentToolDecisionServiceProvider,
+    ),
+    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
     resolveToolApprovalDecisionForWorkspace: (workspaceId) =>
         ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
     resolveSkillCommandTarget:
@@ -385,10 +426,5 @@ agentToolExecutionServiceProvider = Provider<AgentToolExecutionService>((ref) {
 
           return matches.length == 1 ? matches.single : null;
         },
-    runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
-    getAgentIterationDecisionUsecase: ref.watch(
-      agentToolDecisionServiceProvider,
-    ),
-    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
   );
 });

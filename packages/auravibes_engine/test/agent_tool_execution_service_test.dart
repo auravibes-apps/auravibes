@@ -257,17 +257,14 @@ class _FakeExecutionProvider({
   }
 
   @override
-  Future<AgentToolApprovalDecision> resolveToolApprovalDecision({
-    required String conversationId,
-    required String workspaceId,
-    required String toolCallId,
-    required String resolvedTool,
-    required String argumentsRaw,
-  }) async {
-    approvalArgumentsRaw[toolCallId] = argumentsRaw;
+  Future<AgentToolApprovalDecision> resolveToolApprovalDecision(
+    AgentToolApprovalRequest<String> request,
+  ) async {
+    approvalArgumentsRaw[request.toolCallId] = request.argumentsRaw;
     return AgentToolApprovalDecision(
       permissionResult:
-          decisions[toolCallId] ?? AgentToolPermissionResult.needsConfirmation,
+          decisions[request.toolCallId] ??
+          AgentToolPermissionResult.needsConfirmation,
     );
   }
 
@@ -322,13 +319,7 @@ class _FakeExecutionProvider({
   }
 
   @override
-  void logToolExecutionError({
-    required String conversationId,
-    required String toolCallId,
-    required String tool,
-    required Object error,
-    required StackTrace stackTrace,
-  }) {
-    loggedErrors.add(toolCallId);
+  void logToolExecutionError(AgentToolExecutionErrorRequest<String> request) {
+    loggedErrors.add(request.toolCallId);
   }
 }

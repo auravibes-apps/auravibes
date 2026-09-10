@@ -50,6 +50,12 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
   bool get isValid {
     return hasValidTitle && workspaceId.isNotEmpty;
   }
+
+  String identity() => id;
+
+  bool hasWorkspace() => workspaceId.isNotEmpty;
+
+  bool isPinnedConversation() => isPinned;
 }
 
 @freezed
@@ -89,6 +95,12 @@ abstract class const ConversationToCreate._() with _$ConversationToCreate {
         (agentId == null || agentId.isNotEmpty) &&
         (parentConversationId == null || parentConversationId.isNotEmpty);
   }
+
+  bool hasModel() => modelId != null;
+
+  bool hasAgent() => agentId != null;
+
+  bool hasParent() => parentConversationId != null;
 }
 
 @freezed
@@ -123,6 +135,10 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       agentId != null ||
       clearAgent ||
       isPinned != null;
+
+  bool hasChanges() => _hasChanges;
+
+  bool hasValidValues() => _hasValidValues;
 }
 
 bool _isNullOrNonEmpty(String? value) => value == null || value.isNotEmpty;

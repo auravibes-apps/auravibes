@@ -1,7 +1,37 @@
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
-class const CloudWorkspaceRepository(final Client _client) {
+typedef _CloudWorkspaceInviteMember =
+    Future<PendingWorkspaceInviteSummary> Function({
+      required int workspaceId,
+      required String email,
+      required String role,
+      required int expectedWorkspaceRevision,
+    });
+typedef _CloudWorkspaceMemberRoleUpdate = Future<void> Function({
+  required int workspaceId,
+  required String userId,
+  required String role,
+  required int expectedMemberRevision,
+});
+typedef _CloudWorkspaceInviteInput = ({
+  Client client,
+  int workspaceId,
+  String email,
+  String role,
+  int expectedWorkspaceRevision,
+});
+typedef _CloudWorkspaceMemberRoleInput = ({
+  Client client,
+  int workspaceId,
+  String userId,
+  String role,
+  int expectedMemberRevision,
+});
+
+class const CloudWorkspaceRepository(final Client _client);
+
+extension CloudWorkspaceRepositoryReadOperations on CloudWorkspaceRepository {
   Future<List<CloudWorkspaceSummary>> listWorkspaces() {
     return _client.cloudWorkspace.listAuthorizedWorkspaces();
   }
@@ -29,44 +59,17 @@ class const CloudWorkspaceRepository(final Client _client) {
       .new(name: name, requestId: const UuidV7().generate()),
     );
   }
+}
 
-  Future<PendingWorkspaceInviteSummary> inviteMember({
-    required int workspaceId,
-    required String email,
-    required String role,
-    required int expectedWorkspaceRevision,
-  }) {
-    return _client.cloudWorkspace.inviteMember(
-      .new(
-        workspaceId: workspaceId,
-        email: email,
-        role: role,
-        requestId: const UuidV7().generate(),
-        expectedWorkspaceRevision: expectedWorkspaceRevision,
-      ),
-    );
-  }
+extension CloudWorkspaceRepositoryMemberOperations on CloudWorkspaceRepository {
+  _CloudWorkspaceInviteMember get inviteMember => _inviteMemberHandler(_client);
 
   Future<List<CloudWorkspaceMemberSummary>> listMembers(int workspaceId) {
     return _client.cloudWorkspace.listMembers(.new(workspaceId: workspaceId));
   }
 
-  Future<void> updateMemberRole({
-    required int workspaceId,
-    required String userId,
-    required String role,
-    required int expectedMemberRevision,
-  }) {
-    return _client.cloudWorkspace.updateMemberRole(
-      .new(
-        workspaceId: workspaceId,
-        userId: userId,
-        role: role,
-        requestId: const UuidV7().generate(),
-        expectedMemberRevision: expectedMemberRevision,
-      ),
-    );
-  }
+  _CloudWorkspaceMemberRoleUpdate get updateMemberRole =>
+      _updateMemberRoleHandler(_client);
 
   Future<void> removeMember({
     required int workspaceId,
@@ -112,7 +115,60 @@ class const CloudWorkspaceRepository(final Client _client) {
       ),
     );
   }
+}
 
+_CloudWorkspaceInviteMember _inviteMemberHandler(Client client) =>
+    ({
+      required workspaceId,
+      required email,
+      required role,
+      required expectedWorkspaceRevision,
+    }) => _inviteMember((
+      client: client,
+      workspaceId: workspaceId,
+      email: email,
+      role: role,
+      expectedWorkspaceRevision: expectedWorkspaceRevision,
+    ));
+
+_CloudWorkspaceMemberRoleUpdate _updateMemberRoleHandler(Client client) =>
+    ({
+      required workspaceId,
+      required userId,
+      required role,
+      required expectedMemberRevision,
+    }) => _updateMemberRole((
+      client: client,
+      workspaceId: workspaceId,
+      userId: userId,
+      role: role,
+      expectedMemberRevision: expectedMemberRevision,
+    ));
+
+Future<PendingWorkspaceInviteSummary> _inviteMember(
+  _CloudWorkspaceInviteInput input,
+) => input.client.cloudWorkspace.inviteMember(
+  .new(
+    workspaceId: input.workspaceId,
+    email: input.email,
+    role: input.role,
+    requestId: const UuidV7().generate(),
+    expectedWorkspaceRevision: input.expectedWorkspaceRevision,
+  ),
+);
+
+Future<void> _updateMemberRole(_CloudWorkspaceMemberRoleInput input) =>
+    input.client.cloudWorkspace.updateMemberRole(
+      .new(
+        workspaceId: input.workspaceId,
+        userId: input.userId,
+        role: input.role,
+        requestId: const UuidV7().generate(),
+        expectedMemberRevision: input.expectedMemberRevision,
+      ),
+    );
+
+extension CloudWorkspaceRepositoryWorkspaceOps on CloudWorkspaceRepository {
   Future<CloudWorkspaceSummary> acceptInvite({
     required int inviteId,
     required int expectedInviteRevision,

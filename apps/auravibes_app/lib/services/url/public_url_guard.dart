@@ -14,9 +14,7 @@ abstract final class PublicUrlGuard {
     final uri = requirePublicUriSyntax(url, requireHttps: requireHttps);
     final addresses = await _resolveAddresses(uri.host, lookup: lookup);
 
-    final addressesForPinning = InternetAddress.tryParse(uri.host) == null
-        ? addresses.map((address) => address.address).toList(growable: false)
-        : null;
+    final addressesForPinning = _addressesForPinning(uri.host, addresses);
 
     return (uri: uri, addresses: addressesForPinning);
   }
@@ -56,27 +54,42 @@ abstract final class PublicUrlGuard {
 
     final literalAddress = InternetAddress.tryParse(host);
     if (literalAddress != null) {
-      if (_isPrivateAddress(literalAddress)) {
-        throw const FormatException(publicUrlError);
-      }
-
-      return [literalAddress];
+      return _validatedLiteralAddress(literalAddress);
     }
 
-    final addresses = await lookup(host);
+    return _validatedLookup(await lookup(host));
+  }
+
+  static List<InternetAddress> _validatedLiteralAddress(
+    InternetAddress address,
+  ) {
+    if (_isPrivateAddress(address)) throw const FormatException(publicUrlError);
+
+    return [address];
+  }
+
+  static List<InternetAddress> _validatedLookup(
+    List<InternetAddress> addresses,
+  ) {
     if (addresses.isEmpty || addresses.any(_isPrivateAddress)) {
       throw const FormatException(publicUrlError);
     }
 
     return addresses;
   }
-
-  static bool _isPrivateAddress(InternetAddress address) {
-    return address.isLoopback ||
-        address.isLinkLocal ||
-        isPrivateIpAddress(
-          address.rawAddress,
-          isIpv6: address.type == InternetAddressType.IPv6,
-        );
-  }
 }
+
+List<String>? _addressesForPinning(
+  String host,
+  List<InternetAddress> addresses,
+) => InternetAddress.tryParse(host) == null
+    ? addresses.map((address) => address.address).toList(growable: false)
+    : null;
+
+bool _isPrivateAddress(InternetAddress address) =>
+    address.isLoopback ||
+    address.isLinkLocal ||
+    isPrivateIpAddress(
+      address.rawAddress,
+      isIpv6: address.type == InternetAddressType.IPv6,
+    );

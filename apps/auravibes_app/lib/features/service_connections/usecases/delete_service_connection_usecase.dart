@@ -4,7 +4,6 @@ import 'package:auravibes_app/features/service_connections/models/service_connec
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'delete_service_connection_usecase.g.dart';
@@ -48,7 +47,7 @@ Future<DeleteServiceConnectionUsecase> deleteServiceConnectionUsecase(
   }
 }
 
-Future<void> Function(String id) _deleteSkillCredential(
+Future<Future<void> Function(String id)> _deleteSkillCredential(
   Ref ref,
   String workspaceId,
 ) async {

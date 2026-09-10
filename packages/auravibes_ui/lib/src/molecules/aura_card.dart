@@ -76,30 +76,31 @@ class const _AuraCardContent({
   );
 }
 
-class const _AuraCardSurface({
-  required final AuraCard card,
-  required final AuraColorScheme colors,
-  required final double radius,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final content = _AuraCardContent(
-      card: card,
-      color: colors.foregroundOnSurface,
-    );
-    final data = _AuraCardVariantData(
-      card: card,
-      content: content,
-      colors: colors,
-      onTap: card.onTap,
-      radius: radius,
-    );
+class _AuraCardSurface extends StatelessWidget {
+  _AuraCardSurface({
+    required AuraCard card,
+    required AuraColorScheme colors,
+    required double radius,
+  }) : _child = _AuraCardSemantics(
+         child: _AuraCardVariant(
+           data: _AuraCardVariantData(
+             card: card,
+             content: _AuraCardContent(
+               card: card,
+               color: colors.foregroundOnSurface,
+             ),
+             colors: colors,
+             onTap: card.onTap,
+             radius: radius,
+           ),
+         ),
+         label: card.semanticLabel,
+       );
 
-    return _AuraCardSemantics(
-      child: _AuraCardVariant(data: data),
-      label: card.semanticLabel,
-    );
-  }
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraCardSemantics({
@@ -207,11 +208,33 @@ class const _AuraSolidCard({
       );
 }
 
-class const _AuraCardAppearance({
-  required final AuraColorScheme colors,
-  required final AuraCardStyle style,
-  required final AuraTint? tint,
-}) {
+class _AuraCardAppearance {
+  _AuraCardAppearance({
+    required this.colors,
+    required this.style,
+    required this.tint,
+  }) : _shadows = switch (style) {
+         .glass => [DesignShadows.glass],
+         .border => const [],
+         .elevated => [
+           BoxShadow(
+             color: colors.shadow.withValues(alpha: 0.06),
+             offset: const Offset(0, 12),
+             blurRadius: 28,
+           ),
+           BoxShadow(
+             color: colors.shadow.withValues(alpha: 0.02),
+             offset: const Offset(0, 1),
+             blurRadius: 4,
+           ),
+         ],
+       };
+
+  final AuraColorScheme colors;
+  final AuraCardStyle style;
+  final AuraTint? tint;
+  final List<BoxShadow> _shadows;
+
   bool get _isGlass => style == AuraCardStyle.glass;
 
   bool get _isBorder => style == AuraCardStyle.border;
@@ -234,24 +257,6 @@ class const _AuraCardAppearance({
     }
 
     return null;
-  }
-
-  List<BoxShadow> get _shadows {
-    if (_isGlass) return [DesignShadows.glass];
-    if (_isBorder) return const [];
-
-    return [
-      BoxShadow(
-        color: colors.shadow.withValues(alpha: 0.06),
-        offset: const Offset(0, 12),
-        blurRadius: 28,
-      ),
-      BoxShadow(
-        color: colors.shadow.withValues(alpha: 0.02),
-        offset: const Offset(0, 1),
-        blurRadius: 4,
-      ),
-    ];
   }
 
   Color get _defaultBackgroundColor {

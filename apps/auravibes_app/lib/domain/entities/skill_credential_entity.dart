@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_credential_entity.freezed.dart';
 
+@immutable
 @freezed
 abstract class const SkillCredentialEntity._() with _$SkillCredentialEntity {
   const factory({
@@ -15,8 +16,18 @@ abstract class const SkillCredentialEntity._() with _$SkillCredentialEntity {
     required DateTime updatedAt,
     String? keySuffix,
   }) = _SkillCredentialEntity;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @Freezed(toStringOverride: false)
 abstract class const SkillCredentialToCreate._()
     with _$SkillCredentialToCreate {
@@ -25,15 +36,35 @@ abstract class const SkillCredentialToCreate._()
     required String name,
     required Map<String, String> attributes,
   }) = _SkillCredentialToCreate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class const SkillCredentialSecretState._()
     with _$SkillCredentialSecretState {
   const factory({required bool hasValue, String? keySuffix}) =
       _SkillCredentialSecretState;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class const SkillCredentialForEdit._() with _$SkillCredentialForEdit {
   const factory({
@@ -46,8 +77,18 @@ abstract class const SkillCredentialForEdit._() with _$SkillCredentialForEdit {
     required bool isEnabled,
     String? keySuffix,
   }) = _SkillCredentialForEdit;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @Freezed(toStringOverride: false)
 abstract class const SkillCredentialToUpdate._()
     with _$SkillCredentialToUpdate {
@@ -59,4 +100,13 @@ abstract class const SkillCredentialToUpdate._()
     @Default({}) Map<String, String> secretAttributes,
     @Default({}) Set<String> clearSecretAttributeNames,
   }) = _SkillCredentialToUpdate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }

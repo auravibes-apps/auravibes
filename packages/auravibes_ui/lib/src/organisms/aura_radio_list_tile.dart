@@ -45,78 +45,245 @@ class AuraRadioListTile<T> extends StatelessWidget {
   bool get _isDisabled => disabled || onChanged == null;
 
   @override
-  Widget build(BuildContext context) {
-    final isDisabled = _isDisabled;
-    final subtitle = this.subtitle;
+  Widget build(BuildContext context) => _AuraRadioListTileSemantics<T>(
+    value: value,
+    groupValue: groupValue,
+    onChanged: onChanged,
+    title: title,
+    subtitle: subtitle,
+    tint: tint,
+    disabled: _isDisabled,
+    semanticLabel: semanticLabel,
+  );
+}
 
-    final onTap = isDisabled ? null : () => onChanged?.call(value);
+class const _AuraRadioListTileSemantics<T>({
+  required final T value,
+  required final T? groupValue,
+  required final ValueChanged<T?>? onChanged,
+  required final Widget title,
+  required final Widget? subtitle,
+  required final AuraTint? tint,
+  required final bool disabled,
+  required final String? semanticLabel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraRadioListTileSemanticsData<T>(
+    value: value,
+    groupValue: groupValue,
+    onChanged: onChanged,
+    title: title,
+    subtitle: subtitle,
+    tint: tint,
+    disabled: disabled,
+    semanticLabel: semanticLabel,
+  ).child;
+}
 
-    final radioTile = MouseRegion(
-      cursor: isDisabled
-          ? SystemMouseCursors.forbidden
-          : SystemMouseCursors.click,
-      child: GestureDetector(
-        child: Opacity(
-          opacity: isDisabled ? 0.6 : 1.0,
-          child: Row(
-            crossAxisAlignment: .start,
-            children: [
-              ExcludeSemantics(
-                child: AuraRadio<T>(
-                  value: value,
-                  groupValue: groupValue,
-                  onChanged: isDisabled ? null : onChanged,
-                  tint: tint,
-                  disabled: isDisabled,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: [
-                    DefaultTextStyle(
-                      style:
-                          Theme.of(context).textTheme.bodyMedium ??
-                          const TextStyle(fontSize: 16),
-                      child: title,
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      DefaultTextStyle(
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: context.auraColors.onSurfaceVariant,
-                            ) ??
-                            TextStyle(
-                              color: context.auraColors.onSurfaceVariant,
-                              fontSize: 14,
-                            ),
-                        child: subtitle,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        onTap: onTap,
-        behavior: .opaque,
-        excludeFromSemantics: true,
-      ),
-    );
+class _AuraRadioListTileSemanticsData<T> {
+  _AuraRadioListTileSemanticsData({
+    required T value,
+    required T? groupValue,
+    required ValueChanged<T?>? onChanged,
+    required Widget title,
+    required Widget? subtitle,
+    required AuraTint? tint,
+    required bool disabled,
+    required String? semanticLabel,
+  }) : child = Semantics(
+         child: _AuraRadioListTileInteraction<T>(
+           value: value,
+           groupValue: groupValue,
+           onChanged: onChanged,
+           title: title,
+           subtitle: subtitle,
+           tint: tint,
+           disabled: disabled,
+           onTap: _radioListTileOnTap(disabled, onChanged, value),
+         ),
+         container: true,
+         excludeSemantics: true,
+         enabled: !disabled,
+         checked: value == groupValue,
+         inMutuallyExclusiveGroup: true,
+         label: semanticLabel ?? 'Radio button',
+         onTap: _radioListTileOnTap(disabled, onChanged, value),
+       );
 
-    return Semantics(
-      child: radioTile,
-      container: true,
-      excludeSemantics: true,
-      enabled: !isDisabled,
-      checked: value == groupValue,
-      inMutuallyExclusiveGroup: true,
-      label: semanticLabel ?? 'Radio button',
-      onTap: onTap,
-    );
-  }
+  final Widget child;
+}
+
+VoidCallback? _radioListTileOnTap<T>(
+  bool disabled,
+  ValueChanged<T?>? onChanged,
+  T value,
+) => disabled ? null : () => onChanged?.call(value);
+
+class const _AuraRadioListTileInteraction<T>({
+  required final T value,
+  required final T? groupValue,
+  required final ValueChanged<T?>? onChanged,
+  required final Widget title,
+  required final Widget? subtitle,
+  required final AuraTint? tint,
+  required final bool disabled,
+  required final VoidCallback? onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraRadioListTileInteractionData<T>(
+    value: value,
+    groupValue: groupValue,
+    onChanged: onChanged,
+    title: title,
+    subtitle: subtitle,
+    tint: tint,
+    disabled: disabled,
+    onTap: onTap,
+  ).child;
+}
+
+class _AuraRadioListTileInteractionData<T> {
+  _AuraRadioListTileInteractionData({
+    required T value,
+    required T? groupValue,
+    required ValueChanged<T?>? onChanged,
+    required Widget title,
+    required Widget? subtitle,
+    required AuraTint? tint,
+    required bool disabled,
+    required VoidCallback? onTap,
+  }) : child = MouseRegion(
+         cursor: disabled
+             ? SystemMouseCursors.forbidden
+             : SystemMouseCursors.click,
+         child: GestureDetector(
+           child: Opacity(
+             opacity: disabled ? 0.6 : 1.0,
+             child: _AuraRadioListTileContent<T>(
+               value: value,
+               groupValue: groupValue,
+               onChanged: disabled ? null : onChanged,
+               title: title,
+               subtitle: subtitle,
+               tint: tint,
+             ),
+           ),
+           onTap: onTap,
+           behavior: .opaque,
+           excludeFromSemantics: true,
+         ),
+       );
+
+  final Widget child;
+}
+
+class const _AuraRadioListTileContent<T>({
+  required final T value,
+  required final T? groupValue,
+  required final ValueChanged<T?>? onChanged,
+  required final Widget title,
+  required final Widget? subtitle,
+  required final AuraTint? tint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraRadioListTileContentData<T>(
+    value: value,
+    groupValue: groupValue,
+    onChanged: onChanged,
+    title: title,
+    subtitle: subtitle,
+    tint: tint,
+  ).child;
+}
+
+class _AuraRadioListTileContentData<T> {
+  _AuraRadioListTileContentData({
+    required T value,
+    required T? groupValue,
+    required ValueChanged<T?>? onChanged,
+    required Widget title,
+    required Widget? subtitle,
+    required AuraTint? tint,
+  }) : child = Row(
+         crossAxisAlignment: .start,
+         children: [
+           ExcludeSemantics(
+             child: AuraRadio<T>(
+               value: value,
+               groupValue: groupValue,
+               onChanged: onChanged,
+               tint: tint,
+               disabled: onChanged == null,
+             ),
+           ),
+           const SizedBox(width: 12),
+           Expanded(
+             child: _AuraRadioListTileText(title: title, subtitle: subtitle),
+           ),
+         ],
+       );
+
+  final Widget child;
+}
+
+class const _AuraRadioListTileText({
+  required final Widget title,
+  required final Widget? subtitle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraRadioListTileTextData(
+    title: title,
+    subtitle: subtitle,
+    context: context,
+  ).child;
+}
+
+class _AuraRadioListTileTextData {
+  _AuraRadioListTileTextData({
+    required Widget title,
+    required Widget? subtitle,
+    required BuildContext context,
+  }) : child = Column(
+         mainAxisSize: .min,
+         crossAxisAlignment: .start,
+         children: [
+           DefaultTextStyle(
+             style:
+                 Theme.of(context).textTheme.bodyMedium ??
+                 const TextStyle(fontSize: 16),
+             child: title,
+           ),
+           if (subtitle != null) _AuraRadioListTileSubtitle(child: subtitle),
+         ],
+       );
+
+  final Widget child;
+}
+
+class const _AuraRadioListTileSubtitle({required final Widget child})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _AuraRadioListTileSubtitleData(child: child, context: context).child;
+}
+
+class _AuraRadioListTileSubtitleData {
+  _AuraRadioListTileSubtitleData({
+    required Widget child,
+    required BuildContext context,
+  }) : child = Padding(
+         padding: const EdgeInsets.only(top: 4),
+         child: DefaultTextStyle(
+           style:
+               Theme.of(context).textTheme.bodySmall
+                   ?.copyWith(color: context.auraColors.onSurfaceVariant) ??
+               TextStyle(
+                 color: context.auraColors.onSurfaceVariant,
+                 fontSize: 14,
+               ),
+           child: child,
+         ),
+       );
+
+  final Widget child;
 }

@@ -51,9 +51,7 @@ abstract final class CloudResourceMapper {
   static Map<String, dynamic> decode(WorkspaceResource resource) {
     Map<String, dynamic>? decoded;
     try {
-      final data = jsonDecode(resource.data);
-      if (data is! Map<String, dynamic>) throw const FormatException();
-      decoded = data;
+      decoded = _decodeJson(resource.data);
       _validate(resource.resourceKind, decoded);
 
       return decoded;
@@ -98,6 +96,13 @@ abstract final class CloudResourceMapper {
     ),
   };
 
+  static Map<String, dynamic> _decodeJson(String rawData) {
+    final data = jsonDecode(rawData);
+    if (data is! Map<String, dynamic>) throw const FormatException();
+
+    return data;
+  }
+
   static Never _handleDecodeError(
     WorkspaceResource resource,
     Map<String, dynamic>? decoded,
@@ -111,6 +116,7 @@ abstract final class CloudResourceMapper {
       'kind=${resource.resourceKind.name} id=${resource.resourceId}'
       '$skillMetadata errorType=${error.runtimeType}.',
     );
+
     return CloudAppErrors.translateException(error, .resource);
   }
 
@@ -143,6 +149,7 @@ void _validateResourceEntry(
 bool _hasExpectedType(Type expected, Object? value) {
   if (expected == String) return value is String;
   if (expected == bool) return value is bool;
+
   return expected == Map && value is Map;
 }
 
@@ -152,6 +159,7 @@ bool _allowsEmptyValue(WorkspaceResourceKind kind, String field) {
   if (kind == WorkspaceResourceKind.skill) {
     return field == 'content' || field == 'description';
   }
+
   return kind == WorkspaceResourceKind.agent && field == 'content';
 }
 

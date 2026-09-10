@@ -21,6 +21,12 @@ typedef _ConnectionLists = ({
   List<ServiceConnectionListItem> mcpCredentials,
 });
 
+typedef _McpCredentialItemRequest = ({
+  McpServersTable server,
+  ServiceConnectionTable credential,
+  ({ServiceConnectionMetadata metadata, bool hasError}) metadataResult,
+});
+
 class const WatchServiceConnectionListItemsUsecase(
   final AppDatabase _database,
   final ModelConnectionRepository _modelConnectionRepository,
@@ -36,39 +42,8 @@ class const WatchServiceConnectionListItemsUsecase(
       _credentialDefinitionsRepository.watchDefinitions(workspaceId),
       _credentialsRepository.watchCredentialsForWorkspace(workspaceId),
       _watchMcpCredentialItems(workspaceId),
-      (models, definitions, credentials, mcpCredentials) => _buildItems((
-        modelConnections: models,
-        definitions: definitions,
-        credentials: credentials,
-        mcpCredentials: mcpCredentials,
-      )),
+      _combineConnectionItems,
     );
-  }
-
-  List<ServiceConnectionListItem> _buildItems(_ConnectionLists input) {
-    return [
-      ...input.modelConnections.map(
-        ServiceConnectionListItem.fromModelConnection,
-      ),
-      ..._skillCredentialItems(input.definitions, input.credentials),
-      ...input.mcpCredentials,
-    ]..sort((a, b) => a.name.compareTo(b.name));
-  }
-
-  Iterable<ServiceConnectionListItem> _skillCredentialItems(
-    List<SkillCredentialDefinitionEntity> definitions,
-    List<SkillCredentialEntity> credentials,
-  ) {
-    final definitionsById = {
-      for (final definition in definitions) definition.id: definition,
-    };
-
-    return credentials.map((credential) {
-      return ServiceConnectionListItem.fromSkillCredential(
-        credential: credential,
-        definition: definitionsById[credential.credentialDefinitionId],
-      );
-    });
   }
 
   Stream<List<ServiceConnectionListItem>> _watchMcpCredentialItems(
@@ -83,43 +58,31 @@ class const WatchServiceConnectionListItemsUsecase(
       ),
     ])..where(_database.mcpServers.workspaceId.equals(workspaceId));
 
-    return query.watch().map((rows) {
-      return rows.map(_mcpCredentialItem).toList();
-    });
+    return query.watch().map(_mcpCredentialRows);
   }
+
+  List<ServiceConnectionListItem> _mcpCredentialRows(List<TypedResult> rows) =>
+      rows.map(_mcpCredentialItem).toList();
 
   ServiceConnectionListItem _mcpCredentialItem(TypedResult row) {
     final server = row.readTable(_database.mcpServers);
     final credential = row.readTable(_database.serviceConnections);
-    return _buildMcpCredentialItem(
-      server: server,
-      credential: credential,
-      metadataResult: _decodeMetadata(credential),
+    return ServiceConnectionListItem.fromMcpCredential(
+      _buildMcpCredentialItem((
+        server: server,
+        credential: credential,
+        metadataResult: _decodeMetadata(credential),
+      )),
     );
   }
 
-  ServiceConnectionListItem _buildMcpCredentialItem({
-    required McpServersTable server,
-    required ServiceConnectionTable credential,
-    required ({ServiceConnectionMetadata metadata, bool hasError})
-    metadataResult,
-  }) => ServiceConnectionListItem.fromMcpCredential(
-    id: credential.id,
-    workspaceId: credential.workspaceId,
-    name: server.name,
-    url: server.url,
-    mcpServerId: server.id,
-    authenticationType: credential.authenticationType.value,
-    isEnabled: credential.isEnabled,
-    authStatus: credential.authStatus,
-    expiresAt: credential.expiresAt,
-    lastRefreshedAt: credential.lastRefreshedAt,
-    lastAuthError: credential.lastAuthError,
-    metadata: metadataResult.metadata,
-    canRefresh: _canRefresh(credential),
-    now: _now(),
-    hasMetadataError: metadataResult.hasError,
-  );
+  ServiceConnectionMcpCredential _buildMcpCredentialItem(
+    _McpCredentialItemRequest request,
+  ) => _McpCredentialItem(
+    request,
+    _canRefresh(request.credential),
+    _now(),
+  ).value;
 
   bool _canRefresh(ServiceConnectionTable credential) =>
       credential.authenticationType == ServiceAuthenticationTypeTable.oauth2;
@@ -145,4 +108,68 @@ class const WatchServiceConnectionListItemsUsecase(
       return (metadata: const ServiceConnectionMetadata(), hasError: true);
     }
   }
+}
+
+class _McpCredentialItem {
+  _McpCredentialItem(
+    _McpCredentialItemRequest request,
+    bool canRefresh,
+    DateTime now,
+  ) : value = (
+        id: request.credential.id,
+        workspaceId: request.credential.workspaceId,
+        name: request.server.name,
+        url: request.server.url,
+        mcpServerId: request.server.id,
+        authenticationType: request.credential.authenticationType.value,
+        isEnabled: request.credential.isEnabled,
+        authStatus: request.credential.authStatus,
+        expiresAt: request.credential.expiresAt,
+        lastRefreshedAt: request.credential.lastRefreshedAt,
+        lastAuthError: request.credential.lastAuthError,
+        metadata: request.metadataResult.metadata,
+        canRefresh: canRefresh,
+        now: now,
+        hasMetadataError: request.metadataResult.hasError,
+      );
+
+  final ServiceConnectionMcpCredential value;
+}
+
+List<ServiceConnectionListItem> _combineConnectionItems(
+  List<ModelConnectionEntity> models,
+  List<SkillCredentialDefinitionEntity> definitions,
+  List<SkillCredentialEntity> credentials,
+  List<ServiceConnectionListItem> mcpCredentials,
+) => _buildConnectionItems((
+  modelConnections: models,
+  definitions: definitions,
+  credentials: credentials,
+  mcpCredentials: mcpCredentials,
+));
+
+List<ServiceConnectionListItem> _buildConnectionItems(_ConnectionLists input) {
+  return [
+    ...input.modelConnections.map(
+      ServiceConnectionListItem.fromModelConnection,
+    ),
+    ..._skillCredentialItems(input.definitions, input.credentials),
+    ...input.mcpCredentials,
+  ]..sort((a, b) => a.name.compareTo(b.name));
+}
+
+Iterable<ServiceConnectionListItem> _skillCredentialItems(
+  List<SkillCredentialDefinitionEntity> definitions,
+  List<SkillCredentialEntity> credentials,
+) {
+  final definitionsById = {
+    for (final definition in definitions) definition.id: definition,
+  };
+
+  return credentials.map((credential) {
+    return ServiceConnectionListItem.fromSkillCredential(
+      credential: credential,
+      definition: definitionsById[credential.credentialDefinitionId],
+    );
+  });
 }

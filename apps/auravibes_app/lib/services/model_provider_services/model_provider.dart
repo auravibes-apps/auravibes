@@ -19,9 +19,9 @@ class ModelProviderServices {
   Future<List<WorkspaceModelSelectionToCreate>?> getWorkspaceModelSelections(
     ModelProvider provider,
   ) => switch (provider.type) {
-    CredentialsModelType.openai => _openAiSelections(provider),
-    CredentialsModelType.openrouter => _openRouterSelections(provider),
-    CredentialsModelType.anthropic => _anthropicSelections(provider),
+    .openai => _openAiSelections(provider),
+    .openrouter => _openRouterSelections(provider),
+    .anthropic => _anthropicSelections(provider),
     _ => Future.value(),
   };
 }
@@ -33,18 +33,21 @@ Future<List<WorkspaceModelSelectionToCreate>> _openAiSelections(
     provider.url,
     fallback: 'https://api.openai.com/v1',
   );
-  final models = await OpenAIClient.withApiKey(
-    provider.key,
-    baseUrl: baseUrl,
-  ).models.list();
-  return models.data.map((model) => _selection(model.id)).toList();
+  final client = OpenAIClient.withApiKey(provider.key, baseUrl: baseUrl);
+  final models = await client.models.list();
+
+  return models.data.map(_openAiSelection).toList();
 }
+
+WorkspaceModelSelectionToCreate _openAiSelection(Model model) =>
+    _selection(model.id);
 
 Future<List<WorkspaceModelSelectionToCreate>?> _openRouterSelections(
   ModelProvider provider,
 ) async {
   if (!await _validateOpenRouterKey(provider)) return null;
   final models = await _openRouterModels(provider);
+
   return models?.map(_selection).toList();
 }
 
@@ -99,45 +102,58 @@ Future<http.Response> _openRouterGet(
     provider.url,
     fallback: 'https://openrouter.ai/api/v1',
   );
-  return http
-      .get(
-        .parse('${url.replaceFirst(RegExp(r'/$'), '')}$path'),
-        headers: <String, String>{
-          'authorization': 'Bearer ${provider.key}',
-          'accept': 'application/json',
-        },
-      )
+
+  return await http
+      .get(_openRouterUri(url, path), headers: _openRouterHeaders(provider.key))
       .timeout(const Duration(seconds: 10));
 }
+
+Uri _openRouterUri(String baseUrl, String path) =>
+    Uri.parse('${baseUrl.replaceFirst(RegExp(r'/$'), '')}$path');
+
+Map<String, String> _openRouterHeaders(String key) => {
+  'authorization': 'Bearer $key',
+  'accept': 'application/json',
+};
 
 String? _modelId(Object? model) {
   if (model is! Map<String, dynamic>) return null;
   final id = model['id'];
+
   return id is String ? id : null;
 }
 
 Future<List<AntropicResponseModelsItem>> _anthopicAllModels(
   ModelProvider provider,
-) async {
-  var fetchMore = true;
-  String? afterId;
-  final foundModels = <AntropicResponseModelsItem>[];
+) => _collectAnthropicModels(provider, []);
 
-  while (fetchMore) {
-    final modelsResponse = await _anthopicModels(provider, afterId);
+Future<List<AntropicResponseModelsItem>> _collectAnthropicModels(
+  ModelProvider provider,
+  List<AntropicResponseModelsItem> foundModels, [
+  String? afterId,
+]) async {
+  final response = await _anthopicModels(provider, afterId);
+  final page = _appendAnthropicPage(foundModels, response);
+  if (!page.hasMore) return foundModels;
 
-    if (modelsResponse case AntropicResponseModelsData(
-      data: final models,
-      :final hasMore,
-      :final lastId,
-    )) {
-      foundModels.addAll(models);
-      fetchMore = hasMore;
-      afterId = lastId;
-    }
+  return await _collectAnthropicModels(provider, foundModels, page.lastId);
+}
+
+({bool hasMore, String? lastId}) _appendAnthropicPage(
+  List<AntropicResponseModelsItem> foundModels,
+  AntropicResponseModels response,
+) {
+  if (response case AntropicResponseModelsData(
+    data: final models,
+    :final hasMore,
+    :final lastId,
+  )) {
+    foundModels.addAll(models);
+
+    return (hasMore: hasMore, lastId: lastId);
   }
 
-  return foundModels;
+  return (hasMore: false, lastId: null);
 }
 
 Future<AntropicResponseModels> _anthopicModels(
@@ -159,17 +175,21 @@ Future<http.Response> _anthropicGet(
     provider.url,
     fallback: 'https://api.anthropic.com/v1',
   );
-  final queryParameters = <String, dynamic>{'limit': '1000'};
-  if (afterId != null) queryParameters['after_id'] = afterId;
 
-  return http.get(
-    Uri.parse('$url/models').replace(queryParameters: queryParameters),
-    headers: <String, String>{
-      'x-api-key': provider.key,
-      'anthropic-version': '2023-06-01',
-    },
+  return await http.get(
+    _anthropicModelsUri(url, afterId),
+    headers: _anthropicHeaders(provider.key),
   );
 }
+
+Uri _anthropicModelsUri(String baseUrl, String? afterId) =>
+    Uri.parse('$baseUrl/models')
+        .replace(queryParameters: {'limit': '1000', 'after_id': ?afterId});
+
+Map<String, String> _anthropicHeaders(String key) => {
+  'x-api-key': key,
+  'anthropic-version': '2023-06-01',
+};
 
 Future<String> _providerBaseUrl(String? url, {required String fallback}) async {
   final uri = await PublicUrlGuard.requireHttpsUri(url ?? fallback);

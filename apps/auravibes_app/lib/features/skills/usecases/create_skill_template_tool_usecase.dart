@@ -77,15 +77,24 @@ class const CreateSkillTemplateToolUsecase(
   Future<Map<String, SkillCredentialAttributeDefinition>>
   _localCredentialDefinitions(String skillId) async {
     final skillsRepository = this.skillsRepository;
-    final credentialDefinitionsRepository =
-        skillCredentialDefinitionsRepository;
-    if (skillsRepository == null || credentialDefinitionsRepository == null) {
+    final definitionsRepository = skillCredentialDefinitionsRepository;
+    if (skillsRepository == null || definitionsRepository == null) {
       return const {};
     }
     final skill = await skillsRepository.getSkillById(skillId);
-    final credentialDefinitionId = skill?.credentialDefinitionId;
+    return _credentialDefinitionValues(
+      definitionsRepository,
+      skill?.credentialDefinitionId,
+    );
+  }
+
+  Future<Map<String, SkillCredentialAttributeDefinition>>
+  _credentialDefinitionValues(
+    SkillCredentialDefinitionsRepository repository,
+    String? credentialDefinitionId,
+  ) async {
     if (credentialDefinitionId == null) return const {};
-    final definition = await credentialDefinitionsRepository.getDefinitionById(
+    final definition = await repository.getDefinitionById(
       credentialDefinitionId,
     );
     if (definition == null) return const {};

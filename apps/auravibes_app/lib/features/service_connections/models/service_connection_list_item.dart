@@ -3,6 +3,24 @@ import 'package:auravibes_app/domain/entities/service_connection_auth_status.dar
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 
+typedef ServiceConnectionMcpCredential = ({
+  String id,
+  String workspaceId,
+  String name,
+  String url,
+  String mcpServerId,
+  String authenticationType,
+  bool isEnabled,
+  ServiceConnectionAuthStatus? authStatus,
+  DateTime? expiresAt,
+  DateTime? lastRefreshedAt,
+  String? lastAuthError,
+  ServiceConnectionMetadata metadata,
+  bool canRefresh,
+  DateTime now,
+  bool hasMetadataError,
+});
+
 class const ServiceConnectionListItem({
   required final String id,
   required final String workspaceId,
@@ -21,9 +39,8 @@ class const ServiceConnectionListItem({
   required final bool canRefresh,
   required final bool canReconnect,
 }) {
-  ServiceConnectionListItem._fromModelConnection(
-    ModelConnectionEntity connection,
-  ) : this(
+  new _fromModelConnection(ModelConnectionEntity connection)
+    : this(
         id: connection.id,
         workspaceId: connection.workspaceId,
         name: connection.name,
@@ -42,7 +59,7 @@ class const ServiceConnectionListItem({
         canReconnect: false,
       );
 
-  ServiceConnectionListItem._fromSkillCredential({
+  new _fromSkillCredential({
     required SkillCredentialEntity credential,
     required SkillCredentialDefinitionEntity? definition,
   }) : this(
@@ -64,86 +81,55 @@ class const ServiceConnectionListItem({
          canReconnect: false,
        );
 
-  factory fromMcpCredential({
-    required String id,
-    required String workspaceId,
-    required String name,
-    required String url,
-    required String mcpServerId,
-    required String authenticationType,
-    required bool isEnabled,
-    required ServiceConnectionAuthStatus? authStatus,
-    required DateTime? expiresAt,
-    required DateTime? lastRefreshedAt,
-    required String? lastAuthError,
-    required ServiceConnectionMetadata metadata,
-    required bool canRefresh,
-    required DateTime now,
-    required bool hasMetadataError,
-  }) = ServiceConnectionListItem._fromMcpCredential;
+  factory fromMcpCredential(ServiceConnectionMcpCredential data) =
+      ServiceConnectionListItem._fromMcpCredential;
 
-  ServiceConnectionListItem._fromMcpCredential({
-    required String id,
-    required String workspaceId,
-    required String name,
-    required String url,
-    required String mcpServerId,
-    required String authenticationType,
-    required bool isEnabled,
-    required ServiceConnectionAuthStatus? authStatus,
-    required DateTime? expiresAt,
-    required DateTime? lastRefreshedAt,
-    required String? lastAuthError,
-    required ServiceConnectionMetadata metadata,
-    required bool canRefresh,
-    required DateTime now,
-    required bool hasMetadataError,
-  }) : this(
-         id: id,
-         workspaceId: workspaceId,
-         name: name,
-         serviceName: _hostFromUrl(url) ?? metadata.provider,
-         kind: .mcpServer,
-         keySuffix: null,
-         credentialDefinitionId: null,
-         mcpServerId: mcpServerId,
-         authenticationType: authenticationType,
-         displayStatus: _displayStatus(
-           _DisplayStatusRequest(
-             authStatus: authStatus,
-             expiresAt: expiresAt,
-             lastAuthError: lastAuthError,
-             isEnabled: isEnabled,
-             hasMetadataError: hasMetadataError,
-             now: now,
-           ),
-         ),
-         expiresAt: expiresAt,
-         lastRefreshedAt: lastRefreshedAt,
-         lastAuthError: lastAuthError,
-         metadataValues: _metadataValues(
-           _MetadataValuesRequest(
-             metadata: metadata,
-             expiresAt: expiresAt,
-             lastRefreshedAt: lastRefreshedAt,
-             lastAuthError: lastAuthError,
-           ),
-         ),
-         canRefresh: canRefresh,
-         canReconnect: true,
-       );
+  new _fromMcpCredential(ServiceConnectionMcpCredential data)
+    : this(
+        id: data.id,
+        workspaceId: data.workspaceId,
+        name: data.name,
+        serviceName: _hostFromUrl(data.url) ?? data.metadata.provider,
+        kind: .mcpServer,
+        keySuffix: null,
+        credentialDefinitionId: null,
+        mcpServerId: data.mcpServerId,
+        authenticationType: data.authenticationType,
+        displayStatus: _displayStatus(
+          .new(
+            authStatus: data.authStatus,
+            expiresAt: data.expiresAt,
+            lastAuthError: data.lastAuthError,
+            isEnabled: data.isEnabled,
+            hasMetadataError: data.hasMetadataError,
+            now: data.now,
+          ),
+        ),
+        expiresAt: data.expiresAt,
+        lastRefreshedAt: data.lastRefreshedAt,
+        lastAuthError: data.lastAuthError,
+        metadataValues: _metadataValues(
+          .new(
+            metadata: data.metadata,
+            expiresAt: data.expiresAt,
+            lastRefreshedAt: data.lastRefreshedAt,
+            lastAuthError: data.lastAuthError,
+          ),
+        ),
+        canRefresh: data.canRefresh,
+        canReconnect: true,
+      );
+
+  factory fromSkillCredential({
+    required SkillCredentialEntity credential,
+    required SkillCredentialDefinitionEntity? definition,
+  }) => ._fromSkillCredential(credential: credential, definition: definition);
 
   static ServiceConnectionListItem fromModelConnection(
     ModelConnectionEntity connection,
-  ) => ServiceConnectionListItem._fromModelConnection(connection);
+  ) => ._fromModelConnection(connection);
 
-  static ServiceConnectionListItem fromSkillCredential({
-    required SkillCredentialEntity credential,
-    required SkillCredentialDefinitionEntity? definition,
-  }) => ServiceConnectionListItem._fromSkillCredential(
-    credential: credential,
-    definition: definition,
-  );
+  bool hasActions() => canRefresh || canReconnect;
 }
 
 enum ServiceConnectionListItemKind { modelProvider, skillCredential, mcpServer }
@@ -209,8 +195,7 @@ ServiceConnectionDisplayStatus? _authStatus(
 };
 
 bool _isConnected(_DisplayStatusRequest request) {
-  return request.isEnabled &&
-      (request.lastAuthError == null || request.lastAuthError!.isEmpty);
+  return request.isEnabled && (request.lastAuthError?.isEmpty ?? true);
 }
 
 bool _expiresSoon(DateTime? expiresAt, DateTime now) {

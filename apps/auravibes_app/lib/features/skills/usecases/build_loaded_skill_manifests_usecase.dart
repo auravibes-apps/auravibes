@@ -147,15 +147,21 @@ extension on BuildLoadedSkillManifestsUsecase {
     final skillSlug = resolved.skillSlug;
     if (skillSlug == null) return null;
 
-    return (
-      skillSlug: skillSlug,
-      tool: SkillManifestTool(
-        name: resolved.toolIdentifier,
-        description: spec.description,
-        inputJsonSchema: spec.inputJsonSchema,
-      ),
-    );
+    return _manifestToolValue(resolved, spec, skillSlug);
   }
+
+  ({String skillSlug, SkillManifestTool tool}) _manifestToolValue(
+    AgentResolvedToolName resolved,
+    ToolSpec spec,
+    String skillSlug,
+  ) => (
+    skillSlug: skillSlug,
+    tool: SkillManifestTool(
+      name: resolved.toolIdentifier,
+      description: spec.description,
+      inputJsonSchema: spec.inputJsonSchema,
+    ),
+  );
 
   SkillManifest _manifest(AvailableSkill skill, List<SkillManifestTool> tools) {
     final sortedTools = _sortedTools(tools);
@@ -208,15 +214,20 @@ extension on BuildLoadedSkillManifestsUsecase {
 }
 
 Object? _canonicalJson(Object? value) => switch (value) {
-  final Map<Object?, Object?> map => {
-    for (final key in map.keys.cast<String>().toList()..sort())
-      key: _canonicalJson(map[key]),
-  },
-  final Iterable<Object?> values => [
-    for (final value in values) _canonicalJson(value),
-  ],
+  final Map<Object?, Object?> map => _canonicalMap(map),
+  final Iterable<Object?> values => _canonicalList(values),
   _ => value,
 };
+
+Map<String, Object?> _canonicalMap(Map<Object?, Object?> map) {
+  final keys = map.keys.cast<String>().toList()..sort();
+
+  return {for (final key in keys) key: _canonicalJson(map[key])};
+}
+
+List<Object?> _canonicalList(Iterable<Object?> values) => [
+  for (final value in values) _canonicalJson(value),
+];
 
 final buildLoadedSkillManifestsUsecaseProvider =
     Provider<BuildLoadedSkillManifestsUsecase>((ref) {

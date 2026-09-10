@@ -12,6 +12,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+typedef _AgentSelection = ({
+  BuildContext context,
+  WidgetRef ref,
+  String value,
+  String agentId,
+});
+
 class const AgentsScreen({required final String workspaceId, super.key})
     extends ConsumerWidget {
   @override
@@ -29,27 +36,29 @@ class const AgentsScreen({required final String workspaceId, super.key})
   }
 }
 
-class const _AgentsContent({
-  required final AsyncValue<List<AgentEntity>> agentsAsync,
-  required final String workspaceId,
-}) extends StatelessWidget {
+class _AgentsContent extends StatelessWidget {
+  _AgentsContent({required this.agentsAsync, required this.workspaceId})
+    : _child = switch (agentsAsync) {
+        AsyncData(:final value) => _AgentsList(
+          agents: value,
+          workspaceId: workspaceId,
+        ),
+        AsyncLoading(:final value?) => _AgentsList(
+          agents: value,
+          workspaceId: workspaceId,
+        ),
+        AsyncLoading() => const Center(child: AuraSpinner()),
+        AsyncError() => const Center(
+          child: AuraText(child: TextLocale(LocaleKeys.agents_load_error)),
+        ),
+      };
+
+  final AsyncValue<List<AgentEntity>> agentsAsync;
+  final String workspaceId;
+  final Widget _child;
+
   @override
-  Widget build(BuildContext _) {
-    return switch (agentsAsync) {
-      AsyncData(:final value) => _AgentsList(
-        agents: value,
-        workspaceId: workspaceId,
-      ),
-      AsyncLoading(:final value?) => _AgentsList(
-        agents: value,
-        workspaceId: workspaceId,
-      ),
-      AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncError() => const Center(
-        child: AuraText(child: TextLocale(LocaleKeys.agents_load_error)),
-      ),
-    };
-  }
+  Widget build(BuildContext _) => _child;
 }
 
 class const _AgentsAppBar({required final VoidCallback onCreate})
@@ -109,7 +118,12 @@ class const _AgentsList({
     BuildContext context,
     WidgetRef ref,
   ) {
-    return (value, agent) => _handleSelection(context, ref, value, agent.id);
+    return (value, agent) => _handleSelection((
+      context: context,
+      ref: ref,
+      value: value,
+      agentId: agent.id,
+    ));
   }
 
   void _openCreate(BuildContext context) {
@@ -120,18 +134,15 @@ class const _AgentsList({
     final _ = context.push('/workspaces/$workspaceId/more/agents/$agentId');
   }
 
-  void _handleSelection(
-    BuildContext context,
-    WidgetRef ref,
-    String value,
-    String agentId,
-  ) {
-    if (value == 'edit') {
-      _openAgent(context, agentId);
+  void _handleSelection(_AgentSelection selection) {
+    if (selection.value == 'edit') {
+      _openAgent(selection.context, selection.agentId);
 
       return;
     }
-    unawaited(_confirmDelete(context, ref, agentId));
+    unawaited(
+      _confirmDelete(selection.context, selection.ref, selection.agentId),
+    );
   }
 
   Future<void> _confirmDelete(
@@ -184,34 +195,39 @@ class const _AgentsListView({
   }
 }
 
-class const _AgentsEmptyState({required final VoidCallback onCreate})
-    extends StatelessWidget {
+class _AgentsEmptyState extends StatelessWidget {
+  const new({required this.onCreate});
+
+  final VoidCallback onCreate;
+
   @override
-  Widget build(BuildContext _) {
-    return Center(child: _AgentsEmptyContent(onCreate: onCreate));
-  }
+  Widget build(BuildContext _) =>
+      Center(child: _AgentsEmptyContent(onCreate: onCreate));
 }
 
-class const _AgentsEmptyContent({required final VoidCallback onCreate})
-    extends StatelessWidget {
+class _AgentsEmptyContent extends StatelessWidget {
+  _AgentsEmptyContent({required this.onCreate})
+    : _child = AuraColumn(
+        children: [
+          const Icon(Icons.smart_toy_outlined, size: 48),
+          const AuraText(
+            child: TextLocale(LocaleKeys.agents_empty_title),
+            style: .heading4,
+          ),
+          const AuraText(child: TextLocale(LocaleKeys.agents_empty_subtitle)),
+          AuraButton(
+            onPressed: onCreate,
+            child: const TextLocale(LocaleKeys.agents_create),
+          ),
+        ],
+        mainAxisSize: .min,
+      );
+
+  final VoidCallback onCreate;
+  final Widget _child;
+
   @override
-  Widget build(BuildContext _) {
-    return AuraColumn(
-      children: [
-        const Icon(Icons.smart_toy_outlined, size: 48),
-        const AuraText(
-          child: TextLocale(LocaleKeys.agents_empty_title),
-          style: .heading4,
-        ),
-        const AuraText(child: TextLocale(LocaleKeys.agents_empty_subtitle)),
-        AuraButton(
-          onPressed: onCreate,
-          child: const TextLocale(LocaleKeys.agents_create),
-        ),
-      ],
-      mainAxisSize: .min,
-    );
-  }
+  Widget build(BuildContext _) => _child;
 }
 
 class const _AgentListItem({

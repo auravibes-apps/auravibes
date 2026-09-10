@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
@@ -140,7 +141,8 @@ mixin _AgentContinuationMessageRoleChecks {
     return message.role == ChatMessageRole.system;
   }
 
-  bool isSkillContextMessage(ChatMessage message) => message.isSkillContext;
+  bool isSkillContextMessage(ChatMessage message) =>
+      message.metadata['kind'] == skillContextMetadataKind;
 
   bool isUserMessage(ChatMessage message) {
     return message.role == ChatMessageRole.user;
@@ -161,23 +163,32 @@ Future<WorkspaceModelSelectionWithConnectionEntity> _projectSelectedModel(
     'openai',
     model.workspaceModelSelection.modelId,
   );
-  if (openAIModel == null) {
+  _ensureCodexModel(openAIModel);
+
+  return _copyWithCodexModel(model, openAIModel!);
+}
+
+void _ensureCodexModel(ApiModelEntity? model) {
+  if (model == null) {
     throw Exception('OpenAI model catalog is unavailable');
   }
-  if (!openAIModel.isCodexRuntimeModel) {
+  if (!model.isCodexRuntimeModel) {
     throw Exception('Selected Codex model is not supported');
   }
-
-  return model.copyWith(
-    workspaceModelSelection: model.workspaceModelSelection.copyWith(
-      modelName: openAIModel.name,
-      supportsReasoning: openAIModel.supportsReasoning,
-      supportsToolCalls: openAIModel.supportsToolCalls,
-      modalitiesInput: CodexInputModalities.forModel(openAIModel),
-      modalitiesOutput: openAIModel.modalitiesOutput,
-    ),
-  );
 }
+
+WorkspaceModelSelectionWithConnectionEntity _copyWithCodexModel(
+  WorkspaceModelSelectionWithConnectionEntity model,
+  ApiModelEntity openAIModel,
+) => model.copyWith(
+  workspaceModelSelection: model.workspaceModelSelection.copyWith(
+    modelName: openAIModel.name,
+    supportsReasoning: openAIModel.supportsReasoning,
+    supportsToolCalls: openAIModel.supportsToolCalls,
+    modalitiesInput: CodexInputModalities.forModel(openAIModel),
+    modalitiesOutput: openAIModel.modalitiesOutput,
+  ),
+);
 
 final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
   ref,
@@ -195,7 +206,3 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
         ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
   );
 });
-
-extension on ChatMessage {
-  bool get isSkillContext => metadata['kind'] == skillContextMetadataKind;
-}

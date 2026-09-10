@@ -94,16 +94,26 @@ Future<mcp.ClientTransport> _createHttpTransportConfig(
   }
 
   final authType = server.authenticationType;
-  final transport = await mcp.StreamableHttpClientTransport.create(
-    baseUrl: server.url,
-    oauthConfig: _getOauthConfig(authType),
-    headers: _httpHeaders(authType),
-    useHttp2: transportType.useHttp2,
+  final transport = await _createStreamableTransport(
+    server,
+    authType,
+    transportType,
   );
   _setOAuthToken(transport, authType);
 
   return transport;
 }
+
+Future<mcp.StreamableHttpClientTransport> _createStreamableTransport(
+  McpServerToCreate server,
+  McpAuthenticationType authType,
+  McpTransportTypeStreamableHttp transportType,
+) => mcp.StreamableHttpClientTransport.create(
+  baseUrl: server.url,
+  oauthConfig: _getOauthConfig(authType),
+  headers: _httpHeaders(authType),
+  useHttp2: transportType.useHttp2,
+);
 
 Map<String, String> _httpHeaders(McpAuthenticationType authType) =>
     switch (authType) {
@@ -114,7 +124,8 @@ Map<String, String> _httpHeaders(McpAuthenticationType authType) =>
         'Bearer token is required'
         ' for bearer token authentication.',
       ),
-      _ => <String, String>{},
+      McpAuthenticationTypeNone() ||
+      McpAuthenticationTypeOAuth() => <String, String>{},
     };
 
 void _setOAuthToken(
@@ -128,6 +139,7 @@ void _setOAuthToken(
 
 mcp.HttpOAuthClient? _oauthClient(McpAuthenticationType authType) {
   final config = _getOauthConfig(authType);
+
   return config == null ? null : mcp.HttpOAuthClient(config: config);
 }
 
@@ -146,13 +158,13 @@ mcp.OAuthConfig? _getOauthConfig(McpAuthenticationType authType) =>
           tokenEndpoint: tokenEndpoint,
           clientId: clientId,
         ),
-      _ => null,
+      McpAuthenticationTypeNone() || McpAuthenticationTypeBearerToken() => null,
     };
 
 mcp.OAuthToken? _getOauthToken(McpAuthenticationType authType) =>
     switch (authType) {
       McpAuthenticationTypeOAuth(:final token) => _mcpOAuthToken(token),
-      _ => null,
+      McpAuthenticationTypeNone() || McpAuthenticationTypeBearerToken() => null,
     };
 
 mcp.OAuthToken _mcpOAuthToken(OAuthTokenEntity token) => .new(
@@ -181,6 +193,5 @@ mcp.OAuthTokenManager? _tokenManager(McpServerToCreate server) {
   final token = _getOauthToken(authType);
   if (config == null || token == null) return null;
 
-  return mcp.OAuthTokenManager(mcp.HttpOAuthClient(config: config))
-    ..setToken(token);
+  return mcp.OAuthTokenManager(.new(config: config))..setToken(token);
 }

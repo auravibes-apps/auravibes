@@ -1,8 +1,10 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
-import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
+import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart'
+    as agent_detail;
+import 'package:auravibes_app/features/agents/screens/agents_screen.dart'
+    as agents;
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
@@ -268,34 +270,45 @@ class const _SubAgentConversationGate({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final conversation = ref.watch(
-      conversationByIdStreamProvider(workspaceId, conversationId: chatId),
+    return _SubAgentConversationView(
+      conversation: ref.watch(
+        conversationByIdStreamProvider(workspaceId, conversationId: chatId),
+      ),
+      workspaceId: workspaceId,
+      parentConversationId: parentConversationId,
+      chatId: chatId,
     );
-
-    return switch (conversation) {
-      AsyncData(:final value)
-          when _isMatchingConversation(
-            value,
-            workspaceId,
-            parentConversationId,
-          ) =>
-        ChatConversationScreen(
-          workspaceId: workspaceId,
-          chatId: chatId,
-          showInputComposer: false,
-        ),
-      AsyncData() || AsyncLoading() || AsyncError() => const SizedBox.shrink(),
-    };
   }
-
-  static bool _isMatchingConversation(
-    ConversationEntity? conversation,
-    String workspaceId,
-    String parentConversationId,
-  ) =>
-      conversation?.workspaceId == workspaceId &&
-      conversation?.parentConversationId == parentConversationId;
 }
+
+class const _SubAgentConversationView({
+  required final AsyncValue<ConversationEntity?> conversation,
+  required final String workspaceId,
+  required final String parentConversationId,
+  required final String chatId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (conversation) {
+    AsyncData(:final value) when _matchesConversation(value) =>
+      ChatConversationScreen(
+        workspaceId: workspaceId,
+        chatId: chatId,
+        showInputComposer: false,
+      ),
+    AsyncData() || AsyncLoading() || AsyncError() => const SizedBox.shrink(),
+  };
+
+  bool _matchesConversation(ConversationEntity? value) =>
+      _isMatchingConversation(value, workspaceId, parentConversationId);
+}
+
+bool _isMatchingConversation(
+  ConversationEntity? conversation,
+  String workspaceId,
+  String parentConversationId,
+) =>
+    conversation?.workspaceId == workspaceId &&
+    conversation?.parentConversationId == parentConversationId;
 
 class ToolsRoute({required final String workspaceId})
     extends GoRouteData
@@ -338,7 +351,7 @@ class AgentsRoute({required final String workspaceId})
     with $AgentsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return AgentsScreen(workspaceId: workspaceId);
+    return agents.AgentsScreen(workspaceId: workspaceId);
   }
 }
 
@@ -347,7 +360,7 @@ class AgentCreateRoute({required final String workspaceId})
     with $AgentCreateRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return AgentDetailScreen(workspaceId: workspaceId);
+    return agent_detail.AgentDetailScreen(workspaceId: workspaceId);
   }
 }
 
@@ -357,7 +370,10 @@ class AgentDetailRoute({
 }) extends GoRouteData with $AgentDetailRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return AgentDetailScreen(workspaceId: workspaceId, agentId: agentId);
+    return agent_detail.AgentDetailScreen(
+      workspaceId: workspaceId,
+      agentId: agentId,
+    );
   }
 }
 

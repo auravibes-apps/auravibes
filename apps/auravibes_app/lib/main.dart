@@ -17,11 +17,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
-  AppFlavorConfig.instance.setAppFlavor(AppFlavorResolver.resolve(appFlavor));
+  _configureFlavor();
   _ensureFlutterBinding();
-  AppLogging.configure(
-    enabled: AppFlavorConfig.instance.appFlavor != Flavor.prod,
-  );
+  _configureLogging();
   await MainLocale.ensureInitialized();
 
   _configureSystemUi();
@@ -30,6 +28,13 @@ Future<void> main() async {
   _runApp(container);
   _scheduleModelSync(container);
 }
+
+void _configureFlavor() =>
+    AppFlavorConfig.instance.setAppFlavor(AppFlavorResolver.resolve(appFlavor));
+
+void _configureLogging() => AppLogging.configure(
+  enabled: AppFlavorConfig.instance.appFlavor != Flavor.prod,
+);
 
 void _ensureFlutterBinding() {
   // Ponytail: debug-only bridge; enable only for MCP driver screenshots.
@@ -238,68 +243,71 @@ class const _AuraSnackBarHost({required final Widget? child})
 }
 
 ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
-  final colors = auraTheme.colors;
-  final textTheme = _auraTextTheme(auraTheme, brightness);
+  final parts = _auraThemeParts(auraTheme, brightness);
+  final baseTheme = _auraBaseMaterialTheme(parts);
 
-  final baseTheme = _auraBaseMaterialTheme(
-    auraTheme,
-    brightness,
-    colors,
-    textTheme,
-  );
-
-  return _auraFeedbackTheme(
-    _auraControlTheme(baseTheme, colors, auraTheme, textTheme, brightness),
-    colors,
-    auraTheme,
-    textTheme,
-  );
+  return _auraFeedbackTheme(_auraControlTheme(baseTheme, parts), parts);
 }
 
-ThemeData _auraControlTheme(
-  ThemeData baseTheme,
-  AuraColorScheme colors,
-  AuraTheme auraTheme,
-  TextTheme textTheme,
-  Brightness brightness,
-) {
-  return baseTheme.copyWith(
-    chipTheme: _auraChipTheme(colors, auraTheme, textTheme, brightness),
-    dialogTheme: _auraDialogTheme(colors, auraTheme, textTheme),
-    iconButtonTheme: _auraIconButtonTheme(colors),
-  );
-}
-
-ThemeData _auraFeedbackTheme(
-  ThemeData baseTheme,
-  AuraColorScheme colors,
-  AuraTheme auraTheme,
-  TextTheme textTheme,
-) {
-  return baseTheme.copyWith(
-    progressIndicatorTheme: _auraProgressIndicatorTheme(colors),
-    snackBarTheme: _auraSnackBarTheme(colors, auraTheme, textTheme),
-  );
-}
-
-ThemeData _auraBaseMaterialTheme(
+typedef _AuraThemeParts = ({
   AuraTheme auraTheme,
   Brightness brightness,
   AuraColorScheme colors,
   TextTheme textTheme,
-) {
-  return ThemeData(
-    extensions: [auraTheme],
-    useMaterial3: true,
-    colorScheme: _auraColorScheme(colors, brightness),
-    brightness: brightness,
-    scaffoldBackgroundColor: colors.background,
-    fontFamily: auraTheme.typography.bodyFontFamily,
-    iconTheme: .new(color: colors.onSurfaceVariant),
-    primaryTextTheme: textTheme,
-    textTheme: textTheme,
+});
+
+_AuraThemeParts _auraThemeParts(AuraTheme auraTheme, Brightness brightness) => (
+  auraTheme: auraTheme,
+  brightness: brightness,
+  colors: auraTheme.colors,
+  textTheme: _auraTextTheme(auraTheme, brightness),
+);
+
+ThemeData _auraControlTheme(ThemeData baseTheme, _AuraThemeParts parts) {
+  return baseTheme.copyWith(
+    chipTheme: _auraChipTheme(parts),
+    dialogTheme: _auraDialogTheme(
+      parts.colors,
+      parts.auraTheme,
+      parts.textTheme,
+    ),
+    iconButtonTheme: _auraIconButtonTheme(parts.colors),
   );
 }
+
+ThemeData _auraFeedbackTheme(ThemeData baseTheme, _AuraThemeParts parts) {
+  return baseTheme.copyWith(
+    progressIndicatorTheme: _auraProgressIndicatorTheme(parts.colors),
+    snackBarTheme: _auraSnackBarTheme(
+      parts.colors,
+      parts.auraTheme,
+      parts.textTheme,
+    ),
+  );
+}
+
+ThemeData _auraBaseMaterialTheme(_AuraThemeParts parts) {
+  return _buildBaseTheme(parts);
+}
+
+ThemeData _buildBaseTheme(_AuraThemeParts parts) =>
+    _buildBaseThemeDetails(_buildBaseThemeCore(parts), parts);
+
+ThemeData _buildBaseThemeCore(_AuraThemeParts parts) => ThemeData(
+  extensions: [parts.auraTheme],
+  useMaterial3: true,
+  colorScheme: _auraColorScheme(parts.colors, parts.brightness),
+  brightness: parts.brightness,
+  fontFamily: parts.auraTheme.typography.bodyFontFamily,
+);
+
+ThemeData _buildBaseThemeDetails(ThemeData theme, _AuraThemeParts parts) =>
+    theme.copyWith(
+      scaffoldBackgroundColor: parts.colors.background,
+      iconTheme: .new(color: parts.colors.onSurfaceVariant),
+      primaryTextTheme: parts.textTheme,
+      textTheme: parts.textTheme,
+    );
 
 ColorScheme _auraColorScheme(AuraColorScheme colors, Brightness brightness) {
   return _auraSurfaceColors(
@@ -391,21 +399,26 @@ ColorScheme _auraLegacySurfaceColors(
   );
 }
 
-ChipThemeData _auraChipTheme(
-  AuraColorScheme colors,
-  AuraTheme auraTheme,
-  TextTheme textTheme,
-  Brightness brightness,
-) {
-  final baseTheme = _auraBaseChipTheme(colors, auraTheme, brightness);
-
-  return baseTheme.copyWith(
-    labelStyle: textTheme.labelMedium?.copyWith(color: colors.onSurface),
-    secondaryLabelStyle: textTheme.labelMedium?.copyWith(
-      color: colors.onSecondary,
-    ),
+ChipThemeData _auraChipTheme(_AuraThemeParts parts) {
+  final baseTheme = _auraBaseChipTheme(
+    parts.colors,
+    parts.auraTheme,
+    parts.brightness,
   );
+
+  return _auraChipLabels(baseTheme, parts.colors, parts.textTheme);
 }
+
+ChipThemeData _auraChipLabels(
+  ChipThemeData baseTheme,
+  AuraColorScheme colors,
+  TextTheme textTheme,
+) => baseTheme.copyWith(
+  labelStyle: textTheme.labelMedium?.copyWith(color: colors.onSurface),
+  secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+    color: colors.onSecondary,
+  ),
+);
 
 ChipThemeData _auraBaseChipTheme(
   AuraColorScheme colors,
@@ -518,19 +531,23 @@ ShapeBorder _auraSnackBarShape(AuraTheme auraTheme) {
 
 TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
   final typography = auraTheme.typography;
+  final bodyParts = (
+    smallSize: typography.fontSizeSm,
+    extraSmallSize: typography.fontSizeXs,
+    mediumWeight: typography.fontWeightMedium,
+  );
 
   return _auraBaseTextTheme(auraTheme, brightness)
       .merge(_auraDisplayTextTheme(auraTheme))
       .merge(_auraHeadingTextTheme(auraTheme))
-      .merge(
-        _auraBodyTextTheme(
-          auraTheme,
-          typography.fontSizeSm,
-          typography.fontSizeXs,
-          typography.fontWeightMedium,
-        ),
-      );
+      .merge(_auraBodyTextTheme(auraTheme, bodyParts));
 }
+
+typedef _AuraBodyTextParts = ({
+  double smallSize,
+  double extraSmallSize,
+  FontWeight mediumWeight,
+});
 
 TextTheme _auraBaseTextTheme(AuraTheme auraTheme, Brightness brightness) {
   return _auraDefaultTextTheme(brightness).apply(
@@ -582,56 +599,45 @@ TextTheme _auraTitleTextTheme(AuraTheme auraTheme) {
   );
 }
 
-TextTheme _auraBodyTextTheme(
-  AuraTheme auraTheme,
-  double smallSize,
-  double extraSmallSize,
-  FontWeight mediumWeight,
-) {
+TextTheme _auraBodyTextTheme(AuraTheme auraTheme, _AuraBodyTextParts parts) {
   return _auraBodyContentTextTheme(
     auraTheme,
-    smallSize,
-    extraSmallSize,
-    mediumWeight,
-  ).merge(
-    _auraLabelTextTheme(auraTheme, smallSize, extraSmallSize, mediumWeight),
-  );
+    parts,
+  ).merge(_auraLabelTextTheme(auraTheme, parts));
 }
 
 TextTheme _auraBodyContentTextTheme(
   AuraTheme auraTheme,
-  double smallSize,
-  double extraSmallSize,
-  FontWeight mediumWeight,
+  _AuraBodyTextParts parts,
 ) {
   return TextTheme(
-    titleSmall: _auraTextStyle(auraTheme, smallSize, fontWeight: mediumWeight),
+    titleSmall: _auraTextStyle(
+      auraTheme,
+      parts.smallSize,
+      fontWeight: parts.mediumWeight,
+    ),
     bodyLarge: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeBase),
-    bodyMedium: _auraTextStyle(auraTheme, smallSize),
-    bodySmall: _auraTextStyle(auraTheme, extraSmallSize),
+    bodyMedium: _auraTextStyle(auraTheme, parts.smallSize),
+    bodySmall: _auraTextStyle(auraTheme, parts.extraSmallSize),
   );
 }
 
-TextTheme _auraLabelTextTheme(
-  AuraTheme auraTheme,
-  double smallSize,
-  double extraSmallSize,
-  FontWeight mediumWeight,
-) {
-  return TextTheme(
-    labelLarge: _auraTextStyle(auraTheme, smallSize, fontWeight: mediumWeight),
-    labelMedium: _auraTextStyle(
+TextTheme _auraLabelTextTheme(AuraTheme auraTheme, _AuraBodyTextParts parts) =>
+    TextTheme(
+      labelLarge: _auraLabelLargeStyle(auraTheme, parts),
+      labelMedium: _auraLabelSmallStyle(auraTheme, parts),
+      labelSmall: _auraLabelSmallStyle(auraTheme, parts),
+    );
+
+TextStyle _auraLabelLargeStyle(AuraTheme auraTheme, _AuraBodyTextParts parts) =>
+    _auraTextStyle(auraTheme, parts.smallSize, fontWeight: parts.mediumWeight);
+
+TextStyle _auraLabelSmallStyle(AuraTheme auraTheme, _AuraBodyTextParts parts) =>
+    _auraTextStyle(
       auraTheme,
-      extraSmallSize,
-      fontWeight: mediumWeight,
-    ),
-    labelSmall: _auraTextStyle(
-      auraTheme,
-      extraSmallSize,
-      fontWeight: mediumWeight,
-    ),
-  );
-}
+      parts.extraSmallSize,
+      fontWeight: parts.mediumWeight,
+    );
 
 TextStyle _auraTextStyle(
   AuraTheme auraTheme,

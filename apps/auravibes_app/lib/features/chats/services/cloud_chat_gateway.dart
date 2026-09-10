@@ -3,6 +3,47 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
+typedef _SubmitToolDecisionRequest = ({
+  String requestId,
+  String turnId,
+  String toolCallId,
+  String argumentsDigest,
+  int expectedTurnRevision,
+  String decision,
+  bool stopAll,
+  String? editedArgumentsJson,
+});
+
+typedef _QueueConversationMessageRequest = ({
+  String requestId,
+  String conversationId,
+  int expectedProjectionRevision,
+  String clientMessageId,
+  String content,
+  List<String> attachmentIds,
+  String? metadataJson,
+});
+
+typedef _StartTurnRequest = ({
+  String requestId,
+  String conversationId,
+  int expectedConversationRevision,
+  String clientMessageId,
+  String content,
+  List<String> attachmentIds,
+  String? modelSelectionId,
+  String? agentId,
+});
+
+typedef _BeginUploadRequest = ({
+  String requestId,
+  String purpose,
+  String displayName,
+  String mimeType,
+  int sizeBytes,
+  String checksumSha256,
+});
+
 class CloudChatGateway {
   new(this._stateGateway)
     : _subscribeConversation = null,
@@ -40,78 +81,11 @@ class CloudChatGateway {
   int get _workspaceId => _stateGateway.workspace.cloudWorkspaceId;
   Client get _client => _stateGateway.client;
 
-  Future<StartTurnResult> startTurn({
-    required String requestId,
-    required String conversationId,
-    required int expectedConversationRevision,
-    required String clientMessageId,
-    required String content,
-    required List<String> attachmentIds,
-    String? modelSelectionId,
-    String? agentId,
-  }) => CloudAppErrors.guardCall(
-    .conversation,
-    () => _client.conversation.startTurn(
-      .new(
-        workspaceId: _workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedConversationRevision: expectedConversationRevision,
-        clientMessageId: clientMessageId,
-        content: content,
-        attachmentIds: attachmentIds,
-        modelSelectionId: modelSelectionId,
-        agentId: agentId,
-        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
-      ),
-    ),
-  );
-  Future<ConversationMutationResult> continueTurn({
-    required String requestId,
-    required String conversationId,
-    required int expectedConversationRevision,
-  }) => CloudAppErrors.guardCall(
-    .conversation,
-    () => _client.conversation.continueTurn(
-      .new(
-        workspaceId: _workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedConversationRevision: expectedConversationRevision,
-        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
-      ),
-    ),
-  );
-  Future<TurnSnapshot> getTurn({required String turnId}) =>
-      CloudAppErrors.guardCall(
-        .conversation,
-        () => _client.conversation.getTurn(
-          .new(
-            workspaceId: _workspaceId,
-            turnId: turnId,
-            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
-          ),
-        ),
-      );
-
-  Future<ConversationSnapshot> getConversationSnapshot(String conversationId) =>
-      _getConversationSnapshot?.call(conversationId) ??
-      CloudAppErrors.guardCall(
-        .conversation,
-        () => _client.conversation.getConversationSnapshot(
-          .new(
-            workspaceId: _workspaceId,
-            conversationId: conversationId,
-            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
-          ),
-        ),
-      );
-
   Stream<ConversationStreamEvent> subscribeConversation(
     String conversationId, {
     required int afterSequence,
   }) {
-    if (_stateGateway.isDisposed) return const Stream.empty();
+    if (_stateGateway.isDisposed()) return const Stream.empty();
     final request = ConversationSubscribeRequest(
       workspaceId: _workspaceId,
       conversationId: conversationId,
@@ -122,49 +96,75 @@ class CloudChatGateway {
     return _subscribeConversation?.call(request) ??
         _client.conversation.subscribeConversation(request);
   }
+}
 
-  Future<ConversationSnapshot> continueConversation({
-    required String requestId,
-    required String conversationId,
-    required int expectedProjectionRevision,
-  }) => CloudAppErrors.guardCall(
-    .conversation,
-    () => _client.conversation.continueConversation(
-      .new(
-        workspaceId: _workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedProjectionRevision: expectedProjectionRevision,
-        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
-      ),
-    ),
-  );
+Future<T> _guardConversation<T>(Future<T> Function() call) =>
+    CloudAppErrors.guardCall(.conversation, call);
 
-  Future<ConversationSnapshot> queueConversationMessage({
-    required String requestId,
-    required String conversationId,
-    required int expectedProjectionRevision,
-    required String clientMessageId,
-    required String content,
-    required List<String> attachmentIds,
-    String? metadataJson,
-  }) => CloudAppErrors.guardCall(
-    .conversation,
-    () => _client.conversation.queueConversationMessage(
-      .new(
-        workspaceId: _workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedProjectionRevision: expectedProjectionRevision,
-        clientMessageId: clientMessageId,
-        content: content,
-        attachmentIds: attachmentIds,
-        metadataJson: metadataJson,
-        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
-      ),
-    ),
-  );
+Future<T> _guardObject<T>(Future<T> Function() call) =>
+    CloudAppErrors.guardCall(.object, call);
 
+SubmitToolDecisionRequest _submitToolDecisionRequest(
+  int workspaceId,
+  _SubmitToolDecisionRequest request,
+) => .new(
+  workspaceId: workspaceId,
+  requestId: request.requestId,
+  turnId: request.turnId,
+  toolCallId: request.toolCallId,
+  argumentsDigest: request.argumentsDigest,
+  expectedTurnRevision: request.expectedTurnRevision,
+  decision: request.decision,
+  stopAll: request.stopAll,
+  editedArgumentsJson: request.editedArgumentsJson,
+  a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+);
+
+QueueConversationMessageRequest _queueConversationMessageRequest(
+  int workspaceId,
+  _QueueConversationMessageRequest request,
+) => .new(
+  workspaceId: workspaceId,
+  requestId: request.requestId,
+  conversationId: request.conversationId,
+  expectedProjectionRevision: request.expectedProjectionRevision,
+  clientMessageId: request.clientMessageId,
+  content: request.content,
+  attachmentIds: request.attachmentIds,
+  metadataJson: request.metadataJson,
+  a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+);
+
+StartTurnRequest _startTurnRequest(
+  int workspaceId,
+  _StartTurnRequest request,
+) => .new(
+  workspaceId: workspaceId,
+  requestId: request.requestId,
+  conversationId: request.conversationId,
+  expectedConversationRevision: request.expectedConversationRevision,
+  clientMessageId: request.clientMessageId,
+  content: request.content,
+  attachmentIds: request.attachmentIds,
+  modelSelectionId: request.modelSelectionId,
+  agentId: request.agentId,
+  a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+);
+
+BeginUploadRequest _beginUploadRequest(
+  int workspaceId,
+  _BeginUploadRequest request,
+) => .new(
+  workspaceId: workspaceId,
+  requestId: request.requestId,
+  purpose: request.purpose,
+  displayName: request.displayName,
+  mimeType: request.mimeType,
+  sizeBytes: request.sizeBytes,
+  checksumSha256: request.checksumSha256,
+);
+
+extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
   Future<ConversationSnapshot> stopConversation({
     required String requestId,
     required String conversationId,
@@ -182,30 +182,11 @@ class CloudChatGateway {
     ),
   );
 
-  Future<ConversationMutationResult> submitToolDecision({
-    required String requestId,
-    required String turnId,
-    required String toolCallId,
-    required String argumentsDigest,
-    required int expectedTurnRevision,
-    required String decision,
-    bool stopAll = false,
-    String? editedArgumentsJson,
-  }) => CloudAppErrors.guardCall(
-    .conversation,
+  Future<ConversationMutationResult> submitToolDecision(
+    _SubmitToolDecisionRequest request,
+  ) => _guardConversation(
     () => _client.conversation.submitToolDecision(
-      .new(
-        workspaceId: _workspaceId,
-        requestId: requestId,
-        turnId: turnId,
-        toolCallId: toolCallId,
-        argumentsDigest: argumentsDigest,
-        expectedTurnRevision: expectedTurnRevision,
-        decision: decision,
-        stopAll: stopAll,
-        editedArgumentsJson: editedArgumentsJson,
-        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
-      ),
+      _submitToolDecisionRequest(_workspaceId, request),
     ),
   );
   Future<ConversationMutationResult> cancelTurn({
@@ -281,6 +262,34 @@ class CloudChatGateway {
       request.copyWith(workspaceId: _workspaceId),
     ),
   );
+}
+
+extension CloudChatGatewayConversationOperations on CloudChatGateway {
+  Future<ConversationSnapshot> continueConversation({
+    required String requestId,
+    required String conversationId,
+    required int expectedProjectionRevision,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.continueConversation(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedProjectionRevision: expectedProjectionRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+      ),
+    ),
+  );
+
+  Future<ConversationSnapshot> queueConversationMessage(
+    _QueueConversationMessageRequest request,
+  ) => _guardConversation(
+    () => _client.conversation.queueConversationMessage(
+      _queueConversationMessageRequest(_workspaceId, request),
+    ),
+  );
+
   Future<void> deleteConversation(DeleteConversationRequest request) =>
       CloudAppErrors.guardCall(
         .conversation,
@@ -290,28 +299,62 @@ class CloudChatGateway {
       );
 }
 
-extension on CloudChatGateway {
-  Future<BeginUploadResult> beginUpload({
+extension CloudChatGatewayTurnOperations on CloudChatGateway {
+  Future<StartTurnResult> startTurn(_StartTurnRequest request) =>
+      _guardConversation(
+        () => _client.conversation.startTurn(
+          _startTurnRequest(_workspaceId, request),
+        ),
+      );
+
+  Future<ConversationMutationResult> continueTurn({
     required String requestId,
-    required String purpose,
-    required String displayName,
-    required String mimeType,
-    required int sizeBytes,
-    required String checksumSha256,
+    required String conversationId,
+    required int expectedConversationRevision,
   }) => CloudAppErrors.guardCall(
-    .object,
-    () => _client.object.beginUpload(
+    .conversation,
+    () => _client.conversation.continueTurn(
       .new(
         workspaceId: _workspaceId,
         requestId: requestId,
-        purpose: purpose,
-        displayName: displayName,
-        mimeType: mimeType,
-        sizeBytes: sizeBytes,
-        checksumSha256: checksumSha256,
+        conversationId: conversationId,
+        expectedConversationRevision: expectedConversationRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
+
+  Future<TurnSnapshot> getTurn({required String turnId}) =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.getTurn(
+          .new(
+            workspaceId: _workspaceId,
+            turnId: turnId,
+            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+          ),
+        ),
+      );
+
+  Future<ConversationSnapshot> getConversationSnapshot(String conversationId) =>
+      _getConversationSnapshot?.call(conversationId) ??
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.getConversationSnapshot(
+          .new(
+            workspaceId: _workspaceId,
+            conversationId: conversationId,
+            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+          ),
+        ),
+      );
+
+  Future<BeginUploadResult> beginUpload(_BeginUploadRequest request) =>
+      _guardObject(
+        () => _client.object.beginUpload(
+          _beginUploadRequest(_workspaceId, request),
+        ),
+      );
 
   Future<ObjectResult> completeUpload({required int objectId}) =>
       CloudAppErrors.guardCall(
@@ -340,11 +383,7 @@ extension on CloudChatGateway {
         workspaceId: _workspaceId,
         objectId: objectId,
         requestId: requestId,
-        purpose: 'unused',
-        displayName: 'unused',
-        mimeType: 'unused',
-        sizeBytes: 0,
-        checksumSha256: 'unused',
+        expectedRevision: expectedRevision,
       ),
     ),
   );

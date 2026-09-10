@@ -22,6 +22,13 @@ typedef _SecretUpdateRequest = ({
   Map<String, String> data,
 });
 
+typedef _SecretMutationRequest = ({
+  CloudServiceConnection connection,
+  Map<String, String> data,
+  String? secret,
+  bool clearSecret,
+});
+
 class const CloudServiceConnectionUsecases(
   final CloudWorkspaceResourceStore _store,
 ) {
@@ -158,33 +165,33 @@ Future<void> _updateSecret(
   final connection = request.connection;
   final update = request.update;
 
-  await _mutateSecret(
-    store,
+  await _mutateSecret(store, (
     connection: connection,
     data: request.data,
     secret: _secretReplacement(update),
     clearSecret: update.secretEdit == ServiceConnectionSecretEdit.clear,
-  );
+  ));
 }
 
 Future<void> _mutateSecret(
-  CloudWorkspaceResourceStore store, {
-  required CloudServiceConnection connection,
-  required Map<String, String> data,
-  required String? secret,
-  required bool clearSecret,
-}) => store.mutateCredential(
-  operation: .update,
-  kind: .serviceConnection,
-  id: connection.id,
-  data: data,
-  resourceRevision: connection.revision,
-  secretKind: .skillCredential,
-  scope: connection.scope,
-  secret: secret,
-  clearSecret: clearSecret,
-  secretRevision: connection.secretRevision,
-);
+  CloudWorkspaceResourceStore store,
+  _SecretMutationRequest request,
+) {
+  final connection = request.connection;
+
+  return store.mutateCredential(
+    operation: .update,
+    kind: .serviceConnection,
+    id: connection.id,
+    data: request.data,
+    resourceRevision: connection.revision,
+    secretKind: .skillCredential,
+    scope: connection.scope,
+    secret: request.secret,
+    clearSecret: request.clearSecret,
+    secretRevision: connection.secretRevision,
+  );
+}
 
 String? _secretReplacement(GenericServiceConnectionUpdate update) =>
     update.secretEdit == ServiceConnectionSecretEdit.replace

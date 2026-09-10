@@ -16,6 +16,7 @@ enum ModelProvidersType(final String value) {
 ///
 /// A provider is a company or service that offers AI models,
 /// such as OpenAI, Anthropic, Google, etc.
+@immutable
 @freezed
 abstract class const ApiModelProviderEntity._() with _$ApiModelProviderEntity {
   /// Creates a new ApiModelProviderEntity instance.
@@ -48,6 +49,14 @@ abstract class const ApiModelProviderEntity._() with _$ApiModelProviderEntity {
 
   /// Returns true if the provider has documentation.
   bool get hasDocumentation => doc?.isNotEmpty ?? false;
+
+  bool isForType(ModelProvidersType expectedType) => type == expectedType;
+
+  @override
+  Map<String, dynamic> toJson();
+
+  @override
+  String toString();
 
   static ModelProvidersType? _getType(Map<String, dynamic> json) {
     final npm = json.get<String?>('npm');

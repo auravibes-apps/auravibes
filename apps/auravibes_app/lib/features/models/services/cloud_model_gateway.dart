@@ -2,6 +2,29 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
+typedef _PutSecret = Future<PutWorkspaceSecretResponse> Function({
+  required String requestId,
+  required WorkspaceSecretKind secretKind,
+  required WorkspaceSecretScope scope,
+  required String resourceId,
+  required String secret,
+  int? expectedRevision,
+});
+
+typedef _CreateModelConnection = Future<ModelConnectionView> Function({
+  required String connectionId,
+  required String name,
+  required String providerId,
+  String? url,
+});
+
+typedef _UpdateModelConnection = Future<ModelConnectionView> Function({
+  required String connectionId,
+  required int expectedRevision,
+  required String name,
+  required String? url,
+});
+
 class CloudModelGateway {
   new(this._stateGateway)
     : _testAndSync = null,
@@ -59,27 +82,21 @@ class CloudModelGateway {
     required String code,
   })?
   _completeCodexOAuth;
+  _PutSecret get putSecret => _stateGateway.putSecret;
   int get _workspaceId => _stateGateway.workspace.cloudWorkspaceId;
   Client get _client => _stateGateway.client;
 
-  Future<PutWorkspaceSecretResponse> putSecret({
-    required String requestId,
-    required WorkspaceSecretKind secretKind,
-    required WorkspaceSecretScope scope,
-    required String resourceId,
-    required String secret,
-    int? expectedRevision,
-  }) => _stateGateway.putSecret(
-    requestId: requestId,
-    secretKind: secretKind,
-    scope: scope,
-    resourceId: resourceId,
-    secret: secret,
-    expectedRevision: expectedRevision,
-  );
-}
+  @override
+  String toString() => super.toString();
 
-extension CloudModelGatewaySecrets on CloudModelGateway {
+  Future<List<ModelConnectionView>> listModelConnections() {
+    final request = ListModelConnectionsRequest(workspaceId: _workspaceId);
+    return CloudAppErrors.guardCall(
+      .model,
+      () => _list?.call(request) ?? _client.modelConnection.list(request),
+    );
+  }
+
   Future<ModelSyncResult> testAndSyncModelConnection({
     required String connectionId,
   }) => CloudAppErrors.guardCall(
@@ -90,32 +107,25 @@ extension CloudModelGatewaySecrets on CloudModelGateway {
           .new(workspaceId: _workspaceId, connectionId: connectionId),
         ),
   );
-  Future<ModelConnectionView> createModelConnection({
-    required String connectionId,
-    required String name,
-    required String providerId,
-    String? url,
-  }) => CloudAppErrors.guardCall(.model, () {
-    final request = CreateModelConnectionRequest(
-      workspaceId: _workspaceId,
-      requestId: const Uuid().v4(),
-      connectionId: connectionId,
-      name: name,
-      providerId: providerId,
-      url: url,
-    );
-
-    return _create?.call(request) ?? _client.modelConnection.create(request);
-  });
 }
 
 extension CloudModelGatewayConnections on CloudModelGateway {
-  Future<List<ModelConnectionView>> listModelConnections() {
-    final request = ListModelConnectionsRequest(workspaceId: _workspaceId);
+  _CreateModelConnection get createModelConnection =>
+      ({required connectionId, required name, required providerId, url}) =>
+          _createModelConnection((
+            connectionId: connectionId,
+            name: name,
+            providerId: providerId,
+            url: url,
+          ));
 
+  Future<ModelConnectionView> _createModelConnection(
+    ({String connectionId, String name, String providerId, String? url}) value,
+  ) {
+    final request = _createRequest(_workspaceId, value);
     return CloudAppErrors.guardCall(
       .model,
-      () => _list?.call(request) ?? _client.modelConnection.list(request),
+      () => _create?.call(request) ?? _client.modelConnection.create(request),
     );
   }
 
@@ -128,48 +138,62 @@ extension CloudModelGatewayConnections on CloudModelGateway {
           currentSequence: state.currentSequence,
         );
       });
-  Future<ModelConnectionView> updateModelConnection({
-    required String connectionId,
-    required int expectedRevision,
-    required String name,
-    required String? url,
-  }) => CloudAppErrors.guardCall(.model, () {
-    final request = UpdateModelConnectionRequest(
-      workspaceId: _workspaceId,
-      requestId: const Uuid().v4(),
-      connectionId: connectionId,
-      expectedRevision: expectedRevision,
-      name: name,
-      url: url,
-    );
+  _UpdateModelConnection get updateModelConnection =>
+      ({
+        required connectionId,
+        required expectedRevision,
+        required name,
+        required url,
+      }) => _updateModelConnection((
+        connectionId: connectionId,
+        expectedRevision: expectedRevision,
+        name: name,
+        url: url,
+      ));
 
-    return _update?.call(request) ?? _client.modelConnection.update(request);
-  });
+  Future<ModelConnectionView> _updateModelConnection(
+    ({String connectionId, int expectedRevision, String name, String? url})
+    value,
+  ) {
+    final request = _updateRequest(_workspaceId, value);
+    return CloudAppErrors.guardCall(
+      .model,
+      () => _update?.call(request) ?? _client.modelConnection.update(request),
+    );
+  }
+
   Future<void> deleteModelConnection({
     required String connectionId,
     required int expectedRevision,
-  }) => CloudAppErrors.guardCall(.model, () {
-    final request = DeleteModelConnectionRequest(
-      workspaceId: _workspaceId,
-      requestId: const Uuid().v4(),
-      connectionId: connectionId,
-      expectedRevision: expectedRevision,
-    );
+  }) => _deleteModelConnection((
+    connectionId: connectionId,
+    expectedRevision: expectedRevision,
+  ));
 
-    return _delete?.call(request) ?? _client.modelConnection.delete(request);
-  });
+  Future<void> _deleteModelConnection(
+    ({String connectionId, int expectedRevision}) value,
+  ) {
+    final request = _deleteRequest(_workspaceId, value);
+    return CloudAppErrors.guardCall(
+      .model,
+      () => _delete?.call(request) ?? _client.modelConnection.delete(request),
+    );
+  }
 }
 
 extension CloudModelGatewaySelections on CloudModelGateway {
-  Future<List<WorkspaceModelSelectionView>> listModelSelections() =>
-      CloudAppErrors.guardCall(.model, () {
-        final request = ListWorkspaceModelSelectionsRequest(
-          workspaceId: _workspaceId,
-        );
+  Future<List<WorkspaceModelSelectionView>> listModelSelections() {
+    final request = ListWorkspaceModelSelectionsRequest(
+      workspaceId: _workspaceId,
+    );
+    return CloudAppErrors.guardCall(
+      .model,
+      () =>
+          _listSelections?.call(request) ??
+          _client.modelConnection.listSelections(request),
+    );
+  }
 
-        return _listSelections?.call(request) ??
-            _client.modelConnection.listSelections(request);
-      });
   Stream<List<WorkspaceModelSelectionView>> watchModelSelections() =>
       _stateGateway.watch(
         const {'modelConnection', 'secretConfiguredState'},
@@ -213,16 +237,72 @@ extension CloudModelGatewayCatalog on CloudModelGateway {
     required String transactionId,
     required String state,
     required String code,
-  }) => CloudAppErrors.guardCall(
-    .oauth,
-    () =>
-        _completeCodexOAuth?.call(
-          transactionId: transactionId,
-          state: state,
-          code: code,
-        ) ??
-        _client.codexOAuth.complete(
-          .new(transactionId: transactionId, state: state, code: code),
-        ),
-  );
+  }) => _completeCodexOAuthRequest((
+    transactionId: transactionId,
+    state: state,
+    code: code,
+  ));
+
+  Future<CompleteCodexOAuthResult> _completeCodexOAuthRequest(
+    ({String transactionId, String state, String code}) value,
+  ) {
+    final request = _completeRequest(value);
+    return CloudAppErrors.guardCall(
+      .oauth,
+      () => _completeCodexOAuthCall(value, request),
+    );
+  }
+
+  Future<CompleteCodexOAuthResult> _completeCodexOAuthCall(
+    ({String transactionId, String state, String code}) value,
+    CompleteCodexOAuthRequest request,
+  ) =>
+      _completeCodexOAuth?.call(
+        transactionId: value.transactionId,
+        state: value.state,
+        code: value.code,
+      ) ??
+      _client.codexOAuth.complete(request);
 }
+
+CreateModelConnectionRequest _createRequest(
+  int workspaceId,
+  ({String connectionId, String name, String providerId, String? url}) value,
+) => .new(
+  workspaceId: workspaceId,
+  requestId: const Uuid().v4(),
+  connectionId: value.connectionId,
+  name: value.name,
+  providerId: value.providerId,
+  url: value.url,
+);
+
+UpdateModelConnectionRequest _updateRequest(
+  int workspaceId,
+  ({String connectionId, int expectedRevision, String name, String? url}) value,
+) => .new(
+  workspaceId: workspaceId,
+  requestId: const Uuid().v4(),
+  connectionId: value.connectionId,
+  expectedRevision: value.expectedRevision,
+  name: value.name,
+  url: value.url,
+);
+
+DeleteModelConnectionRequest _deleteRequest(
+  int workspaceId,
+  ({String connectionId, int expectedRevision}) value,
+) => .new(
+  workspaceId: workspaceId,
+  requestId: const Uuid().v4(),
+  connectionId: value.connectionId,
+  expectedRevision: value.expectedRevision,
+);
+
+CompleteCodexOAuthRequest _completeRequest(
+  ({String transactionId, String state, String code}) value,
+) => .new(
+  transactionId: value.transactionId,
+  state: value.state,
+  code: value.code,
+);

@@ -131,14 +131,18 @@ AgentToolOverrideEntity _toAgentToolOverride(WorkspaceResource resource) {
 
 WorkspacePatchOperation _agentToolPermissionOperation(
   _AgentToolPermissionOperation request,
-) => WorkspacePatchOperation(
-  operation: _agentToolOperationKind(request.existing),
-  resourceKind: .agentAssociation,
-  resourceId: _agentToolResourceId(request.existing),
-  data: jsonEncode(_agentToolPermissionData(request)),
-  fieldMask: const [],
-  expectedRevision: request.existing?.revision,
-);
+) {
+  final existing = request.existing;
+
+  return WorkspacePatchOperation(
+    operation: _agentToolOperationKind(existing),
+    resourceKind: .agentAssociation,
+    resourceId: _agentToolResourceId(existing),
+    data: jsonEncode(_agentToolPermissionData(request)),
+    fieldMask: const [],
+    expectedRevision: existing?.revision,
+  );
+}
 
 WorkspacePatchOperationKind _agentToolOperationKind(
   WorkspaceResource? existing,

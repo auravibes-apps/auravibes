@@ -20,6 +20,7 @@ enum ToolPermissionMode {
 ///
 /// This represents user preferences for tools at the workspace level,
 /// allowing different workspaces to have different tool configurations.
+@immutable
 @freezed
 abstract class const WorkspaceToolEntity._() with _$WorkspaceToolEntity {
   /// Creates a new WorkspaceTool instance.
@@ -58,14 +59,27 @@ abstract class const WorkspaceToolEntity._() with _$WorkspaceToolEntity {
     String? workspaceToolsGroupId,
   }) = _WorkspaceToolEntity;
 
-  /// Returns true if the tool has custom configuration.
-  bool get hasConfig => config?.isNotEmpty ?? false;
-
   /// Returns true if the tool is currently enabled.
   bool get isAvailable => isEnabled;
 
   /// Returns true if this tool belongs to a group.
   bool get belongsToGroup => workspaceToolsGroupId?.isNotEmpty ?? false;
+
+  bool get isNative => nativeType != null;
+
+  @override
+  String toString();
+
+  /// Returns a stable identifier for this workspace tool setting.
+  String identity() => '$workspaceId:$toolId';
+
+  /// Returns true if this setting belongs to [workspaceId].
+  bool isForWorkspace(String workspaceId) => this.workspaceId == workspaceId;
+}
+
+extension WorkspaceToolEntityHelpers on WorkspaceToolEntity {
+  /// Returns true if the tool has custom configuration.
+  bool get hasConfig => config?.isNotEmpty ?? false;
 
   /// Returns true if this tool has a description.
   bool get hasDescription => description?.isNotEmpty ?? false;
@@ -73,18 +87,25 @@ abstract class const WorkspaceToolEntity._() with _$WorkspaceToolEntity {
   /// Returns true if this tool has an input schema (MCP tool).
   bool get hasInputSchema => inputSchema?.isNotEmpty ?? false;
 
-  UserToolType? get buildInType {
-    return UserToolType.fromValue(toolId);
-  }
+  bool hasToolId(String value) => toolId == value;
 
-  NativeToolType? get nativeType {
-    return NativeToolType.fromValue(toolId);
-  }
+  bool hasWorkspaceId(String value) => workspaceId == value;
 
-  bool get isNative => nativeType != null;
+  bool usesPermissionMode(ToolPermissionMode mode) => permissionMode == mode;
+}
+
+extension WorkspaceToolEntityClassification on WorkspaceToolEntity {
+  UserToolType? get buildInType => UserToolType.fromValue(toolId);
+
+  NativeToolType? get nativeType => NativeToolType.fromValue(toolId);
+
+  bool isBuiltInTool() => buildInType != null;
+
+  bool isNativeTool() => nativeType != null;
 }
 
 /// Entity for creating/updating workspace tool settings.
+@immutable
 @freezed
 abstract class const WorkspaceToolToCreate._() with _$WorkspaceToolToCreate {
   /// Creates a new WorkspaceToolToCreate instance.
@@ -116,4 +137,11 @@ abstract class const WorkspaceToolToCreate._() with _$WorkspaceToolToCreate {
 
   /// Returns true if the tool configuration is valid.
   bool get hasValidConfig => hasValidToolId;
+
+  bool isForTool(String value) => toolId == value;
+
+  bool hasWorkspaceGroup() => workspaceToolsGroupId?.isNotEmpty == true;
+
+  @override
+  String toString();
 }

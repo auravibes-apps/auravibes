@@ -36,20 +36,10 @@ class AuraSpinner extends StatelessWidget {
   final String? semanticLabel;
 
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final spinnerColor = color ?? auraColors.colorFor(tint ?? AuraTint.primary);
-
-    return SizedBox(
-      width: _getSpinnerSize(),
-      height: _getSpinnerSize(),
-      child: CircularProgressIndicator(
-        color: spinnerColor,
-        strokeWidth: strokeWidth ?? _getDefaultStrokeWidth(),
-        semanticsLabel: semanticLabel,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _AuraSpinnerContent.fromSpinner(
+    spinner: this,
+    colors: context.auraColors,
+  );
 
   double _getSpinnerSize() {
     return switch (size) {
@@ -70,6 +60,31 @@ class AuraSpinner extends StatelessWidget {
       .extraLarge => 4.0,
     };
   }
+}
+
+class _AuraSpinnerContent extends StatelessWidget {
+  _AuraSpinnerContent({required double size, required Widget indicator})
+    : _size = size,
+      _indicator = indicator;
+
+  _AuraSpinnerContent.fromSpinner({
+    required AuraSpinner spinner,
+    required AuraColorScheme colors,
+  }) : this(
+         size: spinner._getSpinnerSize(),
+         indicator: CircularProgressIndicator(
+           color: spinner.color ?? colors.colorFor(spinner.tint ?? .primary),
+           strokeWidth: spinner.strokeWidth ?? spinner._getDefaultStrokeWidth(),
+           semanticsLabel: spinner.semanticLabel,
+         ),
+       );
+
+  final double _size;
+  final Widget _indicator;
+
+  @override
+  Widget build(BuildContext context) =>
+      SizedBox(width: _size, height: _size, child: _indicator);
 }
 
 /// The size of a [AuraSpinner].

@@ -5,6 +5,7 @@ import 'dart:math' as math show pi, sin;
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 class _DelayTween({
@@ -74,6 +75,12 @@ class AuraLoadingCircle extends StatefulWidget {
 
   /// Controller.
   final AnimationController? controller;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<AuraTint>('tint', tint));
+  }
 
   @override
   State<AuraLoadingCircle> createState() => _AuraLoadingCircleState();
@@ -187,19 +194,27 @@ class const _LoadingCircleItemTransform({
   required final _LoadingCircleItem item,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Transform(
-    transform: .rotationZ((360 / item.itemCount) * item.index * 0.0174533),
-    child: Align(
-      child: _LoadingCircleDot(
-        index: item.index,
-        itemCount: item.itemCount,
-        itemSize: item.itemSize,
-        itemBuilder: item.circle.itemBuilder,
-        tint: item.circle.tint,
-        controller: item.controller,
-      ),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      _LoadingCircleItemTransformData(item: item).child;
+}
+
+class _LoadingCircleItemTransformData {
+  _LoadingCircleItemTransformData({required _LoadingCircleItem item})
+    : child = Transform(
+        transform: .rotationZ((360 / item.itemCount) * item.index * 0.0174533),
+        child: Align(
+          child: _LoadingCircleDot(
+            index: item.index,
+            itemCount: item.itemCount,
+            itemSize: item.itemSize,
+            itemBuilder: item.circle.itemBuilder,
+            tint: item.circle.tint,
+            controller: item.controller,
+          ),
+        ),
+      );
+
+  final Widget child;
 }
 
 class const _LoadingCircleDot({

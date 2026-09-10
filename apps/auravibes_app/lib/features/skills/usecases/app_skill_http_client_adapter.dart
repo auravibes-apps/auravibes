@@ -13,6 +13,14 @@ class AppSkillHttpClientAdapter {
   final AppSkillUrlGuard _requirePublicUri;
 
   CancelableOperation<UrlResponse> execute(UrlRequest request) {
+    final pending = _newPendingRequest();
+
+    Future<void>(() => _completeRequest(request, pending));
+
+    return pending.completer.operation;
+  }
+
+  _PendingAppSkillRequest _newPendingRequest() {
     late final _PendingAppSkillRequest pending;
     pending = _PendingAppSkillRequest(
       CancelableCompleter<UrlResponse>(
@@ -20,9 +28,7 @@ class AppSkillHttpClientAdapter {
       ),
     );
 
-    Future<void>(() => _completeRequest(request, pending));
-
-    return pending.completer.operation;
+    return pending;
   }
 
   Future<void> _completeRequest(

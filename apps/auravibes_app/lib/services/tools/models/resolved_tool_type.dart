@@ -16,84 +16,49 @@ enum ResolvedToolType {
 ///
 /// This abstraction allows the tool calling manager to handle both types
 /// uniformly while preserving the necessary information for execution.
-class ResolvedTool {
-  const ResolvedTool._({
-    required this.type,
-    required this.tableId,
-    required this.toolIdentifier,
-    required this.fullName,
-    this.builtInTool,
-    this.mcpServerId,
-    this.mcpSlug,
-    this.nativeTool,
-    this.skillSlug,
-    this.skillToolSlug,
-    this.target,
-  }) : isBuiltIn = type == ResolvedToolType.builtIn,
-       isMcp = type == ResolvedToolType.mcp,
-       isNative = type == ResolvedToolType.native,
-       isSkillControl = type == ResolvedToolType.skillControl,
-       isSkillCommand = type == ResolvedToolType.skillCommand,
-       isSkillNative = type == ResolvedToolType.skillNative,
-       isSkillTemplate = type == ResolvedToolType.skillTemplate;
+class const ResolvedTool._({
+  required final ResolvedToolType type,
+  required final String tableId,
+  required final String toolIdentifier,
+  required final String fullName,
+  final UserToolType? builtInTool,
+  final String? mcpServerId,
+  final String? mcpSlug,
+  final NativeToolType? nativeTool,
+  final String? skillSlug,
+  final String? skillToolSlug,
+  final AgentResolvedToolName? target,
+}) {
+  /// Creates a resolved MCP tool.
+  static final mcp =
+      ({
+        required String tableId,
+        required String toolIdentifier,
+        required String mcpServerId,
+        required String mcpSlug,
+      }) => ResolvedTool._(
+        type: .mcp,
+        tableId: tableId,
+        toolIdentifier: toolIdentifier,
+        fullName: toolIdentifier,
+        mcpServerId: mcpServerId,
+        mcpSlug: mcpSlug,
+      );
 
-  /// The type of tool (built-in or MCP).
-  final ResolvedToolType type;
-
-  /// The database table ID for permission checks.
-  final String tableId;
-
-  /// The tool identifier (for example, "calculator" or original MCP tool name).
-  final String toolIdentifier;
-
-  final UserToolType? builtInTool;
-  final String? mcpServerId;
-  final String? mcpSlug;
-  final NativeToolType? nativeTool;
-  final String? skillSlug;
-  final String? skillToolSlug;
-  final AgentResolvedToolName? target;
-  final String fullName;
-  final bool isBuiltIn;
-  final bool isMcp;
-  final bool isNative;
-  final bool isSkillControl;
-  final bool isSkillCommand;
-  final bool isSkillNative;
-  final bool isSkillTemplate;
-
-  static ResolvedTool _create({
-    required ResolvedToolType type,
-    required String tableId,
-    required String toolIdentifier,
-    required String fullName,
-    UserToolType? builtInTool,
-    String? mcpServerId,
-    String? mcpSlug,
-    NativeToolType? nativeTool,
-    String? skillSlug,
-    String? skillToolSlug,
-    AgentResolvedToolName? target,
-  }) => ResolvedTool._(
-    type: type,
-    tableId: tableId,
-    toolIdentifier: toolIdentifier,
-    fullName: fullName,
-    builtInTool: builtInTool,
-    mcpServerId: mcpServerId,
-    mcpSlug: mcpSlug,
-    nativeTool: nativeTool,
-    skillSlug: skillSlug,
-    skillToolSlug: skillToolSlug,
-    target: target,
-  );
+  final bool isBuiltIn = type == .builtIn;
+  final bool isMcp = type == .mcp;
+  final bool isNative = type == .native;
+  final bool isSkillControl = type == .skillControl;
+  final bool isSkillCommand = type == .skillCommand;
+  final bool isSkillNative = type == .skillNative;
+  final bool isSkillTemplate = type == .skillTemplate;
 
   /// Creates a resolved built-in tool.
   static ResolvedTool builtIn({
     required String tableId,
     required String toolIdentifier,
     required UserToolType tooltype,
-  }) => _create(
+  }) => ResolvedTool._(
     type: .builtIn,
     tableId: tableId,
     toolIdentifier: toolIdentifier,
@@ -101,25 +66,10 @@ class ResolvedTool {
     builtInTool: tooltype,
   );
 
-  /// Creates a resolved MCP tool.
-  static ResolvedTool mcp({
-    required String tableId,
-    required String toolIdentifier,
-    required String mcpServerId,
-    required String mcpSlug,
-  }) => _create(
-    type: .mcp,
-    tableId: tableId,
-    toolIdentifier: toolIdentifier,
-    fullName: toolIdentifier,
-    mcpServerId: mcpServerId,
-    mcpSlug: mcpSlug,
-  );
-
   static ResolvedTool native({
     required String tableId,
     required NativeToolType nativeToolType,
-  }) => _create(
+  }) => ResolvedTool._(
     type: .native,
     tableId: tableId,
     toolIdentifier: nativeToolType.value,
@@ -127,17 +77,18 @@ class ResolvedTool {
     nativeTool: nativeToolType,
   );
 
-  static ResolvedTool skillControl({required String toolIdentifier}) => _create(
-    type: .skillControl,
-    tableId: toolIdentifier,
-    toolIdentifier: toolIdentifier,
-    fullName: toolIdentifier,
-  );
+  static ResolvedTool skillControl({required String toolIdentifier}) =>
+      ResolvedTool._(
+        type: .skillControl,
+        tableId: toolIdentifier,
+        toolIdentifier: toolIdentifier,
+        fullName: toolIdentifier,
+      );
 
   static ResolvedTool skillCommand({
     required String commandName,
     AgentResolvedToolName? target,
-  }) => _create(
+  }) => ResolvedTool._(
     type: .skillCommand,
     tableId: commandName,
     toolIdentifier: commandName,
@@ -149,7 +100,7 @@ class ResolvedTool {
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
-  }) => _create(
+  }) => ResolvedTool._(
     type: .skillTemplate,
     tableId: tableId,
     toolIdentifier: toolIdentifier,
@@ -161,7 +112,7 @@ class ResolvedTool {
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
-  }) => _create(
+  }) => ResolvedTool._(
     type: .skillNative,
     tableId: tableId,
     toolIdentifier: toolIdentifier,

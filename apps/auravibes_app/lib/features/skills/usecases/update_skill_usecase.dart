@@ -31,22 +31,34 @@ class const UpdateSkillUsecase(
     if (title == null) return;
 
     ValidateSkillTitleUsecase.call(title);
-    final existingSkill = await _existingSkill(skillId);
-    if (existingSkill == null) {
-      throw StateError('Skill not found: $skillId');
-    }
-
+    final existingSkill = await _requireExistingSkill(skillId);
     final duplicate = await _duplicateSkillTitle(existingSkill, title);
-    if (duplicate != null && duplicate.id != skillId) {
-      throw const SkillTitleValidationException(
-        'A skill with this title already exists',
-      );
-    }
+    _throwIfDuplicateSkill(skillId, duplicate);
+  }
+
+  Future<SkillEntity> _requireExistingSkill(String skillId) async {
+    final existingSkill = await _existingSkill(skillId);
+    if (existingSkill != null) return existingSkill;
+
+    throw StateError('Skill not found: $skillId');
+  }
+
+  void _throwIfDuplicateSkill(String skillId, SkillEntity? duplicate) {
+    if (duplicate == null || duplicate.id == skillId) return;
+
+    throw const SkillTitleValidationException(
+      'A skill with this title already exists',
+    );
   }
 
   Future<SkillEntity?> _existingSkill(String skillId) {
-    return cloudStore?.skill(skillId) ??
-        _skillsRepository?.getSkillById(skillId);
+    final cloud = cloudStore;
+    if (cloud != null) return cloud.skill(skillId);
+
+    final repository = _skillsRepository;
+    if (repository == null) throw StateError('Skill store is unavailable');
+
+    return repository.getSkillById(skillId);
   }
 
   Future<SkillEntity?> _duplicateSkillTitle(

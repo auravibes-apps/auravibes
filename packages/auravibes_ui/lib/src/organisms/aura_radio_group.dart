@@ -46,73 +46,210 @@ class AuraRadioGroup<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     if (options.isEmpty) return const SizedBox.shrink();
 
-    final optionsWidget = _AuraRadioOptions<T>(
+    return _AuraRadioGroupContent<T>(
       value: value,
       onChanged: onChanged,
       options: options,
       direction: direction,
       tint: tint,
+      label: label,
     );
-
-    final label = this.label;
-    if (label != null) {
-      return Column(
-        crossAxisAlignment: .start,
-        children: [
-          DefaultTextStyle.merge(
-            style: .new(color: context.auraColors.onSurface),
-            child: label,
-          ),
-          const AuraSizedBox(height: .sm),
-          optionsWidget,
-        ],
-      );
-    }
-
-    return optionsWidget;
   }
 }
 
-class const _AuraRadioOptions<T>({
+class const _AuraRadioGroupContent<T>({
   required final T? value,
   required final ValueChanged<T?>? onChanged,
   required final List<AuraRadioOption<T>> options,
   required final Axis direction,
   required final AuraTint? tint,
+  required final Widget? label,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return switch (direction) {
-      .vertical => Column(
-        crossAxisAlignment: .start,
-        children: [
-          for (int i = 0; i < options.length; i++) ...[
-            _AuraRadioOption<T>(
-              option: options[i],
-              groupValue: value,
-              onChanged: onChanged,
-              tint: tint,
-            ),
-            if (i < options.length - 1) const AuraSizedBox(height: .sm),
-          ],
-        ],
-      ),
-      .horizontal => Wrap(
-        spacing: context.auraTheme.fromSpacing(.md),
-        runSpacing: context.auraTheme.fromSpacing(.sm),
-        children: [
-          for (int i = 0; i < options.length; i++)
-            _AuraRadioOption<T>(
-              option: options[i],
-              groupValue: value,
-              onChanged: onChanged,
-              tint: tint,
-              shrinkWrap: true,
-            ),
-        ],
-      ),
-    };
-  }
+  Widget build(BuildContext context) => _AuraRadioGroupContentData<T>(
+    value: value,
+    onChanged: onChanged,
+    options: options,
+    direction: direction,
+    tint: tint,
+    label: label,
+    color: context.auraColors.onSurface,
+  ).child;
+}
+
+class _AuraRadioGroupContentData<T> extends StatelessWidget {
+  _AuraRadioGroupContentData({
+    required this.value,
+    required this.onChanged,
+    required this.options,
+    required this.direction,
+    required this.tint,
+    required this.label,
+    required Color color,
+  }) : child = label == null
+           ? _AuraRadioOptions<T>(
+               value: value,
+               onChanged: onChanged,
+               options: options,
+               direction: direction,
+               tint: tint,
+             )
+           : Column(
+               crossAxisAlignment: .start,
+               children: [
+                 DefaultTextStyle.merge(
+                   style: .new(color: color),
+                   child: label,
+                 ),
+                 const AuraSizedBox(height: .sm),
+                 _AuraRadioOptions<T>(
+                   value: value,
+                   onChanged: onChanged,
+                   options: options,
+                   direction: direction,
+                   tint: tint,
+                 ),
+               ],
+             );
+
+  final T? value;
+  final ValueChanged<T?>? onChanged;
+  final List<AuraRadioOption<T>> options;
+  final Axis direction;
+  final AuraTint? tint;
+  final Widget? label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => child;
+}
+
+class _AuraRadioOptions<T> extends StatelessWidget {
+  _AuraRadioOptions({
+    required T? value,
+    required ValueChanged<T?>? onChanged,
+    required List<AuraRadioOption<T>> options,
+    required Axis direction,
+    required AuraTint? tint,
+  }) : _value = value,
+       _onChanged = onChanged,
+       _options = options,
+       _tint = tint,
+       _direction = direction;
+
+  final T? _value;
+  final ValueChanged<T?>? _onChanged;
+  final List<AuraRadioOption<T>> _options;
+  final AuraTint? _tint;
+  final Axis _direction;
+
+  @override
+  Widget build(BuildContext context) => _AuraRadioOptionsData<T>(
+    value: _value,
+    onChanged: _onChanged,
+    options: _options,
+    direction: _direction,
+    tint: _tint,
+    spacing: context.auraTheme.spacing,
+  ).child;
+}
+
+class _AuraRadioOptionsData<T> {
+  _AuraRadioOptionsData({
+    required T? value,
+    required ValueChanged<T?>? onChanged,
+    required List<AuraRadioOption<T>> options,
+    required Axis direction,
+    required AuraTint? tint,
+    required AuraSpacingScale spacing,
+  }) : child = switch (direction) {
+         .vertical => _AuraRadioVerticalOptions<T>(
+           value: value,
+           onChanged: onChanged,
+           options: options,
+           tint: tint,
+         ),
+         .horizontal => _AuraRadioHorizontalOptions<T>(
+           value: value,
+           onChanged: onChanged,
+           options: options,
+           tint: tint,
+           spacing: spacing,
+         ),
+       };
+
+  final Widget child;
+}
+
+class _AuraRadioVerticalOptions<T> extends StatelessWidget {
+  _AuraRadioVerticalOptions({
+    required T? value,
+    required ValueChanged<T?>? onChanged,
+    required List<AuraRadioOption<T>> options,
+    required AuraTint? tint,
+  }) : _child = Column(
+         crossAxisAlignment: .start,
+         children: _AuraRadioVerticalOptionsData<T>(
+           value: value,
+           onChanged: onChanged,
+           options: options,
+           tint: tint,
+         ).children,
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class _AuraRadioVerticalOptionsData<T> {
+  new({
+    required T? value,
+    required ValueChanged<T?>? onChanged,
+    required List<AuraRadioOption<T>> options,
+    required AuraTint? tint,
+  }) : children = [
+         for (int i = 0; i < options.length; i++) ...[
+           _AuraRadioOption<T>(
+             option: options[i],
+             groupValue: value,
+             onChanged: onChanged,
+             tint: tint,
+           ),
+           if (i < options.length - 1) const AuraSizedBox(height: .sm),
+         ],
+       ];
+
+  final List<Widget> children;
+}
+
+class _AuraRadioHorizontalOptions<T> extends StatelessWidget {
+  _AuraRadioHorizontalOptions({
+    required T? value,
+    required ValueChanged<T?>? onChanged,
+    required List<AuraRadioOption<T>> options,
+    required AuraTint? tint,
+    required AuraSpacingScale spacing,
+  }) : _child = Wrap(
+         spacing: spacing.md,
+         runSpacing: spacing.sm,
+         children: [
+           for (final option in options)
+             _AuraRadioOption<T>(
+               option: option,
+               groupValue: value,
+               onChanged: onChanged,
+               tint: tint,
+               shrinkWrap: true,
+             ),
+         ],
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraRadioOption<T>({
@@ -123,68 +260,194 @@ class const _AuraRadioOption<T>({
   final bool shrinkWrap = false,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => _AuraRadioOptionLayout<T>(
+    option: option,
+    groupValue: groupValue,
+    onChanged: onChanged,
+    tint: tint,
+    shrinkWrap: shrinkWrap,
+  );
+}
+
+class _AuraRadioOptionLayout<T> extends StatelessWidget {
+  _AuraRadioOptionLayout({
+    required AuraRadioOption<T> option,
+    required T? groupValue,
+    required ValueChanged<T?>? onChanged,
+    required AuraTint? tint,
+    required bool shrinkWrap,
+  }) : _child = shrinkWrap
+           ? _AuraRadioOptionInteractive<T>(
+               option: option,
+               groupValue: groupValue,
+               onChanged: onChanged,
+               tint: tint,
+               shrinkWrap: shrinkWrap,
+             )
+           : Column(
+               crossAxisAlignment: .start,
+               children: [
+                 _AuraRadioOptionInteractive<T>(
+                   option: option,
+                   groupValue: groupValue,
+                   onChanged: onChanged,
+                   tint: tint,
+                   shrinkWrap: shrinkWrap,
+                 ),
+                 if (option.subtitle case final subtitle?)
+                   _AuraRadioOptionSubtitle(child: subtitle),
+               ],
+             );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AuraRadioOptionInteractive<T>({
+  required final AuraRadioOption<T> option,
+  required final T? groupValue,
+  required final ValueChanged<T?>? onChanged,
+  required final AuraTint? tint,
+  required final bool shrinkWrap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraRadioOptionSemantics<T>(
+    data: _AuraRadioOptionInteractiveData<T>(
+      option: option,
+      groupValue: groupValue,
+      onChanged: onChanged,
+      tint: tint,
+      shrinkWrap: shrinkWrap,
+    ),
+  );
+}
+
+class const _AuraRadioOptionInteractiveData<T>({
+  required final AuraRadioOption<T> option,
+  required final T? groupValue,
+  required final ValueChanged<T?>? onChanged,
+  required final AuraTint? tint,
+  required final bool shrinkWrap,
+}) {
+  VoidCallback? onTap() {
+    final callback = onChanged;
+    if (option.disabled || callback == null) return null;
+
+    return () => callback(option.value);
+  }
+}
+
+class _AuraRadioOptionSemantics<T> extends StatelessWidget {
+  _AuraRadioOptionSemantics({required _AuraRadioOptionInteractiveData<T> data})
+    : _child = Semantics(
+        child: _AuraRadioOptionGesture<T>(data: data),
+        excludeSemantics: true,
+        enabled: data.onTap() != null,
+        checked: data.option.value == data.groupValue,
+        inMutuallyExclusiveGroup: true,
+        label: data.option.semanticLabel ?? 'Radio button',
+        onTap: data.onTap(),
+      );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AuraRadioOptionGesture<T>({
+  required final _AuraRadioOptionInteractiveData<T> data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    child: _AuraRadioOptionRow<T>(
+      option: data.option,
+      groupValue: data.groupValue,
+      onChanged: data.onChanged,
+      tint: data.tint,
+      shrinkWrap: data.shrinkWrap,
+    ),
+    onTap: data.onTap(),
+    behavior: .opaque,
+    excludeFromSemantics: true,
+  );
+}
+
+class _AuraRadioOptionRow<T> extends StatelessWidget {
+  _AuraRadioOptionRow({
+    required AuraRadioOption<T> option,
+    required T? groupValue,
+    required ValueChanged<T?>? onChanged,
+    required AuraTint? tint,
+    required bool shrinkWrap,
+  }) : _child = Row(
+         mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
+         children: [
+           _AuraRadioOptionControl<T>(
+             option: option,
+             groupValue: groupValue,
+             onChanged: onChanged,
+             tint: tint,
+           ),
+           const AuraSizedBox(width: .sm),
+           _AuraRadioOptionLabel(option: option, shrinkWrap: shrinkWrap),
+         ],
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AuraRadioOptionControl<T>({
+  required final AuraRadioOption<T> option,
+  required final T? groupValue,
+  required final ValueChanged<T?>? onChanged,
+  required final AuraTint? tint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: AuraRadio<T>(
+      value: option.value,
+      groupValue: groupValue,
+      onChanged: onChanged,
+      tint: tint,
+      disabled: option.disabled,
+      semanticLabel: option.semanticLabel,
+    ),
+  );
+}
+
+class const _AuraRadioOptionLabel({
+  required final AuraRadioOption<dynamic> option,
+  required final bool shrinkWrap,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
-    final onChanged = this.onChanged;
-    final subtitle = option.subtitle;
-    final onTap = onChanged == null || option.disabled
-        ? null
-        : () => onChanged(option.value);
-    final labelWidget = DefaultTextStyle.merge(
+    final label = DefaultTextStyle.merge(
       style: .new(color: context.auraColors.onSurface),
       child: option.label,
     );
-    final row = Row(
-      mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
-      children: [
-        ExcludeSemantics(
-          child: AuraRadio<T>(
-            value: option.value,
-            groupValue: groupValue,
-            onChanged: onChanged,
-            tint: tint,
-            disabled: option.disabled,
-            semanticLabel: option.semanticLabel,
-          ),
-        ),
-        const AuraSizedBox(width: .sm),
-        if (shrinkWrap) labelWidget else Flexible(child: labelWidget),
-      ],
-    );
 
-    final interactiveRow = Semantics(
-      child: GestureDetector(
-        child: row,
-        onTap: onTap,
-        behavior: .opaque,
-        excludeFromSemantics: true,
-      ),
-      excludeSemantics: true,
-      enabled: onTap != null,
-      checked: option.value == groupValue,
-      inMutuallyExclusiveGroup: true,
-      label: option.semanticLabel ?? 'Radio button',
-      onTap: onTap,
-    );
-
-    if (shrinkWrap) return interactiveRow;
-
-    return Column(
-      crossAxisAlignment: .start,
-      children: [
-        interactiveRow,
-        if (subtitle != null)
-          Padding(
-            padding: EdgeInsetsDirectional.only(
-              start:
-                  AuraRadioGroup._kRadioTapTargetSize +
-                  context.auraTheme.fromSpacing(.sm),
-            ),
-            child: DefaultTextStyle.merge(
-              style: .new(color: context.auraColors.onSurfaceVariant),
-              child: subtitle,
-            ),
-          ),
-      ],
-    );
+    return shrinkWrap ? label : Flexible(child: label);
   }
+}
+
+class const _AuraRadioOptionSubtitle({required final Widget child})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsetsDirectional.only(
+      start:
+          AuraRadioGroup._kRadioTapTargetSize +
+          context.auraTheme.fromSpacing(.sm),
+    ),
+    child: DefaultTextStyle.merge(
+      style: .new(color: context.auraColors.onSurfaceVariant),
+      child: child,
+    ),
+  );
 }

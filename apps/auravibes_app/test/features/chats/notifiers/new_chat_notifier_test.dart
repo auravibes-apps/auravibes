@@ -199,16 +199,11 @@ class _FakeSendNewMessageUsecase implements SendNewMessageUsecase {
   MonitoringService get monitoringService => throw UnimplementedError();
 
   @override
-  Future<ConversationEntity> call({
-    required String workspaceId,
-    required ChatDraft draft,
-    required String workspaceModelSelectionId,
-    String? agentId,
-  }) async {
+  Future<ConversationEntity> call(dynamic request) async {
     return ConversationEntity(
       id: 'new-conv',
       title: 'New',
-      workspaceId: workspaceId,
+      workspaceId: request.workspaceId as String,
       isPinned: false,
       createdAt: .new(2026),
       updatedAt: .new(2026),
@@ -238,12 +233,7 @@ class _ErrorSendNewMessageUsecase implements SendNewMessageUsecase {
   MonitoringService get monitoringService => throw UnimplementedError();
 
   @override
-  Future<ConversationEntity> call({
-    required String workspaceId,
-    required ChatDraft draft,
-    required String workspaceModelSelectionId,
-    String? agentId,
-  }) async {
+  Future<ConversationEntity> call(dynamic request) async {
     throw Exception('send failed');
   }
 }

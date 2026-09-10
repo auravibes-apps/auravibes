@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_template_tool_entity.freezed.dart';
 
+@immutable
 @freezed
 abstract class const SkillTemplateToolEntity._()
     with _$SkillTemplateToolEntity {
@@ -19,8 +20,18 @@ abstract class const SkillTemplateToolEntity._()
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _SkillTemplateToolEntity;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class const SkillTemplateToolToCreate._()
     with _$SkillTemplateToolToCreate {
@@ -33,8 +44,18 @@ abstract class const SkillTemplateToolToCreate._()
     @Default(false) bool requiresCredential,
     @Default(true) bool isEnabled,
   }) = _SkillTemplateToolToCreate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class const SkillTemplateToolToUpdate._()
     with _$SkillTemplateToolToUpdate {
@@ -46,6 +67,15 @@ abstract class const SkillTemplateToolToUpdate._()
     bool? requiresCredential,
     bool? isEnabled,
   }) = _SkillTemplateToolToUpdate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
 enum SkillTemplateToolType { url }

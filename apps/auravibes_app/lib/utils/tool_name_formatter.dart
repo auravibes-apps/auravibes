@@ -29,11 +29,7 @@ class const ToolNameFormatter._() {
       :final kind,
       :final toolIdentifier,
     ) =>
-      (
-        source: kind == AgentResolvedToolKind.skillNative ? 'app' : 'user',
-        skillSlug: skillSlug,
-        toolSlug: toolIdentifier,
-      ),
+      _skillToolParts(kind, skillSlug, toolIdentifier),
     _ => null,
   };
 
@@ -59,13 +55,22 @@ class const ToolNameFormatter._() {
   }) {
     if (parsedId == null) return rawName.toHumanReadable();
 
-    return _formatResolvedName(parsedId, mcpServerName);
+    return _ResolvedToolNameFormatter.format(parsedId, mcpServerName);
   }
 
-  static String _formatResolvedName(
-    AgentResolvedToolName parsedId,
-    String? mcpServerName,
-  ) {
+  static ({String source, String skillSlug, String toolSlug}) _skillToolParts(
+    AgentResolvedToolKind kind,
+    String skillSlug,
+    String toolIdentifier,
+  ) => (
+    source: kind == AgentResolvedToolKind.skillNative ? 'app' : 'user',
+    skillSlug: skillSlug,
+    toolSlug: toolIdentifier,
+  );
+}
+
+abstract final class _ResolvedToolNameFormatter {
+  static String format(AgentResolvedToolName parsedId, String? mcpServerName) {
     final toolIdentifier = parsedId.toolIdentifier;
     final kind = parsedId.kind;
 
@@ -75,23 +80,36 @@ class const ToolNameFormatter._() {
         _mcpServerName(parsedId, mcpServerName),
       );
     }
-    if (kind == AgentResolvedToolKind.skillTemplate ||
-        kind == AgentResolvedToolKind.skillNative) {
+    if (_isSkill(kind)) {
       return _formatSkillNameFromParsed(parsedId, toolIdentifier);
     }
 
     return _formatToolName(toolIdentifier);
   }
 
+  static bool _isSkill(AgentResolvedToolKind kind) =>
+      kind == AgentResolvedToolKind.skillTemplate ||
+      kind == AgentResolvedToolKind.skillNative;
+
   static String _mcpServerName(
     AgentResolvedToolName parsedId,
     String? mcpServerName,
-  ) => mcpServerName ?? parsedId.mcpSlug!.toHumanReadable();
+  ) {
+    final mcpSlug = parsedId.mcpSlug;
+    if (mcpSlug == null) return parsedId.toolIdentifier.toHumanReadable();
+
+    return mcpServerName ?? mcpSlug.toHumanReadable();
+  }
 
   static String _formatSkillNameFromParsed(
     AgentResolvedToolName parsedId,
     String toolIdentifier,
-  ) => _formatSkillName(parsedId.skillSlug!, toolIdentifier);
+  ) {
+    final skillSlug = parsedId.skillSlug;
+    if (skillSlug == null) return _formatToolName(toolIdentifier);
+
+    return _formatSkillName(skillSlug, toolIdentifier);
+  }
 
   static String _formatMcpName(String toolIdentifier, String serverName) =>
       '$serverName: ${_formatToolName(toolIdentifier)}';

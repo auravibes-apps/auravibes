@@ -10,6 +10,68 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 
+typedef _ModelProviderInput = ({
+  ApiModelProvidersTable? modelProvider,
+  String serviceId,
+  bool isCodex,
+  ModelProvidersType? providerType,
+});
+
+typedef _ModelProviderDetails = ({
+  String id,
+  String name,
+  ModelProvidersType? type,
+  String url,
+  String doc,
+});
+
+typedef _ModelCapabilities = ({
+  List<String> modalitiesInput,
+  List<String> modalitiesOutput,
+  bool supportsReasoning,
+  bool supportsToolCalls,
+});
+
+_ModelCapabilities _modelCapabilities(ApiModelsTable? apiModel) {
+  if (apiModel == null) return _emptyModelCapabilities();
+
+  return _modelCapabilitiesFor(apiModel);
+}
+
+_ModelCapabilities _emptyModelCapabilities() => (
+  modalitiesInput: const [],
+  modalitiesOutput: const [],
+  supportsReasoning: false,
+  supportsToolCalls: false,
+);
+
+_ModelCapabilities _modelCapabilitiesFor(ApiModelsTable apiModel) => (
+  modalitiesInput: _modelList(apiModel.modalitiesInput),
+  modalitiesOutput: _modelList(apiModel.modalitiesOutput),
+  supportsReasoning: _modelFlag(apiModel.supportsReasoning),
+  supportsToolCalls: _modelFlag(apiModel.supportsToolCalls),
+);
+
+List<String> _modelList(List<String>? values) => values ?? const [];
+
+bool _modelFlag(bool? value) => value ?? false;
+
+String _providerId(_ModelProviderInput data) =>
+    data.modelProvider?.id ?? data.serviceId;
+
+String _providerUrl(_ModelProviderInput data) => data.modelProvider?.url ?? '';
+
+String _providerDoc(_ModelProviderInput data) => data.modelProvider?.doc ?? '';
+
+ApiModelProviderEntity _modelProviderDetails(_ModelProviderDetails data) =>
+    .new(
+      id: data.id,
+      name: data.name,
+      type: data.type,
+      url: data.url,
+      doc: data.doc,
+    );
+
 /// Implementation of the [WorkspaceModelSelectionRepository] interface.
 ///
 /// This class provides a concrete implementation of workspace model selection
@@ -23,7 +85,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
   ) async {
     await _database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
       workspaceModelSelections
-          .map(this._workspaceModelSelectionToCreateToCompanion)
+          .map(_workspaceModelSelectionToCreateToCompanion)
           .toList(),
     );
   }
@@ -35,7 +97,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
           workspaceIds: filter.workspaces,
         );
 
-    return tableResults.map(this._withProviderTableToEntity).toList();
+    return tableResults.map(_withProviderTableToEntity).toList();
   }
 
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
@@ -46,7 +108,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
         )
         .map(
           (tableResults) =>
-              tableResults.map(this._withProviderTableToEntity).toList(),
+              tableResults.map(_withProviderTableToEntity).toList(),
         );
   }
 
@@ -57,9 +119,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
         .getWorkspaceModelSelectionById(id);
     if (workspaceModelSelectionWithConnection == null) return null;
 
-    return this._withProviderTableToEntity(
-      workspaceModelSelectionWithConnection,
-    );
+    return _withProviderTableToEntity(workspaceModelSelectionWithConnection);
   }
 
   @override
@@ -85,26 +145,40 @@ extension on WorkspaceModelSelectionRepository {
   WorkspaceModelSelectionWithConnectionEntity _withProviderTableToEntity(
     WorkspaceModelSelectionWithConnection withProvider,
   ) {
-    final modelProvider = withProvider.modelProvider;
-    final serviceId = withProvider.modelConnection.serviceId;
-    final isCodex = ModelProviderOAuthProfiles.isCodexProvider(serviceId);
-    final providerType = _mapToTypeTable(modelProvider?.type);
+    final context = _providerMappingContext(withProvider);
 
-    final workspaceModelSelection = _modelSelectionEntity(withProvider);
-    final modelConnection = _modelConnectionEntity(withProvider, serviceId);
-    final modelsProvider = _modelProviderEntity(
-      withProvider.modelProvider,
-      serviceId: serviceId,
-      isCodex: isCodex,
-      providerType: providerType,
-    );
-
-    return WorkspaceModelSelectionWithConnectionEntity(
-      workspaceModelSelection: workspaceModelSelection,
-      modelConnection: modelConnection,
-      modelsProvider: modelsProvider,
+    return _withMappedConnections(
+      _modelSelectionEntity(withProvider),
+      _modelConnectionEntity(withProvider, context.serviceId),
+      _modelProviderEntity((
+        modelProvider: withProvider.modelProvider,
+        serviceId: context.serviceId,
+        isCodex: context.isCodex,
+        providerType: context.providerType,
+      )),
     );
   }
+
+  ({String serviceId, bool isCodex, ModelProvidersType? providerType})
+  _providerMappingContext(WorkspaceModelSelectionWithConnection withProvider) {
+    final serviceId = withProvider.modelConnection.serviceId;
+
+    return (
+      serviceId: serviceId,
+      isCodex: ModelProviderOAuthProfiles.isCodexProvider(serviceId),
+      providerType: _mapToTypeTable(withProvider.modelProvider?.type),
+    );
+  }
+
+  WorkspaceModelSelectionWithConnectionEntity _withMappedConnections(
+    WorkspaceModelSelectionEntity workspaceModelSelection,
+    ModelConnectionEntity modelConnection,
+    ApiModelProviderEntity modelsProvider,
+  ) => WorkspaceModelSelectionWithConnectionEntity(
+    workspaceModelSelection: workspaceModelSelection,
+    modelConnection: modelConnection,
+    modelsProvider: modelsProvider,
+  );
 
   WorkspaceModelSelectionEntity _modelSelectionEntity(
     WorkspaceModelSelectionWithConnection withProvider,
@@ -125,13 +199,17 @@ extension on WorkspaceModelSelectionRepository {
   WorkspaceModelSelectionEntity _withModelCapabilities(
     WorkspaceModelSelectionEntity selection,
     ApiModelsTable? apiModel,
-  ) => selection.copyWith(
-    modelName: apiModel?.name,
-    modalitiesInput: apiModel?.modalitiesInput ?? [],
-    modalitiesOutput: apiModel?.modalitiesOutput ?? [],
-    supportsReasoning: apiModel?.supportsReasoning ?? false,
-    supportsToolCalls: apiModel?.supportsToolCalls ?? false,
-  );
+  ) {
+    final capabilities = _modelCapabilities(apiModel);
+
+    return selection.copyWith(
+      modelName: apiModel?.name,
+      modalitiesInput: capabilities.modalitiesInput,
+      modalitiesOutput: capabilities.modalitiesOutput,
+      supportsReasoning: capabilities.supportsReasoning,
+      supportsToolCalls: capabilities.supportsToolCalls,
+    );
+  }
 
   ModelConnectionEntity _modelConnectionEntity(
     WorkspaceModelSelectionWithConnection withProvider,
@@ -139,22 +217,28 @@ extension on WorkspaceModelSelectionRepository {
   ) {
     final connection = withProvider.modelConnection;
 
-    final modelConnection = ModelConnectionEntity(
-      id: connection.id,
-      name: connection.name,
-      modelId: serviceId,
-      createdAt: connection.createdAt,
-      updatedAt: connection.updatedAt,
-      workspaceId: connection.workspaceId,
-      hasKey: connection.encryptedAuthValue?.isNotEmpty == true,
+    return _withConnectionCredentials(
+      _modelConnectionDetails(connection, serviceId),
+      connection,
     );
-
-    return _withConnectionCredentials(modelConnection, connection);
   }
+
+  ModelConnectionEntity _modelConnectionDetails(
+    ServiceConnectionTable connection,
+    String serviceId,
+  ) => ModelConnectionEntity(
+    id: connection.id,
+    name: connection.name,
+    modelId: serviceId,
+    createdAt: connection.createdAt,
+    updatedAt: connection.updatedAt,
+    workspaceId: connection.workspaceId,
+    hasKey: connection.encryptedAuthValue?.isNotEmpty == true,
+  );
 
   ModelConnectionEntity _withConnectionCredentials(
     ModelConnectionEntity modelConnection,
-    ServiceConnectionsTable connection,
+    ServiceConnectionTable connection,
   ) => modelConnection.copyWith(
     authMode: _authMode(connection.authenticationType),
     url: connection.url,
@@ -163,18 +247,18 @@ extension on WorkspaceModelSelectionRepository {
       connection.metadataJson,
     ),
   );
+}
 
-  ApiModelProviderEntity _modelProviderEntity(
-    ApiModelProvidersTable? modelProvider, {
-    required String serviceId,
-    required bool isCodex,
-    required ModelProvidersType? providerType,
-  }) => .new(
-    id: modelProvider?.id ?? serviceId,
-    name: _providerName(modelProvider, serviceId, isCodex),
-    type: _providerType(providerType, isCodex),
-    url: modelProvider?.url ?? '',
-    doc: modelProvider?.doc ?? '',
+extension on WorkspaceModelSelectionRepository {
+  ApiModelProviderEntity _modelProviderEntity(_ModelProviderInput data) =>
+      _modelProviderDetails(_modelProviderData(data));
+
+  _ModelProviderDetails _modelProviderData(_ModelProviderInput data) => (
+    id: _providerId(data),
+    name: _providerName(data.modelProvider, data.serviceId, data.isCodex),
+    type: _providerType(data.providerType, data.isCodex),
+    url: _providerUrl(data),
+    doc: _providerDoc(data),
   );
 
   String _providerName(

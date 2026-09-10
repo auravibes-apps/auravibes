@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -20,7 +21,9 @@ Future<List<agent.AgentToolCallState>?> _getToolCallStates(
   final message = await messageRepository.getMessageById(messageId);
   if (message == null) return null;
 
-  return (message.metadata?.toolCalls ?? const []).map(_toolCallState).toList();
+  return (message.metadata?.toolCalls ?? const <MessageToolCallEntity>[])
+      .map(_toolCallState)
+      .toList();
 }
 
 agent.AgentToolCallState _toolCallState(MessageToolCallEntity toolCall) {

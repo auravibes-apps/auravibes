@@ -44,6 +44,7 @@ class AuraCheckbox extends StatelessWidget {
     final allowsValueChanges = AuraInteractionScope.of(context)
         .allowsValueChanges;
     final isDisabled = disabled || onChanged == null || !allowsValueChanges;
+
     return _CheckboxBuild(
       value: value,
       tint: tint,
@@ -54,29 +55,33 @@ class AuraCheckbox extends StatelessWidget {
   }
 }
 
-class const _CheckboxBuild({
-  required final bool value,
-  required final AuraTint? tint,
-  required final bool isDisabled,
-  required final ValueChanged<bool>? onChanged,
-  required final bool autofocus,
-}) extends StatelessWidget {
+class _CheckboxBuild extends StatelessWidget {
+  _CheckboxBuild({
+    required bool value,
+    required AuraTint? tint,
+    required bool isDisabled,
+    required ValueChanged<bool>? onChanged,
+    required bool autofocus,
+  }) : _child = Semantics(
+         child: _CheckboxInteraction(
+           value: value,
+           isDisabled: isDisabled,
+           onChanged: onChanged,
+           autofocus: autofocus,
+           child: _CheckboxFocusAwareVisual(
+             value: value,
+             tint: tint,
+             disabled: isDisabled,
+           ),
+         ),
+         enabled: !isDisabled,
+         checked: value,
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => Semantics(
-    child: _CheckboxInteraction(
-      value: value,
-      isDisabled: isDisabled,
-      onChanged: onChanged,
-      autofocus: autofocus,
-      child: _CheckboxFocusAwareVisual(
-        value: value,
-        tint: tint,
-        disabled: isDisabled,
-      ),
-    ),
-    enabled: !isDisabled,
-    checked: value,
-  );
+  Widget build(BuildContext context) => _child;
 }
 
 class const _CheckboxFocusAwareVisual({
@@ -146,21 +151,8 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
   bool _isFocused = false;
 
   @override
-  Widget build(BuildContext context) {
-    final isInteractive = !widget.isDisabled && widget.onChanged != null;
-
-    return _CheckboxInteractionActions(
-      isInteractive: isInteractive,
-      autofocus: widget.autofocus,
-      onActivate: _handleActivate,
-      isDisabled: widget.isDisabled,
-      value: widget.value,
-      onChanged: widget.onChanged,
-      isFocused: _isFocused,
-      onFocusHighlight: _setFocused,
-      child: widget.child,
-    );
-  }
+  Widget build(BuildContext context) =>
+      _CheckboxInteractionActions.fromState(this);
 
   void _setFocused(bool value) => setState(() => _isFocused = value);
 
@@ -173,37 +165,55 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
   }
 }
 
-class const _CheckboxInteractionActions({
-  required final bool isInteractive,
-  required final bool autofocus,
-  required final Null Function(ActivateIntent) onActivate,
-  required final bool isDisabled,
-  required final bool value,
-  required final ValueChanged<bool>? onChanged,
-  required final bool isFocused,
-  required final ValueChanged<bool> onFocusHighlight,
-  required final Widget child,
-}) extends StatelessWidget {
+class _CheckboxInteractionActions extends StatelessWidget {
+  _CheckboxInteractionActions.fromState(_CheckboxInteractionState state)
+    : this(
+        isInteractive:
+            !state.widget.isDisabled && state.widget.onChanged != null,
+        autofocus: state.widget.autofocus,
+        onActivate: state._handleActivate,
+        isDisabled: state.widget.isDisabled,
+        value: state.widget.value,
+        onChanged: state.widget.onChanged,
+        isFocused: state._isFocused,
+        onFocusHighlight: state._setFocused,
+        child: state.widget.child,
+      );
+
+  _CheckboxInteractionActions({
+    required bool isInteractive,
+    required bool autofocus,
+    required Null Function(ActivateIntent) onActivate,
+    required bool isDisabled,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+    required bool isFocused,
+    required ValueChanged<bool> onFocusHighlight,
+    required Widget child,
+  }) : _child = Shortcuts(
+         shortcuts: const <ShortcutActivator, Intent>{
+           SingleActivator(.enter): ActivateIntent(),
+           SingleActivator(.space): ActivateIntent(),
+         },
+         child: _CheckboxActions(
+           onActivate: onActivate,
+           child: _CheckboxInteractionFocus(
+             isInteractive: isInteractive,
+             autofocus: autofocus,
+             isDisabled: isDisabled,
+             value: value,
+             onChanged: onChanged,
+             isFocused: isFocused,
+             onFocusHighlight: onFocusHighlight,
+             child: child,
+           ),
+         ),
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => Shortcuts(
-    shortcuts: const <ShortcutActivator, Intent>{
-      SingleActivator(.enter): ActivateIntent(),
-      SingleActivator(.space): ActivateIntent(),
-    },
-    child: _CheckboxActions(
-      onActivate: onActivate,
-      child: _CheckboxInteractionFocus(
-        isInteractive: isInteractive,
-        autofocus: autofocus,
-        isDisabled: isDisabled,
-        value: value,
-        onChanged: onChanged,
-        isFocused: isFocused,
-        onFocusHighlight: onFocusHighlight,
-        child: child,
-      ),
-    ),
-  );
+  Widget build(BuildContext context) => _child;
 }
 
 class const _CheckboxActions({
@@ -219,35 +229,37 @@ class const _CheckboxActions({
   );
 }
 
-class const _CheckboxInteractionFocus({
-  required final bool isInteractive,
-  required final bool autofocus,
-  required final bool isDisabled,
-  required final bool value,
-  required final ValueChanged<bool>? onChanged,
-  required final bool isFocused,
-  required final ValueChanged<bool> onFocusHighlight,
-  required final Widget child,
-}) extends StatelessWidget {
+class _CheckboxInteractionFocus extends StatelessWidget {
+  _CheckboxInteractionFocus({
+    required bool isInteractive,
+    required bool autofocus,
+    required bool isDisabled,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+    required bool isFocused,
+    required ValueChanged<bool> onFocusHighlight,
+    required Widget child,
+  }) : _child = FocusableActionDetector(
+         enabled: isInteractive,
+         autofocus: autofocus,
+         onShowFocusHighlight: onFocusHighlight,
+         mouseCursor: isInteractive
+             ? SystemMouseCursors.click
+             : SystemMouseCursors.forbidden,
+         child: _CheckboxInteractionGesture(
+           isInteractive: isInteractive,
+           isDisabled: isDisabled,
+           value: value,
+           onChanged: onChanged,
+           isFocused: isFocused,
+           child: child,
+         ),
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) {
-    return FocusableActionDetector(
-      enabled: isInteractive,
-      autofocus: autofocus,
-      onShowFocusHighlight: onFocusHighlight,
-      mouseCursor: isInteractive
-          ? SystemMouseCursors.click
-          : SystemMouseCursors.forbidden,
-      child: _CheckboxInteractionGesture(
-        isInteractive: isInteractive,
-        isDisabled: isDisabled,
-        value: value,
-        onChanged: onChanged,
-        isFocused: isFocused,
-        child: child,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _child;
 }
 
 class const _CheckboxInteractionGesture({
@@ -313,25 +325,13 @@ class const _CheckboxVisual({
   required final bool isFocused,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final activeColor = _getActiveColor(context);
-    final borderColor = disabled ? auraColors.outlineVariant : activeColor;
-
-    return _CheckboxVisualContainer(
-      value: value,
-      activeColor: activeColor,
-      borderColor: borderColor,
-      markColor: auraColors.onTint(tint ?? AuraTint.primary),
-      isFocused: isFocused,
-    );
-  }
-
-  Color _getActiveColor(BuildContext context) {
-    final auraColors = context.auraColors;
-
-    return auraColors.colorFor(tint ?? AuraTint.primary);
-  }
+  Widget build(BuildContext context) => _CheckboxVisualContainer.fromTheme(
+    value: value,
+    tint: tint,
+    disabled: disabled,
+    isFocused: isFocused,
+    colors: context.auraColors,
+  );
 }
 
 class const _CheckboxVisualContainer({
@@ -345,6 +345,22 @@ class const _CheckboxVisualContainer({
   static const _checkMarkSize = 12.0;
   static const _focusedBorderWidth = 3.0;
   static const _defaultBorderWidth = 2.0;
+
+  new fromTheme({
+    required bool value,
+    required AuraTint? tint,
+    required bool disabled,
+    required bool isFocused,
+    required AuraColorScheme colors,
+  }) : this(
+         value: value,
+         activeColor: colors.colorFor(tint ?? AuraTint.primary),
+         borderColor: disabled
+             ? colors.outlineVariant
+             : colors.colorFor(tint ?? AuraTint.primary),
+         markColor: colors.onTint(tint ?? AuraTint.primary),
+         isFocused: isFocused,
+       );
 
   @override
   Widget build(BuildContext context) => _CheckboxAnimatedBox(
@@ -369,8 +385,8 @@ class const _CheckboxAnimatedBox({
     decoration: decoration,
     width: _CheckboxVisualContainer._boxSize,
     height: _CheckboxVisualContainer._boxSize,
-    duration: context.auraTheme.animation.fast,
     child: child,
+    duration: context.auraTheme.animation.fast,
   );
 }
 

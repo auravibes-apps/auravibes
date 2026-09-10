@@ -74,19 +74,21 @@ class const _AuraStatIcon({
   Widget build(BuildContext context) => AuraIcon(icon, tint: tint);
 }
 
-class const _AuraStatBody({
-  required final AuraStat stat,
-  required final AuraSpacingScale spacing,
-}) extends StatelessWidget {
+class _AuraStatBody extends StatelessWidget {
+  _AuraStatBody({required AuraStat stat, required AuraSpacingScale spacing})
+    : _child = Column(
+        crossAxisAlignment: .start,
+        spacing: spacing.xs,
+        children: [
+          AuraText(child: Text(stat.value), style: .heading3),
+          AuraText(child: Text(stat.label), style: .bodySmall),
+          if (stat.delta case final delta?)
+            AuraText(child: Text(delta), style: .caption),
+        ],
+      );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: .start,
-    spacing: spacing.xs,
-    children: [
-      AuraText(child: Text(stat.value), style: .heading3),
-      AuraText(child: Text(stat.label), style: .bodySmall),
-      if (stat.delta case final delta?)
-        AuraText(child: Text(delta), style: .caption),
-    ],
-  );
+  Widget build(BuildContext context) => _child;
 }

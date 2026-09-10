@@ -14,20 +14,39 @@ class const MarkdownPreviewField({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraCard(
-    child: AuraColumn(
-      children: [
-        _MarkdownPreviewHeader(
-          titleKey: titleKey,
-          editKey: editKey,
-          isReadOnly: isReadOnly,
-          onEdit: onEdit,
-        ),
-        _MarkdownPreviewContent(controller: controller, emptyKey: emptyKey),
-      ],
-      spacing: .sm,
-      crossAxisAlignment: .start,
+    child: _MarkdownPreviewBody(
+      controller: controller,
+      titleKey: titleKey,
+      editKey: editKey,
+      emptyKey: emptyKey,
+      isReadOnly: isReadOnly,
+      onEdit: onEdit,
     ),
     style: .border,
+  );
+}
+
+class const _MarkdownPreviewBody({
+  required final TextEditingController controller,
+  required final String titleKey,
+  required final String editKey,
+  required final String emptyKey,
+  required final bool isReadOnly,
+  required final VoidCallback onEdit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _MarkdownPreviewHeader(
+        titleKey: titleKey,
+        editKey: editKey,
+        isReadOnly: isReadOnly,
+        onEdit: onEdit,
+      ),
+      _MarkdownPreviewContent(controller: controller, emptyKey: emptyKey),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
   );
 }
 
@@ -44,14 +63,22 @@ class const _MarkdownPreviewHeader({
         child: AuraText(child: TextLocale(titleKey), style: .heading6),
       ),
       if (!isReadOnly)
-        AuraButton(
-          onPressed: onEdit,
-          child: TextLocale(editKey),
-          variant: .outlined,
-          size: .small,
-        ),
+        _MarkdownPreviewEditButton(editKey: editKey, onEdit: onEdit),
     ],
     spacing: .md,
+  );
+}
+
+class const _MarkdownPreviewEditButton({
+  required final String editKey,
+  required final VoidCallback onEdit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onEdit,
+    child: TextLocale(editKey),
+    variant: .outlined,
+    size: .small,
   );
 }
 
@@ -64,10 +91,19 @@ class const _MarkdownPreviewContent({
       ValueListenableBuilder<TextEditingValue>(
         valueListenable: controller,
         builder: (context, value, _) {
-          final text = value.text.trim();
-          if (text.isEmpty) return EmptyMarkdownPreview(label: emptyKey);
-
-          return GptMarkdown(text);
+          return _MarkdownPreviewValue(text: value.text, emptyKey: emptyKey);
         },
       );
+}
+
+class const _MarkdownPreviewValue({
+  required final String text,
+  required final String emptyKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (text.trim().isEmpty) return EmptyMarkdownPreview(label: emptyKey);
+
+    return GptMarkdown(text);
+  }
 }

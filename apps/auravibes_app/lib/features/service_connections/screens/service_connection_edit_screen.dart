@@ -402,15 +402,30 @@ _GenericConnectionUpdateData _genericConnectionUpdateData(
   _GenericServiceConnectionEditState state,
   _ServiceConnectionEditScreenState screenState,
 ) {
-  final connection = state.connection;
-  final name = screenState._nameController.text.trim();
-  final secret = screenState._modelKeyController.text.trim();
-  final isCleared = screenState._clearedSecrets.contains('secret');
-  final secretEdit = _secretEditFor(secret, isCleared);
+  final secretUpdate = _genericSecretUpdateForScreen(screenState);
 
   return _GenericConnectionUpdateData(
-    connection: connection,
-    name: name,
+    connection: state.connection,
+    name: screenState._nameController.text.trim(),
+    secretEdit: secretUpdate.secretEdit,
+    secret: secretUpdate.secret,
+  );
+}
+
+({ServiceConnectionSecretEdit secretEdit, String? secret})
+_genericSecretUpdateForScreen(_ServiceConnectionEditScreenState state) =>
+    _genericSecretUpdate(
+      state._modelKeyController.text.trim(),
+      state._clearedSecrets.contains('secret'),
+    );
+
+({ServiceConnectionSecretEdit secretEdit, String? secret}) _genericSecretUpdate(
+  String secret,
+  bool isCleared,
+) {
+  final secretEdit = _secretEditFor(secret, isCleared);
+
+  return (
     secretEdit: secretEdit,
     secret: secretEdit == ServiceConnectionSecretEdit.replace ? secret : null,
   );

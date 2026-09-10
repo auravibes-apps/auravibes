@@ -15,4 +15,10 @@ class CloudWorkspaceViewState {
   final List<CloudWorkspaceSummary> workspaces;
   final List<PendingWorkspaceInviteSummary> pendingInvites;
   final bool authenticationRequired;
+
+  bool containsWorkspace(int workspaceId) =>
+      workspaces.any((workspace) => workspace.id == workspaceId);
+
+  bool containsInvite(int inviteId) =>
+      pendingInvites.any((invite) => invite.id == inviteId);
 }

@@ -40,11 +40,12 @@ class const _SkillsScreenScaffold({required final String workspaceId})
       onCreateSkill: _openCreateSkill,
       onOpenSkill: _openSkill,
       onDeleteSkill: _confirmDeleteSkill,
-      onSkillEnabledChanged: (ref, skill, change) =>
-          _setSkillEnabled(ref, skill, change.isEnabled),
+      onSkillEnabledChanged: _setSkillEnabled,
     );
   }
+}
 
+extension on _SkillsScreenScaffold {
   Future<void> _openCreateSkill(BuildContext context) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final result = await context.push<bool>(
@@ -81,19 +82,10 @@ class const _SkillsScreenScaffold({required final String workspaceId})
   Future<void> _setSkillEnabled(
     WidgetRef ref,
     WorkspaceSkill skill,
-    bool isEnabled,
+    ({bool isEnabled}) change,
   ) async {
     final usecase = ref.read(disableSkillUsecaseProvider(workspaceId));
-    await usecase.call((
-      workspaceId: workspaceId,
-      source: skill.source,
-      skillId: skill.id,
-      isEnabled: isEnabled,
-      slug: skill.slug,
-      title: skill.title,
-      description: skill.description,
-      content: null,
-    ));
+    await usecase.call(_disableSkillRequest(workspaceId, skill, change));
     ref.invalidate(workspaceSkillsProvider(workspaceId));
   }
 
@@ -112,7 +104,7 @@ class const _SkillsScreenScaffold({required final String workspaceId})
   Future<bool?> _showDeleteConfirmation(BuildContext context) {
     return showDialog<bool>(
       context: context,
-      builder: (_) => const _DeleteSkillDialog(),
+      builder: (_) => _DeleteSkillDialog(),
     );
   }
 
@@ -121,6 +113,21 @@ class const _SkillsScreenScaffold({required final String workspaceId})
     ref.invalidate(workspaceSkillsProvider(workspaceId));
   }
 }
+
+DisableSkillRequest _disableSkillRequest(
+  String workspaceId,
+  WorkspaceSkill skill,
+  ({bool isEnabled}) change,
+) => (
+  workspaceId: workspaceId,
+  source: skill.source,
+  skillId: skill.id,
+  isEnabled: change.isEnabled,
+  slug: skill.slug,
+  title: skill.title,
+  description: skill.description,
+  content: null,
+);
 
 class const _SkillsScreenScaffoldView({
   required final AsyncValue<List<WorkspaceSkill>> skillsAsync,
@@ -162,22 +169,37 @@ class const _SkillsScreenAppBar({required final VoidCallback onCreateSkill})
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) {
-    return AuraAppBar(
-      title: const TextLocale(LocaleKeys.skills_screen_title),
-      actions: [
-        AuraIconButton(
-          icon: Icons.add,
-          onPressed: onCreateSkill,
-          tooltip: LocaleKeys.skills_screen_create.tr(context: context),
-        ),
-      ],
-      leading: AuraIconButton(
-        icon: Icons.arrow_back,
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      _SkillsScreenAppBarData(onCreateSkill: onCreateSkill).child;
+}
+
+class _SkillsScreenAppBarData {
+  _SkillsScreenAppBarData({required VoidCallback onCreateSkill})
+    : child = AuraAppBar(
+        title: const TextLocale(LocaleKeys.skills_screen_title),
+        actions: [_SkillsScreenCreateButton(onPressed: onCreateSkill)],
+        leading: const _SkillsScreenBackButton(),
+      );
+
+  final Widget child;
+}
+
+class const _SkillsScreenCreateButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.add,
+    onPressed: onPressed,
+    tooltip: LocaleKeys.skills_screen_create.tr(context: context),
+  );
+}
+
+class const _SkillsScreenBackButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.arrow_back,
+    onPressed: () => Navigator.of(context).pop(),
+  );
 }
 
 class const _SkillsScreenBody({
@@ -226,29 +248,56 @@ class const _SkillsScreenAsyncContent({
   onSkillEnabledChanged,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final loadedSkills = _loadedSkills();
-    if (loadedSkills != null) {
-      return _SkillsScreenLoadedAsyncState(
-        skills: loadedSkills,
+  Widget build(BuildContext context, WidgetRef ref) =>
+      _SkillsScreenAsyncContentData(
+        skillsAsync: skillsAsync,
         onCreateSkill: onCreateSkill,
         onOpenSkill: onOpenSkill,
-        onDeleteSkill: onDeleteSkill,
-        onSkillEnabledChanged: onSkillEnabledChanged,
-      );
-    }
+        onDeleteSkill: (skill) => onDeleteSkill(context, ref, skill),
+        onSkillEnabledChanged: (skill, value) =>
+            onSkillEnabledChanged(ref, skill, (isEnabled: value)),
+      ).child;
+}
 
-    return switch (skillsAsync) {
-      AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncError(:final error) => _SkillsScreenError(error: error),
-      _ => const SizedBox.shrink(),
-    };
-  }
+class _SkillsScreenAsyncContentData {
+  _SkillsScreenAsyncContentData({
+    required AsyncValue<List<WorkspaceSkill>> skillsAsync,
+    required VoidCallback onCreateSkill,
+    required ValueChanged<WorkspaceSkill> onOpenSkill,
+    required ValueChanged<WorkspaceSkill> onDeleteSkill,
+    required void Function(WorkspaceSkill skill, bool value)
+    onSkillEnabledChanged,
+  }) : child = switch (_loadedSkills(skillsAsync)) {
+         null => _SkillsScreenPendingState(skillsAsync: skillsAsync),
+         final skills => _SkillsScreenLoadedContent(
+           skills: skills,
+           onCreateSkill: onCreateSkill,
+           onOpenSkill: onOpenSkill,
+           onDeleteSkill: onDeleteSkill,
+           onSkillEnabledChanged: onSkillEnabledChanged,
+         ),
+       };
 
-  List<WorkspaceSkill>? _loadedSkills() => switch (skillsAsync) {
-    AsyncData(:final value) => value,
-    AsyncLoading(value: final value, hasValue: true) => value,
-    _ => null,
+  final Widget child;
+}
+
+List<WorkspaceSkill>? _loadedSkills(
+  AsyncValue<List<WorkspaceSkill>> skillsAsync,
+) => switch (skillsAsync) {
+  AsyncData(:final value) => value,
+  AsyncLoading(value: final value, hasValue: true) => value,
+  _ => null,
+};
+
+class const _SkillsScreenPendingState({required this.skillsAsync})
+    extends StatelessWidget {
+  final AsyncValue<List<WorkspaceSkill>> skillsAsync;
+
+  @override
+  Widget build(BuildContext context) => switch (skillsAsync) {
+    AsyncLoading() => const Center(child: AuraSpinner()),
+    AsyncError(:final error) => _SkillsScreenError(error: error),
+    _ => const SizedBox.shrink(),
   };
 }
 
@@ -315,20 +364,24 @@ class const _SkillsScreenLoadedContent({
 
 class const _SkillsScreenEmpty({required final VoidCallback onCreateSkill})
     extends StatelessWidget {
+  static const _staticChildren = <Widget>[
+    Icon(Icons.psychology_alt_outlined, size: _skillScreenIconSize),
+    AuraText(
+      child: TextLocale(LocaleKeys.skills_screen_empty_title),
+      style: .heading4,
+    ),
+    AuraText(
+      child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
+      textAlign: .center,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Center(
       child: AuraColumn(
         children: [
-          const Icon(Icons.psychology_alt_outlined, size: _skillScreenIconSize),
-          const AuraText(
-            child: TextLocale(LocaleKeys.skills_screen_empty_title),
-            style: .heading4,
-          ),
-          const AuraText(
-            child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
-            textAlign: .center,
-          ),
+          ..._staticChildren,
           AuraButton(
             onPressed: onCreateSkill,
             child: const TextLocale(LocaleKeys.skills_screen_create),
@@ -555,20 +608,22 @@ class const _SkillTileMenu({
   @override
   Widget build(BuildContext context) {
     return AuraPopupMenuButton(
-      items: [
-        AuraPopupMenuItem(
-          title: Text(LocaleKeys.common_edit.tr(context: context)),
-          onTap: onOpen,
-        ),
-        AuraPopupMenuItem(
-          title: Text(LocaleKeys.common_delete.tr(context: context)),
-          onTap: onDelete,
-          variant: .error,
-        ),
-      ],
+      items: _items(context),
       tooltip: LocaleKeys.common_show_more.tr(context: context),
     );
   }
+
+  List<AuraPopupMenuItem> _items(BuildContext context) => [
+    AuraPopupMenuItem(
+      title: Text(LocaleKeys.common_edit.tr(context: context)),
+      onTap: onOpen,
+    ),
+    AuraPopupMenuItem(
+      title: Text(LocaleKeys.common_delete.tr(context: context)),
+      onTap: onDelete,
+      variant: .error,
+    ),
+  ];
 }
 
 class const _SkillChip({required final String label}) extends StatelessWidget {

@@ -20,14 +20,6 @@ typedef _ModelInputFieldData = ({
 
 /// Enhanced input widget for the add model provider form with validation.
 class const EnhancedModelInput({
-  required super.workspaceId,
-  required super.fieldType,
-  super.focusNode,
-  super.onSubmitted,
-  super.key,
-}) extends _EnhancedModelInput {}
-
-class const _EnhancedModelInput({
   required final String workspaceId,
   required final ModelInputFieldType fieldType,
   final FocusNode? focusNode,
@@ -36,15 +28,14 @@ class const _EnhancedModelInput({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(addModelProviderStateProvider(workspaceId));
-    final notifier = ref.read(
-      addModelProviderStateProvider(workspaceId).notifier,
-    );
+    final provider = addModelProviderStateProvider(workspaceId);
+    final state = ref.watch(provider);
+    final notifier = ref.read(provider.notifier);
 
     return _EnhancedModelInputField(
-      fieldType: fieldType,
-      fieldData: _getFieldData(fieldType, state),
-      onChanged: (value) => _onFieldChanged(fieldType, value, notifier),
+      fieldType,
+      _getFieldData(fieldType, state),
+      _fieldChangeCallback(fieldType, notifier),
       focusNode: focusNode,
       onSubmitted: onSubmitted,
     );
@@ -73,6 +64,12 @@ class const _EnhancedModelInput({
         notifier.setUrl(value.isEmpty ? null : value);
     }
   }
+
+  ValueChanged<String> _fieldChangeCallback(
+    ModelInputFieldType type,
+    AddModelProviderState notifier,
+  ) =>
+      (value) => _onFieldChanged(type, value, notifier);
 }
 
 _ModelInputFieldData _nameFieldData(AddModelProviderModel state) => (
@@ -102,40 +99,63 @@ _ModelInputFieldData _urlFieldData(AddModelProviderModel state) => (
   keyboardType: TextInputType.url,
 );
 
-class const _EnhancedModelInputField({
-  required final ModelInputFieldType fieldType,
-  required final _ModelInputFieldData fieldData,
-  required final ValueChanged<String> onChanged,
-  final FocusNode? focusNode,
-  final VoidCallback? onSubmitted,
-  super.key,
-}) extends HookWidget {
+class _EnhancedModelInputField extends HookWidget {
+  const _EnhancedModelInputField(
+    this.fieldType,
+    this.fieldData,
+    this.onChanged, {
+    this.focusNode,
+    this.onSubmitted,
+    super.key,
+  });
+
+  final ModelInputFieldType fieldType;
+  final _ModelInputFieldData fieldData;
+  final ValueChanged<String> onChanged;
+  final FocusNode? focusNode;
+  final VoidCallback? onSubmitted;
+
   @override
   Widget build(BuildContext context) {
     final controller = useTextEditingController(text: fieldData.value ?? '');
 
-    return _input(context, controller);
+    return _ModelInput(
+      controller: controller,
+      fieldType: fieldType,
+      fieldData: fieldData,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      focusNode: focusNode,
+    );
   }
+}
 
-  Widget _input(BuildContext context, TextEditingController controller) =>
-      AuraInput(
-        controller: controller,
-        placeholder: TextLocale(fieldData.placeholder),
-        label: TextLocale(fieldData.label),
-        hint: fieldData.hint != null ? TextLocale(fieldData.hint!) : null,
-        error: fieldData.error != null ? Text(fieldData.error!) : null,
-        isRequired: fieldType._isRequired,
-        state: fieldData.error != null
-            ? AuraInputState.error
-            : AuraInputState.normal,
-        keyboardType: fieldData.keyboardType,
-        textInputAction: fieldType._textInputAction,
-        obscureText: fieldType == ModelInputFieldType.key,
-        autofocus: fieldType == ModelInputFieldType.name && focusNode == null,
-        onChanged: onChanged,
-        onSubmitted: (_) => onSubmitted?.call(),
-        focusNode: focusNode,
-      );
+class _ModelInput extends AuraInput {
+  _ModelInput({
+    required TextEditingController controller,
+    required ModelInputFieldType fieldType,
+    required _ModelInputFieldData fieldData,
+    required ValueChanged<String> onChanged,
+    required VoidCallback? onSubmitted,
+    required FocusNode? focusNode,
+  }) : super(
+         controller: controller,
+         placeholder: TextLocale(fieldData.placeholder),
+         label: TextLocale(fieldData.label),
+         hint: fieldData.hint == null ? null : TextLocale(fieldData.hint!),
+         error: fieldData.error == null ? null : Text(fieldData.error!),
+         isRequired: fieldType._isRequired,
+         state: fieldData.error == null
+             ? AuraInputState.normal
+             : AuraInputState.error,
+         keyboardType: fieldData.keyboardType,
+         textInputAction: fieldType._textInputAction,
+         obscureText: fieldType == ModelInputFieldType.key,
+         autofocus: fieldType == ModelInputFieldType.name && focusNode == null,
+         onChanged: onChanged,
+         onSubmitted: (_) => onSubmitted?.call(),
+         focusNode: focusNode,
+       );
 }
 
 extension on ModelInputFieldType {

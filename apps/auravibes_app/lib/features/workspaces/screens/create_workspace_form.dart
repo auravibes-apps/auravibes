@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
@@ -34,7 +35,8 @@ class CreateWorkspaceForm extends ConsumerStatefulWidget {
       _CreateWorkspaceFormState();
 }
 
-class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
+class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
+    with _CreateWorkspaceFormActions {
   static const _localTarget = '';
 
   final _name = TextEditingController();
@@ -50,22 +52,16 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
 
   @override
   Widget build(BuildContext context) {
-    final accounts = ref.watch(cloudAccountsProvider);
-
-    if (accounts case AsyncData(:final value)) {
-      return _CreateWorkspaceLoaded(
-        accounts: value,
-        name: _name,
-        targetAccountId: _targetAccountId,
-        errorText: _errorText,
-        isCreating: _isCreating,
-        onTargetAccountChanged: _setTargetAccount,
-        onAddCloudAccount: widget.onAddCloudAccount,
-        onCreate: _create,
-      );
-    }
-
-    return _CreateWorkspaceAccountState(accounts);
+    return _CreateWorkspaceAccountView(
+      accounts: ref.watch(cloudAccountsProvider),
+      name: _name,
+      targetAccountId: _targetAccountId,
+      errorText: _errorText,
+      isCreating: _isCreating,
+      onTargetAccountChanged: _setTargetAccount,
+      onAddCloudAccount: widget.onAddCloudAccount,
+      onCreate: _create,
+    );
   }
 
   void _setTargetAccount(String? accountId) {
@@ -90,8 +86,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
 
   Future<void> _runCreate(String name) async {
     try {
-      _validateName(name);
-      _handleCreatedWorkspace(await _createWorkspace(name));
+      _handleCreatedWorkspace(await _validateAndCreateWorkspace(name));
     } on AppCloudWorkspaceException catch (error) {
       _setError(error.localizationKey.tr());
     } on WorkspaceException catch (error) {
@@ -101,39 +96,6 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
     } finally {
       _finishCreating();
     }
-  }
-
-  void _setError(String errorText) {
-    if (mounted) setState(() => _errorText = errorText);
-  }
-
-  void _handleUnexpectedCreateError(Object error, StackTrace stackTrace) {
-    _logger.severe('Create workspace failed', error.runtimeType, stackTrace);
-    _setError(LocaleKeys.workspace_management_unexpected_error.tr());
-  }
-
-  void _validateName(String name) {
-    ref.read(validateWorkspaceNameUseCaseProvider).call(name: name);
-  }
-
-  void _finishCreating() {
-    if (mounted) setState(() => _isCreating = false);
-  }
-
-  void _handleCreatedWorkspace(WorkspaceEntity workspace) {
-    ref.invalidate(allWorkspacesProvider);
-    if (_targetAccountId != _localTarget) {
-      ref.invalidate(cloudWorkspaceStateProvider(_targetAccountId));
-    }
-    if (mounted) widget.onCreated(workspace);
-  }
-
-  Future<WorkspaceEntity> _createWorkspace(String name) async {
-    if (_targetAccountId == _localTarget) {
-      return _createLocalWorkspace(name);
-    }
-
-    return _createCloudWorkspace(name);
   }
 
   Future<WorkspaceEntity> _createLocalWorkspace(String name) =>
@@ -149,127 +111,190 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
       );
     }
 
-    return useCases.create(name);
+    return await useCases.create(name);
+  }
+}
+
+mixin _CreateWorkspaceFormActions on ConsumerState<CreateWorkspaceForm> {
+  _CreateWorkspaceFormState get _state => this as _CreateWorkspaceFormState;
+
+  void _setError(String errorText) {
+    if (mounted) setState(() => _state._errorText = errorText);
   }
 
-  String _workspaceError(WorkspaceException error) {
-    final key = error.localizationKey;
-    if (key == null) return error.message;
-
-    return key.tr(
-      namedArgs: {
-        'min': '${ValidateWorkspaceNameUseCase.minLength}',
-        'max': '${ValidateWorkspaceNameUseCase.maxLength}',
-      },
-    );
+  void _handleUnexpectedCreateError(Object error, StackTrace stackTrace) {
+    _logger.severe('Create workspace failed', error.runtimeType, stackTrace);
+    _setError(LocaleKeys.workspace_management_unexpected_error.tr());
   }
+
+  void _validateName(String name) {
+    ref.read(validateWorkspaceNameUseCaseProvider).call(name: name);
+  }
+
+  void _finishCreating() {
+    if (mounted) setState(() => _state._isCreating = false);
+  }
+
+  void _handleCreatedWorkspace(WorkspaceEntity workspace) {
+    ref.invalidate(allWorkspacesProvider);
+    if (_state._targetAccountId != _CreateWorkspaceFormState._localTarget) {
+      ref.invalidate(cloudWorkspaceStateProvider(_state._targetAccountId));
+    }
+    if (mounted) widget.onCreated(workspace);
+  }
+
+  Future<WorkspaceEntity> _validateAndCreateWorkspace(String name) {
+    _validateName(name);
+
+    return _createWorkspace(name);
+  }
+
+  Future<WorkspaceEntity> _createWorkspace(String name) {
+    if (_state._targetAccountId == _CreateWorkspaceFormState._localTarget) {
+      return _state._createLocalWorkspace(name);
+    }
+
+    return _state._createCloudWorkspace(name);
+  }
+}
+
+String _workspaceError(WorkspaceException error) {
+  final key = error.localizationKey;
+  if (key == null) return error.message;
+
+  return key.tr(
+    namedArgs: {
+      'min': '${ValidateWorkspaceNameUseCase.minLength}',
+      'max': '${ValidateWorkspaceNameUseCase.maxLength}',
+    },
+  );
+}
+
+class _CreateWorkspaceAccountView extends StatelessWidget {
+  new({
+    required AsyncValue<List<CloudAccountSession>> accounts,
+    required TextEditingController name,
+    required String targetAccountId,
+    required String? errorText,
+    required bool isCreating,
+    required ValueChanged<String?> onTargetAccountChanged,
+    required VoidCallback? onAddCloudAccount,
+    required Future<void> Function() onCreate,
+  }) : _child = switch (accounts) {
+         AsyncData(:final value) => _CreateWorkspaceLoaded(
+           accounts: value,
+           name: name,
+           targetAccountId: targetAccountId,
+           errorText: errorText,
+           isCreating: isCreating,
+           onTargetAccountChanged: onTargetAccountChanged,
+           onAddCloudAccount: onAddCloudAccount,
+           onCreate: onCreate,
+         ),
+         final accounts => _CreateWorkspaceAccountState(accounts),
+       };
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class _CreateWorkspaceLoaded extends StatelessWidget {
-  const _CreateWorkspaceLoaded({
-    required this.accounts,
-    required this.name,
-    required this.targetAccountId,
-    required this.errorText,
-    required this.isCreating,
-    required this.onTargetAccountChanged,
-    required this.onAddCloudAccount,
-    required this.onCreate,
-  });
+  new({
+    required List<CloudAccountSession> accounts,
+    required TextEditingController name,
+    required String targetAccountId,
+    required String? errorText,
+    required bool isCreating,
+    required ValueChanged<String?> onTargetAccountChanged,
+    required VoidCallback? onAddCloudAccount,
+    required Future<void> Function() onCreate,
+  }) : _child = AuraColumn(
+         children: [
+           _WorkspaceNameField(
+             name: name,
+             errorText: errorText,
+             isCreating: isCreating,
+             onCreate: onCreate,
+           ),
+           _WorkspaceTargetSelector(
+             accounts: accounts,
+             targetAccountId: targetAccountId,
+             onChanged: onTargetAccountChanged,
+             isEnabled: !isCreating,
+           ),
+           if (accounts.isEmpty)
+             _CloudAccountAction(onAddCloudAccount: onAddCloudAccount),
+           _CreateWorkspaceButton(isCreating: isCreating, onCreate: onCreate),
+         ],
+         spacing: .md,
+         crossAxisAlignment: .stretch,
+       );
 
-  final List<CloudAccountSession> accounts;
-  final TextEditingController name;
-  final String targetAccountId;
-  final String? errorText;
-  final bool isCreating;
-  final ValueChanged<String?> onTargetAccountChanged;
-  final VoidCallback? onAddCloudAccount;
-  final Future<void> Function() onCreate;
+  final Widget _child;
 
   @override
-  Widget build(BuildContext context) {
-    return AuraColumn(
-      children: [
-        _WorkspaceNameField(
-          name: name,
-          errorText: errorText,
-          isCreating: isCreating,
-          onCreate: onCreate,
-        ),
-        _WorkspaceTargetSelector(
-          accounts: accounts,
-          targetAccountId: targetAccountId,
-          onChanged: onTargetAccountChanged,
-          isEnabled: !isCreating,
-        ),
-        if (accounts.isEmpty)
-          _CloudAccountAction(onAddCloudAccount: onAddCloudAccount),
-        _CreateWorkspaceButton(isCreating: isCreating, onCreate: onCreate),
-      ],
-      spacing: .md,
-      crossAxisAlignment: .stretch,
-    );
-  }
+  Widget build(BuildContext context) => _child;
 }
 
 class _WorkspaceNameField extends StatelessWidget {
-  const _WorkspaceNameField({
-    required this.name,
-    required this.errorText,
-    required this.isCreating,
-    required this.onCreate,
-  });
+  new({
+    required TextEditingController name,
+    required String? errorText,
+    required bool isCreating,
+    required Future<void> Function() onCreate,
+  }) : _child = AuraInput(
+         controller: name,
+         placeholder: Text(
+           LocaleKeys.workspace_management_name_placeholder.tr(),
+         ),
+         label: Text(LocaleKeys.workspace_management_name_label.tr()),
+         error: errorText == null ? null : Text(errorText),
+         state: errorText == null ? .normal : .error,
+         textInputAction: .done,
+         enabled: !isCreating,
+         onSubmitted: (_) => unawaited(onCreate()),
+       );
 
-  final TextEditingController name;
-  final String? errorText;
-  final bool isCreating;
-  final Future<void> Function() onCreate;
+  final Widget _child;
 
   @override
-  Widget build(BuildContext context) => AuraInput(
-    controller: name,
-    placeholder: Text(LocaleKeys.workspace_management_name_placeholder.tr()),
-    label: Text(LocaleKeys.workspace_management_name_label.tr()),
-    error: errorText == null ? null : Text(errorText!),
-    state: errorText == null ? .normal : .error,
-    textInputAction: .done,
-    enabled: !isCreating,
-    onSubmitted: (_) => unawaited(onCreate()),
-  );
+  Widget build(BuildContext context) => _child;
 }
 
 class _WorkspaceTargetSelector extends StatelessWidget {
-  const _WorkspaceTargetSelector({
-    required this.accounts,
-    required this.targetAccountId,
-    required this.onChanged,
-    required this.isEnabled,
-  });
+  new({
+    required List<CloudAccountSession> accounts,
+    required String targetAccountId,
+    required ValueChanged<String?> onChanged,
+    required bool isEnabled,
+  }) : _child = AuraDropdownSelector<String>(
+         options: [
+           const AuraDropdownOption(
+             value: _CreateWorkspaceFormState._localTarget,
+             child: TextLocale('workspace_management.local_target'),
+           ),
+           for (final account in accounts)
+             AuraDropdownOption(
+               value: account.userId,
+               child: Text(account.email),
+             ),
+         ],
+         value: targetAccountId,
+         onChanged: onChanged,
+         label: const TextLocale('workspace_management.target_label'),
+         isEnabled: isEnabled,
+       );
 
-  final List<CloudAccountSession> accounts;
-  final String targetAccountId;
-  final ValueChanged<String?> onChanged;
-  final bool isEnabled;
+  final Widget _child;
 
   @override
-  Widget build(BuildContext context) => AuraDropdownSelector<String>(
-    options: [
-      const AuraDropdownOption(
-        value: _CreateWorkspaceFormState._localTarget,
-        child: TextLocale('workspace_management.local_target'),
-      ),
-      for (final account in accounts)
-        AuraDropdownOption(value: account.userId, child: Text(account.email)),
-    ],
-    value: targetAccountId,
-    onChanged: onChanged,
-    label: const TextLocale('workspace_management.target_label'),
-    isEnabled: isEnabled,
-  );
+  Widget build(BuildContext context) => _child;
 }
 
 class _CloudAccountAction extends StatelessWidget {
-  const _CloudAccountAction({required this.onAddCloudAccount});
+  const new({required this.onAddCloudAccount});
 
   final VoidCallback? onAddCloudAccount;
 
@@ -282,15 +307,13 @@ class _CloudAccountAction extends StatelessWidget {
         variant: .outlined,
       );
     }
+
     return const TextLocale('workspace_management.cloud_add_hint');
   }
 }
 
 class _CreateWorkspaceButton extends StatelessWidget {
-  const _CreateWorkspaceButton({
-    required this.isCreating,
-    required this.onCreate,
-  });
+  const new({required this.isCreating, required this.onCreate});
 
   final bool isCreating;
   final Future<void> Function() onCreate;
@@ -306,7 +329,7 @@ class _CreateWorkspaceButton extends StatelessWidget {
 }
 
 class _CreateWorkspaceAccountState extends StatelessWidget {
-  const _CreateWorkspaceAccountState(this.accounts);
+  const new(this.accounts);
 
   final AsyncValue<List<CloudAccountSession>> accounts;
 

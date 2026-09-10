@@ -19,21 +19,24 @@ class const TextLocale(
   final Color? selectionColor,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Text(
-      data.tr(args: args, context: context),
-      style: style,
-      strutStyle: strutStyle,
-      textAlign: textAlign,
-      locale: locale,
-      softWrap: softWrap,
-      overflow: overflow,
-      textScaler: textScaler,
-      maxLines: maxLines,
-      semanticsLabel: semanticsLabel,
-      textWidthBasis: textWidthBasis,
-      textHeightBehavior: textHeightBehavior,
-      selectionColor: selectionColor,
-    );
-  }
+  Widget build(BuildContext context) => _TranslatedText(this, context);
+}
+
+class _TranslatedText extends Text {
+  new(TextLocale source, BuildContext context)
+    : super(
+        source.data.tr(args: source.args, context: context),
+        style: source.style,
+        strutStyle: source.strutStyle,
+        textAlign: source.textAlign,
+        locale: source.locale,
+        softWrap: source.softWrap,
+        overflow: source.overflow,
+        textScaler: source.textScaler,
+        maxLines: source.maxLines,
+        semanticsLabel: source.semanticsLabel,
+        textWidthBasis: source.textWidthBasis,
+        textHeightBehavior: source.textHeightBehavior,
+        selectionColor: source.selectionColor,
+      );
 }

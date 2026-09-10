@@ -57,19 +57,23 @@ extension CloudModelConnectionUsecasesActions on CloudModelConnectionUsecases {
     _UpdateModelConnectionRequest request,
   ) async {
     final connection = request.connection;
-    final updated = await _gateway.updateModelConnection(
-      connectionId: connection.id,
-      expectedRevision: connection.revision,
-      name: request.name,
-      url: request.url,
-    );
+    final updated = await _updateConnection(connection, request);
 
-    return await this._applySecret(_gateway, (
-      connection: updated,
-      resourceId: connection.id,
-      secret: request.secret,
-    ));
+    return await this._applySecret(
+      _gateway,
+      _secretUpdate(updated, connection.id, request.secret),
+    );
   }
+
+  Future<ModelConnectionView> _updateConnection(
+    CloudModelConnection connection,
+    _UpdateModelConnectionRequest request,
+  ) => _gateway.updateModelConnection(
+    connectionId: connection.id,
+    expectedRevision: connection.revision,
+    name: request.name,
+    url: request.url,
+  );
 
   Future<void> delete(CloudModelConnection connection) =>
       _gateway.deleteModelConnection(
@@ -77,6 +81,12 @@ extension CloudModelConnectionUsecasesActions on CloudModelConnectionUsecases {
         expectedRevision: connection.revision,
       );
 }
+
+_SecretUpdate _secretUpdate(
+  ModelConnectionView connection,
+  String resourceId,
+  String? secret,
+) => (connection: connection, resourceId: resourceId, secret: secret);
 
 extension on CloudModelConnectionUsecases {
   Future<ModelConnectionView> _applySecret(

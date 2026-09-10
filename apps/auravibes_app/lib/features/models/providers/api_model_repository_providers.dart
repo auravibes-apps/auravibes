@@ -7,7 +7,6 @@ import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/services/model_sync_service.dart';
-import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
@@ -33,9 +32,10 @@ ModelApiService modelApiService(Ref _) {
 /// Provider for the model sync service.
 @Riverpod(keepAlive: true)
 ModelSyncService modelSyncService(Ref ref) {
-  final repository = ref.watch(apiModelRepositoryProvider);
-  final apiService = ref.watch(modelApiServiceProvider);
-  final service = _createModelSyncService(repository, apiService);
+  final service = _createModelSyncService(
+    ref.watch(apiModelRepositoryProvider),
+    ref.watch(modelApiServiceProvider),
+  );
 
   final timer = Timer.periodic(
     const Duration(hours: 5),
@@ -51,10 +51,7 @@ ModelSyncService _createModelSyncService(
   ApiModelRepository repository,
   ModelApiService apiService,
 ) => ModelSyncService(
-  syncApiModelsUseCase: SyncApiModelsUseCase(
-    repository: repository,
-    apiService: apiService,
-  ),
+  syncApiModelsUseCase: .new(repository: repository, apiService: apiService),
 );
 
 @riverpod
@@ -66,15 +63,17 @@ Future<List<ApiModelProviderEntity>> apiModelProviders(
     modelCatalogStoreProvider(workspaceId).future,
   );
   final realProviders = _realProviders(await catalog.getAllProviders());
-  final openAIProvider = realProviders.firstWhereOrNull(
-    (provider) => provider.id == 'openai',
-  );
+  final openAIProvider = _openAIProvider(realProviders);
   if (openAIProvider == null || ModelProviderOAuthProfiles.clientId.isEmpty) {
     return realProviders;
   }
 
   return [_codexProvider(openAIProvider), ...realProviders];
 }
+
+ApiModelProviderEntity? _openAIProvider(
+  List<ApiModelProviderEntity> providers,
+) => providers.firstWhereOrNull((provider) => provider.id == 'openai');
 
 List<ApiModelProviderEntity> _realProviders(
   List<ApiModelProviderEntity> providers,
@@ -108,20 +107,23 @@ Future<List<ApiModelEntity>> getAllModels(
   return await catalog.getAllModels();
 }
 
-@riverpod
-// ignore: prefer-static-class (required framework top-level declaration)
-Future<ApiModelEntity?> getModelByProviderAndModelId(
+typedef _GetModelByProviderAndModelId = Future<ApiModelEntity?> Function(
   Ref ref, {
   required String workspaceId,
   required String providerId,
   required String modelId,
-}) async {
-  final catalog = await ref.watch(
-    modelCatalogStoreProvider(workspaceId).future,
-  );
+});
 
-  return await catalog.getModelByProviderAndModelId(providerId, modelId);
-}
+@riverpod
+_GetModelByProviderAndModelId get getModelByProviderAndModelId =>
+    (
+      ref, {
+      required workspaceId,
+      required providerId,
+      required modelId,
+    }) async =>
+        await (await ref.watch(modelCatalogStoreProvider(workspaceId).future))
+            .getModelByProviderAndModelId(providerId, modelId);
 
 @riverpod
 Future<List<ApiModelEntity>> getModelsByProvider(

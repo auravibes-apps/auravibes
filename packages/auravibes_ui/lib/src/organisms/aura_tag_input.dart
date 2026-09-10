@@ -50,64 +50,186 @@ class _AuraTagInputState extends State<AuraTagInput> {
 
   @override
   Widget build(BuildContext context) {
-    final enabled =
-        AuraInteractionScope.of(context).allowsValueChanges &&
-        widget.onChanged != null;
-    final callback = widget.onChanged;
-    void add(String raw) {
-      final tag = raw.trim();
-      if (!enabled ||
-          callback == null ||
-          tag.isEmpty ||
-          widget.value.contains(tag)) {
-        return;
-      }
-      if (widget.maxTags case final max? when widget.value.length >= max) {
-        return;
-      }
-      callback([...widget.value, tag]);
-      _controller.clear();
-    }
+    final data = _buildData(context);
 
-    return Column(
-      crossAxisAlignment: .start,
+    return _AuraTagInputView(
       spacing: context.auraTheme.spacing.sm,
-      children: [
-        if (widget.label case final value?)
-          AuraText(child: Text(value), style: .bodySmall),
-        Wrap(
-          spacing: context.auraTheme.spacing.xs,
-          children: [
-            for (final tag in widget.value)
-              AuraBadge.text(
-                child: Row(
-                  mainAxisSize: .min,
-                  children: [
-                    Text(tag),
-                    IconButton(
-                      onPressed: enabled && callback != null
-                          ? () => callback(
-                              widget.value
-                                  .where((candidate) => candidate != tag)
-                                  .toList(),
-                            )
-                          : null,
-                      tooltip: widget.removeLabel(tag),
-                      icon: const Icon(Icons.close, size: 16),
-                    ),
-                  ],
-                ),
-                semanticLabel: tag,
-              ),
-          ],
-        ),
-        TextField(
-          controller: _controller,
-          decoration: .new(hintText: widget.placeholder),
-          onSubmitted: add,
-          enabled: enabled,
-        ),
-      ],
+      data: data,
+      controller: _controller,
     );
   }
+
+  _AuraTagInputData _buildData(BuildContext context) => _AuraTagInputData(
+    value: widget.value,
+    callback: widget.onChanged,
+    enabled:
+        AuraInteractionScope.of(context).allowsValueChanges &&
+        widget.onChanged != null,
+    label: widget.label,
+    placeholder: widget.placeholder,
+    maxTags: widget.maxTags,
+    removeLabel: widget.removeLabel,
+  );
 }
+
+class _AuraTagInputView extends StatelessWidget {
+  const new({
+    required this.spacing,
+    required this.data,
+    required this.controller,
+  });
+
+  final double spacing;
+  final _AuraTagInputData data;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    spacing: spacing,
+    children: [
+      _AuraTagInputLabel(label: data.label),
+      _AuraTagList.fromData(data: data, spacing: context.auraTheme.spacing.xs),
+      _AuraTagInputTextField(data: data, controller: controller),
+    ],
+  );
+}
+
+class _AuraTagInputTextField extends StatelessWidget {
+  const new({required this.data, required this.controller});
+
+  final _AuraTagInputData data;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+    controller: controller,
+    decoration: .new(hintText: data.placeholder),
+    onSubmitted: (raw) =>
+        _addTag(.new(raw: raw, data: data, controller: controller)),
+    enabled: data.enabled,
+  );
+}
+
+class _AuraTagInputLabel extends StatelessWidget {
+  const new({required this.label});
+
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) => switch (label) {
+    final value? => AuraText(child: Text(value), style: .bodySmall),
+    null => const SizedBox.shrink(),
+  };
+}
+
+class _AuraTagList extends StatelessWidget {
+  const new({required this.spacing, required this.children});
+
+  new fromData({required _AuraTagInputData data, required double spacing})
+    : this(
+        spacing: spacing,
+        children: [
+          for (final tag in data.value)
+            _AuraTagChip.fromData(
+              tag: tag,
+              enabled: data.enabled,
+              removeLabel: data.removeLabel,
+              onRemove: data.callback == null
+                  ? null
+                  : () => data.callback?.call(
+                      data.value
+                          .where((candidate) => candidate != tag)
+                          .toList(),
+                    ),
+            ),
+        ],
+      );
+
+  final double spacing;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) =>
+      Wrap(spacing: spacing, children: children);
+}
+
+class _AuraTagChip extends StatelessWidget {
+  const new({required this.child});
+
+  new fromData({
+    required String tag,
+    required bool enabled,
+    required String Function(String tag) removeLabel,
+    required VoidCallback? onRemove,
+  }) : this(
+         child: AuraBadge.text(
+           child: Row(
+             mainAxisSize: .min,
+             children: [
+               Text(tag),
+               IconButton(
+                 onPressed: enabled ? onRemove : null,
+                 tooltip: removeLabel(tag),
+                 icon: const Icon(Icons.close, size: 16),
+               ),
+             ],
+           ),
+           semanticLabel: tag,
+         ),
+       );
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => child;
+}
+
+class _AuraTagInputData {
+  const new({
+    required this.value,
+    required this.callback,
+    required this.enabled,
+    required this.label,
+    required this.placeholder,
+    required this.maxTags,
+    required this.removeLabel,
+  });
+
+  final List<String> value;
+  final ValueChanged<List<String>>? callback;
+  final bool enabled;
+  final String? label;
+  final String? placeholder;
+  final int? maxTags;
+  final String Function(String tag) removeLabel;
+}
+
+class _AuraTagAddRequest {
+  const new({required this.raw, required this.data, required this.controller});
+
+  final String raw;
+  final _AuraTagInputData data;
+  final TextEditingController controller;
+}
+
+void _addTag(_AuraTagAddRequest request) {
+  final tag = request.raw.trim();
+  if (!_canAddTag(request, tag)) return;
+  request.data.callback?.call([...request.data.value, tag]);
+  request.controller.clear();
+}
+
+bool _canAddTag(_AuraTagAddRequest request, String tag) {
+  if (!_isTagInputReady(request.data, tag)) return false;
+
+  final maxTags = request.data.maxTags;
+
+  return maxTags == null || request.data.value.length < maxTags;
+}
+
+bool _isTagInputReady(_AuraTagInputData data, String tag) =>
+    data.enabled &&
+    data.callback != null &&
+    tag.isNotEmpty &&
+    !data.value.contains(tag);

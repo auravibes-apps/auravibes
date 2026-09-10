@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -13,6 +12,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_
 import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -162,8 +162,7 @@ void main() {
         () => chatbotService.sendMessage(
           _model,
           any(),
-          tools: const [],
-          sessionId: any(named: 'sessionId'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -268,8 +267,7 @@ void main() {
           () => chatbotService.sendMessage(
             _model,
             any(),
-            tools: const [],
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer((invocation) {
           final history =
@@ -352,16 +350,15 @@ void main() {
           () => chatbotService.sendMessage(
             _model,
             any(),
-            tools: tools,
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer((invocation) {
           sentMessages.add(
             List<ChatMessage>.from(invocation.positionalArguments[1] as List),
           );
-          sentTools.add(
-            List<ToolSpec>.from(invocation.namedArguments[#tools] as List),
-          );
+          final options =
+              invocation.namedArguments[#options] as ChatbotMessageOptions;
+          sentTools.add(List<ToolSpec>.from(options.tools ?? const []));
 
           return Stream.value(
             ChatResult<ChatMessage>(
@@ -400,8 +397,7 @@ void main() {
         () => chatbotService.sendMessage(
           _model,
           any(),
-          tools: const [],
-          sessionId: any(named: 'sessionId'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -439,8 +435,7 @@ void main() {
         () => chatbotService.sendMessage(
           _model,
           any(),
-          tools: const [],
-          sessionId: any(named: 'sessionId'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -491,8 +486,7 @@ void main() {
         () => chatbotService.sendMessage(
           _model,
           any(),
-          tools: const [],
-          sessionId: any(named: 'sessionId'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -570,8 +564,7 @@ void main() {
           () => chatbotService.sendMessage(
             any(),
             any(),
-            tools: const [],
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([
@@ -590,8 +583,7 @@ void main() {
           () => chatbotService.sendMessage(
             any(),
             any(),
-            tools: const [],
-            sessionId: 'conversation-1',
+            options: any(named: 'options'),
           ),
         ).called(1);
       },
@@ -645,8 +637,7 @@ void main() {
           () => chatbotService.sendMessage(
             any(),
             any(),
-            tools: tools,
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([
@@ -665,8 +656,7 @@ void main() {
           () => chatbotService.sendMessage(
             any(),
             any(),
-            tools: tools,
-            sessionId: 'conversation-1',
+            options: any(named: 'options'),
           ),
         ).called(1);
       },
@@ -717,8 +707,7 @@ void main() {
         () => chatbotService.sendMessage(
           any(),
           any(),
-          tools: any(named: 'tools'),
-          sessionId: any(named: 'sessionId'),
+          options: any(named: 'options'),
         ),
       );
     });
@@ -730,8 +719,7 @@ void main() {
           () => chatbotService.sendMessage(
             _model,
             any(),
-            tools: const [],
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([
@@ -772,8 +760,7 @@ void main() {
           () => chatbotService.sendMessage(
             _model,
             any(),
-            tools: const [],
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([
@@ -821,8 +808,7 @@ void main() {
           () => chatbotService.sendMessage(
             _model,
             any(),
-            tools: const [],
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer((_) => controller.stream);
 
@@ -865,8 +851,7 @@ void main() {
           () => chatbotService.sendMessage(
             _model,
             any(),
-            tools: const [],
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer((_) => controller.stream);
 
@@ -909,8 +894,7 @@ void main() {
         () => chatbotService.sendMessage(
           _model,
           any(),
-          tools: const [],
-          sessionId: any(named: 'sessionId'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer((_) => controller.stream);
 
@@ -965,8 +949,7 @@ void main() {
           () => chatbotService.sendMessage(
             _model,
             any(),
-            tools: const [],
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer((_) => controller.stream);
         when(() => messageRepository.createMessage(any())).thenAnswer((_) {
@@ -1036,8 +1019,7 @@ void main() {
         () => chatbotService.sendMessage(
           _model,
           any(),
-          tools: const [],
-          sessionId: any(named: 'sessionId'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer((_) => const Stream.empty());
 
@@ -1228,8 +1210,7 @@ void main() {
         () => chatbotService.sendMessage(
           _model,
           any(),
-          tools: const [],
-          sessionId: any(named: 'sessionId'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer((_) => Stream.error(StateError('model error')));
 
@@ -1291,8 +1272,7 @@ void main() {
           () => chatbotService.sendMessage(
             _model,
             any(),
-            tools: const [],
-            sessionId: any(named: 'sessionId'),
+            options: any(named: 'options'),
           ),
         ).thenAnswer((_) => const Stream.empty());
 
@@ -1435,8 +1415,7 @@ void main() {
         () => chatbotService.sendMessage(
           _model,
           any(),
-          tools: const [],
-          sessionId: any(named: 'sessionId'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([

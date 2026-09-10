@@ -7,6 +7,7 @@ export 'agent_visibility.dart';
 
 part 'agent_entity.freezed.dart';
 
+@immutable
 @freezed
 abstract class const AgentEntity._() with _$AgentEntity {
   const factory({
@@ -21,13 +22,31 @@ abstract class const AgentEntity._() with _$AgentEntity {
     @Default(true) bool isEnabled,
     @Default(AgentVisibility.both) AgentVisibility visibility,
   }) = _AgentEntity;
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
+}
+
+extension AgentEntityHelpers on AgentEntity {
   bool get appearsInChatSelector =>
       isEnabled && visibility.appearsInChatSelector;
 
   bool get appearsInSubAgentList =>
       isEnabled && visibility.appearsInSubAgentList;
+
+  String identity() => id;
+
+  bool hasSkills() => skills.isNotEmpty;
+
+  bool hasDescription() => description.trim().isNotEmpty;
 }
 
+@immutable
 @freezed
 abstract class const AgentToCreate._() with _$AgentToCreate {
   const factory({
@@ -46,8 +65,22 @@ abstract class const AgentToCreate._() with _$AgentToCreate {
         normalizedDescription.length <= AgentLimits.descriptionMaxLength &&
         content.trim().isNotEmpty;
   }
+
+  @override
+  int get hashCode;
+
+  bool hasRequiredName() => name.trim().isNotEmpty;
+
+  bool hasRequiredContent() => content.trim().isNotEmpty;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class const AgentToUpdate._() with _$AgentToUpdate {
   const factory({
@@ -66,11 +99,41 @@ abstract class const AgentToUpdate._() with _$AgentToUpdate {
         normalizedDescription.length <= AgentLimits.descriptionMaxLength &&
         content.trim().isNotEmpty;
   }
+
+  @override
+  int get hashCode;
+
+  bool hasRequiredName() => name.trim().isNotEmpty;
+
+  bool hasRequiredContent() => content.trim().isNotEmpty;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 sealed class AgentSkillRef with _$AgentSkillRef {
   const factory user(String skillId) = UserAgentSkillRef;
 
   const factory app(String identifier) = AppAgentSkillRef;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
+
+  String skillIdentifier() => switch (this) {
+    UserAgentSkillRef(:final skillId) => skillId,
+    AppAgentSkillRef(:final identifier) => identifier,
+  };
+
+  bool isAppSkill() => this is AppAgentSkillRef;
 }

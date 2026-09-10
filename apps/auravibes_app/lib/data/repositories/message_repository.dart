@@ -12,6 +12,20 @@ import 'package:drift/drift.dart';
 
 const _messageContentCannotBeEmpty = 'Message content cannot be empty';
 
+typedef _MessageWatchError = ({
+  Exception error,
+  StackTrace stackTrace,
+  EventSink<List<MessageEntity>> sink,
+  String conversationId,
+});
+
+typedef _MessageWatchErrorInput = ({
+  Object error,
+  StackTrace stackTrace,
+  EventSink<List<MessageEntity>> sink,
+  String conversationId,
+});
+
 /// Implementation of [MessageRepository] interface.
 ///
 /// This class provides a concrete implementation of message data operations
@@ -21,7 +35,11 @@ class MessageRepository(
   /// The database instance for message operations.
   final AppDatabase _database, {
   final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
-}) {
+}) with
+    _MessageRepositoryReadApi,
+    _MessageRepositoryQueryApi,
+    _MessageRepositoryMutationApi,
+    _MessageRepositoryStateApi {
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
   ) async {
@@ -29,8 +47,96 @@ class MessageRepository(
       conversationId,
     );
 
-    return await this._mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
+}
+
+mixin _MessageRepositoryReadApi {
+  Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
+    List<String> conversationIds,
+  ) =>
+      MessageRepositoryReadOperations(this as MessageRepository)
+          .getLatestAssistantMessagesByConversations(conversationIds);
+
+  Stream<List<MessageEntity>> watchMessagesByConversation(
+    String conversationId,
+  ) =>
+      MessageRepositoryReadOperations(this as MessageRepository)
+          .watchMessagesByConversation(conversationId);
+}
+
+mixin _MessageRepositoryQueryApi {
+  Stream<MessageEntity?> watchLatestAssistantMessageByConversation(
+    String conversationId,
+  ) =>
+      MessageRepositoryQueryOperations(this as MessageRepository)
+          .watchLatestAssistantMessageByConversation(conversationId);
+
+  Future<List<MessageEntity>> getMessagesByConversationPaginated(
+    String conversationId,
+    int limit,
+    int offset,
+  ) =>
+      MessageRepositoryQueryOperations(this as MessageRepository)
+          .getMessagesByConversationPaginated(conversationId, limit, offset);
+
+  Future<List<MessageEntity>> getMessagesByType(
+    String conversationId,
+    MessageType messageType,
+  ) =>
+      MessageRepositoryQueryOperations(this as MessageRepository)
+          .getMessagesByType(conversationId, messageType);
+
+  Future<List<MessageEntity>> getUserMessages(String conversationId) =>
+      MessageRepositoryQueryOperations(this as MessageRepository)
+          .getUserMessages(conversationId);
+
+  Future<List<MessageEntity>> getSystemMessages(String conversationId) =>
+      MessageRepositoryQueryOperations(this as MessageRepository)
+          .getSystemMessages(conversationId);
+
+  Future<MessageEntity?> getMessageById(String id) =>
+      MessageRepositoryQueryOperations(this as MessageRepository)
+          .getMessageById(id);
+
+  Future<MessageEntity> createMessage(MessageToCreate message) =>
+      MessageRepositoryQueryOperations(this as MessageRepository)
+          .createMessage(message);
+}
+
+mixin _MessageRepositoryMutationApi {
+  Future<MessageEntity> patchMessage(String id, MessagePatch message) =>
+      MessageRepositoryMutationOperations(this as MessageRepository)
+          .patchMessage(id, message);
+}
+
+mixin _MessageRepositoryStateApi {
+  Future<bool> deleteMessage(String id) =>
+      MessageRepositoryStateOperations(this as MessageRepository)
+          .deleteMessage(id);
+
+  Future<bool> messageExists(String id) =>
+      MessageRepositoryStateOperations(this as MessageRepository)
+          .messageExists(id);
+
+  Future<List<MessageEntity>> getMessagesByStatus(
+    String conversationId,
+    MessageStatus status,
+  ) =>
+      MessageRepositoryStateOperations(this as MessageRepository)
+          .getMessagesByStatus(conversationId, status);
+
+  Future<int> getMessageCountByConversation(String conversationId) =>
+      MessageRepositoryStateOperations(this as MessageRepository)
+          .getMessageCountByConversation(conversationId);
+
+  Future<bool> validateMessage(MessageToCreate message) =>
+      MessageRepositoryStateOperations(this as MessageRepository)
+          .validateMessage(message);
+
+  Future<MessageEntity?> getLatestCompactionSummary(String conversationId) =>
+      MessageRepositoryStateOperations(this as MessageRepository)
+          .getLatestCompactionSummary(conversationId);
 }
 
 extension MessageRepositoryReadOperations on MessageRepository {
@@ -40,41 +146,51 @@ extension MessageRepositoryReadOperations on MessageRepository {
     final messageTables = await _database.messageDao
         .getLatestAssistantMessagesByConversations(conversationIds);
 
-    return messageTables.map(this._mapToMessage).toList();
+    return messageTables.map(_mapToMessage).toList();
   }
 
   Stream<List<MessageEntity>> watchMessagesByConversation(
     String conversationId,
-  ) => this
-      ._watchMessagesQuery(conversationId)
-      .map(this._mapJoinedMessageRows)
-      .transform(this._messageWatchTransformer(conversationId));
+  ) =>
+      _watchMessagesQuery(conversationId)
+          .map(_mapJoinedMessageRows)
+          .transform(_messageWatchTransformer(conversationId));
 }
 
 extension on MessageRepository {
-  Stream<List<TypedResult>> _watchMessagesQuery(String conversationId) =>
-      (_database.select(_database.messages).join([
-              leftOuterJoin(
-                _database.messageAttachments,
-                _database.messageAttachments.messageId.equalsExp(
-                  _database.messages.id,
-                ),
-              ),
-            ])
-            ..where(_database.messages.conversationId.equals(conversationId))
-            ..orderBy([
-              OrderingTerm(expression: _database.messages.createdAt),
-              OrderingTerm(expression: _database.messageAttachments.createdAt),
-            ]))
-          .watch();
+  Stream<List<TypedResult>> _watchMessagesQuery(String conversationId) {
+    final query = _database
+        .select(_database.messages)
+        .join(_messageAttachmentJoins());
+    query.where(_database.messages.conversationId.equals(conversationId));
+    query.orderBy(_messageOrderTerms());
+
+    return query.watch();
+  }
+
+  List<Join<HasResultSet, dynamic>> _messageAttachmentJoins() => [
+    leftOuterJoin(
+      _database.messageAttachments,
+      _database.messageAttachments.messageId.equalsExp(_database.messages.id),
+    ),
+  ];
+
+  List<OrderingTerm> _messageOrderTerms() => [
+    OrderingTerm(expression: _database.messages.createdAt),
+    OrderingTerm(expression: _database.messageAttachments.createdAt),
+  ];
 
   StreamTransformer<List<MessageEntity>, List<MessageEntity>>
   _messageWatchTransformer(String conversationId) =>
       StreamTransformer.fromHandlers(
         handleData: (messages, sink) =>
             _handleWatchData(messages, sink, conversationId),
-        handleError: (error, stackTrace, sink) =>
-            _handleWatchError(error, stackTrace, sink, conversationId),
+        handleError: (error, stackTrace, sink) => _handleWatchError((
+          error: error,
+          stackTrace: stackTrace,
+          sink: sink,
+          conversationId: conversationId,
+        )),
       );
 
   void _handleWatchData(
@@ -85,18 +201,24 @@ extension on MessageRepository {
     try {
       sink.add(messages);
     } on Exception catch (error, stackTrace) {
-      _addWatchError(error, stackTrace, sink, conversationId);
+      _addWatchError((
+        error: error,
+        stackTrace: stackTrace,
+        sink: sink,
+        conversationId: conversationId,
+      ));
     }
   }
 
-  void _handleWatchError(
-    Object error,
-    StackTrace stackTrace,
-    EventSink<List<MessageEntity>> sink,
-    String conversationId,
-  ) {
+  void _handleWatchError(_MessageWatchErrorInput data) {
+    final (:error, :stackTrace, :sink, :conversationId) = data;
     if (error is Exception) {
-      _addWatchError(error, stackTrace, sink, conversationId);
+      _addWatchError((
+        error: error,
+        stackTrace: stackTrace,
+        sink: sink,
+        conversationId: conversationId,
+      ));
 
       return;
     }
@@ -104,12 +226,9 @@ extension on MessageRepository {
     sink.addError(error, stackTrace);
   }
 
-  void _addWatchError(
-    Exception error,
-    StackTrace stackTrace,
-    EventSink<List<MessageEntity>> sink,
-    String conversationId,
-  ) {
+  void _addWatchError(_MessageWatchError data) {
+    final (:error, :stackTrace, :sink, :conversationId) = data;
+
     sink.addError(
       MessageException(
         'Failed to watch messages for conversation $conversationId',
@@ -126,7 +245,7 @@ extension MessageRepositoryQueryOperations on MessageRepository {
   ) {
     return _database.messageDao
         .watchLatestAssistantMessageByConversation(conversationId)
-        .map((message) => message == null ? null : this._mapToMessage(message));
+        .map((message) => message == null ? null : _mapToMessage(message));
   }
 
   Future<List<MessageEntity>> getMessagesByConversationPaginated(
@@ -137,7 +256,7 @@ extension MessageRepositoryQueryOperations on MessageRepository {
     final messageTables = await _database.messageDao
         .getMessagesByConversationPaginated(conversationId, limit, offset);
 
-    return await this._mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<List<MessageEntity>> getMessagesByType(
@@ -146,10 +265,10 @@ extension MessageRepositoryQueryOperations on MessageRepository {
   ) async {
     final messageTables = await _database.messageDao.getMessagesByType(
       conversationId,
-      this._messageTypeToTableType(messageType),
+      _messageTypeToTableType(messageType),
     );
 
-    return await this._mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<List<MessageEntity>> getUserMessages(String conversationId) async {
@@ -157,7 +276,7 @@ extension MessageRepositoryQueryOperations on MessageRepository {
       conversationId,
     );
 
-    return await this._mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<List<MessageEntity>> getSystemMessages(String conversationId) async {
@@ -165,7 +284,7 @@ extension MessageRepositoryQueryOperations on MessageRepository {
       conversationId,
     );
 
-    return await this._mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<MessageEntity?> getMessageById(String id) async {
@@ -173,31 +292,38 @@ extension MessageRepositoryQueryOperations on MessageRepository {
 
     if (messageTable == null) return null;
 
-    return await this._mapToMessageWithAttachments(messageTable);
+    return await _mapToMessageWithAttachments(messageTable);
   }
 
   Future<MessageEntity> createMessage(MessageToCreate message) async {
     // Validate message before creating.
-    if (!await this.validateMessage(message)) {
+    if (!await validateMessage(message)) {
       throw const MessageValidationException('Invalid message data');
     }
 
     final promotedAttachments = <MessageAttachmentToCreate>[];
     try {
-      await this._promoteAttachments(message.attachments, promotedAttachments);
-
-      final createdMessage = await this._insertMessage(
-        message.copyWith(attachments: promotedAttachments),
-      );
-
-      await this._deleteDraftAttachmentFiles(message.attachments);
-
-      return await this._mapToMessageWithAttachments(createdMessage);
+      return await _createMessage(message, promotedAttachments);
     } on Exception {
-      await this._deleteDraftAttachmentFiles(promotedAttachments);
+      await _deleteDraftAttachmentFiles(promotedAttachments);
 
       rethrow;
     }
+  }
+
+  Future<MessageEntity> _createMessage(
+    MessageToCreate message,
+    List<MessageAttachmentToCreate> promotedAttachments,
+  ) async {
+    await _promoteAttachments(message.attachments, promotedAttachments);
+
+    final createdMessage = await _insertMessage(
+      message.copyWith(attachments: promotedAttachments),
+    );
+
+    await _deleteDraftAttachmentFiles(message.attachments);
+
+    return _mapToMessageWithAttachments(createdMessage);
   }
 }
 
@@ -214,15 +340,16 @@ extension on MessageRepository {
     }
   }
 
-  Future<MessagesTable> _insertMessage(MessageToCreate message) async {
-    return _database.transaction(() async {
-      final createdMessage = await _database.messageDao.insertMessage(
-        _mapToMessagesCompanion(message),
-      );
-      await _insertAttachments(createdMessage.id, message.attachments);
+  Future<MessagesTable> _insertMessage(MessageToCreate message) =>
+      _database.transaction(() => _insertMessageRows(message));
 
-      return createdMessage;
-    });
+  Future<MessagesTable> _insertMessageRows(MessageToCreate message) async {
+    final createdMessage = await _database.messageDao.insertMessage(
+      _mapToMessagesCompanion(message),
+    );
+    await _insertAttachments(createdMessage.id, message.attachments);
+
+    return createdMessage;
   }
 
   Future<void> _insertAttachments(
@@ -239,10 +366,10 @@ extension on MessageRepository {
 
 extension MessageRepositoryMutationOperations on MessageRepository {
   Future<MessageEntity> patchMessage(String id, MessagePatch message) async {
-    this._validateMessagePatch(message);
-    await this._validateSentMessage(id, message);
+    _validateMessagePatch(message);
+    await _validateSentMessage(id, message);
 
-    final messageCompanion = this._mapPatchToMessagesCompanion(message);
+    final messageCompanion = _mapPatchToMessagesCompanion(message);
     final updatedMessage = await _database.messageDao.patchMessage(
       id,
       messageCompanion,
@@ -252,7 +379,7 @@ extension MessageRepositoryMutationOperations on MessageRepository {
       throw MessageNotFoundException(id);
     }
 
-    return await this._mapToMessageWithAttachments(updatedMessage);
+    return await _mapToMessageWithAttachments(updatedMessage);
   }
 }
 
@@ -283,14 +410,14 @@ extension on MessageRepository {
 
 extension MessageRepositoryStateOperations on MessageRepository {
   Future<bool> deleteMessage(String id) async {
-    final message = await this.getMessageById(id);
+    final message = await getMessageById(id);
     if (message == null) {
       return false; // Return false instead of throwing for delete operations.
     }
 
     final deleted = await _database.messageDao.deleteMessage(id);
     if (deleted) {
-      await this._deletePersistedAttachmentFiles(message.attachments);
+      await _deletePersistedAttachmentFiles(message.attachments);
     }
 
     return deleted;
@@ -309,7 +436,7 @@ extension MessageRepositoryStateOperations on MessageRepository {
       status.value,
     );
 
-    return await this._mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<int> getMessageCountByConversation(String conversationId) {
@@ -318,9 +445,7 @@ extension MessageRepositoryStateOperations on MessageRepository {
 
   Future<bool> validateMessage(MessageToCreate message) async {
     if (!message.isValid) {
-      throw MessageValidationException(
-        this._getValidationErrorToCreate(message),
-      );
+      throw MessageValidationException(_getValidationErrorToCreate(message));
     }
 
     return true;
@@ -335,7 +460,7 @@ extension MessageRepositoryStateOperations on MessageRepository {
 
     if (row == null) return null;
 
-    return await this._mapToMessageWithAttachments(row);
+    return await _mapToMessageWithAttachments(row);
   }
 }
 
@@ -345,15 +470,22 @@ extension on MessageRepository {
   ) async {
     if (messageTables.isEmpty) return [];
 
-    final ids = messageTables.map((message) => message.id).toList();
-    final attachmentRows = await (_database.select(
-      _database.messageAttachments,
-    )..where((attachment) => attachment.messageId.isIn(ids))).get();
+    final attachmentRows = await _messageAttachmentRows(messageTables);
 
     return _mapMessageTables(
       messageTables,
       _attachmentsByMessage(attachmentRows),
     );
+  }
+
+  Future<List<MessageAttachmentsTable>> _messageAttachmentRows(
+    List<MessagesTable> messageTables,
+  ) async {
+    final ids = messageTables.map((message) => message.id).toList();
+
+    return await (_database.select(
+      _database.messageAttachments,
+    )..where((attachment) => attachment.messageId.isIn(ids))).get();
   }
 
   Map<String, List<MessageAttachmentEntity>> _attachmentsByMessage(
@@ -462,18 +594,26 @@ extension on MessageRepository {
     final messageRows = <String, MessagesTable>{};
     final attachmentsByMessage = <String, List<MessageAttachmentEntity>>{};
     for (final row in rows) {
-      final message = row.readTable(_database.messages);
-      messageRows[message.id] = message;
-
-      final attachment = row.readTableOrNull(_database.messageAttachments);
-      if (attachment == null) continue;
-
-      attachmentsByMessage
-          .putIfAbsent(message.id, () => [])
-          .add(_mapToAttachment(attachment));
+      _collectJoinedMessageRow(row, messageRows, attachmentsByMessage);
     }
 
     return (messages: messageRows, attachments: attachmentsByMessage);
+  }
+
+  void _collectJoinedMessageRow(
+    TypedResult row,
+    Map<String, MessagesTable> messageRows,
+    Map<String, List<MessageAttachmentEntity>> attachmentsByMessage,
+  ) {
+    final message = row.readTable(_database.messages);
+    messageRows[message.id] = message;
+
+    final attachment = row.readTableOrNull(_database.messageAttachments);
+    if (attachment == null) return;
+
+    attachmentsByMessage
+        .putIfAbsent(message.id, () => [])
+        .add(_mapToAttachment(attachment));
   }
 
   List<MessageEntity> _joinedMessages(
@@ -505,18 +645,19 @@ extension on MessageRepository {
   }
 
   bool _hasMessagePayload(MessageMetadataEntity? metadata) {
-    if (metadata == null) return false;
-
-    return metadata.toolCalls.isNotEmpty ||
-        (metadata.thinking?.trim().isNotEmpty ?? false) ||
-        metadata.modelMetadata.isNotEmpty ||
-        metadata.promptTokens != null ||
-        metadata.completionTokens != null ||
-        metadata.totalTokens != null;
+    return metadata != null &&
+        [
+          metadata.toolCalls.isNotEmpty,
+          metadata.thinking?.trim().isNotEmpty ?? false,
+          metadata.modelMetadata.isNotEmpty,
+          metadata.promptTokens != null,
+          metadata.completionTokens != null,
+          metadata.totalTokens != null,
+        ].any((hasPayload) => hasPayload);
   }
 }
 
-extension on MessageRepository {
+extension MessageRepositoryCompanionMappings on MessageRepository {
   /// Maps a [MessageEntity] domain entity to a [MessagesCompanion]
   /// for database operations.
   ///
@@ -555,7 +696,9 @@ extension on MessageRepository {
       metadata: .absentIfNull(JsonCodec.encode(message.metadata?.toJson())),
     );
   }
+}
 
+extension MessageRepositoryValidationMappings on MessageRepository {
   /// Gets validation error message for a message.
   ///
   /// [message] The message to validate.
@@ -647,7 +790,10 @@ class MessageValidationException extends MessageException {
   const new(super.message, [super.cause]);
 
   @override
-  String toString() => super.toString();
+  String toString() {
+    final value = super.toString();
+    return value;
+  }
 }
 
 /// Exception thrown when a message is not found.
@@ -660,5 +806,8 @@ class MessageNotFoundException extends MessageException {
   final String messageId;
 
   @override
-  String toString() => super.toString();
+  String toString() {
+    final value = super.toString();
+    return value;
+  }
 }

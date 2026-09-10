@@ -82,14 +82,10 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     final drafts = state[conversationId];
     if (drafts == null) return;
 
-    if (!drafts.any((d) => d.id == draftId)) return;
+    final remainingDrafts = _withoutDraft(drafts, draftId);
+    if (remainingDrafts.length == drafts.length) return;
 
-    final remainingDrafts = drafts.where((d) => d.id != draftId).toList();
-
-    state = {
-      ..._withoutConversation(conversationId),
-      if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
-    };
+    state = _withRemainingDrafts(conversationId, remainingDrafts);
   }
 
   void clear(String conversationId) {
@@ -98,6 +94,19 @@ class ConversationSendQueue extends _$ConversationSendQueue {
 
     state = _withoutConversation(conversationId);
   }
+
+  List<ConversationQueuedDraft> _withoutDraft(
+    List<ConversationQueuedDraft> drafts,
+    String draftId,
+  ) => drafts.where((draft) => draft.id != draftId).toList();
+
+  Map<String, List<ConversationQueuedDraft>> _withRemainingDrafts(
+    String conversationId,
+    List<ConversationQueuedDraft> remainingDrafts,
+  ) => {
+    ..._withoutConversation(conversationId),
+    if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
+  };
 
   Map<String, List<ConversationQueuedDraft>> _withoutConversation(
     String conversationId,

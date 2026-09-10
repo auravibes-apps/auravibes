@@ -28,29 +28,70 @@ class const _PickerButtonSemantics({
   required final double width,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final colors = context.auraColors;
+  Widget build(BuildContext context) => _PickerButtonThemedSurface(
+    child: child,
+    decoration: decoration,
+    label: label,
+    onPressed: onPressed,
+    selected: selected,
+    width: width,
+  );
+}
 
-    return _PickerButtonA11y(
-      child: _PickerButtonSurface(
-        child: child,
-        color: colors.primary.withValues(alpha: 0.16),
-        decoration: decoration ?? _defaultDecoration(context, colors),
-        onPressed: onPressed,
-        width: width,
-      ),
-      selected: selected,
-      label: label,
-    );
-  }
+class const _PickerButtonThemedSurface({
+  required final Widget child,
+  required final Decoration? decoration,
+  required final String label,
+  required final VoidCallback onPressed,
+  required final bool selected,
+  required final double width,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _PickerButtonThemedContent(
+    child: child,
+    decoration: decoration,
+    label: label,
+    onPressed: onPressed,
+    selected: selected,
+    width: width,
+    colors: context.auraColors,
+    borderRadius: context.auraTheme.fromBorderRadius(.md),
+  );
+}
 
-  Decoration _defaultDecoration(BuildContext context, AuraColorScheme colors) =>
-      BoxDecoration(
-        border: Border.fromBorderSide(.new(color: colors.outlineVariant)),
-        borderRadius: BorderRadius.circular(
-          context.auraTheme.fromBorderRadius(.md),
-        ),
-      );
+class _PickerButtonThemedContent extends StatelessWidget {
+  _PickerButtonThemedContent({
+    required Widget child,
+    required Decoration? decoration,
+    required String label,
+    required VoidCallback onPressed,
+    required bool selected,
+    required double width,
+    required AuraColorScheme colors,
+    required double borderRadius,
+  }) : _child = _PickerButtonA11y(
+         child: _PickerButtonSurface(
+           child: child,
+           color: colors.primary.withValues(alpha: 0.16),
+           decoration:
+               decoration ??
+               BoxDecoration(
+                 border: Border.fromBorderSide(
+                   .new(color: colors.outlineVariant),
+                 ),
+                 borderRadius: BorderRadius.circular(borderRadius),
+               ),
+           onPressed: onPressed,
+           width: width,
+         ),
+         label: label,
+         selected: selected,
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class const _PickerButtonSurface({
@@ -211,6 +252,8 @@ class const _DatePickerGrid({required final _DatePicker picker})
 }
 
 class const _DatePickerGridChildren(final _DatePicker picker) {
+  List<Widget> get children => buildChildren();
+
   List<Widget> get _emptyDays {
     final value = picker.value;
     final firstDay = DateTime(value.year, value.month);
@@ -230,8 +273,6 @@ class const _DatePickerGridChildren(final _DatePicker picker) {
         _DatePickerDay(picker: picker, day: day),
     ];
   }
-
-  List<Widget> get children => buildChildren();
 
   List<Widget> buildChildren() => [..._emptyDays, ..._dayWidgets];
 }
@@ -356,11 +397,7 @@ class const _TimePickerUnit({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _TimePickerUnitLayout(
-    data: _TimePickerUnitData(
-      picker: picker,
-      hour: hour,
-      colors: context.auraColors,
-    ),
+    data: .new(picker: picker, hour: hour, colors: context.auraColors),
   );
 }
 
@@ -386,6 +423,9 @@ class const _TimePickerUnitData({
   void decrease() => picker.onChanged(_change(-1));
 
   void increase() => picker.onChanged(_change(1));
+
+  @override
+  String toString() => '_TimePickerUnitData(hour: $hour, value: $value)';
 
   DateTime _change(int delta) {
     final dateTime = picker.value;

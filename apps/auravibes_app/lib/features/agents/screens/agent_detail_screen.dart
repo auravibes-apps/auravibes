@@ -66,6 +66,20 @@ typedef _AgentSkillTileData = ({
   bool disabled,
 });
 
+typedef _ToolGroupRequest = ({
+  String key,
+  ({String source, String skillSlug, String toolSlug}) parsed,
+  List<WorkspaceToolEntity> visibleTools,
+  _ToolGroupBuckets buckets,
+});
+
+typedef _NewToolGroupRequest = ({
+  String key,
+  ({String source, String skillSlug, String toolSlug}) parsed,
+  WorkspaceSkill? skill,
+  List<WorkspaceToolEntity> visibleTools,
+});
+
 class const AgentDetailScreen({
   required final String workspaceId,
   final String? agentId,
@@ -75,8 +89,8 @@ class const AgentDetailScreen({
   ConsumerState<AgentDetailScreen> createState() => _AgentDetailScreenState();
 }
 
-class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
-  static const _compactLayoutWidth = 640.0;
+abstract class _AgentDetailScreenStateBase
+    extends ConsumerState<AgentDetailScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _contentController = TextEditingController();
@@ -95,12 +109,23 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
     _contentController.dispose();
     super.dispose();
   }
+}
+
+class _AgentDetailScreenState extends _AgentDetailScreenStateBase
+    with
+        _AgentDetailDialogs,
+        _AgentDetailInitialization,
+        _AgentDetailToolOverrides,
+        _AgentDetailEditing,
+        _AgentDetailSaving,
+        _AgentDetailSummaryActions {
+  static const _compactLayoutWidth = 640.0;
 
   @override
   Widget build(BuildContext context) => _AgentDetailScreenView(state: this);
 }
 
-extension _AgentDetailDialogs on _AgentDetailScreenState {
+mixin _AgentDetailDialogs on _AgentDetailScreenStateBase {
   Future<void> _showSkillsManager({
     required List<WorkspaceSkill> enabledSkills,
     required List<WorkspaceSkill> disabledSkills,
@@ -109,7 +134,7 @@ extension _AgentDetailDialogs on _AgentDetailScreenState {
     return showDialog<void>(
       context: context,
       builder: (_) => _AgentSkillsDialog(
-        owner: this,
+        owner: this as _AgentDetailScreenState,
         enabledSkills: enabledSkills,
         disabledSkills: disabledSkills,
         unavailableRefs: unavailableRefs,
@@ -121,6 +146,12 @@ extension _AgentDetailDialogs on _AgentDetailScreenState {
 
   void _setVisibility(AgentVisibility value) =>
       setState(() => _visibility = value);
+
+  void _setToolPermissionMode(String toolId, AgentToolPermissionMode value) {
+    setState(() {
+      _toolPermissionModes[toolId] = value;
+    });
+  }
 
   void _manageSkills({
     required List<WorkspaceSkill> enabledSkills,
@@ -151,9 +182,17 @@ extension _AgentDetailDialogs on _AgentDetailScreenState {
       ),
     );
   }
+
+  void _manageSkillsFromSummary(_AgentFormSummary summary) {
+    _manageSkills(
+      enabledSkills: summary.enabledSkills,
+      disabledSkills: summary.disabledSkills,
+      unavailableRefs: summary.unavailableRefs,
+    );
+  }
 }
 
-extension _AgentDetailInitialization on _AgentDetailScreenState {
+mixin _AgentDetailInitialization on _AgentDetailScreenStateBase {
   void initialize(AgentEntity agent) {
     _loaded = true;
     _initializeAgentFields(agent);
@@ -179,15 +218,9 @@ extension _AgentDetailInitialization on _AgentDetailScreenState {
       final _ = _selectedSkills.remove(skill);
     });
   }
-
-  void _setToolPermissionMode(String toolId, AgentToolPermissionMode value) {
-    setState(() {
-      _toolPermissionModes[toolId] = value;
-    });
-  }
 }
 
-extension _AgentDetailToolOverrides on _AgentDetailScreenState {
+mixin _AgentDetailToolOverrides on _AgentDetailScreenStateBase {
   void _initializeToolOverrides(List<AgentToolOverrideEntity> overrides) {
     _toolOverridesLoaded = true;
     _toolPermissionModes
@@ -219,7 +252,7 @@ extension _AgentDetailToolOverrides on _AgentDetailScreenState {
   }
 }
 
-extension _AgentDetailEditing on _AgentDetailScreenState {
+mixin _AgentDetailEditing on _AgentDetailScreenStateBase {
   Future<void> _editPrompt() async {
     final markdown = await MarkdownEditorLauncher.show(
       context,
@@ -270,21 +303,27 @@ extension _AgentDetailEditing on _AgentDetailScreenState {
   }
 
   Future<void> _enableSkillInWorkspace(WorkspaceSkill skill) async {
-    await ref.read(disableSkillUsecaseProvider(widget.workspaceId)).call((
-      workspaceId: widget.workspaceId,
-      source: skill.source,
-      skillId: skill.id,
-      isEnabled: true,
-      slug: null,
-      title: null,
-      description: null,
-      content: null,
-    ));
-    final _ = ref.invalidate(workspaceSkillsProvider(widget.workspaceId));
+    final workspaceId = widget.workspaceId;
+    final usecase = ref.read(disableSkillUsecaseProvider(workspaceId));
+    await usecase.call(skill._enableRequest(workspaceId));
+    final _ = ref.invalidate(workspaceSkillsProvider(workspaceId));
   }
 }
 
-extension _AgentDetailSaving on _AgentDetailScreenState {
+mixin _AgentDetailSaving on _AgentDetailScreenStateBase {
+  void _requestSave() {
+    if (_saving) return;
+    unawaited((this as _AgentDetailScreenState)._save());
+  }
+
+  Future<void> _saveToolOverrides(String agentId) {
+    return ref
+        .read(saveAgentToolOverridesUsecaseProvider(widget.workspaceId))
+        .call(agentId: agentId, permissionsByToolId: _toolPermissionModes);
+  }
+}
+
+mixin _AgentDetailSummaryActions on _AgentDetailScreenStateBase {
   Future<void> _save() async {
     final draft = _agentDraft();
     if (!_validateDraft(draft)) return;
@@ -299,23 +338,13 @@ extension _AgentDetailSaving on _AgentDetailScreenState {
 
   Future<void> _completeSave(AgentToCreate draft) async {
     final agent = await _saveAgent(draft);
-    await _saveToolOverrides(agent.id);
+    await (this as _AgentDetailScreenState)._saveToolOverrides(agent.id);
     final _ = ref.invalidate(agentsProvider(widget.workspaceId));
     if (mounted) context.pop(true);
   }
 
   void _finishSaving() {
     if (mounted) setState(() => _saving = false);
-  }
-}
-
-extension _AgentDetailSummaryActions on _AgentDetailScreenState {
-  void _manageSkillsFromSummary(_AgentFormSummary summary) {
-    _manageSkills(
-      enabledSkills: summary.enabledSkills,
-      disabledSkills: summary.disabledSkills,
-      unavailableRefs: summary.unavailableRefs,
-    );
   }
 
   AgentToCreate _agentDraft() {
@@ -358,17 +387,6 @@ extension _AgentDetailSummaryActions on _AgentDetailScreenState {
       visibility: draft.visibility,
       skills: draft.skills,
     );
-  }
-
-  void _requestSave() {
-    if (_saving) return;
-    unawaited(_save());
-  }
-
-  Future<void> _saveToolOverrides(String agentId) {
-    return ref
-        .read(saveAgentToolOverridesUsecaseProvider(widget.workspaceId))
-        .call(agentId: agentId, permissionsByToolId: _toolPermissionModes);
   }
 }
 
@@ -819,11 +837,9 @@ class const _PromptCardSettings({
   );
 }
 
-class const _PromptCardMarkdownFields({
-  required final _AgentDetailScreenState state,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraColumn(
+class _PromptCardMarkdownFields({required final _AgentDetailScreenState state})
+    extends StatelessWidget {
+  final Widget _child = AuraColumn(
     children: [
       _AgentDescriptionField(
         controller: state._descriptionController,
@@ -837,26 +853,29 @@ class const _PromptCardMarkdownFields({
     spacing: .md,
     crossAxisAlignment: .start,
   );
+
+  @override
+  Widget build(BuildContext _) => _child;
 }
 
 class const _PromptCardHeader() extends StatelessWidget {
+  final Widget _child = const AuraColumn(
+    children: [
+      AuraText(
+        child: TextLocale(LocaleKeys.agents_profile_prompt_title),
+        style: .heading5,
+      ),
+      AuraText(
+        child: TextLocale(LocaleKeys.agents_profile_prompt_description),
+        style: .bodySmall,
+      ),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+
   @override
-  Widget build(BuildContext context) {
-    return const AuraColumn(
-      children: [
-        AuraText(
-          child: TextLocale(LocaleKeys.agents_profile_prompt_title),
-          style: .heading5,
-        ),
-        AuraText(
-          child: TextLocale(LocaleKeys.agents_profile_prompt_description),
-          style: .bodySmall,
-        ),
-      ],
-      spacing: .xs,
-      crossAxisAlignment: .start,
-    );
-  }
+  Widget build(BuildContext _) => _child;
 }
 
 class const _AgentNameField({required final TextEditingController controller})
@@ -970,15 +989,14 @@ class const _SkillsSummaryCard({
   );
 }
 
-class const _SkillsSummaryContent({
+class _SkillsSummaryContent({
   required final int selectedCount,
   required final int availableCount,
   required final int disabledSelectedCount,
   required final int unavailableCount,
   required final VoidCallback onManage,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraColumn(
+  final Widget _child = AuraColumn(
     children: [
       _SkillsSummaryHeader(onManage: onManage),
       _SkillsSummaryDetails(
@@ -992,6 +1010,9 @@ class const _SkillsSummaryContent({
     spacing: .sm,
     crossAxisAlignment: .start,
   );
+
+  @override
+  Widget build(BuildContext _) => _child;
 }
 
 class const _SkillsSummaryHeader({required final VoidCallback onManage})
@@ -1004,34 +1025,32 @@ class const _SkillsSummaryHeader({required final VoidCallback onManage})
   );
 }
 
-class const _SkillsSummaryDetails({
+class _SkillsSummaryDetails({
   required final int selectedCount,
   required final int availableCount,
   required final int disabledSelectedCount,
   required final int unavailableCount,
   required final VoidCallback onManage,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final hasWarning = disabledSelectedCount > 0 || unavailableCount > 0;
-
-    return AuraColumn(
-      children: [
-        _SkillsSummaryText(
-          selectedCount: selectedCount,
-          availableCount: availableCount,
+  final Widget _child = AuraColumn(
+    children: [
+      _SkillsSummaryText(
+        selectedCount: selectedCount,
+        availableCount: availableCount,
+      ),
+      if (disabledSelectedCount > 0 || unavailableCount > 0)
+        _SkillsWarning(
+          disabledSelectedCount: disabledSelectedCount,
+          unavailableCount: unavailableCount,
+          onManage: onManage,
         ),
-        if (hasWarning)
-          _SkillsWarning(
-            disabledSelectedCount: disabledSelectedCount,
-            unavailableCount: unavailableCount,
-            onManage: onManage,
-          ),
-      ],
-      spacing: .sm,
-      crossAxisAlignment: .start,
-    );
-  }
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+
+  @override
+  Widget build(BuildContext _) => _child;
 }
 
 class const _SkillsSummaryText({
@@ -1090,33 +1109,33 @@ class const _ToolPermissionsSummaryCard({
   );
 }
 
-class const _ToolPermissionsSummaryContent({
+class _ToolPermissionsSummaryContent({
   required final int overrideCount,
   required final int missingOverrideCount,
   required final VoidCallback onManage,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraColumn(
-      children: [
-        _CardHeader(
-          title: const TextLocale(LocaleKeys.agents_tool_permissions_title),
-          actionLabel: const TextLocale(
-            LocaleKeys.agents_manage_tool_permissions,
-          ),
-          onAction: onManage,
+  final Widget _child = AuraColumn(
+    children: [
+      _CardHeader(
+        title: const TextLocale(LocaleKeys.agents_tool_permissions_title),
+        actionLabel: const TextLocale(
+          LocaleKeys.agents_manage_tool_permissions,
         ),
-        _ToolPermissionsSummaryText(overrideCount: overrideCount),
-        if (missingOverrideCount > 0)
-          _ToolPermissionsWarning(
-            missingOverrideCount: missingOverrideCount,
-            onManage: onManage,
-          ),
-      ],
-      spacing: .sm,
-      crossAxisAlignment: .start,
-    );
-  }
+        onAction: onManage,
+      ),
+      _ToolPermissionsSummaryText(overrideCount: overrideCount),
+      if (missingOverrideCount > 0)
+        _ToolPermissionsWarning(
+          missingOverrideCount: missingOverrideCount,
+          onManage: onManage,
+        ),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+
+  @override
+  Widget build(BuildContext _) => _child;
 }
 
 class const _ToolPermissionsSummaryText({required final int overrideCount})
@@ -1233,28 +1252,37 @@ class const _SaveBarButtonFromConstraints({
   );
 }
 
-class const _SaveBarButton({
+class _SaveBarButton({
   required final double width,
   required final bool isCompact,
   required final bool isCreate,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final button = SizedBox(
-      width: width,
-      child: AuraButton(
-        onPressed: onSave,
-        child: TextLocale(
-          isCreate ? LocaleKeys.agents_create : LocaleKeys.common_save,
-        ),
-      ),
-    );
+  final Widget _child = isCompact
+      ? SizedBox(
+          width: width,
+          child: AuraButton(
+            onPressed: onSave,
+            child: TextLocale(
+              isCreate ? LocaleKeys.agents_create : LocaleKeys.common_save,
+            ),
+          ),
+        )
+      : Align(
+          alignment: Alignment.centerRight,
+          child: SizedBox(
+            width: width,
+            child: AuraButton(
+              onPressed: onSave,
+              child: TextLocale(
+                isCreate ? LocaleKeys.agents_create : LocaleKeys.common_save,
+              ),
+            ),
+          ),
+        );
 
-    return isCompact
-        ? button
-        : Align(alignment: Alignment.centerRight, child: button);
-  }
+  @override
+  Widget build(BuildContext _) => _child;
 }
 
 class const _WarningTile({
@@ -1601,37 +1629,41 @@ extension on _AgentToolPermissionsDialogState {
     final key = '${parsed.source}:${parsed.skillSlug}';
     return buckets.groupByKey.putIfAbsent(
       key,
-      () => _createToolGroup(key, parsed, visibleTools, buckets),
+      () => _createToolGroup((
+        key: key,
+        parsed: parsed,
+        visibleTools: visibleTools,
+        buckets: buckets,
+      )),
     );
   }
 
-  _ToolGroup _createToolGroup(
-    String key,
-    ({String source, String skillSlug, String toolSlug}) parsed,
-    List<WorkspaceToolEntity> visibleTools,
-    _ToolGroupBuckets buckets,
-  ) {
-    final skill = _findSkill(parsed.source, parsed.skillSlug);
-    final group = _newToolGroup(key, parsed, skill, visibleTools);
-    _addToolGroup(group, skill, buckets);
+  _ToolGroup _createToolGroup(_ToolGroupRequest request) {
+    final skill = _findSkill(request.parsed.source, request.parsed.skillSlug);
+    final group = _newToolGroup((
+      key: request.key,
+      parsed: request.parsed,
+      skill: skill,
+      visibleTools: request.visibleTools,
+    ));
+    _addToolGroup(group, skill, request.buckets);
     return group;
   }
 
-  _ToolGroup _newToolGroup(
-    String key,
-    ({String source, String skillSlug, String toolSlug}) parsed,
-    WorkspaceSkill? skill,
-    List<WorkspaceToolEntity> visibleTools,
-  ) => _ToolGroup(
-    key: key,
-    title: _skillGroupTitle(skill, parsed.skillSlug),
-    tools: [],
-    overrideCount: _skillGroupOverrideCount(
-      source: parsed.source,
-      skillSlug: parsed.skillSlug,
-      tools: visibleTools,
-    ),
-  );
+  _ToolGroup _newToolGroup(_NewToolGroupRequest request) {
+    final parsed = request.parsed;
+
+    return _ToolGroup(
+      key: request.key,
+      title: _skillGroupTitle(request.skill, parsed.skillSlug),
+      tools: [],
+      overrideCount: _skillGroupOverrideCount(
+        source: parsed.source,
+        skillSlug: parsed.skillSlug,
+        tools: request.visibleTools,
+      ),
+    );
+  }
 
   void _addToolGroup(
     _ToolGroup group,
@@ -1797,33 +1829,33 @@ class const _OverrideToolsSection({
   }
 }
 
-class const _ToolGroupSections({
+class _ToolGroupSections({
   required final _AgentToolPermissionsDialogState state,
   required final _ToolPermissionDialogData data,
 }) extends StatelessWidget {
+  final Widget _child = Column(
+    children: [
+      _ToolGroupList(
+        groups: data.grouped.selectedSkillGroups,
+        empty: const TextLocale(
+          LocaleKeys.agents_manage_selected_skill_tools_empty,
+        ),
+        query: data.query,
+        state: state,
+      ),
+      _ToolGroupList(
+        groups: data.grouped.otherSkillGroups,
+        empty: const TextLocale(
+          LocaleKeys.agents_manage_other_skill_tools_empty,
+        ),
+        query: data.query,
+        state: state,
+      ),
+    ],
+  );
+
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _ToolGroupList(
-          groups: data.grouped.selectedSkillGroups,
-          empty: const TextLocale(
-            LocaleKeys.agents_manage_selected_skill_tools_empty,
-          ),
-          query: data.query,
-          state: state,
-        ),
-        _ToolGroupList(
-          groups: data.grouped.otherSkillGroups,
-          empty: const TextLocale(
-            LocaleKeys.agents_manage_other_skill_tools_empty,
-          ),
-          query: data.query,
-          state: state,
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext _) => _child;
 }
 
 class const _ToolGroupList({
@@ -2017,16 +2049,21 @@ class const _AgentManageDialogHeaderRow({required final Widget title})
       Expanded(
         child: AuraText(child: title, style: .heading5),
       ),
-      AuraIconButton(
-        icon: Icons.close,
-        onPressed: () => Navigator.of(context).pop(),
-        semanticLabel: LocaleKeys.common_close_dialog.tr(),
-      ),
+      const _AgentManageDialogCloseButton(),
     ],
   );
 }
 
-class const _SkillSection({
+class const _AgentManageDialogCloseButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.close,
+    onPressed: () => Navigator.of(context).pop(),
+    semanticLabel: LocaleKeys.common_close_dialog.tr(context: context),
+  );
+}
+
+class _SkillSection({
   required final Widget title,
   required final Widget empty,
   required final List<WorkspaceSkill> skills,
@@ -2034,23 +2071,23 @@ class const _SkillSection({
   required final ValueChanged<WorkspaceSkill> onTap,
   final bool disabled = false,
 }) extends StatelessWidget {
+  final Widget _child = _DialogSection(
+    title: title,
+    empty: empty,
+    children: [
+      for (final skill in skills)
+        _AgentSkillTile(
+          skill: skill,
+          selected: selectedSkills.contains(skill.ref),
+          onTap: () => onTap(skill),
+          disabled: disabled,
+        ),
+    ],
+    isEmpty: skills.isEmpty,
+  );
+
   @override
-  Widget build(BuildContext context) {
-    return _DialogSection(
-      title: title,
-      empty: empty,
-      children: [
-        for (final skill in skills)
-          _AgentSkillTile(
-            skill: skill,
-            selected: selectedSkills.contains(skill.ref),
-            onTap: () => onTap(skill),
-            disabled: disabled,
-          ),
-      ],
-      isEmpty: skills.isEmpty,
-    );
-  }
+  Widget build(BuildContext _) => _child;
 }
 
 class const _UnavailableSkillSection({
@@ -2108,13 +2145,13 @@ class const _UnavailableSkillTileContent({required final AgentSkillRef ref})
   Widget build(BuildContext context) => AuraColumn(
     children: [
       const TextLocale(LocaleKeys.agents_disabled_skill_label),
-      Text(ref.label),
+      Text(ref.label()),
     ],
     crossAxisAlignment: .start,
   );
 }
 
-class const _ToolSection({
+class _ToolSection({
   required final Widget title,
   required final Widget empty,
   required final List<WorkspaceToolEntity> tools,
@@ -2122,22 +2159,22 @@ class const _ToolSection({
   required final void Function(String toolId, AgentToolPermissionMode value)
   onChanged,
 }) extends StatelessWidget {
+  final Widget _child = _DialogSection(
+    title: title,
+    empty: empty,
+    children: [
+      for (final tool in tools)
+        _AgentToolPermissionTile(
+          tool: tool,
+          value: valueOf(tool.id),
+          onChanged: (value) => onChanged(tool.id, value),
+        ),
+    ],
+    isEmpty: tools.isEmpty,
+  );
+
   @override
-  Widget build(BuildContext context) {
-    return _DialogSection(
-      title: title,
-      empty: empty,
-      children: [
-        for (final tool in tools)
-          _AgentToolPermissionTile(
-            tool: tool,
-            value: valueOf(tool.id),
-            onChanged: (value) => onChanged(tool.id, value),
-          ),
-      ],
-      isEmpty: tools.isEmpty,
-    );
-  }
+  Widget build(BuildContext _) => _child;
 }
 
 class const _CollapsibleToolSection({
@@ -2165,7 +2202,7 @@ class const _CollapsibleToolSection({
   );
 }
 
-class const _CollapsibleToolColumn({
+class _CollapsibleToolColumn({
   required final String title,
   required final Widget empty,
   required final bool isExpanded,
@@ -2175,8 +2212,7 @@ class const _CollapsibleToolColumn({
   required final void Function(String toolId, AgentToolPermissionMode value)
   onChanged,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraColumn(
+  final Widget _child = AuraColumn(
     children: [
       _CollapsibleToolHeader(
         title: title,
@@ -2194,6 +2230,9 @@ class const _CollapsibleToolColumn({
     spacing: .sm,
     crossAxisAlignment: .start,
   );
+
+  @override
+  Widget build(BuildContext _) => _child;
 }
 
 class const _CollapsibleToolHeader({
@@ -2234,29 +2273,26 @@ class const _CollapsibleToolContent({
   }
 }
 
-class const _DialogSection({
+class _DialogSection({
   required final Widget title,
   required final Widget empty,
   required final List<Widget> children,
   required final bool isEmpty,
 }) extends StatelessWidget {
+  final Widget _child = Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: AuraColumn(
+      children: [
+        AuraText(child: title, style: .heading6),
+        if (isEmpty) AuraText(child: empty, style: .bodySmall) else ...children,
+      ],
+      spacing: .sm,
+      crossAxisAlignment: .start,
+    ),
+  );
+
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: AuraColumn(
-        children: [
-          AuraText(child: title, style: .heading6),
-          if (isEmpty)
-            AuraText(child: empty, style: .bodySmall)
-          else
-            ...children,
-        ],
-        spacing: .sm,
-        crossAxisAlignment: .start,
-      ),
-    );
-  }
+  Widget build(BuildContext _) => _child;
 }
 
 class const _AgentSkillTile({
@@ -2414,6 +2450,17 @@ class const _AgentToolPermissionSelector({
 }
 
 extension on WorkspaceSkill {
+  DisableSkillRequest _enableRequest(String workspaceId) => (
+    workspaceId: workspaceId,
+    source: source,
+    skillId: id,
+    isEnabled: true,
+    slug: null,
+    title: null,
+    description: null,
+    content: null,
+  );
+
   AgentSkillRef get ref {
     return switch (source) {
       .user => AgentSkillRef.user(id),
@@ -2440,7 +2487,7 @@ extension on WorkspaceToolEntity {
 }
 
 extension on AgentSkillRef {
-  String get label {
+  String label() {
     return switch (this) {
       UserAgentSkillRef(:final skillId) => skillId,
       AppAgentSkillRef(:final identifier) => identifier,

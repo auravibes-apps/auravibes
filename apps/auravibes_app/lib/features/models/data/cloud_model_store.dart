@@ -236,6 +236,8 @@ class CloudModelCatalogStore
 mixin _CloudModelCatalogMethods {
   CloudModelGateway get _gateway;
 
+  Future<List<ApiModelProviderEntity>> getAllProviders();
+
   Future<List<ApiModelEntity>> getAllModels() async =>
       (await _gateway.listModelCatalogModels())
           .map(_catalogModel)

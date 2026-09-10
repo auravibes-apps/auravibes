@@ -17,4 +17,10 @@ abstract class const ConversationSkillEntity._()
   bool get isUserSkill => workspaceSkillId?.isNotEmpty ?? false;
 
   bool get isAppSkill => appSkillIdentifier?.isNotEmpty ?? false;
+
+  String identity() => id;
+
+  bool hasWorkspaceSkill() => workspaceSkillId != null;
+
+  bool hasAppSkill() => appSkillIdentifier != null;
 }

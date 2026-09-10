@@ -19,13 +19,18 @@ Stream<CompactionSettings> compactionSettings(
     cloudWorkspaceStateGatewayProvider(session).future,
   );
   if (gateway == null) {
-    yield* ref
-        .watch(workspaceCompactionSettingsRepositoryProvider)
-        .watchEffectiveSettings(workspaceId);
+    yield* _localCompactionSettings(ref, workspaceId);
 
     return;
   }
 
   yield* CloudSkillSettingsAdapter(gateway).watchCompactionSettings();
 }
+
+Stream<CompactionSettings> _localCompactionSettings(
+  Ref ref,
+  String workspaceId,
+) => ref
+    .watch(workspaceCompactionSettingsRepositoryProvider)
+    .watchEffectiveSettings(workspaceId);
 // Top-level API/provider declarations are required by their consumers.

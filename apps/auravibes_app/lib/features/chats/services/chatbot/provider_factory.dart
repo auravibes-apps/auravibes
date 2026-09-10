@@ -7,9 +7,9 @@ import 'package:auravibes_app/features/chats/services/chatbot/openai_codex_plugi
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/genkit.dart';
+import 'package:genkit/plugin.dart' show GenkitPlugin;
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
-import 'package:genkit/plugin.dart' show GenkitPlugin;
 
 typedef UntypedModelRef = ModelRef<Object?>;
 typedef _ProviderRequest = ({
@@ -19,6 +19,14 @@ typedef _ProviderRequest = ({
   ProviderRuntimeSelection runtime,
   String modelId,
   String? sessionId,
+});
+typedef _RuntimeRequest = ({
+  String providerId,
+  bool hasCustomUrl,
+  bool supportsReasoning,
+  bool usesOAuth,
+  bool isCodexOAuth,
+  String modelId,
 });
 
 class const ProviderFactory({
@@ -81,24 +89,30 @@ extension _ProviderFactoryCreation on ProviderFactory {
     return Genkit(plugins: _plugins(request));
   }
 
-  List<GenkitPlugin> _plugins(_ProviderRequest request) {
+  List<GenkitPlugin> _plugins(_ProviderRequest request) => [_plugin(request)];
+
+  GenkitPlugin _plugin(_ProviderRequest request) {
     final runtime = request.runtime;
-    final type = request.config.modelsProvider.type;
     if (runtime.runtime == ProviderRuntime.anthropic) {
-      return [_anthropicPlugin(request)];
+      return _anthropicPlugin(request);
     }
-    if (type == ModelProvidersType.openrouter) {
-      return [_openRouterPlugin(request)];
-    }
-    if (runtime.runtime == ProviderRuntime.codexOAuth) {
-      return [_codexPlugin(request)];
-    }
-    if (runtime.runtime == ProviderRuntime.openAiReasoning &&
-        request.baseUrl != null) {
-      return [_openAIReasoningPlugin(request)];
+    if (request.config.modelsProvider.type == ModelProvidersType.openrouter) {
+      return _openRouterPlugin(request);
     }
 
-    return [_openAIPlugin(request)];
+    return _nonRouterPlugin(request, runtime.runtime);
+  }
+
+  GenkitPlugin _nonRouterPlugin(
+    _ProviderRequest request,
+    ProviderRuntime runtime,
+  ) {
+    if (runtime == ProviderRuntime.codexOAuth) return _codexPlugin(request);
+    if (runtime == ProviderRuntime.openAiReasoning && request.baseUrl != null) {
+      return _openAIReasoningPlugin(request);
+    }
+
+    return _openAIPlugin(request);
   }
 }
 
@@ -127,9 +141,12 @@ extension _ProviderFactoryPlugins on ProviderFactory {
   }
 
   GenkitPlugin _openAIReasoningPlugin(_ProviderRequest request) {
+    final baseUrl = request.baseUrl;
+    if (baseUrl == null) return _openAIPlugin(request);
+
     return AppChatCompletionsPlugin(
-      name: _openAIReasoningNamespace,
-      baseUrl: request.baseUrl!,
+      name: ProviderFactory._openAIReasoningNamespace,
+      baseUrl: baseUrl,
       apiKey: request.apiKey,
       codec: _openAICompatReasoningCodec(),
       models: [ChatCompletionsModelDefinition(name: request.modelId)],
@@ -153,6 +170,14 @@ extension _ProviderFactoryResolution on ProviderFactory {
     if (config.modelsProvider.type == ModelProvidersType.openrouter) {
       return modelRef('openrouter/$modelId');
     }
+
+    return _nonProviderModelReference(modelId, runtime);
+  }
+
+  UntypedModelRef _nonProviderModelReference(
+    String modelId,
+    ProviderRuntimeSelection runtime,
+  ) {
     if (runtime.runtime == ProviderRuntime.codexOAuth) {
       return openAICodexModel(modelId);
     }
@@ -169,7 +194,9 @@ extension _ProviderFactoryResolution on ProviderFactory {
     return AnthropicOptions(
       thinking: .new(
         type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
-        budgetTokens: usesAdaptiveThinking ? null : _thinkingBudgetTokens,
+        budgetTokens: usesAdaptiveThinking
+            ? null
+            : ProviderFactory._thinkingBudgetTokens,
       ),
     ) as T;
   }
@@ -188,7 +215,7 @@ extension _ProviderFactoryCredentials on ProviderFactory {
 
   Future<String> _resolveOAuthCredential(
     WorkspaceModelSelectionWithConnectionEntity config,
-  ) async {
+  ) {
     final resolver = resolveOAuthAccessToken;
     if (resolver == null) {
       throw const FormatException('OAuth token resolver is not configured.');
@@ -216,19 +243,34 @@ extension _ProviderFactoryCredentials on ProviderFactory {
   ProviderRuntimeSelection _runtimeSelection(
     WorkspaceModelSelectionWithConnectionEntity config,
     String? connectionUrl,
-  ) => selectProviderRuntime(
+  ) => _selectRuntime((
     providerId: config.modelsProvider.type?.name ?? 'openai',
-    hasCustomUrl:
-        connectionUrl != null ||
-        (config.modelsProvider.type == ModelProvidersType.openai &&
-            _blankToNull(config.modelsProvider.url) != null),
+    hasCustomUrl: _hasCustomUrl(config, connectionUrl),
     supportsReasoning: config.workspaceModelSelection.supportsReasoning,
     usesOAuth: config.modelConnection.authMode == ModelProviderAuthMode.oauth2,
     isCodexOAuth: ModelProviderOAuthProfiles.isCodexProvider(
       config.modelConnection.modelId,
     ),
     modelId: config.workspaceModelSelection.modelId,
-  );
+  ));
+
+  ProviderRuntimeSelection _selectRuntime(_RuntimeRequest request) =>
+      selectProviderRuntime(
+        providerId: request.providerId,
+        hasCustomUrl: request.hasCustomUrl,
+        supportsReasoning: request.supportsReasoning,
+        usesOAuth: request.usesOAuth,
+        isCodexOAuth: request.isCodexOAuth,
+        modelId: request.modelId,
+      );
+
+  bool _hasCustomUrl(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    String? connectionUrl,
+  ) =>
+      connectionUrl != null ||
+      (config.modelsProvider.type == ModelProvidersType.openai &&
+          _blankToNull(config.modelsProvider.url) != null);
 
   String? _blankToNull(String? value) {
     final trimmed = value?.trim();
@@ -256,10 +298,11 @@ ChatCompletionsCodec _openRouterCodec() {
   );
 }
 
-ChatCompletionsCodec _openAICompatReasoningCodec() => ChatCompletionsCodec(
-  errorLabel: 'OpenAI-compatible',
-  customize: _customizeOpenAICompatReasoning,
-);
+ChatCompletionsCodec _openAICompatReasoningCodec() =>
+    const ChatCompletionsCodec(
+      errorLabel: 'OpenAI-compatible',
+      customize: _customizeOpenAICompatReasoning,
+    );
 
 ({String model, Map<String, dynamic> extraBody})
 _customizeOpenAICompatReasoning(

@@ -52,33 +52,14 @@ class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
 class AppSubAgentConversationStore(
   final ConversationRepository _conversationRepository,
 ) implements agent.SubAgentConversationStore {
-  late final Future<agent.SubAgentConversationRecord> Function({
-    required String parentConversationId,
-    required String workspaceId,
-    required String? modelId,
-    required String? agentId,
-    required String title,
-  })
-  createChildConversation =
-      ({
-        required String parentConversationId,
-        required String workspaceId,
-        required String? modelId,
-        required String? agentId,
-        required String title,
-      }) async {
-        final conversation = await _conversationRepository.createConversation(
-          .new(
-            title: title,
-            workspaceId: workspaceId,
-            modelId: modelId,
-            agentId: agentId,
-            parentConversationId: parentConversationId,
-          ),
-        );
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    if (invocation.memberName == #createChildConversation) {
+      return _createChildConversationFromInvocation(invocation);
+    }
 
-        return _toRecord(conversation);
-      };
+    return super.noSuchMethod(invocation);
+  }
 
   @override
   Future<agent.SubAgentConversationRecord?> getConversation(
@@ -92,6 +73,37 @@ class AppSubAgentConversationStore(
     return _toRecord(conversation);
   }
 
+  Future<agent.SubAgentConversationRecord>
+  _createChildConversationFromInvocation(Invocation invocation) =>
+      _createChildConversation(
+        _conversationRepository,
+        _createChildConversationRequest(invocation.namedArguments),
+      );
+
+  Future<agent.SubAgentConversationRecord> _createChildConversation(
+    ConversationRepository repository,
+    ({
+      String parentConversationId,
+      String workspaceId,
+      String? modelId,
+      String? agentId,
+      String title,
+    })
+    request,
+  ) async {
+    final conversation = await repository.createConversation(
+      .new(
+        title: request.title,
+        workspaceId: request.workspaceId,
+        modelId: request.modelId,
+        agentId: request.agentId,
+        parentConversationId: request.parentConversationId,
+      ),
+    );
+
+    return _toRecord(conversation);
+  }
+
   agent.SubAgentConversationRecord _toRecord(ConversationEntity conversation) {
     return agent.SubAgentConversationRecord(
       id: conversation.id,
@@ -101,6 +113,21 @@ class AppSubAgentConversationStore(
     );
   }
 }
+
+({
+  String parentConversationId,
+  String workspaceId,
+  String? modelId,
+  String? agentId,
+  String title,
+})
+_createChildConversationRequest(Map<Symbol, dynamic> arguments) => (
+  parentConversationId: arguments[#parentConversationId] as String,
+  workspaceId: arguments[#workspaceId] as String,
+  modelId: arguments[#modelId] as String?,
+  agentId: arguments[#agentId] as String?,
+  title: arguments[#title] as String,
+);
 
 class const AppSubAgentMessageStore(final MessageRepository _messageRepository)
     implements agent.SubAgentMessageStore {

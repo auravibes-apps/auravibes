@@ -33,6 +33,7 @@ class AuraSnackBarHost extends StatefulWidget {
 class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
   var _nextSnackBarId = 0;
   int? _activeSnackBarId;
+  int? _dismissingSnackBarId;
   Widget? _activeSnackBar;
 
   @override
@@ -41,43 +42,13 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
     super.dispose();
   }
 
-  AuraSnackBarController show({
-    required Widget content,
-    required Color backgroundColor,
-    required Color foregroundColor,
-    required Duration duration,
-    String? actionLabel,
-    VoidCallback? onAction,
-  }) {
+  AuraSnackBarController show(_AuraSnackBarRequest request) {
     final snackBarId = _nextSnackBarId++;
-    var isDismissing = false;
+    _activateSnackBar(snackBarId, request);
 
-    void dismissWithCleanup() {
-      if (isDismissing) return;
-      isDismissing = true;
-      if (snackBarId != _activeSnackBarId || !mounted) return;
-      setState(() {
-        _activeSnackBarId = null;
-        _activeSnackBar = null;
-      });
-    }
-
-    final snackbarWidget = _AuraSnackBarOverlayEntry(
-      backgroundColor: backgroundColor,
-      foregroundColor: foregroundColor,
-      content: content,
-      dismissCallback: dismissWithCleanup,
-      duration: duration,
-      actionLabel: actionLabel,
-      onAction: onAction,
+    return AuraSnackBarController(
+      dismissCallback: () => _dismissSnackBar(snackBarId),
     );
-
-    setState(() {
-      _activeSnackBarId = snackBarId;
-      _activeSnackBar = snackbarWidget;
-    });
-
-    return AuraSnackBarController(dismissCallback: dismissWithCleanup);
   }
 
   @override
@@ -94,11 +65,33 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
     );
   }
 
+  void _activateSnackBar(int snackBarId, _AuraSnackBarRequest request) {
+    final snackbarWidget = _AuraSnackBarOverlayEntry(
+      request: request,
+      dismissCallback: () => _dismissSnackBar(snackBarId),
+    );
+
+    setState(() {
+      _activeSnackBarId = snackBarId;
+      _activeSnackBar = snackbarWidget;
+    });
+  }
+
   void _removeActiveSnackBarImmediately() {
     if (_activeSnackBar == null) return;
 
     _activeSnackBarId = null;
     _activeSnackBar = null;
+  }
+
+  void _dismissSnackBar(int snackBarId) {
+    if (_dismissingSnackBarId == snackBarId) return;
+    _dismissingSnackBarId = snackBarId;
+    if (snackBarId != _activeSnackBarId || !mounted) return;
+    setState(() {
+      _activeSnackBarId = null;
+      _activeSnackBar = null;
+    });
   }
 }
 
@@ -150,58 +143,128 @@ class AuraSnackBarController {
 abstract final class AuraSnackBars {
   /// Shows a snackbar in the nearest [AuraSnackBarHost].
   ///
-  /// Displays a custom snackbar overlay with Aura theming based on [variant].
-  /// It auto-dismisses after [duration] and can include an optional action.
-  static AuraSnackBarController show({
+  /// Displays a themed overlay, auto-dismissed after its duration, with an
+  /// optional action.
+  static final AuraSnackBarController Function({
     required BuildContext context,
     required Widget content,
-    AuraSnackBarVariant variant = AuraSnackBarVariant.default_,
-    Duration duration = const Duration(seconds: 4),
+    AuraSnackBarVariant variant,
+    Duration duration,
     String? actionLabel,
     VoidCallback? onAction,
-  }) {
-    final host = AuraSnackBarHost._maybeOf(context);
-    if (host == null) {
-      throw FlutterError(
-        'showAuraSnackBar requires an AuraSnackBarHost ancestor.\n'
-        'Wrap the app, window, navigator, or pane that owns snackbar behavior '
-        'with AuraSnackBarHost.',
+  })
+  show =
+      ({
+        required context,
+        required content,
+        variant = AuraSnackBarVariant.default_,
+        duration = const Duration(seconds: 4),
+        actionLabel,
+        onAction,
+      }) => _showSnackBar(
+        _AuraSnackBarShowRequest(
+          context: context,
+          content: content,
+          variant: variant,
+          duration: duration,
+          actionLabel: actionLabel,
+          onAction: onAction,
+        ),
       );
-    }
 
-    final colors = context.auraColors;
-    final backgroundColor = _getBackgroundColor(variant, colors);
-    final foregroundColor = _getForegroundColor(variant, colors);
+  const AuraSnackBars._();
 
-    // Validate duration is within bounds (1-60 seconds) without discarding
-    // subsecond precision.
-    var validatedDuration = duration;
-    if (duration < const Duration(seconds: 1)) {
-      validatedDuration = const Duration(seconds: 1);
-    } else if (duration > const Duration(seconds: 60)) {
-      validatedDuration = const Duration(seconds: 60);
-    }
+  @override
+  String toString() => 'AuraSnackBars';
+}
 
-    return host.show(
-      backgroundColor: backgroundColor,
-      foregroundColor: foregroundColor,
-      content: content,
-      duration: validatedDuration,
-      actionLabel: actionLabel,
-      onAction: onAction,
-    );
+class _AuraSnackBarShowRequest {
+  const _AuraSnackBarShowRequest({
+    required this.context,
+    required this.content,
+    required this.variant,
+    required this.duration,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final BuildContext context;
+  final Widget content;
+  final AuraSnackBarVariant variant;
+  final Duration duration;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+}
+
+AuraSnackBarController _showSnackBar(_AuraSnackBarShowRequest request) {
+  final host = _requiredSnackBarHost(request.context);
+  return host.show(_AuraSnackBarRequestData(request).value);
+}
+
+class _AuraSnackBarRequestData {
+  _AuraSnackBarRequestData(_AuraSnackBarShowRequest request)
+    : value = _AuraSnackBarRequest(
+        backgroundColor: _getBackgroundColor(
+          request.variant,
+          request.context.auraColors,
+        ),
+        foregroundColor: _getForegroundColor(
+          request.variant,
+          request.context.auraColors,
+        ),
+        content: request.content,
+        duration: _validatedSnackBarDuration(request.duration),
+        actionLabel: request.actionLabel,
+        onAction: request.onAction,
+      );
+
+  final _AuraSnackBarRequest value;
+}
+
+class _AuraSnackBarRequest {
+  const new({
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.content,
+    required this.duration,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final Widget content;
+  final Duration duration;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+}
+
+_AuraSnackBarHostState _requiredSnackBarHost(BuildContext context) {
+  final host = AuraSnackBarHost._maybeOf(context);
+  if (host != null) return host;
+
+  throw FlutterError(
+    'showAuraSnackBar requires an AuraSnackBarHost ancestor.\n'
+    'Wrap the app, window, navigator, or pane that owns snackbar behavior '
+    'with AuraSnackBarHost.',
+  );
+}
+
+Duration _validatedSnackBarDuration(Duration duration) {
+  if (duration < const Duration(seconds: 1)) {
+    return const Duration(seconds: 1);
   }
+  if (duration > const Duration(seconds: 60)) {
+    return const Duration(seconds: 60);
+  }
+
+  return duration;
 }
 
 /// Internal widget that manages its own animation state.
 class const _AuraSnackBarOverlayEntry({
-  required final Color backgroundColor,
-  required final Color foregroundColor,
-  required final Widget content,
+  required final _AuraSnackBarRequest request,
   required final VoidCallback dismissCallback,
-  required final Duration duration,
-  final String? actionLabel,
-  final VoidCallback? onAction,
 }) extends StatefulWidget {
   @override
   State<_AuraSnackBarOverlayEntry> createState() =>
@@ -228,32 +291,12 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
   void initState() {
     super.initState();
 
-    // Initialize animation controller.
-    final animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
+    final animationController = _createAnimationController();
     _animationController = animationController;
-
-    // Set up slide animation (slide up from bottom).
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: animationController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
-
-    // Set up fade animation.
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
-    );
-
-    // Start entry animation.
+    _slideAnimation = _createSlideAnimation(animationController);
+    _fadeAnimation = _createFadeAnimation(animationController);
     final _ = animationController.forward();
-
-    // Set up auto-dismiss timer.
-    _dismissTimer = .new(widget.duration, dismiss);
+    _dismissTimer = .new(widget.request.duration, dismiss);
   }
 
   @override
@@ -280,7 +323,6 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
 
   @override
   Widget build(BuildContext context) {
-    final actionLabel = widget.actionLabel;
     final slideAnimation = _slideAnimation;
     final fadeAnimation = _fadeAnimation;
 
@@ -288,86 +330,29 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
       return const SizedBox.shrink();
     }
 
-    return Positioned(
-      left: _horizontalInset,
-      right: _horizontalInset,
-      bottom: MediaQuery.paddingOf(context).bottom + _bottomInset,
-      child: SlideTransition(
-        position: slideAnimation,
-        child: FadeTransition(
-          opacity: fadeAnimation,
-          child: Semantics(
-            child: Material(
-              color: DesignColors.transparent,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: widget.backgroundColor,
-                  borderRadius: const BorderRadius.all(.circular(12)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: context.auraColors.shadow.withValues(alpha: 0.15),
-                      offset: const Offset(0, 4),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: _contentVerticalPadding,
-                      horizontal: 16,
-                    ),
-                    child: Row(
-                      children: [
-                        // Content.
-                        Expanded(
-                          child: DefaultTextStyle(
-                            style: .new(
-                              color: widget.foregroundColor,
-                              fontSize: _contentFontSize,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            child: widget.content,
-                          ),
-                        ),
-                        // Action button.
-                        if (actionLabel != null) ...[
-                          const SizedBox(width: _actionGap),
-                          GestureDetector(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: _actionVerticalPadding,
-                                horizontal: _actionHorizontalPadding,
-                              ),
-                              child: Text(
-                                actionLabel,
-                                style: .new(
-                                  color: widget.foregroundColor,
-                                  fontSize: _contentFontSize,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            onTap: () {
-                              widget.onAction?.call();
-                              dismiss();
-                            },
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            container: true,
-            liveRegion: true,
-          ),
-        ),
-      ),
+    return _AuraSnackBarAnimated.fromEntry(
+      entry: widget,
+      slideAnimation: slideAnimation,
+      fadeAnimation: fadeAnimation,
+      onDismiss: dismiss,
     );
   }
+
+  AnimationController _createAnimationController() => AnimationController(
+    duration: const Duration(milliseconds: 300),
+    vsync: this,
+  );
+
+  Animation<Offset> _createSlideAnimation(AnimationController controller) =>
+      Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+        CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+      );
+
+  Animation<double> _createFadeAnimation(AnimationController controller) =>
+      Tween<double>(
+        begin: 0,
+        end: 1,
+      ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOut));
 
   Future<void> _reverseAndDismiss(
     AnimationController animationController,
@@ -383,6 +368,202 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     // As dispose() will be called by the framework.
     widget.dismissCallback();
   }
+}
+
+class _AuraSnackBarAnimated extends StatelessWidget {
+  const new({required this.child});
+
+  new fromEntry({
+    required _AuraSnackBarOverlayEntry entry,
+    required Animation<Offset> slideAnimation,
+    required Animation<double> fadeAnimation,
+    required VoidCallback onDismiss,
+  }) : this(
+         child: _AuraSnackBarTransitions(
+           entry: entry,
+           slideAnimation: slideAnimation,
+           fadeAnimation: fadeAnimation,
+           onDismiss: onDismiss,
+         ),
+       );
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Positioned(
+    left: _AuraSnackBarOverlayEntryState._horizontalInset,
+    right: _AuraSnackBarOverlayEntryState._horizontalInset,
+    bottom:
+        MediaQuery.paddingOf(context).bottom +
+        _AuraSnackBarOverlayEntryState._bottomInset,
+    child: child,
+  );
+}
+
+class const _AuraSnackBarTransitions({
+  required final _AuraSnackBarOverlayEntry entry,
+  required final Animation<Offset> slideAnimation,
+  required final Animation<double> fadeAnimation,
+  required final VoidCallback onDismiss,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SlideTransition(
+    position: slideAnimation,
+    child: FadeTransition(
+      opacity: fadeAnimation,
+      child: _AuraSnackBarSurface(entry: entry, onDismiss: onDismiss),
+    ),
+  );
+}
+
+class const _AuraSnackBarSurface({
+  required final _AuraSnackBarOverlayEntry entry,
+  required final VoidCallback onDismiss,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: Material(
+      color: DesignColors.transparent,
+      child: _AuraSnackBarContainer(entry: entry, onDismiss: onDismiss),
+    ),
+    container: true,
+    liveRegion: true,
+  );
+}
+
+class const _AuraSnackBarContainer({
+  required final _AuraSnackBarOverlayEntry entry,
+  required final VoidCallback onDismiss,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: _snackBarDecoration(context, entry.request.backgroundColor),
+    child: _AuraSnackBarPadding(entry: entry, onDismiss: onDismiss),
+  );
+}
+
+BoxDecoration _snackBarDecoration(
+  BuildContext context,
+  Color backgroundColor,
+) => BoxDecoration(
+  color: backgroundColor,
+  borderRadius: const BorderRadius.all(.circular(12)),
+  boxShadow: [
+    BoxShadow(
+      color: context.auraColors.shadow.withValues(alpha: 0.15),
+      offset: const Offset(0, 4),
+      blurRadius: 10,
+    ),
+  ],
+);
+
+class const _AuraSnackBarPadding({
+  required final _AuraSnackBarOverlayEntry entry,
+  required final VoidCallback onDismiss,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: _AuraSnackBarOverlayEntryState._contentVerticalPadding,
+        horizontal: 16,
+      ),
+      child: _AuraSnackBarRow.fromEntry(entry: entry, onDismiss: onDismiss),
+    ),
+  );
+}
+
+class _AuraSnackBarRow extends StatelessWidget {
+  const new({required this.content, required this.action});
+
+  new fromEntry({
+    required _AuraSnackBarOverlayEntry entry,
+    required VoidCallback onDismiss,
+  }) : this(
+         content: DefaultTextStyle(
+           style: .new(
+             color: entry.request.foregroundColor,
+             fontSize: _AuraSnackBarOverlayEntryState._contentFontSize,
+             fontWeight: FontWeight.w500,
+           ),
+           child: entry.request.content,
+         ),
+         action: switch (entry.request.actionLabel) {
+           final label? => _AuraSnackBarAction(
+             label: label,
+             foregroundColor: entry.request.foregroundColor,
+             onAction: entry.request.onAction,
+             onDismiss: onDismiss,
+           ),
+           null => null,
+         },
+       );
+
+  final Widget content;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(child: content),
+      ?action,
+    ],
+  );
+}
+
+class const _AuraSnackBarAction({
+  required final String label,
+  required final Color foregroundColor,
+  required final VoidCallback? onAction,
+  required final VoidCallback onDismiss,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      const SizedBox(width: _AuraSnackBarOverlayEntryState._actionGap),
+      GestureDetector(
+        child: _AuraSnackBarActionContent.fromValues(
+          label: label,
+          foregroundColor: foregroundColor,
+        ),
+        onTap: _handleTap,
+      ),
+    ],
+  );
+
+  void _handleTap() {
+    onAction?.call();
+    onDismiss();
+  }
+}
+
+class _AuraSnackBarActionContent extends StatelessWidget {
+  const new({required this.child});
+
+  new fromValues({required String label, required Color foregroundColor})
+    : this(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: _AuraSnackBarOverlayEntryState._actionVerticalPadding,
+            horizontal: _AuraSnackBarOverlayEntryState._actionHorizontalPadding,
+          ),
+          child: Text(
+            label,
+            style: .new(
+              color: foregroundColor,
+              fontSize: _AuraSnackBarOverlayEntryState._contentFontSize,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => child;
 }
 
 /// Gets the background color for a snackbar variant.

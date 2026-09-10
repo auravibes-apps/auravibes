@@ -32,16 +32,11 @@ class CodexOAuthService {
   Future<OAuthTokenEntity> authenticateWithBrowser({
     bool Function()? isCancelled,
   }) async {
-    final pkce = _generatePkce();
-    final state = _randomUrlSafe(32);
     final server = await _bindServer();
     try {
-      return await _authenticateWithBrowser((
-        server: server,
-        pkce: pkce,
-        state: state,
-        isCancelled: isCancelled,
-      ));
+      return await _authenticateWithBrowser(
+        _browserAuthRequest(server, isCancelled),
+      );
     } finally {
       final _ = await server.close(force: true);
     }
@@ -56,7 +51,7 @@ class CodexOAuthService {
       _devicePollRequest(data, isCancelled),
     );
 
-    return _exchangeDeviceAuthorization(authorization);
+    return await _exchangeDeviceAuthorization(authorization);
   }
 
   Uri buildAuthorizeUri({
@@ -124,6 +119,13 @@ typedef _CodeTokenRequest = ({
   String codeVerifier,
 });
 
+typedef _BrowserCallbackRequest = ({
+  HttpRequest request,
+  Completer<String> completer,
+  Uri uri,
+  String state,
+});
+
 extension _CodexOAuthPrimaryFlow on CodexOAuthService {
   Future<OAuthTokenEntity> _authenticateWithBrowser(
     _BrowserAuthRequest request,
@@ -131,7 +133,7 @@ extension _CodexOAuthPrimaryFlow on CodexOAuthService {
     final redirectUri = 'http://localhost:${request.server.port}/auth/callback';
     final code = await _browserCode(request);
 
-    return exchangeCodeForToken(
+    return await exchangeCodeForToken(
       code: code,
       redirectUri: redirectUri,
       codeVerifier: request.pkce.verifier,
@@ -143,7 +145,7 @@ extension _CodexOAuthPrimaryFlow on CodexOAuthService {
     _startBrowserCallbackListener(request, completer);
     await _openBrowser(_browserAuthorizationUri(request));
 
-    return _awaitBrowserCode(completer, request.isCancelled);
+    return await _awaitBrowserCode(completer, request.isCancelled);
   }
 
   void _startBrowserCallbackListener(
@@ -174,6 +176,16 @@ extension _CodexOAuthPrimaryFlow on CodexOAuthService {
 
     return _waitForBrowserCode(completer, isCancelled);
   }
+
+  _BrowserAuthRequest _browserAuthRequest(
+    HttpServer server,
+    bool Function()? isCancelled,
+  ) => (
+    server: server,
+    pkce: _generatePkce(),
+    state: _randomUrlSafe(32),
+    isCancelled: isCancelled,
+  );
 }
 
 extension _CodexOAuthCallbacksAndPolling on CodexOAuthService {
@@ -196,14 +208,19 @@ extension _CodexOAuthCallbacksAndPolling on CodexOAuthService {
       ..start();
 
     try {
-      return await Future.any<String>([
-        completer.future.timeout(const Duration(minutes: 5)),
-        _waitForCancellation(cancellation.future),
-      ]);
+      return await _browserCodeWaitFuture(completer, cancellation);
     } finally {
       cancellationPoller.cancel();
     }
   }
+
+  Future<String> _browserCodeWaitFuture(
+    Completer<String> completer,
+    Completer<void> cancellation,
+  ) => Future.any<String>([
+    completer.future.timeout(const Duration(minutes: 5)),
+    _waitForCancellation(cancellation.future),
+  ]);
 
   Future<bool> _handleBrowserCallback(
     HttpRequest request,
@@ -217,23 +234,29 @@ extension _CodexOAuthCallbacksAndPolling on CodexOAuthService {
       return false;
     }
 
-    return _handleKnownBrowserCallback(request, completer, uri, state);
+    return await _handleKnownBrowserCallback((
+      request: request,
+      completer: completer,
+      uri: uri,
+      state: state,
+    ));
   }
 
   Future<bool> _handleKnownBrowserCallback(
-    HttpRequest request,
-    Completer<String> completer,
-    Uri uri,
-    String state,
+    _BrowserCallbackRequest callback,
   ) async {
-    final error = _browserCallbackError(uri, state);
+    final error = _browserCallbackError(callback.uri, callback.state);
     if (error != null) {
-      await _failBrowserCallback(request, completer, error);
+      await _failBrowserCallback(callback.request, callback.completer, error);
 
       return true;
     }
 
-    await _completeBrowserCallback(request, completer, uri);
+    await _completeBrowserCallback(
+      callback.request,
+      callback.completer,
+      callback.uri,
+    );
 
     return true;
   }
@@ -310,9 +333,15 @@ extension _CodexOAuthDeviceAuthorization on CodexOAuthService {
 extension _CodexOAuthDevicePolling on CodexOAuthService {
   Future<HttpServer> _bindServer() async {
     try {
-      return await HttpServer.bind(InternetAddress.loopbackIPv4, defaultPort);
+      return await HttpServer.bind(
+        InternetAddress.loopbackIPv4,
+        CodexOAuthService.defaultPort,
+      );
     } on SocketException {
-      return await HttpServer.bind(InternetAddress.loopbackIPv4, fallbackPort);
+      return await HttpServer.bind(
+        InternetAddress.loopbackIPv4,
+        CodexOAuthService.fallbackPort,
+      );
     }
   }
 
@@ -467,7 +496,7 @@ List<String>? _scopes(Object? value) => switch (value) {
 };
 
 class _DevicePollRequest {
-  _DevicePollRequest({
+  new({
     required this.deviceAuthId,
     required this.userCode,
     required this.interval,
@@ -481,7 +510,7 @@ class _DevicePollRequest {
 }
 
 class _CancellationPoller {
-  _CancellationPoller(this.signal, this.isCancelled);
+  new(this.signal, this.isCancelled);
 
   final Completer<void> signal;
   final bool Function() isCancelled;
@@ -497,7 +526,7 @@ class _CancellationPoller {
 
       return;
     }
-    _timer = Timer(const Duration(milliseconds: 250), _check);
+    _timer = .new(const Duration(milliseconds: 250), _check);
   }
 }
 
@@ -560,6 +589,7 @@ Map<String, Object?>? _decodeJwtPayload(String encodedPayload) {
   try {
     final payload = base64Url.normalize(encodedPayload);
     final decoded = utf8.decode(base64Url.decode(payload));
+
     return _asJsonMap(jsonDecode(decoded));
   } on FormatException {
     return null;
@@ -568,7 +598,7 @@ Map<String, Object?>? _decodeJwtPayload(String encodedPayload) {
 
 Map<String, Object?>? _asJsonMap(Object? value) => switch (value) {
   final Map<String, Object?> map => map,
-  final Map map => map.cast<String, Object?>(),
+  final Map<Object?, Object?> map => map.cast<String, Object?>(),
   _ => null,
 };
 

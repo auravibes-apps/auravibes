@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
 
 class const DuplicateSkillTemplateToolUsecase(
@@ -49,12 +50,14 @@ class const DuplicateSkillTemplateToolUsecase(
   }
 
   Future<String> _copyTitle(SkillTemplateToolEntity tool) async {
-    for (var suffix = 1; ; suffix++) {
-      final title = _copyTitleValue(tool.title, suffix);
-      if (!await _titleExists(tool.skillId, generateSkillSlug(title))) {
-        return title;
-      }
+    var suffix = 1;
+    var title = _copyTitleValue(tool.title, suffix);
+    while (await _titleExists(tool.skillId, generateSkillSlug(title))) {
+      suffix++;
+      title = _copyTitleValue(tool.title, suffix);
     }
+
+    return title;
   }
 
   String _copyTitleValue(String originalTitle, int suffix) =>

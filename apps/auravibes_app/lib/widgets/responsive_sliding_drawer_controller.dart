@@ -102,15 +102,6 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     return controller;
   }
 
-  double get _requiredDesktopDrawerWidth {
-    final width = _desktopDrawerWidth;
-    if (width == null) {
-      throw StateError('Desktop drawer width is not initialized');
-    }
-
-    return width;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -159,6 +150,15 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 }
 
 extension _ResponsiveSlidingDrawerAppearance on _ResponsiveSlidingDrawerState {
+  double get _requiredDesktopDrawerWidth {
+    final width = _desktopDrawerWidth;
+    if (width == null) {
+      throw StateError('Desktop drawer width is not initialized');
+    }
+
+    return width;
+  }
+
   double get _gradientStartOpacity => widget.isDarkMode
       ? _ResponsiveSlidingDrawerState._scrimGradientStartOpacityDarkMode
       : _ResponsiveSlidingDrawerState._scrimGradientStartOpacityLightMode;

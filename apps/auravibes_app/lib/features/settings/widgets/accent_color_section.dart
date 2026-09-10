@@ -74,8 +74,7 @@ class const _AccentColorCard({
 }
 
 class const _AccentColorHeader() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => const AuraColumn(
+  static const _content = AuraColumn(
     children: [
       AuraText(
         child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
@@ -89,6 +88,9 @@ class const _AccentColorHeader() extends StatelessWidget {
     spacing: .none,
     crossAxisAlignment: .start,
   );
+
+  @override
+  Widget build(BuildContext context) => _content;
 }
 
 class const _AccentColorTile({
@@ -103,12 +105,15 @@ class const _AccentColorTile({
     ),
     onTap: onTap,
     variant: .ghost,
-    leading: Icon(
-      Icons.color_lens_outlined,
-      color: context.auraColors.secondary,
-    ),
+    leading: _AccentColorTileLeading(),
     trailing: _AccentColorTileTrailing(hue: hue),
   );
+}
+
+class const _AccentColorTileLeading() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Icon(Icons.color_lens_outlined, color: context.auraColors.secondary);
 }
 
 class const _AccentColorTileTrailing({required final double hue})
@@ -143,16 +148,15 @@ class _HueDialogState extends State<_HueDialog> {
   Widget build(BuildContext context) => AuraColumn(
     children: [
       _HueSwatch(hue: _hue, size: 48),
-      _HueSlider(
-        hue: _hue,
-        onChanged: (value) {
-          setState(() => _hue = value);
-          widget.onChanged(value);
-        },
-      ),
+      _HueSlider(hue: _hue, onChanged: _updateHue),
     ],
     crossAxisAlignment: .stretch,
   );
+
+  void _updateHue(double value) {
+    setState(() => _hue = value);
+    widget.onChanged(value);
+  }
 }
 
 class const _HueSwatch({required final double hue, final double size = 24})
@@ -208,19 +212,25 @@ class const _HueSliderControl({
   required final ValueChanged<double> onChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => SliderTheme(
-    data: .new(
-      trackHeight: 0,
-      activeTrackColor: Colors.transparent,
-      inactiveTrackColor: Colors.transparent,
-      thumbColor: context.auraColors.onSurface,
-      overlayColor: context.auraColors.primary.withValues(alpha: 0.12),
-    ),
-    child: Slider(
-      value: hue.clamp(0, AccentHue.maxValue),
-      onChanged: onChanged,
-      max: AccentHue.maxValue,
-    ),
+  Widget build(BuildContext context) {
+    final colors = context.auraColors;
+
+    return SliderTheme(
+      data: _sliderThemeData(colors),
+      child: Slider(
+        value: hue.clamp(0, AccentHue.maxValue),
+        onChanged: onChanged,
+        max: AccentHue.maxValue,
+      ),
+    );
+  }
+
+  SliderThemeData _sliderThemeData(AuraColorScheme colors) => .new(
+    trackHeight: 0,
+    activeTrackColor: Colors.transparent,
+    inactiveTrackColor: Colors.transparent,
+    thumbColor: colors.onSurface,
+    overlayColor: colors.primary.withValues(alpha: 0.12),
   );
 }
 

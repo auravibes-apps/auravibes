@@ -18,6 +18,7 @@ const _maximumPrecision = 20;
 const _markLabelHeight = 20.0;
 const _alignmentRange = 2.0;
 const _focusRingOffset = 3.0;
+const _focusRingStrokeWidth = 2.0;
 const _half = 2.0;
 
 typedef _SliderNormalizationRequest = ({
@@ -191,23 +192,27 @@ class const _AuraSliderStateView({
   );
 }
 
-class const _AuraSliderInteractionView({
-  required final _AuraSliderState state,
-  required final _SliderBuildValues values,
-}) extends StatelessWidget {
+class _AuraSliderInteractionView extends StatelessWidget {
+  _AuraSliderInteractionView({
+    required _AuraSliderState state,
+    required _SliderBuildValues values,
+  }) : _child = _AuraSliderInteraction(
+         enabled: values.enabled,
+         value: values.value,
+         min: state.widget.min,
+         max: state.widget.max,
+         tint: state.widget.tint,
+         isFocused: state._isFocused,
+         onChanged: state._changeValue,
+         onIncrease: state._increase,
+         onDecrease: state._decrease,
+         onShowFocusHighlight: state._setFocusHighlight,
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => _AuraSliderInteraction(
-    enabled: values.enabled,
-    value: values.value,
-    min: state.widget.min,
-    max: state.widget.max,
-    tint: state.widget.tint,
-    isFocused: state._isFocused,
-    onChanged: state._changeValue,
-    onIncrease: state._increase,
-    onDecrease: state._decrease,
-    onShowFocusHighlight: state._setFocusHighlight,
-  );
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraSliderSemantics({
@@ -251,24 +256,23 @@ class const _AuraSliderInteraction({
       _AuraSliderInteractionFocus(interaction: this);
 }
 
-class const _AuraSliderInteractionFocus({
-  required final _AuraSliderInteraction interaction,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final value = interaction;
+class _AuraSliderInteractionFocus extends StatelessWidget {
+  _AuraSliderInteractionFocus({required _AuraSliderInteraction interaction})
+    : _child = FocusableActionDetector(
+        enabled: interaction.enabled,
+        shortcuts: _sliderShortcuts,
+        actions: _sliderActions(interaction.onIncrease, interaction.onDecrease),
+        onShowFocusHighlight: interaction.onShowFocusHighlight,
+        mouseCursor: interaction.enabled
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.forbidden,
+        child: _AuraSliderInteractionTrack(interaction: interaction),
+      );
 
-    return FocusableActionDetector(
-      enabled: value.enabled,
-      shortcuts: _sliderShortcuts,
-      actions: _sliderActions(value.onIncrease, value.onDecrease),
-      onShowFocusHighlight: value.onShowFocusHighlight,
-      mouseCursor: value.enabled
-          ? SystemMouseCursors.click
-          : SystemMouseCursors.forbidden,
-      child: _AuraSliderInteractionTrack(interaction: value),
-    );
-  }
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraSliderInteractionTrack({
@@ -300,12 +304,14 @@ Map<Type, Action<Intent>> _sliderActions(
   _AuraSliderIncreaseIntent: CallbackAction<_AuraSliderIncreaseIntent>(
     onInvoke: (_) {
       onIncrease();
+
       return null;
     },
   ),
   _AuraSliderDecreaseIntent: CallbackAction<_AuraSliderDecreaseIntent>(
     onInvoke: (_) {
       onDecrease();
+
       return null;
     },
   ),
@@ -337,38 +343,40 @@ class const _AuraSliderTrack({
       );
 }
 
-class const _AuraSliderTrackLayout({
-  required final double width,
-  required final bool enabled,
-  required final double value,
-  required final double min,
-  required final double max,
-  required final Color activeColor,
-  required final Color inactiveColor,
-  required final bool isFocused,
-  required final ValueChanged<double> onChanged,
-}) extends StatelessWidget {
+class _AuraSliderTrackLayout extends StatelessWidget {
+  _AuraSliderTrackLayout({
+    required double width,
+    required bool enabled,
+    required double value,
+    required double min,
+    required double max,
+    required Color activeColor,
+    required Color inactiveColor,
+    required bool isFocused,
+    required ValueChanged<double> onChanged,
+  }) : _child = _AuraSliderGesture(
+         enabled: enabled,
+         width: width,
+         min: min,
+         max: max,
+         value: value,
+         onChanged: onChanged,
+         child: _AuraSliderTrackCanvas(
+           enabled: enabled,
+           value: value,
+           min: min,
+           max: max,
+           activeColor: activeColor,
+           inactiveColor: inactiveColor,
+           isFocused: isFocused,
+           width: width,
+         ),
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) {
-    return _AuraSliderGesture(
-      enabled: enabled,
-      width: width,
-      min: min,
-      max: max,
-      value: value,
-      onChanged: onChanged,
-      child: _AuraSliderTrackCanvas(
-        enabled: enabled,
-        value: value,
-        min: min,
-        max: max,
-        activeColor: activeColor,
-        inactiveColor: inactiveColor,
-        isFocused: isFocused,
-        width: width,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraSliderGesture({
@@ -382,10 +390,10 @@ class const _AuraSliderGesture({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GestureDetector(
-    behavior: .opaque,
+    child: child,
     onTapDown: enabled ? _handleTap : null,
     onHorizontalDragUpdate: enabled ? _handleDrag : null,
-    child: child,
+    behavior: .opaque,
   );
 
   void _handleTap(TapDownDetails details) =>
@@ -405,35 +413,44 @@ class const _AuraSliderGesture({
   );
 }
 
-class const _AuraSliderTrackCanvas({
-  required final bool enabled,
-  required final double value,
-  required final double min,
-  required final double max,
-  required final Color activeColor,
-  required final Color inactiveColor,
-  required final bool isFocused,
-  required final double width,
-}) extends StatelessWidget {
-  double get _thumbX =>
-      _thumbPosition((value: value, width: width, min: min, max: max));
+class _AuraSliderTrackCanvas extends StatelessWidget {
+  _AuraSliderTrackCanvas({
+    required bool enabled,
+    required double value,
+    required double min,
+    required double max,
+    required Color activeColor,
+    required Color inactiveColor,
+    required bool isFocused,
+    required double width,
+  }) : _child = SizedBox(
+         height: _controlHeight,
+         child: CustomPaint(
+           painter: _AuraSliderPainter(
+             value: value,
+             min: min,
+             max: max,
+             activeColor: enabled ? activeColor : inactiveColor,
+             inactiveColor: inactiveColor,
+           ),
+           foregroundPainter: enabled && isFocused
+               ? _AuraSliderFocusRingPainter(
+                   thumbX: _thumbPosition((
+                     value: value,
+                     width: width,
+                     min: min,
+                     max: max,
+                   )),
+                   color: activeColor,
+                 )
+               : null,
+         ),
+       );
+
+  final Widget _child;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: _controlHeight,
-    child: CustomPaint(
-      painter: _AuraSliderPainter(
-        value: value,
-        min: min,
-        max: max,
-        activeColor: enabled ? activeColor : inactiveColor,
-        inactiveColor: inactiveColor,
-      ),
-      foregroundPainter: enabled && isFocused
-          ? _AuraSliderFocusRingPainter(thumbX: _thumbX, color: activeColor)
-          : null,
-    ),
-  );
+  Widget build(BuildContext context) => _child;
 }
 
 double _clampValue(double value, double min, double max) =>
@@ -618,8 +635,8 @@ RRect _sliderTrackRRect(_SliderPaintGeometry geometry, double end) {
   final radius = geometry.trackRadius;
 
   return RRect.fromRectAndRadius(
-    Rect.fromLTRB(start, centerY - radius, end, centerY + radius),
-    Radius.circular(radius),
+    .fromLTRB(start, centerY - radius, end, centerY + radius),
+    .circular(radius),
   );
 }
 
@@ -628,20 +645,20 @@ void _drawSliderThumb(
   _SliderPaintGeometry geometry,
   Color color,
 ) => canvas.drawCircle(
-  Offset(geometry.thumbX, geometry.centerY),
+  .new(geometry.thumbX, geometry.centerY),
   _thumbRadius,
   Paint()..color = color,
 );
 
 void _drawSliderFocusRing(_SliderFocusRingRequest request) {
-  final focusPaint = Paint()
-    ..color = request.color.withValues(alpha: 0.24)
-    ..style = .stroke
-    ..strokeWidth = 2;
-
   request.canvas.drawCircle(
-    Offset(request.thumbX, request.size.height / _half),
+    .new(request.thumbX, request.size.height / _half),
     _thumbRadius + _focusRingOffset,
-    focusPaint,
+    _sliderFocusPaint(request.color),
   );
 }
+
+Paint _sliderFocusPaint(Color color) => Paint()
+  ..color = color.withValues(alpha: 0.24)
+  ..style = .stroke
+  ..strokeWidth = _focusRingStrokeWidth;

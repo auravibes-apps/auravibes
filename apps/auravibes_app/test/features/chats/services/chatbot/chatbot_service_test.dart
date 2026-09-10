@@ -74,51 +74,51 @@ void main() {
       );
       final service = _createService(providerFactory: providerFactory);
 
-      final results = await service
-          .sendMessage(
-            _makeConfig(),
-            [
-              ChatMessage.system('system prompt'),
-              ChatMessage.user('hello'),
-              ChatMessage.model(
-                'ignored',
-                parts: [genkit.TextPart(text: 'model part')],
-              ),
-              ChatMessage(
-                role: ChatMessageRole.tool,
-                parts: [
-                  genkit.ToolResponsePart(
-                    toolResponse: genkit.ToolResponse(
-                      ref: 'tool-0',
-                      name: 'lookup_weather',
-                      output: 'sunny',
-                    ),
-                  ),
-                ],
+      final results = await service.sendMessage(
+        _makeConfig(),
+        [
+          ChatMessage.system('system prompt'),
+          ChatMessage.user('hello'),
+          ChatMessage.model(
+            'ignored',
+            parts: [genkit.TextPart(text: 'model part')],
+          ),
+          ChatMessage(
+            role: ChatMessageRole.tool,
+            parts: [
+              genkit.ToolResponsePart(
+                toolResponse: genkit.ToolResponse(
+                  ref: 'tool-0',
+                  name: 'lookup_weather',
+                  output: 'sunny',
+                ),
               ),
             ],
-            tools: [
-              ToolSpec(
-                name: 'lookup_weather',
-                description: 'Looks up weather',
-                inputJsonSchema: {
-                  'type': 'object',
-                  'properties': {
-                    'city': {'type': 'string'},
-                  },
+          ),
+        ],
+        options: ChatbotMessageOptions(
+          tools: [
+            ToolSpec(
+              name: 'lookup_weather',
+              description: 'Looks up weather',
+              inputJsonSchema: {
+                'type': 'object',
+                'properties': {
+                  'city': {'type': 'string'},
                 },
-              ),
-            ],
-          )
-          .toList();
+              },
+            ),
+          ],
+        ),
+      ).toList();
 
       expect(results, hasLength(2));
       expect(results.firstOrNull?.output.text, 'Hello');
       expect(results.last.finishReason, ChatFinishReason.toolCalls);
       expect(results.last.entityTools.single.id, 'tool-1');
-      expect(results.last.entityPromptTokens, 12);
-      expect(results.last.entityCompletionTokens, 8);
-      expect(results.last.entityTotalTokens, 20);
+      expect(results.last.entityPromptTokens(), 12);
+      expect(results.last.entityCompletionTokens(), 8);
+      expect(results.last.entityTotalTokens(), 20);
       expect(results.last.entityModelMetadata, {'continuation': 'signature'});
 
       expect(capturedRequest?.tools?.single.name, 'lookup_weather');

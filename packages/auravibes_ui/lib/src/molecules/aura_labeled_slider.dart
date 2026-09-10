@@ -66,6 +66,7 @@ class AuraLabeledSlider extends StatelessWidget {
       slider: this,
       effectiveValue: _effectiveSliderValue(this),
       format: _sliderFormatter(this),
+      spacing: context.auraTheme.spacing,
     );
   }
 }
@@ -90,27 +91,32 @@ String Function(double) _sliderFormatter(AuraLabeledSlider slider) =>
     slider.valueFormatter ??
     (value) => _formatSliderValue(value, slider.precision);
 
-class const _AuraLabeledSliderContent({
-  required final AuraLabeledSlider slider,
-  required final double effectiveValue,
-  required final String Function(double) format,
-}) extends StatelessWidget {
+class _AuraLabeledSliderContent extends StatelessWidget {
+  _AuraLabeledSliderContent({
+    required AuraLabeledSlider slider,
+    required double effectiveValue,
+    required String Function(double) format,
+    required AuraSpacingScale spacing,
+  }) : _child = Column(
+         crossAxisAlignment: .stretch,
+         children: [
+           _AuraLabeledSliderHeaderAndControl(
+             slider: slider,
+             effectiveValue: effectiveValue,
+             format: format,
+           ),
+           _AuraLabeledSliderFooter(
+             slider: slider,
+             format: format,
+             spacing: spacing,
+           ),
+         ],
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: .stretch,
-    children: [
-      _AuraLabeledSliderHeaderAndControl(
-        slider: slider,
-        effectiveValue: effectiveValue,
-        format: format,
-      ),
-      _AuraLabeledSliderFooter(
-        slider: slider,
-        format: format,
-        spacing: context.auraTheme.spacing,
-      ),
-    ],
-  );
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraLabeledSliderFooter({

@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_entity.freezed.dart';
 
+@immutable
 @freezed
 abstract class const SkillEntity._() with _$SkillEntity {
   const factory({
@@ -19,8 +20,18 @@ abstract class const SkillEntity._() with _$SkillEntity {
     required DateTime updatedAt,
     String? credentialDefinitionId,
   }) = _SkillEntity;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class const SkillToCreate._() with _$SkillToCreate {
   const factory({
@@ -32,8 +43,18 @@ abstract class const SkillToCreate._() with _$SkillToCreate {
     @Default(false) bool isCredentialOptional,
     @Default(true) bool isEnabled,
   }) = _SkillToCreate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class const SkillToUpdate._() with _$SkillToUpdate {
   const factory({
@@ -45,6 +66,15 @@ abstract class const SkillToUpdate._() with _$SkillToUpdate {
     bool? isCredentialOptional,
     bool? isEnabled,
   }) = _SkillToUpdate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
 enum SkillSource { user, app }

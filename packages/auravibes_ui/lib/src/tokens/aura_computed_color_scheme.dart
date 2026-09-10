@@ -49,6 +49,13 @@ typedef _ComputedForegroundValues = ({
   _ComputedSemanticForegrounds semantic,
 });
 
+typedef _ComputedForegroundRequest = ({
+  _ComputedBrandValues brand,
+  _ComputedSurfaceValues surface,
+  _ComputedSemanticValues semantic,
+  bool isLight,
+});
+
 typedef _ComputedPaletteValues = ({
   _ComputedBrandValues brand,
   _ComputedSurfaceValues surface,
@@ -154,23 +161,29 @@ _ComputedPaletteValues _computedPaletteValues(
 _ComputedSchemeValues _computedSchemeValuesFromPalette(
   _ComputedPaletteValues palette,
   bool isLight,
-) {
-  final foreground = _computedForegroundValues(
+) => _computedSchemeWithForeground(
+  palette,
+  _computedForegroundValues((
     brand: palette.brand,
     surface: palette.surface,
     semantic: palette.semantic,
     isLight: isLight,
-  );
+  )),
+  isLight,
+);
 
-  return (
-    brand: palette.brand,
-    surface: palette.surface,
-    semantic: palette.semantic,
-    foreground: foreground,
-    shadow: _computedShadow,
-    scrim: _computedScrim(isLight),
-  );
-}
+_ComputedSchemeValues _computedSchemeWithForeground(
+  _ComputedPaletteValues palette,
+  _ComputedForegroundValues foreground,
+  bool isLight,
+) => (
+  brand: palette.brand,
+  surface: palette.surface,
+  semantic: palette.semantic,
+  foreground: foreground,
+  shadow: _computedShadow,
+  scrim: _computedScrim(isLight),
+);
 
 const _computedShadow = Color(0xFF000000);
 const _brandVariantLightLightness = 0.3;
@@ -198,20 +211,24 @@ typedef _ComputedBrandPair = ({
 });
 
 _ComputedBrandPair _computedBrandPair(double hue, bool isLight) => (
-  primary: _brandColor((
-    hue: hue,
-    isLight: isLight,
-    lightLightness: 0.4,
-    darkLightness: 0.78,
-    chroma: 0.17,
-  )),
-  variant: _brandColor((
-    hue: hue,
-    isLight: isLight,
-    lightLightness: _brandVariantLightLightness,
-    darkLightness: 0.68,
-    chroma: _brandVariantChroma,
-  )),
+  primary: _brandColor(_primaryBrandRequest(hue, isLight)),
+  variant: _brandColor(_variantBrandRequest(hue, isLight)),
+);
+
+_BrandColorRequest _primaryBrandRequest(double hue, bool isLight) => (
+  hue: hue,
+  isLight: isLight,
+  lightLightness: 0.4,
+  darkLightness: 0.78,
+  chroma: 0.17,
+);
+
+_BrandColorRequest _variantBrandRequest(double hue, bool isLight) => (
+  hue: hue,
+  isLight: isLight,
+  lightLightness: _brandVariantLightLightness,
+  darkLightness: 0.68,
+  chroma: _brandVariantChroma,
 );
 
 AuraComputedColor _brandColor(_BrandColorRequest request) => _computedColor(
@@ -245,15 +262,12 @@ _ComputedSemanticValues _computedSemanticValues(bool isLight) {
   );
 }
 
-_ComputedForegroundValues _computedForegroundValues({
-  required _ComputedBrandValues brand,
-  required _ComputedSurfaceValues surface,
-  required _ComputedSemanticValues semantic,
-  required bool isLight,
-}) => (
-  brand: _computedBrandForegrounds(brand),
-  surface: _computedSurfaceForegrounds(surface, isLight),
-  semantic: _computedSemanticForegrounds(semantic),
+_ComputedForegroundValues _computedForegroundValues(
+  _ComputedForegroundRequest request,
+) => (
+  brand: _computedBrandForegrounds(request.brand),
+  surface: _computedSurfaceForegrounds(request.surface, request.isLight),
+  semantic: _computedSemanticForegrounds(request.semantic),
 );
 
 _ComputedBrandForegrounds _computedBrandForegrounds(
@@ -276,23 +290,27 @@ _ComputedSemanticForegrounds _computedSemanticForegrounds(
 _ComputedSurfaceForegrounds _computedSurfaceForegrounds(
   _ComputedSurfaceValues surface,
   bool isLight,
+) => _computedSurfaceForegroundValues(surface, isLight);
+
+_ComputedSurfaceForegrounds _computedSurfaceForegroundValues(
+  _ComputedSurfaceValues surface,
+  bool isLight,
 ) => (
-  onSurface: _computedForegroundColor(
-    DesignColors.neutral900,
-    surface.surface,
-    isLight,
-  ),
-  onSurfaceVariant: _computedForegroundColor(
-    DesignColors.neutral700,
+  onSurface: _computedSurfaceForeground(surface.surface, isLight),
+  onSurfaceVariant: _computedSurfaceVariantForeground(
     surface.surfaceVariant,
     isLight,
   ),
-  onBackground: _computedForegroundColor(
-    DesignColors.neutral900,
-    surface.background,
-    isLight,
-  ),
+  onBackground: _computedSurfaceForeground(surface.background, isLight),
 );
+
+Color _computedSurfaceForeground(AuraComputedColor surface, bool isLight) =>
+    _computedForegroundColor(DesignColors.neutral900, surface, isLight);
+
+Color _computedSurfaceVariantForeground(
+  AuraComputedColor surface,
+  bool isLight,
+) => _computedForegroundColor(DesignColors.neutral700, surface, isLight);
 
 Color _computedForegroundColor(
   Color lightColor,
@@ -308,13 +326,15 @@ AuraComputedColor _computedColor(double hue, double lightness, double chroma) {
       lightness: lightness,
       chroma: safeChroma,
     );
-    if (candidate.toOklab().toLrgb().isValid) return candidate;
+    if (_isValidComputedColor(candidate)) return candidate;
     safeChroma -= 0.01;
   }
 
-  return AuraComputedColor.withLightness(
-    hue: hue,
-    lightness: lightness,
-    chroma: 0,
-  );
+  return _achromaticComputedColor(hue, lightness);
 }
+
+bool _isValidComputedColor(AuraComputedColor candidate) =>
+    candidate.toOklab().toLrgb().isValid;
+
+AuraComputedColor _achromaticComputedColor(double hue, double lightness) =>
+    AuraComputedColor.withLightness(hue: hue, lightness: lightness, chroma: 0);

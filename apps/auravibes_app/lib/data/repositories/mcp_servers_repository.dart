@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
@@ -49,7 +48,7 @@ class McpServersRepository implements McpServersRepositoryContract {
     try {
       // Use a transaction to ensure atomicity.
       return await _database.transaction(
-        () => this._addMcpServerWithTools(workspaceId, serverToCreate, tools),
+        () => _addMcpServerWithTools(workspaceId, serverToCreate, tools),
       );
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
@@ -62,7 +61,7 @@ class McpServersRepository implements McpServersRepositoryContract {
   @override
   Future<bool> deleteMcpServer(String serverId) async {
     try {
-      return await _database.transaction(() => this._deleteMcpServer(serverId));
+      return await _database.transaction(() => _deleteMcpServer(serverId));
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException('Failed to delete MCP server.', e),
@@ -78,7 +77,7 @@ class McpServersRepository implements McpServersRepositoryContract {
   }) async {
     try {
       await _database.transaction(
-        () => this._syncMcpTools(mcpServerId, currentTools),
+        () => _syncMcpTools(mcpServerId, currentTools),
       );
 
       // Note: Existing tools are NOT modified - user customizations preserved.
@@ -101,7 +100,7 @@ class McpServersRepository implements McpServersRepositoryContract {
         workspaceId,
       );
 
-      return results.map(this._tableToEntity).toList();
+      return results.map(_tableToEntity).toList();
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException('Failed to get MCP servers for workspace.', e),
@@ -115,11 +114,7 @@ class McpServersRepository implements McpServersRepositoryContract {
     String workspaceId,
   ) async {
     try {
-      final results = await _mcpServersDao.getEnabledMcpServersForWorkspace(
-        workspaceId,
-      );
-
-      return results.map(this._tableToEntity).toList();
+      return await _getEnabledMcpServers(workspaceId);
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException(
@@ -137,7 +132,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       final result = await _mcpServersDao.getMcpServerById(serverId);
       if (result == null) return null;
 
-      return this._tableToEntity(result);
+      return _tableToEntity(result);
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException('Failed to get MCP server by ID.', e),
@@ -148,6 +143,13 @@ class McpServersRepository implements McpServersRepositoryContract {
 }
 
 extension McpServersRepositoryOperations on McpServersRepository {
+  Future<List<McpServerEntity>> _getEnabledMcpServers(
+    String workspaceId,
+  ) async =>
+      (await _mcpServersDao.getEnabledMcpServersForWorkspace(workspaceId))
+          .map(_tableToEntity)
+          .toList();
+
   Future<McpServersTable> _insertMcpServer(
     String workspaceId,
     McpServerToCreate serverToCreate,
@@ -219,7 +221,9 @@ extension McpServersRepositoryOperations on McpServersRepository {
 
     await _syncToolsForGroup(group, currentTools);
   }
+}
 
+extension on McpServersRepository {
   Future<ToolsGroupsTable> _insertToolsGroup(
     McpServersTable server,
     McpServerToCreate serverToCreate,
@@ -311,7 +315,9 @@ extension McpServersRepositoryOperations on McpServersRepository {
       final _ = await _workspaceToolsDao.deleteWorkspaceToolById(tool.id);
     }
   }
+}
 
+extension on McpServersRepository {
   /// Convert a database table row to an entity.
   McpServerEntity _tableToEntity(McpServersTable table) {
     return _copyServerDetails(table);
@@ -375,5 +381,5 @@ class McpServerNotFoundException extends McpServersException {
   final String serverId;
 
   @override
-  String toString() => super.toString();
+  String toString() => StringBuffer(super.toString()).toString();
 }

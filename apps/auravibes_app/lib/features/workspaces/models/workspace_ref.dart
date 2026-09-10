@@ -12,16 +12,16 @@ final class const CloudWorkspaceRef({
   required final int cloudWorkspaceId,
 }) extends WorkspaceRef;
 
-final class const WorkspaceSession(final WorkspaceRef workspace) {
-  WorkspaceCapabilities get capabilities => switch (workspace) {
-    CloudWorkspaceRef() => WorkspaceCapabilities.cloud,
-    LocalWorkspaceRef() => WorkspaceCapabilities.local,
-  };
+final class WorkspaceSession {
+  const new(this.workspace)
+    : capabilities = workspace is CloudWorkspaceRef
+          ? WorkspaceCapabilities.cloud
+          : WorkspaceCapabilities.local,
+      cloud = workspace is CloudWorkspaceRef ? workspace : null;
 
-  CloudWorkspaceRef? get cloud => switch (workspace) {
-    final CloudWorkspaceRef cloud => cloud,
-    LocalWorkspaceRef() => null,
-  };
+  final WorkspaceRef workspace;
+  final WorkspaceCapabilities capabilities;
+  final CloudWorkspaceRef? cloud;
 
   /// Returns whether this session supports [capability].
   bool hasCapability(WorkspaceCapabilities capability) =>

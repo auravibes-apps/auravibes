@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -23,6 +23,7 @@ Future<WorkspaceSession> workspaceSessionForRoute(
 ) async {
   final _ = ref.watch(allWorkspacesProvider);
   final workspaces = await ref.read(allWorkspacesProvider.future);
+
   return _workspaceSessionForMirror(
     localWorkspaceId,
     _findWorkspace(workspaces, localWorkspaceId),
@@ -47,51 +48,48 @@ WorkspaceSession _workspaceSessionForMirror(
   String localWorkspaceId,
   WorkspaceEntity mirror,
 ) {
-  final serverUrl = mirror.url;
-  final accountId = mirror.cloudAccountId;
-  final cloudWorkspaceId = int.tryParse(mirror.cloudWorkspaceId ?? '');
   if (mirror.type != WorkspaceType.remote) {
     return WorkspaceSession(
       LocalWorkspaceRef(localWorkspaceId: localWorkspaceId),
     );
   }
-  return _remoteWorkspaceSession(
-    localWorkspaceId,
-    serverUrl,
-    accountId,
-    cloudWorkspaceId,
-  );
+
+  return _remoteWorkspaceSession(localWorkspaceId, mirror);
 }
 
 WorkspaceSession _remoteWorkspaceSession(
   String localWorkspaceId,
-  String? serverUrl,
-  String? accountId,
-  int? cloudWorkspaceId,
+  WorkspaceEntity mirror,
 ) {
-  if (!_hasRemoteMetadata(serverUrl, accountId, cloudWorkspaceId)) {
+  final metadata = _remoteWorkspaceMetadata(mirror);
+  if (metadata == null) {
     throw StateError('Remote workspace $localWorkspaceId has invalid metadata');
   }
 
   return WorkspaceSession(
     CloudWorkspaceRef(
       localWorkspaceId: localWorkspaceId,
-      serverUrl: CloudAccountIdentity.canonicalServerOrigin(serverUrl!),
-      accountId: accountId!,
-      cloudWorkspaceId: cloudWorkspaceId!,
+      serverUrl: CloudAccountIdentity.canonicalServerOrigin(metadata.serverUrl),
+      accountId: metadata.accountId,
+      cloudWorkspaceId: metadata.cloudWorkspaceId,
     ),
   );
 }
 
-bool _hasRemoteMetadata(
-  String? serverUrl,
-  String? accountId,
-  int? cloudWorkspaceId,
-) =>
-    serverUrl != null &&
-    accountId != null &&
-    accountId.isNotEmpty &&
-    cloudWorkspaceId != null;
+({String serverUrl, String accountId, int cloudWorkspaceId})?
+_remoteWorkspaceMetadata(WorkspaceEntity mirror) {
+  final serverUrl = mirror.url;
+  final accountId = mirror.cloudAccountId;
+  final cloudWorkspaceId = int.tryParse(mirror.cloudWorkspaceId ?? '');
+  if (serverUrl == null || accountId == null || accountId.isEmpty) return null;
+  if (cloudWorkspaceId == null) return null;
+
+  return (
+    serverUrl: serverUrl,
+    accountId: accountId,
+    cloudWorkspaceId: cloudWorkspaceId,
+  );
+}
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)
@@ -105,7 +103,7 @@ Future<WorkspaceAvailability> workspaceAvailability(
   final cloud = session.cloud;
   if (cloud == null) return WorkspaceAvailable(session);
 
-  return _checkCloudWorkspaceAvailability(ref, session, cloud);
+  return await _checkCloudWorkspaceAvailability(ref, session, cloud);
 }
 
 Future<WorkspaceAvailability> _checkCloudWorkspaceAvailability(
@@ -113,23 +111,41 @@ Future<WorkspaceAvailability> _checkCloudWorkspaceAvailability(
   WorkspaceSession session,
   CloudWorkspaceRef cloud,
 ) async {
-  final client = await ref.watch(
-    serverpodClientForWorkspaceProvider((
-      serverUrl: cloud.serverUrl,
-      accountId: cloud.accountId,
-    )).future,
-  );
+  final client = await _workspaceClient(ref, cloud);
+
+  return await _availabilityAfterAuthentication(client, session);
+}
+
+Future<Client> _workspaceClient(Ref ref, CloudWorkspaceRef cloud) => ref.watch(
+  serverpodClientForWorkspaceProvider((
+    serverUrl: cloud.serverUrl,
+    accountId: cloud.accountId,
+  )).future,
+);
+
+Future<WorkspaceAvailability> _availabilityAfterAuthentication(
+  Client client,
+  WorkspaceSession session,
+) async {
   try {
     final _ = await client.account.currentUser();
-  } on CloudWorkspaceException catch (error) {
-    if (error.code == CloudWorkspaceErrorCode.authenticationRequired) {
-      return WorkspaceAuthenticationRequired(session);
-    }
-
-    rethrow;
+  } on CloudWorkspaceException catch (error, stackTrace) {
+    return _authenticationFailure(error, stackTrace, session);
   }
 
   return WorkspaceAvailable(session);
+}
+
+WorkspaceAvailability _authenticationFailure(
+  CloudWorkspaceException error,
+  StackTrace stackTrace,
+  WorkspaceSession session,
+) {
+  if (error.code == CloudWorkspaceErrorCode.authenticationRequired) {
+    return WorkspaceAuthenticationRequired(session);
+  }
+
+  Error.throwWithStackTrace(error, stackTrace);
 }
 
 @riverpod

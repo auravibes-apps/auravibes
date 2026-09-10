@@ -10,4 +10,8 @@ extension AgentVisibilityX on AgentVisibility {
   bool get appearsInSubAgentList {
     return this == AgentVisibility.subAgentList || this == AgentVisibility.both;
   }
+
+  bool canAppearInChatSelector() => appearsInChatSelector;
+
+  bool canAppearInSubAgentList() => appearsInSubAgentList;
 }

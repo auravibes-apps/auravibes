@@ -38,15 +38,21 @@ final class const CalculatorTool()
     final evaluator = RealEvaluator();
 
     return CancelableOperation.fromFuture(
-      .new(() {
-        try {
-          final exp = parser.parse(toolInput);
-
-          return evaluator.evaluate(exp).toString();
-        } on Exception catch (_) {
-          return '''I don't know how to do that.''';
-        }
-      }),
+      _calculate(toolInput, parser, evaluator),
     );
+  }
+}
+
+Future<String> _calculate(
+  String input,
+  GrammarParser parser,
+  RealEvaluator evaluator,
+) async {
+  try {
+    final expression = parser.parse(input);
+
+    return evaluator.evaluate(expression).toString();
+  } on Exception catch (_) {
+    return '''I don't know how to do that.''';
   }
 }

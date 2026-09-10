@@ -15,16 +15,55 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
 class const OAuthAuthenticationCanceledException() implements Exception;
 
+const _oauthChars =
+    'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+final Random _oauthRng = _createSecureRandom();
+
 class OAuthAuthenticate({
   required final String callbackUrlScheme,
   required final String clientName,
   Dio? dio,
 }) {
-  static const String _chars =
-      'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
-
-  static final Random _rng = _createSecureRandom();
   final Dio _dio = dio ?? Dio();
+
+  static Uri Function({
+    required OAuthDiscoveryResult oAuthResult,
+    required String redirectUrl,
+    required String stateParam,
+    required String codeChallenge,
+  })
+  get buildAuthorizationUri =>
+      ({
+        required oAuthResult,
+        required redirectUrl,
+        required stateParam,
+        required codeChallenge,
+      }) => _buildAuthorizationUri((
+        oAuthResult: oAuthResult,
+        redirectUrl: redirectUrl,
+        stateParam: stateParam,
+        codeChallenge: codeChallenge,
+      ));
+
+  Future<OAuthTokenModel> Function({
+    required String code,
+    required OAuthDiscoveryResult oAuthResult,
+    required String codeVerifier,
+    required String redirectUrl,
+  })
+  get exchangeCodeForToken =>
+      ({
+        required code,
+        required oAuthResult,
+        required codeVerifier,
+        required redirectUrl,
+      }) => _exchangeCodeForToken((
+        authenticator: this,
+        code: code,
+        oAuthResult: oAuthResult,
+        codeVerifier: codeVerifier,
+        redirectUrl: redirectUrl,
+      ));
 
   /// Generates PKCE code challenge from verifier.
   static String generateCodeChallenge(String codeVerifier) {
@@ -54,39 +93,12 @@ class OAuthAuthenticate({
 
     final result = await _authenticateInBrowser(request.uri);
 
-    final code = validateGetCode(
+    return await _completeAuthentication((
+      authenticator: this,
+      result: oAuthResult,
+      request: request,
       urlResult: result,
-      stateParam: request.stateParam,
-    );
-
-    return exchangeCodeForToken(
-      code: code,
-      oAuthResult: oAuthResult,
-      codeVerifier: request.codeVerifier,
-      redirectUrl: request.redirectUrl,
-    );
-  }
-
-  static Uri buildAuthorizationUri({
-    required OAuthDiscoveryResult oAuthResult,
-    required String redirectUrl,
-    required String stateParam,
-    required String codeChallenge,
-  }) {
-    final clientId = oAuthResult.clientId;
-    final scope = oAuthResult.scope;
-
-    return Uri.parse(oAuthResult.authorizationUrl).replace(
-      queryParameters: {
-        'response_type': 'code',
-        'redirect_uri': redirectUrl,
-        'state': stateParam,
-        'code_challenge': codeChallenge,
-        'code_challenge_method': 'S256',
-        if (clientId != null && clientId.isNotEmpty) 'client_id': clientId,
-        if (scope != null && scope.isNotEmpty) 'scope': scope,
-      },
-    );
+    ));
   }
 
   static String validateGetCode({
@@ -101,46 +113,6 @@ class OAuthAuthenticate({
     return _requiredAuthorizationCode(queryParams);
   }
 
-  Future<OAuthTokenModel> exchangeCodeForToken({
-    required String code,
-    required OAuthDiscoveryResult oAuthResult,
-    required String codeVerifier,
-    required String redirectUrl,
-  }) async {
-    final tokenUri = await PublicUrlGuard.requireHttpsUri(oAuthResult.tokenUrl);
-    final response = await _postToken(_dio, (
-      tokenUri: tokenUri,
-      code: code,
-      redirectUrl: redirectUrl,
-      codeVerifier: codeVerifier,
-      clientId: oAuthResult.clientId,
-    ));
-
-    return OAuthTokenModel.fromJson(_validTokenData(response));
-  }
-
-  static Random _createSecureRandom() {
-    try {
-      return Random.secure();
-      // ignore: avoid_catching_errors - Required to handle unsupported secure RNG.
-    } on UnsupportedError catch (_, stackTrace) {
-      Error.throwWithStackTrace(
-        StateError(
-          'Secure randomness is required to generate OAuth PKCE and state '
-          'values, but Random.secure() is not supported on this platform.',
-        ),
-        stackTrace,
-      );
-    }
-  }
-
-  /// Generates a random string for PKCE code verifier.
-  static String _generateRandomString(int length) {
-    return String.fromCharCodes(
-      .generate(length, (_) => _chars.codeUnitAt(_rng.nextInt(_chars.length))),
-    );
-  }
-
   Future<String> _authenticateInBrowser(Uri uri) async {
     try {
       return await FlutterWebAuth2.authenticate(
@@ -148,14 +120,7 @@ class OAuthAuthenticate({
         callbackUrlScheme: callbackUrlScheme,
       );
     } on PlatformException catch (e, stackTrace) {
-      if (e.code == 'CANCELED') {
-        Error.throwWithStackTrace(
-          const OAuthAuthenticationCanceledException(),
-          stackTrace,
-        );
-      }
-
-      rethrow;
+      _handleBrowserAuthenticationError(e, stackTrace);
     }
   }
 }
@@ -166,6 +131,135 @@ typedef _OAuthAuthRequest = ({
   String redirectUrl,
   Uri uri,
 });
+
+typedef _OAuthAuthInput = ({
+  OAuthAuthenticate authenticator,
+  OAuthDiscoveryResult result,
+  String codeVerifier,
+  String stateParam,
+});
+
+typedef _OAuthAuthenticationCompletion = ({
+  OAuthAuthenticate authenticator,
+  OAuthDiscoveryResult result,
+  _OAuthAuthRequest request,
+  String urlResult,
+});
+
+typedef _AuthorizationUriRequest = ({
+  OAuthDiscoveryResult oAuthResult,
+  String redirectUrl,
+  String stateParam,
+  String codeChallenge,
+});
+
+typedef _TokenExchangeInput = ({
+  OAuthAuthenticate authenticator,
+  String code,
+  OAuthDiscoveryResult oAuthResult,
+  String codeVerifier,
+  String redirectUrl,
+});
+
+Future<OAuthTokenModel> _completeAuthentication(
+  _OAuthAuthenticationCompletion input,
+) {
+  final code = OAuthAuthenticate.validateGetCode(
+    urlResult: input.urlResult,
+    stateParam: input.request.stateParam,
+  );
+
+  return input.authenticator.exchangeCodeForToken(
+    code: code,
+    oAuthResult: input.result,
+    codeVerifier: input.request.codeVerifier,
+    redirectUrl: input.request.redirectUrl,
+  );
+}
+
+Uri _buildAuthorizationUri(_AuthorizationUriRequest request) =>
+    Uri.parse(request.oAuthResult.authorizationUrl)
+        .replace(queryParameters: _authorizationQueryParameters(request));
+
+Map<String, String> _authorizationQueryParameters(
+  _AuthorizationUriRequest request,
+) {
+  final clientId = request.oAuthResult.clientId;
+  final scope = request.oAuthResult.scope;
+
+  return {
+    'response_type': 'code',
+    'redirect_uri': request.redirectUrl,
+    'state': request.stateParam,
+    'code_challenge': request.codeChallenge,
+    'code_challenge_method': 'S256',
+    if (clientId != null && clientId.isNotEmpty) 'client_id': clientId,
+    if (scope != null && scope.isNotEmpty) 'scope': scope,
+  };
+}
+
+Future<OAuthTokenModel> _exchangeCodeForToken(_TokenExchangeInput input) async {
+  final tokenUri = await PublicUrlGuard.requireHttpsUri(
+    input.oAuthResult.tokenUrl,
+  );
+  final response = await _postToken(
+    input.authenticator._dio,
+    _tokenExchangeRequest(input, tokenUri),
+  );
+
+  return _tokenModel(response);
+}
+
+_TokenExchangeRequest _tokenExchangeRequest(
+  _TokenExchangeInput input,
+  Uri tokenUri,
+) => (
+  tokenUri: tokenUri,
+  code: input.code,
+  redirectUrl: input.redirectUrl,
+  codeVerifier: input.codeVerifier,
+  clientId: input.oAuthResult.clientId,
+);
+
+OAuthTokenModel _tokenModel(Response<Object?> response) =>
+    OAuthTokenModel.fromJson(_validTokenData(response));
+
+Random _createSecureRandom() {
+  try {
+    return Random.secure();
+    // ignore: avoid_catching_errors - Required to handle unsupported secure RNG.
+  } on UnsupportedError catch (_, stackTrace) {
+    Error.throwWithStackTrace(
+      StateError(
+        'Secure randomness is required to generate OAuth PKCE and state '
+        'values, but Random.secure() is not supported on this platform.',
+      ),
+      stackTrace,
+    );
+  }
+}
+
+/// Generates a random string for PKCE code verifier.
+String _generateRandomString(int length) => String.fromCharCodes(
+  .generate(
+    length,
+    (_) => _oauthChars.codeUnitAt(_oauthRng.nextInt(_oauthChars.length)),
+  ),
+);
+
+Never _handleBrowserAuthenticationError(
+  PlatformException error,
+  StackTrace stackTrace,
+) {
+  if (error.code == 'CANCELED') {
+    Error.throwWithStackTrace(
+      const OAuthAuthenticationCanceledException(),
+      stackTrace,
+    );
+  }
+
+  Error.throwWithStackTrace(error, stackTrace);
+}
 
 typedef _TokenExchangeRequest = ({
   Uri tokenUri,
@@ -182,21 +276,36 @@ Future<_OAuthAuthRequest> _buildAuthenticationRequest(
   final _ = await PublicUrlGuard.requireHttpsUri(result.authorizationUrl);
   final codeVerifier = _generateRandomString(128);
   final stateParam = _generateRandomString(32);
-  final redirectUrl = '${authenticator.callbackUrlScheme}:/';
-  final uri = OAuthAuthenticate.buildAuthorizationUri(
-    oAuthResult: result,
-    redirectUrl: redirectUrl,
-    stateParam: stateParam,
-    codeChallenge: OAuthAuthenticate.generateCodeChallenge(codeVerifier),
-  );
 
-  return (
+  return _createAuthenticationRequest((
+    authenticator: authenticator,
+    result: result,
     codeVerifier: codeVerifier,
     stateParam: stateParam,
+  ));
+}
+
+_OAuthAuthRequest _createAuthenticationRequest(_OAuthAuthInput input) {
+  final redirectUrl = '${input.authenticator.callbackUrlScheme}:/';
+  final uri = _authorizationUri(input, redirectUrl);
+
+  return (
+    codeVerifier: input.codeVerifier,
+    stateParam: input.stateParam,
     redirectUrl: redirectUrl,
     uri: uri,
   );
 }
+
+Uri _authorizationUri(_OAuthAuthInput input, String redirectUrl) =>
+    OAuthAuthenticate.buildAuthorizationUri(
+      oAuthResult: input.result,
+      redirectUrl: redirectUrl,
+      stateParam: input.stateParam,
+      codeChallenge: OAuthAuthenticate.generateCodeChallenge(
+        input.codeVerifier,
+      ),
+    );
 
 void _validateAuthorizationResponse(
   Map<String, String> queryParams,

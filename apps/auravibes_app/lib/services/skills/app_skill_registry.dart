@@ -60,21 +60,29 @@ AppSkillToolDefinition _agentsListTool() => AppSkillToolDefinition(
   ),
 );
 
-AppSkillDefinition _localizedSkillsManagerDefinition() {
-  const definition = skillsManagerSkillDefinition;
+AppSkillDefinition _localizedSkillsManagerDefinition() =>
+    _localizedDefinition(skillsManagerSkillDefinition);
 
-  return AppSkillDefinition(
-    identifier: definition.identifier,
-    slug: definition.slug,
-    title: definition.title,
-    description: definition.description,
-    content: definition.content,
-    nativeTools: definition.nativeTools.map(_localizedTool).toList(),
-    titleKey: LocaleKeys.app_skills_skills_manager_title,
-    descriptionKey: LocaleKeys.app_skills_skills_manager_description,
-    contentKey: LocaleKeys.app_skills_skills_manager_content,
-  );
-}
+AppSkillDefinition _localizedDefinition(AppSkillDefinition definition) =>
+    _localizedDefinitionWithTools(definition, _localizedTools(definition));
+
+AppSkillDefinition _localizedDefinitionWithTools(
+  AppSkillDefinition definition,
+  List<AppSkillToolDefinition> nativeTools,
+) => AppSkillDefinition(
+  identifier: definition.identifier,
+  slug: definition.slug,
+  title: definition.title,
+  description: definition.description,
+  content: definition.content,
+  nativeTools: nativeTools,
+  titleKey: LocaleKeys.app_skills_skills_manager_title,
+  descriptionKey: LocaleKeys.app_skills_skills_manager_description,
+  contentKey: LocaleKeys.app_skills_skills_manager_content,
+);
+
+List<AppSkillToolDefinition> _localizedTools(AppSkillDefinition definition) =>
+    definition.nativeTools.map(_localizedTool).toList();
 
 AppSkillToolDefinition _localizedTool(AppSkillToolDefinition tool) =>
     AppSkillToolDefinition(

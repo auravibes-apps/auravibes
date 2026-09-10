@@ -33,11 +33,11 @@ class const AppAgentToolResumeProvider({
   required final agent.AgentLoopRunner agentLoop,
   required final ActiveSubAgentRuntime? activeSubAgents,
 }) implements agent.AgentToolResumeProvider {
-  late final Future<agent.AgentIterationDecision> Function({
+  @override
+  Future<agent.AgentIterationDecision> runAllowedTools({
     required String conversationId,
     required String workspaceId,
-  })
-  runAllowedTools = ({required conversationId, required workspaceId}) async {
+  }) async {
     final decision = await toolExecutionService.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
@@ -46,13 +46,13 @@ class const AppAgentToolResumeProvider({
 
     _finishChildIfNeeded(activeSubAgents, conversationId);
     return decision;
-  };
+  }
 
-  late final Future<void> Function({
+  @override
+  Future<void> continueAgent({
     required String conversationId,
     required agent.AgentIterationContext context,
-  })
-  continueAgent = ({required conversationId, required context}) async {
+  }) async {
     final decision = await agentLoop(
       conversationId: conversationId,
       context: context,
@@ -60,7 +60,7 @@ class const AppAgentToolResumeProvider({
     if (decision == agent.AgentIterationDecision.waitForToolApproval) return;
 
     _finishChildIfNeeded(activeSubAgents, conversationId);
-  };
+  }
 
   @override
   Future<agent.AgentToolResumeReference?> getResumeReference(

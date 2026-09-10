@@ -132,12 +132,13 @@ void main() {
         ),
       );
 
-      final decision = await provider.resolveToolApprovalDecision(
+      final decision = await provider.resolveToolApprovalDecision((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         toolCallId: 'tool-call-1',
         resolvedTool: tool,
-      );
+        argumentsRaw: '{}',
+      ));
 
       expect(decision.permissionResult.name, 'granted');
     });
@@ -181,7 +182,7 @@ void main() {
         );
 
         await expectLater(
-          provider.resolveToolApprovalDecision(
+          provider.resolveToolApprovalDecision((
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-call-1',
@@ -191,7 +192,8 @@ void main() {
               mcpServerId: 'server-1',
               mcpSlug: 'server-1',
             ),
-          ),
+            argumentsRaw: '{}',
+          )),
           throwsA(isA<StateError>()),
         );
       });
@@ -199,13 +201,13 @@ void main() {
       test('returns notConfigured for malformed skill arguments', () async {
         final provider = providerWith(null);
 
-        final decision = await provider.resolveToolApprovalDecision(
+        final decision = await provider.resolveToolApprovalDecision((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
           resolvedTool: .skillCommand(commandName: callSkillToolName),
           argumentsRaw: '{not-json',
-        );
+        ));
 
         expect(
           decision.permissionResult,
@@ -218,7 +220,7 @@ void main() {
         () async {
           final provider = providerWith(null);
 
-          final decision = await provider.resolveToolApprovalDecision(
+          final decision = await provider.resolveToolApprovalDecision((
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-call-1',
@@ -226,7 +228,7 @@ void main() {
             argumentsRaw:
                 '{"skill":"duckduckgo","tool":"search",'
                 '"args":{},"revision":"rev-1"}',
-          );
+          ));
 
           expect(
             decision.permissionResult,
@@ -269,7 +271,7 @@ void main() {
             ),
           );
 
-          final decision = await provider.resolveToolApprovalDecision(
+          final decision = await provider.resolveToolApprovalDecision((
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-call-1',
@@ -277,7 +279,7 @@ void main() {
             argumentsRaw:
                 '{"skill":"duckduckgo","tool":"search",'
                 '"args":{},"revision":"rev-1"}',
-          );
+          ));
 
           final approvalTool =
               verify(
@@ -312,13 +314,13 @@ void main() {
           );
         });
 
-        final decision = await provider.resolveToolApprovalDecision(
+        final decision = await provider.resolveToolApprovalDecision((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
           resolvedTool: .skillCommand(commandName: callSkillToolName),
           argumentsRaw: '{"skill":"duckduckgo"}',
-        );
+        ));
 
         expect(
           decision.permissionResult,
@@ -344,7 +346,7 @@ void main() {
           }) async => null,
         );
 
-        final decision = await provider.resolveToolApprovalDecision(
+        final decision = await provider.resolveToolApprovalDecision((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
@@ -352,7 +354,7 @@ void main() {
           argumentsRaw:
               '{"skill":"duckduckgo","tool":"search",'
               '"args":{},"revision":"rev-1"}',
-        );
+        ));
 
         expect(
           decision.permissionResult,
@@ -389,12 +391,13 @@ void main() {
           ),
         );
 
-        final decision = await provider.resolveToolApprovalDecision(
+        final decision = await provider.resolveToolApprovalDecision((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
           resolvedTool: directTool,
-        );
+          argumentsRaw: '{}',
+        ));
 
         verify(
           () => resolveToolApprovalDecision(

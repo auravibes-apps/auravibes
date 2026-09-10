@@ -37,6 +37,14 @@ class const AgentToolExecutionResult({
   final String? responseRaw,
 });
 
+typedef AgentToolExecutionErrorRequest<TTool extends Object> = ({
+  String conversationId,
+  String toolCallId,
+  TTool tool,
+  Object error,
+  StackTrace stackTrace,
+});
+
 typedef AgentResolvedToolRunner<TTool extends Object> =
     Future<Object?> Function({
       required String conversationId,
@@ -46,13 +54,9 @@ typedef AgentResolvedToolRunner<TTool extends Object> =
 
 typedef AgentToolCancellationChecker = bool Function(String conversationId);
 
-typedef AgentToolExecutionErrorLogger<TTool extends Object> = void Function({
-  required String conversationId,
-  required String toolCallId,
-  required TTool tool,
-  required Object error,
-  required StackTrace stackTrace,
-});
+typedef AgentToolExecutionErrorLogger<TTool extends Object> = void Function(
+  AgentToolExecutionErrorRequest<TTool> request,
+);
 
 class const AgentToolExecutionDispatcher<TTool extends Object>({
   required final AgentResolvedToolRunner<TTool> runResolvedTool,
@@ -90,26 +94,26 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         },
       );
     } on FormatException catch (error, stackTrace) {
-      logToolExecutionError(
+      logToolExecutionError((
         conversationId: conversationId,
         toolCallId: toolCallId,
         tool: tool,
         error: error,
         stackTrace: stackTrace,
-      );
+      ));
 
       return const AgentToolExecutionResult(
         resultStatus: .executionError,
         responseRaw: 'Tool execution failed.',
       );
     } on Object catch (error, stackTrace) {
-      logToolExecutionError(
+      logToolExecutionError((
         conversationId: conversationId,
         toolCallId: toolCallId,
         tool: tool,
         error: error,
         stackTrace: stackTrace,
-      );
+      ));
 
       return const AgentToolExecutionResult(resultStatus: .executionError);
     }

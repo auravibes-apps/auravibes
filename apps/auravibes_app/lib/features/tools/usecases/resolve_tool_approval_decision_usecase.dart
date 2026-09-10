@@ -21,42 +21,35 @@ class ResolveToolApprovalDecisionUsecase({
   required final WorkspaceToolsRepositoryContract workspaceToolsRepository,
   final SyncSkillToolPermissionsUsecase? syncSkillToolPermissionsUsecase,
 }) {
-  late final Future<ToolApprovalDecision> Function({
+  Future<ToolApprovalDecision> call({
     required String conversationId,
     required String workspaceId,
     required String toolCallId,
     required ResolvedTool resolvedTool,
-  })
-  call =
-      ({
-        required String conversationId,
-        required String workspaceId,
-        required String toolCallId,
-        required ResolvedTool resolvedTool,
-      }) async {
-        if (_isListSkillsTool(resolvedTool)) {
-          return ToolApprovalDecision(
-            toolCallId: toolCallId,
-            permissionResult: .granted,
-          );
-        }
+  }) async {
+    if (_isListSkillsTool(resolvedTool)) {
+      return ToolApprovalDecision(
+        toolCallId: toolCallId,
+        permissionResult: .granted,
+      );
+    }
 
-        final permissionTableId = await resolvePermissionTableId(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          resolvedTool: resolvedTool,
-        );
-        if (permissionTableId == null) {
-          return _notConfiguredDecision(toolCallId);
-        }
+    final permissionTableId = await resolvePermissionTableId(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      resolvedTool: resolvedTool,
+    );
+    if (permissionTableId == null) {
+      return _notConfiguredDecision(toolCallId);
+    }
 
-        return _configuredDecision(conversationToolsRepository, (
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          toolCallId: toolCallId,
-          permissionTableId: permissionTableId,
-        ));
-      };
+    return _configuredDecision(conversationToolsRepository, (
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      toolCallId: toolCallId,
+      permissionTableId: permissionTableId,
+    ));
+  }
 
   Future<String?> resolvePermissionTableId({
     required String conversationId,

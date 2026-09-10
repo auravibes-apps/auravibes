@@ -209,7 +209,7 @@ class const _WorkspaceListActions({
   required final BuildContext context,
   required final WidgetRef ref,
   required final String activeWorkspaceId,
-}) {}
+});
 
 extension on _WorkspaceListActions {
   void switchWorkspace(String workspaceId) {
@@ -430,27 +430,27 @@ class const _LocalWorkspaceSection({
   }
 }
 
-class const _LocalWorkspaceItems({
-  required final _WorkspaceListData data,
-  required final _WorkspaceListActions actions,
-}) extends StatelessWidget {
+class _LocalWorkspaceItems extends StatelessWidget {
+  new({
+    required _WorkspaceListData data,
+    required _WorkspaceListActions actions,
+  }) : _children = [
+         if (data.local.isEmpty)
+           const TextLocale(LocaleKeys.workspace_management_no_workspaces),
+         for (final workspace in data.local)
+           _LocalWorkspaceItem(
+             workspace: workspace,
+             activeWorkspaceId: data.activeWorkspaceId,
+             editingWorkspace: data.editingWorkspace,
+             actions: actions,
+           ),
+       ];
+
+  final List<Widget> _children;
+
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        if (data.local.isEmpty)
-          const TextLocale(LocaleKeys.workspace_management_no_workspaces),
-        for (final workspace in data.local)
-          _LocalWorkspaceItem(
-            workspace: workspace,
-            activeWorkspaceId: data.activeWorkspaceId,
-            editingWorkspace: data.editingWorkspace,
-            actions: actions,
-          ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: .stretch, children: _children);
 }
 
 class const _LocalWorkspaceItem({
@@ -517,28 +517,27 @@ class const _ConnectedWorkspaceSection({
   }
 }
 
-class const _ConnectedWorkspaceItems({
-  required final _WorkspaceListData data,
-  required final _WorkspaceListActions actions,
-}) extends StatelessWidget {
+class _ConnectedWorkspaceItems extends StatelessWidget {
+  new({
+    required _WorkspaceListData data,
+    required _WorkspaceListActions actions,
+  }) : _children = [
+         for (final workspace in data.connected)
+           _ConnectedWorkspaceItem(
+             workspace: workspace,
+             activeWorkspaceId: data.activeWorkspaceId,
+             accountEmail: actions.accountEmail(
+               data.accounts,
+               workspace.cloudAccountId,
+             ),
+             actions: actions,
+           ),
+       ];
+
+  final List<Widget> _children;
+
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        for (final workspace in data.connected)
-          _ConnectedWorkspaceItem(
-            workspace: workspace,
-            activeWorkspaceId: data.activeWorkspaceId,
-            accountEmail: actions.accountEmail(
-              data.accounts,
-              workspace.cloudAccountId,
-            ),
-            actions: actions,
-          ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(children: _children);
 }
 
 class const _ConnectedWorkspaceItem({
@@ -641,65 +640,69 @@ class const _AvailableCloudAccountGroup({
   }
 }
 
-class const _AvailableCloudAccountGroupLayout({
-  required final CloudAccountSession account,
-  required final List<CloudAccountSession> accounts,
-  required final List<WorkspaceEntity> localWorkspaces,
-  required final String workspaceId,
-  required final AsyncValue<CloudWorkspaceViewState?> state,
-  required final _WorkspaceListActions actions,
-}) extends StatelessWidget {
+class _AvailableCloudAccountGroupLayout extends StatelessWidget {
+  new({
+    required CloudAccountSession account,
+    required List<CloudAccountSession> accounts,
+    required List<WorkspaceEntity> localWorkspaces,
+    required String workspaceId,
+    required AsyncValue<CloudWorkspaceViewState?> state,
+    required _WorkspaceListActions actions,
+  }) : _child = Padding(
+         padding: const EdgeInsets.only(bottom: 16),
+         child: Column(
+           crossAxisAlignment: .stretch,
+           children: [
+             AuraText(child: Text(account.email), style: .heading6),
+             const SizedBox(height: 8),
+             _AvailableCloudAccountState(
+               account,
+               accounts,
+               localWorkspaces,
+               workspaceId,
+               state,
+               actions,
+             ),
+           ],
+         ),
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: .stretch,
-        children: [
-          AuraText(child: Text(account.email), style: .heading6),
-          const SizedBox(height: 8),
-          _AvailableCloudAccountState(
-            account,
-            accounts,
-            localWorkspaces,
-            workspaceId,
-            state,
-            actions,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _child;
 }
 
-class const _AvailableCloudAccountState(
-  final CloudAccountSession account,
-  final List<CloudAccountSession> accounts,
-  final List<WorkspaceEntity> localWorkspaces,
-  final String workspaceId,
-  final AsyncValue<CloudWorkspaceViewState?> state,
-  final _WorkspaceListActions actions,
-) extends StatelessWidget {
+class _AvailableCloudAccountState extends StatelessWidget {
+  new(
+    CloudAccountSession account,
+    List<CloudAccountSession> accounts,
+    List<WorkspaceEntity> localWorkspaces,
+    String workspaceId,
+    AsyncValue<CloudWorkspaceViewState?> state,
+    _WorkspaceListActions actions,
+  ) : _child = switch (state) {
+        AsyncData(value: final value?) => _AvailableCloudDataState(
+          account,
+          accounts,
+          localWorkspaces,
+          workspaceId,
+          value,
+          actions,
+        ),
+        AsyncData(value: null) => const TextLocale(
+          LocaleKeys.cloud_accounts_no_workspaces,
+        ),
+        AsyncLoading() => const Center(child: AuraSpinner()),
+        AsyncError() => const TextLocale(
+          LocaleKeys.workspace_management_cloud_load_error,
+        ),
+      };
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) {
-    return switch (state) {
-      AsyncData(value: final value?) => _AvailableCloudDataState(
-        account,
-        accounts,
-        localWorkspaces,
-        workspaceId,
-        value,
-        actions,
-      ),
-      AsyncData(value: null) => const TextLocale(
-        LocaleKeys.cloud_accounts_no_workspaces,
-      ),
-      AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncError() => const TextLocale(
-        LocaleKeys.workspace_management_cloud_load_error,
-      ),
-    };
-  }
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AvailableCloudDataState(
@@ -842,31 +845,34 @@ class const _AvailableCloudWorkspaceItem({
   Widget build(BuildContext context) {
     return _AvailableWorkspaceTile(
       workspace: workspace,
-      connectedAccountEmail: _connectedElsewhereEmail(
+      connectedAccountEmail: _connectedElsewhereEmail((
         workspace: workspace,
         accountId: account.userId,
         accounts: accounts,
         localWorkspaces: localWorkspaces,
-      ),
+      )),
       accountId: account.userId,
       actions: actions,
     );
   }
 }
 
-String? _connectedElsewhereEmail({
-  required CloudWorkspaceSummary workspace,
-  required String accountId,
-  required List<CloudAccountSession> accounts,
-  required List<WorkspaceEntity> localWorkspaces,
-}) {
-  final mirror = localWorkspaces.firstWhereOrNull(
-    (local) => _isConnectedElsewhere(local, workspace, accountId),
+String? _connectedElsewhereEmail(
+  ({
+    CloudWorkspaceSummary workspace,
+    String accountId,
+    List<CloudAccountSession> accounts,
+    List<WorkspaceEntity> localWorkspaces,
+  })
+  input,
+) {
+  final mirror = input.localWorkspaces.firstWhereOrNull(
+    (local) => _isConnectedElsewhere(local, input.workspace, input.accountId),
   );
 
   if (mirror == null) return null;
 
-  return accounts
+  return input.accounts
       .firstWhereOrNull((account) => account.userId == mirror.cloudAccountId)
       ?.email;
 }
@@ -1021,28 +1027,28 @@ class const _AvailableWorkspaceTile({
   }
 }
 
-class const _AvailableWorkspaceDetails({
-  required final CloudWorkspaceSummary workspace,
-  required final String? connectedAccountEmail,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final email = connectedAccountEmail;
+class _AvailableWorkspaceDetails extends StatelessWidget {
+  new({
+    required CloudWorkspaceSummary workspace,
+    required String? connectedAccountEmail,
+  }) : _child = AuraColumn(
+         children: [
+           Text(workspace.name),
+           if (connectedAccountEmail case final email?)
+             Text(
+               LocaleKeys.workspace_management_cloud_connected_elsewhere.tr(
+                 namedArgs: {'email': email},
+               ),
+             ),
+         ],
+         spacing: .xs,
+         crossAxisAlignment: .start,
+       );
 
-    return AuraColumn(
-      children: [
-        Text(workspace.name),
-        if (email != null)
-          Text(
-            LocaleKeys.workspace_management_cloud_connected_elsewhere.tr(
-              namedArgs: {'email': email},
-            ),
-          ),
-      ],
-      spacing: .xs,
-      crossAxisAlignment: .start,
-    );
-  }
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AvailableWorkspaceMenu({
@@ -1133,21 +1139,33 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
   }
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: _WorkspaceNameEditor(
-          controller: _controller,
-          onSave: widget.onSave,
-        ),
-      ),
-      _WorkspaceEditActions(
-        controller: _controller,
-        onSave: widget.onSave,
-        onCancel: widget.onCancel,
-      ),
-    ],
+  Widget build(BuildContext context) => _WorkspaceEditRow(
+    controller: _controller,
+    onSave: widget.onSave,
+    onCancel: widget.onCancel,
   );
+}
+
+class _WorkspaceEditRow extends StatelessWidget {
+  new({
+    required TextEditingController controller,
+    required ValueChanged<String> onSave,
+    required VoidCallback onCancel,
+  }) : _children = [
+         Expanded(
+           child: _WorkspaceNameEditor(controller: controller, onSave: onSave),
+         ),
+         _WorkspaceEditActions(
+           controller: controller,
+           onSave: onSave,
+           onCancel: onCancel,
+         ),
+       ];
+
+  final List<Widget> _children;
+
+  @override
+  Widget build(BuildContext context) => Row(children: _children);
 }
 
 class const _WorkspaceNameEditor({

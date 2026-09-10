@@ -34,24 +34,34 @@ class const _ModelLogo({
       return svgBuilder(context, url);
     }
 
-    return _networkLogo(context, url);
+    return _NetworkModelLogo(
+      url: url,
+      width: width,
+      height: height,
+      color: context.auraColors.onBackground,
+      httpClient: httpClient,
+    );
   }
+}
 
-  Widget _networkLogo(BuildContext context, String url) => SvgPicture.network(
-    url,
-    width: width,
-    height: height,
-    placeholderBuilder: (context) {
-      return const AuraSpinner();
-    },
-    colorFilter: .mode(context.auraColors.onBackground, .srcIn),
-    errorBuilder: (context, error, stackTrace) {
-      return const AuraText(
-        child: TextLocale(
-          LocaleKeys.models_screens_add_provider_search_no_icon,
-        ),
-      );
-    },
-    httpClient: httpClient,
-  );
+class _NetworkModelLogo extends SvgPicture {
+  _NetworkModelLogo({
+    required String url,
+    required double height,
+    required double? width,
+    required Color color,
+    required http.Client? httpClient,
+  }) : super.network(
+         url,
+         width: width,
+         height: height,
+         placeholderBuilder: (_) => const AuraSpinner(),
+         colorFilter: .mode(color, .srcIn),
+         errorBuilder: (_, _, _) => const AuraText(
+           child: TextLocale(
+             LocaleKeys.models_screens_add_provider_search_no_icon,
+           ),
+         ),
+         httpClient: httpClient,
+       );
 }

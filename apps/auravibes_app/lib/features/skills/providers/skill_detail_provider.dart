@@ -3,8 +3,8 @@ import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' show AppSkillDefinition;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_detail_provider.g.dart';
 
@@ -14,6 +14,39 @@ typedef _EnabledStateRequest = ({
   SkillEntity? sourceSkill,
   String skillId,
   String workspaceId,
+});
+
+typedef _SkillDetailInput = ({Ref ref, String skillId, String workspaceId});
+
+typedef _SkillDetailRequestInput = ({
+  _SkillDetailInput input,
+  CloudSkillStore? cloud,
+  SkillEntity? sourceSkill,
+  AppSkillDefinition? appSkill,
+});
+
+typedef _NativeSkillText = ({
+  String title,
+  String slug,
+  String description,
+  String content,
+});
+
+typedef _NativeSkillKeys = ({
+  String? titleKey,
+  String? descriptionKey,
+  String? contentKey,
+});
+
+typedef _NativeSkillValues = ({
+  String title,
+  String slug,
+  String description,
+  String content,
+  bool isCredentialOptional,
+  String? titleKey,
+  String? descriptionKey,
+  String? contentKey,
 });
 
 typedef _SkillDetailRequest = ({
@@ -38,17 +71,57 @@ Future<SkillDetail?> skillDetail(
   String workspaceId,
   String skillId,
 ) async {
-  final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
-  final sourceSkill = await _loadSourceSkill(ref, cloud, skillId);
-  final appSkill = ref.watch(appSkillRegistryProvider).getByIdentifier(skillId);
-  return _buildSkillDetail((
-    ref: ref,
-    cloud: cloud,
-    sourceSkill: sourceSkill,
-    appSkill: appSkill,
-    skillId: skillId,
-    workspaceId: workspaceId,
-  ));
+  return await _buildSkillDetail(
+    await _loadSkillDetailRequest((
+      ref: ref,
+      skillId: skillId,
+      workspaceId: workspaceId,
+    )),
+  );
+}
+
+Future<_SkillDetailRequest> _loadSkillDetailRequest(
+  _SkillDetailInput request,
+) async => _skillDetailRequest(await _loadSkillDetailInputs(request));
+
+Future<_SkillDetailRequestInput> _loadSkillDetailInputs(
+  _SkillDetailInput request,
+) async {
+  final cloud = request.ref.watch(cloudSkillStoreProvider(request.workspaceId));
+  final sourceSkill = await _loadSourceSkill(
+    request.ref,
+    cloud,
+    request.skillId,
+  );
+
+  return _skillDetailInput(request, cloud, sourceSkill);
+}
+
+_SkillDetailRequestInput _skillDetailInput(
+  _SkillDetailInput input,
+  CloudSkillStore? cloud,
+  SkillEntity? sourceSkill,
+) => (
+  input: input,
+  cloud: cloud,
+  sourceSkill: sourceSkill,
+  appSkill: _appSkill(input.ref, input.skillId),
+);
+
+AppSkillDefinition? _appSkill(Ref ref, String skillId) =>
+    ref.watch(appSkillRegistryProvider).getByIdentifier(skillId);
+
+_SkillDetailRequest _skillDetailRequest(_SkillDetailRequestInput request) {
+  final input = request.input;
+
+  return (
+    ref: input.ref,
+    cloud: request.cloud,
+    sourceSkill: request.sourceSkill,
+    appSkill: request.appSkill,
+    skillId: input.skillId,
+    workspaceId: input.workspaceId,
+  );
 }
 
 Future<SkillDetail?> _buildSkillDetail(_SkillDetailRequest request) async {
@@ -57,11 +130,20 @@ Future<SkillDetail?> _buildSkillDetail(_SkillDetailRequest request) async {
   if (sourceSkill != null && !_isNativeAppRecord(sourceSkill, appSkill)) {
     return SkillDetail.fromUserSkill(sourceSkill);
   }
+
+  return await _buildNativeSkillDetailIfAvailable(request);
+}
+
+Future<SkillDetail?> _buildNativeSkillDetailIfAvailable(
+  _SkillDetailRequest request,
+) async {
+  final appSkill = request.appSkill;
   if (appSkill == null) return null;
 
   final isEnabled = await _loadEnabledState(
     _enabledStateRequest(request, appSkill),
   );
+
   return _buildNativeSkillDetail(
     _nativeSkillDetailRequest(request, appSkill, isEnabled),
   );
@@ -93,8 +175,9 @@ Future<SkillEntity?> _loadSourceSkill(
   Ref ref,
   CloudSkillStore? cloud,
   String skillId,
-) async {
+) {
   if (cloud != null) return cloud.skill(skillId);
+
   return ref.watch(skillsRepositoryProvider).getSkillById(skillId);
 }
 
@@ -109,10 +192,10 @@ bool _isNativeAppRecord(
 Future<bool> _loadEnabledState(_EnabledStateRequest request) async {
   final sourceEnabled = request.sourceSkill?.isEnabled;
   if (sourceEnabled != null) return sourceEnabled;
-  if (request.cloud != null) {
-    return request.cloud!.isAppSkillEnabled(request.skillId);
-  }
-  return request.ref
+  final cloud = request.cloud;
+  if (cloud != null) return await cloud.isAppSkillEnabled(request.skillId);
+
+  return await request.ref
       .watch(appSkillWorkspaceSettingsRepositoryProvider)
       .isAppSkillEnabled(request.workspaceId, request.skillId);
 }
@@ -124,6 +207,7 @@ SkillDetail _buildNativeSkillDetail(_NativeSkillDetailRequest request) {
 final SkillDetail Function(_NativeSkillDetailRequest request)
 _nativeSkillDetailBuilder = (request) {
   final values = _nativeSkillValues(request.appSkill, request.sourceSkill);
+
   return SkillDetail(
     source: SkillSource.app,
     id: request.appSkill.identifier,
@@ -142,44 +226,65 @@ _nativeSkillDetailBuilder = (request) {
   );
 };
 
-({
-  String title,
-  String slug,
-  String description,
-  String content,
-  bool isCredentialOptional,
-  String? titleKey,
-  String? descriptionKey,
-  String? contentKey,
-})
-_nativeSkillValues(AppSkillDefinition appSkill, SkillEntity? sourceSkill) {
+_NativeSkillValues _nativeSkillValues(
+  AppSkillDefinition appSkill,
+  SkillEntity? sourceSkill,
+) {
   final text = _nativeSkillText(appSkill, sourceSkill);
   final keys = _nativeSkillKeys(appSkill, sourceSkill);
-  return (
-    title: text.title,
-    slug: text.slug,
-    description: text.description,
-    content: text.content,
-    isCredentialOptional: _nativeSkillCredentialOptional(sourceSkill),
-    titleKey: keys.titleKey,
-    descriptionKey: keys.descriptionKey,
-    contentKey: keys.contentKey,
+
+  return _nativeSkillValuesFrom(
+    text,
+    keys,
+    _nativeSkillCredentialOptional(sourceSkill),
   );
 }
 
-({String title, String slug, String description, String content})
-_nativeSkillText(AppSkillDefinition appSkill, SkillEntity? sourceSkill) => (
-  title: sourceSkill?.title ?? appSkill.title,
-  slug: sourceSkill?.slug ?? appSkill.slug,
-  description: sourceSkill?.description ?? appSkill.description,
-  content: sourceSkill?.content ?? appSkill.content,
+_NativeSkillValues _nativeSkillValuesFrom(
+  _NativeSkillText text,
+  _NativeSkillKeys keys,
+  bool isCredentialOptional,
+) => (
+  title: text.title,
+  slug: text.slug,
+  description: text.description,
+  content: text.content,
+  isCredentialOptional: isCredentialOptional,
+  titleKey: keys.titleKey,
+  descriptionKey: keys.descriptionKey,
+  contentKey: keys.contentKey,
+);
+
+_NativeSkillText _nativeSkillText(
+  AppSkillDefinition appSkill,
+  SkillEntity? sourceSkill,
+) {
+  if (sourceSkill != null) return _sourceSkillText(sourceSkill);
+
+  return _appSkillText(appSkill);
+}
+
+_NativeSkillText _sourceSkillText(SkillEntity skill) => (
+  title: skill.title,
+  slug: skill.slug,
+  description: skill.description,
+  content: skill.content,
+);
+
+_NativeSkillText _appSkillText(AppSkillDefinition skill) => (
+  title: skill.title,
+  slug: skill.slug,
+  description: skill.description,
+  content: skill.content,
 );
 
 bool _nativeSkillCredentialOptional(SkillEntity? sourceSkill) =>
     sourceSkill?.isCredentialOptional ?? false;
 
-({String? titleKey, String? descriptionKey, String? contentKey})
-_nativeSkillKeys(AppSkillDefinition appSkill, SkillEntity? sourceSkill) => (
+_NativeSkillKeys _nativeSkillKeys(
+  AppSkillDefinition appSkill,
+  SkillEntity? sourceSkill,
+) => (
   titleKey: sourceSkill == null ? appSkill.titleKey : null,
   descriptionKey: sourceSkill == null ? appSkill.descriptionKey : null,
   contentKey: sourceSkill == null ? appSkill.contentKey : null,

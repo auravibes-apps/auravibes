@@ -21,17 +21,28 @@ Stream<ConversationEntity?> conversationByIdStream(
       .value;
   if (session == null) return const Stream.empty();
   if (session.cloud case final cloud?) {
-    return _cloudConversations(ref, cloud).map(
-      (conversations) => conversations
-          .where((conversation) => conversation.id == conversationId)
-          .firstOrNull,
-    );
+    return _cloudConversationById(ref, cloud, conversationId);
   }
 
-  return ref
-      .watch(conversationRepositoryProvider)
-      .watchConversationById(conversationId);
+  return _localConversationById(ref, conversationId);
 }
+
+Stream<ConversationEntity?> _cloudConversationById(
+  Ref ref,
+  CloudWorkspaceRef cloud,
+  String conversationId,
+) => _cloudConversations(ref, cloud).map(
+  (conversations) => conversations
+      .where((conversation) => conversation.id == conversationId)
+      .firstOrNull,
+);
+
+Stream<ConversationEntity?> _localConversationById(
+  Ref ref,
+  String conversationId,
+) => ref
+    .watch(conversationRepositoryProvider)
+    .watchConversationById(conversationId);
 
 @riverpod
 Stream<List<ConversationEntity>> conversationsStream(
@@ -43,16 +54,23 @@ Stream<List<ConversationEntity>> conversationsStream(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
   if (!ref.mounted) return;
+  yield* _conversationsForSession(ref, session, workspaceId, limit);
+}
+
+Stream<List<ConversationEntity>> _conversationsForSession(
+  Ref ref,
+  WorkspaceSession session,
+  String workspaceId,
+  int? limit,
+) {
   if (session.cloud case final cloud?) {
-    yield* _cloudConversations(ref, cloud).map(
+    return _cloudConversations(ref, cloud).map(
       (conversations) =>
           conversations.take(limit ?? conversations.length).toList(),
     );
-
-    return;
   }
 
-  yield* ref
+  return ref
       .watch(conversationRepositoryProvider)
       .watchConversationsByWorkspace(workspaceId, limit: limit);
 }
@@ -68,20 +86,31 @@ Stream<List<ConversationEntity>> childConversationsStream(
       .value;
   if (session == null) return const Stream.empty();
   if (session.cloud case final cloud?) {
-    return _cloudConversations(ref, cloud).map(
-      (conversations) => conversations
-          .where(
-            (conversation) =>
-                conversation.parentConversationId == parentConversationId,
-          )
-          .toList(),
-    );
+    return _cloudChildConversations(ref, cloud, parentConversationId);
   }
 
-  return ref
-      .watch(conversationRepositoryProvider)
-      .watchChildConversations(parentConversationId);
+  return _localChildConversations(ref, parentConversationId);
 }
+
+Stream<List<ConversationEntity>> _cloudChildConversations(
+  Ref ref,
+  CloudWorkspaceRef cloud,
+  String parentConversationId,
+) => _cloudConversations(ref, cloud).map(
+  (conversations) => conversations
+      .where(
+        (conversation) =>
+            conversation.parentConversationId == parentConversationId,
+      )
+      .toList(),
+);
+
+Stream<List<ConversationEntity>> _localChildConversations(
+  Ref ref,
+  String parentConversationId,
+) => ref
+    .watch(conversationRepositoryProvider)
+    .watchChildConversations(parentConversationId);
 
 @riverpod
 String? streamingTitle(Ref ref, String conversationId) {

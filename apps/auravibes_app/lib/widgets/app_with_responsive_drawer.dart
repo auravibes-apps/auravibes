@@ -131,22 +131,37 @@ class const _WorkspaceHeader({required final String workspaceId})
 class const _WorkspaceHeaderContent({required final String workspaceId})
     extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => switch (ref.watch(
-    allWorkspacesProvider,
-  )) {
-    AsyncData(:final value) => _WorkspaceHeaderValue(
-      workspaceId: workspaceId,
-      workspaces: value,
-    ),
-    AsyncLoading() => const AuraContainer(
-      child: Center(child: TextLocale(LocaleKeys.workspace_management_loading)),
-      height: 48,
-    ),
-    AsyncError(:final error, :final stackTrace) => _WorkspaceHeaderError(
-      error: error,
-      stackTrace: stackTrace,
-    ),
-  };
+  Widget build(BuildContext _, WidgetRef ref) => _WorkspaceHeaderResult(
+    workspaceId: workspaceId,
+    workspaces: ref.watch(allWorkspacesProvider),
+  );
+}
+
+class _WorkspaceHeaderResult extends StatelessWidget {
+  new({
+    required String workspaceId,
+    required AsyncValue<List<WorkspaceEntity>> workspaces,
+  }) : _child = switch (workspaces) {
+         AsyncData(:final value) => _WorkspaceHeaderValue(
+           workspaceId: workspaceId,
+           workspaces: value,
+         ),
+         AsyncLoading() => const AuraContainer(
+           child: Center(
+             child: TextLocale(LocaleKeys.workspace_management_loading),
+           ),
+           height: 48,
+         ),
+         AsyncError(:final error, :final stackTrace) => _WorkspaceHeaderError(
+           error: error,
+           stackTrace: stackTrace,
+         ),
+       };
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext _) => _child;
 }
 
 class const _WorkspaceHeaderValue({

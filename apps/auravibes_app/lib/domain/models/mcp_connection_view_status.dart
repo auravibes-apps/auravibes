@@ -23,26 +23,31 @@ class const GroupedToolsViewItem({
   bool get isMcpGroup => group?.isMcpGroup ?? false;
   String? get mcpServerId => group?.mcpServerId;
 
-  int get sortPriority {
-    if (group == null) {
-      return switch (defaultGroupType) {
-        .builtIn => 0,
-        .native => 1,
-        null => 0,
-      };
-    }
+  int get sortPriority => group == null
+      ? _defaultGroupSortPriorities[defaultGroupType]!
+      : _mcpConnectionSortPriorities[mcpConnection?.status]!;
 
-    const errorIndex = 2;
-    const disconnectedIndex = 3;
-    const connectingIndex = 4;
-    const connectedIndex = 5;
+  /// Returns true if this item represents a default group.
+  bool get isDefaultGroup => group == null;
 
-    return switch (mcpConnection?.status) {
-      .error => errorIndex,
-      .disconnected => disconnectedIndex,
-      .connecting => connectingIndex,
-      .connected => connectedIndex,
-      null => connectedIndex,
-    };
-  }
+  /// Returns true if this group contains a tool with [toolId].
+  bool containsTool(String toolId) =>
+      tools.any((tool) => tool.toolId == toolId);
+
+  /// Returns true if this group contains at least one tool.
+  bool hasTools() => tools.isNotEmpty;
 }
+
+const _defaultGroupSortPriorities = <DefaultToolGroupType?, int>{
+  .builtIn: 0,
+  .native: 1,
+  null: 0,
+};
+
+const _mcpConnectionSortPriorities = <McpConnectionViewStatus?, int>{
+  .error: 2,
+  .disconnected: 3,
+  .connecting: 4,
+  .connected: 5,
+  null: 5,
+};

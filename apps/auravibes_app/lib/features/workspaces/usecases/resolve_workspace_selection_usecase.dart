@@ -20,17 +20,25 @@ class ResolveWorkspaceSelectionUsecase({
     final workspaces = await _loadWorkspaceList();
     if (workspaces == null) return null;
 
-    var savedWorkspaceId = await _readSavedWorkspaceId();
-    if (savedWorkspaceId != null &&
-        !workspaces.any((workspace) => workspace.id == savedWorkspaceId)) {
-      await _clearStaleSelection(savedWorkspaceId);
-      savedWorkspaceId = null;
-    }
+    final savedWorkspaceId = await _readValidSavedWorkspaceId(workspaces);
 
     return WorkspaceSelection(
       workspaces: workspaces,
       savedWorkspaceId: savedWorkspaceId,
     );
+  }
+
+  Future<String?> _readValidSavedWorkspaceId(
+    List<WorkspaceEntity> workspaces,
+  ) async {
+    final savedWorkspaceId = await _readSavedWorkspaceId();
+    if (savedWorkspaceId == null ||
+        workspaces.any((workspace) => workspace.id == savedWorkspaceId)) {
+      return savedWorkspaceId;
+    }
+
+    await _clearStaleSelection(savedWorkspaceId);
+    return null;
   }
 
   Future<List<WorkspaceEntity>?> _loadWorkspaceList() async {

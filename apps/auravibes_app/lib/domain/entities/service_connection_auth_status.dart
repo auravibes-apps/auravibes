@@ -11,23 +11,14 @@ enum ServiceConnectionAuthStatus {
 
 sealed class const ServiceConnectionSecret() {
   factory fromJson(Map<String, dynamic> json) {
-    return switch (json['type']) {
-      'apiKey' => ServiceConnectionSecretApiKey(
-        apiKey: _requiredSecretValue(json, 'api_key', 'apiKey'),
-      ),
-      'bearerToken' => ServiceConnectionSecretBearerToken(
-        bearerToken: _requiredSecretValue(json, 'bearer_token', 'bearerToken'),
-      ),
-      'oauth2' => ServiceConnectionSecretOAuth2(
-        accessToken: _requiredSecretValue(json, 'access_token', 'oauth2'),
-        refreshToken: _stringOrNull(json['refresh_token']),
-        idToken: _stringOrNull(json['id_token']),
-        clientSecret: _stringOrNull(json['client_secret']),
-      ),
-      _ => throw FormatException(
+    final createSecret = _secretFactories[json['type']];
+    if (createSecret == null) {
+      throw FormatException(
         'Unsupported service credential secret type: ${json['type']}',
-      ),
-    };
+      );
+    }
+
+    return createSecret(json);
   }
 
   Map<String, dynamic> toJson();
@@ -71,6 +62,31 @@ class const ServiceConnectionSecretOAuth2({
   }
 }
 
+final _secretFactories =
+    <String, ServiceConnectionSecret Function(Map<String, dynamic>)>{
+      'apiKey': _apiKeySecret,
+      'bearerToken': _bearerTokenSecret,
+      'oauth2': _oauth2Secret,
+    };
+
+ServiceConnectionSecret _apiKeySecret(Map<String, dynamic> json) =>
+    ServiceConnectionSecretApiKey(
+      apiKey: _requiredSecretValue(json, 'api_key', 'apiKey'),
+    );
+
+ServiceConnectionSecret _bearerTokenSecret(Map<String, dynamic> json) =>
+    ServiceConnectionSecretBearerToken(
+      bearerToken: _requiredSecretValue(json, 'bearer_token', 'bearerToken'),
+    );
+
+ServiceConnectionSecret _oauth2Secret(Map<String, dynamic> json) =>
+    ServiceConnectionSecretOAuth2(
+      accessToken: _requiredSecretValue(json, 'access_token', 'oauth2'),
+      refreshToken: _stringOrNull(json['refresh_token']),
+      idToken: _stringOrNull(json['id_token']),
+      clientSecret: _stringOrNull(json['client_secret']),
+    );
+
 class const ServiceConnectionMetadata({
   final String? clientId,
   final String? issuer,
@@ -87,11 +103,7 @@ class const ServiceConnectionMetadata({
       issuer: _stringOrNull(json['issuer']),
       authorizationEndpoint: _stringOrNull(json['authorization_endpoint']),
       tokenEndpoint: _stringOrNull(json['token_endpoint']),
-      scopes: switch (json['scopes']) {
-        final List<dynamic> values => values.map((value) => '$value').toList(),
-        final String value when value.isNotEmpty => value.split(' '),
-        _ => const [],
-      },
+      scopes: _scopesFromJson(json['scopes']),
       accountId: _stringOrNull(json['account_id']),
       tenantId: _stringOrNull(json['tenant_id']),
       provider: _stringOrNull(json['provider']),
@@ -116,7 +128,36 @@ class const ServiceConnectionMetadata({
   String toString() => 'ServiceConnectionMetadata(fields: ${toJson().keys})';
 }
 
+List<String> _scopesFromJson(Object? value) => switch (value) {
+  final List<dynamic> values => values.map((value) => '$value').toList(),
+  final String value when value.isNotEmpty => value.split(' '),
+  _ => const [],
+};
+
 class const ServiceConnectionAuthCodec._() {
+  static final OAuthTokenEntity Function({
+    required ServiceConnectionSecretOAuth2 secret,
+    required DateTime issuedAt,
+    required int expiresIn,
+    required List<String> scopes,
+  })
+  tokenFromSecret =
+      ({
+        required ServiceConnectionSecretOAuth2 secret,
+        required DateTime issuedAt,
+        required int expiresIn,
+        required List<String> scopes,
+      }) {
+        return OAuthTokenEntity(
+          accessToken: secret.accessToken,
+          issuedAt: issuedAt,
+          refreshToken: secret.refreshToken,
+          idToken: secret.idToken,
+          expiresIn: expiresIn,
+          scopes: scopes,
+        );
+      };
+
   static String encodeSecret(ServiceConnectionSecret secret) {
     return jsonEncode(secret.toJson());
   }
@@ -144,22 +185,6 @@ class const ServiceConnectionAuthCodec._() {
 
   static String encodeMetadata(ServiceConnectionMetadata metadata) {
     return jsonEncode(metadata.toJson());
-  }
-
-  static OAuthTokenEntity tokenFromSecret({
-    required ServiceConnectionSecretOAuth2 secret,
-    required DateTime issuedAt,
-    required int expiresIn,
-    required List<String> scopes,
-  }) {
-    return OAuthTokenEntity(
-      accessToken: secret.accessToken,
-      issuedAt: issuedAt,
-      refreshToken: secret.refreshToken,
-      idToken: secret.idToken,
-      expiresIn: expiresIn,
-      scopes: scopes,
-    );
   }
 }
 

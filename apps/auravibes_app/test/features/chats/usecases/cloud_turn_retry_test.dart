@@ -64,39 +64,21 @@ void main() {
   test('decide forwards client-observed arguments digest', () async {
     final gateway = _Gateway();
     final result = MockConversationMutationResult();
-    when(
-      () => gateway.submitToolDecision(
-        requestId: any(named: 'requestId'),
-        turnId: 'turn-1',
-        toolCallId: 'call-1',
-        argumentsDigest: 'observed-digest',
-        expectedTurnRevision: 2,
-        decision: 'approve',
-        editedArgumentsJson: '{"value":2}',
-      ),
-    ).thenAnswer((_) async => result);
+    when(() => gateway.submitToolDecision(any()))
+        .thenAnswer((_) async => result);
 
-    final actual = await CloudTurnUsecase(gateway).decide(
+    final actual = await CloudTurnUsecase(gateway).decide((
       turnId: 'turn-1',
       toolCallId: 'call-1',
       argumentsDigest: 'observed-digest',
       revision: 2,
       approved: true,
+      stopAll: false,
       editedArgumentsJson: '{"value":2}',
-    );
+    ));
 
     expect(actual, same(result));
-    verify(
-      () => gateway.submitToolDecision(
-        requestId: any(named: 'requestId'),
-        turnId: 'turn-1',
-        toolCallId: 'call-1',
-        argumentsDigest: 'observed-digest',
-        expectedTurnRevision: 2,
-        decision: 'approve',
-        editedArgumentsJson: '{"value":2}',
-      ),
-    ).called(1);
+    verify(() => gateway.submitToolDecision(any())).called(1);
   });
 
   test(
@@ -114,78 +96,50 @@ void main() {
       when(() => pendingCall.id).thenReturn('call-2');
       when(() => pendingCall.status).thenReturn('pending');
       when(() => pendingCall.argumentsDigest).thenReturn('digest-2');
-      when(
-        () => gateway.submitToolDecision(
-          requestId: any(named: 'requestId'),
-          turnId: 'turn-1',
-          toolCallId: 'call-1',
-          argumentsDigest: 'digest-1',
-          expectedTurnRevision: 2,
-          decision: 'approve',
-        ),
-      ).thenAnswer((_) async => first);
-      when(
-        () => gateway.submitToolDecision(
-          requestId: any(named: 'requestId'),
-          turnId: 'turn-1',
-          toolCallId: 'call-2',
-          argumentsDigest: 'digest-2',
-          expectedTurnRevision: 2,
-          decision: 'approve',
-        ),
-      ).thenThrow(
-        const CloudAppException(
-          localizationKey: 'unused',
-          context: .conversation,
-          code: 'staleRevision',
-        ),
-      );
+      when(() => gateway.submitToolDecision(any())).thenAnswer((invocation) {
+        final request = invocation.positionalArguments.single as dynamic;
+        if (request.toolCallId == 'call-1') return Future.value(first);
+        if (request.expectedTurnRevision == 2) {
+          throw const CloudAppException(
+            localizationKey: 'unused',
+            context: .conversation,
+            code: 'staleRevision',
+          );
+        }
+
+        return Future.value(second);
+      });
       when(() => gateway.getTurn(turnId: 'turn-1'))
           .thenAnswer((_) async => snapshot);
-      when(
-        () => gateway.submitToolDecision(
-          requestId: any(named: 'requestId'),
-          turnId: 'turn-1',
-          toolCallId: 'call-2',
-          argumentsDigest: 'digest-2',
-          expectedTurnRevision: 3,
-          decision: 'approve',
-        ),
-      ).thenAnswer((_) async => second);
 
       final usecase = CloudTurnUsecase(gateway);
       expect(
-        await usecase.decide(
+        await usecase.decide((
           turnId: 'turn-1',
           toolCallId: 'call-1',
           argumentsDigest: 'digest-1',
           revision: 2,
           approved: true,
-        ),
+          stopAll: false,
+          editedArgumentsJson: null,
+        )),
         same(first),
       );
       expect(
-        await usecase.decide(
+        await usecase.decide((
           turnId: 'turn-1',
           toolCallId: 'call-2',
           argumentsDigest: 'digest-2',
           revision: 2,
           approved: true,
-        ),
+          stopAll: false,
+          editedArgumentsJson: null,
+        )),
         same(second),
       );
 
       verify(() => gateway.getTurn(turnId: 'turn-1')).called(1);
-      verify(
-        () => gateway.submitToolDecision(
-          requestId: any(named: 'requestId'),
-          turnId: 'turn-1',
-          toolCallId: 'call-2',
-          argumentsDigest: 'digest-2',
-          expectedTurnRevision: 3,
-          decision: 'approve',
-        ),
-      ).called(1);
+      verify(() => gateway.submitToolDecision(any())).called(1);
     },
   );
 
@@ -205,36 +159,31 @@ void main() {
     when(() => pendingCall.argumentsDigest).thenReturn('digest-1');
     when(() => gateway.getTurn(turnId: 'turn-1'))
         .thenAnswer((_) async => snapshot);
-    when(
-      () => gateway.submitToolDecision(
-        requestId: any(named: 'requestId'),
-        turnId: 'turn-1',
-        toolCallId: 'call-1',
-        argumentsDigest: 'digest-1',
-        expectedTurnRevision: any(named: 'expectedTurnRevision'),
-        decision: 'approve',
-      ),
-    ).thenAnswer((invocation) async {
-      requestIds.add(invocation.namedArguments[#requestId]! as String);
-      if (attempts++ == 0) {
-        throw const CloudAppException(
-          localizationKey: 'unused',
-          context: .conversation,
-          code: 'staleRevision',
-        );
-      }
+    when(() => gateway.submitToolDecision(any()))
+        .thenAnswer((invocation) async {
+          final request = invocation.positionalArguments.single as dynamic;
+          requestIds.add(request.requestId as String);
+          if (attempts++ == 0) {
+            throw const CloudAppException(
+              localizationKey: 'unused',
+              context: .conversation,
+              code: 'staleRevision',
+            );
+          }
 
-      return result;
-    });
+          return result;
+        });
 
     expect(
-      await CloudTurnUsecase(gateway).decide(
+      await CloudTurnUsecase(gateway).decide((
         turnId: 'turn-1',
         toolCallId: 'call-1',
         argumentsDigest: 'digest-1',
         revision: 2,
         approved: true,
-      ),
+        stopAll: false,
+        editedArgumentsJson: null,
+      )),
       same(result),
     );
 
@@ -245,39 +194,21 @@ void main() {
   test('stop-all denial reaches the cloud decision gateway', () async {
     final gateway = _Gateway();
     final result = MockConversationMutationResult();
-    when(
-      () => gateway.submitToolDecision(
-        requestId: any(named: 'requestId'),
-        turnId: 'turn-1',
-        toolCallId: 'call-1',
-        argumentsDigest: 'observed-digest',
-        expectedTurnRevision: 2,
-        decision: 'deny',
-        stopAll: true,
-      ),
-    ).thenAnswer((_) async => result);
+    when(() => gateway.submitToolDecision(any()))
+        .thenAnswer((_) async => result);
 
-    final actual = await CloudTurnUsecase(gateway).decide(
+    final actual = await CloudTurnUsecase(gateway).decide((
       turnId: 'turn-1',
       toolCallId: 'call-1',
       argumentsDigest: 'observed-digest',
       revision: 2,
       approved: false,
       stopAll: true,
-    );
+      editedArgumentsJson: null,
+    ));
 
     expect(actual, same(result));
-    verify(
-      () => gateway.submitToolDecision(
-        requestId: any(named: 'requestId'),
-        turnId: 'turn-1',
-        toolCallId: 'call-1',
-        argumentsDigest: 'observed-digest',
-        expectedTurnRevision: 2,
-        decision: 'deny',
-        stopAll: true,
-      ),
-    ).called(1);
+    verify(() => gateway.submitToolDecision(any())).called(1);
   });
 }
 

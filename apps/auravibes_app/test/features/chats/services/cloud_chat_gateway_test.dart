@@ -36,14 +36,16 @@ void main() {
       .new(client: client, workspace: _workspace),
     );
     final operations = <String, Future<Object?> Function()>{
-      'startTurn': () => gateway.startTurn(
+      'startTurn': () => gateway.startTurn((
         requestId: 'start',
         conversationId: 'conversation',
         expectedConversationRevision: 1,
         clientMessageId: 'message',
         content: 'Hello',
         attachmentIds: const [],
-      ),
+        modelSelectionId: null,
+        agentId: null,
+      )),
       'continueTurn': () => gateway.continueTurn(
         requestId: 'continue',
         conversationId: 'conversation',
@@ -54,15 +56,17 @@ void main() {
         conversationId: 'conversation',
         expectedProjectionRevision: 1,
       ),
-      'submitToolDecision': () => gateway.submitToolDecision(
+      'submitToolDecision': () => gateway.submitToolDecision((
         requestId: 'decision',
         turnId: 'turn',
         toolCallId: 'tool',
         argumentsDigest: 'digest',
         expectedTurnRevision: 1,
         decision: 'approve',
-      ),
-      'queueConversationMessage': () => gateway.queueConversationMessage(
+        stopAll: false,
+        editedArgumentsJson: null,
+      )),
+      'queueConversationMessage': () => gateway.queueConversationMessage((
         requestId: 'queue',
         conversationId: 'conversation',
         expectedProjectionRevision: 1,
@@ -70,7 +74,7 @@ void main() {
         content: 'Hello',
         attachmentIds: const [],
         metadataJson: '{"action":"unchanged"}',
-      ),
+      )),
       'stopConversation': () => gateway.stopConversation(
         requestId: 'stop',
         conversationId: 'conversation',

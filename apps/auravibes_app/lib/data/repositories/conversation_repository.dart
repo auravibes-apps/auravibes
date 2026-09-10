@@ -13,6 +13,33 @@ const _parentConversationIdEmpty = 'Parent conversation ID cannot be empty';
 const _unknownValidationError = 'Unknown validation error';
 const _workspaceIdEmpty = 'Workspace ID cannot be empty';
 
+String _conversationPatchValidationMessage(ConversationPatch conversation) =>
+    _emptyPatchTitle(conversation) ??
+    _emptyPatchModelId(conversation) ??
+    _emptyPatchAgentId(conversation) ??
+    _unknownValidationError;
+
+String? _emptyPatchTitle(ConversationPatch conversation) {
+  final title = conversation.title;
+  if (title != null && title.isEmpty) return _conversationTitleEmpty;
+
+  return null;
+}
+
+String? _emptyPatchModelId(ConversationPatch conversation) {
+  final modelId = conversation.modelId;
+  if (modelId != null && modelId.isEmpty) return _modelIdEmpty;
+
+  return null;
+}
+
+String? _emptyPatchAgentId(ConversationPatch conversation) {
+  final agentId = conversation.agentId;
+  if (agentId != null && agentId.isEmpty) return _agentIdEmpty;
+
+  return null;
+}
+
 class ConversationRepository(
   final AppDatabase _database, {
   final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
@@ -23,13 +50,13 @@ class ConversationRepository(
   }) {
     return _database.conversationDao
         .watchConversationsByWorkspace(workspaceId, limit: limit)
-        .map((rows) => rows.map(this._mapToConversation).toList());
+        .map((rows) => rows.map(_mapToConversation).toList());
   }
 
   Stream<ConversationEntity?> watchConversationById(String id) {
     return _database.conversationDao
         .watchConversationById(id)
-        .map((row) => row != null ? this._mapToConversation(row) : null);
+        .map((row) => row != null ? _mapToConversation(row) : null);
   }
 
   Stream<List<ConversationEntity>> watchChildConversations(
@@ -37,7 +64,7 @@ class ConversationRepository(
   ) {
     return _database.conversationDao
         .watchChildConversations(parentConversationId)
-        .map((rows) => rows.map(this._mapToConversation).toList());
+        .map((rows) => rows.map(_mapToConversation).toList());
   }
 
   Future<List<ConversationEntity>> getChildConversations(
@@ -47,7 +74,7 @@ class ConversationRepository(
       parentConversationId,
     );
 
-    return rows.map(this._mapToConversation).toList();
+    return rows.map(_mapToConversation).toList();
   }
 
   Future<ConversationEntity?> getConversationById(String id) async {
@@ -55,22 +82,20 @@ class ConversationRepository(
         .getConversationById(id);
 
     return conversationTable != null
-        ? this._mapToConversation(conversationTable)
+        ? _mapToConversation(conversationTable)
         : null;
   }
 
   Future<ConversationEntity> createConversation(
     ConversationToCreate conversation,
   ) async {
-    this._validateConversationToCreate(conversation);
+    _validateConversationToCreate(conversation);
 
-    final conversationCompanion = this._mapToConversationsCompanion(
-      conversation,
-    );
+    final conversationCompanion = _mapToConversationsCompanion(conversation);
     final createdConversation = await _database.conversationDao
         .insertConversation(conversationCompanion);
 
-    return this._mapToConversation(createdConversation);
+    return _mapToConversation(createdConversation);
   }
 
   Future<ConversationEntity> patchConversation(
@@ -83,11 +108,25 @@ class ConversationRepository(
     return _mapToConversation(updatedConversation);
   }
 
+  Future<bool> deleteConversation(String id) async {
+    if (!await _conversationExists(id)) return false;
+
+    final attachmentPaths = await _attachmentPathsForConversation(id);
+    final deleted = await _database.conversationDao.deleteConversation(id);
+    if (deleted) {
+      final _ = await Future.wait(attachmentPaths.map(_deleteAttachmentFile));
+    }
+
+    return deleted;
+  }
+}
+
+extension on ConversationRepository {
   Future<ConversationsTable> _patchConversation(
     String id,
     ConversationPatch conversation,
   ) async {
-    if (!await _conversationExists(id)) throw ConversationNotFoundException(id);
+    await _requireConversation(id);
 
     final updated = await _database.conversationDao.patchConversation(
       id,
@@ -97,6 +136,16 @@ class ConversationRepository(
       throw ConversationException('Failed to update conversation with ID $id');
     }
 
+    return _updatedConversation(id);
+  }
+
+  Future<void> _requireConversation(String id) async {
+    if (!await _conversationExists(id)) {
+      throw ConversationNotFoundException(id);
+    }
+  }
+
+  Future<ConversationsTable> _updatedConversation(String id) async {
     final result = await _database.conversationDao.getConversationById(id);
     if (result == null) {
       throw ConversationException(
@@ -107,35 +156,29 @@ class ConversationRepository(
     return result;
   }
 
-  Future<bool> deleteConversation(String id) async {
-    if (!await _conversationExists(id)) return false;
-
-    final attachmentPaths = await this._attachmentPathsForConversation(id);
-    final deleted = await _database.conversationDao.deleteConversation(id);
-    if (deleted) {
-      final _ = await Future.wait(
-        attachmentPaths.map(this._deleteAttachmentFile),
-      );
-    }
-
-    return deleted;
-  }
-}
-
-extension on ConversationRepository {
   Future<List<String>> _attachmentPathsForConversation(String id) async {
-    final rows = await (_database.select(_database.messageAttachments).join([
-      innerJoin(
-        _database.messages,
-        _database.messages.id.equalsExp(_database.messageAttachments.messageId),
-      ),
-    ])..where(_database.messages.conversationId.equals(id))).get();
+    final rows = await _conversationAttachmentRows(id);
 
-    return [
-      for (final row in rows)
-        row.readTable(_database.messageAttachments).localPath,
-    ];
+    return rows
+        .map((row) => row.readTable(_database.messageAttachments).localPath)
+        .toList();
   }
+
+  Future<List<TypedResult>> _conversationAttachmentRows(String id) async {
+    final query = _database
+        .select(_database.messageAttachments)
+        .join(_conversationAttachmentJoins());
+    query.where(_database.messages.conversationId.equals(id));
+
+    return query.get();
+  }
+
+  List<Join> _conversationAttachmentJoins() => [
+    innerJoin(
+      _database.messages,
+      _database.messages.id.equalsExp(_database.messageAttachments.messageId),
+    ),
+  ];
 
   Future<void> _deleteAttachmentFile(String localPath) async {
     try {
@@ -175,32 +218,15 @@ extension on ConversationRepository {
 
     return null;
   }
+}
 
+extension on ConversationRepository {
   void _validateConversationPatch(ConversationPatch conversation) {
     if (!conversation.isValid) {
       throw ConversationValidationException(
         _conversationPatchValidationMessage(conversation),
       );
     }
-  }
-
-  String _conversationPatchValidationMessage(ConversationPatch conversation) {
-    final title = conversation.title;
-    if (title != null && title.isEmpty) {
-      return _conversationTitleEmpty;
-    }
-
-    final modelId = conversation.modelId;
-    if (modelId != null && modelId.isEmpty) {
-      return _modelIdEmpty;
-    }
-
-    final agentId = conversation.agentId;
-    if (agentId != null && agentId.isEmpty) {
-      return _agentIdEmpty;
-    }
-
-    return _unknownValidationError;
   }
 
   ConversationEntity _mapToConversation(ConversationsTable conversationTable) {

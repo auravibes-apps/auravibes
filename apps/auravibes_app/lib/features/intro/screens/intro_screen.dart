@@ -45,28 +45,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
   Widget build(BuildContext context) {
     _redirectIfExistingWorkspace();
 
-    return AuraScreen(
-      child: _IntroContent(
-        slide: _slide,
-        titleKey: _titleKey,
-        bodyKey: _bodyKey,
-        onCreated: _workspaceCreated,
-        onBack: _back,
-        onContinue: _continue,
-        onConnectAi: _connectAi,
-        onSkipAi: _startChat,
-      ),
-      variant: .aurora,
-    );
-  }
-
-  void _redirectIfExistingWorkspace() {
-    if (_slide != _IntroSlide.workspaceChoice) return;
-    final workspace = _existingWorkspace;
-    if (workspace == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.go(_newChatLocation(workspace.id));
-    });
+    return _IntroFrame(this);
   }
 
   void _continue() {
@@ -85,6 +64,17 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
       _slide = .ready;
     });
   }
+}
+
+extension on _IntroScreenState {
+  void _redirectIfExistingWorkspace() {
+    if (_slide != _IntroSlide.workspaceChoice) return;
+    final workspace = _existingWorkspace;
+    if (workspace == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.go(_newChatLocation(workspace.id));
+    });
+  }
 
   void _connectAi() {
     final workspace = _createdWorkspace;
@@ -97,6 +87,26 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
     if (workspace == null) return;
     context.go(_newChatLocation(workspace.id));
   }
+}
+
+class _IntroFrame extends StatelessWidget {
+  new(_IntroScreenState state)
+    : _content = _IntroContent(
+        slide: state._slide,
+        titleKey: state._titleKey,
+        bodyKey: state._bodyKey,
+        onCreated: state._workspaceCreated,
+        onBack: state._back,
+        onContinue: state._continue,
+        onConnectAi: state._connectAi,
+        onSkipAi: state._startChat,
+      );
+
+  final _IntroContent _content;
+
+  @override
+  Widget build(BuildContext context) =>
+      AuraScreen(child: _content, variant: .aurora);
 }
 
 class const _IntroContent({
@@ -135,50 +145,41 @@ class const _IntroContentContainer({
   required final VoidCallback onSkipAi,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => _IntroContentLayout(content: this);
+}
+
+class const _IntroContentLayout({required final _IntroContentContainer content})
+    extends StatelessWidget {
+  @override
   Widget build(BuildContext context) => Center(
     child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 520),
-      child: _IntroContentList(
-        slide: slide,
-        titleKey: titleKey,
-        bodyKey: bodyKey,
-        onCreated: onCreated,
-        onBack: onBack,
-        onContinue: onContinue,
-        onConnectAi: onConnectAi,
-        onSkipAi: onSkipAi,
-      ),
+      child: _IntroContentList(content: content),
     ),
   );
 }
 
-class const _IntroContentList({
-  required final _IntroSlide slide,
-  required final String titleKey,
-  required final String bodyKey,
-  required final ValueChanged<WorkspaceEntity> onCreated,
-  required final VoidCallback onBack,
-  required final VoidCallback onContinue,
-  required final VoidCallback onConnectAi,
-  required final VoidCallback onSkipAi,
-}) extends StatelessWidget {
-  late final List<Widget> _children = [
-    _ProgressIndicator(activeSlide: slide),
-    const SizedBox(height: 32),
-    _SlideContent(titleKey: titleKey, bodyKey: bodyKey),
-    if (slide == _IntroSlide.workspaceChoice) ...[
-      const SizedBox(height: 24),
-      CreateWorkspaceForm(onCreated: onCreated),
-    ],
-    const SizedBox(height: 32),
-    _SlideActions(
-      slide: slide,
-      onBack: onBack,
-      onContinue: onContinue,
-      onConnectAi: onConnectAi,
-      onSkipAi: onSkipAi,
-    ),
-  ];
+class _IntroContentList extends StatelessWidget {
+  new({required _IntroContentContainer content})
+    : _children = [
+        _ProgressIndicator(activeSlide: content.slide),
+        const SizedBox(height: 32),
+        _SlideContent(titleKey: content.titleKey, bodyKey: content.bodyKey),
+        if (content.slide == _IntroSlide.workspaceChoice) ...[
+          const SizedBox(height: 24),
+          CreateWorkspaceForm(onCreated: content.onCreated),
+        ],
+        const SizedBox(height: 32),
+        _SlideActions(
+          slide: content.slide,
+          onBack: content.onBack,
+          onContinue: content.onContinue,
+          onConnectAi: content.onConnectAi,
+          onSkipAi: content.onSkipAi,
+        ),
+      ];
+
+  final List<Widget> _children;
 
   @override
   Widget build(BuildContext context) =>
@@ -248,13 +249,15 @@ class const _ProgressStepPadding({
   required final Color activeColor,
   required final Color inactiveColor,
 }) extends StatelessWidget {
+  EdgeInsets get _padding => EdgeInsets.only(
+    right: index == _IntroSlide.values.length - 1
+        ? 0
+        : _IntroScreenState._slideButtonSpacing,
+  );
+
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(
-      right: index == _IntroSlide.values.length - 1
-          ? 0
-          : _IntroScreenState._slideButtonSpacing,
-    ),
+    padding: _padding,
     child: _ProgressStepDecorated(
       index: index,
       activeSlide: activeSlide,
@@ -336,44 +339,51 @@ class const _SlideActionRow({
   );
 }
 
-class const _SlideActionButtons({
-  required final _IntroSlide slide,
-  required final VoidCallback onBack,
-  required final VoidCallback onContinue,
-  required final VoidCallback onConnectAi,
-  required final VoidCallback onSkipAi,
-}) extends StatelessWidget {
-  late final List<Widget> _children = [
-    if (slide == _IntroSlide.workspaceContext) ...[
-      _SlideActionButton(
-        onPressed: onBack,
-        label: LocaleKeys.intro_flow_back,
-        key: const Key('intro_back_button'),
-        outlined: true,
-      ),
-      const SizedBox(width: 8),
-    ],
-    _SlideActionButton(
-      onPressed: slide == _IntroSlide.ready ? onConnectAi : onContinue,
-      label: slide == _IntroSlide.ready
-          ? LocaleKeys.intro_flow_connect_primary
-          : LocaleKeys.intro_flow_continue,
-      key: .new(
-        slide == _IntroSlide.ready
-            ? 'intro_connect_ai_button'
-            : 'intro_continue_button',
-      ),
-    ),
-    if (slide == _IntroSlide.ready) ...[
-      const SizedBox(width: 8),
-      _SlideActionButton(
-        onPressed: onSkipAi,
-        label: LocaleKeys.intro_flow_connect_skip,
-        key: const Key('intro_skip_ai_button'),
-        outlined: true,
-      ),
-    ],
-  ];
+class _SlideActionButtons extends StatelessWidget {
+  new({
+    required this.slide,
+    required this.onBack,
+    required this.onContinue,
+    required this.onConnectAi,
+    required this.onSkipAi,
+  }) : _children = [
+         if (slide == _IntroSlide.workspaceContext) ...[
+           _SlideActionButton(
+             onPressed: onBack,
+             label: LocaleKeys.intro_flow_back,
+             outlined: true,
+             key: const Key('intro_back_button'),
+           ),
+           const SizedBox(width: 8),
+         ],
+         _SlideActionButton(
+           onPressed: slide == _IntroSlide.ready ? onConnectAi : onContinue,
+           label: slide == _IntroSlide.ready
+               ? LocaleKeys.intro_flow_connect_primary
+               : LocaleKeys.intro_flow_continue,
+           key: .new(
+             slide == _IntroSlide.ready
+                 ? 'intro_connect_ai_button'
+                 : 'intro_continue_button',
+           ),
+         ),
+         if (slide == _IntroSlide.ready) ...[
+           const SizedBox(width: 8),
+           _SlideActionButton(
+             onPressed: onSkipAi,
+             label: LocaleKeys.intro_flow_connect_skip,
+             outlined: true,
+             key: const Key('intro_skip_ai_button'),
+           ),
+         ],
+       ];
+
+  final _IntroSlide slide;
+  final VoidCallback onBack;
+  final VoidCallback onContinue;
+  final VoidCallback onConnectAi;
+  final VoidCallback onSkipAi;
+  final List<Widget> _children;
 
   @override
   Widget build(BuildContext context) => Row(children: _children);

@@ -21,18 +21,22 @@ class const AgentToolResultUpdate({
   final String? responseRaw,
 });
 
+typedef AgentToolApprovalRequest<TTool extends Object> = ({
+  String conversationId,
+  String workspaceId,
+  String toolCallId,
+  TTool resolvedTool,
+  String? argumentsRaw,
+});
+
 abstract interface class AgentToolExecutionProvider<TTool extends Object> {
   Future<LoadLatestMessageToolCallsResult<TTool>> loadLatestToolCalls({
     required String conversationId,
   });
 
-  Future<AgentToolApprovalDecision> resolveToolApprovalDecision({
-    required String conversationId,
-    required String workspaceId,
-    required String toolCallId,
-    required TTool resolvedTool,
-    required String argumentsRaw,
-  });
+  Future<AgentToolApprovalDecision> resolveToolApprovalDecision(
+    AgentToolApprovalRequest<TTool> request,
+  );
 
   Future<Object?> runResolvedTool({
     required String conversationId,
@@ -55,13 +59,7 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
 
   String toolIdentifier(TTool tool);
 
-  void logToolExecutionError({
-    required String conversationId,
-    required String toolCallId,
-    required TTool tool,
-    required Object error,
-    required StackTrace stackTrace,
-  });
+  void logToolExecutionError(AgentToolExecutionErrorRequest<TTool> request);
 }
 
 class const AgentToolExecutionService<TTool extends Object>({
@@ -102,13 +100,13 @@ class const AgentToolExecutionService<TTool extends Object>({
         continue;
       }
 
-      final decision = await provider.resolveToolApprovalDecision(
+      final decision = await provider.resolveToolApprovalDecision((
         conversationId: conversationId,
         workspaceId: workspaceId,
         toolCallId: toolToCall.id,
         resolvedTool: toolToCall.tool,
         argumentsRaw: toolToCall.argumentsRaw,
-      );
+      ));
 
       switch (decision.permissionResult) {
         case .granted:
@@ -273,13 +271,13 @@ class const AgentToolExecutionService<TTool extends Object>({
         responseRaw: result.responseRaw,
       );
     } on Object catch (error, stackTrace) {
-      _logExecutionError(
+      _logExecutionError((
         conversationId: conversationId,
         toolCallId: toolToCall.id,
         tool: toolToCall.tool,
         error: error,
         stackTrace: stackTrace,
-      );
+      ));
 
       return AgentToolResultUpdate(
         toolCallId: toolToCall.id,
@@ -290,19 +288,7 @@ class const AgentToolExecutionService<TTool extends Object>({
     }
   }
 
-  void _logExecutionError({
-    required String conversationId,
-    required String toolCallId,
-    required TTool tool,
-    required Object error,
-    required StackTrace stackTrace,
-  }) {
-    provider.logToolExecutionError(
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      tool: tool,
-      error: error,
-      stackTrace: stackTrace,
-    );
+  void _logExecutionError(AgentToolExecutionErrorRequest<TTool> request) {
+    provider.logToolExecutionError(request);
   }
 }

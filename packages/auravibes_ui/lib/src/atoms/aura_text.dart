@@ -95,20 +95,15 @@ abstract final class AuraTextStyles {
     required AuraTextStyle style,
     required AuraColorScheme colors,
     required AuraTypographyScale typography,
-  }) {
-    final fontFamily = typography.bodyFontFamily;
-
-    return switch (style) {
-      .heading1 ||
-      .heading2 ||
-      .heading3 ||
-      .heading4 ||
-      .heading5 ||
-      .heading6 => _resolveHeading(style, colors, typography, fontFamily),
-      _ => _resolveBody(style, colors, typography, fontFamily),
-    };
-  }
+  }) => _resolveTextStyle(_textResolveRequest(style, colors, typography));
 }
+
+typedef _AuraTextResolveRequest = ({
+  AuraTextStyle style,
+  AuraColorScheme colors,
+  AuraTypographyScale typography,
+  String fontFamily,
+});
 
 typedef _AuraTextStyleValues = ({
   Color? color,
@@ -119,49 +114,99 @@ typedef _AuraTextStyleValues = ({
   String fontFamily,
 });
 
-TextStyle _resolveHeading(
+TextStyle _resolveTextStyle(_AuraTextResolveRequest request) =>
+    switch (request.style) {
+      .heading1 ||
+      .heading2 ||
+      .heading3 ||
+      .heading4 ||
+      .heading5 ||
+      .heading6 => _resolveHeading(request),
+      _ => _resolveBody(request),
+    };
+
+_AuraTextResolveRequest _textResolveRequest(
   AuraTextStyle style,
   AuraColorScheme colors,
   AuraTypographyScale typography,
-  String fontFamily,
-) => _textStyle((
-  color: colors.foreground,
+) => (
+  style: style,
+  colors: colors,
+  typography: typography,
+  fontFamily: typography.bodyFontFamily,
+);
+
+TextStyle _resolveHeading(_AuraTextResolveRequest request) {
+  return _textStyle(_headingStyleValues(request));
+}
+
+_AuraTextStyleValues _headingStyleValues(_AuraTextResolveRequest request) {
+  final metrics = _headingMetrics(request.style, request.typography);
+
+  return (
+    color: request.colors.foreground,
+    fontSize: metrics.fontSize,
+    fontWeight: metrics.fontWeight,
+    letterSpacing: metrics.letterSpacing,
+    height: metrics.height,
+    fontFamily: request.fontFamily,
+  );
+}
+
+TextStyle _resolveBody(_AuraTextResolveRequest request) {
+  if (request.style == .button) {
+    return _buttonStyle(request.typography, request.fontFamily);
+  }
+  if (request.style == .code) {
+    return _codeStyle(request.colors, request.typography);
+  }
+
+  return _contentStyle(request);
+}
+
+TextStyle _contentStyle(_AuraTextResolveRequest request) {
+  return _textStyle(_contentStyleValues(request));
+}
+
+_AuraTextStyleValues _contentStyleValues(_AuraTextResolveRequest request) {
+  final metrics = _bodyMetrics(request.style, request.typography);
+
+  return (
+    color: _bodyColor(request.style, request.colors),
+    fontSize: metrics.fontSize,
+    fontWeight: metrics.fontWeight,
+    letterSpacing: metrics.letterSpacing,
+    height: metrics.height,
+    fontFamily: request.fontFamily,
+  );
+}
+
+typedef _AuraTextMetrics = ({
+  double fontSize,
+  FontWeight fontWeight,
+  double letterSpacing,
+  double height,
+});
+
+_AuraTextMetrics _headingMetrics(
+  AuraTextStyle style,
+  AuraTypographyScale typography,
+) => (
   fontSize: _headingFontSize(style, typography),
   fontWeight: _headingFontWeight(style, typography),
   letterSpacing: _headingLetterSpacing(style, typography),
   height: _headingLineHeight(style, typography),
-  fontFamily: fontFamily,
-));
+);
 
-TextStyle _resolveBody(
+_AuraTextMetrics _bodyMetrics(
   AuraTextStyle style,
-  AuraColorScheme colors,
   AuraTypographyScale typography,
-  String fontFamily,
-) {
-  if (style == .button) {
-    return _buttonStyle(typography, fontFamily);
-  }
-  if (style == .code) {
-    return _codeStyle(colors, typography);
-  }
-
-  return _contentStyle(style, colors, typography, fontFamily);
-}
-
-TextStyle _contentStyle(
-  AuraTextStyle style,
-  AuraColorScheme colors,
-  AuraTypographyScale typography,
-  String fontFamily,
-) => _textStyle((
-  color: _bodyColor(style, colors),
+) => (
   fontSize: _bodyFontSize(style, typography),
   fontWeight: _bodyFontWeight(style, typography),
   letterSpacing: _bodyLetterSpacing(style, typography),
   height: _bodyLineHeight(style, typography),
-  fontFamily: fontFamily,
-));
+);
 
 TextStyle _buttonStyle(AuraTypographyScale typography, String fontFamily) =>
     _textStyle((

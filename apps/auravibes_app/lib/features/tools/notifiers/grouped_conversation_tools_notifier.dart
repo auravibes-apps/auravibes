@@ -51,13 +51,6 @@ class GroupedConversationToolsNotifier
     required bool enabled,
     DefaultToolGroupType? defaultGroupType,
   }) async {
-    final conversationNotifier = ref.read(
-      conversationToolsProvider(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ).notifier,
-    );
-
     final group = _findConversationGroup(
       state.value ?? [],
       groupId,
@@ -65,11 +58,12 @@ class GroupedConversationToolsNotifier
     );
     if (group == null) return;
 
-    await _toggleGroupTools(
-      group,
-      conversationNotifier.setToolEnabled,
+    await _toggleConversationGroup(ref, (
+      group: group,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
       enabled: enabled,
-    );
+    ));
 
     // The state will be automatically refreshed via the watch on.
     // ConversationToolsProvider.
@@ -136,30 +130,15 @@ class GroupedConversationToolsNotifier
   }) {
     final result = <ConversationToolsGroupWithTools>[];
     for (final group in groups) {
-      final tools = toolsByGroupId[group.id] ?? [];
-      if (tools.isEmpty) continue;
-
-      result.add(
-        ConversationToolsGroupWithTools(
-          group: group,
-          tools: tools,
-          mcpConnectionState: _findMcpConnection(group, mcpConnections),
-        ),
+      final groupWithTools = _customConversationGroup(
+        group,
+        toolsByGroupId,
+        mcpConnections,
       );
+      if (groupWithTools != null) result.add(groupWithTools);
     }
 
     return result;
-  }
-
-  McpConnectionState? _findMcpConnection(
-    ToolsGroupEntity group,
-    List<McpConnectionState> mcpConnections,
-  ) {
-    if (!group.isMcpGroup || group.mcpServerId == null) return null;
-
-    return mcpConnections
-        .where((connection) => connection.server.id == group.mcpServerId)
-        .firstOrNull;
   }
 
   int _compareGroups(
@@ -177,6 +156,56 @@ class GroupedConversationToolsNotifier
 
     return bDate.compareTo(aDate);
   }
+}
+
+Future<void> _toggleConversationGroup(
+  Ref ref,
+  ({
+    ConversationToolsGroupWithTools group,
+    String workspaceId,
+    String? conversationId,
+    bool enabled,
+  })
+  request,
+) async {
+  final conversationNotifier = ref.read(
+    conversationToolsProvider(
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+    ).notifier,
+  );
+
+  await _toggleGroupTools(
+    request.group,
+    conversationNotifier.setToolEnabled,
+    enabled: request.enabled,
+  );
+}
+
+ConversationToolsGroupWithTools? _customConversationGroup(
+  ToolsGroupEntity group,
+  Map<String?, List<ConversationToolState>> toolsByGroupId,
+  List<McpConnectionState> mcpConnections,
+) {
+  final tools = toolsByGroupId[group.id] ?? [];
+  if (tools.isEmpty) return null;
+
+  return ConversationToolsGroupWithTools(
+    group: group,
+    tools: tools,
+    mcpConnectionState: _findMcpConnection(group, mcpConnections),
+  );
+}
+
+McpConnectionState? _findMcpConnection(
+  ToolsGroupEntity group,
+  List<McpConnectionState> mcpConnections,
+) {
+  if (!group.isMcpGroup || group.mcpServerId == null) return null;
+
+  return mcpConnections
+      .where((connection) => connection.server.id == group.mcpServerId)
+      .firstOrNull;
 }
 
 ConversationToolsGroupWithTools? _conversationDefaultGroup(
@@ -234,12 +263,20 @@ ConversationToolsGroupWithTools? _findConversationGroup(
   String? groupId,
   DefaultToolGroupType? defaultGroupType,
 ) => groups.firstWhereOrNull(
-  (group) =>
-      group.group?.id == groupId ||
-      (groupId == null &&
-          group.isDefaultGroup &&
-          group.defaultGroupType == defaultGroupType),
+  (group) => _matchesConversationGroup(group, (
+    groupId: groupId,
+    defaultGroupType: defaultGroupType,
+  )),
 );
+
+bool _matchesConversationGroup(
+  ConversationToolsGroupWithTools group,
+  ({String? groupId, DefaultToolGroupType? defaultGroupType}) request,
+) =>
+    group.group?.id == request.groupId ||
+    (request.groupId == null &&
+        group.isDefaultGroup &&
+        group.defaultGroupType == request.defaultGroupType);
 
 Future<void> _toggleGroupTools(
   ConversationToolsGroupWithTools group,

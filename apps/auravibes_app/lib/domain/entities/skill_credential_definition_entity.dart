@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_credential_definition_entity.freezed.dart';
 
+@immutable
 @freezed
 abstract class const SkillCredentialDefinitionEntity._()
     with _$SkillCredentialDefinitionEntity {
@@ -14,18 +15,47 @@ abstract class const SkillCredentialDefinitionEntity._()
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _SkillCredentialDefinitionEntity;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class const SkillCredentialDefinitionToCreate._()
     with _$SkillCredentialDefinitionToCreate {
   const factory({required String title, required String attributesJson}) =
       _SkillCredentialDefinitionToCreate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
+@immutable
 @freezed
 abstract class const SkillCredentialDefinitionToUpdate._()
     with _$SkillCredentialDefinitionToUpdate {
   const factory({String? title, String? attributesJson}) =
       _SkillCredentialDefinitionToUpdate;
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }

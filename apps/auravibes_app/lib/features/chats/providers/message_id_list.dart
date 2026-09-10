@@ -622,7 +622,7 @@ int _conversationMessageTokens(Ref ref, MessageEntity message) {
     messagesStreamingProvider.select((state) => state[message.id]?.lastResult),
   );
 
-  return streamingResult?.entityTotalTokens ??
+  return streamingResult?.entityTotalTokens() ??
       message.metadata?.usedTokens ??
       0;
 }

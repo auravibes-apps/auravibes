@@ -10,6 +10,48 @@ import 'package:json_schema_builder/json_schema_builder.dart';
 
 const _percentageScale = 100.0;
 
+typedef _DashboardTableContent = ({
+  List<String> columns,
+  List<List<Object?>> rows,
+});
+
+typedef _DashboardTableOptions = ({
+  Widget? caption,
+  List<AuraTableAlignment> columnAlignments,
+  List<AuraTableValueFormat> columnFormats,
+  List<bool> sortableColumns,
+  List<AuraTint?> rowTints,
+  String? emptyText,
+  String noValueLabel,
+});
+
+typedef _DashboardTableData = ({
+  _DashboardTableContent content,
+  _DashboardTableOptions options,
+});
+
+typedef _DashboardChartContent = ({
+  List<String> labels,
+  List<AuraChartSeries> series,
+  String semanticLabel,
+});
+
+typedef _DashboardChartAxes = ({String? x, String? y, String? unit});
+
+typedef _DashboardChartOptions = ({
+  AuraChartType type,
+  bool stacked,
+  double? minY,
+  double? maxY,
+  _DashboardChartAxes axes,
+  List<AuraTint> palette,
+});
+
+typedef _DashboardChartData = ({
+  _DashboardChartContent content,
+  _DashboardChartOptions options,
+});
+
 typedef _DashboardBuilder = Widget Function(
   CatalogItemContext context,
   Map<String, Object?> data,
@@ -25,9 +67,9 @@ abstract final class AuraDashboardCatalogAdapter {
 abstract final class _DashboardCatalog {
   static List<CatalogItem> items(IconData Function(String?) resolveIcon) {
     final builders = <String, _DashboardBuilder>{
-      ..._DashboardBuilders.builders,
+      ..._dashboardBuilders,
       'EmptyState': (context, data) =>
-          _DashboardBuilders.emptyState(context, data, resolveIcon),
+          _DashboardPrimitiveBuilders.emptyState(context, data, resolveIcon),
     };
 
     return [for (final entry in builders.entries) _catalogItem(entry)];
@@ -124,18 +166,18 @@ class const _BoundDashboardData({
       ChatA2uiWarning(details: 'component: ${context.id}\nissue: $issue');
 }
 
-abstract final class _DashboardBuilders {
-  static final builders = <String, _DashboardBuilder>{
-    'Progress': _progress,
-    'Badge': _badge,
-    'Avatar': _avatar,
-    'AvatarGroup': _avatarGroup,
-    'Table': _table,
-    'Chart': _chart,
-    'LoadingIndicator': _loading,
-    'AnimatedContent': _animated,
-  };
+final _dashboardBuilders = <String, _DashboardBuilder>{
+  'Progress': _DashboardPrimitiveBuilders.progress,
+  'Badge': _DashboardPrimitiveBuilders.badge,
+  'Avatar': _DashboardPrimitiveBuilders.avatar,
+  'AvatarGroup': _DashboardPrimitiveBuilders.avatarGroup,
+  'Table': _DashboardTableBuilder.table,
+  'Chart': _DashboardChartBuilder.chart,
+  'LoadingIndicator': _DashboardLoadingBuilder.loading,
+  'AnimatedContent': _DashboardChartBuilder.animated,
+};
 
+abstract final class _DashboardPrimitiveBuilders {
   static Widget emptyState(
     CatalogItemContext context,
     Map<String, Object?> data,
@@ -149,41 +191,28 @@ abstract final class _DashboardBuilders {
     icon: AuraIcon(resolveIcon(data['icon'] as String? ?? 'info')),
   );
 
-  static Widget _progress(
+  static Widget progress(
     CatalogItemContext context,
     Map<String, Object?> data,
   ) {
     final label = data['label'] as String?;
-    final indeterminate = data['indeterminate'] == true;
-    final value = indeterminate ? null : (data['value'] as num?)?.toDouble();
+    final value = _progressValue(data);
 
     return AuraColumn(
       children: [
-        if (label != null || data['showValue'] == true)
-          Wrap(
-            alignment: .spaceBetween,
-            spacing: context.buildContext.auraTheme.spacing.base,
-            runSpacing: context.buildContext.auraTheme.spacing.xs,
-            children: [
-              if (label != null) AuraText(child: Text(label)),
-              if (data['showValue'] == true && value != null)
-                AuraText(child: Text('${(value * _percentageScale).round()}%')),
-            ],
-          ),
+        _ProgressLabel(data: data, label: label, value: value),
         AuraLinearProgressIndicator(
           value: value,
           tint: _DashboardValues.tone(data['tone']),
           semanticLabel: label,
-          semanticValue: value == null
-              ? null
-              : '${(value * _percentageScale).round()}%',
+          semanticValue: _progressSemanticValue(value),
         ),
       ],
       crossAxisAlignment: .stretch,
     );
   }
 
-  static Widget _badge(CatalogItemContext _, Map<String, Object?> data) =>
+  static Widget badge(CatalogItemContext _, Map<String, Object?> data) =>
       AuraBadge.text(
         child: Text(data['label']! as String),
         variant: AuraBadgeVariant.values.byName(
@@ -192,19 +221,18 @@ abstract final class _DashboardBuilders {
         size: AuraBadgeSize.values.byName(data['size'] as String? ?? 'medium'),
       );
 
-  static Widget _avatar(CatalogItemContext _, Map<String, Object?> data) {
-    return ChatCatalogAvatar(
-      name: data['name']! as String,
-      url: data['url'] as String?,
-      size: switch (data['size']) {
-        'small' => .xl,
-        'large' => .xl3,
-        _ => .xl2,
-      },
-    );
-  }
+  static Widget avatar(CatalogItemContext _, Map<String, Object?> data) =>
+      ChatCatalogAvatar(
+        name: data['name']! as String,
+        url: data['url'] as String?,
+        size: switch (data['size']) {
+          'small' => .xl,
+          'large' => .xl3,
+          _ => .xl2,
+        },
+      );
 
-  static Widget _avatarGroup(
+  static Widget avatarGroup(
     CatalogItemContext context,
     Map<String, Object?> data,
   ) {
@@ -212,154 +240,254 @@ abstract final class _DashboardBuilders {
     final maxVisible = data['maxVisible'] as int? ?? 5;
 
     return AuraAvatarGroup(
-      children: [
-        for (final avatar in avatars)
-          _avatar(context, Map<String, Object?>.from(avatar)),
-      ],
+      children: _avatarChildren(context, avatars),
       maxVisible: maxVisible,
-      overflowSemanticLabel: avatars
-          .skip(maxVisible)
-          .map((avatar) => avatar['name'])
-          .join(', '),
+      overflowSemanticLabel: _avatarOverflow(avatars, maxVisible),
     );
   }
 
-  static Widget _table(CatalogItemContext _, Map<String, Object?> data) {
-    final columns = (data['columns']! as List)
-        .map(
-          (value) => value is Map ? value : <Object?, Object?>{'label': value},
-        )
-        .toList(growable: false);
-    final rows = (data['rows']! as List)
-        .map(
-          (value) => value is Map ? value : <Object?, Object?>{'cells': value},
-        )
-        .toList(growable: false);
+  static List<Widget> _avatarChildren(
+    CatalogItemContext context,
+    List<Map<Object?, Object?>> avatars,
+  ) => [
+    for (final avatar in avatars)
+      _DashboardPrimitiveBuilders.avatar(
+        context,
+        Map<String, Object?>.from(avatar),
+      ),
+  ];
+
+  static String _avatarOverflow(
+    List<Map<Object?, Object?>> avatars,
+    int maxVisible,
+  ) => avatars.skip(maxVisible).map((avatar) => avatar['name']).join(', ');
+}
+
+class const _ProgressLabel({
+  required final Map<String, Object?> data,
+  required final String? label,
+  required final double? value,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (label == null && data['showValue'] != true) {
+      return const SizedBox.shrink();
+    }
+
+    return _ProgressLabelRow(
+      label: label,
+      value: value,
+      showValue: data['showValue'] == true,
+    );
+  }
+}
+
+class const _ProgressLabelRow({
+  required final String? label,
+  required final double? value,
+  required final bool showValue,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    alignment: .spaceBetween,
+    spacing: context.buildContext.auraTheme.spacing.base,
+    runSpacing: context.buildContext.auraTheme.spacing.xs,
+    children: [
+      if (label != null) _ProgressLabelText(label!),
+      if (showValue && value != null) _ProgressLabelValue(value!),
+    ],
+  );
+}
+
+class const _ProgressLabelText(final String label) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(child: Text(label));
+}
+
+class const _ProgressLabelValue(final double value) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      AuraText(child: Text('${(value * _percentageScale).round()}%'));
+}
+
+double? _progressValue(Map<String, Object?> data) =>
+    data['indeterminate'] == true ? null : (data['value'] as num?)?.toDouble();
+
+String? _progressSemanticValue(double? value) =>
+    value == null ? null : '${(value * _percentageScale).round()}%';
+
+abstract final class _DashboardTableBuilder {
+  static Widget table(CatalogItemContext _, Map<String, Object?> data) =>
+      _DashboardTable(data);
+
+  static _DashboardTableData _tableData(Map<String, Object?> data) {
+    final columns = _tableColumns(data);
+    final rows = _tableRows(data);
+
+    return (
+      content: (
+        columns: _tableColumnLabels(columns),
+        rows: _tableRowCells(rows),
+      ),
+      options: _tableOptions(data, columns, rows),
+    );
+  }
+
+  static _DashboardTableOptions _tableOptions(
+    Map<String, Object?> data,
+    List<Map<Object?, Object?>> columns,
+    List<Map<Object?, Object?>> rows,
+  ) => (
+    caption: _tableCaption(data),
+    columnAlignments: _tableColumnAlignments(columns),
+    columnFormats: _tableColumnFormats(columns),
+    sortableColumns: _sortableColumns(columns),
+    rowTints: _rowTints(rows),
+    emptyText: _DashboardValues.nullableString(data['emptyText']),
+    noValueLabel:
+        _DashboardValues.nullableString(data['noValueLabel']) ?? 'No value',
+  );
+
+  static AuraTable _buildTable(_DashboardTableData values) {
+    final content = values.content;
+    final options = values.options;
 
     return AuraTable(
-      columns: [
-        for (final column in columns) _DashboardValues.string(column['label']),
-      ],
-      rows: [for (final row in rows) (row['cells']! as List).cast<Object?>()],
-      caption: switch (data['caption']) {
-        final String caption => Text(caption),
-        _ => null,
-      },
-      columnAlignments: [
-        for (final column in columns)
-          switch (column['align']) {
-            'center' => AuraTableAlignment.center,
-            'end' => AuraTableAlignment.end,
-            _ => AuraTableAlignment.start,
-          },
-      ],
-      columnFormats: [
-        for (final column in columns)
-          switch (column['format']) {
-            'number' => AuraTableValueFormat.number,
-            'percent' => AuraTableValueFormat.percent,
-            _ => AuraTableValueFormat.plain,
-          },
-      ],
-      sortableColumns: [
-        for (final column in columns) column['sortable'] == true,
-      ],
-      rowTints: [
-        for (final row in rows) _DashboardValues.nullableTone(row['tone']),
-      ],
-      emptyText: _DashboardValues.nullableString(data['emptyText']),
-      noValueLabel:
-          _DashboardValues.nullableString(data['noValueLabel']) ?? 'No value',
+      columns: content.columns,
+      rows: content.rows,
+      caption: options.caption,
+      columnAlignments: options.columnAlignments,
+      columnFormats: options.columnFormats,
+      sortableColumns: options.sortableColumns,
+      rowTints: options.rowTints,
+      emptyText: options.emptyText,
+      noValueLabel: options.noValueLabel,
     );
   }
 
-  static Widget _loading(CatalogItemContext _, Map<String, Object?> data) {
-    final label = data['label']! as String;
-    final value = (data['value'] as num?)?.toDouble();
-    final indicator = value == null
-        ? AuraSpinner(
-            size: switch (data['size']) {
-              'small' => AuraSpinnerSize.small,
-              'large' => AuraSpinnerSize.large,
-              _ => AuraSpinnerSize.medium,
-            },
-            semanticLabel: label,
+  static List<Map<Object?, Object?>> _tableColumns(Map<String, Object?> data) =>
+      (data['columns']! as List)
+          .map(
+            (value) =>
+                value is Map ? value : <Object?, Object?>{'label': value},
           )
-        : AuraLinearProgressIndicator(
-            value: value,
-            semanticLabel: label,
-            semanticValue: '${(value * 100).round()}%',
-          );
+          .toList(growable: false);
 
-    if (data['inline'] == true) {
-      return AuraRow(
-        children: [
-          indicator,
-          AuraText(child: Text(label)),
-        ],
-        mainAxisSize: .min,
+  static List<Map<Object?, Object?>> _tableRows(Map<String, Object?> data) =>
+      (data['rows']! as List)
+          .map(
+            (value) =>
+                value is Map ? value : <Object?, Object?>{'cells': value},
+          )
+          .toList(growable: false);
+
+  static List<String> _tableColumnLabels(List<Map<Object?, Object?>> columns) =>
+      [for (final column in columns) _DashboardValues.string(column['label'])];
+
+  static List<List<Object?>> _tableRowCells(List<Map<Object?, Object?>> rows) =>
+      [for (final row in rows) (row['cells']! as List).cast<Object?>()];
+
+  static Widget? _tableCaption(Map<String, Object?> data) =>
+      switch (data['caption']) {
+        final String caption => Text(caption),
+        _ => null,
+      };
+}
+
+List<bool> _sortableColumns(List<Map<Object?, Object?>> columns) => [
+  for (final column in columns) column['sortable'] == true,
+];
+
+List<AuraTint?> _rowTints(List<Map<Object?, Object?>> rows) => [
+  for (final row in rows) _DashboardValues.nullableTone(row['tone']),
+];
+
+List<AuraTableAlignment> _tableColumnAlignments(
+  List<Map<Object?, Object?>> columns,
+) => [
+  for (final column in columns)
+    switch (column['align']) {
+      'center' => AuraTableAlignment.center,
+      'end' => AuraTableAlignment.end,
+      _ => AuraTableAlignment.start,
+    },
+];
+
+List<AuraTableValueFormat> _tableColumnFormats(
+  List<Map<Object?, Object?>> columns,
+) => [
+  for (final column in columns)
+    switch (column['format']) {
+      'number' => AuraTableValueFormat.number,
+      'percent' => AuraTableValueFormat.percent,
+      _ => AuraTableValueFormat.plain,
+    },
+];
+
+class _DashboardTable extends StatelessWidget {
+  _DashboardTable(Map<String, Object?> data)
+    : _table = _DashboardTableConfig(data).build();
+
+  final AuraTable _table;
+
+  @override
+  Widget build(BuildContext context) => _table;
+}
+
+class _DashboardTableConfig {
+  const _DashboardTableConfig(this.data);
+
+  final Map<String, Object?> data;
+
+  AuraTable build() => _DashboardTableBuilder._buildTable(
+    _DashboardTableBuilder._tableData(data),
+  );
+}
+
+abstract final class _DashboardLoadingBuilder {
+  static Widget loading(CatalogItemContext _, Map<String, Object?> data) {
+    final label = data['label']! as String;
+    final indicator = _loadingIndicator(data, label);
+
+    return data['inline'] == true
+        ? AuraRow(
+            children: [
+              indicator,
+              AuraText(child: Text(label)),
+            ],
+            mainAxisSize: .min,
+          )
+        : AuraColumn(
+            children: [
+              indicator,
+              AuraText(child: Text(label)),
+            ],
+          );
+  }
+
+  static Widget _loadingIndicator(Map<String, Object?> data, String label) {
+    final value = (data['value'] as num?)?.toDouble();
+    if (value == null) {
+      return AuraSpinner(
+        size: switch (data['size']) {
+          'small' => AuraSpinnerSize.small,
+          'large' => AuraSpinnerSize.large,
+          _ => AuraSpinnerSize.medium,
+        },
+        semanticLabel: label,
       );
     }
 
-    return AuraColumn(
-      children: [
-        indicator,
-        AuraText(child: Text(label)),
-      ],
+    return AuraLinearProgressIndicator(
+      value: value,
+      semanticLabel: label,
+      semanticValue: '${(value * _percentageScale).round()}%',
     );
   }
+}
 
-  static Widget _chart(CatalogItemContext _, Map<String, Object?> data) {
-    final labels = (data['labels']! as List).cast<String>();
-    final series = [
-      for (final item
-          in (data['series']! as List).cast<Map<Object?, Object?>>())
-        AuraChartSeries(
-          label: item['label']! as String,
-          values: [
-            for (final value in item['values']! as List)
-              (value as num).toDouble(),
-          ],
-          tint: _DashboardValues.tone(item['tone']),
-        ),
-    ];
-    final descriptions = <String>[];
-    for (final item in series) {
-      final values = [
-        for (var i = 0; i < labels.length; i++)
-          '${labels[i]}: ${item.values[i]}',
-      ];
-      descriptions.add('${item.label}: ${values.join(', ')}');
-    }
-    final summary = [
-      if (data['label'] case final String label) label,
-      ...descriptions,
-    ].join('\n');
-
-    return AuraChart(
-      labels: labels,
-      series: series,
-      semanticLabel: summary,
-      type: switch (data['variant']) {
-        'bar' => .bar,
-        'pie' => .pie,
-        'donut' => .donut,
-        _ => .line,
-      },
-      stacked: data['stacked'] == true,
-      minY: (data['minY'] as num?)?.toDouble(),
-      maxY: (data['maxY'] as num?)?.toDouble(),
-      xAxisTitle: _DashboardValues.nullableString(data['xAxisTitle']),
-      yAxisTitle: _DashboardValues.nullableString(data['yAxisTitle']),
-      unit: _DashboardValues.nullableString(data['unit']),
-      palette: [
-        for (final tone in data['palette'] as List? ?? const <Object?>[])
-          if (tone is String) _DashboardValues.tone(tone),
-      ],
-    );
-  }
-
-  static Widget _animated(
+abstract final class _DashboardChartBuilder {
+  static Widget animated(
     CatalogItemContext context,
     Map<String, Object?> data,
   ) => AuraAnimatedContent(
@@ -376,6 +504,110 @@ abstract final class _DashboardBuilders {
       _ => .fade,
     },
   );
+
+  static Widget chart(CatalogItemContext _, Map<String, Object?> data) =>
+      _DashboardChart(_DashboardChartConfig(data));
+
+  static _DashboardChartData _chartData(Map<String, Object?> data) {
+    return (content: _chartContent(data), options: _chartOptions(data));
+  }
+
+  static _DashboardChartContent _chartContent(Map<String, Object?> data) {
+    final labels = (data['labels']! as List).cast<String>();
+    final series = _chartSeries(data);
+
+    return (
+      labels: labels,
+      series: series,
+      semanticLabel: _chartSummary(data, labels, series),
+    );
+  }
+
+  static _DashboardChartOptions _chartOptions(Map<String, Object?> data) => (
+    type: _chartType(data),
+    stacked: data['stacked'] == true,
+    minY: (data['minY'] as num?)?.toDouble(),
+    maxY: (data['maxY'] as num?)?.toDouble(),
+    axes: _chartAxes(data),
+    palette: _chartPalette(data),
+  );
+
+  static _DashboardChartAxes _chartAxes(Map<String, Object?> data) => (
+    x: _DashboardValues.nullableString(data['xAxisTitle']),
+    y: _DashboardValues.nullableString(data['yAxisTitle']),
+    unit: _DashboardValues.nullableString(data['unit']),
+  );
+
+  static List<AuraChartSeries> _chartSeries(Map<String, Object?> data) => [
+    for (final item in (data['series']! as List).cast<Map<Object?, Object?>>())
+      AuraChartSeries(
+        label: item['label']! as String,
+        values: _chartValues(item['values']),
+        tint: _DashboardValues.tone(item['tone']),
+      ),
+  ];
+
+  static String _chartSummary(
+    Map<String, Object?> data,
+    List<String> labels,
+    List<AuraChartSeries> series,
+  ) => [
+    if (data['label'] case final String label) label,
+    for (final item in series)
+      '${item.label}: ${[for (var i = 0; i < labels.length; i++) '${labels[i]}: ${item.values[i]}'].join(', ')}',
+  ].join('\n');
+
+  static AuraChartType _chartType(Map<String, Object?> data) =>
+      switch (data['variant']) {
+        'bar' => .bar,
+        'pie' => .pie,
+        'donut' => .donut,
+        _ => .line,
+      };
+
+  static List<AuraTint> _chartPalette(Map<String, Object?> data) => [
+    for (final tone in data['palette'] as List? ?? const <Object?>[])
+      if (tone is String) _DashboardValues.tone(tone),
+  ];
+}
+
+List<double> _chartValues(Object? values) => [
+  for (final value in values! as List) (value as num).toDouble(),
+];
+
+class _DashboardChart extends StatelessWidget {
+  const _DashboardChart(this.config);
+
+  final _DashboardChartConfig config;
+
+  @override
+  Widget build(BuildContext context) => config.build();
+}
+
+class _DashboardChartConfig {
+  const _DashboardChartConfig(this.data);
+
+  final Map<String, Object?> data;
+
+  AuraChart build() =>
+      _DashboardAuraChart(_DashboardChartBuilder._chartData(data));
+}
+
+class _DashboardAuraChart extends AuraChart {
+  _DashboardAuraChart(_DashboardChartData values)
+    : super(
+        labels: values.content.labels,
+        series: values.content.series,
+        semanticLabel: values.content.semanticLabel,
+        type: values.options.type,
+        stacked: values.options.stacked,
+        minY: values.options.minY,
+        maxY: values.options.maxY,
+        xAxisTitle: values.options.axes.x,
+        yAxisTitle: values.options.axes.y,
+        unit: values.options.axes.unit,
+        palette: values.options.palette,
+      );
 }
 
 abstract final class _DashboardValues {

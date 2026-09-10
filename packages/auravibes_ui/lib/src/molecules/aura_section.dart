@@ -24,17 +24,36 @@ class AuraSection extends StatelessWidget {
   final String? description;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    child: Column(
-      crossAxisAlignment: .start,
-      spacing: context.auraTheme.spacing.sm,
-      children: [
-        AuraText(child: Text(title), style: .heading5),
-        if (description case final value?)
-          AuraText(child: Text(value), style: .bodySmall),
-        child,
-      ],
-    ),
-    container: true,
+  Widget build(BuildContext context) => _AuraSectionContent(
+    title: title,
+    description: description,
+    child: child,
+    spacing: context.auraTheme.spacing,
   );
+}
+
+class _AuraSectionContent extends StatelessWidget {
+  _AuraSectionContent({
+    required String title,
+    required Widget child,
+    required AuraSpacingScale spacing,
+    String? description,
+  }) : _child = Semantics(
+         child: Column(
+           crossAxisAlignment: .start,
+           spacing: spacing.sm,
+           children: [
+             AuraText(child: Text(title), style: .heading5),
+             if (description case final value?)
+               AuraText(child: Text(value), style: .bodySmall),
+             child,
+           ],
+         ),
+         container: true,
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }

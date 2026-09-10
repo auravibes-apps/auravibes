@@ -13,6 +13,13 @@ part 'workspace_skills_provider.g.dart';
 
 final _logger = Logger('workspace_skills');
 
+typedef _AppendLocalAppSkillsRequest = ({
+  Ref ref,
+  AppSkillWorkspaceSettingsRepository settings,
+  String workspaceId,
+  List<WorkspaceSkill> result,
+});
+
 @riverpod
 Future<List<WorkspaceSkill>> workspaceSkills(
   Ref ref,
@@ -20,16 +27,23 @@ Future<List<WorkspaceSkill>> workspaceSkills(
 ) async {
   _logger.info('Load started: workspace=$workspaceId.');
   try {
-    final gateway = await _cloudGateway(ref, workspaceId);
-    if (gateway != null) {
-      return await _loadCloudSkills(ref, gateway, workspaceId);
-    }
-
-    return await _loadLocalSkills(ref, workspaceId);
+    return await _loadWorkspaceSkills(ref, workspaceId);
   } on Object catch (error, stackTrace) {
     _logger.severe('Load failed: workspace=$workspaceId.', error, stackTrace);
     rethrow;
   }
+}
+
+Future<List<WorkspaceSkill>> _loadWorkspaceSkills(
+  Ref ref,
+  String workspaceId,
+) async {
+  final gateway = await _cloudGateway(ref, workspaceId);
+  if (gateway != null) {
+    return await _loadCloudSkills(ref, gateway, workspaceId);
+  }
+
+  return await _loadLocalSkills(ref, workspaceId);
 }
 
 Future<CloudWorkspaceStateGateway?> _cloudGateway(
@@ -110,13 +124,26 @@ Future<List<WorkspaceSkill>> _loadLocalSkills(
   final result = await _loadUserSkills(ref, workspaceId);
   final settings = ref.watch(appSkillWorkspaceSettingsRepositoryProvider);
 
-  await _appendLocalAppSkills(ref, settings, workspaceId, result);
-  _sortSkills(result);
-  _logger.info(
-    'Local snapshot loaded: workspace=$workspaceId, skills=${result.length}.',
-  );
+  await _appendLocalAppSkills((
+    ref: ref,
+    settings: settings,
+    workspaceId: workspaceId,
+    result: result,
+  ));
+  _sortAndLogLocalSkills(workspaceId, result);
 
   return result;
+}
+
+void _sortAndLogLocalSkills(String workspaceId, List<WorkspaceSkill> skills) {
+  _sortSkills(skills);
+  _logLocalSkills(workspaceId, skills);
+}
+
+void _logLocalSkills(String workspaceId, List<WorkspaceSkill> skills) {
+  _logger.info(
+    'Local snapshot loaded: workspace=$workspaceId, skills=${skills.length}.',
+  );
 }
 
 Future<List<WorkspaceSkill>> _loadUserSkills(
@@ -141,18 +168,13 @@ WorkspaceSkill _userWorkspaceSkill(SkillEntity skill) {
   );
 }
 
-Future<void> _appendLocalAppSkills(
-  Ref ref,
-  AppSkillWorkspaceSettingsRepository settings,
-  String workspaceId,
-  List<WorkspaceSkill> result,
-) async {
-  for (final skill in ref.watch(appSkillRegistryProvider).getAll()) {
-    final isEnabled = await settings.isAppSkillEnabled(
-      workspaceId,
+Future<void> _appendLocalAppSkills(_AppendLocalAppSkillsRequest request) async {
+  for (final skill in request.ref.watch(appSkillRegistryProvider).getAll()) {
+    final isEnabled = await request.settings.isAppSkillEnabled(
+      request.workspaceId,
       skill.identifier,
     );
-    result.add(_appWorkspaceSkill(skill, isEnabled: isEnabled));
+    request.result.add(_appWorkspaceSkill(skill, isEnabled: isEnabled));
   }
 }
 

@@ -25,14 +25,7 @@ class EncryptionService(final SecretKeyManager _keyManager) {
       nonce: nonce,
     );
 
-    // Combine nonce + ciphertext + mac for storage.
-    final combined = Uint8List.fromList([
-      ...secretBox.nonce,
-      ...secretBox.cipherText,
-      ...secretBox.mac.bytes,
-    ]);
-
-    return base64Encode(combined);
+    return _encodeSecretBox(secretBox);
   }
 
   /// Decrypts a base64-encoded ciphertext.
@@ -55,10 +48,18 @@ class EncryptionService(final SecretKeyManager _keyManager) {
     return SecretBox(
       combined.sublist(_nonceLength, combined.length - _macLength),
       nonce: combined.sublist(0, _nonceLength),
-      mac: Mac(combined.sublist(combined.length - _macLength)),
+      mac: .new(combined.sublist(combined.length - _macLength)),
     );
   }
 }
+
+String _encodeSecretBox(SecretBox secretBox) => base64Encode(
+  Uint8List.fromList([
+    ...secretBox.nonce,
+    ...secretBox.cipherText,
+    ...secretBox.mac.bytes,
+  ]),
+);
 
 final Provider<EncryptionService> encryptionServiceProvider =
     Provider<EncryptionService>((ref) {

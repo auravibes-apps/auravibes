@@ -109,15 +109,17 @@ class AuraIconButton extends StatelessWidget {
 
     return AuraTooltip(message: tooltip, child: button);
   }
+}
 
+extension on AuraIconButton {
   double _getIconSize() {
     return switch (size) {
-      .extraSmall => _extraSmallIconSize,
-      .small => _smallIconSize,
-      .medium => _mediumIconSize,
-      .large => _largeIconSize,
-      .extraLarge => _extraLargeIconSize,
-      .huge => _hugeIconSize,
+      .extraSmall => AuraIconButton._extraSmallIconSize,
+      .small => AuraIconButton._smallIconSize,
+      .medium => AuraIconButton._mediumIconSize,
+      .large => AuraIconButton._largeIconSize,
+      .extraLarge => AuraIconButton._extraLargeIconSize,
+      .huge => AuraIconButton._hugeIconSize,
     };
   }
 
@@ -138,13 +140,7 @@ class AuraIconButton extends StatelessWidget {
   Color _getEnabledIconColor(AuraColorScheme colors) {
     final tint = this.tint;
 
-    return switch (variant) {
-      .ghost =>
-        tint == null ? colors.foregroundOnSurface : colors.colorFor(tint),
-      .filled => colors.onTint(tint ?? AuraTint.primary),
-      .outlined => colors.colorFor(tint ?? AuraTint.primary),
-      .elevated => colors.onTint(tint ?? AuraTint.primary),
-    };
+    return _iconColorForVariant(variant, colors, tint);
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
@@ -158,6 +154,16 @@ class AuraIconButton extends StatelessWidget {
     };
   }
 }
+
+Color _iconColorForVariant(
+  AuraIconButtonVariant variant,
+  AuraColorScheme colors,
+  AuraTint? tint,
+) => switch (variant) {
+  .ghost => tint == null ? colors.foregroundOnSurface : colors.colorFor(tint),
+  .filled || .elevated => colors.onTint(tint ?? AuraTint.primary),
+  .outlined => colors.colorFor(tint ?? AuraTint.primary),
+};
 
 class const _AuraIconButtonContent({required final AuraIconButton button})
     extends StatelessWidget {
@@ -193,56 +199,69 @@ class const _AuraIconButtonControl({
   Widget build(BuildContext context) => SizedBox(
     width: _buttonSize,
     height: _buttonSize,
-    child: _AuraIconButtonButton(
-      button: button,
-      colors: colors,
-      buttonSize: _buttonSize,
-    ),
+    child: _AuraIconButtonButton(button: button, colors: colors),
   );
 }
 
 class const _AuraIconButtonButton({
   required final AuraIconButton button,
   required final AuraColorScheme colors,
-  required final double buttonSize,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final values = _iconButtonValues(button, colors);
+  Widget build(BuildContext context) => _AuraIconButtonButtonData(
+    button: button,
+    colors: colors,
+    theme: context.auraTheme,
+  ).toWidget();
+}
 
-    return IconButton(
-      iconSize: values.iconSize,
-      padding: EdgeInsets.zero,
-      alignment: Alignment.center,
-      onPressed: _iconButtonOnPressed(button),
-      style: _style(context, values),
-      icon: _AuraIconButtonIconContent(
-        button: button,
-        size: values.iconSize,
-        color: values.foregroundColor,
-      ),
-    );
-  }
+class _AuraIconButtonButtonData {
+  new({
+    required AuraIconButton button,
+    required AuraColorScheme colors,
+    required AuraTheme theme,
+  }) : this.fromValues(
+         button: button,
+         colors: colors,
+         theme: theme,
+         values: _iconButtonValues(button, colors),
+       );
 
-  ButtonStyle _style(BuildContext context, _AuraIconButtonValues values) =>
-      IconButton.styleFrom(
-        alignment: Alignment.center,
-        padding: EdgeInsets.zero,
-        foregroundColor: values.foregroundColor,
-        backgroundColor: values.backgroundColor,
-        elevation: button.variant == AuraIconButtonVariant.elevated ? 2 : 0,
-        shape: _shape(context, values.borderRadius),
-      );
+  new fromValues({
+    required AuraIconButton button,
+    required AuraColorScheme colors,
+    required AuraTheme theme,
+    required _AuraIconButtonValues values,
+  }) : _widget = IconButton(
+         iconSize: values.iconSize,
+         padding: EdgeInsets.zero,
+         alignment: Alignment.center,
+         onPressed: _iconButtonOnPressed(button),
+         style: IconButton.styleFrom(
+           alignment: Alignment.center,
+           padding: EdgeInsets.zero,
+           foregroundColor: values.foregroundColor,
+           backgroundColor: values.backgroundColor,
+           elevation: button.variant == AuraIconButtonVariant.elevated ? 2 : 0,
+           shape: RoundedRectangleBorder(
+             side: button.variant == AuraIconButtonVariant.outlined
+                 ? BorderSide(color: colors.outline)
+                 : BorderSide.none,
+             borderRadius: BorderRadius.circular(
+               theme.fromBorderRadius(values.borderRadius),
+             ),
+           ),
+         ),
+         icon: _AuraIconButtonIconContent(
+           button: button,
+           size: values.iconSize,
+           color: values.foregroundColor,
+         ),
+       );
 
-  OutlinedBorder _shape(BuildContext context, AuraBorderRadius borderRadius) =>
-      RoundedRectangleBorder(
-        side: button.variant == AuraIconButtonVariant.outlined
-            ? BorderSide(color: colors.outline)
-            : BorderSide.none,
-        borderRadius: BorderRadius.circular(
-          context.auraTheme.fromBorderRadius(borderRadius),
-        ),
-      );
+  final Widget _widget;
+
+  Widget toWidget() => _widget;
 }
 
 _AuraIconButtonValues _iconButtonValues(

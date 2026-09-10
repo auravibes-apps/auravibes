@@ -263,24 +263,41 @@ class _ChatCatalogImageSizing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final circular = image.variant != ChatCatalogImageVariant.normal;
-    final width = _dimension(image.width, _defaultImageWidth(image.variant));
-    final height = _dimension(
-      image.height,
-      circular ? width : _defaultImageHeight,
-    );
-
     return LayoutBuilder(
-      builder: (_, constraints) => _ChatCatalogImageConstrained(
-        image: image,
-        future: future,
-        circular: circular,
-        width: math.min(width, constraints.maxWidth),
-        height: math.min(height, constraints.maxHeight),
-        constraints: constraints,
-      ),
+      builder: (_, constraints) =>
+          _constrainedImage(image, future, constraints),
     );
   }
+
+  static Widget _constrainedImage(
+    ChatCatalogImage image,
+    Future<Uint8List>? future,
+    BoxConstraints constraints,
+  ) {
+    final dimensions = _imageDimensions(image);
+
+    return _ChatCatalogImageConstrained(
+      image: image,
+      future: future,
+      circular: dimensions.circular,
+      width: math.min(dimensions.width, constraints.maxWidth),
+      height: math.min(dimensions.height, constraints.maxHeight),
+      constraints: constraints,
+    );
+  }
+}
+
+typedef _ImageDimensions = ({bool circular, double width, double height});
+
+_ImageDimensions _imageDimensions(ChatCatalogImage image) {
+  final circular = image.variant != ChatCatalogImageVariant.normal;
+  final width = _dimension(image.width, _defaultImageWidth(image.variant));
+
+  return (
+    circular: circular,
+    width: width,
+    height: _dimension(image.height, circular ? width : _defaultImageHeight),
+  );
 }
 
 class _ChatCatalogImageConstrained extends StatelessWidget {
@@ -354,7 +371,7 @@ class _ChatCatalogImageShape extends StatelessWidget {
 class _ChatCatalogImageFuture extends StatelessWidget {
   const new({required this.source});
 
-  final _ChatCatalogImageSizing source;
+  final _ChatCatalogImageConstrained source;
 
   @override
   Widget build(BuildContext context) => FutureBuilder<Uint8List>(

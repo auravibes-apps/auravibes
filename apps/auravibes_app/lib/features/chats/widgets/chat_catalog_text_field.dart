@@ -78,28 +78,82 @@ class _ChatCatalogTextFieldState extends State<ChatCatalogTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final label = widget.label;
-    final placeholder = widget.placeholder;
-    final helperText = widget.helperText;
-    final errorText = widget.errorText;
+    final values = _fieldValues(widget);
 
-    return AuraInput(
+    return _ChatCatalogTextFieldInput(
       controller: _controller,
-      placeholder: placeholder.isEmpty ? null : Text(placeholder),
-      label: label == null ? null : AuraText(child: Text(label)),
-      hint: helperText.isEmpty ? null : Text(helperText),
-      error: errorText == null ? null : Text(errorText),
       isRequired: widget.required,
-      keyboardType: switch (widget.variant) {
-        'number' => TextInputType.number,
-        'email' => TextInputType.emailAddress,
-        _ => null,
-      },
-      obscureText: widget.variant == 'password',
-      maxLines: widget.variant == 'multiline' ? 4 : 1,
       maxLength: widget.maxLength,
       onChanged: widget.onChanged,
-      semanticLabel: label,
+      semanticLabel: widget.label,
+      values: values,
     );
   }
 }
+
+class const _ChatCatalogTextFieldInput({
+  required final TextEditingController controller,
+  required final bool isRequired,
+  required final int? maxLength,
+  required final ValueChanged<String> onChanged,
+  required final String? semanticLabel,
+  required final ({
+    bool obscureText,
+    TextInputType? keyboardType,
+    Widget? label,
+    Widget? hint,
+    Widget? error,
+    int maxLines,
+    Widget? placeholder,
+  })
+  values,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: controller,
+    placeholder: values.placeholder,
+    label: values.label,
+    hint: values.hint,
+    error: values.error,
+    isRequired: isRequired,
+    keyboardType: values.keyboardType,
+    obscureText: values.obscureText,
+    maxLines: values.maxLines,
+    maxLength: maxLength,
+    onChanged: onChanged,
+    semanticLabel: semanticLabel,
+  );
+}
+
+({
+  bool obscureText,
+  TextInputType? keyboardType,
+  Widget? label,
+  Widget? hint,
+  Widget? error,
+  int maxLines,
+  Widget? placeholder,
+})
+_fieldValues(ChatCatalogTextField widget) => (
+  placeholder: _optionalFieldText(widget.placeholder),
+  label: _fieldLabel(widget.label),
+  hint: _optionalFieldText(widget.helperText),
+  error: _fieldError(widget.errorText),
+  keyboardType: _fieldKeyboardType(widget.variant),
+  obscureText: widget.variant == 'password',
+  maxLines: widget.variant == 'multiline' ? 4 : 1,
+);
+
+Widget? _optionalFieldText(String? value) =>
+    value == null || value.isEmpty ? null : Text(value);
+
+Widget? _fieldLabel(String? value) =>
+    value == null ? null : AuraText(child: Text(value));
+
+Widget? _fieldError(String? value) => value == null ? null : Text(value);
+
+TextInputType? _fieldKeyboardType(String? variant) => switch (variant) {
+  'number' => TextInputType.number,
+  'email' => TextInputType.emailAddress,
+  _ => null,
+};

@@ -91,22 +91,18 @@ class const _AddModelProviderContentView({
   final VoidCallback? onCancel,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    if (!runtime.selection.hasModel) {
-      return _SelectModelProvider(workspaceId: workspaceId);
-    }
-
-    return _AddModelProviderSessionContent(
-      session: session,
-      context: context,
-      ref: ref,
-      runtime: runtime,
-      workspaceId: workspaceId,
-      showHeader: showHeader,
-      onCreated: onCreated,
-      onCancel: onCancel,
-    );
-  }
+  Widget build(BuildContext _) => runtime.selection.hasModel
+      ? _AddModelProviderSessionContent(
+          session: session,
+          context: context,
+          ref: ref,
+          runtime: runtime,
+          workspaceId: workspaceId,
+          showHeader: showHeader,
+          onCreated: onCreated,
+          onCancel: onCancel,
+        )
+      : _SelectModelProvider(workspaceId: workspaceId);
 }
 
 class const _AddModelProviderSessionContent({
@@ -123,18 +119,20 @@ class const _AddModelProviderSessionContent({
   Widget build(BuildContext _) => switch (session) {
     AsyncLoading() || AsyncError() => const Center(child: AuraSpinner()),
     AsyncData(:final value) => _AddModelProviderForm(
-      data: _addModelProviderFormData((
-        context: context,
-        ref: ref,
-        runtime: runtime,
-        capabilities: value.capabilities,
-        workspaceId: workspaceId,
-        showHeader: showHeader,
-        onCreated: onCreated,
-        onCancel: onCancel,
-      )),
+      data: _addModelProviderFormData(_request(value)),
     ),
   };
+
+  _AddModelProviderFormRequest _request(WorkspaceSession value) => (
+    context: context,
+    ref: ref,
+    runtime: runtime,
+    capabilities: value.capabilities,
+    workspaceId: workspaceId,
+    showHeader: showHeader,
+    onCreated: onCreated,
+    onCancel: onCancel,
+  );
 }
 
 typedef _AddModelProviderFormRequest = ({
@@ -211,12 +209,15 @@ _AddModelProviderFormCallbacks _addModelProviderFormCallbacks(
   _AddModelProviderFormRequest request,
   _CodexOAuthState state,
 ) => _AddModelProviderFormCallbacks(
-  onClose: request.onCancel ?? () => Navigator.of(request.context).pop(),
+  onClose: request.onCancel ?? _closeModelProviderForm(request.context),
   onSubmit: _addModelProviderSubmitCallback(request),
   onCancelCodexOAuth: () => _cancelCodexOAuth(state),
   onCodexBrowserSubmit: _addModelProviderBrowserCallback(request, state),
   onCodexDeviceSubmit: _addModelProviderDeviceCallback(request, state),
 );
+
+VoidCallback _closeModelProviderForm(BuildContext context) =>
+    () => Navigator.of(context).pop();
 
 VoidCallback _addModelProviderSubmitCallback(
   _AddModelProviderFormRequest request,
@@ -554,21 +555,19 @@ Future<ModelConnectionEntity?> _addModelProviderFromTransaction(
 class const _AddModelProviderForm({
   required final _AddModelProviderFormData data,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final values = data.values;
-    final request = values.request;
-    final callbacks = data.callbacks;
+  _AddModelProviderFormValues get _values => data.values;
+  _AddModelProviderFormRequest get _request => _values.request;
+  _AddModelProviderFormCallbacks get _callbacks => data.callbacks;
 
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        if (request.showHeader) _ModalHeader(onClose: callbacks.onClose),
-        _SelectedModelHeader(workspaceId: request.workspaceId),
-        Flexible(child: _AddModelProviderFormScroll(data: data)),
-      ],
-    );
-  }
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      if (_request.showHeader) _ModalHeader(onClose: _callbacks.onClose),
+      _SelectedModelHeader(workspaceId: _request.workspaceId),
+      Flexible(child: _AddModelProviderFormScroll(data: data)),
+    ],
+  );
 }
 
 class const _AddModelProviderFormScroll({
@@ -637,22 +636,26 @@ class const _ModelProviderCredentialFieldsView({
   required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    final request = values.request;
-    final selection = request.runtime.selection;
+  Widget build(BuildContext _) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      _ModelProviderNameField(workspaceId: values.request.workspaceId),
+      _ModelProviderSecretFieldsVisibility(values: values, onSubmit: onSubmit),
+    ],
+  );
+}
 
-    return Column(
-      crossAxisAlignment: .start,
-      children: [
-        _ModelProviderNameField(workspaceId: request.workspaceId),
-        if (!selection.isOAuth)
-          _ModelProviderSecretFields(
-            workspaceId: request.workspaceId,
-            onSubmit: onSubmit,
-          ),
-      ],
-    );
-  }
+class const _ModelProviderSecretFieldsVisibility({
+  required final _AddModelProviderFormValues values,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => values.request.runtime.selection.isOAuth
+      ? const SizedBox.shrink()
+      : _ModelProviderSecretFields(
+          workspaceId: values.request.workspaceId,
+          onSubmit: onSubmit,
+        );
 }
 
 class const _ModelProviderNameField({required final String workspaceId})
@@ -713,17 +716,30 @@ class const _CodexDeviceCodeSection({
     final deviceCode = values.state.deviceCode.value;
     if (deviceCode == null) return const SizedBox.shrink();
 
-    return Column(
-      children: [
-        _CodexDeviceCodePanel(
-          deviceCode: deviceCode,
-          isPending: values.request.runtime.controls.isSubmitting,
-          onCancel: callbacks.onCancelCodexOAuth,
-        ),
-        const AuraSizedBox(height: .xl),
-      ],
+    return _CodexDeviceCodeContent(
+      deviceCode: deviceCode,
+      isPending: values.request.runtime.controls.isSubmitting,
+      onCancel: callbacks.onCancelCodexOAuth,
     );
   }
+}
+
+class const _CodexDeviceCodeContent({
+  required final CodexDeviceCode deviceCode,
+  required final bool isPending,
+  required final VoidCallback onCancel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      _CodexDeviceCodePanel(
+        deviceCode: deviceCode,
+        isPending: isPending,
+        onCancel: onCancel,
+      ),
+      const AuraSizedBox(height: .xl),
+    ],
+  );
 }
 
 class const _CodexOAuthActions({
@@ -745,34 +761,34 @@ class const _CodexCreateAction({
   required final _AddModelProviderFormValues values,
   required final _AddModelProviderFormCallbacks callbacks,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext _) {
-    final selection = values.request.runtime.selection;
-    final controls = values.request.runtime.controls;
-    final deviceCode = values.state.deviceCode.value;
-    if (selection.isCodex && controls.isSubmitting && deviceCode != null) {
-      return const SizedBox.shrink();
-    }
-
-    return _CreateButton(values: values, callbacks: callbacks);
+  bool get _hidden {
+    final request = values.request;
+    return request.runtime.selection.isCodex &&
+        request.runtime.controls.isSubmitting &&
+        values.state.deviceCode.value != null;
   }
+
+  @override
+  Widget build(BuildContext _) => _hidden
+      ? const SizedBox.shrink()
+      : _CreateButton(values: values, callbacks: callbacks);
 }
 
 class const _CodexPendingAction({
   required final _AddModelProviderFormValues values,
   required final _AddModelProviderFormCallbacks callbacks,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext _) {
-    final selection = values.request.runtime.selection;
-    final controls = values.request.runtime.controls;
-    final deviceCode = values.state.deviceCode.value;
-    if (!selection.isCodex || !controls.isSubmitting || deviceCode != null) {
-      return const SizedBox.shrink();
-    }
-
-    return _CodexOAuthPendingActions(onCancel: callbacks.onCancelCodexOAuth);
+  bool get _visible {
+    final request = values.request;
+    return request.runtime.selection.isCodex &&
+        request.runtime.controls.isSubmitting &&
+        values.state.deviceCode.value == null;
   }
+
+  @override
+  Widget build(BuildContext _) => _visible
+      ? _CodexOAuthPendingActions(onCancel: callbacks.onCancelCodexOAuth)
+      : const SizedBox.shrink();
 }
 
 class const _CodexOAuthPendingActions({required final VoidCallback onCancel})
@@ -1092,33 +1108,22 @@ class const _CreateButtonActions({
   required final bool isSubmitting,
   required final bool disabled,
 }) extends StatelessWidget {
+  ({bool isSubmitting, bool disabled}) get _state =>
+      (isSubmitting: isSubmitting, disabled: disabled);
+
   @override
-  Widget build(BuildContext _) {
-    return Column(
-      children: [
-        _CodexBrowserAction(
-          values: values,
-          isSubmitting: isSubmitting,
-          disabled: disabled,
-          onPressed: callbacks.onCodexBrowserSubmit,
-        ),
-        _CodexDeviceAction(
-          values: values,
-          isSubmitting: isSubmitting,
-          disabled: disabled,
-          onSubmit: callbacks.onSubmit,
-          onCodexDeviceSubmit: callbacks.onCodexDeviceSubmit,
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext _) => Column(
+    children: [
+      _CodexBrowserAction(values: values, state: _state, callbacks: callbacks),
+      _CodexDeviceAction(values: values, state: _state, callbacks: callbacks),
+    ],
+  );
 }
 
 class const _CodexBrowserAction({
   required final _AddModelProviderFormValues values,
-  required final bool isSubmitting,
-  required final bool disabled,
-  required final VoidCallback onPressed,
+  required final ({bool isSubmitting, bool disabled}) state,
+  required final _AddModelProviderFormCallbacks callbacks,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -1127,10 +1132,10 @@ class const _CodexBrowserAction({
     }
 
     return _CodexBrowserCreateButton(
-      isSubmitting: isSubmitting,
-      disabled: disabled,
+      isSubmitting: state.isSubmitting,
+      disabled: state.disabled,
       activeOAuthMethod: values.state.activeOAuthMethod.value,
-      onPressed: onPressed,
+      onPressed: callbacks.onCodexBrowserSubmit,
     );
   }
 }
@@ -1147,27 +1152,23 @@ bool _supportsCodexBrowser(_AddModelProviderFormValues values) {
 
 class const _CodexDeviceAction({
   required final _AddModelProviderFormValues values,
-  required final bool isSubmitting,
-  required final bool disabled,
-  required final VoidCallback onSubmit,
-  required final VoidCallback onCodexDeviceSubmit,
+  required final ({bool isSubmitting, bool disabled}) state,
+  required final _AddModelProviderFormCallbacks callbacks,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    final selection = values.request.runtime.selection;
-    if (selection.isCodex && !values.request.capabilities.modelDeviceOAuth) {
-      return const SizedBox.shrink();
-    }
+  Widget build(BuildContext _) => _supportsCodexDevice(values)
+      ? _CodexDeviceCreateButton.from(
+          values: values,
+          state: state,
+          callbacks: callbacks,
+        )
+      : const SizedBox.shrink();
+}
 
-    return _CodexDeviceCreateButton(
-      isSubmitting: isSubmitting,
-      disabled: disabled,
-      isCodex: selection.isCodex,
-      activeOAuthMethod: values.state.activeOAuthMethod.value,
-      onSubmit: onSubmit,
-      onCodexDeviceSubmit: onCodexDeviceSubmit,
-    );
-  }
+bool _supportsCodexDevice(_AddModelProviderFormValues values) {
+  final request = values.request;
+  return !request.runtime.selection.isCodex ||
+      request.capabilities.modelDeviceOAuth;
 }
 
 class const _CodexBrowserCreateButton({
@@ -1219,22 +1220,34 @@ class const _CodexDeviceCreateButton({
   required final VoidCallback onSubmit,
   required final VoidCallback onCodexDeviceSubmit,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext _) {
-    final onPressed = isCodex ? onCodexDeviceSubmit : onSubmit;
-    final label = isCodex
-        ? LocaleKeys.models_screens_add_provider_use_device_code
-        : LocaleKeys.models_screens_add_provider_create_button;
+  _CodexDeviceCreateButton.from({
+    required _AddModelProviderFormValues values,
+    required ({bool isSubmitting, bool disabled}) state,
+    required _AddModelProviderFormCallbacks callbacks,
+  }) : this(
+         isSubmitting: state.isSubmitting,
+         disabled: state.disabled,
+         isCodex: values.request.runtime.selection.isCodex,
+         activeOAuthMethod: values.state.activeOAuthMethod.value,
+         onSubmit: callbacks.onSubmit,
+         onCodexDeviceSubmit: callbacks.onCodexDeviceSubmit,
+       );
 
-    return _CodexDeviceButton(
-      onPressed: onPressed,
-      disabled: disabled,
-      label: label,
-      isLoading:
-          isSubmitting &&
-          (!isCodex || activeOAuthMethod == CodexOAuthMethod.deviceCode),
-    );
-  }
+  VoidCallback get _onPressed => isCodex ? onCodexDeviceSubmit : onSubmit;
+  String get _label => isCodex
+      ? LocaleKeys.models_screens_add_provider_use_device_code
+      : LocaleKeys.models_screens_add_provider_create_button;
+  bool get _isLoading =>
+      isSubmitting &&
+      (!isCodex || activeOAuthMethod == CodexOAuthMethod.deviceCode);
+
+  @override
+  Widget build(BuildContext _) => _CodexDeviceButton(
+    onPressed: _onPressed,
+    disabled: disabled,
+    label: _label,
+    isLoading: _isLoading,
+  );
 }
 
 class const _CodexDeviceButton({
@@ -1290,7 +1303,9 @@ class const _CodexDeviceCodePanel({
       onCancel: onCancel,
     );
   }
+}
 
+extension on _CodexDeviceCodePanel {
   TextStyle? _codexDeviceLinkStyle(BuildContext context) =>
       Theme.of(context).textTheme.bodyMedium?.copyWith(
         color: context.auraColors.primary,
@@ -1428,27 +1443,55 @@ class const _CodexDeviceCodePanelDetails({
   required final VoidCallback onOpen,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    return Column(
-      crossAxisAlignment: .start,
-      children: [
-        const AuraText(
-          child: TextLocale(
-            LocaleKeys.models_screens_add_provider_device_code_instruction,
-          ),
-          style: .bodyLarge,
+  Widget build(BuildContext _) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      const _CodexDeviceCodeInstructionSection(),
+      _CodexDeviceCodeRows(
+        userCode: userCode,
+        verificationUrl: verificationUrl,
+        linkStyle: linkStyle,
+        onCopyCode: onCopyCode,
+        onOpen: onOpen,
+      ),
+    ],
+  );
+}
+
+class const _CodexDeviceCodeInstructionSection() extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => const Column(
+    children: [
+      AuraText(
+        child: TextLocale(
+          LocaleKeys.models_screens_add_provider_device_code_instruction,
         ),
-        const AuraSizedBox(height: .sm),
-        _CodexDeviceCodeRow(userCode: userCode, onCopy: onCopyCode),
-        const AuraSizedBox(height: .md),
-        _CodexDeviceLinkRow(
-          verificationUrl: verificationUrl,
-          linkStyle: linkStyle,
-          onOpen: onOpen,
-        ),
-      ],
-    );
-  }
+        style: .bodyLarge,
+      ),
+      AuraSizedBox(height: .sm),
+    ],
+  );
+}
+
+class const _CodexDeviceCodeRows({
+  required final String userCode,
+  required final String verificationUrl,
+  required final TextStyle? linkStyle,
+  required final VoidCallback onCopyCode,
+  required final VoidCallback onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      _CodexDeviceCodeRow(userCode: userCode, onCopy: onCopyCode),
+      const AuraSizedBox(height: .md),
+      _CodexDeviceLinkRow(
+        verificationUrl: verificationUrl,
+        linkStyle: linkStyle,
+        onOpen: onOpen,
+      ),
+    ],
+  );
 }
 
 class const _CodexDeviceCodePanelActions({
@@ -1482,26 +1525,36 @@ class const _CodexDeviceCodeRow({
   required final VoidCallback onCopy,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        const AuraText(
-          child: TextLocale(
-            LocaleKeys.models_screens_add_provider_device_code_step_code,
-          ),
-        ),
-        const AuraSizedBox(height: .sm),
-        _CodexDeviceCodeValue(
-          userCode: userCode,
-          onCopy: onCopy,
-          tooltip: LocaleKeys
-              .models_screens_add_provider_device_code_copy_tooltip
-              .tr(context: context),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => _CodexDeviceCodeRowContent(
+    userCode: userCode,
+    onCopy: onCopy,
+    tooltip: _tooltip(context),
+  );
+
+  String _tooltip(BuildContext context) => LocaleKeys
+      .models_screens_add_provider_device_code_copy_tooltip
+      .tr(context: context);
+}
+
+class _CodexDeviceCodeRowContent extends Column {
+  _CodexDeviceCodeRowContent({
+    required String userCode,
+    required VoidCallback onCopy,
+    required String tooltip,
+  }) : super(
+         crossAxisAlignment: .stretch,
+         children: [
+           const _CodexDeviceStepLabel(
+             LocaleKeys.models_screens_add_provider_device_code_step_code,
+           ),
+           const AuraSizedBox(height: .sm),
+           _CodexDeviceCodeValue(
+             userCode: userCode,
+             onCopy: onCopy,
+             tooltip: tooltip,
+           ),
+         ],
+       );
 }
 
 class const _CodexDeviceCodeValue({
@@ -1532,27 +1585,46 @@ class const _CodexDeviceLinkRow({
   required final VoidCallback onOpen,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        const AuraText(
-          child: TextLocale(
-            LocaleKeys.models_screens_add_provider_device_code_step_link,
-          ),
-        ),
-        const AuraSizedBox(height: .sm),
-        _CodexDeviceLinkValue(
-          verificationUrl: verificationUrl,
-          linkStyle: linkStyle,
-          onOpen: onOpen,
-          tooltip: LocaleKeys
-              .models_screens_add_provider_device_code_open_link_tooltip
-              .tr(context: context),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => _CodexDeviceLinkRowContent(
+    verificationUrl: verificationUrl,
+    linkStyle: linkStyle,
+    onOpen: onOpen,
+    tooltip: _tooltip(context),
+  );
+
+  String _tooltip(BuildContext context) => LocaleKeys
+      .models_screens_add_provider_device_code_open_link_tooltip
+      .tr(context: context);
+}
+
+class _CodexDeviceLinkRowContent extends Column {
+  _CodexDeviceLinkRowContent({
+    required String verificationUrl,
+    required TextStyle? linkStyle,
+    required VoidCallback onOpen,
+    required String tooltip,
+  }) : super(
+         crossAxisAlignment: .stretch,
+         children: [
+           const _CodexDeviceStepLabel(
+             LocaleKeys.models_screens_add_provider_device_code_step_link,
+           ),
+           const AuraSizedBox(height: .sm),
+           _CodexDeviceLinkValue(
+             verificationUrl: verificationUrl,
+             linkStyle: linkStyle,
+             onOpen: onOpen,
+             tooltip: tooltip,
+           ),
+         ],
+       );
+}
+
+class const _CodexDeviceStepLabel(this.localeKey) extends StatelessWidget {
+  final String localeKey;
+
+  @override
+  Widget build(BuildContext _) => AuraText(child: TextLocale(localeKey));
 }
 
 class const _CodexDeviceLinkValue({
@@ -1562,25 +1634,19 @@ class const _CodexDeviceLinkValue({
   required final String tooltip,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    return Row(
-      children: [
-        Expanded(
-          child: SelectableText(
-            verificationUrl,
-            style: linkStyle,
-            onTap: onOpen,
-          ),
-        ),
-        AuraIconButton(
-          icon: Icons.open_in_new,
-          onPressed: onOpen,
-          tint: .primary,
-          tooltip: tooltip,
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext _) => Row(
+    children: [
+      Expanded(
+        child: SelectableText(verificationUrl, style: linkStyle, onTap: onOpen),
+      ),
+      AuraIconButton(
+        icon: Icons.open_in_new,
+        onPressed: onOpen,
+        tint: .primary,
+        tooltip: tooltip,
+      ),
+    ],
+  );
 }
 
 class const _CodexDevicePendingSection() extends StatelessWidget {
@@ -1644,20 +1710,30 @@ class const _SelectModelProvider({required final String workspaceId})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = _useModelProviderSelection(ref, workspaceId);
-
-    if (state.models == null) {
-      return _ReloadModelProvidersButton(
-        onPressed: () => _reloadModelProviders(ref, workspaceId),
-      );
-    }
-
-    return _SelectModelProviderView(
-      searchQuery: state.searchQuery,
-      filteredModels: state.filteredModels,
-      onSearchChanged: state.onSearchChanged,
-      onModelSelected: state.onModelSelected,
+    return _ModelProviderSelectionContent(
+      workspaceId: workspaceId,
+      ref: ref,
+      state: state,
     );
   }
+}
+
+class const _ModelProviderSelectionContent({
+  required final String workspaceId,
+  required final WidgetRef ref,
+  required final _ModelProviderSelectionState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => state.models == null
+      ? _ReloadModelProvidersButton(
+          onPressed: () => _reloadModelProviders(ref, workspaceId),
+        )
+      : _SelectModelProviderView(
+          searchQuery: state.searchQuery,
+          filteredModels: state.filteredModels,
+          onSearchChanged: state.onSearchChanged,
+          onModelSelected: state.onModelSelected,
+        );
 }
 
 class const _ModelProviderSelectionState({
@@ -1772,23 +1848,26 @@ class const _ModelProviderSearchControls({
   required final ValueChanged<String> onSearchChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const AuraText(
-          child: TextLocale(
-            LocaleKeys.chats_screens_chat_conversation_select_model_selctor,
-          ),
-        ),
-        const AuraSizedBox(height: .md),
-        _ModelProviderSearchInput(
-          searchQuery: searchQuery,
-          onSearchChanged: onSearchChanged,
-        ),
-        const AuraSizedBox(height: .md),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    children: [
+      const _ModelProviderSearchLabel(),
+      const AuraSizedBox(height: .md),
+      _ModelProviderSearchInput(
+        searchQuery: searchQuery,
+        onSearchChanged: onSearchChanged,
+      ),
+      const AuraSizedBox(height: .md),
+    ],
+  );
+}
+
+class const _ModelProviderSearchLabel() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_select_model_selctor,
+    ),
+  );
 }
 
 class const _ModelProviderSearchInput({
@@ -1882,21 +1961,26 @@ class const _ModelProviderListItemContent({
   required final bool isOAuthProvider,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    return Row(
-      mainAxisAlignment: .spaceBetween,
-      children: [
-        ModelLogo(modelId: model.id),
-        AuraText(child: Text(model.name)),
-        if (isOAuthProvider)
-          const AuraText(
-            child: TextLocale(LocaleKeys.mcp_modal_auth_oauth),
-            style: .bodySmall,
-            tint: .primary,
-          ),
-      ],
-    );
-  }
+  Widget build(BuildContext _) => Row(
+    mainAxisAlignment: .spaceBetween,
+    children: [
+      ModelLogo(modelId: model.id),
+      AuraText(child: Text(model.name)),
+      _ModelProviderOAuthBadge(visible: isOAuthProvider),
+    ],
+  );
+}
+
+class const _ModelProviderOAuthBadge({required final bool visible})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => visible
+      ? const AuraText(
+          child: TextLocale(LocaleKeys.mcp_modal_auth_oauth),
+          style: .bodySmall,
+          tint: .primary,
+        )
+      : const SizedBox.shrink();
 }
 
 /// Header showing the selected model with a back button.
@@ -1904,19 +1988,27 @@ class const _SelectedModelHeader({required final String workspaceId})
     extends HookConsumerWidget {
   @override
   Widget build(BuildContext _, WidgetRef ref) {
-    final state = _watchSelectedModelHeader(ref, workspaceId);
-    final details = _selectedModelHeaderDetails(state);
-    if (details == null) return const SizedBox.shrink();
-    final notifier = ref.watch(
-      addModelProviderStateProvider(workspaceId).notifier,
-    );
-
-    return _SelectedModelHeaderView(
-      modelId: details.modelId,
-      modelName: details.modelName,
-      onBack: () => notifier.setModel(null),
+    return _SelectedModelHeaderContent(
+      details: _selectedModelHeaderDetails(
+        _watchSelectedModelHeader(ref, workspaceId),
+      ),
+      notifier: ref.watch(addModelProviderStateProvider(workspaceId).notifier),
     );
   }
+}
+
+class const _SelectedModelHeaderContent({
+  required final _SelectedModelHeaderDetails? details,
+  required final AddModelProviderState notifier,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => details == null
+      ? const SizedBox.shrink()
+      : _SelectedModelHeaderView(
+          modelId: details!.modelId,
+          modelName: details!.modelName,
+          onBack: () => notifier.setModel(null),
+        );
 }
 
 typedef _SelectedModelHeaderState = ({
@@ -1939,18 +2031,25 @@ typedef _SelectedModelHeaderDetails = ({String modelId, String modelName});
 _SelectedModelHeaderDetails? _selectedModelHeaderDetails(
   _SelectedModelHeaderState state,
 ) {
-  final selectedModelId = state.selectedModelId;
-  final models = state.models;
-  if (selectedModelId == null || models == null) return null;
-
-  final selectedModel = _findModelProvider(models, selectedModelId);
-  final modelName = _selectedModelName(selectedModel, selectedModelId);
+  final input = _selectedModelHeaderInput(state);
+  if (input == null) return null;
+  final selectedModel = _findModelProvider(input.models, input.modelId);
+  final modelName = _selectedModelName(selectedModel, input.modelId);
   if (modelName == null) return null;
 
   return (
     modelId: selectedModel?.id ?? ModelProviderOAuthProfiles.providerId,
     modelName: modelName,
   );
+}
+
+({String modelId, List<ApiModelProviderEntity> models})?
+_selectedModelHeaderInput(_SelectedModelHeaderState state) {
+  final modelId = state.selectedModelId;
+  final models = state.models;
+  return modelId == null || models == null
+      ? null
+      : (modelId: modelId, models: models);
 }
 
 ApiModelProviderEntity? _findModelProvider(

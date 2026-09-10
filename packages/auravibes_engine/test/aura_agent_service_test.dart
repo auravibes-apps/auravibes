@@ -160,13 +160,9 @@ class _FakeToolProvider
     required String toolName,
   }) async => 'tool';
 
-  Future<AgentToolApprovalDecision> resolveToolApprovalDecision({
-    required String conversationId,
-    required String workspaceId,
-    required String toolCallId,
-    required String resolvedTool,
-    required String argumentsRaw,
-  }) async {
+  Future<AgentToolApprovalDecision> resolveToolApprovalDecision(
+    AgentToolApprovalRequest<String> request,
+  ) async {
     return const AgentToolApprovalDecision(permissionResult: .granted);
   }
 
@@ -283,13 +279,7 @@ class _FakeToolProvider
   }
 
   @override
-  void logToolExecutionError({
-    required String conversationId,
-    required String toolCallId,
-    required String tool,
-    required Object error,
-    required StackTrace stackTrace,
-  }) {}
+  void logToolExecutionError(AgentToolExecutionErrorRequest<String> request) {}
 }
 
 class const _EmptySendQueueRuntime() implements AgentSendQueueRuntime {

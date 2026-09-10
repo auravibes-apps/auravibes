@@ -45,6 +45,7 @@ class const McpTransportTypeStreamableHttp({final bool useHttp2 = false})
   }
 }
 
+@immutable
 @Freezed(toStringOverride: false)
 abstract class const OAuthTokenModel._() with _$OAuthTokenModel {
   // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
@@ -60,6 +61,19 @@ abstract class const OAuthTokenModel._() with _$OAuthTokenModel {
 
   factory fromJson(Map<String, dynamic> json) =>
       _$OAuthTokenModelFromJson(json);
+
+  @override
+  int get hashCode;
+
+  @override
+  Map<String, dynamic> toJson();
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
+
   OAuthTokenEntity toEntity() {
     return OAuthTokenEntity(
       accessToken: accessToken,
@@ -73,6 +87,7 @@ abstract class const OAuthTokenModel._() with _$OAuthTokenModel {
   }
 }
 
+@immutable
 @Freezed(toStringOverride: false)
 abstract class const OAuthTokenEntity._() with _$OAuthTokenEntity {
   const factory({
@@ -106,17 +121,19 @@ abstract class const OAuthTokenEntity._() with _$OAuthTokenEntity {
   bool get needsOAuthTokenRefresh =>
       isOAuthTokenExpired && refreshToken != null;
 
+  bool hasRefreshToken() => refreshToken != null;
+
+  @override
+  String toString();
+
   Future<OAuthTokenEntity> copyCryptor(
     Future<String> Function(String) encryptor,
   ) async {
-    final refreshToken = this.refreshToken;
-    final idToken = this.idToken;
-
     return OAuthTokenEntity(
       accessToken: await encryptor(accessToken),
       issuedAt: issuedAt,
-      refreshToken: refreshToken != null ? await encryptor(refreshToken) : null,
-      idToken: idToken != null ? await encryptor(idToken) : null,
+      refreshToken: await _encryptNullable(refreshToken, encryptor),
+      idToken: await _encryptNullable(idToken, encryptor),
       expiresIn: expiresIn,
       tokenType: tokenType,
       scopes: scopes,
@@ -124,6 +141,16 @@ abstract class const OAuthTokenEntity._() with _$OAuthTokenEntity {
   }
 }
 
+Future<String?> _encryptNullable(
+  String? value,
+  Future<String> Function(String) encryptor,
+) async {
+  if (value == null) return null;
+
+  return await encryptor(value);
+}
+
+@immutable
 @Freezed(toStringOverride: false)
 sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
   const factory none() = McpAuthenticationTypeNone;
@@ -140,6 +167,12 @@ sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
 
   factory fromJson(Map<String, dynamic> json) =>
       _$McpAuthenticationTypeFromJson(json);
+
+  @override
+  String toString();
+
+  @override
+  Map<String, dynamic> toJson();
 
   Future<McpAuthenticationType> copyCryptor(
     Future<String> Function(String) encryptor,
@@ -160,6 +193,7 @@ sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
 }
 
 /// Entity for creating/updating MCP server configurations.
+@immutable
 @freezed
 abstract class const McpServerToCreate._() with _$McpServerToCreate {
   /// Creates a new McpServerToCreate instance.
@@ -182,6 +216,10 @@ abstract class const McpServerToCreate._() with _$McpServerToCreate {
     /// Optional description of what this MCP server provides.
     String? description,
   }) = _McpServerToCreate;
+
+  @override
+  int get hashCode;
+
   String get slugServerName {
     final slug = name
         .toLowerCase()
@@ -190,12 +228,21 @@ abstract class const McpServerToCreate._() with _$McpServerToCreate {
 
     return slug.isEmpty ? 'server' : slug;
   }
+
+  bool hasDescription() => description?.isNotEmpty == true;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
 /// Entity representing an MCP (Model Context Protocol) server configuration.
 ///
 /// This represents user-configured MCP servers that can be connected to
 /// for extending AI capabilities with external tools and resources.
+@immutable
 @freezed
 abstract class const McpServerEntity._()
     extends McpServerToCreate
@@ -236,12 +283,22 @@ abstract class const McpServerEntity._()
     @Default(true) bool isEnabled,
   }) = _McpServerEntity;
   this : super._();
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
+
+  @override
+  bool operator ==(Object other);
 }
 
 enum McpAuthenticationTypeOptions { none, oauth, bearerToken }
 
 enum McpTransportTypeOptions { streamableHttp, sse }
 
+@immutable
 @Freezed(toStringOverride: false)
 abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
   const factory({
@@ -257,6 +314,10 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
 
     String? description,
   }) = _McpServerFormToCreate;
+
+  @override
+  int get hashCode;
+
   bool get isValid {
     if (name.isEmpty || url.isEmpty) {
       return false;
@@ -269,35 +330,23 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
         // OAuth requires no additional fields here.
         return true;
       case .bearerToken:
-        return bearerToken?.isNotEmpty ?? false;
+        return hasValidAuthentication();
     }
   }
 
-  List<String> get validationErrors {
-    final errors = <String>[];
+  List<String> get validationErrors => [
+    if (name.isEmpty) 'Name is required.',
+    if (url.isEmpty) 'URL is required.',
+    if (authenticationType == .bearerToken && bearerToken?.isNotEmpty != true)
+      'Bearer token is required for Bearer Token authentication.',
+  ];
 
-    if (name.isEmpty) {
-      errors.add('Name is required.');
-    }
-    if (url.isEmpty) {
-      errors.add('URL is required.');
-    }
+  bool hasValidAuthentication() =>
+      authenticationType != .bearerToken || bearerToken?.isNotEmpty == true;
 
-    switch (authenticationType) {
-      case .none:
-        break;
-      case .oauth:
-        // No additional fields to validate here.
-        break;
-      case .bearerToken:
-        final bearerToken = this.bearerToken;
-        if (bearerToken == null || bearerToken.isEmpty) {
-          errors.add(
-            'Bearer token is required for Bearer Token authentication.',
-          );
-        }
-    }
+  @override
+  String toString();
 
-    return errors;
-  }
+  @override
+  bool operator ==(Object other);
 }

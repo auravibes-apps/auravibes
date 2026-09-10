@@ -1,5 +1,6 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_empty_state.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
@@ -31,9 +32,6 @@ class const _ToolsWorkspaceListState({
   required final AsyncValue<List<ToolsGroupWithTools>> groupedToolsAsync,
   required final String workspaceId,
 }) extends StatelessWidget {
-  final AsyncValue<List<ToolsGroupWithTools>> groupedToolsAsync;
-  final String workspaceId;
-
   @override
   Widget build(BuildContext context) {
     return switch (groupedToolsAsync) {
@@ -59,9 +57,6 @@ class const _ToolsGroupListOrEmpty({
   required final List<ToolsGroupWithTools> groups,
   required final String workspaceId,
 }) extends StatelessWidget {
-  final List<ToolsGroupWithTools> groups;
-  final String workspaceId;
-
   @override
   Widget build(BuildContext context) {
     if (groups.isEmpty) {
@@ -78,9 +73,6 @@ class const _ToolsError({
   required final Object error,
   required final StackTrace stackTrace,
 }) extends StatelessWidget {
-  final Object error;
-  final StackTrace stackTrace;
-
   @override
   Widget build(BuildContext context) =>
       AppErrorWidget(error: error, stackTrace: stackTrace);
@@ -90,9 +82,6 @@ class const _ToolsGroupList({
   required final List<ToolsGroupWithTools> groups,
   required final String workspaceId,
 }) extends StatelessWidget {
-  final List<ToolsGroupWithTools> groups;
-  final String workspaceId;
-
   @override
   Widget build(BuildContext context) {
     return ListView.builder(

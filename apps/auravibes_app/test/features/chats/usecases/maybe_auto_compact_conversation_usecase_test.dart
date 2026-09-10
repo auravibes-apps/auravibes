@@ -41,6 +41,34 @@ class MockShouldCompactConversationUsecase extends Mock
 class MockCompactConversationUsecase extends Mock
     implements CompactConversationUsecase;
 
+typedef _CompactionInput = ({
+  String conversationId,
+  String workspaceId,
+  String selectedModelId,
+  String selectedProviderId,
+  int maxOutputTokens,
+  int? contextLimit,
+  CompactionTrigger trigger,
+});
+
+_CompactionInput _compactRequest({
+  required String conversationId,
+  required String workspaceId,
+  required String selectedModelId,
+  required String selectedProviderId,
+  required int maxOutputTokens,
+  int? contextLimit,
+  CompactionTrigger trigger = CompactionTrigger.auto,
+}) => (
+  conversationId: conversationId,
+  workspaceId: workspaceId,
+  selectedModelId: selectedModelId,
+  selectedProviderId: selectedProviderId,
+  maxOutputTokens: maxOutputTokens,
+  contextLimit: contextLimit,
+  trigger: trigger,
+);
+
 class MaybeAutoCompactFixture {
   MockConversationRepository? _mockConvRepo;
   MockWorkspaceModelSelectionsRepository? _mockModelRepo;
@@ -231,12 +259,14 @@ void main() {
     ).thenAnswer((_) async => _makeModel());
     when(
       () => fixture.mockShouldCompact(
-        conversationId: 'conv-1',
-        workspaceId: 'ws-1',
-        selectedModelId: 'model-1',
-        selectedProviderId: 'provider-1',
-        maxOutputTokens: 4096,
-        contextLimit: 128000,
+        _compactRequest(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          selectedModelId: 'model-1',
+          selectedProviderId: 'provider-1',
+          maxOutputTokens: 4096,
+          contextLimit: 128000,
+        ),
       ),
     ).thenAnswer((_) async => decision);
     when(
@@ -278,12 +308,14 @@ void main() {
     ).thenAnswer((_) async => _makeModel());
     when(
       () => fixture.mockShouldCompact(
-        conversationId: 'conv-1',
-        workspaceId: 'ws-1',
-        selectedModelId: 'model-1',
-        selectedProviderId: 'provider-1',
-        maxOutputTokens: 4096,
-        contextLimit: 128000,
+        _compactRequest(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          selectedModelId: 'model-1',
+          selectedProviderId: 'provider-1',
+          maxOutputTokens: 4096,
+          contextLimit: 128000,
+        ),
       ),
     ).thenAnswer((_) async => decision);
 
@@ -319,11 +351,13 @@ void main() {
     ).thenAnswer((_) async => null);
     when(
       () => fixture.mockShouldCompact(
-        conversationId: 'conv-1',
-        workspaceId: 'ws-1',
-        selectedModelId: 'model-1',
-        selectedProviderId: 'provider-1',
-        maxOutputTokens: 4096,
+        _compactRequest(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          selectedModelId: 'model-1',
+          selectedProviderId: 'provider-1',
+          maxOutputTokens: 4096,
+        ),
       ),
     ).thenAnswer((_) async => decision);
 
@@ -332,11 +366,13 @@ void main() {
     expect(
       () => verify(
         () => fixture.mockShouldCompact(
-          conversationId: 'conv-1',
-          workspaceId: 'ws-1',
-          selectedModelId: 'model-1',
-          selectedProviderId: 'provider-1',
-          maxOutputTokens: 4096,
+          _compactRequest(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            selectedModelId: 'model-1',
+            selectedProviderId: 'provider-1',
+            maxOutputTokens: 4096,
+          ),
         ),
       ).called(1),
       returnsNormally,

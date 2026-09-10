@@ -28,7 +28,4 @@ abstract class const ToolsGroupWithTools._()
   bool containsTool(String toolId) => tools.any((tool) => tool.id == toolId);
 
   bool hasEnabledTools() => tools.any((tool) => tool.isEnabled);
-
-  @override
-  bool operator ==(Object other);
 }

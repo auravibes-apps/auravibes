@@ -30,25 +30,32 @@ class AuraAvatar extends StatelessWidget {
   final AuraTint tint;
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.auraColors;
-
-    return Semantics(
-      child: _AuraAvatarSurface(
-        child: child,
-        imageProvider: imageProvider,
-        diameter: context.auraTheme.fromSpacing(size),
-        backgroundColor: colors.colorFor(tint),
-        foregroundColor: colors.onTint(tint),
-      ),
-      excludeSemantics: semanticLabel != null,
-      image: true,
-      label: semanticLabel,
-    );
-  }
+  Widget build(BuildContext context) => _AuraAvatarSemantics(
+    label: semanticLabel,
+    child: _AuraAvatarSurface(
+      child: child,
+      imageProvider: imageProvider,
+      diameter: context.auraTheme.fromSpacing(size),
+      backgroundColor: context.auraColors.colorFor(tint),
+      foregroundColor: context.auraColors.onTint(tint),
+    ),
+  );
 
   static Widget _imageError(BuildContext _, Object _, StackTrace? _) =>
       const SizedBox.shrink();
+}
+
+class const _AuraAvatarSemantics({
+  required final String? label,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: child,
+    excludeSemantics: label != null,
+    image: true,
+    label: label,
+  );
 }
 
 class const _AuraAvatarSurface({
@@ -61,13 +68,13 @@ class const _AuraAvatarSurface({
   @override
   Widget build(BuildContext context) => ClipOval(
     child: SizedBox.square(
-      dimension: diameter,
       child: _AuraAvatarContent(
         child: child,
         imageProvider: imageProvider,
         backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
       ),
+      dimension: diameter,
     ),
   );
 }

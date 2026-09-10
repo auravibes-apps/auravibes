@@ -8,6 +8,5 @@ class const ToolApprovalDecision({
   bool get needsConfirmation =>
       permissionResult == ToolPermissionResult.needsConfirmation;
 
-  @override
-  bool operator ==(Object other) => identical(this, other);
+  bool isGranted() => permissionResult == ToolPermissionResult.granted;
 }

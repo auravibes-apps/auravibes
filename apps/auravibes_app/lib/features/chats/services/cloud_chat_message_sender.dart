@@ -161,7 +161,7 @@ extension on CloudChatMessageSender {
 
   Future<ConversationSnapshot> _queueMessageWithoutCleanup(
     _QueueMessageInput input,
-  ) => input._chat.queueConversationMessage(
+  ) => input._chat.queueConversationMessage((
     requestId: _newRequestId(),
     conversationId: input._conversationId,
     expectedProjectionRevision: input._projectionRevision,
@@ -169,7 +169,7 @@ extension on CloudChatMessageSender {
     content: input._content,
     attachmentIds: input._attachmentIds,
     metadataJson: input._metadataJson,
-  );
+  ));
 
   String _newRequestId() => const UuidV7().generate();
 

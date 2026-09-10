@@ -22,7 +22,7 @@ class _OnColorCandidateScanner({
   Color? passingDark;
   Color? passingLight;
   double maxPos = -double.infinity;
-  double minNeg = double.infinity;
+  double minNeg = .infinity;
 
   _OnColorCandidates scan() {
     _checkBaseCandidates();
@@ -131,6 +131,9 @@ class AuraComputedColor extends OKLCHColor {
     required super.lightness,
     super.chroma = _defaultChroma,
   });
+
+  @override
+  Color toColor() => super.toColor();
 
   /// Foreground color that meets APCA [targetLc] against this surface.
   ///

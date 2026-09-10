@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -81,6 +82,10 @@ class _FakeBuildDynamicSkillToolSpecsUsecase(final List<ToolSpec> _result)
 class _FakeBuildSkillTemplateToolSpecsUsecase
     implements BuildSkillTemplateToolSpecsUsecase {
   List<ToolSpec> result = const [];
+
+  @override
+  Future<WorkspaceSession> Function(String workspaceId)? get workspaceSession =>
+      null;
 
   @override
   Future<List<ToolSpec>> call({

@@ -150,21 +150,8 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
   bool _isHovered = false;
 
   @override
-  Widget build(BuildContext context) {
-    final isDisabled = _isDisabled(context);
-
-    return _AuraRadioPresentation(
-      isDisabled: isDisabled,
-      isSelected: widget.value == widget.groupValue,
-      isFocused: _isFocused,
-      color: _getActiveColor(context),
-      borderColor: _getBorderColor(context, isDisabled),
-      semanticLabel: widget.semanticLabel,
-      onSelect: _select,
-      onHover: _setHovered,
-      onFocusChange: _setFocused,
-    );
-  }
+  Widget build(BuildContext context) =>
+      _AuraRadioPresentation.fromState(this, context);
 
   bool _isDisabled(BuildContext context) {
     return widget.disabled ||
@@ -203,17 +190,44 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
   }
 }
 
-class const _AuraRadioPresentation({
-  required final bool isDisabled,
-  required final bool isSelected,
-  required final bool isFocused,
-  required final Color color,
-  required final Color borderColor,
-  required final String? semanticLabel,
-  required final VoidCallback onSelect,
-  required final ValueChanged<bool> onHover,
-  required final ValueChanged<bool> onFocusChange,
-}) extends StatelessWidget {
+class _AuraRadioPresentation extends StatelessWidget {
+  const _AuraRadioPresentation({
+    required this.isDisabled,
+    required this.isSelected,
+    required this.isFocused,
+    required this.color,
+    required this.borderColor,
+    required this.semanticLabel,
+    required this.onSelect,
+    required this.onHover,
+    required this.onFocusChange,
+  });
+
+  _AuraRadioPresentation.fromState(
+    _AuraRadioState<dynamic> state,
+    BuildContext context,
+  ) : this(
+        isDisabled: state._isDisabled(context),
+        isSelected: state.widget.value == state.widget.groupValue,
+        isFocused: state._isFocused,
+        color: state._getActiveColor(context),
+        borderColor: state._getBorderColor(context, state._isDisabled(context)),
+        semanticLabel: state.widget.semanticLabel,
+        onSelect: state._select,
+        onHover: state._setHovered,
+        onFocusChange: state._setFocused,
+      );
+
+  final bool isDisabled;
+  final bool isSelected;
+  final bool isFocused;
+  final Color color;
+  final Color borderColor;
+  final String? semanticLabel;
+  final VoidCallback onSelect;
+  final ValueChanged<bool> onHover;
+  final ValueChanged<bool> onFocusChange;
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -290,27 +304,28 @@ class const _AuraRadioIndicator({
   }
 }
 
-class const _AuraRadioPaint({
-  required final _AuraRadioPresentation presentation,
-}) extends StatelessWidget {
+class _AuraRadioPaint extends StatelessWidget {
   static const _radioSize = 24.0;
 
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: presentation.isDisabled ? 0.6 : 1.0,
-      child: SizedBox(
-        width: _radioSize,
-        height: _radioSize,
-        child: CustomPaint(
-          painter: _RadioPainter(
-            isSelected: presentation.isSelected,
-            isFocused: presentation.isFocused,
-            color: presentation.color,
-            borderColor: presentation.borderColor,
+  _AuraRadioPaint({required _AuraRadioPresentation presentation})
+    : _child = Opacity(
+        opacity: presentation.isDisabled ? 0.6 : 1.0,
+        child: SizedBox(
+          width: _radioSize,
+          height: _radioSize,
+          child: CustomPaint(
+            painter: _RadioPainter(
+              isSelected: presentation.isSelected,
+              isFocused: presentation.isFocused,
+              color: presentation.color,
+              borderColor: presentation.borderColor,
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }

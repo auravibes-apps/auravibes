@@ -1,6 +1,3 @@
-// Preserve the callback for Dio 5.x compatibility until Dio 6 removes it.
-// ignore_for_file: deprecated_member_use
-
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -30,17 +27,15 @@ HttpClient _createHttpClient(
   InternetAddress resolvedAddress,
 ) {
   final connectionFactory = _connectionFactory(resolvedAddress);
-  final configuredClient = current.createHttpClient?.call();
-  final client = configuredClient ?? _defaultHttpClient(current);
+  final ioCurrent = current as IOHttpClientAdapter;
+  final configuredClient = ioCurrent.createHttpClient?.call();
+  final client = configuredClient ?? _defaultHttpClient();
 
   return client..connectionFactory = connectionFactory;
 }
 
-HttpClient _defaultHttpClient(HttpClientAdapter current) {
-  final client = HttpClient()..idleTimeout = const Duration(seconds: 3);
-
-  return current.onHttpClientCreate?.call(client) ?? client;
-}
+HttpClient _defaultHttpClient() =>
+    HttpClient()..idleTimeout = const Duration(seconds: 3);
 
 Future<ConnectionTask<Socket>> Function(Uri, String?, int?) _connectionFactory(
   InternetAddress resolvedAddress,

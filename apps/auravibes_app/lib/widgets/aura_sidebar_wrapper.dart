@@ -51,11 +51,15 @@ final List<AuraNavigationData> _navigationItems = [
 /// navigation item should be highlighted - the conversation itself is selected
 /// in the sidebar's middle section.
 int _calculateSelectedIndex(BuildContext context, int shellIndex) {
-  final router = GoRouter.of(context);
-  final pathSegments = router.routeInformationProvider.value.uri.pathSegments;
+  if (_isConversationPath(_routeSegments(context))) return -1;
 
-  if (_isConversationPath(pathSegments)) return -1;
+  return _selectedIndexForShell(shellIndex);
+}
 
+List<String> _routeSegments(BuildContext context) =>
+    GoRouter.of(context).routeInformationProvider.value.uri.pathSegments;
+
+int _selectedIndexForShell(int shellIndex) {
   const newChatIndex = 0;
   const appSettingsIndex = 1;
   const footerSettingsIndex = 2;

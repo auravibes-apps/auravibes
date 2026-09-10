@@ -32,15 +32,9 @@ class const CloudAccountAddScreen({
   }
 }
 
-class const _CloudAccountAddContent({
-  required final String workspaceId,
-  required final String returnPath,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
+class _CloudAccountAddContent extends StatelessWidget {
+  new({required String workspaceId, required String returnPath})
+    : _children = [
         const _CloudAccountAddDescription(),
         const SizedBox(height: 16),
         _CloudAccountRouteButton(
@@ -55,14 +49,16 @@ class const _CloudAccountAddContent({
           returnPath: returnPath,
           outlined: true,
         ),
-      ],
-    );
-  }
+      ];
+
+  final List<Widget> _children;
+
+  @override
+  Widget build(BuildContext context) =>
+      ListView(padding: const EdgeInsets.all(16), children: _children);
 }
 
-class _CloudAccountAddDescription extends StatelessWidget {
-  const _CloudAccountAddDescription();
-
+class const _CloudAccountAddDescription() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Column(
     crossAxisAlignment: .start,
@@ -76,27 +72,34 @@ class _CloudAccountAddDescription extends StatelessWidget {
   );
 }
 
-class const _CloudAccountRouteButton({
-  required final String label,
-  required final String workspaceId,
-  required final String returnPath,
-  final bool outlined = false,
-}) extends StatelessWidget {
+class _CloudAccountRouteButton extends StatelessWidget {
+  new({
+    required this.label,
+    required this.workspaceId,
+    required this.returnPath,
+    this.outlined = false,
+  }) : _location =
+           (outlined
+                   ? CloudAccountRegisterRoute(
+                       workspaceId: workspaceId,
+                       returnPath: returnPath,
+                     )
+                   : CloudAccountLoginRoute(
+                       workspaceId: workspaceId,
+                       returnPath: returnPath,
+                     ))
+               .location;
+
+  final String label;
+  final String workspaceId;
+  final String returnPath;
+  final bool outlined;
+  final String _location;
+
   @override
   Widget build(BuildContext context) => _CloudAccountAddButton(
     label: label,
-    onPressed: () => context.go(
-      (outlined
-              ? CloudAccountRegisterRoute(
-                  workspaceId: workspaceId,
-                  returnPath: returnPath,
-                )
-              : CloudAccountLoginRoute(
-                  workspaceId: workspaceId,
-                  returnPath: returnPath,
-                ))
-          .location,
-    ),
+    onPressed: () => context.go(_location),
     outlined: outlined,
   );
 }

@@ -17,7 +17,9 @@ class const CreateSkillUsecase(
 
     return _createSkill(workspaceId, skill);
   }
+}
 
+extension _CreateSkillValidationOperations on CreateSkillUsecase {
   Future<void> _validateNewSkill(
     String workspaceId,
     SkillToCreate skill,
@@ -47,7 +49,9 @@ class const CreateSkillUsecase(
     final existingSlug = await _existingSlug(workspaceId, slug, cloudSkills);
     _throwIfDuplicateSlug(existingSlug);
   }
+}
 
+extension _CreateSkillLookupOperations on CreateSkillUsecase {
   Future<List<SkillEntity>?> _cloudSkills() async {
     final cloud = cloudStore;
     if (cloud == null) return null;
@@ -66,7 +70,10 @@ class const CreateSkillUsecase(
       );
     }
 
-    return _skillsRepository?.getSkillByTitle(workspaceId, title);
+    final repository = _skillsRepository;
+    if (repository == null) throw StateError('Skill store is unavailable');
+
+    return repository.getSkillByTitle(workspaceId, title);
   }
 
   Future<SkillEntity?> _existingSlug(
@@ -80,9 +87,14 @@ class const CreateSkillUsecase(
       );
     }
 
-    return _skillsRepository?.getSkillBySlug(workspaceId, slug);
-  }
+    final repository = _skillsRepository;
+    if (repository == null) throw StateError('Skill store is unavailable');
 
+    return repository.getSkillBySlug(workspaceId, slug);
+  }
+}
+
+extension _CreateSkillValidationErrors on CreateSkillUsecase {
   void _throwIfDuplicateTitle(SkillEntity? existingTitle) {
     if (existingTitle != null) {
       throw const SkillTitleValidationException(
@@ -98,7 +110,9 @@ class const CreateSkillUsecase(
       );
     }
   }
+}
 
+extension _CreateSkillPersistenceOperations on CreateSkillUsecase {
   Future<SkillEntity> _createSkill(
     String workspaceId,
     SkillToCreate skill,

@@ -22,20 +22,35 @@ class AuraAvatarGroup extends StatelessWidget {
   final String? overflowSemanticLabel;
 
   @override
-  Widget build(BuildContext context) {
-    final spacing = context.auraTheme.spacing.xs;
+  Widget build(BuildContext context) => _AuraAvatarGroupContent(
+    children: children,
+    maxVisible: maxVisible,
+    overflowSemanticLabel: overflowSemanticLabel,
+    spacing: context.auraTheme.spacing.xs,
+  );
+}
 
-    return Wrap(
-      spacing: spacing,
-      runSpacing: spacing,
-      children: [
-        ...children.take(maxVisible),
-        if (children.length > maxVisible)
-          AuraAvatar(
-            child: Text('+${children.length - maxVisible}'),
-            semanticLabel: overflowSemanticLabel,
-          ),
-      ],
-    );
-  }
+class _AuraAvatarGroupContent extends StatelessWidget {
+  _AuraAvatarGroupContent({
+    required List<Widget> children,
+    required int maxVisible,
+    required String? overflowSemanticLabel,
+    required double spacing,
+  }) : _child = Wrap(
+         spacing: spacing,
+         runSpacing: spacing,
+         children: [
+           ...children.take(maxVisible),
+           if (children.length > maxVisible)
+             AuraAvatar(
+               child: Text('+${children.length - maxVisible}'),
+               semanticLabel: overflowSemanticLabel,
+             ),
+         ],
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }

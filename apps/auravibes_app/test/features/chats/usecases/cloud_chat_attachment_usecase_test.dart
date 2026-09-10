@@ -14,25 +14,17 @@ void main() {
       final bytes = Uint8List.fromList([1, 2, 3]);
       final checksum = CloudAttachmentChecksum.fromBytes(bytes);
       final usecase = CloudChatAttachmentUsecase(
-        beginUpload:
-            ({
-              required requestId,
-              required purpose,
-              required displayName,
-              required mimeType,
-              required sizeBytes,
-              required checksumSha256,
-            }) async {
-              calls.add('begin:$requestId:$checksumSha256');
+        beginUpload: (request) async {
+          calls.add('begin:${request.requestId}:${request.checksumSha256}');
 
-              return BeginUploadResult(
-                objectId: 9,
-                revision: 1,
-                uploadUrl: 'https://upload.example/object',
-                headers: const {},
-                expiresAt: .utc(2026),
-              );
-            },
+          return BeginUploadResult(
+            objectId: 9,
+            revision: 1,
+            uploadUrl: 'https://upload.example/object',
+            headers: const {},
+            expiresAt: .utc(2026),
+          );
+        },
         uploadBytes: (upload, _) async => calls.add('put:${upload.objectId}'),
         completeUpload: ({required objectId}) async {
           calls.add('complete:$objectId');
@@ -82,21 +74,13 @@ void main() {
     'never returns pending object ID when completion rejects scan',
     () async {
       final usecase = CloudChatAttachmentUsecase(
-        beginUpload:
-            ({
-              required requestId,
-              required purpose,
-              required displayName,
-              required mimeType,
-              required sizeBytes,
-              required checksumSha256,
-            }) async => BeginUploadResult(
-              objectId: 9,
-              revision: 1,
-              uploadUrl: 'https://upload.example/object',
-              headers: const {},
-              expiresAt: .utc(2026),
-            ),
+        beginUpload: (_) async => BeginUploadResult(
+          objectId: 9,
+          revision: 1,
+          uploadUrl: 'https://upload.example/object',
+          headers: const {},
+          expiresAt: .utc(2026),
+        ),
         uploadBytes: (_, _) => Future<void>.value(),
         completeUpload: ({required objectId}) =>
             throw ObjectException(code: .scanInfected),
@@ -137,21 +121,13 @@ void main() {
     final deleted = <({int objectId, int revision})>[];
     var uploads = 0;
     final usecase = CloudChatAttachmentUsecase(
-      beginUpload:
-          ({
-            required requestId,
-            required purpose,
-            required displayName,
-            required mimeType,
-            required sizeBytes,
-            required checksumSha256,
-          }) async => BeginUploadResult(
-            objectId: ++uploads,
-            revision: 1,
-            uploadUrl: 'https://upload.example/object',
-            headers: const {},
-            expiresAt: .utc(2026),
-          ),
+      beginUpload: (_) async => BeginUploadResult(
+        objectId: ++uploads,
+        revision: 1,
+        uploadUrl: 'https://upload.example/object',
+        headers: const {},
+        expiresAt: .utc(2026),
+      ),
       uploadBytes: (_, _) => Future<void>.value(),
       completeUpload: ({required objectId}) {
         if (objectId == 2) {
@@ -217,14 +193,7 @@ void main() {
 
   test('download requires server-authorized HTTPS URL', () async {
     final usecase = CloudChatAttachmentUsecase(
-      beginUpload: ({
-        required requestId,
-        required purpose,
-        required displayName,
-        required mimeType,
-        required sizeBytes,
-        required checksumSha256,
-      }) => throw UnimplementedError(),
+      beginUpload: (_) => throw UnimplementedError(),
       uploadBytes: (_, _) => throw UnimplementedError(),
       completeUpload: ({required objectId}) => throw UnimplementedError(),
       getDownload: ({required objectId}) => Future.value(
@@ -250,14 +219,7 @@ void main() {
   test('delete forwards object revision to server policy', () async {
     Object? received;
     final usecase = CloudChatAttachmentUsecase(
-      beginUpload: ({
-        required requestId,
-        required purpose,
-        required displayName,
-        required mimeType,
-        required sizeBytes,
-        required checksumSha256,
-      }) => throw UnimplementedError(),
+      beginUpload: (_) => throw UnimplementedError(),
       uploadBytes: (_, _) => throw UnimplementedError(),
       completeUpload: ({required objectId}) => throw UnimplementedError(),
       getDownload: ({required objectId}) => throw UnimplementedError(),

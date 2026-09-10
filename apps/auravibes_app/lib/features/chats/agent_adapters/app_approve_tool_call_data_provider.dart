@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_service.dart';
@@ -47,17 +48,17 @@ typedef _ToolCallPatchRequest = ({
   String? responseRaw,
 });
 
-typedef _ToolExecutionErrorRequest = ({
-  String conversationId,
-  String toolCallId,
-  ResolvedTool tool,
-  Object error,
-  StackTrace stackTrace,
-});
+typedef _ToolExecutionErrorRequest =
+    agent.AgentToolExecutionErrorRequest<ResolvedTool>;
 
 class const AppApproveToolCallDataProvider({
   required final MessageRepository messageRepository,
   required final ConversationRepository conversationRepository,
+  required final ToolResolverService toolResolverService,
+  required final AgentToolResumeService agentToolResumeService,
+  required final ResolvedToolService runResolvedToolUsecase,
+  required final AgentCancellationRuntime agentCancellationRuntime,
+  required final void Function() onToolCallChanged,
   final ConversationToolsRepository? conversationToolsRepository,
   final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase,
   final ConversationToolsRepository Function(String workspaceId)?
@@ -67,11 +68,6 @@ class const AppApproveToolCallDataProvider({
   final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase,
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace,
-  required final ToolResolverService toolResolverService,
-  required final AgentToolResumeService agentToolResumeService,
-  required final ResolvedToolService runResolvedToolUsecase,
-  required final AgentCancellationRuntime agentCancellationRuntime,
-  required final void Function() onToolCallChanged,
 }) implements agent.ApproveToolCallProvider<ResolvedTool> {
   this
     : assert(
@@ -90,50 +86,22 @@ class const AppApproveToolCallDataProvider({
         'A conversation tool specs usecase is required.',
       );
 
-  late final Future<void> Function({
+  @override
+  Future<void> updateToolCallResult({
     required String messageId,
     required String toolCallId,
     required agent.AgentToolResultStatus resultStatus,
     String? responseRaw,
-  })
-  updateToolCallResult =
-      ({
-        required messageId,
-        required toolCallId,
-        required resultStatus,
-        responseRaw,
-      }) async {
-        await _patchToolCall(messageRepository, onToolCallChanged, (
-          messageId: messageId,
-          toolCallId: toolCallId,
-          resultStatus: AgentToolStatusMapper.toResultStatus(resultStatus),
-          responseRaw: responseRaw,
-        ));
-      };
+  }) => _patchToolCall(messageRepository, onToolCallChanged, (
+    messageId: messageId,
+    toolCallId: toolCallId,
+    resultStatus: AgentToolStatusMapper.toResultStatus(resultStatus),
+    responseRaw: responseRaw,
+  ));
 
-  late final void Function({
-    required String conversationId,
-    required String toolCallId,
-    required ResolvedTool tool,
-    required Object error,
-    required StackTrace stackTrace,
-  })
-  logToolExecutionError =
-      ({
-        required conversationId,
-        required toolCallId,
-        required tool,
-        required error,
-        required stackTrace,
-      }) {
-        _logToolExecutionError((
-          conversationId: conversationId,
-          toolCallId: toolCallId,
-          tool: tool,
-          error: error,
-          stackTrace: stackTrace,
-        ));
-      };
+  @override
+  void logToolExecutionError(_ToolExecutionErrorRequest request) =>
+      _logToolExecutionError(request);
 
   @override
   Future<agent.AgentApprovableToolCall?> loadToolCall({
@@ -224,78 +192,142 @@ Future<agent.AgentApprovableToolCall?> _loadToolCall(
   final message = await messageRepository.getMessageById(request.messageId);
   if (message == null) return null;
 
-  final toolCall = message.metadata?.toolCalls
-      .where((tool) => tool.id == request.toolCallId)
-      .firstOrNull;
+  final toolCall = _findToolCall(message.metadata, request.toolCallId);
   if (toolCall == null) return null;
 
-  return agent.AgentApprovableToolCall(
-    conversationId: message.conversationId,
-    name: toolCall.name,
-    argumentsRaw: toolCall.argumentsRaw,
-  );
+  return _toApprovableToolCall(message.conversationId, toolCall);
 }
+
+MessageToolCallEntity? _findToolCall(
+  MessageMetadataEntity? metadata,
+  String toolCallId,
+) => metadata?.toolCalls.where((tool) => tool.id == toolCallId).firstOrNull;
+
+agent.AgentApprovableToolCall _toApprovableToolCall(
+  String conversationId,
+  MessageToolCallEntity toolCall,
+) => agent.AgentApprovableToolCall(
+  conversationId: conversationId,
+  name: toolCall.name,
+  argumentsRaw: toolCall.argumentsRaw,
+);
 
 Future<ResolvedTool?> _resolveTool(_ToolResolutionRequest request) async {
   final conversation = await request.conversationRepository.getConversationById(
     request.conversationId,
   );
   if (conversation == null) {
-    return request.toolResolverService.resolveTool(
-      request.toolName,
-      agent.buildToolCatalog<ResolvedTool>([]),
-    );
+    return await _resolveWithoutConversation(request);
   }
-  final loadToolSpecs =
-      request.loadConversationToolSpecsUsecaseForWorkspace?.call(
-        conversation.workspaceId,
-      ) ??
-      request.loadConversationToolSpecsUsecase;
-  if (loadToolSpecs == null) {
-    throw StateError('Conversation tool specs usecase is unavailable.');
-  }
-  final catalog = await loadToolSpecs.buildCatalog(
-    conversationId: request.conversationId,
-    workspaceId: conversation.workspaceId,
-  );
+
+  final catalog = await _loadConversationToolCatalog(request, conversation);
 
   return request.toolResolverService.resolveTool(request.toolName, catalog);
 }
 
+Future<ResolvedTool?> _resolveWithoutConversation(
+  _ToolResolutionRequest request,
+) => Future.value(
+  request.toolResolverService.resolveTool(
+    request.toolName,
+    agent.buildToolCatalog<ResolvedTool>([]),
+  ),
+);
+
+Future<agent.ToolCatalog<ResolvedTool>> _loadConversationToolCatalog(
+  _ToolResolutionRequest request,
+  ConversationEntity conversation,
+) async {
+  final loadToolSpecs = _loadToolSpecs(request, conversation.workspaceId);
+  if (loadToolSpecs == null) {
+    throw StateError('Conversation tool specs usecase is unavailable.');
+  }
+
+  return await loadToolSpecs.buildCatalog(
+    conversationId: request.conversationId,
+    workspaceId: conversation.workspaceId,
+  );
+}
+
+LoadConversationToolSpecsUsecase? _loadToolSpecs(
+  _ToolResolutionRequest request,
+  String workspaceId,
+) =>
+    request.loadConversationToolSpecsUsecaseForWorkspace?.call(workspaceId) ??
+    request.loadConversationToolSpecsUsecase;
+
 Future<void> _grantToolForConversation(_ToolGrantRequest request) async {
+  final conversationId = request.conversationId;
   final conversation = await request.conversationRepository.getConversationById(
-    request.conversationId,
+    conversationId,
   );
   if (conversation == null) return;
-  final approvalUsecase =
-      request.resolveToolApprovalDecisionUsecaseForWorkspace?.call(
-        conversation.workspaceId,
-      ) ??
-      request.resolveToolApprovalDecisionUsecase;
+
+  await _grantToolForConversationInWorkspace(request, conversation);
+}
+
+Future<void> _grantToolForConversationInWorkspace(
+  _ToolGrantRequest request,
+  ConversationEntity conversation,
+) async {
+  final approvalUsecase = _approvalUsecase(request, conversation.workspaceId);
   if (approvalUsecase == null) {
     throw StateError('Tool approval usecase is unavailable.');
   }
-  final permissionTableId = await approvalUsecase.resolvePermissionTableId(
-    conversationId: request.conversationId,
-    workspaceId: conversation.workspaceId,
-    resolvedTool: request.tool,
+  final permissionTableId = await _permissionTableId(
+    approvalUsecase,
+    conversationId,
+    conversation.workspaceId,
+    request.tool,
   );
   if (permissionTableId == null) return;
 
-  final toolsRepository =
-      request.conversationToolsRepositoryForWorkspace?.call(
-        conversation.workspaceId,
-      ) ??
-      request.conversationToolsRepository;
+  final toolsRepository = _conversationToolsRepository(
+    request,
+    conversation.workspaceId,
+  );
   if (toolsRepository == null) {
     throw StateError('Conversation tools repository is unavailable.');
   }
-  final _ = await toolsRepository.setConversationToolPermission(
-    request.conversationId,
+  await _setAlwaysAllow(toolsRepository, conversationId, permissionTableId);
+}
+
+Future<String?> _permissionTableId(
+  ResolveToolApprovalDecisionUsecase approvalUsecase,
+  String conversationId,
+  String workspaceId,
+  ResolvedTool tool,
+) => approvalUsecase.resolvePermissionTableId(
+  conversationId: conversationId,
+  workspaceId: workspaceId,
+  resolvedTool: tool,
+);
+
+Future<void> _setAlwaysAllow(
+  ConversationToolsRepository repository,
+  String conversationId,
+  String permissionTableId,
+) async {
+  final _ = await repository.setConversationToolPermission(
+    conversationId,
     permissionTableId,
     permissionMode: .alwaysAllow,
   );
 }
+
+ResolveToolApprovalDecisionUsecase? _approvalUsecase(
+  _ToolGrantRequest request,
+  String workspaceId,
+) =>
+    request.resolveToolApprovalDecisionUsecaseForWorkspace?.call(workspaceId) ??
+    request.resolveToolApprovalDecisionUsecase;
+
+ConversationToolsRepository? _conversationToolsRepository(
+  _ToolGrantRequest request,
+  String workspaceId,
+) =>
+    request.conversationToolsRepositoryForWorkspace?.call(workspaceId) ??
+    request.conversationToolsRepository;
 
 Future<void> _patchToolCall(
   MessageRepository messageRepository,
@@ -306,20 +338,39 @@ Future<void> _patchToolCall(
   if (message == null) return;
 
   final metadata = message.metadata ?? const MessageMetadataEntity();
-  final updatedToolCalls = metadata.toolCalls.map((toolCall) {
-    if (toolCall.id != request.toolCallId) return toolCall;
+  final updatedToolCalls = _updatedToolCalls(metadata.toolCalls, request);
 
-    return toolCall.copyWith(
-      resultStatus: request.resultStatus,
-      responseRaw: request.responseRaw,
-    );
-  }).toList();
-
-  final _ = await messageRepository.patchMessage(
+  await _persistToolCallPatch(
+    messageRepository,
     request.messageId,
-    .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+    metadata.copyWith(toolCalls: updatedToolCalls),
   );
   onToolCallChanged();
+}
+
+List<MessageToolCallEntity> _updatedToolCalls(
+  List<MessageToolCallEntity> toolCalls,
+  _ToolCallPatchRequest request,
+) => toolCalls
+    .map(
+      (toolCall) => toolCall.id != request.toolCallId
+          ? toolCall
+          : toolCall.copyWith(
+              resultStatus: request.resultStatus,
+              responseRaw: request.responseRaw,
+            ),
+    )
+    .toList();
+
+Future<void> _persistToolCallPatch(
+  MessageRepository messageRepository,
+  String messageId,
+  MessageMetadataEntity metadata,
+) async {
+  final _ = await messageRepository.patchMessage(
+    messageId,
+    .new(metadata: metadata),
+  );
 }
 
 void _logToolExecutionError(_ToolExecutionErrorRequest request) {

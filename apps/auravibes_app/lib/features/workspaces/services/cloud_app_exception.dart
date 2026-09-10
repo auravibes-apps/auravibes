@@ -46,43 +46,46 @@ abstract final class CloudAppErrors {
       code: translated.code,
     );
   }
-
-  static ({String localizationKey, String? code}) _translatedException(
-    Object error,
-  ) => switch (error) {
-    CloudWorkspaceException(:final code) => _workspaceTranslation(code),
-    ConversationException(:final code) => _conversationTranslation(code),
-    ObjectException(:final code) => _objectTranslation(code),
-    UnsupportedWorkspaceCapabilityException() => (
-      localizationKey: LocaleKeys.workspace_capabilities_unsupported_error,
-      code: 'unsupportedCapability',
-    ),
-    TypeError() ||
-    FormatException() ||
-    StateError() ||
-    UnsupportedError() => _malformedTranslation(error),
-    _ => (localizationKey: LocaleKeys.cloud_errors_unavailable, code: null),
-  };
-
-  static ({String localizationKey, String? code}) _workspaceTranslation(
-    CloudWorkspaceErrorCode code,
-  ) => (localizationKey: _workspaceKey(code), code: code.name);
-
-  static ({String localizationKey, String? code}) _conversationTranslation(
-    ConversationErrorCode code,
-  ) => (localizationKey: _conversationKey(code), code: code.name);
-
-  static ({String localizationKey, String? code}) _objectTranslation(
-    ObjectErrorCode code,
-  ) => (localizationKey: _objectKey(code), code: code.name);
-
-  static ({String localizationKey, String? code}) _malformedTranslation(
-    Object error,
-  ) => (
-    localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-    code: error.runtimeType.toString(),
-  );
 }
+
+({String localizationKey, String? code}) _translatedException(Object error) =>
+    switch (error) {
+      CloudWorkspaceException(:final code) => _workspaceTranslation(code),
+      ConversationException(:final code) => _conversationTranslation(code),
+      ObjectException(:final code) => _objectTranslation(code),
+      UnsupportedWorkspaceCapabilityException() => (
+        localizationKey: LocaleKeys.workspace_capabilities_unsupported_error,
+        code: 'unsupportedCapability',
+      ),
+      _ => _genericTranslation(error),
+    };
+
+({String localizationKey, String? code}) _genericTranslation(Object error) =>
+    switch (error) {
+      TypeError() ||
+      FormatException() ||
+      StateError() ||
+      UnsupportedError() => _malformedTranslation(error),
+      _ => (localizationKey: LocaleKeys.cloud_errors_unavailable, code: null),
+    };
+
+({String localizationKey, String? code}) _workspaceTranslation(
+  CloudWorkspaceErrorCode code,
+) => (localizationKey: _workspaceKey(code), code: code.name);
+
+({String localizationKey, String? code}) _conversationTranslation(
+  ConversationErrorCode code,
+) => (localizationKey: _conversationKey(code), code: code.name);
+
+({String localizationKey, String? code}) _objectTranslation(
+  ObjectErrorCode code,
+) => (localizationKey: _objectKey(code), code: code.name);
+
+({String localizationKey, String? code}) _malformedTranslation(Object error) =>
+    (
+      localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+      code: error.runtimeType.toString(),
+    );
 
 const _workspaceLocalizationKeys = <CloudWorkspaceErrorCode, String>{
   .authenticationRequired: LocaleKeys.cloud_errors_authentication_required,

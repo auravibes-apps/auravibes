@@ -45,8 +45,15 @@ class const UpdateSkillCredentialDefinitionUsecase(
   Future<SkillCredentialDefinitionEntity?> _existingDefinition(
     String definitionId,
   ) {
-    return cloudStore?.definition(definitionId) ??
-        _skillCredentialDefinitionsRepository?.getDefinitionById(definitionId);
+    final cloud = cloudStore;
+    if (cloud != null) return cloud.definition(definitionId);
+
+    final repository = _skillCredentialDefinitionsRepository;
+    if (repository == null) {
+      throw StateError('Credential definition store is unavailable');
+    }
+
+    return repository.getDefinitionById(definitionId);
   }
 
   Future<void> _validateTitle(

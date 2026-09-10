@@ -101,28 +101,25 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
   }
 }
 
-class const _AuraTypingIndicatorView({
-  required final AuraTypingIndicator indicator,
-  required final List<Animation<double>> dotAnimations,
-}) extends StatelessWidget {
+class _AuraTypingIndicatorView extends StatelessWidget {
+  _AuraTypingIndicatorView({
+    required AuraTypingIndicator indicator,
+    required List<Animation<double>> dotAnimations,
+  }) : _child = _AuraTypingIndicatorContainer(
+         indicator: indicator,
+         child: Semantics(
+           child: _AuraTypingIndicatorDots(
+             indicator: indicator,
+             dotAnimations: dotAnimations,
+           ),
+           label: indicator.semanticLabel,
+         ),
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) {
-    final content = _AuraTypingIndicatorDots(
-      indicator: indicator,
-      dotAnimations: dotAnimations,
-    );
-    final semanticContent = Semantics(
-      child: content,
-      label: indicator.semanticLabel,
-    );
-
-    if (!indicator.showContainer) return semanticContent;
-
-    return _AuraTypingIndicatorContainer(
-      indicator: indicator,
-      child: semanticContent,
-    );
-  }
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraTypingIndicatorDots({
@@ -189,10 +186,12 @@ class const _AuraTypingIndicatorContainer({
   required final Widget child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _AuraTypingIndicatorAlignment(
-    manageAlignment: indicator.manageAlignment,
-    child: _AuraTypingIndicatorBox(indicator: indicator, child: child),
-  );
+  Widget build(BuildContext context) => indicator.showContainer
+      ? _AuraTypingIndicatorAlignment(
+          manageAlignment: indicator.manageAlignment,
+          child: _AuraTypingIndicatorBox(indicator: indicator, child: child),
+        )
+      : child;
 }
 
 class const _AuraTypingIndicatorAlignment({
@@ -237,20 +236,14 @@ EdgeInsets _containerPadding(
   required AuraSpacingScale spacing,
 }) {
   return switch (size) {
-    .small => EdgeInsets.symmetric(
-      vertical: spacing.xs,
-      horizontal: spacing.sm,
-    ),
-    .medium => EdgeInsets.symmetric(
-      vertical: spacing.sm,
-      horizontal: spacing.md,
-    ),
-    .large => EdgeInsets.symmetric(
-      vertical: spacing.md,
-      horizontal: spacing.lg,
-    ),
+    .small => _typingPadding(spacing.xs, spacing.sm),
+    .medium => _typingPadding(spacing.sm, spacing.md),
+    .large => _typingPadding(spacing.md, spacing.lg),
   };
 }
+
+EdgeInsets _typingPadding(double vertical, double horizontal) =>
+    EdgeInsets.symmetric(vertical: vertical, horizontal: horizontal);
 
 EdgeInsetsGeometry _containerMargin(
   bool manageAlignment, {

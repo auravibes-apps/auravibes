@@ -36,6 +36,22 @@ typedef _CredentialCreateRequest = ({
   DateTime now,
 });
 
+typedef _CredentialSecretUpdateRequest = ({
+  String id,
+  WorkspaceResource resource,
+  SkillCredentialToUpdate value,
+  SkillCredentialEntity updated,
+  int? secretRevision,
+});
+
+typedef _CredentialMutationRequest = ({
+  String id,
+  int resourceRevision,
+  Map<String, Object?> data,
+  String secret,
+  int? secretRevision,
+});
+
 typedef _ConversationSkillRequest = ({
   String id,
   String conversationId,
@@ -122,17 +138,88 @@ class CloudSkillStore(
   final String workspaceId,
 );
 
+extension CloudSkillStoreSkillApi on CloudSkillStore {
+  Future<List<SkillEntity>> skills() => this._apiSkills();
+
+  Future<SkillEntity?> skill(String id) => this._apiSkill(id);
+
+  Future<SkillEntity> createSkill(SkillToCreate value) =>
+      this._apiCreateSkill(value);
+
+  Future<SkillEntity> updateSkill(String id, SkillToUpdate value) =>
+      this._apiUpdateSkill(id, value);
+
+  Future<void> deleteSkill(String id) => this._apiDeleteSkill(id);
+}
+
+extension CloudSkillStoreDefinitionApi on CloudSkillStore {
+  Future<List<SkillCredentialDefinitionEntity>> definitions() =>
+      this._apiDefinitions();
+
+  Future<SkillCredentialDefinitionEntity?> definition(String id) =>
+      this._apiDefinition(id);
+
+  Future<SkillCredentialDefinitionEntity> createDefinition(
+    SkillCredentialDefinitionToCreate value,
+  ) => this._apiCreateDefinition(value);
+
+  Future<SkillCredentialDefinitionEntity> updateDefinition(
+    String id,
+    SkillCredentialDefinitionToUpdate value,
+  ) => this._apiUpdateDefinition(id, value);
+
+  Future<void> deleteDefinition(String id) => this._apiDeleteDefinition(id);
+}
+
+extension CloudSkillStoreToolApi on CloudSkillStore {
+  Future<SkillTemplateToolEntity?> tool(String id) => this._apiTool(id);
+
+  Future<SkillTemplateToolEntity> createTool(
+    String skillId,
+    SkillTemplateToolToCreate value,
+  ) => this._apiCreateTool(skillId, value);
+
+  Future<SkillTemplateToolEntity> updateTool(
+    String id,
+    SkillTemplateToolToUpdate value,
+  ) => this._apiUpdateTool(id, value);
+
+  Future<List<SkillTemplateToolEntity>> tools(String skillId) =>
+      this._apiTools(skillId);
+
+  Future<void> deleteTool(String id) => this._apiDeleteTool(id);
+}
+
+extension CloudSkillStoreCredentialApi on CloudSkillStore {
+  Future<List<SkillCredentialEntity>> credentials(String definitionId) =>
+      this._apiCredentials(definitionId);
+
+  Future<SkillCredentialEntity> createCredential(
+    SkillCredentialToCreate value,
+  ) => this._apiCreateCredential(value);
+
+  Future<SkillCredentialForEdit?> credentialForEdit(String id) =>
+      this._apiCredentialForEdit(id);
+
+  Future<SkillCredentialEntity> updateCredential(
+    String id,
+    SkillCredentialToUpdate value,
+  ) => this._apiUpdateCredential(id, value);
+
+  Future<void> deleteCredential(String id) => this._apiDeleteCredential(id);
+}
+
 extension CloudSkillStoreSkillOperations on CloudSkillStore {
-  Future<List<SkillCredentialDefinitionEntity>> definitions() async =>
+  Future<List<SkillCredentialDefinitionEntity>> _apiDefinitions() async =>
       (await _active(.skillDefinition)).map(_definition).toList();
 
-  Future<SkillEntity?> skill(String id) async =>
+  Future<SkillEntity?> _apiSkill(String id) async =>
       (await _active(.skill))
           .where((item) => item.resourceId == id)
           .map(_skill)
           .firstOrNull;
 
-  Future<SkillEntity> createSkill(SkillToCreate value) async {
+  Future<SkillEntity> _apiCreateSkill(SkillToCreate value) async {
     final now = DateTime.now().toUtc();
     final id = const UuidV7().generate();
     final entity = _skillFromCreate(id, value, now);
@@ -141,7 +228,7 @@ extension CloudSkillStoreSkillOperations on CloudSkillStore {
     return entity;
   }
 
-  Future<SkillEntity> updateSkill(String id, SkillToUpdate value) async {
+  Future<SkillEntity> _apiUpdateSkill(String id, SkillToUpdate value) async {
     final resource = await _required(.skill, id);
     final current = _skill(resource);
     final updated = _updatedSkill(current, value);
@@ -155,23 +242,23 @@ extension CloudSkillStoreSkillOperations on CloudSkillStore {
     return updated;
   }
 
-  Future<void> deleteSkill(String id) => _delete(.skill, id);
+  Future<void> _apiDeleteSkill(String id) => _delete(.skill, id);
 }
 
 extension CloudSkillStoreToolOperations on CloudSkillStore {
-  Future<List<SkillTemplateToolEntity>> tools(String skillId) async =>
+  Future<List<SkillTemplateToolEntity>> _apiTools(String skillId) async =>
       (await _active(.skillTemplateTool))
           .where((item) => _data(item)['skillId'] == skillId)
           .map(_tool)
           .toList();
 
-  Future<SkillTemplateToolEntity?> tool(String id) async =>
+  Future<SkillTemplateToolEntity?> _apiTool(String id) async =>
       (await _active(.skillTemplateTool))
           .where((item) => item.resourceId == id)
           .map(_tool)
           .firstOrNull;
 
-  Future<SkillTemplateToolEntity> createTool(
+  Future<SkillTemplateToolEntity> _apiCreateTool(
     String skillId,
     SkillTemplateToolToCreate value,
   ) async {
@@ -189,11 +276,20 @@ extension CloudSkillStoreToolOperations on CloudSkillStore {
     return entity;
   }
 
-  Future<SkillTemplateToolEntity> updateTool(
+  Future<SkillTemplateToolEntity> _apiUpdateTool(
     String id,
     SkillTemplateToolToUpdate value,
   ) async {
     final resource = await _required(.skillTemplateTool, id);
+
+    return _updateToolValue(id, resource, value);
+  }
+
+  Future<SkillTemplateToolEntity> _updateToolValue(
+    String id,
+    WorkspaceResource resource,
+    SkillTemplateToolToUpdate value,
+  ) async {
     final current = _tool(resource);
     final skillSlug = await _skillSlug(current.skillId);
     final updated = _updatedTool(current, value);
@@ -207,20 +303,20 @@ extension CloudSkillStoreToolOperations on CloudSkillStore {
     return updated;
   }
 
-  Future<void> deleteTool(String id) => _delete(.skillTemplateTool, id);
+  Future<void> _apiDeleteTool(String id) => _delete(.skillTemplateTool, id);
 }
 
 extension CloudSkillStoreDefinitionOperations on CloudSkillStore {
-  Future<List<SkillEntity>> skills() async =>
+  Future<List<SkillEntity>> _apiSkills() async =>
       (await _active(.skill)).map(_skill).toList();
 
-  Future<SkillCredentialDefinitionEntity?> definition(String id) async =>
+  Future<SkillCredentialDefinitionEntity?> _apiDefinition(String id) async =>
       (await _active(.skillDefinition))
           .where((item) => item.resourceId == id)
           .map(_definition)
           .firstOrNull;
 
-  Future<SkillCredentialDefinitionEntity> createDefinition(
+  Future<SkillCredentialDefinitionEntity> _apiCreateDefinition(
     SkillCredentialDefinitionToCreate value,
   ) async {
     final now = DateTime.now().toUtc();
@@ -235,7 +331,7 @@ extension CloudSkillStoreDefinitionOperations on CloudSkillStore {
     return entity;
   }
 
-  Future<SkillCredentialDefinitionEntity> updateDefinition(
+  Future<SkillCredentialDefinitionEntity> _apiUpdateDefinition(
     String id,
     SkillCredentialDefinitionToUpdate value,
   ) async {
@@ -252,17 +348,19 @@ extension CloudSkillStoreDefinitionOperations on CloudSkillStore {
     return updated;
   }
 
-  Future<void> deleteDefinition(String id) => _delete(.skillDefinition, id);
+  Future<void> _apiDeleteDefinition(String id) => _delete(.skillDefinition, id);
 }
 
 extension CloudSkillStoreCredentialOperations on CloudSkillStore {
-  Future<List<SkillCredentialEntity>> credentials(String definitionId) async =>
+  Future<List<SkillCredentialEntity>> _apiCredentials(
+    String definitionId,
+  ) async =>
       (await _active(.serviceConnection))
           .where((item) => _isCredentialForDefinition(item, definitionId))
           .map(_credential)
           .toList();
 
-  Future<SkillCredentialEntity> createCredential(
+  Future<SkillCredentialEntity> _apiCreateCredential(
     SkillCredentialToCreate value,
   ) async {
     final input = await _credentialCreateData(value);
@@ -274,7 +372,7 @@ extension CloudSkillStoreCredentialOperations on CloudSkillStore {
     return _credentialWithResponse(input.entity, response);
   }
 
-  Future<SkillCredentialForEdit?> credentialForEdit(String id) async {
+  Future<SkillCredentialForEdit?> _apiCredentialForEdit(String id) async {
     final resource = await _credentialResource(id);
     if (resource == null) return null;
     final credential = _credential(resource);
@@ -287,7 +385,7 @@ extension CloudSkillStoreCredentialOperations on CloudSkillStore {
     return _credentialForEdit(credential, fields);
   }
 
-  Future<SkillCredentialEntity> updateCredential(
+  Future<SkillCredentialEntity> _apiUpdateCredential(
     String id,
     SkillCredentialToUpdate value,
   ) async {
@@ -303,7 +401,7 @@ extension CloudSkillStoreCredentialOperations on CloudSkillStore {
     ));
   }
 
-  Future<void> deleteCredential(String id) async {
+  Future<void> _apiDeleteCredential(String id) async {
     final resource = await _required(.serviceConnection, id);
     final secretRevision = _data(resource)['secretRevision'] as int?;
     if (secretRevision == null) {
@@ -434,22 +532,17 @@ extension _CloudSkillStoreCredentialCreation on CloudSkillStore {
 
 extension _CloudSkillStoreSkillMapping on CloudSkillStore {
   /// Builds a user skill from create input in identity, text, and state steps.
-  SkillEntity _skillFromCreate(String id, SkillToCreate value, DateTime now) =>
-      _skillCreateState(
-        _skillCreateText(
-          _skillCreateIdentity(
-            _blankSkill.copyWith(
-              source: SkillSource.user,
-              id: id,
-              workspaceId: workspaceId,
-            ),
-            value,
-          ),
-          value,
-        ),
-        value,
-        now,
-      );
+  SkillEntity _skillFromCreate(String id, SkillToCreate value, DateTime now) {
+    final base = _blankSkill.copyWith(
+      source: SkillSource.user,
+      id: id,
+      workspaceId: workspaceId,
+    );
+    final identity = _skillCreateIdentity(base, value);
+    final text = _skillCreateText(identity, value);
+
+    return _skillCreateState(text, value, now);
+  }
 
   SkillEntity _skillCreateIdentity(SkillEntity skill, SkillToCreate value) =>
       skill.copyWith(
@@ -520,17 +613,20 @@ extension _CloudSkillStoreToolMapping on CloudSkillStore {
   SkillTemplateToolEntity _toolFromCreate(
     ({String id, String skillId, SkillTemplateToolToCreate value, DateTime now})
     request,
-  ) => _toolCreateState(
-    _toolCreateText(
-      _toolCreateIdentity(
-        _blankTool.copyWith(id: request.id, skillId: request.skillId),
-        request.value,
+  ) {
+    final value = request.value;
+    return _toolCreateState(
+      _toolCreateText(
+        _toolCreateIdentity(
+          _blankTool.copyWith(id: request.id, skillId: request.skillId),
+          value,
+        ),
+        value,
       ),
-      request.value,
-    ),
-    request.value,
-    request.now,
-  );
+      value,
+      request.now,
+    );
+  }
 
   SkillTemplateToolEntity _toolCreateIdentity(
     SkillTemplateToolEntity tool,
@@ -687,10 +783,11 @@ extension _CloudSkillStoreCredentialMapping on CloudSkillStore {
   }
 
   void _addCredentialAttribute(_CredentialAttributeRequest request) {
-    (request.fields[request.entry.key]?.secret == false
+    final entry = request.entry;
+    (request.fields[entry.key]?.secret == false
             ? request.metadata
-            : request.secret)[request.entry.key] =
-        request.entry.value;
+            : request.secret)[entry.key] =
+        entry.value;
   }
 }
 
@@ -785,37 +882,43 @@ extension _CloudSkillStoreCredentialState on CloudSkillStore {
     request,
   ) async {
     final secretRevision = _credentialSecretRevision(request.resource);
-    if (!_writesCredentialSecret(request.value)) {
-      await _updateCredentialMetadata(
-        request.resource,
-        request.updated,
-        secretRevision,
+    if (_writesCredentialSecret(request.value)) {
+      return _updateCredentialSecret(
+        _credentialSecretUpdateRequest(request, secretRevision),
       );
-
-      return request.updated;
     }
 
-    return await _updateCredentialSecret((
-      id: request.id,
-      resource: request.resource,
-      value: request.value,
-      updated: request.updated,
-      secretRevision: secretRevision,
-    ));
+    await _updateCredentialMetadata(
+      request.resource,
+      request.updated,
+      secretRevision,
+    );
+
+    return request.updated;
   }
 
-  int? _credentialSecretRevision(WorkspaceResource resource) =>
-      _data(resource)['secretRevision'] as int?;
-
-  Future<SkillCredentialEntity> _updateCredentialSecret(
+  _CredentialSecretUpdateRequest _credentialSecretUpdateRequest(
     ({
       String id,
       WorkspaceResource resource,
       SkillCredentialToUpdate value,
       SkillCredentialEntity updated,
-      int? secretRevision,
     })
     request,
+    int? secretRevision,
+  ) => (
+    id: request.id,
+    resource: request.resource,
+    value: request.value,
+    updated: request.updated,
+    secretRevision: secretRevision,
+  );
+
+  int? _credentialSecretRevision(WorkspaceResource resource) =>
+      _data(resource)['secretRevision'] as int?;
+
+  Future<SkillCredentialEntity> _updateCredentialSecret(
+    _CredentialSecretUpdateRequest request,
   ) async {
     final response = await _updateCredentialResource(request);
 
@@ -829,30 +932,28 @@ extension _CloudSkillStoreCredentialState on CloudSkillStore {
 
 extension _CloudSkillStoreCredentialPersistence on CloudSkillStore {
   Future<MutateWorkspaceCredentialResponse> _updateCredentialResource(
-    ({
-      String id,
-      WorkspaceResource resource,
-      SkillCredentialToUpdate value,
-      SkillCredentialEntity updated,
-      int? secretRevision,
-    })
-    request,
-  ) {
-    final data = _credentialData(request.updated, secretRevision: null);
-    final secret = _updatedSecret(request.value);
+    _CredentialSecretUpdateRequest request,
+  ) => _mutateCredentialUpdate((
+    id: request.id,
+    resourceRevision: request.resource.revision,
+    data: _credentialData(request.updated, secretRevision: null),
+    secret: _updatedSecret(request.value),
+    secretRevision: request.secretRevision,
+  ));
 
-    return _store.mutateCredential(
-      operation: .update,
-      kind: .serviceConnection,
-      id: request.id,
-      data: data,
-      resourceRevision: request.resource.revision,
-      secretKind: .skillCredential,
-      scope: .workspace,
-      secret: secret,
-      secretRevision: request.secretRevision,
-    );
-  }
+  Future<MutateWorkspaceCredentialResponse> _mutateCredentialUpdate(
+    _CredentialMutationRequest request,
+  ) => _store.mutateCredential(
+    operation: .update,
+    kind: .serviceConnection,
+    id: request.id,
+    data: request.data,
+    resourceRevision: request.resourceRevision,
+    secretKind: .skillCredential,
+    scope: .workspace,
+    secret: request.secret,
+    secretRevision: request.secretRevision,
+  );
 
   String _updatedSecret(SkillCredentialToUpdate value) => jsonEncode({
     'set': value.secretAttributes,
@@ -1392,12 +1493,23 @@ Future<void> _setConversationSkillForRequest(
 
     return;
   }
-  if (existing == null) {
-    await store._createConversationSkill((
-      id: request.id,
-      conversationId: request.conversationId,
-      skillId: request.skillId,
-      isAppSkill: request.isAppSkill,
-    ));
-  }
+  if (existing != null) return;
+
+  await store._createConversationSkill(_conversationSkillRequest(request));
 }
+
+_ConversationSkillRequest _conversationSkillRequest(
+  ({
+    String id,
+    String conversationId,
+    String skillId,
+    bool isAppSkill,
+    bool selected,
+  })
+  request,
+) => (
+  id: request.id,
+  conversationId: request.conversationId,
+  skillId: request.skillId,
+  isAppSkill: request.isAppSkill,
+);

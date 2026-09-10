@@ -20,21 +20,35 @@ abstract final class CloudMessageTools {
   ) => [
     if (state case final cloudState?)
       for (final call in cloudState.toolCalls)
-        if (call.status == 'pending')
-          for (final message in cloudState.messages)
-            if (message.id == call.messageId && message.turnRevision != null)
-              PendingToolCall(
-                toolCall: .new(
-                  id: call.id,
-                  name: call.name,
-                  argumentsRaw: call.argumentsJson,
-                  argumentsDigest: call.argumentsDigest,
-                  turnId: message.turnId ?? call.turnId,
-                  turnRevision: message.turnRevision,
-                  responseRaw: call.resultJson,
-                ),
-                messageId: call.messageId,
-                sourceConversationId: cloudState.conversation.id,
-              ),
+        if (call.status == 'pending') ..._pendingCallsForTool(cloudState, call),
   ];
+
+  static List<PendingToolCall> _pendingCallsForTool(
+    CloudConversationState state,
+    ConversationToolCallView call,
+  ) => [
+    for (final message in state.messages)
+      if (message.id == call.messageId)
+        if (message.turnRevision case final turnRevision?)
+          _pendingToolCall(state, call, message, turnRevision),
+  ];
+
+  static PendingToolCall _pendingToolCall(
+    CloudConversationState state,
+    ConversationToolCallView call,
+    ConversationMessageView message,
+    int turnRevision,
+  ) => PendingToolCall(
+    toolCall: .new(
+      id: call.id,
+      name: call.name,
+      argumentsRaw: call.argumentsJson,
+      argumentsDigest: call.argumentsDigest,
+      turnId: message.turnId ?? call.turnId,
+      turnRevision: turnRevision,
+      responseRaw: call.resultJson,
+    ),
+    messageId: call.messageId,
+    sourceConversationId: state.conversation.id,
+  );
 }

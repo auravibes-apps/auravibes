@@ -4,7 +4,6 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -23,7 +22,6 @@ import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:rxdart/rxdart.dart';
 
 final _logger = Logger('continue_agent_service');
 
@@ -49,6 +47,13 @@ typedef _ContinueAgentA2uiState = ({
   List<String>? messages,
   Map<String, List<String>> issuesBySurface,
   List<String> messageIssues,
+});
+
+typedef _StoppedAssistantPatch = ({
+  String messageId,
+  ChatResult<ChatMessage>? result,
+  MessageMetadataEntity? metadata,
+  _ContinueAgentA2uiMessage messageState,
 });
 
 typedef _ContinueAgentCoreDependencies = ({
@@ -288,15 +293,17 @@ extension _ContinueAgentCleanup on _ContinueAgentServiceDependencies {
       return metadata;
     }
 
-    return metadata.copyWith(
-      toolCalls: metadata.toolCalls.map((toolCall) {
-        if (!toolCall.isPending) return toolCall;
+    final toolCalls = metadata.toolCalls
+        .map(
+          (toolCall) => toolCall.isPending
+              ? toolCall.copyWith(
+                  resultStatus: ToolCallResultStatus.stoppedByUser,
+                )
+              : toolCall,
+        )
+        .toList();
 
-        return toolCall.copyWith(
-          resultStatus: ToolCallResultStatus.stoppedByUser,
-        );
-      }).toList(),
-    );
+    return metadata.copyWith(toolCalls: toolCalls);
   }
 
   Future<void> _markPendingUsersErrored(
@@ -306,10 +313,7 @@ extension _ContinueAgentCleanup on _ContinueAgentServiceDependencies {
 
     try {
       for (final pendingUserMessageId in pendingUserMessageIds) {
-        final _ = await this.messageRepository.patchMessage(
-          pendingUserMessageId,
-          const MessagePatch(status: .error),
-        );
+        await _markPendingUserErrored(pendingUserMessageId);
       }
     } on Object catch (cleanupError, cleanupStackTrace) {
       monitoringService.trackError(
@@ -320,15 +324,19 @@ extension _ContinueAgentCleanup on _ContinueAgentServiceDependencies {
     }
   }
 
+  Future<void> _markPendingUserErrored(String messageId) async {
+    final _ = await this.messageRepository.patchMessage(
+      messageId,
+      const MessagePatch(status: .error),
+    );
+  }
+
   String? _stoppedAssistantContent(ChatResult<ChatMessage>? result) =>
       result?.entityText.isEmpty ?? true ? null : result?.entityText;
 
   Future<void> _markAssistantErrored(String messageId) async {
     try {
-      final _ = await this.messageRepository.patchMessage(
-        messageId,
-        const .new(status: .error),
-      );
+      await _patchAssistantError(messageId);
     } on Object catch (cleanupError, cleanupStackTrace) {
       monitoringService.trackError(
         'Failed to persist assistant error state',
@@ -336,8 +344,19 @@ extension _ContinueAgentCleanup on _ContinueAgentServiceDependencies {
         stackTrace: cleanupStackTrace,
       );
     } finally {
-      final _ = _a2uiRuntimesByMessageId.remove(messageId);
+      _removeA2uiRuntime(messageId);
     }
+  }
+
+  Future<void> _patchAssistantError(String messageId) async {
+    final _ = await this.messageRepository.patchMessage(
+      messageId,
+      const .new(status: .error),
+    );
+  }
+
+  void _removeA2uiRuntime(String messageId) {
+    final _ = _a2uiRuntimesByMessageId.remove(messageId);
   }
 
   Future<void> _markPendingUsersSent(List<String> pendingUserMessageIds) async {
@@ -370,12 +389,12 @@ extension _ContinueAgentPersistence on _ContinueAgentServiceDependencies {
 
     final messageState = _a2uiMessageState(messageId);
     final stoppedMetadata = _markPendingToolsStopped(result?.entityMetadata);
-    await _patchStoppedAssistantMessage(
-      messageId,
-      result,
-      stoppedMetadata,
-      messageState,
-    );
+    await _patchStoppedAssistantMessage((
+      messageId: messageId,
+      result: result,
+      metadata: stoppedMetadata,
+      messageState: messageState,
+    ));
     _closeA2uiMessageIfComplete(
       messageId,
       stoppedMetadata,
@@ -385,16 +404,13 @@ extension _ContinueAgentPersistence on _ContinueAgentServiceDependencies {
   }
 
   Future<void> _patchStoppedAssistantMessage(
-    String messageId,
-    ChatResult<ChatMessage>? result,
-    MessageMetadataEntity? metadata,
-    _ContinueAgentA2uiMessage messageState,
+    _StoppedAssistantPatch request,
   ) async {
     final _ = await this.messageRepository.patchMessage(
-      messageId,
+      request.messageId,
       .new(
-        content: _stoppedAssistantContent(result),
-        metadata: _withA2uiState(metadata, messageState),
+        content: _stoppedAssistantContent(request.result),
+        metadata: _withA2uiState(request.metadata, request.messageState),
         status: MessageStatus.sent,
       ),
     );
@@ -422,7 +438,10 @@ extension _ContinueAgentPersistence on _ContinueAgentServiceDependencies {
   String? _metadataJson(MessageMetadataEntity? metadata) {
     return metadata == null ? null : JsonCodec.encode(metadata.toJson());
   }
+}
 
+extension _ContinueAgentCompletionPersistence
+    on _ContinueAgentServiceDependencies {
   void _bindA2uiRuntime(String conversationId, String messageId) {
     final runtime = a2uiRuntimeForConversation?.call(conversationId);
     if (runtime == null || !runtime.enabled) return;
@@ -553,8 +572,10 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
     return this.chatbotService.sendMessage(
       preparedInput.model,
       preparedInput.chatHistory,
-      tools: preparedInput.enabledTools,
-      sessionId: request.conversationId,
+      options: .new(
+        tools: preparedInput.enabledTools,
+        sessionId: request.conversationId,
+      ),
       a2uiRuntime: request.a2uiRuntime,
     );
   }
@@ -563,10 +584,7 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
     _ContinueAgentRequest request,
     Stream<ChatResult<ChatMessage>> responseStream,
   ) {
-    return AgentStreamRunner<ChatResult<ChatMessage>>(
-      cancellationEffects: agentCancellationRuntime,
-      provider: this,
-    ).call(
+    return _responseStreamRunner().call(
       conversationId: request.conversationId,
       responseStream: responseStream,
       pendingUserMessageIds: request.context?.ackMessageIds ?? const <String>[],
@@ -574,6 +592,12 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
           request.context?.origin == AgentIterationOrigin.toolResume,
     );
   }
+
+  AgentStreamRunner<ChatResult<ChatMessage>> _responseStreamRunner() =>
+      AgentStreamRunner<ChatResult<ChatMessage>>(
+        cancellationEffects: agentCancellationRuntime,
+        provider: this,
+      );
 
   Future<
     PreparedContinueAgentInput<

@@ -19,24 +19,28 @@ class const SkillDetail({
   final String? descriptionKey,
   final String? contentKey,
 }) {
-  // App skills may not have a persisted workspace row.
-  factory fromUserSkill(SkillEntity skill) {
-    return SkillDetail(
-      source: skill.source,
-      id: skill.id,
-      workspaceId: skill.workspaceId,
-      kind: skill.kind,
-      title: skill.title,
-      slug: skill.slug,
-      description: skill.description,
-      content: skill.content,
-      isEnabled: skill.isEnabled,
-      isCredentialOptional: skill.isCredentialOptional,
-      credentialDefinitionId: skill.credentialDefinitionId,
-    );
-  }
-
   bool get isUserSkill => source == SkillSource.user;
 
+  // App skills may not have a persisted workspace row.
+  static SkillDetail fromUserSkill(SkillEntity skill) =>
+      _UserSkillSkillDetail(skill);
+
   bool hasSource(SkillSource value) => source == value;
+}
+
+class _UserSkillSkillDetail extends SkillDetail {
+  new(SkillEntity skill)
+    : super(
+        source: skill.source,
+        id: skill.id,
+        workspaceId: skill.workspaceId,
+        kind: skill.kind,
+        title: skill.title,
+        slug: skill.slug,
+        description: skill.description,
+        content: skill.content,
+        isEnabled: skill.isEnabled,
+        isCredentialOptional: skill.isCredentialOptional,
+        credentialDefinitionId: skill.credentialDefinitionId,
+      );
 }

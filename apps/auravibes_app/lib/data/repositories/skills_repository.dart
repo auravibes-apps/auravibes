@@ -11,28 +11,28 @@ class SkillsRepository(AppDatabase database) {
   Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async {
     final rows = await _dao.getWorkspaceSkills(workspaceId);
 
-    return rows.map(this._tableToEntity).toList();
+    return rows.map(_tableToEntity).toList();
   }
 
   Future<SkillEntity?> getSkillById(String skillId) async {
     final row = await _dao.getSkillById(skillId);
     if (row == null) return null;
 
-    return this._tableToEntity(row);
+    return _tableToEntity(row);
   }
 
   Future<SkillEntity?> getSkillBySlug(String workspaceId, String slug) async {
     final row = await _dao.getSkillBySlug(workspaceId, slug);
     if (row == null) return null;
 
-    return this._tableToEntity(row);
+    return _tableToEntity(row);
   }
 
   Future<SkillEntity?> getSkillByTitle(String workspaceId, String title) async {
     final row = await _dao.getSkillByTitle(workspaceId, title.trim());
     if (row == null) return null;
 
-    return this._tableToEntity(row);
+    return _tableToEntity(row);
   }
 
   Future<SkillEntity> createSkill(
@@ -43,50 +43,66 @@ class SkillsRepository(AppDatabase database) {
       _createSkillCompanion(workspaceId, skill),
     );
 
-    return this._tableToEntity(table);
+    return _tableToEntity(table);
   }
 
   Future<SkillEntity> updateSkill(String skillId, SkillToUpdate skill) async {
     final table = await _dao.updateSkill(skillId, _updateSkillCompanion(skill));
 
-    return this._tableToEntity(table);
+    return _tableToEntity(table);
   }
 
   Future<bool> deleteSkill(String skillId) => _dao.deleteSkill(skillId);
 }
 
-extension on SkillsRepository {
+extension SkillsRepositoryCompanionMappings on SkillsRepository {
   SkillsCompanion _createSkillCompanion(
     String workspaceId,
     SkillToCreate skill,
   ) {
-    return SkillsCompanion(
-      source: const Value(SkillSourceTable.user),
-      workspaceId: Value(workspaceId),
-      kind: Value(this._mapKindToTable(skill.kind)),
-      title: Value(skill.title.trim()),
-      slug: Value(generateSkillSlug(skill.title)),
-      description: Value(skill.description),
-      content: Value(skill.content),
-      credentialDefinitionId: Value(skill.credentialDefinitionId),
-      isCredentialOptional: Value(skill.isCredentialOptional),
-      isEnabled: Value(skill.isEnabled),
+    return _addSkillCreationFields(
+      SkillsCompanion(
+        source: const Value(SkillSourceTable.user),
+        workspaceId: Value(workspaceId),
+        kind: Value(_mapKindToTable(skill.kind)),
+        title: Value(skill.title.trim()),
+        slug: Value(generateSkillSlug(skill.title)),
+      ),
+      skill,
     );
   }
+
+  SkillsCompanion _addSkillCreationFields(
+    SkillsCompanion companion,
+    SkillToCreate skill,
+  ) => companion.copyWith(
+    description: Value(skill.description),
+    content: Value(skill.content),
+    credentialDefinitionId: Value(skill.credentialDefinitionId),
+    isCredentialOptional: Value(skill.isCredentialOptional),
+    isEnabled: Value(skill.isEnabled),
+  );
 
   SkillsCompanion _updateSkillCompanion(SkillToUpdate skill) {
-    return SkillsCompanion(
-      updatedAt: Value(DateTime.now()),
-      title: this._skillTitleValue(skill.title),
-      description: Value.absentIfNull(skill.description),
-      content: Value.absentIfNull(skill.content),
-      credentialDefinitionId: this._credentialDefinitionValue(skill),
-      isCredentialOptional: Value.absentIfNull(skill.isCredentialOptional),
-      isEnabled: Value.absentIfNull(skill.isEnabled),
+    return _addSkillUpdateFields(
+      SkillsCompanion(updatedAt: Value(DateTime.now())),
+      skill,
     );
   }
 
-  Value<String?> _skillTitleValue(String? title) {
+  SkillsCompanion _addSkillUpdateFields(
+    SkillsCompanion companion,
+    SkillToUpdate skill,
+  ) => companion.copyWith(
+    title: _skillTitleValue(skill.title),
+    description: Value.absentIfNull(skill.description),
+    content: Value.absentIfNull(skill.content),
+    credentialDefinitionId: _credentialDefinitionValue(skill),
+    isCredentialOptional: Value.absentIfNull(skill.isCredentialOptional),
+    isEnabled: Value.absentIfNull(skill.isEnabled),
+  );
+
+  Value<String>? _skillTitleValue(String? title) {
     return title == null ? const Value.absent() : Value(title.trim());
   }
 
@@ -95,24 +111,40 @@ extension on SkillsRepository {
         ? const Value(null)
         : Value.absentIfNull(skill.credentialDefinitionId);
   }
+}
 
+extension SkillsRepositoryEntityMappings on SkillsRepository {
   SkillEntity _tableToEntity(SkillsTable table) {
-    return SkillEntity(
-      source: this._mapSource(table.source),
-      id: table.id,
-      workspaceId: table.workspaceId,
-      kind: this._mapKind(table.kind),
-      title: table.title,
-      slug: table.slug,
-      description: table.description,
-      content: table.content,
-      isEnabled: table.isEnabled,
-      isCredentialOptional: table.isCredentialOptional,
-      createdAt: table.createdAt,
-      updatedAt: table.updatedAt,
-      credentialDefinitionId: table.credentialDefinitionId,
+    return _withSkillState(
+      _withSkillContent(_withSkillIdentity(_emptySkillEntity, table), table),
+      table,
     );
   }
+
+  SkillEntity _withSkillIdentity(SkillEntity skill, SkillsTable table) =>
+      skill.copyWith(
+        source: _mapSource(table.source),
+        id: table.id,
+        workspaceId: table.workspaceId,
+        kind: _mapKind(table.kind),
+      );
+
+  SkillEntity _withSkillContent(SkillEntity skill, SkillsTable table) =>
+      skill.copyWith(
+        title: table.title,
+        slug: table.slug,
+        description: table.description,
+        content: table.content,
+      );
+
+  SkillEntity _withSkillState(SkillEntity skill, SkillsTable table) =>
+      skill.copyWith(
+        isEnabled: table.isEnabled,
+        isCredentialOptional: table.isCredentialOptional,
+        createdAt: table.createdAt,
+        updatedAt: table.updatedAt,
+        credentialDefinitionId: table.credentialDefinitionId,
+      );
 
   SkillSource _mapSource(SkillSourceTable source) {
     return switch (source) {
@@ -135,3 +167,18 @@ extension on SkillsRepository {
     };
   }
 }
+
+final _emptySkillEntity = SkillEntity(
+  id: '',
+  workspaceId: '',
+  source: SkillSource.user,
+  kind: SkillKind.template,
+  title: '',
+  slug: '',
+  description: '',
+  content: '',
+  isEnabled: false,
+  isCredentialOptional: false,
+  createdAt: DateTime(0),
+  updatedAt: DateTime(0),
+);

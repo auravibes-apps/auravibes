@@ -43,14 +43,12 @@ class _AuraAccordionState extends State<AuraAccordion> {
     );
   }
 
-  void _toggle(int index) {
-    setState(() {
-      if (_expanded.contains(index)) {
-        if (!_expanded.remove(index)) return;
-      } else {
-        if (!_expanded.add(index)) return;
-      }
-    });
+  void _toggle(int index) => setState(() => _toggleExpanded(index));
+
+  void _toggleExpanded(int index) {
+    if (_expanded.remove(index)) return;
+
+    _expanded.add(index);
   }
 }
 

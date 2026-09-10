@@ -38,17 +38,38 @@ class AuraAnimatedContent extends StatelessWidget {
       MediaQuery.accessibleNavigationOf(context);
 
   Widget _buildTransition(Widget child, Animation<double> animation) {
-    return switch (transition) {
-      .fade => FadeTransition(opacity: animation, child: child),
-      .slide => SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.08),
-          end: Offset.zero,
-        ).animate(animation),
-        child: child,
-      ),
-      .scale => ScaleTransition(scale: animation, child: child),
-      .none => child,
-    };
+    return _AuraAnimatedTransition(
+      transition: transition,
+      animation: animation,
+      child: child,
+    );
   }
+}
+
+class const _AuraAnimatedTransition({
+  required final AuraContentTransition transition,
+  required final Animation<double> animation,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (transition) {
+    .fade => FadeTransition(opacity: animation, child: child),
+    .slide => _AuraAnimatedSlideTransition(animation: animation, child: child),
+    .scale => ScaleTransition(scale: animation, child: child),
+    .none => child,
+  };
+}
+
+class const _AuraAnimatedSlideTransition({
+  required final Animation<double> animation,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SlideTransition(
+    position: Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(animation),
+    child: child,
+  );
 }

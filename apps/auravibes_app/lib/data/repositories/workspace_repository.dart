@@ -7,6 +7,13 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:drift/drift.dart';
 
+typedef _CloudWorkspaceData = ({
+  String name,
+  String cloudWorkspaceId,
+  String cloudAccountId,
+  String serverUrl,
+});
+
 /// Implementation of the [WorkspaceRepository] interface.
 ///
 /// This class provides a concrete implementation of workspace data operations
@@ -16,27 +23,138 @@ class WorkspaceRepository(
   /// The database instance for workspace operations.
   final AppDatabase _database, {
   final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
-}) {
+}) with
+    _WorkspaceRepositoryOperationsApi,
+    _WorkspaceRepositoryCloudApi,
+    _WorkspaceRepositoryQueryApi {
   Future<List<WorkspaceEntity>> getAllWorkspaces() async {
     final workspaceTables = await _database.workspaceDao.getAllWorkspaces();
 
-    return workspaceTables.map(this._mapToWorkspace).toList();
+    return workspaceTables.map(_mapToWorkspace).toList();
   }
+}
+
+mixin _WorkspaceRepositoryOperationsApi {
+  Stream<List<WorkspaceEntity>> watchAllWorkspaces() =>
+      WorkspaceRepositoryOperations(this as WorkspaceRepository)
+          .watchAllWorkspaces();
+
+  Future<WorkspaceEntity?> getWorkspaceById(String id) =>
+      WorkspaceRepositoryOperations(this as WorkspaceRepository)
+          .getWorkspaceById(id);
+
+  Future<List<WorkspaceEntity>> getWorkspacesByType(WorkspaceType type) =>
+      WorkspaceRepositoryOperations(this as WorkspaceRepository)
+          .getWorkspacesByType(type);
+
+  Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) =>
+      WorkspaceRepositoryOperations(this as WorkspaceRepository)
+          .createWorkspace(workspace);
+
+  Future<WorkspaceEntity> patchWorkspace(String id, WorkspacePatch workspace) =>
+      WorkspaceRepositoryOperations(this as WorkspaceRepository)
+          .patchWorkspace(id, workspace);
+
+  Future<bool> deleteWorkspace(String id) =>
+      WorkspaceRepositoryOperations(this as WorkspaceRepository)
+          .deleteWorkspace(id);
+}
+
+mixin _WorkspaceRepositoryCloudApi {
+  Future<WorkspaceEntity?> getCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+    required String serverUrl,
+  }) =>
+      WorkspaceRepositoryCloudOperations(this as WorkspaceRepository)
+          .getCloudWorkspaceMirror(
+            cloudWorkspaceId: cloudWorkspaceId,
+            cloudAccountId: cloudAccountId,
+            serverUrl: serverUrl,
+          );
+
+  Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
+    String cloudWorkspaceId, {
+    required String cloudAccountId,
+    required String serverUrl,
+  }) => WorkspaceRepositoryCloudOperations(this as WorkspaceRepository)
+      .getCloudWorkspaceMirrorByCloudId(
+        cloudWorkspaceId,
+        cloudAccountId: cloudAccountId,
+        serverUrl: serverUrl,
+      );
+
+  Future<WorkspaceEntity> upsertCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+    required String name,
+    required String serverUrl,
+  }) =>
+      WorkspaceRepositoryCloudOperations(this as WorkspaceRepository)
+          .upsertCloudWorkspaceMirror(
+            cloudWorkspaceId: cloudWorkspaceId,
+            cloudAccountId: cloudAccountId,
+            name: name,
+            serverUrl: serverUrl,
+          );
+
+  Future<bool> deleteCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+    required String serverUrl,
+  }) =>
+      WorkspaceRepositoryCloudOperations(this as WorkspaceRepository)
+          .deleteCloudWorkspaceMirror(
+            cloudWorkspaceId: cloudWorkspaceId,
+            cloudAccountId: cloudAccountId,
+            serverUrl: serverUrl,
+          );
+
+  Future<int> deleteCloudWorkspaceMirrorsForAccount(
+    String cloudAccountId, {
+    required String serverUrl,
+  }) => WorkspaceRepositoryCloudOperations(
+    this as WorkspaceRepository,
+  ).deleteCloudWorkspaceMirrorsForAccount(cloudAccountId, serverUrl: serverUrl);
+}
+
+mixin _WorkspaceRepositoryQueryApi {
+  Future<bool> workspaceExists(String id) =>
+      WorkspaceRepositoryQueryOperations(this as WorkspaceRepository)
+          .workspaceExists(id);
+
+  Future<List<WorkspaceEntity>> searchWorkspacesByName(String query) =>
+      WorkspaceRepositoryQueryOperations(this as WorkspaceRepository)
+          .searchWorkspacesByName(query);
+
+  Future<int> getWorkspaceCount() =>
+      WorkspaceRepositoryQueryOperations(this as WorkspaceRepository)
+          .getWorkspaceCount();
+
+  Future<int> getWorkspaceCountByType(WorkspaceType type) =>
+      WorkspaceRepositoryQueryOperations(this as WorkspaceRepository)
+          .getWorkspaceCountByType(type);
+
+  Future<bool> validateWorkspace(WorkspaceToCreate workspace) =>
+      WorkspaceRepositoryQueryOperations(this as WorkspaceRepository)
+          .validateWorkspace(workspace);
+
+  Future<bool> patchWorkspaceTimestamp(String id) =>
+      WorkspaceRepositoryQueryOperations(this as WorkspaceRepository)
+          .patchWorkspaceTimestamp(id);
 }
 
 extension WorkspaceRepositoryOperations on WorkspaceRepository {
   Stream<List<WorkspaceEntity>> watchAllWorkspaces() {
     return _database.workspaceDao.watchAllWorkspaces().map(
-      (tables) => tables.map(this._mapToWorkspace).toList(),
+      (tables) => tables.map(_mapToWorkspace).toList(),
     );
   }
 
   Future<WorkspaceEntity?> getWorkspaceById(String id) async {
     final workspacesTable = await _database.workspaceDao.getWorkspaceById(id);
 
-    return workspacesTable != null
-        ? this._mapToWorkspace(workspacesTable)
-        : null;
+    return workspacesTable != null ? _mapToWorkspace(workspacesTable) : null;
   }
 
   Future<List<WorkspaceEntity>> getWorkspacesByType(WorkspaceType type) async {
@@ -44,72 +162,49 @@ extension WorkspaceRepositoryOperations on WorkspaceRepository {
       type,
     );
 
-    return workspaceTables.map(this._mapToWorkspace).toList();
+    return workspaceTables.map(_mapToWorkspace).toList();
   }
 
   Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) async {
     // Validate workspace before creating.
-    if (!await this.validateWorkspace(workspace)) {
+    if (!await validateWorkspace(workspace)) {
       throw const WorkspaceValidationException('Invalid workspace data');
     }
 
-    final workspaceCompanion = this._mapToWorkspacesCompanion(workspace);
+    final workspaceCompanion = _mapToWorkspacesCompanion(workspace);
     final createdWorkspace = await _database.workspaceDao.insertWorkspace(
       workspaceCompanion,
     );
 
-    return this._mapToWorkspace(createdWorkspace);
+    return _mapToWorkspace(createdWorkspace);
   }
 
   Future<WorkspaceEntity> patchWorkspace(
     String id,
     WorkspacePatch workspace,
   ) async {
-    final currentWorkspaceTable = await _database.workspaceDao.getWorkspaceById(
+    final currentWorkspaceTable = await _requireWorkspace(id);
+
+    _validateWorkspacePatch(workspace, _mapToWorkspace(currentWorkspaceTable));
+
+    final updatedWorkspace = await _patchWorkspaceRow(
       id,
-    );
-    if (currentWorkspaceTable == null) {
-      throw WorkspaceNotFoundException(id);
-    }
-
-    this._validateWorkspacePatch(
-      workspace,
-      this._mapToWorkspace(currentWorkspaceTable),
+      _mapPatchToWorkspacesCompanion(workspace),
     );
 
-    final workspaceCompanion = this._mapPatchToWorkspacesCompanion(workspace);
-    final updated = await _database.workspaceDao.patchWorkspace(
-      id,
-      workspaceCompanion,
-    );
-
-    if (!updated) {
-      throw WorkspaceException('Failed to patch workspace with ID $id');
-    }
-
-    final updatedWorkspace = await _database.workspaceDao.getWorkspaceById(id);
-
-    if (updatedWorkspace == null) {
-      throw WorkspaceException(
-        'Failed to retrieve updated workspace with ID $id',
-      );
-    }
-
-    return this._mapToWorkspace(updatedWorkspace);
+    return _mapToWorkspace(updatedWorkspace);
   }
 
   Future<bool> deleteWorkspace(String id) async {
     // Check if workspace exists.
-    if (!await this.workspaceExists(id)) {
+    if (!await workspaceExists(id)) {
       return false; // Return false instead of throwing for delete operations.
     }
 
-    final attachmentPaths = await this._attachmentPathsForWorkspace(id);
+    final attachmentPaths = await _attachmentPathsForWorkspace(id);
     final deleted = await _database.workspaceDao.deleteWorkspace(id);
     if (deleted) {
-      final _ = await Future.wait(
-        attachmentPaths.map(this._deleteAttachmentFile),
-      );
+      final _ = await Future.wait(attachmentPaths.map(_deleteAttachmentFile));
     }
 
     return deleted;
@@ -122,14 +217,11 @@ extension WorkspaceRepositoryCloudOperations on WorkspaceRepository {
     required String cloudAccountId,
     required String serverUrl,
   }) async {
-    final row =
-        await (_database.select(_database.workspaces)..where(
-              (workspace) =>
-                  workspace.cloudWorkspaceId.equals(cloudWorkspaceId) &
-                  workspace.cloudAccountId.equals(cloudAccountId) &
-                  workspace.url.equals(serverUrl),
-            ))
-            .getSingleOrNull();
+    final row = await _findCloudWorkspaceMirror(
+      cloudWorkspaceId: cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+      serverUrl: serverUrl,
+    );
 
     return row == null ? null : _mapToWorkspace(row);
   }
@@ -139,14 +231,11 @@ extension WorkspaceRepositoryCloudOperations on WorkspaceRepository {
     required String cloudAccountId,
     required String serverUrl,
   }) async {
-    final row =
-        await (_database.select(_database.workspaces)..where(
-              (workspace) =>
-                  workspace.cloudWorkspaceId.equals(cloudWorkspaceId) &
-                  workspace.cloudAccountId.equals(cloudAccountId) &
-                  workspace.url.equals(serverUrl),
-            ))
-            .getSingleOrNull();
+    final row = await _findCloudWorkspaceMirror(
+      cloudWorkspaceId: cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+      serverUrl: serverUrl,
+    );
 
     return row == null ? null : _mapToWorkspace(row);
   }
@@ -157,6 +246,12 @@ extension WorkspaceRepositoryCloudOperations on WorkspaceRepository {
     required String name,
     required String serverUrl,
   }) async {
+    final cloudWorkspace = (
+      name: name,
+      cloudWorkspaceId: cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+      serverUrl: serverUrl,
+    );
     final existing = await getCloudWorkspaceMirrorByCloudId(
       cloudWorkspaceId,
       cloudAccountId: cloudAccountId,
@@ -164,26 +259,12 @@ extension WorkspaceRepositoryCloudOperations on WorkspaceRepository {
     );
 
     if (existing == null) {
-      return await createWorkspace(
-        .new(
-          name: name,
-          type: WorkspaceType.remote,
-          url: serverUrl,
-          cloudWorkspaceId: cloudWorkspaceId,
-          cloudAccountId: cloudAccountId,
-        ),
-      );
+      return await createWorkspace(_cloudWorkspaceToCreate(cloudWorkspace));
     }
 
     return await patchWorkspace(
       existing.id,
-      .new(
-        name: name,
-        type: WorkspaceType.remote,
-        url: serverUrl,
-        cloudWorkspaceId: cloudWorkspaceId,
-        cloudAccountId: cloudAccountId,
-      ),
+      _cloudWorkspacePatch(cloudWorkspace),
     );
   }
 
@@ -206,13 +287,10 @@ extension WorkspaceRepositoryCloudOperations on WorkspaceRepository {
     String cloudAccountId, {
     required String serverUrl,
   }) async {
-    final mirrors =
-        await (_database.select(_database.workspaces)..where(
-              (workspace) =>
-                  workspace.cloudAccountId.equals(cloudAccountId) &
-                  workspace.url.equals(serverUrl),
-            ))
-            .get();
+    final mirrors = await _findCloudWorkspaceMirrorsForAccount(
+      cloudAccountId: cloudAccountId,
+      serverUrl: serverUrl,
+    );
     var deleted = 0;
     for (final mirror in mirrors) {
       if (await deleteWorkspace(mirror.id)) deleted++;
@@ -264,8 +342,85 @@ extension WorkspaceRepositoryQueryOperations on WorkspaceRepository {
 }
 
 extension on WorkspaceRepository {
+  Future<WorkspacesTable> _requireWorkspace(String id) async {
+    final workspace = await _database.workspaceDao.getWorkspaceById(id);
+    if (workspace == null) throw WorkspaceNotFoundException(id);
+
+    return workspace;
+  }
+
+  Future<WorkspacesTable> _patchWorkspaceRow(
+    String id,
+    WorkspacesCompanion companion,
+  ) async {
+    final updated = await _database.workspaceDao.patchWorkspace(id, companion);
+    if (!updated) {
+      throw WorkspaceException('Failed to patch workspace with ID $id');
+    }
+
+    final workspace = await _database.workspaceDao.getWorkspaceById(id);
+    if (workspace == null) {
+      throw WorkspaceException(
+        'Failed to retrieve updated workspace with ID $id',
+      );
+    }
+
+    return workspace;
+  }
+
+  Future<WorkspacesTable?> _findCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+    required String serverUrl,
+  }) async {
+    return await (_database.select(_database.workspaces)..where(
+          (workspace) =>
+              workspace.cloudWorkspaceId.equals(cloudWorkspaceId) &
+              workspace.cloudAccountId.equals(cloudAccountId) &
+              workspace.url.equals(serverUrl),
+        ))
+        .getSingleOrNull();
+  }
+
+  Future<List<WorkspacesTable>> _findCloudWorkspaceMirrorsForAccount({
+    required String cloudAccountId,
+    required String serverUrl,
+  }) async {
+    return await (_database.select(_database.workspaces)..where(
+          (workspace) =>
+              workspace.cloudAccountId.equals(cloudAccountId) &
+              workspace.url.equals(serverUrl),
+        ))
+        .get();
+  }
+
+  WorkspaceToCreate _cloudWorkspaceToCreate(_CloudWorkspaceData data) => .new(
+    name: data.name,
+    type: WorkspaceType.remote,
+    url: data.serverUrl,
+    cloudWorkspaceId: data.cloudWorkspaceId,
+    cloudAccountId: data.cloudAccountId,
+  );
+
+  WorkspacePatch _cloudWorkspacePatch(_CloudWorkspaceData data) => .new(
+    name: data.name,
+    type: WorkspaceType.remote,
+    url: data.serverUrl,
+    cloudWorkspaceId: data.cloudWorkspaceId,
+    cloudAccountId: data.cloudAccountId,
+  );
+
   Future<List<String>> _attachmentPathsForWorkspace(String id) async {
-    final rows = await (_database.select(_database.messageAttachments).join([
+    final rows = await _workspaceAttachmentRows(id);
+
+    return [
+      for (final row in rows)
+        row.readTable(_database.messageAttachments).localPath,
+    ];
+  }
+
+  Future<List<TypedResult>> _workspaceAttachmentRows(String id) async {
+    return await (_database.select(_database.messageAttachments).join([
       innerJoin(
         _database.messages,
         _database.messages.id.equalsExp(_database.messageAttachments.messageId),
@@ -275,11 +430,6 @@ extension on WorkspaceRepository {
         _database.conversations.id.equalsExp(_database.messages.conversationId),
       ),
     ])..where(_database.conversations.workspaceId.equals(id))).get();
-
-    return [
-      for (final row in rows)
-        row.readTable(_database.messageAttachments).localPath,
-    ];
   }
 
   Future<void> _deleteAttachmentFile(String localPath) async {
@@ -289,7 +439,9 @@ extension on WorkspaceRepository {
       return;
     }
   }
+}
 
+extension on WorkspaceRepository {
   /// Maps a [workspacesTable] database record to a [WorkspaceEntity]
   /// domain entity.
   ///
@@ -387,6 +539,12 @@ class WorkspaceException implements Exception {
 class WorkspaceValidationException extends WorkspaceException {
   /// Creates a new WorkspaceValidationException.
   const new(super.message, {super.localizationKey, super.cause});
+
+  @override
+  String toString() {
+    final value = super.toString();
+    return value;
+  }
 }
 
 /// Exception thrown when a workspace is not found.
@@ -400,4 +558,10 @@ class WorkspaceNotFoundException extends WorkspaceException {
 
   /// ID of the workspace that was not found.
   final String workspaceId;
+
+  @override
+  String toString() {
+    final value = super.toString();
+    return value;
+  }
 }

@@ -38,7 +38,7 @@ typedef _DeleteErrorRequest = ({
 });
 
 class _McpActionRequest {
-  const _McpActionRequest({
+  const new({
     required this.context,
     required this.ref,
     required this.connection,
@@ -49,7 +49,7 @@ class _McpActionRequest {
     required this.action,
   });
 
-  _McpActionRequest._reconnect({
+  new _reconnect({
     required BuildContext context,
     required WidgetRef ref,
     required ServiceConnectionListItem connection,
@@ -65,7 +65,7 @@ class _McpActionRequest {
          action: (usecase) => usecase.reconnectMcpServer(serverId),
        );
 
-  _McpActionRequest._refresh({
+  new _refresh({
     required BuildContext context,
     required WidgetRef ref,
     required ServiceConnectionListItem connection,
@@ -203,7 +203,8 @@ List<ServiceConnectionListItem>? _connectionsValue(
 ) => switch (value) {
   AsyncData(:final value) => value,
   AsyncLoading(value: final value?, hasValue: true) => value,
-  _ => null,
+  AsyncLoading() => null,
+  AsyncError() => null,
 };
 
 class const _ConnectionsLoadError() extends StatelessWidget {
@@ -292,10 +293,19 @@ class const _EmptyConnectionsContent({
 
 class const _EmptyConnectionsIntro() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    mainAxisSize: .min,
+  Widget build(BuildContext context) => const AuraColumn(
     children: [
       const AuraIcon(Icons.hub_outlined, size: .extraLarge),
+      const _EmptyConnectionsCopy(),
+    ],
+    mainAxisSize: .min,
+  );
+}
+
+class const _EmptyConnectionsCopy() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraColumn(
+    children: [
       const AuraText(
         child: TextLocale(LocaleKeys.service_connections_empty_title),
         style: .heading3,
@@ -305,6 +315,7 @@ class const _EmptyConnectionsIntro() extends StatelessWidget {
         textAlign: .center,
       ),
     ],
+    mainAxisSize: .min,
   );
 }
 
@@ -529,15 +540,15 @@ class const _ConnectionTileDetails({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
-    mainAxisSize: .min,
-    spacing: .xs,
-    crossAxisAlignment: .start,
     children: [
       if (connection.kind == ServiceConnectionListItemKind.mcpServer)
         _ConnectionStatusBadge(status: connection.displayStatus),
       if (connection.metadataValues.isNotEmpty)
         _ConnectionMetadata(values: connection.metadataValues),
     ],
+    mainAxisSize: .min,
+    spacing: .xs,
+    crossAxisAlignment: .start,
   );
 }
 
@@ -883,7 +894,7 @@ Future<void> _reconnectMcpServer(
   if (serverId == null) return;
 
   await _runMcpAction(
-    _McpActionRequest._reconnect(
+    ._reconnect(
       context: context,
       ref: ref,
       connection: connection,
@@ -901,7 +912,7 @@ Future<void> _refreshToken(
   if (serverId == null) return;
 
   await _runMcpAction(
-    _McpActionRequest._refresh(
+    ._refresh(
       context: context,
       ref: ref,
       connection: connection,

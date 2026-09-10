@@ -53,12 +53,13 @@ extension on AppChatCompletionsPlugin {
         metadata: {'model': ?info?.toJson()},
       );
 
-  Future<dynamic> _generateModel(
+  Future<ModelResponse> _generateModel(
     String modelName,
-    dynamic request,
-    dynamic context,
+    ModelRequest? request,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) async {
     if (request == null) throw ArgumentError.notNull('request');
+
     final body = codec.buildRequestBody(
       modelName: modelName,
       request: request,
@@ -66,30 +67,50 @@ extension on AppChatCompletionsPlugin {
     );
     final transport = _transport;
 
-    return context.streamingRequested
-        ? codec.stream(transport, body, context.sendChunk)
-        : codec.complete(transport, body);
+    if (context.streamingRequested) {
+      return await codec.stream(transport, body, context.sendChunk);
+    }
+
+    return await codec.complete(transport, body);
   }
 
   Future<ProviderTransportResponse> _transport(
     Map<String, dynamic> body,
   ) async {
-    if (apiKey.trim().isEmpty) {
-      throw GenkitException(
-        '[$name] API key is required.',
-        status: .INVALID_ARGUMENT,
-      );
-    }
-    final normalized = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
-    final request =
-        http.Request('POST', Uri.parse(normalized).resolve('chat/completions'))
-          ..headers.addAll({
-            'authorization': 'Bearer ${apiKey.trim()}',
-            'content-type': 'application/json',
-            ...?headers,
-          })
-          ..body = jsonEncode(body);
+    _ensureApiKey();
+    final request = _request(body);
     final client = httpClient ?? http.Client();
+    return _sendRequest(client, request);
+  }
+
+  void _ensureApiKey() {
+    if (apiKey.trim().isNotEmpty) return;
+
+    throw GenkitException(
+      '[$name] API key is required.',
+      status: .INVALID_ARGUMENT,
+    );
+  }
+
+  http.Request _request(Map<String, dynamic> body) {
+    final normalized = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+
+    return http.Request(
+        'POST',
+        Uri.parse(normalized).resolve('chat/completions'),
+      )
+      ..headers.addAll({
+        'authorization': 'Bearer ${apiKey.trim()}',
+        'content-type': 'application/json',
+        ...?headers,
+      })
+      ..body = jsonEncode(body);
+  }
+
+  Future<ProviderTransportResponse> _sendRequest(
+    http.Client client,
+    http.Request request,
+  ) async {
     try {
       final response = await client.send(request).timeout(requestTimeout);
 

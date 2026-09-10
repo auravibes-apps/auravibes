@@ -3,6 +3,13 @@ import 'package:flutter/widgets.dart';
 
 part 'aura_wrap.dart';
 
+typedef _GridItemWidthRequest = ({
+  AuraGrid grid,
+  BoxConstraints constraints,
+  double gap,
+  int columns,
+});
+
 /// A responsive grid using a minimum item width and theme spacing.
 class AuraGrid extends StatelessWidget {
   /// Creates a grid.
@@ -34,7 +41,12 @@ class const _AuraGridLayout({required final AuraGrid grid})
   Widget _buildLayout(BuildContext context, BoxConstraints constraints) {
     final gap = _gridGap(grid, context);
     final columns = _gridColumnCount(grid, constraints, gap);
-    final width = _gridItemWidth(grid, constraints, gap, columns);
+    final width = _gridItemWidth((
+      grid: grid,
+      constraints: constraints,
+      gap: gap,
+      columns: columns,
+    ));
 
     return _AuraGridWrap(children: grid.children, gap: gap, width: width);
   }
@@ -48,14 +60,11 @@ int _gridColumnCount(AuraGrid grid, BoxConstraints constraints, double gap) =>
     ? (constraints.maxWidth / (grid.minimumItemWidth + gap)).floor().clamp(1, 6)
     : 1;
 
-double _gridItemWidth(
-  AuraGrid grid,
-  BoxConstraints constraints,
-  double gap,
-  int columns,
-) => constraints.maxWidth.isFinite
-    ? (constraints.maxWidth - gap * (columns - 1)) / columns
-    : grid.minimumItemWidth;
+double _gridItemWidth(_GridItemWidthRequest request) =>
+    request.constraints.maxWidth.isFinite
+    ? (request.constraints.maxWidth - request.gap * (request.columns - 1)) /
+          request.columns
+    : request.grid.minimumItemWidth;
 
 class const _AuraGridWrap({
   required final List<Widget> children,

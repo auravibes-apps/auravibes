@@ -6,6 +6,17 @@ import 'package:flutter_portal/flutter_portal.dart';
 
 export 'aura_popup_menu_button.dart';
 
+typedef _PopupFocusNode = ({FocusNode node, bool ownsNode});
+
+typedef _PopupMenuKeyRequest = ({
+  FocusNode node,
+  KeyEvent event,
+  FocusNode trigger,
+  bool visible,
+  VoidCallback toggle,
+  VoidCallback close,
+});
+
 /// Controller for managing the visibility of a context menu.
 class AuraPopupMenuController {
   /// Creates a new context menu controller.
@@ -63,32 +74,14 @@ class AuraPopupMenu extends StatefulWidget {
 
 class _AuraPopupMenuState extends State<AuraPopupMenu> {
   FocusNode? _focusNode;
-  FocusScopeNode? _menuFocusScopeNode;
+  late final FocusScopeNode _menuFocusScopeNode;
   bool _ownsFocusNode = false;
   bool _visible = false;
-
-  FocusNode get _requiredFocusNode {
-    final node = _focusNode;
-    if (node == null) {
-      throw StateError('Focus node not initialized');
-    }
-
-    return node;
-  }
-
-  FocusScopeNode get _requiredMenuFocusScopeNode {
-    final node = _menuFocusScopeNode;
-    if (node == null) {
-      throw StateError('Menu focus scope node not initialized');
-    }
-
-    return node;
-  }
 
   @override
   void initState() {
     super.initState();
-    _initFocusNode(widget.focusNode);
+    _initializePopupMenuFocus();
     _menuFocusScopeNode = .new(
       debugLabel: 'AuraPopupMenu menu',
       onKeyEvent: _handleMenuKeyEvent,
@@ -103,19 +96,14 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     if (_ownsFocusNode) {
       _requiredFocusNode.dispose();
     }
-    _requiredMenuFocusScopeNode.dispose();
+    _menuFocusScopeNode.dispose();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(covariant AuraPopupMenu oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode != widget.focusNode) {
-      if (_ownsFocusNode) {
-        _requiredFocusNode.dispose();
-      }
-      _initFocusNode(widget.focusNode);
-    }
+    _updatePopupMenuFocusNode(this, oldWidget.focusNode, widget.focusNode);
     widget.controller._state = this;
   }
 
@@ -127,13 +115,9 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     setState(() {
       _visible = true;
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_visible) {
-        return;
-      }
-
-      _requiredMenuFocusScopeNode.requestFocus();
-    });
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _requestMenuFocus(this),
+    );
   }
 
   void close() {
@@ -156,73 +140,147 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return PortalTarget(
-      visible: _visible,
-      anchor: const Aligned(
-        follower: .topCenter,
-        target: .bottomCenter,
-        portal: .bottomCenter,
-        shiftToWithinBound: .new(x: true, y: true),
-      ),
-      portalFollower: TapRegion(
-        child: FocusScope(
-          node: _requiredMenuFocusScopeNode,
-          child: SizedBox(
-            width: 200,
-            child: AuraCard(
-              child: _AuraPopupMenuCloseScope(
-                close: close,
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: widget.items
-                      .map((e) => Builder(builder: e.build))
-                      .toList(),
-                ),
-              ),
-              padding: .none,
-              style: .border,
-            ),
-          ),
-        ),
-        onTapOutside: (_) => close(),
-        groupId: this,
-      ),
-      child: Focus(
-        child: TapRegion(child: widget.child, groupId: this),
-        focusNode: _requiredFocusNode,
-        onKeyEvent: _handleMenuKeyEvent,
-        descendantsAreFocusable: false,
-      ),
-    );
+  Widget build(BuildContext context) => _AuraPopupMenuData(
+    visible: _visible,
+    menuFocusScopeNode: _menuFocusScopeNode,
+    items: widget.items,
+    close: close,
+    trigger: widget.child,
+    focusNode: _requiredFocusNode,
+    onKeyEvent: _handleMenuKeyEvent,
+    groupId: this,
+  ).child;
+
+  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) =>
+      _handlePopupMenuKey((
+        node: node,
+        event: event,
+        trigger: _requiredFocusNode,
+        visible: _visible,
+        toggle: toggle,
+        close: close,
+      ));
+}
+
+extension on _AuraPopupMenuState {
+  void _initializePopupMenuFocus() {
+    final focus = _popupFocusNode(widget.focusNode);
+    _focusNode = focus.node;
+    _ownsFocusNode = focus.ownsNode;
   }
 
-  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        node == _requiredFocusNode &&
-        (event.logicalKey == LogicalKeyboardKey.enter ||
-            event.logicalKey == LogicalKeyboardKey.space)) {
-      toggle();
-
-      return KeyEventResult.handled;
+  FocusNode get _requiredFocusNode {
+    final node = _focusNode;
+    if (node == null) {
+      throw StateError('Focus node not initialized');
     }
 
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.escape &&
-        _visible) {
-      close();
+    return node;
+  }
+}
 
-      return KeyEventResult.handled;
-    }
+_PopupFocusNode _popupFocusNode(FocusNode? focusNode) =>
+    (node: focusNode ?? FocusNode(), ownsNode: focusNode == null);
 
-    return KeyEventResult.ignored;
+void _updatePopupMenuFocusNode(
+  _AuraPopupMenuState state,
+  FocusNode? oldFocusNode,
+  FocusNode? newFocusNode,
+) {
+  if (oldFocusNode == newFocusNode) return;
+  if (state._ownsFocusNode) state._requiredFocusNode.dispose();
+
+  final focus = _popupFocusNode(newFocusNode);
+  state._focusNode = focus.node;
+  state._ownsFocusNode = focus.ownsNode;
+}
+
+void _requestMenuFocus(_AuraPopupMenuState state) {
+  if (!state.mounted || !state._visible) return;
+
+  state._menuFocusScopeNode.requestFocus();
+}
+
+KeyEventResult _handlePopupMenuKey(_PopupMenuKeyRequest request) {
+  final event = request.event;
+  if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+  if (_shouldTogglePopupMenu(request, event)) {
+    request.toggle();
+
+    return KeyEventResult.handled;
   }
 
-  void _initFocusNode(FocusNode? focusNode) {
-    _focusNode = focusNode ?? FocusNode();
-    _ownsFocusNode = focusNode == null;
+  if (_shouldClosePopupMenu(request, event)) {
+    request.close();
+
+    return KeyEventResult.handled;
   }
+
+  return KeyEventResult.ignored;
+}
+
+bool _isPopupMenuActivationKey(LogicalKeyboardKey key) =>
+    key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.space;
+
+bool _shouldTogglePopupMenu(_PopupMenuKeyRequest request, KeyDownEvent event) =>
+    request.node == request.trigger &&
+    _isPopupMenuActivationKey(event.logicalKey);
+
+bool _shouldClosePopupMenu(_PopupMenuKeyRequest request, KeyDownEvent event) =>
+    request.visible && event.logicalKey == LogicalKeyboardKey.escape;
+
+class _AuraPopupMenuData {
+  _AuraPopupMenuData({
+    required bool visible,
+    required FocusScopeNode menuFocusScopeNode,
+    required List<AuraPopupMenuEntry> items,
+    required VoidCallback close,
+    required Widget trigger,
+    required FocusNode focusNode,
+    required FocusOnKeyEventCallback onKeyEvent,
+    required Object groupId,
+  }) : child = PortalTarget(
+         visible: visible,
+         anchor: const Aligned(
+           follower: .topCenter,
+           target: .bottomCenter,
+           portal: .bottomCenter,
+           shiftToWithinBound: .new(x: true, y: true),
+         ),
+         portalFollower: TapRegion(
+           child: FocusScope(
+             node: menuFocusScopeNode,
+             child: SizedBox(
+               width: 200,
+               child: AuraCard(
+                 child: _AuraPopupMenuCloseScope(
+                   close: close,
+                   child: Column(
+                     mainAxisSize: .min,
+                     crossAxisAlignment: .start,
+                     children: items
+                         .map((e) => Builder(builder: e.build))
+                         .toList(),
+                   ),
+                 ),
+                 padding: .none,
+                 style: .border,
+               ),
+             ),
+           ),
+           onTapOutside: (_) => close(),
+           groupId: groupId,
+         ),
+         child: Focus(
+           child: TapRegion(child: trigger, groupId: groupId),
+           focusNode: focusNode,
+           onKeyEvent: onKeyEvent,
+           descendantsAreFocusable: false,
+         ),
+       );
+
+  final Widget child;
 }
 
 class const _AuraPopupMenuCloseScope({

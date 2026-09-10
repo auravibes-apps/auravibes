@@ -59,19 +59,23 @@ class AuraLinearProgressIndicator extends StatelessWidget {
   _AuraLinearProgressConfiguration _configuration(BuildContext context) {
     final colors = context.auraColors;
     final theme = context.auraTheme;
-    final progress = _clampProgress(value);
-    final alpha = _clampAlpha(backgroundAlpha);
 
     return (
       height: height,
-      borderRadius: theme.fromBorderRadius(borderRadius),
-      value: progress,
+      borderRadius: _progressBorderRadius(theme, borderRadius),
+      value: _clampProgress(value),
       backgroundColor: colors.surfaceVariant,
-      backgroundAlpha: alpha,
-      fillColor: colors.colorFor(tint),
+      backgroundAlpha: _clampAlpha(backgroundAlpha),
+      fillColor: _progressFillColor(colors, tint),
     );
   }
 }
+
+double _progressBorderRadius(AuraTheme theme, AuraBorderRadius borderRadius) =>
+    theme.fromBorderRadius(borderRadius);
+
+Color _progressFillColor(AuraColorScheme colors, AuraTint tint) =>
+    colors.colorFor(tint);
 
 double? _clampProgress(double? value) {
   if (value == null) return null;
@@ -142,21 +146,32 @@ class const _AuraLinearProgressFill({
   required final Color color,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    if (value case final value?) {
-      return FractionallySizedBox(
-        alignment: AlignmentDirectional.centerStart,
-        widthFactor: value.toDouble(),
-        child: ColoredBox(color: color),
-      );
-    }
+  Widget build(BuildContext context) => switch (value) {
+    final value? => _AuraLinearProgressDeterminate(value: value, color: color),
+    null => _AuraLinearProgressIndeterminate(color: color),
+  };
+}
 
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: FractionallySizedBox(
-        widthFactor: 0.35,
-        child: ColoredBox(color: color),
-      ),
-    );
-  }
+class const _AuraLinearProgressDeterminate({
+  required final num value,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FractionallySizedBox(
+    alignment: AlignmentDirectional.centerStart,
+    widthFactor: value.toDouble(),
+    child: ColoredBox(color: color),
+  );
+}
+
+class const _AuraLinearProgressIndeterminate({required final Color color})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: FractionallySizedBox(
+      widthFactor: 0.35,
+      child: ColoredBox(color: color),
+    ),
+  );
 }

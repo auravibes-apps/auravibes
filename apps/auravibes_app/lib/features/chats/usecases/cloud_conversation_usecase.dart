@@ -36,23 +36,7 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
   Future<ConversationSummary> updateModel(
     ConversationEntity conversation,
     String modelId,
-  ) async {
-    final patch = ConversationPatch(modelId: modelId);
-    try {
-      return await update(conversation, patch);
-    } on CloudAppException catch (error) {
-      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
-      final latest = await _gateway.getConversation(conversation.id);
-
-      return await _gateway.updateConversation(
-        _updateRequest(
-          conversationId: conversation.id,
-          revision: latest.revision,
-          patch: patch,
-        ),
-      );
-    }
-  }
+  ) => _updateModel(conversation, modelId);
 
   Future<void> delete(ConversationEntity conversation) =>
       _gateway.deleteConversation(
@@ -71,6 +55,19 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
         expectedConversationRevision: conversation.revision,
       );
 
+  Future<ConversationSummary> _updateModel(
+    ConversationEntity conversation,
+    String modelId,
+  ) async {
+    final patch = ConversationPatch(modelId: modelId);
+    try {
+      return await update(conversation, patch);
+    } on CloudAppException catch (error) {
+      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
+      return _retryUpdateModel(conversation.id, patch);
+    }
+  }
+
   UpdateConversationRequest _updateRequest({
     required String conversationId,
     required int revision,
@@ -88,4 +85,19 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     clearAgent: patch.clearAgent,
     clearParent: false,
   );
+
+  Future<ConversationSummary> _retryUpdateModel(
+    String conversationId,
+    ConversationPatch patch,
+  ) async {
+    final latest = await _gateway.getConversation(conversationId);
+
+    return _gateway.updateConversation(
+      _updateRequest(
+        conversationId: conversationId,
+        revision: latest.revision,
+        patch: patch,
+      ),
+    );
+  }
 }

@@ -33,11 +33,12 @@ abstract final class LogRedaction {
   };
 
   static String _redact(String text) {
+    var redacted = text;
     for (final pattern in _secretPatterns) {
-      text = text.replaceAllMapped(pattern, _replaceMatch);
+      redacted = redacted.replaceAllMapped(pattern, _replaceMatch);
     }
 
-    return text;
+    return redacted;
   }
 
   static String _replaceMatch(Match match) {

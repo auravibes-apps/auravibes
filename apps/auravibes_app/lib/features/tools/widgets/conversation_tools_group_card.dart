@@ -41,13 +41,7 @@ class const ConversationToolsGroupCard({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpanded = useState(initiallyExpanded);
-    final callbacks = _ConversationToolsGroupCardCallbacks(
-      groupWithTools: groupWithTools,
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      ref: ref,
-      context: context,
-    );
+    final callbacks = _callbacks(context, ref);
 
     return _ConversationToolsGroupCardFrame(
       groupWithTools: groupWithTools,
@@ -58,6 +52,17 @@ class const ConversationToolsGroupCard({
       callbacks: callbacks,
     );
   }
+
+  _ConversationToolsGroupCardCallbacks _callbacks(
+    BuildContext context,
+    WidgetRef ref,
+  ) => _ConversationToolsGroupCardCallbacks(
+    groupWithTools: groupWithTools,
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    ref: ref,
+    context: context,
+  );
 }
 
 class _ConversationToolsGroupCardCallbacks {
@@ -82,13 +87,13 @@ class _ConversationToolsGroupCardCallbacks {
       ? _handleReconnect
       : null;
 
-  late final VoidCallback? onViewError = groupWithTools.hasMcpError
+  late final VoidCallback? onViewError = groupWithTools.hasMcpError()
       ? _showErrorDetails
       : null;
 
   late final bool _shouldShowReconnect =
       groupWithTools.isMcpGroup &&
-      (groupWithTools.hasMcpError || groupWithTools.isMcpDisconnected);
+      (groupWithTools.hasMcpError() || groupWithTools.isMcpDisconnected());
 
   Future<void> _handleToggleAllTools(bool enabled) async {
     await ref

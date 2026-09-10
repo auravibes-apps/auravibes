@@ -6,20 +6,10 @@ abstract final class ToolMetadataDecoder {
   static String? decode(Object? metadata) {
     if (metadata == null) return null;
 
-    final decoded = _decodeInput(metadata);
+    final decoded = metadata is String ? _decodeInput(metadata) : metadata;
     if (decoded is _DecodeFailure) return decoded.value;
 
     return _decodeValue(decoded);
-  }
-
-  static Object? _decodeInput(Object metadata) {
-    if (metadata is! String) return metadata;
-
-    try {
-      return jsonDecode(metadata);
-    } on Exception catch (_) {
-      return _DecodeFailure(metadata);
-    }
   }
 
   static String? _decodeValue(Object? decoded) {
@@ -40,6 +30,14 @@ abstract final class ToolMetadataDecoder {
     } on Object {
       return value.toString();
     }
+  }
+}
+
+Object? _decodeInput(String metadata) {
+  try {
+    return jsonDecode(metadata);
+  } on Exception catch (_) {
+    return _DecodeFailure(metadata);
   }
 }
 

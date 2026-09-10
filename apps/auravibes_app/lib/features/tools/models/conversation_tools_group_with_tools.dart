@@ -28,13 +28,13 @@ abstract class const ConversationToolsGroupWithTools._()
   bool get areAllToolsEnabled =>
       tools.isNotEmpty && tools.every((t) => t.isEnabled);
 
-  bool get areAnyToolsEnabled => tools.any((t) => t.isEnabled);
+  @override
+  bool get isDefaultGroup => group == null;
+
+  bool areAnyToolsEnabled() => tools.any((t) => t.isEnabled);
 
   bool containsTool(String toolId) =>
       tools.any((tool) => tool.tool.id == toolId);
 
   bool hasEnabledTools() => tools.any((tool) => tool.isEnabled);
-
-  @override
-  bool operator ==(Object other);
 }

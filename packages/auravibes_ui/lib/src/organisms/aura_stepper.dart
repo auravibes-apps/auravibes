@@ -21,28 +21,43 @@ class AuraStepper extends StatelessWidget {
     spacing: context.auraTheme.spacing.sm,
     children: [
       for (final (index, step) in steps.indexed)
-        _AuraStepperItem(step: step, isLast: index == steps.length - 1),
+        _AuraStepperItem(
+          step: step,
+          isLast: index == steps.length - 1,
+          spacing: context.auraTheme.spacing.sm,
+        ),
     ],
   );
 }
 
-class const _AuraStepperItem({
-  required final AuraStep step,
-  required final bool isLast,
-}) extends StatelessWidget {
+class _AuraStepperItem extends StatelessWidget {
+  _AuraStepperItem({
+    required AuraStep step,
+    required bool isLast,
+    required double spacing,
+  }) : _child = Row(
+         crossAxisAlignment: .start,
+         spacing: spacing,
+         children: [
+           _AuraStepperIcon(state: step.state),
+           Expanded(child: _AuraStepperText(step: step)),
+           if (!isLast) const SizedBox.shrink(),
+         ],
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: .start,
-    spacing: context.auraTheme.spacing.sm,
-    children: [
-      AuraIcon(
-        _stepIcon(step.state),
-        tint: _stepTint(step.state),
-        semanticLabel: step.state.name,
-      ),
-      Expanded(child: _AuraStepperText(step: step)),
-      if (!isLast) const SizedBox.shrink(),
-    ],
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AuraStepperIcon({required final AuraStepState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIcon(
+    _stepIcon(state),
+    tint: _stepTint(state),
+    semanticLabel: state.name,
   );
 }
 

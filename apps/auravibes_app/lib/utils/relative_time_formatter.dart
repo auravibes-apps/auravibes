@@ -15,25 +15,10 @@ abstract final class RelativeTimeFormatter {
 
   static String _translateDifference(Duration diff, TranslateFunc translate) {
     final bucket = _bucketFor(diff);
+    final key = bucket.localizationKey;
+    if (bucket == _RelativeTimeBucket.justNow) return translate(key);
 
-    return switch (bucket) {
-      .justNow => translate(LocaleKeys.home_screen_date_formatting_just_now),
-      .minutes => _translateCount(
-        translate,
-        LocaleKeys.home_screen_date_formatting_minutes_ago,
-        diff.inMinutes,
-      ),
-      .hours => _translateCount(
-        translate,
-        LocaleKeys.home_screen_date_formatting_hours_ago,
-        diff.inHours,
-      ),
-      .days => _translateCount(
-        translate,
-        LocaleKeys.home_screen_date_formatting_days_ago,
-        diff.inDays,
-      ),
-    };
+    return _translateCount(translate, key, bucket.count(diff));
   }
 
   static _RelativeTimeBucket _bucketFor(Duration diff) {
@@ -57,3 +42,19 @@ abstract final class RelativeTimeFormatter {
 }
 
 enum _RelativeTimeBucket { justNow, minutes, hours, days }
+
+extension on _RelativeTimeBucket {
+  String get localizationKey => switch (this) {
+    .justNow => LocaleKeys.home_screen_date_formatting_just_now,
+    .minutes => LocaleKeys.home_screen_date_formatting_minutes_ago,
+    .hours => LocaleKeys.home_screen_date_formatting_hours_ago,
+    .days => LocaleKeys.home_screen_date_formatting_days_ago,
+  };
+
+  int count(Duration duration) => switch (this) {
+    .justNow => 0,
+    .minutes => duration.inMinutes,
+    .hours => duration.inHours,
+    .days => duration.inDays,
+  };
+}

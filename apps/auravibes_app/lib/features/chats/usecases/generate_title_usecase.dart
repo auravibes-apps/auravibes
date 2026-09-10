@@ -21,39 +21,77 @@ class const GenerateTitleUsecase({
     required String firstMessage,
     required WorkspaceModelSelectionWithConnectionEntity
     workspaceModelSelection,
-  }) {
-    // Stream title.
-    final stream = chatbotService.streamTitle(
-      workspaceModelSelection,
-      firstMessage,
-    );
+  }) => _startTitleStreaming((
+    conversationId: conversationId,
+    firstMessage: firstMessage,
+    workspaceModelSelection: workspaceModelSelection,
+    conversationRepo: conversationRepo,
+    chatbotService: chatbotService,
+    titlesStreamingRuntime: titlesStreamingRuntime,
+    monitoringService: monitoringService,
+  ));
+}
 
-    final sharedStream = stream.doOnError((error, stackTrace) {
-      monitoringService.trackError(
+typedef _TitleStreamingRequest = ({
+  String conversationId,
+  String firstMessage,
+  WorkspaceModelSelectionWithConnectionEntity workspaceModelSelection,
+  ConversationRepository conversationRepo,
+  ChatbotService chatbotService,
+  TitlesStreamingRuntime titlesStreamingRuntime,
+  MonitoringService monitoringService,
+});
+
+void _startTitleStreaming(_TitleStreamingRequest request) {
+  final sharedStream = _sharedTitleStream(request);
+  _listenForTitleUpdates(sharedStream, request);
+  _persistTitleUpdates(sharedStream, request);
+}
+
+Stream<String> _sharedTitleStream(_TitleStreamingRequest request) => request
+    .chatbotService
+    .streamTitle(request.workspaceModelSelection, request.firstMessage)
+    .doOnError((error, stackTrace) {
+      request.monitoringService.trackError(
         'Error streaming title',
         error: error,
         stackTrace: stackTrace,
       );
-      titlesStreamingRuntime.removeTitle(conversationId);
-    }).share();
+      request.titlesStreamingRuntime.removeTitle(request.conversationId);
+    })
+    .share();
 
-    final _ = sharedStream
-        .doOnDone(() => titlesStreamingRuntime.removeTitle(conversationId))
-        .listen((title) {
-          titlesStreamingRuntime.updateTitle(conversationId, title);
-        });
+void _listenForTitleUpdates(
+  Stream<String> sharedStream,
+  _TitleStreamingRequest request,
+) {
+  final _ = sharedStream
+      .doOnDone(
+        () =>
+            request.titlesStreamingRuntime.removeTitle(request.conversationId),
+      )
+      .listen((title) {
+        request.titlesStreamingRuntime.updateTitle(
+          request.conversationId,
+          title,
+        );
+      });
+}
 
-    final _ = sharedStream
-        .coalescingSave(
-          store: (t) async {
-            final _ = await conversationRepo.patchConversation(
-              conversationId,
-              .new(title: t),
-            );
-          },
-        )
-        .listen(null);
-  }
+void _persistTitleUpdates(
+  Stream<String> sharedStream,
+  _TitleStreamingRequest request,
+) {
+  final _ = sharedStream
+      .coalescingSave(
+        store: (title) async {
+          final _ = await request.conversationRepo.patchConversation(
+            request.conversationId,
+            .new(title: title),
+          );
+        },
+      )
+      .listen(null);
 }
 
 final generateTitleUsecaseProvider = Provider<GenerateTitleUsecase>((ref) {

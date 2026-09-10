@@ -983,7 +983,7 @@ extension _ConfirmationCloudActions on _ConfirmationActionHandler {
 }
 
 Future<Object?> _submitCloudDecision(_CloudDecisionRequest request) =>
-    request.cloud.decide(
+    request.cloud.decide((
       turnId: request.turnId,
       toolCallId: request.toolCallId,
       argumentsDigest: request.argumentsDigest,
@@ -991,7 +991,7 @@ Future<Object?> _submitCloudDecision(_CloudDecisionRequest request) =>
       approved: request.approved,
       editedArgumentsJson: request.editedArgumentsJson,
       stopAll: request.stopAll,
-    );
+    ));
 
 extension _ConfirmationActionExecution on _ConfirmationActionHandler {
   Future<void> _runAction(
