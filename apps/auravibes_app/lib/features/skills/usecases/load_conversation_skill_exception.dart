@@ -1,4 +1,3 @@
-// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
@@ -12,7 +11,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' show AppSkillDefinition;
 
-import 'package:riverpod/src/providers/provider.dart';
+import 'package:riverpod/riverpod.dart';
 
 class const LoadConversationSkillException(final String localizationKey)
     implements Exception {
@@ -53,23 +52,35 @@ class const LoadConversationSkillUsecase(
 
     throw StateError('Skill not found for slug: $slug');
   }
+}
 
+extension on LoadConversationSkillUsecase {
   Future<SkillEntity?> _findUserSkill(
     String workspaceId,
     String slug,
     CloudSkillStore? cloud,
   ) async {
-    if (cloud != null) {
-      return (await cloud.skills())
-          .where((item) => item.source == SkillSource.user && item.slug == slug)
-          .firstOrNull;
-    }
+    if (cloud != null) return await _findCloudUserSkill(cloud, slug);
 
+    return _findLocalUserSkill(workspaceId, slug);
+  }
+
+  Future<SkillEntity?> _findLocalUserSkill(
+    String workspaceId,
+    String slug,
+  ) async {
     final repository =
         _skillsRepository ?? (throw StateError('Skill store is unavailable'));
 
     return await repository.getSkillBySlug(workspaceId, slug);
   }
+
+  Future<SkillEntity?> _findCloudUserSkill(
+    CloudSkillStore cloud,
+    String slug,
+  ) async => (await cloud.skills())
+      .where((item) => item.source == SkillSource.user && item.slug == slug)
+      .firstOrNull;
 
   Future<void> _loadUserSkill(
     String conversationId,
@@ -77,15 +88,31 @@ class const LoadConversationSkillUsecase(
     SkillEntity skill,
     CloudSkillStore? cloud,
   ) async {
-    if (!await _isUserSkillReady(workspaceId, skill, cloud)) {
-      throw const LoadConversationSkillException(
-        LocaleKeys.skills_screen_error_requires_credential,
-      );
-    }
+    await _ensureUserSkillReady(workspaceId, skill, cloud);
+    await _persistUserSkill(conversationId, skill.id, cloud);
+  }
+
+  Future<void> _ensureUserSkillReady(
+    String workspaceId,
+    SkillEntity skill,
+    CloudSkillStore? cloud,
+  ) async {
+    if (await _isUserSkillReady(workspaceId, skill, cloud)) return;
+
+    throw const LoadConversationSkillException(
+      LocaleKeys.skills_screen_error_requires_credential,
+    );
+  }
+
+  Future<void> _persistUserSkill(
+    String conversationId,
+    String skillId,
+    CloudSkillStore? cloud,
+  ) async {
     if (cloud != null) {
       final _ = await cloud.setConversationSkill(
         conversationId,
-        skill.id,
+        skillId,
         selected: true,
         isAppSkill: false,
       );
@@ -99,11 +126,13 @@ class const LoadConversationSkillUsecase(
     }
     final _ = await repository.setWorkspaceSkillLoaded(
       conversationId,
-      skill.id,
+      skillId,
       isLoaded: true,
     );
   }
+}
 
+extension on LoadConversationSkillUsecase {
   Future<bool> _isUserSkillReady(
     String workspaceId,
     SkillEntity skill,
@@ -125,10 +154,18 @@ class const LoadConversationSkillUsecase(
   ) async {
     await _ensureAppSkillEnabled(workspaceId, skill, cloud);
     await _ensureAppSkillCredentials(workspaceId, skill);
+    await _persistAppSkill(conversationId, skill.identifier, cloud);
+  }
+
+  Future<void> _persistAppSkill(
+    String conversationId,
+    String skillId,
+    CloudSkillStore? cloud,
+  ) async {
     if (cloud != null) {
       final _ = await cloud.setConversationSkill(
         conversationId,
-        skill.identifier,
+        skillId,
         selected: true,
         isAppSkill: true,
       );
@@ -142,7 +179,7 @@ class const LoadConversationSkillUsecase(
     }
     final _ = await repository.setAppSkillLoaded(
       conversationId,
-      skill.identifier,
+      skillId,
       isLoaded: true,
     );
   }

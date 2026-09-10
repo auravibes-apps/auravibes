@@ -19,7 +19,9 @@ class WorkspaceModelSelectionWithConnection({
 )
 class WorkspaceModelSelectionsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$WorkspaceModelSelectionsDaoMixin {
+    with _$WorkspaceModelSelectionsDaoMixin {}
+
+extension WorkspaceModelSelectionsDaoMethods on WorkspaceModelSelectionsDao {
   Future<void> insertWorkspaceModelSelections(
     List<WorkspaceModelSelectionsCompanion> modelProvidersToInsert,
   ) async {

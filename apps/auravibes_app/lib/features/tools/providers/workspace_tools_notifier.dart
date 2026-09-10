@@ -111,15 +111,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
   void _replaceTools(List<WorkspaceToolEntity> workspaceTools) {
     if (state case AsyncData(:final value)) {
-      state = AsyncData(
-        value.map((wt) {
-          final workspaceTool = workspaceTools.firstWhereOrNull(
-            (element) => element.id == wt.id,
-          );
-
-          return workspaceTool ?? wt;
-        }).toList(),
-      );
+      state = AsyncData(_mergeWorkspaceTools(value, workspaceTools));
     }
   }
 
@@ -146,9 +138,22 @@ Future<List<UserToolType>> availableToolsToAdd(
   final workspaceTools = await ref.watch(
     workspaceToolsProvider(workspaceId).future,
   );
+  return _availableTools(workspaceTools);
+}
 
+List<WorkspaceToolEntity> _mergeWorkspaceTools(
+  List<WorkspaceToolEntity> currentTools,
+  List<WorkspaceToolEntity> replacements,
+) => currentTools.map((tool) {
+  return replacements.firstWhereOrNull(
+        (replacement) => replacement.id == tool.id,
+      ) ??
+      tool;
+}).toList();
+
+List<UserToolType> _availableTools(List<WorkspaceToolEntity> workspaceTools) {
   final addedBuiltInToolIds = workspaceTools
-      .map((wt) => wt.buildInType)
+      .map((tool) => tool.buildInType)
       .whereType<UserToolType>()
       .map((type) => type.value)
       .toSet();

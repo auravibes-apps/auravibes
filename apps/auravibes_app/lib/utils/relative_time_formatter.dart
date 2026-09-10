@@ -8,31 +8,52 @@ abstract final class RelativeTimeFormatter {
     DateTime timestamp, {
     DateTime? now,
     TranslateFunc translate = _defaultTranslate,
-  }) {
-    final diff = (now ?? DateTime.now()).difference(timestamp);
+  }) => _translateDifference(
+    (now ?? DateTime.now()).difference(timestamp),
+    translate,
+  );
 
-    if (diff.isNegative || diff.inMinutes < 1) {
-      return translate(LocaleKeys.home_screen_date_formatting_just_now);
-    }
-    if (diff.inHours < 1) {
-      return translate(
+  static String _translateDifference(Duration diff, TranslateFunc translate) {
+    final bucket = _bucketFor(diff);
+
+    return switch (bucket) {
+      .justNow => translate(LocaleKeys.home_screen_date_formatting_just_now),
+      .minutes => _translateCount(
+        translate,
         LocaleKeys.home_screen_date_formatting_minutes_ago,
-        args: [diff.inMinutes.toString()],
-      );
-    }
-    if (diff.inDays < 1) {
-      return translate(
+        diff.inMinutes,
+      ),
+      .hours => _translateCount(
+        translate,
         LocaleKeys.home_screen_date_formatting_hours_ago,
-        args: [diff.inHours.toString()],
-      );
-    }
-
-    return translate(
-      LocaleKeys.home_screen_date_formatting_days_ago,
-      args: [diff.inDays.toString()],
-    );
+        diff.inHours,
+      ),
+      .days => _translateCount(
+        translate,
+        LocaleKeys.home_screen_date_formatting_days_ago,
+        diff.inDays,
+      ),
+    };
   }
+
+  static _RelativeTimeBucket _bucketFor(Duration diff) {
+    if (diff.isNegative || diff.inMinutes < 1) {
+      return .justNow;
+    }
+    if (diff.inHours < 1) return .minutes;
+    if (diff.inDays < 1) return .hours;
+
+    return .days;
+  }
+
+  static String _translateCount(
+    TranslateFunc translate,
+    String key,
+    int count,
+  ) => translate(key, args: [count.toString()]);
 
   static String _defaultTranslate(String key, {List<String>? args}) =>
       key.tr(args: args ?? const []);
 }
+
+enum _RelativeTimeBucket { justNow, minutes, hours, days }

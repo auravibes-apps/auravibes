@@ -5,6 +5,8 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 
+const _messageIconSize = 20.0;
+
 /// A message bubble component for chat interfaces.
 ///
 /// This component displays chat messages with proper styling for user and AI
@@ -282,7 +284,7 @@ class const _AuraImageErrorRow({
   Widget build(BuildContext context) => Row(
     mainAxisSize: .min,
     children: [
-      Icon(Icons.broken_image, size: 20, color: color),
+      Icon(Icons.broken_image, size: _messageIconSize, color: color),
       const AuraSizedBox(width: .sm),
       Text(label, style: .new(color: color)),
     ],
@@ -306,7 +308,7 @@ class const _AuraFileRow({
   Widget build(BuildContext context) => Row(
     mainAxisSize: .min,
     children: [
-      Icon(Icons.attach_file, size: 20, color: textColor),
+      Icon(Icons.attach_file, size: _messageIconSize, color: textColor),
       const AuraSizedBox(width: .sm),
       Flexible(
         child: _AuraFileName(message: message, textColor: textColor),

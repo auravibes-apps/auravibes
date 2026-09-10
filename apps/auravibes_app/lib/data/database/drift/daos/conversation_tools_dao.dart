@@ -7,7 +7,9 @@ part 'conversation_tools_dao.g.dart';
 @DriftAccessor(tables: [ConversationTools])
 class ConversationToolsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$ConversationToolsDaoMixin {
+    with _$ConversationToolsDaoMixin {}
+
+extension ConversationToolsDaoMethods on ConversationToolsDao {
   /// Get a specific conversation tool setting.
   Future<ConversationToolsTable?> getConversationTool(
     String conversationId,
@@ -36,19 +38,29 @@ class ConversationToolsDao(super.attachedDatabase)
     required bool isEnabled,
     required PermissionAccess permission,
   }) {
+    return _upsertConversationTool(
+      conversationId,
+      toolId,
+      isEnabled,
+      permission,
+    );
+  }
+
+  Future<ConversationToolsTable> _upsertConversationTool(
+    String conversationId,
+    String toolId,
+    bool isEnabled,
+    PermissionAccess permission,
+  ) {
     return into(conversationTools).insertReturning(
-      ConversationToolsCompanion(
-        conversationId: .new(conversationId),
-        toolId: .new(toolId),
-        isEnabled: .new(isEnabled),
-        permissions: .new(permission),
+      _conversationToolInsertCompanion(
+        conversationId,
+        toolId,
+        isEnabled,
+        permission,
       ),
       onConflict: DoUpdate(
-        (old) => ConversationToolsCompanion(
-          updatedAt: .new(DateTime.now()),
-          isEnabled: .new(isEnabled),
-          permissions: .new(permission),
-        ),
+        (old) => _conversationToolUpdateCompanion(isEnabled, permission),
       ),
     );
   }
@@ -62,36 +74,24 @@ class ConversationToolsDao(super.attachedDatabase)
     // Check if exists first.
     final existing = await getConversationTool(conversationId, toolId);
 
-    if (existing != null) {
-      // Update existing.
-      final _ =
-          await (update(conversationTools)..where(
-                (tbl) =>
-                    tbl.conversationId.equals(conversationId) &
-                    tbl.toolId.equals(toolId),
-              ))
-              .write(
-                ConversationToolsCompanion(
-                  updatedAt: .new(DateTime.now()),
-                  isEnabled: .new(isEnabled),
-                ),
-              );
-      final updated = await getConversationTool(conversationId, toolId);
-      if (updated == null) {
-        throw StateError('Updated conversation tool was not found');
-      }
-
-      return updated;
-    } else {
-      // Insert new.
-      return await into(conversationTools).insertReturning(
-        ConversationToolsCompanion(
-          conversationId: .new(conversationId),
-          toolId: .new(toolId),
-          isEnabled: .new(isEnabled),
-        ),
-      );
+    if (existing == null) {
+      return _insertConversationTool(conversationId, toolId, isEnabled);
     }
+
+    await _updateConversationTool(
+      conversationId,
+      toolId,
+      ConversationToolsCompanion(
+        updatedAt: .new(DateTime.now()),
+        isEnabled: .new(isEnabled),
+      ),
+    );
+
+    return _requireConversationTool(
+      conversationId,
+      toolId,
+      'Updated conversation tool was not found',
+    );
   }
 
   /// Set the permission for a conversation tool.
@@ -102,35 +102,28 @@ class ConversationToolsDao(super.attachedDatabase)
   }) async {
     final existing = await getConversationTool(conversationId, toolId);
 
-    if (existing != null) {
-      final _ =
-          await (update(conversationTools)..where(
-                (tbl) =>
-                    tbl.conversationId.equals(conversationId) &
-                    tbl.toolId.equals(toolId),
-              ))
-              .write(
-                ConversationToolsCompanion(
-                  updatedAt: .new(DateTime.now()),
-                  permissions: .new(permission),
-                ),
-              );
-      final updated = await getConversationTool(conversationId, toolId);
-      if (updated == null) {
-        throw StateError('Updated conversation tool was not found');
-      }
-
-      return updated;
-    } else {
-      return await into(conversationTools).insertReturning(
-        ConversationToolsCompanion(
-          conversationId: .new(conversationId),
-          toolId: .new(toolId),
-          isEnabled: const Value(true),
-          permissions: .new(permission),
-        ),
+    if (existing == null) {
+      return _insertConversationToolWithPermission(
+        conversationId,
+        toolId,
+        permission,
       );
     }
+
+    await _updateConversationTool(
+      conversationId,
+      toolId,
+      ConversationToolsCompanion(
+        updatedAt: .new(DateTime.now()),
+        permissions: .new(permission),
+      ),
+    );
+
+    return _requireConversationTool(
+      conversationId,
+      toolId,
+      'Updated conversation tool was not found',
+    );
   }
 
   /// Delete a conversation tool setting.
@@ -257,4 +250,75 @@ class ConversationToolsDao(super.attachedDatabase)
 
   Future<void> removeDisabledToolsForConversation(String conversationId) =>
       removeToolsForConversation(conversationId);
+
+  Future<ConversationToolsTable> _insertConversationTool(
+    String conversationId,
+    String toolId,
+    bool isEnabled,
+  ) => into(conversationTools).insertReturning(
+    ConversationToolsCompanion(
+      conversationId: .new(conversationId),
+      toolId: .new(toolId),
+      isEnabled: .new(isEnabled),
+    ),
+  );
+
+  Future<ConversationToolsTable> _insertConversationToolWithPermission(
+    String conversationId,
+    String toolId,
+    PermissionAccess permission,
+  ) => into(conversationTools).insertReturning(
+    ConversationToolsCompanion(
+      conversationId: .new(conversationId),
+      toolId: .new(toolId),
+      isEnabled: const Value(true),
+      permissions: .new(permission),
+    ),
+  );
+
+  ConversationToolsCompanion _conversationToolInsertCompanion(
+    String conversationId,
+    String toolId,
+    bool isEnabled,
+    PermissionAccess permission,
+  ) => ConversationToolsCompanion(
+    conversationId: .new(conversationId),
+    toolId: .new(toolId),
+    isEnabled: .new(isEnabled),
+    permissions: .new(permission),
+  );
+
+  ConversationToolsCompanion _conversationToolUpdateCompanion(
+    bool isEnabled,
+    PermissionAccess permission,
+  ) => ConversationToolsCompanion(
+    updatedAt: .new(DateTime.now()),
+    isEnabled: .new(isEnabled),
+    permissions: .new(permission),
+  );
+
+  Future<int> _updateConversationTool(
+    String conversationId,
+    String toolId,
+    ConversationToolsCompanion companion,
+  ) =>
+      (update(conversationTools)..where(
+            (tbl) =>
+                tbl.conversationId.equals(conversationId) &
+                tbl.toolId.equals(toolId),
+          ))
+          .write(companion);
+
+  Future<ConversationToolsTable> _requireConversationTool(
+    String conversationId,
+    String toolId,
+    String notFoundMessage,
+  ) async {
+    final updated = await getConversationTool(conversationId, toolId);
+    if (updated == null) {
+      throw StateError(notFoundMessage);
+    }
+
+    return updated;
+  }
 }

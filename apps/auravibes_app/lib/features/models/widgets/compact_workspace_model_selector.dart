@@ -9,6 +9,15 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class const CompactWorkspaceModelSelector({
+  required super.workspaceId,
+  required super.workspaceModelSelectionId,
+  required super.onChanged,
+  super.compactMode,
+  super.sheetMode,
+  super.key,
+}) extends _CompactWorkspaceModelSelector {}
+
+class const _CompactWorkspaceModelSelector({
   required final String workspaceId,
   required final String? workspaceModelSelectionId,
   required final ValueChanged<String?> onChanged,
@@ -24,24 +33,12 @@ class const CompactWorkspaceModelSelector({
     );
 
     return switch (groupedModelsAsync) {
-      AsyncLoading() =>
-        sheetMode
-            ? const Center(child: AuraSpinner(size: .small))
-            : const SizedBox(
-                width: 180,
-                child: AuraDropdownSelector<String>(
-                  options: [],
-                  placeholder: AuraSpinner(size: .small),
-                  isEnabled: false,
-                ),
-              ),
-      AsyncError(:final error, :final stackTrace) =>
-        sheetMode
-            ? AppErrorWidget(error: error, stackTrace: stackTrace)
-            : SizedBox(
-                width: _selectorWidth,
-                child: AppErrorWidget(error: error, stackTrace: stackTrace),
-              ),
+      AsyncLoading() => _ModelSelectorLoading(sheetMode: sheetMode),
+      AsyncError(:final error, :final stackTrace) => _ModelSelectorError(
+        sheetMode: sheetMode,
+        error: error,
+        stackTrace: stackTrace,
+      ),
       AsyncData(:final value) => _CompactModelSelectorBody(
         groupedModels: value,
         workspaceModelSelectionId: workspaceModelSelectionId,
@@ -51,6 +48,35 @@ class const CompactWorkspaceModelSelector({
       ),
     };
   }
+}
+
+class const _ModelSelectorLoading({required final bool sheetMode})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => sheetMode
+      ? const Center(child: AuraSpinner(size: .small))
+      : const SizedBox(
+          width: 180,
+          child: AuraDropdownSelector<String>(
+            options: [],
+            placeholder: AuraSpinner(size: .small),
+            isEnabled: false,
+          ),
+        );
+}
+
+class const _ModelSelectorError({
+  required final bool sheetMode,
+  required final Object error,
+  required final StackTrace stackTrace,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => sheetMode
+      ? AppErrorWidget(error: error, stackTrace: stackTrace)
+      : SizedBox(
+          width: _CompactWorkspaceModelSelector._selectorWidth,
+          child: AppErrorWidget(error: error, stackTrace: stackTrace),
+        );
 }
 
 class const _CompactModelSelectorBody({
@@ -154,32 +180,43 @@ class const _ModelSheetSelector({
         ),
         const AuraSizedBox(height: .sm),
         Flexible(
-          child: ListView.separated(
-            itemBuilder: (context, index) {
-              final model = filteredModels[index];
-              final selection = model.workspaceModelSelection;
-              final isSelected = selection.id == workspaceModelSelectionId;
-
-              return AuraTile(
-                child: _ModelSheetOptionContent(model: model),
-                onTap: () {
-                  onChanged(selection.id);
-                  final _ = Navigator.maybePop(context);
-                },
-                variant: isSelected
-                    ? AuraTileVariant.selected
-                    : AuraTileVariant.surface,
-                trailing: isSelected
-                    ? const AuraIcon(Icons.check, tint: .primary)
-                    : null,
-              );
-            },
-            separatorBuilder: (context, index) =>
-                const AuraSizedBox(height: .sm),
-            itemCount: filteredModels.length,
+          child: _ModelSheetOptions(
+            filteredModels: filteredModels,
+            workspaceModelSelectionId: workspaceModelSelectionId,
+            onChanged: onChanged,
           ),
         ),
       ],
+    );
+  }
+}
+
+class const _ModelSheetOptions({
+  required final List<WorkspaceModelSelectionWithConnectionEntity>
+  filteredModels,
+  required final String? workspaceModelSelectionId,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView.separated(
+    itemBuilder: (context, index) => _modelTile(context, index),
+    separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
+    itemCount: filteredModels.length,
+  );
+
+  Widget _modelTile(BuildContext context, int index) {
+    final model = filteredModels[index];
+    final selection = model.workspaceModelSelection;
+    final isSelected = selection.id == workspaceModelSelectionId;
+
+    return AuraTile(
+      child: _ModelSheetOptionContent(model: model),
+      onTap: () {
+        onChanged(selection.id);
+        final _ = Navigator.maybePop(context);
+      },
+      variant: isSelected ? AuraTileVariant.selected : AuraTileVariant.surface,
+      trailing: isSelected ? const AuraIcon(Icons.check, tint: .primary) : null,
     );
   }
 }
@@ -196,48 +233,37 @@ class const _CompactModelDropdown({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
+    if (groupedModels.isEmpty) {
+      return _emptyDropdown();
+    }
+
+    return _dropdown(context);
+  }
+
+  Widget _emptyDropdown() => const SizedBox(
+    width: _CompactWorkspaceModelSelector._selectorWidth,
+    child: AuraDropdownSelector<String>(
+      options: [],
+      placeholder: TextLocale(
+        LocaleKeys.models_screens_select_model,
+        softWrap: false,
+        overflow: .ellipsis,
+        maxLines: 1,
+      ),
+      isEnabled: false,
+    ),
+  );
+
+  Widget _dropdown(BuildContext context) {
+    final colors = context.auraColors;
     final radius = BorderRadius.all(
       .circular(context.auraTheme.fromBorderRadius(.xl)),
     );
-    OutlineInputBorder outline(Color color) => OutlineInputBorder(
-      borderSide: .new(color: color),
-      borderRadius: radius,
-    );
-
-    if (groupedModels.isEmpty) {
-      return const SizedBox(
-        width: CompactWorkspaceModelSelector._selectorWidth,
-        child: AuraDropdownSelector<String>(
-          options: [],
-          placeholder: TextLocale(
-            LocaleKeys.models_screens_select_model,
-            softWrap: false,
-            overflow: .ellipsis,
-            maxLines: 1,
-          ),
-          isEnabled: false,
-        ),
-      );
-    }
 
     return SizedBox(
-      width: CompactWorkspaceModelSelector._selectorWidth,
+      width: _CompactWorkspaceModelSelector._selectorWidth,
       child: AuraDropdownSelector<String>(
-        options: filteredModels
-            .map(
-              (model) => AuraDropdownOption(
-                value: model.workspaceModelSelection.id,
-                child: Text(
-                  model.workspaceModelSelection.modelName ??
-                      model.workspaceModelSelection.modelId,
-                  overflow: .ellipsis,
-                  maxLines: 1,
-                ),
-                trailing: _ModelOptionSubtitle(model: model),
-              ),
-            )
-            .toList(),
+        options: _options(),
         value: workspaceModelSelectionId,
         onChanged: onChanged,
         placeholder: const TextLocale(
@@ -255,11 +281,11 @@ class const _CompactModelDropdown({
                 vertical: context.auraTheme.fromSpacing(.sm),
                 horizontal: context.auraTheme.fromSpacing(.md),
               ),
-              focusedBorder: outline(auraColors.primary),
-              enabledBorder: outline(auraColors.outline),
-              border: outline(auraColors.outline),
+              focusedBorder: _outline(radius, colors.primary),
+              enabledBorder: _outline(radius, colors.outline),
+              border: _outline(radius, colors.outline),
             ),
-            style: .new(color: auraColors.onSurface),
+            style: .new(color: colors.onSurface),
             onChanged: onSearchChanged,
           ),
           padding: .small,
@@ -267,6 +293,27 @@ class const _CompactModelDropdown({
       ),
     );
   }
+
+  List<AuraDropdownOption<String>> _options() => filteredModels
+      .map(
+        (model) => AuraDropdownOption(
+          value: model.workspaceModelSelection.id,
+          child: Text(
+            model.workspaceModelSelection.modelName ??
+                model.workspaceModelSelection.modelId,
+            overflow: .ellipsis,
+            maxLines: 1,
+          ),
+          trailing: _ModelOptionSubtitle(model: model),
+        ),
+      )
+      .toList();
+
+  OutlineInputBorder _outline(BorderRadius radius, Color color) =>
+      OutlineInputBorder(
+        borderSide: .new(color: color),
+        borderRadius: radius,
+      );
 }
 
 class const _ModelCompactChip({

@@ -6,34 +6,48 @@ class const BuildMcpServerToCreateUseCase({
   required final OAuthAuthenticate _authenticator,
 }) {
   Future<McpServerToCreate> call(McpServerFormToCreate serverToCreate) async {
-    final serverInfo = McpServerToCreate(
-      name: serverToCreate.name,
-      url: serverToCreate.url,
-      transport: serverToCreate.transport,
-      authenticationType: const McpAuthenticationTypeNone(),
-      description: serverToCreate.description,
-    );
+    final serverInfo = _serverInfo(serverToCreate);
 
-    if (serverToCreate.authenticationType ==
-        McpAuthenticationTypeOptions.bearerToken) {
-      final bearerToken = serverToCreate.bearerToken;
-      if (bearerToken == null) {
-        throw Exception('Bearer token is required');
-      }
+    return switch (serverToCreate.authenticationType) {
+      McpAuthenticationTypeOptions.bearerToken => _withBearerToken(
+        serverInfo,
+        serverToCreate.bearerToken,
+      ),
+      McpAuthenticationTypeOptions.oauth => await _withOAuth(
+        serverInfo,
+        serverToCreate.url,
+      ),
+      _ => serverInfo,
+    };
+  }
 
-      return serverInfo.copyWith(
-        authenticationType: McpAuthenticationTypeBearerToken(
-          bearerToken: bearerToken,
-        ),
+  McpServerToCreate _serverInfo(McpServerFormToCreate serverToCreate) =>
+      McpServerToCreate(
+        name: serverToCreate.name,
+        url: serverToCreate.url,
+        transport: serverToCreate.transport,
+        authenticationType: const McpAuthenticationTypeNone(),
+        description: serverToCreate.description,
       );
-    }
 
-    if (serverToCreate.authenticationType !=
-        McpAuthenticationTypeOptions.oauth) {
-      return serverInfo;
-    }
+  McpServerToCreate _withBearerToken(
+    McpServerToCreate serverInfo,
+    String? bearerToken,
+  ) {
+    if (bearerToken == null) throw Exception('Bearer token is required');
 
-    final discover = await _authenticator.discover(serverToCreate.url);
+    return serverInfo.copyWith(
+      authenticationType: McpAuthenticationTypeBearerToken(
+        bearerToken: bearerToken,
+      ),
+    );
+  }
+
+  Future<McpServerToCreate> _withOAuth(
+    McpServerToCreate serverInfo,
+    String url,
+  ) async {
+    final discover = await _authenticator.discover(url);
     if (discover == null) {
       throw Exception('Failed to discover OAuth endpoints');
     }

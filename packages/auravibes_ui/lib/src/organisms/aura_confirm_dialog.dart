@@ -58,27 +58,58 @@ class AuraConfirmDialog extends StatelessWidget {
       title: title,
       message: message,
       actions: [
-        AuraButton(
-          onPressed: () {
-            Navigator.of(context).pop(false);
-            onCancel?.call();
-          },
-          child: cancelLabel,
-          variant: .text,
-        ),
+        _AuraConfirmCancelButton(label: cancelLabel, onCancel: onCancel),
         const SizedBox(width: 8),
-        AuraButton(
-          onPressed: () {
-            Navigator.of(context).pop(true);
-            onConfirm?.call();
-          },
-          child: confirmLabel,
-          variant: .text,
-          tint: isDestructive ? AuraTint.error : tint ?? AuraTint.primary,
+        _AuraConfirmButton(
+          label: confirmLabel,
+          onConfirm: onConfirm,
+          isDestructive: isDestructive,
+          tint: tint,
         ),
       ],
     );
   }
+}
+
+class const _AuraConfirmCancelButton({
+  required final Widget label,
+  required final VoidCallback? onCancel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraButton(
+      onPressed: _onPressed(context),
+      child: label,
+      variant: .text,
+    );
+  }
+
+  VoidCallback _onPressed(BuildContext context) => () {
+    Navigator.of(context).pop(false);
+    onCancel?.call();
+  };
+}
+
+class const _AuraConfirmButton({
+  required final Widget label,
+  required final VoidCallback? onConfirm,
+  required final bool isDestructive,
+  required final AuraTint? tint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraButton(
+      onPressed: _onPressed(context),
+      child: label,
+      variant: .text,
+      tint: isDestructive ? AuraTint.error : tint ?? AuraTint.primary,
+    );
+  }
+
+  VoidCallback _onPressed(BuildContext context) => () {
+    Navigator.of(context).pop(true);
+    onConfirm?.call();
+  };
 }
 
 /// Labels used by [AuraDialogs.confirm].
@@ -91,6 +122,9 @@ class AuraConfirmDialogActions {
 
   /// Label for the cancel action.
   final Widget? cancelLabel;
+
+  /// Whether either action label was provided explicitly.
+  bool hasCustomLabels() => confirmLabel != null || cancelLabel != null;
 }
 
 /// Shows a confirmation dialog and returns user selection.
@@ -98,8 +132,6 @@ class AuraConfirmDialogActions {
 /// Returns `true` if confirmed, `false` if cancelled,
 /// `null` if dismissed (e.g., by tapping outside).
 abstract final class AuraDialogs {
-  static const _transitionScale = 0.95;
-
   /// Shows a confirmation dialog and returns the user's selection.
   static Future<bool?> confirm({
     required BuildContext context,
@@ -110,32 +142,17 @@ abstract final class AuraDialogs {
     bool barrierDismissible = true,
     AuraTint? tint,
   }) {
-    return showGeneralDialog<bool>(
+    return _showAuraDialog<bool>(
       context: context,
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return AuraConfirmDialog(
-          title: title,
-          message: message,
-          confirmLabel: actions.confirmLabel ?? const Text('Confirm'),
-          cancelLabel: actions.cancelLabel ?? const Text('Cancel'),
-          isDestructive: isDestructive,
-          tint: tint,
-        );
-      },
+      child: AuraConfirmDialog(
+        title: title,
+        message: message,
+        confirmLabel: actions.confirmLabel ?? const Text('Confirm'),
+        cancelLabel: actions.cancelLabel ?? const Text('Cancel'),
+        isDestructive: isDestructive,
+        tint: tint,
+      ),
       barrierDismissible: barrierDismissible,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: context.auraColors.scrim,
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: _transitionScale, end: 1).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOut),
-            ),
-            child: child,
-          ),
-        );
-      },
     );
   }
 
@@ -148,30 +165,63 @@ abstract final class AuraDialogs {
     AuraTint? tint,
     bool barrierDismissible = true,
   }) async {
-    await showGeneralDialog<void>(
+    await _showAuraDialog<void>(
       context: context,
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return AuraAlertDialog(
-          title: title,
-          message: message,
-          dismissLabel: dismissLabel ?? const Text('OK'),
-          tint: tint,
-        );
-      },
+      child: AuraAlertDialog(
+        title: title,
+        message: message,
+        dismissLabel: dismissLabel ?? const Text('OK'),
+        tint: tint,
+      ),
       barrierDismissible: barrierDismissible,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: context.auraColors.scrim,
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: _transitionScale, end: 1).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOut),
-            ),
-            child: child,
-          ),
-        );
-      },
+    );
+  }
+}
+
+Future<T?> _showAuraDialog<T>({
+  required BuildContext context,
+  required Widget child,
+  required bool barrierDismissible,
+}) {
+  final pageBuilder = _auraDialogPageBuilder(child);
+
+  return showGeneralDialog<T>(
+    context: context,
+    pageBuilder: pageBuilder,
+    barrierDismissible: barrierDismissible,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: context.auraColors.scrim,
+    transitionBuilder: (_, animation, _, child) =>
+        _AuraDialogTransition(animation: animation, child: child),
+  );
+}
+
+typedef _AuraDialogPageBuilder = Widget Function(
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+);
+
+_AuraDialogPageBuilder _auraDialogPageBuilder(Widget child) =>
+    (_, _, _) => child;
+
+class const _AuraDialogTransition({
+  required final Animation<double> animation,
+  required final Widget child,
+}) extends StatelessWidget {
+  static const _transitionScale = 0.95;
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+        scale: Tween<double>(
+          begin: _transitionScale,
+          end: 1,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+        child: child,
+      ),
     );
   }
 }

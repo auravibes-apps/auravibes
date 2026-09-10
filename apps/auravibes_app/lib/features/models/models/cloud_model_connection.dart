@@ -11,17 +11,17 @@ class const CloudModelConnection({
   final String? url,
   final String? keySuffix,
 }) {
-  factory fromView(ModelConnectionView view) {
-    return CloudModelConnection(
-      id: view.id,
-      revision: view.revision,
-      name: view.name,
-      providerId: view.providerId,
-      hasSecret: view.hasSecret,
-      createdAt: view.createdAt,
-      updatedAt: view.updatedAt,
-      url: view.url,
-      keySuffix: view.keySuffix,
-    );
-  }
+  factory CloudModelConnection.fromView(ModelConnectionView view) => .new(
+    id: view.id,
+    revision: view.revision,
+    name: view.name,
+    providerId: view.providerId,
+    hasSecret: view.hasSecret,
+    createdAt: view.createdAt,
+    updatedAt: view.updatedAt,
+    url: view.url,
+    keySuffix: view.keySuffix,
+  );
+
+  bool hasConfiguredSecret() => hasSecret;
 }

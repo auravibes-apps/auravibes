@@ -37,7 +37,7 @@ class const SidebarConversationsWidget({
       return const SizedBox.shrink();
     }
 
-    final currentChatId = _currentChatId(
+    final currentChatId = _sidebarCurrentChatId(
       GoRouter.maybeOf(context)
           ?.routeInformationProvider
           .value
@@ -47,61 +47,77 @@ class const SidebarConversationsWidget({
     final chatListAsync = ref.watch(
       conversationsStreamProvider(workspaceId: workspaceId, limit: limit),
     );
-    switch (chatListAsync) {
-      case AsyncData(value: final chats):
-        if (chats.isEmpty) {
-          return const Column(
-            children: [
-              _SidebarConversationsSectionHeader(),
-              _SidebarConversationsEmptyState(),
-            ],
-          );
-        }
+    return _buildSidebarContent(
+      context,
+      ref,
+      chatListAsync,
+      workspaceId,
+      currentChatId,
+    );
+  }
+}
 
-        return Column(
+String? _sidebarCurrentChatId(List<String>? pathSegments) {
+  if (pathSegments == null) return null;
+  const minimumRouteSegments = 4;
+  if (pathSegments.length < minimumRouteSegments) return null;
+  final [firstSegment, _, thirdSegment, fourthSegment, ...] = pathSegments;
+  if (firstSegment != 'workspaces') return null;
+  if (thirdSegment != 'chats') return null;
+
+  return fourthSegment;
+}
+
+bool _sidebarIsCompacting(WidgetRef ref, String conversationId) {
+  final execution = ref.watch(compactionExecutionProvider);
+  final entry = execution[conversationId];
+
+  return entry != null && entry.status == CompactionExecutionStatus.running;
+}
+
+Widget _buildSidebarContent(
+  BuildContext context,
+  WidgetRef ref,
+  dynamic chatListAsync,
+  String workspaceId,
+  String? currentChatId,
+) {
+  switch (chatListAsync) {
+    case AsyncData(value: final chats):
+      if (chats.isEmpty) {
+        return const Column(
           children: [
-            const _SidebarConversationsSectionHeader(),
-            for (final chat in chats) ...[
-              _SidebarConversationTile(
-                chat: chat,
-                workspaceId: workspaceId,
-                isActive: chat.id == currentChatId,
-              ),
-              if (_isCompacting(ref, chat.id)) const _CompactingRow(),
-            ],
-            _SidebarConversationsViewAllButton(workspaceId: workspaceId),
+            _SidebarConversationsSectionHeader(),
+            _SidebarConversationsEmptyState(),
           ],
         );
-      case AsyncLoading():
-        return Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: context.auraTheme.fromSpacing(.md),
+      }
+
+      return Column(
+        children: [
+          const _SidebarConversationsSectionHeader(),
+          for (final chat in chats) ...[
+            _SidebarConversationTile(
+              chat: chat,
+              workspaceId: workspaceId,
+              isActive: chat.id == currentChatId,
             ),
-            child: const AuraSpinner(),
+            if (_sidebarIsCompacting(ref, chat.id)) const _CompactingRow(),
+          ],
+          _SidebarConversationsViewAllButton(workspaceId: workspaceId),
+        ],
+      );
+    case AsyncLoading():
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: context.auraTheme.fromSpacing(.md),
           ),
-        );
-      case AsyncError(:final error):
-        return _SidebarConversationsError(error: error);
-    }
-  }
-
-  String? _currentChatId(List<String>? pathSegments) {
-    if (pathSegments == null) return null;
-    const minimumRouteSegments = 4;
-    if (pathSegments.length < minimumRouteSegments) return null;
-    final [firstSegment, _, thirdSegment, fourthSegment, ...] = pathSegments;
-    if (firstSegment != 'workspaces') return null;
-    if (thirdSegment != 'chats') return null;
-
-    return fourthSegment;
-  }
-
-  bool _isCompacting(WidgetRef ref, String conversationId) {
-    final execution = ref.watch(compactionExecutionProvider);
-    final entry = execution[conversationId];
-
-    return entry != null && entry.status == CompactionExecutionStatus.running;
+          child: const AuraSpinner(),
+        ),
+      );
+    case AsyncError(:final error):
+      return _SidebarConversationsError(error: error);
   }
 }
 
@@ -244,7 +260,9 @@ class _SidebarConversationTileState
           items: [
             AuraPopupMenuItem(
               title: const TextLocale(LocaleKeys.common_delete),
-              onTap: () => unawaited(_handleDelete(context)),
+              onTap: () => unawaited(
+                _deleteSidebarConversation(context, ref, widget.chat),
+              ),
               leading: const AuraIcon(Icons.delete_outline),
               variant: .error,
             ),
@@ -254,24 +272,28 @@ class _SidebarConversationTileState
       ),
     );
   }
+}
 
-  Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await DeleteConversationConfirmDialog.show(context);
-    if (!confirmed) return;
+Future<void> _deleteSidebarConversation(
+  BuildContext context,
+  WidgetRef ref,
+  ConversationEntity chat,
+) async {
+  final confirmed = await DeleteConversationConfirmDialog.show(context);
+  if (!confirmed) return;
 
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
-    );
-    if (cloud != null) {
-      await cloud.delete(widget.chat);
+  final cloud = await ref.read(
+    cloudConversationUsecaseProvider(chat.workspaceId).future,
+  );
+  if (cloud != null) {
+    await cloud.delete(chat);
 
-      return;
-    }
-
-    final _ = await ref
-        .read(conversationRepositoryProvider)
-        .deleteConversation(widget.chat.id);
+    return;
   }
+
+  final _ = await ref
+      .read(conversationRepositoryProvider)
+      .deleteConversation(chat.id);
 }
 
 class const _CompactingRow() extends StatelessWidget {

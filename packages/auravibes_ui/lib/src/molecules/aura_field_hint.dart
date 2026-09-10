@@ -34,20 +34,33 @@ class AuraFieldHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Final auraColors = context.auraColors;.
     final displayText = error ?? text;
 
     if (displayText == null) return const SizedBox.shrink();
 
-    final isError = error != null;
-    final textStyle = isError
-        ? (errorStyle ?? AuraTextStyle.caption)
-        : (style ?? AuraTextStyle.caption);
-
-    return AuraText(
-      child: Semantics(child: displayText, label: semanticLabel),
-      style: textStyle,
-      tint: isError ? AuraTint.error : null,
+    return _AuraFieldHintContent(
+      displayText: displayText,
+      isError: error != null,
+      style: style,
+      errorStyle: errorStyle,
+      semanticLabel: semanticLabel,
     );
   }
+}
+
+class const _AuraFieldHintContent({
+  required final Widget displayText,
+  required final bool isError,
+  required final AuraTextStyle? style,
+  required final AuraTextStyle? errorStyle,
+  required final String? semanticLabel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Semantics(child: displayText, label: semanticLabel),
+    style: isError
+        ? (errorStyle ?? AuraTextStyle.caption)
+        : (style ?? AuraTextStyle.caption),
+    tint: isError ? AuraTint.error : null,
+  );
 }

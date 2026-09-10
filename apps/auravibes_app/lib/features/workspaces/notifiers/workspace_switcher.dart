@@ -85,39 +85,50 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
     try {
       _logger.info('Workspace switch started');
 
-      if (!ref.mounted || switchGeneration != _switchGeneration) return;
-      state = WorkspaceSwitchState(
-        status: .loading,
-        targetWorkspaceId: workspaceId,
-      );
+      if (!_beginSwitch(workspaceId, switchGeneration)) return;
+      final selectedWorkspaceId = await _selectWorkspace(workspaceId);
 
-      final selectedWorkspaceId = await ref
-          .read(selectWorkspaceUsecaseProvider)
-          .call(workspaceId: workspaceId);
-
-      if (!ref.mounted || switchGeneration != _switchGeneration) return;
-
-      final router = ref.read(routerProvider);
-      final location = '/workspaces/$selectedWorkspaceId/chat/new';
-      router.go(location);
-
-      final duration = DateTime.now().difference(startTime);
-      _logger.info(
-        'Workspace switch completed in ${duration.inMilliseconds}ms',
-      );
-
-      if (ref.mounted && switchGeneration == _switchGeneration) {
-        state = const WorkspaceSwitchState();
-      }
+      if (!_isCurrent(switchGeneration)) return;
+      _completeSwitch(selectedWorkspaceId, startTime, switchGeneration);
     } on Object catch (error, stackTrace) {
       _logger.severe('Workspace switch failed', error, stackTrace);
-      if (ref.mounted && switchGeneration == _switchGeneration) {
-        state = WorkspaceSwitchState(
-          status: .error,
-          targetWorkspaceId: workspaceId,
-          errorLocalizationKey: LocaleKeys.workspace_management_switch_error,
-        );
-      }
+      _setSwitchError(workspaceId, switchGeneration);
     }
+  }
+
+  bool _beginSwitch(String workspaceId, int switchGeneration) {
+    if (!_isCurrent(switchGeneration)) return false;
+    state = WorkspaceSwitchState(
+      status: .loading,
+      targetWorkspaceId: workspaceId,
+    );
+
+    return true;
+  }
+
+  Future<String> _selectWorkspace(String workspaceId) =>
+      ref.read(selectWorkspaceUsecaseProvider).call(workspaceId: workspaceId);
+
+  bool _isCurrent(int switchGeneration) =>
+      ref.mounted && switchGeneration == _switchGeneration;
+
+  void _completeSwitch(
+    String workspaceId,
+    DateTime startTime,
+    int switchGeneration,
+  ) {
+    ref.read(routerProvider).go('/workspaces/$workspaceId/chat/new');
+    final duration = DateTime.now().difference(startTime);
+    _logger.info('Workspace switch completed in ${duration.inMilliseconds}ms');
+    if (_isCurrent(switchGeneration)) state = const WorkspaceSwitchState();
+  }
+
+  void _setSwitchError(String workspaceId, int switchGeneration) {
+    if (!_isCurrent(switchGeneration)) return;
+    state = WorkspaceSwitchState(
+      status: .error,
+      targetWorkspaceId: workspaceId,
+      errorLocalizationKey: LocaleKeys.workspace_management_switch_error,
+    );
   }
 }

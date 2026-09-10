@@ -209,13 +209,17 @@ void main() {
               content: 'Use weather',
             ),
           );
-      await container.read(disableSkillUsecaseProvider(workspaceId))(
+      await container.read(disableSkillUsecaseProvider(workspaceId))((
         workspaceId: workspaceId,
         source: SkillSource.user,
         skillId: skill.id,
         isEnabled: false,
-      );
-      await container.read(disableSkillUsecaseProvider(workspaceId))(
+        slug: null,
+        title: null,
+        description: null,
+        content: null,
+      ));
+      await container.read(disableSkillUsecaseProvider(workspaceId))((
         workspaceId: workspaceId,
         source: SkillSource.app,
         skillId: 'agents',
@@ -224,7 +228,7 @@ void main() {
         title: 'Agents',
         description: 'Run agents',
         content: 'Run workspace agents',
-      );
+      ));
       await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
         conversationId: 'conversation-1',
         workspaceId: workspaceId,

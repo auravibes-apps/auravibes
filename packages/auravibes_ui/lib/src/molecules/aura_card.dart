@@ -200,10 +200,10 @@ class const _AuraSolidCard({
 
   Decoration _decoration(_AuraCardAppearance appearance, double radius) =>
       BoxDecoration(
-        color: appearance.backgroundColor,
-        border: appearance.border,
+        color: appearance.surfaceColor(),
+        border: appearance._border,
         borderRadius: BorderRadius.all(.circular(radius)),
-        boxShadow: appearance.shadows,
+        boxShadow: appearance._shadows,
       );
 }
 
@@ -212,33 +212,33 @@ class const _AuraCardAppearance({
   required final AuraCardStyle style,
   required final AuraTint? tint,
 }) {
-  bool get isGlass => style == AuraCardStyle.glass;
+  bool get _isGlass => style == AuraCardStyle.glass;
 
-  bool get isBorder => style == AuraCardStyle.border;
+  bool get _isBorder => style == AuraCardStyle.border;
 
-  Color get backgroundColor {
-    if (isGlass) return colors.surface.withValues(alpha: 0.1);
+  Color get _backgroundColor {
+    if (_isGlass) return colors.surface.withValues(alpha: 0.1);
 
     return _defaultBackgroundColor;
   }
 
-  BoxBorder? get border {
-    if (isGlass) {
+  BoxBorder? get _border {
+    if (_isGlass) {
       return Border.all(
         color: colors.surfaceVariant.withValues(alpha: 0.2),
         width: AuraCard._borderWidth,
       );
     }
-    if (isBorder) {
+    if (_isBorder) {
       return Border.fromBorderSide(.new(color: colors.outlineVariant));
     }
 
     return null;
   }
 
-  List<BoxShadow> get shadows {
-    if (isGlass) return [DesignShadows.glass];
-    if (isBorder) return const [];
+  List<BoxShadow> get _shadows {
+    if (_isGlass) return [DesignShadows.glass];
+    if (_isBorder) return const [];
 
     return [
       BoxShadow(
@@ -263,6 +263,11 @@ class const _AuraCardAppearance({
       colors.surface,
     );
   }
+
+  Color surfaceColor() => _backgroundColor;
+
+  @override
+  String toString() => 'AuraCardAppearance(style: $style, tint: $tint)';
 }
 
 /// Aura Card Style.

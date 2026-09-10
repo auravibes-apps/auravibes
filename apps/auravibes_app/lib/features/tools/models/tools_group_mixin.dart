@@ -13,41 +13,36 @@ mixin ToolsGroupMixin {
   DefaultToolGroupType? get defaultGroupType;
   McpConnectionState? get mcpConnectionState;
 
-  bool get isDefaultGroup => group == null;
+  late final bool isDefaultGroup = group == null;
 
-  bool get isNativeDefaultGroup =>
+  late final bool isNativeDefaultGroup =
       isDefaultGroup && defaultGroupType == DefaultToolGroupType.native;
 
-  bool get isMcpGroup => group?.isMcpGroup ?? false;
+  late final bool isMcpGroup = group?.isMcpGroup ?? false;
 
-  String? get localizedDisplayNameKey {
-    if (!isDefaultGroup) {
-      if (group?.name == SkillToolPermissionConstants.skillToolsGroupName) {
-        return LocaleKeys.more_screen_skills_title;
-      }
+  late final String? localizedDisplayNameKey = switch (defaultGroupType) {
+    .native when isDefaultGroup => LocaleKeys.tools_screen_native_group,
+    .builtIn ||
+    null when isDefaultGroup => LocaleKeys.tools_screen_default_group,
+    _ when group?.name == SkillToolPermissionConstants.skillToolsGroupName =>
+      LocaleKeys.more_screen_skills_title,
+    _ => null,
+  };
 
-      return null;
-    }
+  late final McpConnectionStatus? mcpStatus = mcpConnectionState?.status;
 
-    return switch (defaultGroupType) {
-      .native => LocaleKeys.tools_screen_native_group,
-      .builtIn || null => LocaleKeys.tools_screen_default_group,
-    };
-  }
+  late final String? mcpServerId = group?.mcpServerId;
 
-  McpConnectionStatus? get mcpStatus => mcpConnectionState?.status;
+  late final bool hasMcpError = mcpStatus == McpConnectionStatus.error;
 
-  String? get mcpServerId => group?.mcpServerId;
+  late final bool isMcpDisconnected =
+      mcpStatus == McpConnectionStatus.disconnected;
 
-  bool get hasMcpError => mcpStatus == McpConnectionStatus.error;
+  late final bool isMcpConnecting = mcpStatus == McpConnectionStatus.connecting;
 
-  bool get isMcpDisconnected => mcpStatus == McpConnectionStatus.disconnected;
+  late final bool isMcpConnected = mcpStatus == McpConnectionStatus.connected;
 
-  bool get isMcpConnecting => mcpStatus == McpConnectionStatus.connecting;
-
-  bool get isMcpConnected => mcpStatus == McpConnectionStatus.connected;
-
-  bool get needsAttention => hasMcpError || isMcpDisconnected;
+  late final bool needsAttention = hasMcpError || isMcpDisconnected;
 
   String? get mcpErrorMessage {
     final message = mcpConnectionState?.errorMessage;
@@ -65,7 +60,9 @@ mixin ToolsGroupMixin {
     return message.truncateCharacters(50);
   }
 
-  bool get isEnabled => group?.isEnabled ?? true;
+  late final bool isEnabled = group?.isEnabled ?? true;
+
+  late final int sortPriority = _sortPriority();
 
   int computeDefaultSortPriority() {
     return switch (defaultGroupType) {
@@ -74,7 +71,11 @@ mixin ToolsGroupMixin {
     };
   }
 
-  int get sortPriority {
+  bool isSameGroup(ToolsGroupMixin other) => group == other.group;
+
+  bool hasErrorMessage() => mcpErrorMessage != null;
+
+  int _sortPriority() {
     if (isDefaultGroup) return computeDefaultSortPriority();
     if (hasMcpError) return 2;
     if (isMcpDisconnected) return 3;

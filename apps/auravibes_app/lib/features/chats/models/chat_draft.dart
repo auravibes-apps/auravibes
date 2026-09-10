@@ -6,4 +6,6 @@ class const ChatDraft({
   final String? metadataJson,
 }) {
   bool get isEmpty => text.trim().isEmpty && attachments.isEmpty;
+
+  bool hasAttachments() => attachments.isNotEmpty;
 }

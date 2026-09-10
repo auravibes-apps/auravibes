@@ -47,6 +47,19 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:uuid/v7.dart';
 
+export 'daos/agents_dao.dart';
+export 'daos/api_model_providers_dao.dart';
+export 'daos/api_models_dao.dart';
+export 'daos/app_skill_workspace_settings_dao.dart';
+export 'daos/conversation_skills_dao.dart';
+export 'daos/conversation_tools_dao.dart';
+export 'daos/message_dao.dart';
+export 'daos/model_connections_dao.dart';
+export 'daos/skill_credentials_dao.dart';
+export 'daos/workspace_compaction_settings_dao.dart';
+export 'daos/workspace_dao.dart';
+export 'daos/workspace_tools_dao.dart';
+
 part 'app_database.g.dart';
 
 /// Main application database using Drift.

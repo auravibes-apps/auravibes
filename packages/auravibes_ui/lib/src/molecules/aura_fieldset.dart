@@ -9,4 +9,7 @@ class AuraFieldset extends AuraSection {
     super.key,
     super.description,
   });
+
+  /// Whether this fieldset provides supporting text.
+  bool hasDescription() => description != null;
 }

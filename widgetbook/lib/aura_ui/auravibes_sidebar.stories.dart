@@ -69,6 +69,27 @@ class const SidebarDemo({
 }
 
 class _SidebarDemoState extends State<SidebarDemo> {
+  static const _navigationItems = [
+    AuraNavigationData(
+      icon: Icon(Icons.home),
+      label: Text('Home'),
+      semanticLabel: 'Home navigation',
+    ),
+    AuraNavigationData(
+      icon: Icon(Icons.folder),
+      label: Text('Projects'),
+      semanticLabel: 'Projects navigation',
+    ),
+    AuraNavigationData(
+      icon: Icon(Icons.settings),
+      label: Text('Settings'),
+      semanticLabel: 'Settings navigation',
+    ),
+  ];
+  static const _header = Padding(
+    padding: EdgeInsets.all(16),
+    child: AuraText(child: Text('Navigation')),
+  );
   int _selectedIndex = 0;
 
   @override
@@ -86,32 +107,13 @@ class _SidebarDemoState extends State<SidebarDemo> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AuraSidebar(
-      navigationItems: const [
-        AuraNavigationData(
-          icon: Icon(Icons.home),
-          label: Text('Home'),
-          semanticLabel: 'Home navigation',
-        ),
-        AuraNavigationData(
-          icon: Icon(Icons.folder),
-          label: Text('Projects'),
-          semanticLabel: 'Projects navigation',
-        ),
-        AuraNavigationData(
-          icon: Icon(Icons.settings),
-          label: Text('Settings'),
-          semanticLabel: 'Settings navigation',
-        ),
-      ],
-      onNavigationTap: (index) => setState(() => _selectedIndex = index),
-      isExpanded: widget.expanded,
-      selectedIndex: _selectedIndex,
-      header: const Padding(
-        padding: EdgeInsets.all(16),
-        child: AuraText(child: Text('Navigation')),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AuraSidebar(
+    navigationItems: _navigationItems,
+    onNavigationTap: _select,
+    isExpanded: widget.expanded,
+    selectedIndex: _selectedIndex,
+    header: _header,
+  );
+
+  void _select(int index) => setState(() => _selectedIndex = index);
 }

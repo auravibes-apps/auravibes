@@ -226,7 +226,7 @@ class const AppResolvedToolProvider({
 
   @override
   Future<Object?> runSkillControlTool(agent.SkillControlToolRequest input) =>
-      _runSkillControlRequest(this, _skillControlToolRequest(input));
+      _runSkillControlRequest(this, input);
 
   @override
   Future<Object?> runSkillTemplateTool(agent.SkillTemplateToolRequest input) {
@@ -257,15 +257,6 @@ class const AppResolvedToolProvider({
     );
   }
 }
-
-_SkillControlToolRequest _skillControlToolRequest(
-  agent.SkillControlToolRequest input,
-) => (
-  conversationId: input.conversationId,
-  workspaceId: input.workspaceId,
-  toolIdentifier: input.toolIdentifier,
-  arguments: input.arguments,
-);
 
 Future<Object?> _runSkillControlRequest(
   AppResolvedToolProvider provider,

@@ -151,6 +151,20 @@ class ChatbotService({
     ChatA2uiTextEvent(:final text) => _streamTextEvent(text, pendingThinking),
   };
 
+  String? _extractThinking(GenerateResponseChunk<Object?> chunk) {
+    final thinking = StringBuffer();
+    for (final part in chunk.content) {
+      final reasoning = part.reasoning;
+      if (reasoning != null && reasoning.isNotEmpty) {
+        thinking.write(reasoning);
+      }
+    }
+
+    return thinking.isEmpty ? null : thinking.toString();
+  }
+}
+
+extension on ChatbotService {
   Stream<ChatResult<ChatMessage>> _streamA2uiMessage(
     ChatA2uiRuntime? runtime,
     ChatA2uiProtocolMessage message,
@@ -215,75 +229,9 @@ class ChatbotService({
 
     return result;
   }
+}
 
-  List<Tool<Map<String, Object?>, Object?>>? _defineGenkitTools(
-    Genkit ai,
-    List<ToolSpec>? tools,
-  ) {
-    return tools?.map((spec) {
-      return ai.defineTool<Map<String, Object?>, Object?>(
-        name: spec.name,
-        description: spec.description,
-        inputSchema: SchemanticType.from<Map<String, Object?>>(
-          jsonSchema: spec.inputJsonSchema.cast<String, Object?>(),
-          parse: (v) => v as Map<String, Object?>,
-        ),
-        fn: (input, context) async {
-          throw StateError(
-            'Tool "${spec.name}" execution should go through the approval '
-            'pipeline, not through Genkit fn',
-          );
-        },
-      );
-    }).toList();
-  }
-
-  Message _toGenkitMessage(ChatMessage message) {
-    return Message(
-      role: switch (message.role) {
-        .system => Role.system,
-        .user => Role.user,
-        .model => Role.model,
-        .tool => Role.tool,
-      },
-      content: message.parts.isEmpty
-          ? [TextPart(text: message.content)]
-          : message.parts.map(_toProviderSafePart).toList(),
-    );
-  }
-
-  Part _toProviderSafePart(Part part) {
-    return switch (part) {
-      ToolRequestPart(:final toolRequest) => ToolRequestPart(
-        toolRequest: .new(
-          ref: providerSafeToolCallId(toolRequest.ref),
-          name: toolRequest.name,
-          input: toolRequest.input,
-        ),
-      ),
-      ToolResponsePart(:final toolResponse) => ToolResponsePart(
-        toolResponse: .new(
-          ref: providerSafeToolCallId(toolResponse.ref),
-          name: toolResponse.name,
-          output: toolResponse.output,
-        ),
-      ),
-      _ => part,
-    };
-  }
-
-  String? _extractThinking(GenerateResponseChunk<Object?> chunk) {
-    final thinking = StringBuffer();
-    for (final part in chunk.content) {
-      final reasoning = part.reasoning;
-      if (reasoning != null && reasoning.isNotEmpty) {
-        thinking.write(reasoning);
-      }
-    }
-
-    return thinking.isEmpty ? null : thinking.toString();
-  }
-
+extension on ChatbotService {
   ChatResult<ChatMessage> _finalChatResult(
     GenerateResponseHelper<Object?> finalResponse,
   ) {
@@ -326,4 +274,56 @@ class ChatbotService({
       response.candidates?.firstOrNull?.message.metadata
           ?.cast<String, Object?>() ??
       const <String, Object?>{};
+}
+
+extension on ChatbotService {
+  List<Tool<Map<String, Object?>, Object?>>? _defineGenkitTools(
+    Genkit ai,
+    List<ToolSpec>? tools,
+  ) => tools?.map((spec) {
+    return ai.defineTool<Map<String, Object?>, Object?>(
+      name: spec.name,
+      description: spec.description,
+      inputSchema: SchemanticType.from<Map<String, Object?>>(
+        jsonSchema: spec.inputJsonSchema.cast<String, Object?>(),
+        parse: (v) => v as Map<String, Object?>,
+      ),
+      fn: (input, context) async {
+        throw StateError(
+          'Tool "${spec.name}" execution should go through the approval '
+          'pipeline, not through Genkit fn',
+        );
+      },
+    );
+  }).toList();
+
+  Message _toGenkitMessage(ChatMessage message) => Message(
+    role: switch (message.role) {
+      .system => Role.system,
+      .user => Role.user,
+      .model => Role.model,
+      .tool => Role.tool,
+    },
+    content: message.parts.isEmpty
+        ? [TextPart(text: message.content)]
+        : message.parts.map(_toProviderSafePart).toList(),
+  );
+
+  Part _toProviderSafePart(Part part) => switch (part) {
+    ToolRequestPart(:final toolRequest) => ToolRequestPart(
+      toolRequest: .new(
+        ref: providerSafeToolCallId(toolRequest.ref),
+        name: toolRequest.name,
+        input: toolRequest.input,
+      ),
+    ),
+    ToolResponsePart(:final toolResponse) => ToolResponsePart(
+      toolResponse: .new(
+        ref: providerSafeToolCallId(toolResponse.ref),
+        name: toolResponse.name,
+        output: toolResponse.output,
+      ),
+    ),
+    _ => part,
+  };
 }

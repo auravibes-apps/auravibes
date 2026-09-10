@@ -7,7 +7,9 @@ part 'conversation_skills_dao.g.dart';
 @DriftAccessor(tables: [ConversationSkills])
 class ConversationSkillsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$ConversationSkillsDaoMixin {
+    with _$ConversationSkillsDaoMixin {}
+
+extension ConversationSkillsDaoMethods on ConversationSkillsDao {
   Future<List<ConversationSkillsTable>> getConversationSkills(
     String conversationId,
   ) =>
@@ -43,38 +45,20 @@ class ConversationSkillsDao(super.attachedDatabase)
     String workspaceSkillId, {
     required bool isLoaded,
   }) async {
-    final existing = await getConversationWorkspaceSkill(
-      conversationId,
-      workspaceSkillId,
+    return _setSkillLoaded(
+      find: () =>
+          getConversationWorkspaceSkill(conversationId, workspaceSkillId),
+      insert: ConversationSkillsCompanion(
+        conversationId: .new(conversationId),
+        workspaceSkillId: .new(workspaceSkillId),
+        isLoaded: .new(isLoaded),
+      ),
+      update: ConversationSkillsCompanion(
+        updatedAt: .new(DateTime.now()),
+        isLoaded: .new(isLoaded),
+      ),
+      notFoundMessage: 'Updated conversation skill was not found',
     );
-    if (existing == null) {
-      return await into(conversationSkills).insertReturning(
-        ConversationSkillsCompanion(
-          conversationId: .new(conversationId),
-          workspaceSkillId: .new(workspaceSkillId),
-          isLoaded: .new(isLoaded),
-        ),
-      );
-    }
-
-    final _ =
-        await (update(
-          conversationSkills,
-        )..where((tbl) => tbl.id.equals(existing.id))).write(
-          ConversationSkillsCompanion(
-            updatedAt: .new(DateTime.now()),
-            isLoaded: .new(isLoaded),
-          ),
-        );
-    final updated = await getConversationWorkspaceSkill(
-      conversationId,
-      workspaceSkillId,
-    );
-    if (updated == null) {
-      throw StateError('Updated conversation skill was not found');
-    }
-
-    return updated;
   }
 
   Future<ConversationSkillsTable> setAppSkillLoaded(
@@ -82,35 +66,38 @@ class ConversationSkillsDao(super.attachedDatabase)
     String appSkillIdentifier, {
     required bool isLoaded,
   }) async {
-    final existing = await getConversationAppSkill(
-      conversationId,
-      appSkillIdentifier,
+    return _setSkillLoaded(
+      find: () => getConversationAppSkill(conversationId, appSkillIdentifier),
+      insert: ConversationSkillsCompanion(
+        conversationId: .new(conversationId),
+        appSkillIdentifier: .new(appSkillIdentifier),
+        isLoaded: .new(isLoaded),
+      ),
+      update: ConversationSkillsCompanion(
+        updatedAt: .new(DateTime.now()),
+        isLoaded: .new(isLoaded),
+      ),
+      notFoundMessage: 'Updated conversation app skill was not found',
     );
+  }
+
+  Future<ConversationSkillsTable> _setSkillLoaded({
+    required Future<ConversationSkillsTable?> Function() find,
+    required ConversationSkillsCompanion insert,
+    required ConversationSkillsCompanion update,
+    required String notFoundMessage,
+  }) async {
+    final existing = await find();
     if (existing == null) {
-      return await into(conversationSkills).insertReturning(
-        ConversationSkillsCompanion(
-          conversationId: .new(conversationId),
-          appSkillIdentifier: .new(appSkillIdentifier),
-          isLoaded: .new(isLoaded),
-        ),
-      );
+      return into(conversationSkills).insertReturning(insert);
     }
 
-    final _ =
-        await (update(
-          conversationSkills,
-        )..where((tbl) => tbl.id.equals(existing.id))).write(
-          ConversationSkillsCompanion(
-            updatedAt: .new(DateTime.now()),
-            isLoaded: .new(isLoaded),
-          ),
-        );
-    final updated = await getConversationAppSkill(
-      conversationId,
-      appSkillIdentifier,
-    );
+    await (this.update(
+      conversationSkills,
+    )..where((tbl) => tbl.id.equals(existing.id))).write(update);
+    final updated = await find();
     if (updated == null) {
-      throw StateError('Updated conversation app skill was not found');
+      throw StateError(notFoundMessage);
     }
 
     return updated;

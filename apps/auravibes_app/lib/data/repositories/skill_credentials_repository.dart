@@ -29,7 +29,7 @@ class SkillCredentialsRepository({
       credentialDefinitionId: credentialDefinitionId,
     );
 
-    return await Future.wait(rows.map(_tableToEntity));
+    return await Future.wait(rows.map(this._tableToEntity));
   }
 
   Stream<List<SkillCredentialEntity>> watchCredentialsForWorkspace(
@@ -37,14 +37,14 @@ class SkillCredentialsRepository({
   ) {
     return _dao
         .watchCredentialsForWorkspace(workspaceId)
-        .asyncMap((rows) => Future.wait(rows.map(_tableToEntity)));
+        .asyncMap((rows) => Future.wait(rows.map(this._tableToEntity)));
   }
 
   Future<SkillCredentialEntity?> getCredentialById(String credentialId) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) return null;
 
-    return await _tableToEntity(row);
+    return await this._tableToEntity(row);
   }
 
   Future<Map<String, String>> readCredentialAttributes(
@@ -55,7 +55,10 @@ class SkillCredentialsRepository({
       throw SkillCredentialsException.notFound(credentialId);
     }
 
-    return {..._nonSecretAttributes(row), ...await _secretAttributes(row)};
+    return {
+      ...this._nonSecretAttributes(row),
+      ...await this._secretAttributes(row),
+    };
   }
 
   Future<SkillCredentialForEdit?> getCredentialForEdit(
@@ -63,9 +66,9 @@ class SkillCredentialsRepository({
   ) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) return null;
-    final secretAttributes = await _secretAttributes(row);
-    final nonSecretAttributes = _nonSecretAttributes(row);
-    final definitions = await _attributeDefinitions(row.serviceId);
+    final secretAttributes = await this._secretAttributes(row);
+    final nonSecretAttributes = this._nonSecretAttributes(row);
+    final definitions = await this._attributeDefinitions(row.serviceId);
     final secretDefinitions = definitions.entries.where(
       (entry) => entry.value.secret,
     );
@@ -80,7 +83,7 @@ class SkillCredentialsRepository({
         for (final entry in secretDefinitions)
           entry.key: SkillCredentialSecretState(
             hasValue: secretAttributes[entry.key]?.isNotEmpty == true,
-            keySuffix: _keySuffix([secretAttributes[entry.key] ?? '']),
+            keySuffix: this._keySuffix([secretAttributes[entry.key] ?? '']),
           ),
       },
       isEnabled: row.isEnabled,
@@ -92,11 +95,11 @@ class SkillCredentialsRepository({
     String workspaceId,
     SkillCredentialToCreate credential,
   ) async {
-    final definitions = await _attributeDefinitions(
+    final definitions = await this._attributeDefinitions(
       credential.credentialDefinitionId,
     );
-    final split = _splitAttributes(credential.attributes, definitions);
-    _validateRequiredAttributes(
+    final split = this._splitAttributes(credential.attributes, definitions);
+    this._validateRequiredAttributes(
       definitions: definitions,
       secretAttributes: split.secret,
       nonSecretAttributes: split.nonSecret,
@@ -104,7 +107,7 @@ class SkillCredentialsRepository({
     final encryptedAttributes = split.secret.isEmpty
         ? null
         : await _encryptionService.encrypt(jsonEncode(split.secret));
-    final keySuffix = _keySuffix(split.secret.values);
+    final keySuffix = this._keySuffix(split.secret.values);
     final row = await _dao.createCredential(
       .new(
         name: Value(credential.name),
@@ -113,12 +116,12 @@ class SkillCredentialsRepository({
         authenticationType: const Value(ServiceAuthenticationTypeTable.apiKey),
         encryptedAuthValue: Value(encryptedAttributes),
         keySuffix: Value(keySuffix),
-        metadataJson: Value(_metadataJson(split.nonSecret)),
+        metadataJson: Value(this._metadataJson(split.nonSecret)),
         workspaceId: Value(workspaceId),
       ),
     );
 
-    return await _tableToEntity(row);
+    return await this._tableToEntity(row);
   }
 
   Future<SkillCredentialEntity> updateCredential(
@@ -129,8 +132,8 @@ class SkillCredentialsRepository({
     if (row == null) {
       throw SkillCredentialsException.notFound(credentialId);
     }
-    final definitions = await _attributeDefinitions(row.serviceId);
-    final existingSecrets = await _secretAttributes(row);
+    final definitions = await this._attributeDefinitions(row.serviceId);
+    final existingSecrets = await this._secretAttributes(row);
     final nextSecrets = {...existingSecrets};
     credential.clearSecretAttributeNames.forEach(nextSecrets.remove);
     for (final entry in credential.secretAttributes.entries) {
@@ -139,11 +142,11 @@ class SkillCredentialsRepository({
     nextSecrets.removeWhere((key, _) => definitions[key]?.secret != true);
 
     final nextNonSecrets = {
-      ..._nonSecretAttributes(row),
+      ...this._nonSecretAttributes(row),
       for (final entry in credential.nonSecretAttributes.entries)
         if (definitions[entry.key]?.secret == false) entry.key: entry.value,
     };
-    _validateRequiredAttributes(
+    this._validateRequiredAttributes(
       definitions: definitions,
       secretAttributes: nextSecrets,
       nonSecretAttributes: nextNonSecrets,
@@ -156,15 +159,15 @@ class SkillCredentialsRepository({
       .new(
         name: Value.absentIfNull(credential.name),
         encryptedAuthValue: Value(encryptedAttributes),
-        keySuffix: Value(_keySuffix(nextSecrets.values)),
-        metadataJson: Value(_metadataJson(nextNonSecrets)),
+        keySuffix: Value(this._keySuffix(nextSecrets.values)),
+        metadataJson: Value(this._metadataJson(nextNonSecrets)),
       ),
     );
     if (updated == null) {
       throw SkillCredentialsException.notFound(credentialId);
     }
 
-    return await _tableToEntity(updated);
+    return await this._tableToEntity(updated);
   }
 
   Future<void> deleteCredential(String credentialId) async {
@@ -185,7 +188,9 @@ class SkillCredentialsRepository({
       'deletedRows=$deletedRows',
     );
   }
+}
 
+extension on SkillCredentialsRepository {
   Future<SkillCredentialEntity> _tableToEntity(
     ServiceConnectionTable table,
   ) async {

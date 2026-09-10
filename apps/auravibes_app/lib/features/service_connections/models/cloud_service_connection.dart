@@ -17,22 +17,29 @@ class const CloudServiceConnection({
   factory fromResource(WorkspaceResource resource) {
     final data = CloudResourceMapper.decode(resource);
 
-    return CloudServiceConnection(
-      id: resource.resourceId,
-      revision: resource.revision,
-      name: data['name'] as String,
-      serviceId: CloudResourceMapper.string(data, 'serviceId'),
-      hasSecret: data['hasSecret'] as bool? ?? data['keySuffix'] != null,
-      scope: .fromJson(
-        data['scope'] as String? ?? WorkspaceSecretScope.workspace.name,
-      ),
-      kind: data['kind'] as String? ?? 'appSkillCredential',
-      secretRevision: data['secretRevision'] as int?,
-      keySuffix: data['keySuffix'] as String?,
-      credentialDefinitionId: data['credentialDefinitionId'] as String?,
-      isEnabled: data['isEnabled'] as bool? ?? true,
-    );
+    return _fromResourceData(resource, data);
   }
+
+  static CloudServiceConnection _fromResourceData(
+    WorkspaceResource resource,
+    Map<String, dynamic> data,
+  ) => CloudServiceConnection(
+    id: resource.resourceId,
+    revision: resource.revision,
+    name: data['name'] as String,
+    serviceId: CloudResourceMapper.string(data, 'serviceId'),
+    hasSecret: data['hasSecret'] as bool? ?? data['keySuffix'] != null,
+    scope: .fromJson(
+      data['scope'] as String? ?? WorkspaceSecretScope.workspace.name,
+    ),
+    kind: data['kind'] as String? ?? 'appSkillCredential',
+    secretRevision: data['secretRevision'] as int?,
+    keySuffix: data['keySuffix'] as String?,
+    credentialDefinitionId: data['credentialDefinitionId'] as String?,
+    isEnabled: data['isEnabled'] as bool? ?? true,
+  );
+
+  bool isConfigured() => hasSecret;
 }
 
 enum ServiceConnectionSecretEdit { preserve, replace, clear }
@@ -56,6 +63,8 @@ class const GenericServiceConnectionForEdit({
         revision: connection.revision,
         secretRevision: connection.secretRevision,
       );
+
+  bool hasConfiguredSecret() => hasSecret;
 }
 
 class const GenericServiceConnectionUpdate({

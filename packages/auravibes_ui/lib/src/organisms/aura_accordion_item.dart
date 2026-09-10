@@ -10,4 +10,7 @@ class AuraAccordionItem {
 
   /// Expanded content.
   final Widget child;
+
+  /// Whether the item has a non-empty title.
+  bool hasTitle() => title.isNotEmpty;
 }

@@ -18,31 +18,9 @@ class _RadioPainter({
     final center = Offset(size.width / 2, size.height / 2);
     final outerRadius = size.width / 2 - 2; // Account for stroke width.
 
-    if (isFocused) {
-      final focusPaint = Paint()
-        ..color = color.withValues(alpha: 0.24)
-        ..style = .stroke
-        ..strokeWidth = 2;
-
-      canvas.drawCircle(center, outerRadius + 1, focusPaint);
-    }
-
-    // Draw outer circle with border.
-    final outerPaint = Paint()
-      ..color = borderColor
-      ..style = .stroke
-      ..strokeWidth = 2;
-
-    canvas.drawCircle(center, outerRadius, outerPaint);
-
-    // Draw inner filled circle when selected (50% of outer radius).
-    if (isSelected) {
-      final innerPaint = Paint()
-        ..color = color
-        ..style = .fill;
-
-      canvas.drawCircle(center, outerRadius * 0.5, innerPaint);
-    }
+    if (isFocused) _paintFocus(canvas, center, outerRadius);
+    _paintOuter(canvas, center, outerRadius);
+    if (isSelected) _paintSelection(canvas, center, outerRadius);
   }
 
   @override
@@ -51,6 +29,32 @@ class _RadioPainter({
         isFocused != oldDelegate.isFocused ||
         color != oldDelegate.color ||
         borderColor != oldDelegate.borderColor;
+  }
+
+  void _paintFocus(Canvas canvas, Offset center, double outerRadius) {
+    final focusPaint = Paint()
+      ..color = color.withValues(alpha: 0.24)
+      ..style = .stroke
+      ..strokeWidth = 2;
+
+    canvas.drawCircle(center, outerRadius + 1, focusPaint);
+  }
+
+  void _paintOuter(Canvas canvas, Offset center, double outerRadius) {
+    final outerPaint = Paint()
+      ..color = borderColor
+      ..style = .stroke
+      ..strokeWidth = 2;
+
+    canvas.drawCircle(center, outerRadius, outerPaint);
+  }
+
+  void _paintSelection(Canvas canvas, Offset center, double outerRadius) {
+    final innerPaint = Paint()
+      ..color = color
+      ..style = .fill;
+
+    canvas.drawCircle(center, outerRadius * 0.5, innerPaint);
   }
 }
 
@@ -81,6 +85,9 @@ class AuraRadioOption<T> {
 
   /// A semantic label announced by assistive technologies.
   final String? semanticLabel;
+
+  /// Whether this option provides a subtitle widget.
+  bool hasSubtitle() => subtitle != null;
 }
 
 /// An individual radio button that communicates with its parent group.
@@ -139,75 +146,35 @@ class AuraRadio<T> extends StatefulWidget {
 }
 
 class _AuraRadioState<T> extends State<AuraRadio<T>> {
-  static const _radioSize = 24.0;
   bool _isFocused = false;
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final isDisabled =
-        widget.disabled ||
-        widget.onChanged == null ||
-        !AuraInteractionScope.of(context).allowsValueChanges;
-    final isSelected = widget.value == widget.groupValue;
-    final effectiveColor = _getActiveColor(context);
-    final borderColor = _getBorderColor(context, isDisabled);
+    final isDisabled = _isDisabled(context);
 
-    return Semantics(
-      child: FocusableActionDetector(
-        enabled: !isDisabled,
-        shortcuts: const {
-          SingleActivator(.enter): ActivateIntent(),
-          SingleActivator(.space): ActivateIntent(),
-        },
-        actions: {
-          ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) {
-              _select();
-
-              return null;
-            },
-          ),
-        },
-        onShowHoverHighlight: (value) => setState(() => _isHovered = value),
-        onFocusChange: (value) => setState(() => _isFocused = value),
-        mouseCursor: isDisabled
-            ? SystemMouseCursors.forbidden
-            : SystemMouseCursors.click,
-        child: GestureDetector(
-          child: SizedBox(
-            width: DesignInputSizes.heightLg,
-            height: DesignInputSizes.heightLg,
-            child: Center(
-              child: Opacity(
-                opacity: isDisabled ? 0.6 : 1.0,
-                child: SizedBox(
-                  width: _radioSize,
-                  height: _radioSize,
-                  child: CustomPaint(
-                    painter: _RadioPainter(
-                      isSelected: isSelected,
-                      isFocused: _isFocused,
-                      color: effectiveColor,
-                      borderColor: borderColor,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          onTap: isDisabled ? null : _select,
-          behavior: .opaque,
-          excludeFromSemantics: true,
-        ),
-      ),
-      enabled: !isDisabled,
-      checked: isSelected,
-      inMutuallyExclusiveGroup: true,
-      label: widget.semanticLabel,
-      onTap: isDisabled ? null : _select,
+    return _AuraRadioPresentation(
+      isDisabled: isDisabled,
+      isSelected: widget.value == widget.groupValue,
+      isFocused: _isFocused,
+      color: _getActiveColor(context),
+      borderColor: _getBorderColor(context, isDisabled),
+      semanticLabel: widget.semanticLabel,
+      onSelect: _select,
+      onHover: _setHovered,
+      onFocusChange: _setFocused,
     );
   }
+
+  bool _isDisabled(BuildContext context) {
+    return widget.disabled ||
+        widget.onChanged == null ||
+        !AuraInteractionScope.of(context).allowsValueChanges;
+  }
+
+  void _setHovered(bool value) => setState(() => _isHovered = value);
+
+  void _setFocused(bool value) => setState(() => _isFocused = value);
 
   Color _getActiveColor(BuildContext context) {
     final auraColors = context.auraColors;
@@ -233,5 +200,117 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
     }
 
     widget.onChanged?.call(widget.value);
+  }
+}
+
+class const _AuraRadioPresentation({
+  required final bool isDisabled,
+  required final bool isSelected,
+  required final bool isFocused,
+  required final Color color,
+  required final Color borderColor,
+  required final String? semanticLabel,
+  required final VoidCallback onSelect,
+  required final ValueChanged<bool> onHover,
+  required final ValueChanged<bool> onFocusChange,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      child: _AuraRadioFocusDetector(presentation: this),
+      enabled: !isDisabled,
+      checked: isSelected,
+      inMutuallyExclusiveGroup: true,
+      label: semanticLabel,
+      onTap: isDisabled ? null : onSelect,
+    );
+  }
+}
+
+class const _AuraRadioFocusDetector({
+  required final _AuraRadioPresentation presentation,
+}) extends StatelessWidget {
+  Map<ShortcutActivator, Intent> get _shortcuts => const {
+    SingleActivator(.enter): ActivateIntent(),
+    SingleActivator(.space): ActivateIntent(),
+  };
+
+  Map<Type, Action<Intent>> get _actions => {
+    ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: _activate),
+  };
+
+  MouseCursor get _mouseCursor => presentation.isDisabled
+      ? SystemMouseCursors.forbidden
+      : SystemMouseCursors.click;
+
+  @override
+  Widget build(BuildContext context) {
+    return FocusableActionDetector(
+      enabled: !presentation.isDisabled,
+      shortcuts: _shortcuts,
+      actions: _actions,
+      onShowHoverHighlight: presentation.onHover,
+      onFocusChange: presentation.onFocusChange,
+      mouseCursor: _mouseCursor,
+      child: _AuraRadioTapTarget(presentation: presentation),
+    );
+  }
+
+  Null _activate(ActivateIntent _) {
+    presentation.onSelect();
+
+    return null;
+  }
+}
+
+class const _AuraRadioTapTarget({
+  required final _AuraRadioPresentation presentation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      child: _AuraRadioIndicator(presentation: presentation),
+      onTap: presentation.isDisabled ? null : presentation.onSelect,
+      behavior: .opaque,
+      excludeFromSemantics: true,
+    );
+  }
+}
+
+class const _AuraRadioIndicator({
+  required final _AuraRadioPresentation presentation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: DesignInputSizes.heightLg,
+      height: DesignInputSizes.heightLg,
+      child: Center(child: _AuraRadioPaint(presentation: presentation)),
+    );
+  }
+}
+
+class const _AuraRadioPaint({
+  required final _AuraRadioPresentation presentation,
+}) extends StatelessWidget {
+  static const _radioSize = 24.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: presentation.isDisabled ? 0.6 : 1.0,
+      child: SizedBox(
+        width: _radioSize,
+        height: _radioSize,
+        child: CustomPaint(
+          painter: _RadioPainter(
+            isSelected: presentation.isSelected,
+            isFocused: presentation.isFocused,
+            color: presentation.color,
+            borderColor: presentation.borderColor,
+          ),
+        ),
+      ),
+    );
   }
 }

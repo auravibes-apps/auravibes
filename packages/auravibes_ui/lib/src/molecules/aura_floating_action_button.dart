@@ -69,69 +69,15 @@ class AuraFloatingActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final labelText = text;
-    final tooltip = this.tooltip;
     final resolvedTint = tint ?? AuraTint.primary;
-    final resolvedBackground = auraColors.colorFor(resolvedTint);
-    final resolvedForeground = auraColors.onTint(resolvedTint);
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(
-        context.auraTheme.fromBorderRadius(_getBorderRadius()),
-      ),
-    );
-
-    Widget fab;
-    if (size == AuraFABSize.extended && labelText != null) {
-      fab = FloatingActionButton.extended(
-        tooltip: tooltip,
-        foregroundColor: resolvedForeground,
-        backgroundColor: resolvedBackground,
-        heroTag: heroTag,
-        elevation: _getElevation(),
-        focusElevation: _getFocusElevation(),
-        hoverElevation: _getHoverElevation(),
-        highlightElevation: _getHighlightElevation(),
-        onPressed: onPressed,
-        shape: shape,
-        icon: Icon(icon, color: resolvedForeground),
-        label: AuraText(
-          child: Text(
-            labelText,
-            style: .new(
-              color: resolvedForeground,
-              fontWeight: context.auraTheme.typography.fontWeightMedium,
-            ),
-          ),
+    return _AuraFabLayout(
+      button: this,
+      background: auraColors.colorFor(resolvedTint),
+      foreground: auraColors.onTint(resolvedTint),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.fromBorderRadius(_getBorderRadius()),
         ),
-      );
-    } else {
-      fab = FloatingActionButton(
-        child: Icon(icon, size: _getIconPixels(), color: resolvedForeground),
-        tooltip: tooltip,
-        foregroundColor: resolvedForeground,
-        backgroundColor: resolvedBackground,
-        heroTag: heroTag,
-        elevation: _getElevation(),
-        focusElevation: _getFocusElevation(),
-        hoverElevation: _getHoverElevation(),
-        highlightElevation: _getHighlightElevation(),
-        onPressed: onPressed,
-        shape: shape,
-      );
-
-      if (size == AuraFABSize.mini || size == AuraFABSize.large) {
-        fab = SizedBox(width: _getFABSize(), height: _getFABSize(), child: fab);
-      }
-    }
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-      child: Semantics(
-        child: fab,
-        enabled: onPressed != null,
-        button: true,
-        label: semanticLabel ?? tooltip ?? 'Floating action button',
-        onTap: onPressed,
       ),
     );
   }
@@ -177,6 +123,122 @@ class AuraFloatingActionButton extends StatelessWidget {
 
   double _getHighlightElevation() {
     return DesignElevation.xl;
+  }
+}
+
+class const _AuraFabLayout({
+  required final AuraFloatingActionButton button,
+  required final Color background,
+  required final Color foreground,
+  required final ShapeBorder shape,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+    child: Semantics(
+      child: _AuraFabContent(
+        button: button,
+        background: background,
+        foreground: foreground,
+        shape: shape,
+      ),
+      enabled: button.onPressed != null,
+      button: true,
+      label: button.semanticLabel ?? button.tooltip ?? 'Floating action button',
+      onTap: button.onPressed,
+    ),
+  );
+}
+
+class const _AuraFabContent({
+  required final AuraFloatingActionButton button,
+  required final Color background,
+  required final Color foreground,
+  required final ShapeBorder shape,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      button.size == AuraFABSize.extended && button.text != null
+      ? _AuraFabExtended(
+          button: button,
+          background: background,
+          foreground: foreground,
+          shape: shape,
+        )
+      : _AuraFabRegular(
+          button: button,
+          background: background,
+          foreground: foreground,
+          shape: shape,
+        );
+}
+
+class const _AuraFabExtended({
+  required final AuraFloatingActionButton button,
+  required final Color background,
+  required final Color foreground,
+  required final ShapeBorder shape,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FloatingActionButton.extended(
+    tooltip: button.tooltip,
+    foregroundColor: foreground,
+    backgroundColor: background,
+    heroTag: button.heroTag,
+    elevation: button._getElevation(),
+    focusElevation: button._getFocusElevation(),
+    hoverElevation: button._getHoverElevation(),
+    highlightElevation: button._getHighlightElevation(),
+    onPressed: button.onPressed,
+    shape: shape,
+    icon: Icon(button.icon, color: foreground),
+    label: AuraText(
+      child: Text(
+        button.text!,
+        style: .new(
+          color: foreground,
+          fontWeight: context.auraTheme.typography.fontWeightMedium,
+        ),
+      ),
+    ),
+  );
+}
+
+class const _AuraFabRegular({
+  required final AuraFloatingActionButton button,
+  required final Color background,
+  required final Color foreground,
+  required final ShapeBorder shape,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final fab = FloatingActionButton(
+      child: Icon(
+        button.icon,
+        size: button._getIconPixels(),
+        color: foreground,
+      ),
+      tooltip: button.tooltip,
+      foregroundColor: foreground,
+      backgroundColor: background,
+      heroTag: button.heroTag,
+      elevation: button._getElevation(),
+      focusElevation: button._getFocusElevation(),
+      hoverElevation: button._getHoverElevation(),
+      highlightElevation: button._getHighlightElevation(),
+      onPressed: button.onPressed,
+      shape: shape,
+    );
+
+    if (button.size == AuraFABSize.mini || button.size == AuraFABSize.large) {
+      return SizedBox(
+        width: button._getFABSize(),
+        height: button._getFABSize(),
+        child: fab,
+      );
+    }
+
+    return fab;
   }
 }
 

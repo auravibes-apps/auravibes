@@ -10,19 +10,9 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
-class const CloudConversationSkillSelection({
-  required final String conversationId,
-  required final String skillId,
-  required final bool isAppSkill,
-  required final bool selected,
-  required final int? expectedRevision,
-});
-
-class CloudSkillSettingsAdapter {
-  const CloudSkillSettingsAdapter(this._gateway);
-
-  final CloudWorkspaceStateGateway _gateway;
-
+class const CloudSkillSettingsAdapter(
+  final CloudWorkspaceStateGateway _gateway,
+) {
   CloudWorkspaceResourceStore get _store =>
       CloudWorkspaceResourceStore(_gateway);
 
@@ -33,6 +23,14 @@ class CloudSkillSettingsAdapter {
       ])
       .map(_mapSkills);
 }
+
+class const CloudConversationSkillSelection({
+  required final String conversationId,
+  required final String skillId,
+  required final bool isAppSkill,
+  required final bool selected,
+  required final int? expectedRevision,
+});
 
 extension CloudSkillSettingsAdapterStreams on CloudSkillSettingsAdapter {
   Stream<({CompactionSettings settings, int? revision})>
@@ -53,7 +51,10 @@ extension CloudSkillSettingsAdapterStreams on CloudSkillSettingsAdapter {
   ) async {
     final state = await watchCompactionSettingsState().first;
 
-    return saveCompactionSettings(settings, expectedRevision: state.revision);
+    return await saveCompactionSettings(
+      settings,
+      expectedRevision: state.revision,
+    );
   }
 }
 

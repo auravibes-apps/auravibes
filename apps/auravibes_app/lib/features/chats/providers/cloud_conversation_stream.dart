@@ -10,8 +10,11 @@ export 'cloud_conversation_key.dart';
 
 final Logger _logger = .new('cloud_conversation');
 
-// ignore: specify_nonobvious_property_types, Riverpod hides family types.
-final cloudConversationStateProvider = StreamProvider.autoDispose
+final AutoDisposeStreamProviderFamily<
+  CloudConversationState,
+  CloudConversationKey
+>
+cloudConversationStateProvider = StreamProvider.autoDispose
     .family<CloudConversationState, CloudConversationKey>(
       _watchCloudConversation,
     );

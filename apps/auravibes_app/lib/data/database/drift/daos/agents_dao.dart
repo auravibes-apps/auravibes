@@ -8,7 +8,9 @@ part 'agents_dao.g.dart';
 @DriftAccessor(tables: [Agents, AgentSkills])
 class AgentsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$AgentsDaoMixin {
+    with _$AgentsDaoMixin {}
+
+extension AgentsDaoMethods on AgentsDao {
   Stream<List<AgentsTable>> watchAgentsByWorkspace(String workspaceId) =>
       (select(agents)
             ..where((tbl) => tbl.workspaceId.equals(workspaceId))
@@ -52,17 +54,21 @@ class AgentsDao(super.attachedDatabase)
     AgentsCompanion agent,
     List<AgentSkillsCompanion> skills,
   ) {
-    return transaction(() async {
-      final _ = await (update(
-        agents,
-      )..where((tbl) => tbl.id.equals(agentId))).write(agent);
-      await _replaceSkills(agentId, skills);
+    return transaction(() => _updateAgent(agentId, agent, skills));
+  }
 
-      final updated = await getAgentById(agentId);
-      if (updated == null) throw StateError('Updated agent was not found');
+  Future<AgentsTable> _updateAgent(
+    String agentId,
+    AgentsCompanion agent,
+    List<AgentSkillsCompanion> skills,
+  ) async {
+    await (update(agents)..where((tbl) => tbl.id.equals(agentId))).write(agent);
+    await _replaceSkills(agentId, skills);
 
-      return updated;
-    });
+    final updated = await getAgentById(agentId);
+    if (updated == null) throw StateError('Updated agent was not found');
+
+    return updated;
   }
 
   Future<bool> deleteAgent(String agentId) async {

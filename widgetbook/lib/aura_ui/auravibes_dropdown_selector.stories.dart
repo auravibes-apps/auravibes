@@ -6,6 +6,16 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 part 'auravibes_dropdown_selector.stories.bridge.g.dart';
 part 'auravibes_dropdown_selector.stories.g.dart';
 
+const _dropdownOptions = <AuraDropdownOption<String>>[
+  AuraDropdownOption(value: 'Free', child: Text('Free'), semanticLabel: 'Free'),
+  AuraDropdownOption(value: 'Pro', child: Text('Pro'), semanticLabel: 'Pro'),
+  AuraDropdownOption(
+    value: 'Enterprise',
+    child: Text('Enterprise'),
+    semanticLabel: 'Enterprise',
+  ),
+];
+
 class const _DropdownInput({
   required final int? selectedIndex,
   required final bool enabled,
@@ -94,30 +104,41 @@ class _DropdownDemoState extends State<DropdownDemo> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    const options = ['Free', 'Pro', 'Enterprise'];
-    final selectedIndex = _selectedIndex;
+  Widget build(BuildContext context) => _DropdownControl(
+    data: .new(demo: widget, selectedIndex: _selectedIndex, onChanged: _select),
+  );
 
-    return AuraDropdownSelector<String>(
-      options: [
-        for (final option in options)
-          AuraDropdownOption(
-            value: option,
-            child: Text(option),
-            semanticLabel: option,
-          ),
-      ],
-      value: selectedIndex == null ? null : options[selectedIndex],
-      onChanged: (value) => setState(() {
-        _selectedIndex = value == null ? null : options.indexOf(value);
-      }),
-      placeholder: const Text('Select a plan'),
-      label: Text(widget.label),
-      hint: const Text('Choose the plan for this workspace'),
-      error: widget.showError ? const Text('Select a plan') : null,
-      isRequired: widget.isRequired,
-      isEnabled: widget.enabled,
-      semanticLabel: widget.label,
-    );
-  }
+  void _select(String? value) => setState(
+    () => _selectedIndex = value == null
+        ? null
+        : _dropdownOptions.indexWhere((option) => option.value == value),
+  );
+}
+
+class const _DropdownControl({required final _DropdownControlData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => data.selector;
+}
+
+class _DropdownControlData({
+  required final DropdownDemo demo,
+  required final int? selectedIndex,
+  required final ValueChanged<String?> onChanged,
+}) {
+  final AuraDropdownSelector<String> selector = .new(
+    options: _dropdownOptions,
+    value: switch (selectedIndex) {
+      final index? => _dropdownOptions[index].value,
+      null => null,
+    },
+    onChanged: onChanged,
+    placeholder: const Text('Select a plan'),
+    label: Text(demo.label),
+    hint: const Text('Choose the plan for this workspace'),
+    error: demo.showError ? const Text('Select a plan') : null,
+    isRequired: demo.isRequired,
+    isEnabled: demo.enabled,
+    semanticLabel: demo.label,
+  );
 }

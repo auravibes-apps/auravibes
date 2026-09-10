@@ -1223,7 +1223,7 @@ _resolvePendingToolCallWithDecision(
   _PendingToolCallDecisionRequest request,
   ResolvedTool resolvedTool,
 ) async {
-  final decision = await request.decisionUsecase(
+  final decision = await request.decisionUsecase.call(
     conversationId: request.conversationId,
     workspaceId: request.workspaceId,
     toolCallId: request.toolCall.id,

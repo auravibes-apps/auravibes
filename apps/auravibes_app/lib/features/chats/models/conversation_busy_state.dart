@@ -17,6 +17,9 @@ class ConversationBusyState {
   final bool isCompacting;
   final bool cloudExecutionBusy;
 
-  bool get isBusy =>
-      cloudExecutionBusy || isStreaming || hasPendingTools || isCompacting;
+  bool hasLocalActivity() => isStreaming || hasPendingTools || isCompacting;
+
+  bool hasCloudActivity() => cloudExecutionBusy;
+
+  bool get isBusy => hasCloudActivity() || hasLocalActivity();
 }

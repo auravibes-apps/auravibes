@@ -17,49 +17,58 @@ class const ToolResolverService([
   }
 
   ResolvedTool? _resolveLegacyName(String compositeToolName) {
-    if (compositeToolName == listAgentsToolName) {
-      return ResolvedTool.skillNative(
-        tableId: compositeToolName,
-        skillSlug: agentsSkillSlug,
-        toolIdentifier: compositeToolName,
-      );
-    }
-
-    if (compositeToolName == runSubAgentToolName) {
-      return ResolvedTool.skillNative(
-        tableId: compositeToolName,
-        skillSlug: agentsSkillSlug,
-        toolIdentifier: compositeToolName,
-      );
+    if (compositeToolName == listAgentsToolName ||
+        compositeToolName == runSubAgentToolName) {
+      return _resolveLegacyAgent(compositeToolName);
     }
 
     final resolved = _resolver.resolve(compositeToolName);
     if (resolved == null) return null;
 
-    return switch (resolved.kind) {
-      .skillControl => ResolvedTool.skillCommand(
-        commandName: resolved.toolIdentifier,
-      ),
-      .skillNative => ResolvedTool.skillNative(
+    return _resolveResolvedTool(resolved);
+  }
+
+  ResolvedTool? _resolveResolvedTool(AgentResolvedToolName resolved) =>
+      switch (resolved.kind) {
+        .skillControl => ResolvedTool.skillCommand(
+          commandName: resolved.toolIdentifier,
+        ),
+        .skillNative || .skillTemplate => _resolveSkillTool(resolved),
+        .mcp => _resolveMcpTool(resolved),
+        .builtIn => _resolveBuiltInTool(resolved),
+        .native => _resolveNativeTool(resolved),
+      };
+
+  ResolvedTool _resolveSkillTool(AgentResolvedToolName resolved) {
+    final skillSlug = resolved.skillSlug ?? '';
+    if (resolved.kind == AgentResolvedToolKind.skillNative) {
+      return ResolvedTool.skillNative(
         tableId: resolved.tableId,
-        skillSlug: resolved.skillSlug ?? '',
+        skillSlug: skillSlug,
         toolIdentifier: resolved.toolIdentifier,
-      ),
-      .skillTemplate => ResolvedTool.skillTemplate(
-        tableId: resolved.tableId,
-        skillSlug: resolved.skillSlug ?? '',
-        toolIdentifier: resolved.toolIdentifier,
-      ),
-      .mcp => ResolvedTool.mcp(
+      );
+    }
+
+    return ResolvedTool.skillTemplate(
+      tableId: resolved.tableId,
+      skillSlug: skillSlug,
+      toolIdentifier: resolved.toolIdentifier,
+    );
+  }
+
+  ResolvedTool _resolveMcpTool(AgentResolvedToolName resolved) =>
+      ResolvedTool.mcp(
         tableId: resolved.tableId,
         toolIdentifier: resolved.toolIdentifier,
         mcpServerId: resolved.mcpServerId ?? '',
         mcpSlug: resolved.mcpSlug ?? '',
-      ),
-      .builtIn => _resolveBuiltInTool(resolved),
-      .native => _resolveNativeTool(resolved),
-    };
-  }
+      );
+
+  ResolvedTool _resolveLegacyAgent(String toolName) => ResolvedTool.skillNative(
+    tableId: toolName,
+    skillSlug: agentsSkillSlug,
+    toolIdentifier: toolName,
+  );
 
   ResolvedTool? _resolveBuiltInTool(AgentResolvedToolName resolved) {
     final toolType = UserToolType.fromValue(resolved.toolIdentifier);

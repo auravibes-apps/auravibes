@@ -37,33 +37,7 @@ class OAuthCredentialService {
       return const McpAuthenticationType.none();
     }
 
-    switch (row.authenticationType) {
-      case .none:
-        return const McpAuthenticationType.none();
-      case .apiKey:
-        return const McpAuthenticationType.none();
-      case .bearerToken:
-        final secret = await _serviceConnectionRepository.readSecret(row.id);
-        if (secret is! ServiceConnectionSecretBearerToken) {
-          throw const FormatException('Invalid bearer credential payload.');
-        }
-
-        return McpAuthenticationType.bearerToken(
-          bearerToken: secret.bearerToken,
-        );
-      case .oauth2:
-        final token = await refreshIfNeeded(serviceConnectionId);
-        final metadata = ServiceConnectionAuthCodec.decodeMetadata(
-          row.metadataJson,
-        );
-
-        return McpAuthenticationType.oauth(
-          token: token,
-          clientId: metadata.clientId ?? 'app-client-id',
-          authorizationEndpoint: metadata.authorizationEndpoint ?? '',
-          tokenEndpoint: metadata.tokenEndpoint ?? '',
-        );
-    }
+    return _resolveRowAuthentication(row, serviceConnectionId);
   }
 
   Future<String> getValidAccessToken(String serviceConnectionId) async {
@@ -81,19 +55,8 @@ class OAuthCredentialService {
     final metadata = ServiceConnectionAuthCodec.decodeMetadata(
       row.metadataJson,
     );
-    final expiresAt = row.expiresAt;
-    final shouldRefresh =
-        expiresAt == null ||
-        DateTime.now().isAfter(expiresAt.subtract(const Duration(minutes: 5)));
-    if (!shouldRefresh) {
-      final issuedAt = row.lastRefreshedAt ?? row.updatedAt;
-
-      return ServiceConnectionAuthCodec.tokenFromSecret(
-        secret: secret,
-        issuedAt: issuedAt,
-        expiresIn: expiresAt.difference(issuedAt).inSeconds,
-        scopes: metadata.scopes,
-      );
+    if (_tokenStillValid(row.expiresAt)) {
+      return _cachedToken(row, secret, metadata.scopes);
     }
 
     return await forceRefresh(serviceConnectionId);
@@ -131,66 +94,81 @@ class OAuthCredentialService {
       error: error.isEmpty ? null : error,
     );
   }
+}
 
-  Future<OAuthTokenEntity> _forceRefresh(String serviceConnectionId) async {
-    final row = await _requiredServiceConnection(serviceConnectionId);
-    final secret = await _serviceConnectionRepository.readSecret(row.id);
-    if (secret is! ServiceConnectionSecretOAuth2) {
-      throw const FormatException('Credential is not OAuth2.');
+typedef _OAuthRefreshContext = ({
+  ServiceConnectionEntity row,
+  ServiceConnectionMetadata metadata,
+  String refreshToken,
+  String? clientSecret,
+});
+
+typedef _OAuthRefreshRequest = ({
+  Uri tokenUri,
+  String refreshToken,
+  String? clientId,
+  String? clientSecret,
+  List<String> previousScopes,
+});
+
+extension on OAuthCredentialService {
+  Future<McpAuthenticationType> _resolveRowAuthentication(
+    ServiceConnectionEntity row,
+    String serviceConnectionId,
+  ) async => switch (row.authenticationType) {
+    .none || .apiKey => const McpAuthenticationType.none(),
+    .bearerToken => _bearerAuthentication(row.id),
+    .oauth2 => _oauthAuthentication(row, serviceConnectionId),
+  };
+
+  Future<McpAuthenticationType> _bearerAuthentication(String id) async {
+    final secret = await _serviceConnectionRepository.readSecret(id);
+    if (secret is! ServiceConnectionSecretBearerToken) {
+      throw const FormatException('Invalid bearer credential payload.');
     }
+    return McpAuthenticationType.bearerToken(bearerToken: secret.bearerToken);
+  }
+
+  Future<McpAuthenticationType> _oauthAuthentication(
+    ServiceConnectionEntity row,
+    String serviceConnectionId,
+  ) async {
+    final token = await refreshIfNeeded(serviceConnectionId);
     final metadata = ServiceConnectionAuthCodec.decodeMetadata(
       row.metadataJson,
     );
-    final refreshToken = secret.refreshToken;
-    final tokenEndpoint = metadata.tokenEndpoint;
-    if (refreshToken == null || refreshToken.isEmpty || tokenEndpoint == null) {
-      await markReauthRequired(
-        serviceConnectionId,
-        error: 'Missing OAuth refresh configuration.',
-      );
-      throw const FormatException('Missing OAuth refresh configuration.');
-    }
+    return McpAuthenticationType.oauth(
+      token: token,
+      clientId: metadata.clientId ?? 'app-client-id',
+      authorizationEndpoint: metadata.authorizationEndpoint ?? '',
+      tokenEndpoint: metadata.tokenEndpoint ?? '',
+    );
+  }
 
+  bool _tokenStillValid(DateTime? expiresAt) =>
+      expiresAt != null &&
+      DateTime.now().isBefore(expiresAt.subtract(const Duration(minutes: 5)));
+
+  OAuthTokenEntity _cachedToken(
+    ServiceConnectionEntity row,
+    ServiceConnectionSecretOAuth2 secret,
+    List<String> scopes,
+  ) {
+    final issuedAt = row.lastRefreshedAt ?? row.updatedAt;
+    return ServiceConnectionAuthCodec.tokenFromSecret(
+      secret: secret,
+      issuedAt: issuedAt,
+      expiresIn: row.expiresAt!.difference(issuedAt).inSeconds,
+      scopes: scopes,
+    );
+  }
+
+  Future<OAuthTokenEntity> _forceRefresh(String serviceConnectionId) async {
+    final context = await _loadRefreshContext(serviceConnectionId);
     try {
-      final tokenUri = await PublicUrlGuard.requireHttpsUri(tokenEndpoint);
-      final response = await _dio.post<Object?>(
-        tokenUri.toString(),
-        data: {
-          'grant_type': 'refresh_token',
-          'refresh_token': refreshToken,
-          if (metadata.clientId case final clientId? when clientId.isNotEmpty)
-            'client_id': clientId,
-          if (secret.clientSecret case final clientSecret?
-              when clientSecret.isNotEmpty)
-            'client_secret': clientSecret,
-        },
-        options: .new(
-          responseType: ResponseType.json,
-          contentType: Headers.formUrlEncodedContentType,
-        ),
-      );
-      final data = response.data;
-      if (data is! Map<String, dynamic>) {
-        throw const FormatException('Invalid OAuth refresh response.');
-      }
-      final token = _tokenFromRefreshResponse(
-        data,
-        previousRefreshToken: refreshToken,
-        previousScopes: metadata.scopes,
-      );
-      await _serviceConnectionRepository.updateOAuthToken(
-        id: row.id,
-        token: token,
-      );
-
-      return token;
-    } on DioException catch (e) {
-      if (_isInvalidGrant(e)) {
-        await markReauthRequired(
-          serviceConnectionId,
-          error: 'OAuth refresh token was rejected.',
-        );
-      }
+      return await _performRefresh(context);
+    } on DioException catch (error) {
+      await _handleDioRefreshFailure(serviceConnectionId, error);
       rethrow;
     } on FormatException {
       await markReauthRequired(
@@ -201,35 +179,127 @@ class OAuthCredentialService {
     }
   }
 
+  Future<_OAuthRefreshContext> _loadRefreshContext(String id) async {
+    final row = await _requiredServiceConnection(id);
+    final secret = await _serviceConnectionRepository.readSecret(row.id);
+    if (secret is! ServiceConnectionSecretOAuth2) {
+      throw const FormatException('Credential is not OAuth2.');
+    }
+    final metadata = ServiceConnectionAuthCodec.decodeMetadata(
+      row.metadataJson,
+    );
+    final refreshToken = secret.refreshToken;
+    if (refreshToken == null ||
+        refreshToken.isEmpty ||
+        metadata.tokenEndpoint == null) {
+      await markReauthRequired(
+        id,
+        error: 'Missing OAuth refresh configuration.',
+      );
+      throw const FormatException('Missing OAuth refresh configuration.');
+    }
+
+    return (
+      row: row,
+      metadata: metadata,
+      refreshToken: refreshToken,
+      clientSecret: secret.clientSecret,
+    );
+  }
+
+  Future<OAuthTokenEntity> _performRefresh(_OAuthRefreshContext context) async {
+    final request = (
+      tokenUri: await PublicUrlGuard.requireHttpsUri(
+        context.metadata.tokenEndpoint!,
+      ),
+      refreshToken: context.refreshToken,
+      clientId: context.metadata.clientId,
+      clientSecret: context.clientSecret,
+      previousScopes: context.metadata.scopes,
+    );
+    final token = await _requestRefreshToken(request);
+    await _serviceConnectionRepository.updateOAuthToken(
+      id: context.row.id,
+      token: token,
+    );
+
+    return token;
+  }
+
+  Future<void> _handleDioRefreshFailure(
+    String serviceConnectionId,
+    DioException error,
+  ) async {
+    if (!_isInvalidGrant(error)) return;
+    await markReauthRequired(
+      serviceConnectionId,
+      error: 'OAuth refresh token was rejected.',
+    );
+  }
+
+  Future<OAuthTokenEntity> _requestRefreshToken(
+    _OAuthRefreshRequest request,
+  ) async {
+    final response = await _postRefreshToken(request);
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException('Invalid OAuth refresh response.');
+    }
+
+    return _tokenFromRefreshResponse(
+      data,
+      previousRefreshToken: request.refreshToken,
+      previousScopes: request.previousScopes,
+    );
+  }
+
+  Future<Response<Object?>> _postRefreshToken(_OAuthRefreshRequest request) =>
+      _dio.post<Object?>(
+        request.tokenUri.toString(),
+        data: {
+          'grant_type': 'refresh_token',
+          'refresh_token': request.refreshToken,
+          if (request.clientId case final value? when value.isNotEmpty)
+            'client_id': value,
+          if (request.clientSecret case final value? when value.isNotEmpty)
+            'client_secret': value,
+        },
+        options: .new(
+          responseType: ResponseType.json,
+          contentType: Headers.formUrlEncodedContentType,
+        ),
+      );
+
   OAuthTokenEntity _tokenFromRefreshResponse(
     Map<String, dynamic> data, {
     required String previousRefreshToken,
     required List<String> previousScopes,
-  }) {
-    final accessToken = data['access_token'];
-    if (accessToken is! String || accessToken.isEmpty) {
-      throw const FormatException('Invalid OAuth refresh access token.');
-    }
+  }) => OAuthTokenEntity(
+    accessToken: _requiredRefreshAccessToken(data),
+    issuedAt: .now(),
+    refreshToken: data['refresh_token'] as String? ?? previousRefreshToken,
+    idToken: data['id_token'] as String?,
+    expiresIn: data['expires_in'] as int?,
+    tokenType: data['token_type'] as String?,
+    scopes: _refreshScopes(data['scope'], previousScopes),
+  );
 
-    return OAuthTokenEntity(
-      accessToken: accessToken,
-      issuedAt: .now(),
-      refreshToken: data['refresh_token'] as String? ?? previousRefreshToken,
-      idToken: data['id_token'] as String?,
-      expiresIn: data['expires_in'] as int?,
-      tokenType: data['token_type'] as String?,
-      scopes: switch (data['scope']) {
-        final String scope when scope.isNotEmpty => scope.split(' '),
-        _ => previousScopes,
-      },
-    );
+  String _requiredRefreshAccessToken(Map<String, dynamic> data) {
+    final accessToken = data['access_token'];
+    if (accessToken is String && accessToken.isNotEmpty) return accessToken;
+
+    throw const FormatException('Invalid OAuth refresh access token.');
   }
+
+  List<String> _refreshScopes(Object? value, List<String> fallback) =>
+      switch (value) {
+        final String scope when scope.isNotEmpty => scope.split(' '),
+        _ => fallback,
+      };
 
   Future<ServiceConnectionEntity> _requiredServiceConnection(String id) async {
     final row = await _serviceConnectionRepository.getById(id);
-    if (row == null) {
-      throw StateError('Service connection not found: $id');
-    }
+    if (row == null) throw StateError('Service connection not found: $id');
 
     return row;
   }

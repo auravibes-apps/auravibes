@@ -62,7 +62,9 @@ class _SkillCredentialDefinitionEditScreenState
       appBar: _SkillCredentialDefinitionAppBar(state: this),
     );
   }
+}
 
+extension on _SkillCredentialDefinitionEditScreenState {
   void _initializeForm(SkillCredentialDefinitionEntity? definition) {
     if (_initialized) return;
     if (definition != null) {
@@ -142,7 +144,9 @@ class _SkillCredentialDefinitionEditScreenState
 
   SkillCredentialDefinitionToUpdate _definitionUpdate(String attributesJson) =>
       .new(title: _titleController.text, attributesJson: attributesJson);
+}
 
+extension on _SkillCredentialDefinitionEditScreenState {
   void _addAttributeRow() {
     setState(() => _attributeRows.add(_AttributeFormRow()));
   }
@@ -189,7 +193,9 @@ class _SkillCredentialDefinitionEditScreenState
       if (!row.secret) 'secret': false,
     };
   }
+}
 
+extension on _SkillCredentialDefinitionEditScreenState {
   Future<void> _confirmDelete(BuildContext context) async {
     final shouldDelete = await _showDeleteConfirmation(context);
     final definitionId = widget.definitionId;

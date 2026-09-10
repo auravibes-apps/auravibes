@@ -43,29 +43,48 @@ class const BuildAppSkillNativeToolSpecsUsecase(
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
   }) async {
-    final loadedSkills = await _listAvailableSkillsUsecase(workspaceId).call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-      filter: .loaded,
-    );
+    final loadedSkills = await _loadedSkills(conversationId, workspaceId);
+    final conversationState = await _conversationState(conversationId);
+    final runtimeSkills = _runtimeSkills(loadedSkills, extraSkills);
+
+    return await _toolSpecs(runtimeSkills, workspaceId, conversationState);
+  }
+
+  Future<List<AvailableSkill>> _loadedSkills(
+    String conversationId,
+    String workspaceId,
+  ) => _listAvailableSkillsUsecase(workspaceId).call(
+    conversationId: conversationId,
+    workspaceId: workspaceId,
+    filter: .loaded,
+  );
+
+  Future<({bool isUnknown, bool isSubAgent})> _conversationState(
+    String conversationId,
+  ) async {
     final conversation = await _conversationRepository?.getConversationById(
       conversationId,
     );
-    final isUnknownConversation =
-        _conversationRepository != null && conversation == null;
-    final isSubAgentConversation = conversation?.parentConversationId != null;
-    final runtimeSkills = _runtimeSkills(loadedSkills, extraSkills);
 
-    return <ToolSpec>[
-      ..._skillsManagerToolSpecs(runtimeSkills),
-      ..._subAgentToolSpecs(
-        runtimeSkills,
-        isUnknownConversation: isUnknownConversation,
-        isSubAgentConversation: isSubAgentConversation,
-      ),
-      ...await _serviceSkillToolSpecs(runtimeSkills, workspaceId),
-    ];
+    return (
+      isUnknown: _conversationRepository != null && conversation == null,
+      isSubAgent: conversation?.parentConversationId != null,
+    );
   }
+
+  Future<List<ToolSpec>> _toolSpecs(
+    List<AvailableSkill> runtimeSkills,
+    String workspaceId,
+    ({bool isUnknown, bool isSubAgent}) conversationState,
+  ) async => [
+    ..._skillsManagerToolSpecs(runtimeSkills),
+    ..._subAgentToolSpecs(
+      runtimeSkills,
+      isUnknownConversation: conversationState.isUnknown,
+      isSubAgentConversation: conversationState.isSubAgent,
+    ),
+    ...await _serviceSkillToolSpecs(runtimeSkills, workspaceId),
+  ];
 
   List<AvailableSkill> _runtimeSkills(
     List<AvailableSkill> loadedSkills,

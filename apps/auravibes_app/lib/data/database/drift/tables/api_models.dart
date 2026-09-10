@@ -12,47 +12,47 @@ export 'package:auravibes_app/data/database/drift/converters/list_converter.dart
 /// Table definition for chat models in the database.
 @DataClassName('ApiModelsTable')
 class ApiModels extends Table {
-  TextColumn get modelProvider =>
-      text().references(ApiModelProviders, #id, onDelete: .cascade)();
+  late final modelProvider = text().references(
+    ApiModelProviders,
+    #id,
+    onDelete: .cascade,
+  )();
 
   // Model id.
-  TextColumn get id => text()();
+  late final id = text()();
 
   /// Human-readable name of the model.
-  TextColumn get name => text()();
+  late final name = text()();
 
-  TextColumn get family => text().nullable()();
+  late final family = text().nullable()();
 
   /// Type of chat model (local or remote). Stored as a string to handle enum
   /// conversion.
 
-  TextColumn get modalitiesInput =>
-      text().map(stringListConverter).nullable()();
-  TextColumn get modalitiesOutput =>
-      text().map(stringListConverter).nullable()();
+  late final modalitiesInput = text().map(stringListConverter).nullable()();
+  late final modalitiesOutput = text().map(stringListConverter).nullable()();
 
-  BoolColumn get openWeights => boolean().nullable()();
+  late final openWeights = boolean().nullable()();
 
-  BoolColumn get supportsReasoning =>
-      boolean().withDefault(const Constant(false))();
+  late final supportsReasoning = boolean().withDefault(const Constant(false))();
 
-  BoolColumn get isCanonical => boolean().withDefault(const Constant(true))();
+  late final isCanonical = boolean().withDefault(const Constant(true))();
 
-  BoolColumn get supportsPriorityMode =>
-      boolean().withDefault(const Constant(false))();
+  late final supportsPriorityMode = boolean().withDefault(
+    const Constant(false),
+  )();
 
-  BoolColumn get supportsToolCalls =>
-      boolean().withDefault(const Constant(false))();
+  late final supportsToolCalls = boolean().withDefault(const Constant(false))();
 
   // Cost.
-  RealColumn get costInput => real().nullable()();
-  RealColumn get costOutput => real().nullable()();
-  RealColumn get costCacheRead => real().nullable()();
+  late final costInput = real().nullable()();
+  late final costOutput = real().nullable()();
+  late final costCacheRead = real().nullable()();
 
-  IntColumn get limitContext => integer()();
+  late final limitContext = integer()();
 
-  IntColumn get limitOutput => integer()();
+  late final limitOutput = integer()();
 
   @override
-  Set<Column> get primaryKey => {id, modelProvider};
+  late final Set<Column> primaryKey = {id, modelProvider};
 }

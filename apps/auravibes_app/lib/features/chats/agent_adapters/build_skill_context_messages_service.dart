@@ -18,10 +18,11 @@ class const BuildSkillContextMessagesService(
   final BuildLoadedSkillManifestsUsecase? _buildLoadedSkillManifestsUsecase,
 ]) {
   static const _builder = agent.BuildSkillContextMessages();
-  Future<List<ChatMessage>> call({
+  late final Future<List<ChatMessage>> Function({
     required String conversationId,
     required String workspaceId,
-  }) async {
+  })
+  call = ({required conversationId, required workspaceId}) async {
     final loadedSkills = await _listAvailableSkillsUsecase(
       conversationId: conversationId,
       workspaceId: workspaceId,
@@ -81,7 +82,7 @@ class const BuildSkillContextMessagesService(
           metadata: Map<String, Object?>.of(message.metadata),
         ),
     ];
-  }
+  };
 }
 
 final buildSkillContextMessagesServiceProvider =

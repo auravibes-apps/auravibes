@@ -7,7 +7,9 @@ part 'conversation_dao.g.dart';
 @DriftAccessor(tables: [Conversations])
 class ConversationDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$ConversationDaoMixin {
+    with _$ConversationDaoMixin {}
+
+extension ConversationDaoMethods on ConversationDao {
   Future<ConversationsTable> insertConversation(
     ConversationsCompanion conversation,
   ) => into(conversations).insertReturning(conversation);

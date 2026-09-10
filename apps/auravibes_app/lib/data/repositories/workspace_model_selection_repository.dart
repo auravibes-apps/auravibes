@@ -23,7 +23,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
   ) async {
     await _database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
       workspaceModelSelections
-          .map(_workspaceModelSelectionToCreateToCompanion)
+          .map(this._workspaceModelSelectionToCreateToCompanion)
           .toList(),
     );
   }
@@ -35,7 +35,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
           workspaceIds: filter.workspaces,
         );
 
-    return tableResults.map(_withProviderTableToEntity).toList();
+    return tableResults.map(this._withProviderTableToEntity).toList();
   }
 
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
@@ -46,7 +46,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
         )
         .map(
           (tableResults) =>
-              tableResults.map(_withProviderTableToEntity).toList(),
+              tableResults.map(this._withProviderTableToEntity).toList(),
         );
   }
 
@@ -57,7 +57,9 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
         .getWorkspaceModelSelectionById(id);
     if (workspaceModelSelectionWithConnection == null) return null;
 
-    return _withProviderTableToEntity(workspaceModelSelectionWithConnection);
+    return this._withProviderTableToEntity(
+      workspaceModelSelectionWithConnection,
+    );
   }
 
   @override
@@ -68,7 +70,9 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
     String workspaceId,
   ) => watchWorkspaceModelSelections(.new(workspaces: [workspaceId]));
+}
 
+extension on WorkspaceModelSelectionRepository {
   WorkspaceModelSelectionsCompanion _workspaceModelSelectionToCreateToCompanion(
     WorkspaceModelSelectionToCreate workspaceModelSelection,
   ) {
@@ -86,15 +90,19 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
     final isCodex = ModelProviderOAuthProfiles.isCodexProvider(serviceId);
     final providerType = _mapToTypeTable(modelProvider?.type);
 
+    final workspaceModelSelection = _modelSelectionEntity(withProvider);
+    final modelConnection = _modelConnectionEntity(withProvider, serviceId);
+    final modelsProvider = _modelProviderEntity(
+      withProvider.modelProvider,
+      serviceId: serviceId,
+      isCodex: isCodex,
+      providerType: providerType,
+    );
+
     return WorkspaceModelSelectionWithConnectionEntity(
-      workspaceModelSelection: _modelSelectionEntity(withProvider),
-      modelConnection: _modelConnectionEntity(withProvider, serviceId),
-      modelsProvider: _modelProviderEntity(
-        withProvider.modelProvider,
-        serviceId: serviceId,
-        isCodex: isCodex,
-        providerType: providerType,
-      ),
+      workspaceModelSelection: workspaceModelSelection,
+      modelConnection: modelConnection,
+      modelsProvider: modelsProvider,
     );
   }
 
@@ -103,19 +111,27 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
   ) {
     final apiModel = withProvider.apiModel;
 
-    return .new(
+    final selection = WorkspaceModelSelectionEntity(
       id: withProvider.model.id,
       modelId: withProvider.model.modelId,
       createdAt: withProvider.model.createdAt,
       updatedAt: withProvider.model.updatedAt,
       modelConnectionId: withProvider.model.modelConnectionId,
-      modelName: apiModel?.name,
-      modalitiesInput: apiModel?.modalitiesInput ?? [],
-      modalitiesOutput: apiModel?.modalitiesOutput ?? [],
-      supportsReasoning: apiModel?.supportsReasoning ?? false,
-      supportsToolCalls: apiModel?.supportsToolCalls ?? false,
     );
+
+    return _withModelCapabilities(selection, apiModel);
   }
+
+  WorkspaceModelSelectionEntity _withModelCapabilities(
+    WorkspaceModelSelectionEntity selection,
+    ApiModelsTable? apiModel,
+  ) => selection.copyWith(
+    modelName: apiModel?.name,
+    modalitiesInput: apiModel?.modalitiesInput ?? [],
+    modalitiesOutput: apiModel?.modalitiesOutput ?? [],
+    supportsReasoning: apiModel?.supportsReasoning ?? false,
+    supportsToolCalls: apiModel?.supportsToolCalls ?? false,
+  );
 
   ModelConnectionEntity _modelConnectionEntity(
     WorkspaceModelSelectionWithConnection withProvider,
@@ -123,7 +139,7 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
   ) {
     final connection = withProvider.modelConnection;
 
-    return .new(
+    final modelConnection = ModelConnectionEntity(
       id: connection.id,
       name: connection.name,
       modelId: serviceId,
@@ -131,14 +147,22 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
       updatedAt: connection.updatedAt,
       workspaceId: connection.workspaceId,
       hasKey: connection.encryptedAuthValue?.isNotEmpty == true,
-      authMode: _authMode(connection.authenticationType),
-      url: connection.url,
-      keySuffix: connection.keySuffix,
-      oauthMetadata: ServiceConnectionAuthCodec.decodeMetadata(
-        connection.metadataJson,
-      ),
     );
+
+    return _withConnectionCredentials(modelConnection, connection);
   }
+
+  ModelConnectionEntity _withConnectionCredentials(
+    ModelConnectionEntity modelConnection,
+    ServiceConnectionsTable connection,
+  ) => modelConnection.copyWith(
+    authMode: _authMode(connection.authenticationType),
+    url: connection.url,
+    keySuffix: connection.keySuffix,
+    oauthMetadata: ServiceConnectionAuthCodec.decodeMetadata(
+      connection.metadataJson,
+    ),
+  );
 
   ApiModelProviderEntity _modelProviderEntity(
     ApiModelProvidersTable? modelProvider, {

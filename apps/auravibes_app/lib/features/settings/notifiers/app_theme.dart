@@ -29,16 +29,7 @@ class ThemeNotifier extends _$ThemeNotifier {
   @override
   Future<AppTheme> build() async {
     final prefs = await ref.watch(sharedPreferencesProvider.future);
-    final theme = prefs.get(_themeKey);
-    if (theme is int && theme >= 0 && theme < AppTheme.values.length) {
-      return .values[theme];
-    }
-
-    if (theme == 'default' || theme == AppTheme.system.name) {
-      return .system;
-    }
-
-    return .system;
+    return _appThemeFromStoredValue(prefs.get(_themeKey));
   }
 
   Future<void> setTheme(AppTheme theme) async {
@@ -46,4 +37,11 @@ class ThemeNotifier extends _$ThemeNotifier {
     final prefs = await ref.read(sharedPreferencesProvider.future);
     final _ = await prefs.setInt(_themeKey, theme.index);
   }
+}
+
+AppTheme _appThemeFromStoredValue(Object? value) {
+  if (value is int && value >= 0 && value < AppTheme.values.length) {
+    return .values[value];
+  }
+  return .system;
 }

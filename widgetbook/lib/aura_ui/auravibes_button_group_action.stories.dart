@@ -7,6 +7,29 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 part 'auravibes_button_group_action.stories.bridge.g.dart';
 part 'auravibes_button_group_action.stories.g.dart';
 
+const _actionItems = <AuraButtonGroupItem<String>>[
+  AuraButtonGroupItem(
+    value: 'undo',
+    child: Icon(Icons.undo),
+    semanticLabel: 'Undo',
+  ),
+  AuraButtonGroupItem(
+    value: 'redo',
+    child: Icon(Icons.redo),
+    semanticLabel: 'Redo',
+  ),
+  AuraButtonGroupItem(
+    value: 'copy',
+    child: Icon(Icons.copy),
+    semanticLabel: 'Copy',
+  ),
+  AuraButtonGroupItem(
+    value: 'paste',
+    child: Icon(Icons.paste),
+    semanticLabel: 'Paste',
+  ),
+];
+
 const _component = ComponentMeta(name: 'AuraButtonGroup');
 const _meta = Meta(ActionDemo.new);
 
@@ -68,46 +91,40 @@ class _ActionDemoState extends State<ActionDemo> {
   String _lastPressed = 'None';
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        AuraButtonGroup<String>.action(
-          items: const [
-            AuraButtonGroupItem(
-              value: 'undo',
-              child: Icon(Icons.undo),
-              semanticLabel: 'Undo',
-            ),
-            AuraButtonGroupItem(
-              value: 'redo',
-              child: Icon(Icons.redo),
-              semanticLabel: 'Redo',
-            ),
-            AuraButtonGroupItem(
-              value: 'copy',
-              child: Icon(Icons.copy),
-              semanticLabel: 'Copy',
-            ),
-            AuraButtonGroupItem(
-              value: 'paste',
-              child: Icon(Icons.paste),
-              semanticLabel: 'Paste',
-            ),
-          ],
-          onPressed: (value) => setState(() => _lastPressed = value),
-          size: widget.size,
-          variant: widget.variant,
-          orientation: widget.orientation,
-          disabled: widget.disabled,
-          isLoading: widget.isLoading,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Last pressed: $_lastPressed',
-          style: .new(color: context.auraColors.onSurface),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _ActionGroup(
+        demo: widget,
+        onPressed: (value) => setState(() => _lastPressed = value),
+      ),
+      const SizedBox(height: 16),
+      _ActionStatus(lastPressed: _lastPressed),
+    ],
+  );
+}
+
+class const _ActionGroup({
+  required final ActionDemo demo,
+  required final ValueChanged<String> onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButtonGroup<String>.action(
+    items: _actionItems,
+    onPressed: onPressed,
+    size: demo.size,
+    variant: demo.variant,
+    orientation: demo.orientation,
+    disabled: demo.disabled,
+    isLoading: demo.isLoading,
+  );
+}
+
+class const _ActionStatus({required final String lastPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    'Last pressed: $lastPressed',
+    style: .new(color: context.auraColors.onSurface),
+  );
 }

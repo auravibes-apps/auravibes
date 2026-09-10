@@ -49,7 +49,7 @@ class McpServersRepository implements McpServersRepositoryContract {
     try {
       // Use a transaction to ensure atomicity.
       return await _database.transaction(
-        () => _addMcpServerWithTools(workspaceId, serverToCreate, tools),
+        () => this._addMcpServerWithTools(workspaceId, serverToCreate, tools),
       );
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
@@ -62,7 +62,7 @@ class McpServersRepository implements McpServersRepositoryContract {
   @override
   Future<bool> deleteMcpServer(String serverId) async {
     try {
-      return await _database.transaction(() => _deleteMcpServer(serverId));
+      return await _database.transaction(() => this._deleteMcpServer(serverId));
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException('Failed to delete MCP server.', e),
@@ -78,7 +78,7 @@ class McpServersRepository implements McpServersRepositoryContract {
   }) async {
     try {
       await _database.transaction(
-        () => _syncMcpTools(mcpServerId, currentTools),
+        () => this._syncMcpTools(mcpServerId, currentTools),
       );
 
       // Note: Existing tools are NOT modified - user customizations preserved.
@@ -101,7 +101,7 @@ class McpServersRepository implements McpServersRepositoryContract {
         workspaceId,
       );
 
-      return results.map(_tableToEntity).toList();
+      return results.map(this._tableToEntity).toList();
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException('Failed to get MCP servers for workspace.', e),
@@ -119,7 +119,7 @@ class McpServersRepository implements McpServersRepositoryContract {
         workspaceId,
       );
 
-      return results.map(_tableToEntity).toList();
+      return results.map(this._tableToEntity).toList();
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException(
@@ -137,7 +137,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       final result = await _mcpServersDao.getMcpServerById(serverId);
       if (result == null) return null;
 
-      return _tableToEntity(result);
+      return this._tableToEntity(result);
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException('Failed to get MCP server by ID.', e),
@@ -145,7 +145,9 @@ class McpServersRepository implements McpServersRepositoryContract {
       );
     }
   }
+}
 
+extension McpServersRepositoryOperations on McpServersRepository {
   Future<McpServersTable> _insertMcpServer(
     String workspaceId,
     McpServerToCreate serverToCreate,
@@ -371,4 +373,7 @@ class McpServerNotFoundException extends McpServersException {
 
   /// ID of the MCP server that was not found.
   final String serverId;
+
+  @override
+  String toString() => super.toString();
 }

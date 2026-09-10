@@ -17,9 +17,11 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
-  AppFlavorConfig.appFlavor = AppFlavorResolver.resolve(appFlavor);
+  AppFlavorConfig.instance.setAppFlavor(AppFlavorResolver.resolve(appFlavor));
   _ensureFlutterBinding();
-  AppLogging.configure(enabled: AppFlavorConfig.appFlavor != Flavor.prod);
+  AppLogging.configure(
+    enabled: AppFlavorConfig.instance.appFlavor != Flavor.prod,
+  );
   await MainLocale.ensureInitialized();
 
   _configureSystemUi();
@@ -195,7 +197,7 @@ class _AuraMaterialApp extends MaterialApp {
   }) : super.router(
          routerConfig: routerConfig,
          builder: _snackBarBuilder,
-         title: AppFlavorConfig.title,
+         title: AppFlavorConfig.instance.title,
          theme: lightTheme,
          darkTheme: darkTheme,
          themeMode: themeMode,
@@ -223,7 +225,7 @@ Widget Function(BuildContext, Widget?) get _snackBarBuilder {
   return (_, child) => _AuraSnackBarHost(child: child);
 }
 
-bool get _showDebugBanner => AppFlavorConfig.appFlavor != Flavor.prod;
+bool get _showDebugBanner => AppFlavorConfig.instance.appFlavor != Flavor.prod;
 
 class const _AuraSnackBarHost({required final Widget? child})
     extends StatelessWidget {

@@ -36,34 +36,12 @@ class CodexOAuthService {
     final state = _randomUrlSafe(32);
     final server = await _bindServer();
     try {
-      final port = server.port;
-      final redirectUri = 'http://localhost:$port/auth/callback';
-      final codeCompleter = Completer<String>();
-
-      unawaited(
-        _listenForBrowserCallback(
-          server: server,
-          state: state,
-          completer: codeCompleter,
-        ),
-      );
-
-      final authorizeUrl = buildAuthorizeUri(
-        redirectUri: redirectUri,
-        codeChallenge: pkce.challenge,
+      return await _authenticateWithBrowser((
+        server: server,
+        pkce: pkce,
         state: state,
-      );
-      await _openBrowser(authorizeUrl);
-
-      final code = isCancelled == null
-          ? await codeCompleter.future.timeout(const Duration(minutes: 5))
-          : await _waitForBrowserCode(codeCompleter, isCancelled);
-
-      return await exchangeCodeForToken(
-        code: code,
-        redirectUri: redirectUri,
-        codeVerifier: pkce.verifier,
-      );
+        isCancelled: isCancelled,
+      ));
     } finally {
       final _ = await server.close(force: true);
     }
@@ -73,37 +51,12 @@ class CodexOAuthService {
     void Function(CodexDeviceCode deviceCode)? onDeviceCode,
     bool Function()? isCancelled,
   }) async {
-    final response = await _dio.post<Object?>(
-      '${ModelProviderOAuthProfiles.issuer}/api/accounts/deviceauth/usercode',
-      data: {'client_id': ModelProviderOAuthProfiles.clientId},
-      options: .new(
-        headers: const {'Content-Type': _jsonContentType},
-        responseType: ResponseType.json,
-      ),
-    );
-    final data = _mapResponse(response.data);
-    final deviceAuthId = _requiredString(data, 'device_auth_id');
-    final userCode = _requiredString(data, 'user_code');
-    final interval = _interval(data['interval']);
-    onDeviceCode?.call(
-      .new(
-        verificationUrl: '${ModelProviderOAuthProfiles.issuer}/codex/device',
-        userCode: userCode,
-      ),
-    );
-
+    final data = await _requestDeviceAuthorization(onDeviceCode);
     final authorization = await _pollDeviceToken(
-      deviceAuthId: deviceAuthId,
-      userCode: userCode,
-      interval: interval,
-      isCancelled: isCancelled,
+      _devicePollRequest(data, isCancelled),
     );
 
-    return await exchangeCodeForToken(
-      code: _requiredString(authorization, 'authorization_code'),
-      redirectUri: deviceCallback,
-      codeVerifier: _requiredString(authorization, 'code_verifier'),
-    );
+    return _exchangeDeviceAuthorization(authorization);
   }
 
   Uri buildAuthorizeUri({
@@ -130,21 +83,11 @@ class CodexOAuthService {
     required String redirectUri,
     required String codeVerifier,
   }) async {
-    final response = await _dio.post<Object?>(
-      ModelProviderOAuthProfiles.tokenEndpoint,
-      data: {
-        'grant_type': 'authorization_code',
-        'code': code,
-        'redirect_uri': redirectUri,
-        'client_id': ModelProviderOAuthProfiles.clientId,
-        'code_verifier': codeVerifier,
-      },
-      options: .new(
-        headers: const {'Accept': 'application/json'},
-        responseType: ResponseType.json,
-        contentType: Headers.formUrlEncodedContentType,
-      ),
-    );
+    final response = await _requestCodeToken((
+      code: code,
+      redirectUri: redirectUri,
+      codeVerifier: codeVerifier,
+    ));
     final token = _tokenFromResponse(_mapResponse(response.data));
 
     return token.copyWith(
@@ -166,15 +109,74 @@ class CodexOAuthService {
 
     return null;
   }
+}
 
-  Future<HttpServer> _bindServer() async {
-    try {
-      return await HttpServer.bind(InternetAddress.loopbackIPv4, defaultPort);
-    } on SocketException {
-      return await HttpServer.bind(InternetAddress.loopbackIPv4, fallbackPort);
-    }
+typedef _BrowserAuthRequest = ({
+  HttpServer server,
+  _Pkce pkce,
+  String state,
+  bool Function()? isCancelled,
+});
+
+typedef _CodeTokenRequest = ({
+  String code,
+  String redirectUri,
+  String codeVerifier,
+});
+
+extension _CodexOAuthPrimaryFlow on CodexOAuthService {
+  Future<OAuthTokenEntity> _authenticateWithBrowser(
+    _BrowserAuthRequest request,
+  ) async {
+    final redirectUri = 'http://localhost:${request.server.port}/auth/callback';
+    final code = await _browserCode(request);
+
+    return exchangeCodeForToken(
+      code: code,
+      redirectUri: redirectUri,
+      codeVerifier: request.pkce.verifier,
+    );
   }
 
+  Future<String> _browserCode(_BrowserAuthRequest request) async {
+    final completer = Completer<String>();
+    _startBrowserCallbackListener(request, completer);
+    await _openBrowser(_browserAuthorizationUri(request));
+
+    return _awaitBrowserCode(completer, request.isCancelled);
+  }
+
+  void _startBrowserCallbackListener(
+    _BrowserAuthRequest request,
+    Completer<String> completer,
+  ) => unawaited(
+    _listenForBrowserCallback(
+      server: request.server,
+      state: request.state,
+      completer: completer,
+    ),
+  );
+
+  Uri _browserAuthorizationUri(_BrowserAuthRequest request) =>
+      buildAuthorizeUri(
+        redirectUri: 'http://localhost:${request.server.port}/auth/callback',
+        codeChallenge: request.pkce.challenge,
+        state: request.state,
+      );
+
+  Future<String> _awaitBrowserCode(
+    Completer<String> completer,
+    bool Function()? isCancelled,
+  ) {
+    if (isCancelled == null) {
+      return completer.future.timeout(const Duration(minutes: 5));
+    }
+
+    return _waitForBrowserCode(completer, isCancelled);
+  }
+}
+
+extension _CodexOAuthCallbacksAndPolling on CodexOAuthService {
   Future<void> _listenForBrowserCallback({
     required HttpServer server,
     required String state,
@@ -190,33 +192,16 @@ class CodexOAuthService {
     bool Function() isCancelled,
   ) async {
     final cancellation = Completer<void>();
-    Timer? cancellationTimer;
+    final cancellationPoller = _CancellationPoller(cancellation, isCancelled)
+      ..start();
 
-    void checkCancellation() {
-      if (isCancelled()) {
-        cancellation.complete();
-
-        return;
-      }
-      cancellationTimer = Timer(
-        const Duration(milliseconds: 250),
-        checkCancellation,
-      );
-    }
-
-    Future<String> waitForCancellation() async {
-      await cancellation.future;
-      throw const CodexOAuthCanceledException();
-    }
-
-    checkCancellation();
     try {
       return await Future.any<String>([
         completer.future.timeout(const Duration(minutes: 5)),
-        waitForCancellation(),
+        _waitForCancellation(cancellation.future),
       ]);
     } finally {
-      cancellationTimer?.cancel();
+      cancellationPoller.cancel();
     }
   }
 
@@ -227,38 +212,44 @@ class CodexOAuthService {
   ) async {
     final uri = request.uri;
     if (uri.path != '/auth/callback') {
-      request.response.statusCode = HttpStatus.notFound;
-      final _ = await request.response.close();
+      await _closeNotFoundResponse(request);
 
       return false;
     }
 
-    final error = uri.queryParameters['error'];
+    return _handleKnownBrowserCallback(request, completer, uri, state);
+  }
+
+  Future<bool> _handleKnownBrowserCallback(
+    HttpRequest request,
+    Completer<String> completer,
+    Uri uri,
+    String state,
+  ) async {
+    final error = _browserCallbackError(uri, state);
     if (error != null) {
-      await _failBrowserCallback(
-        request,
-        completer,
-        uri.queryParameters['error_description'] ?? error,
-      );
-
-      return true;
-    }
-    if (uri.queryParameters['state'] != state) {
-      await _failBrowserCallback(request, completer, 'OAuth state mismatch');
-
-      return true;
-    }
-    final code = uri.queryParameters['code'];
-    if (code == null || code.isEmpty) {
-      await _failBrowserCallback(request, completer, 'OAuth code not found');
+      await _failBrowserCallback(request, completer, error);
 
       return true;
     }
 
-    completer.complete(code);
-    await _writeHtml(request, _successHtml);
+    await _completeBrowserCallback(request, completer, uri);
 
     return true;
+  }
+
+  Future<void> _closeNotFoundResponse(HttpRequest request) async {
+    request.response.statusCode = HttpStatus.notFound;
+    final _ = await request.response.close();
+  }
+
+  Future<void> _completeBrowserCallback(
+    HttpRequest request,
+    Completer<String> completer,
+    Uri uri,
+  ) async {
+    completer.complete(uri.queryParameters['code']!);
+    await _writeHtml(request, _successHtml);
   }
 
   Future<void> _failBrowserCallback(
@@ -266,96 +257,97 @@ class CodexOAuthService {
     Completer<String> completer,
     String message,
   ) async {
-    if (!completer.isCompleted) {
-      completer.completeError(Exception(message));
-    }
+    if (!completer.isCompleted) completer.completeError(Exception(message));
     await _writeHtml(request, _errorHtml(message));
   }
+}
 
-  Future<Map<String, dynamic>> _pollDeviceToken({
-    required String deviceAuthId,
-    required String userCode,
-    required Duration interval,
+extension _CodexOAuthDeviceAuthorization on CodexOAuthService {
+  Future<OAuthTokenEntity> _exchangeDeviceAuthorization(
+    Map<String, dynamic> authorization,
+  ) => exchangeCodeForToken(
+    code: _requiredString(authorization, 'authorization_code'),
+    redirectUri: CodexOAuthService.deviceCallback,
+    codeVerifier: _requiredString(authorization, 'code_verifier'),
+  );
+
+  _DevicePollRequest _devicePollRequest(
+    Map<String, Object?> data,
     bool Function()? isCancelled,
-  }) async {
-    final startedAt = DateTime.now();
-    while (DateTime.now().difference(startedAt) < const Duration(minutes: 15)) {
-      if (isCancelled?.call() ?? false) {
-        throw const CodexOAuthCanceledException();
-      }
-      final response = await _dio.post<Object?>(
-        '${ModelProviderOAuthProfiles.issuer}/api/accounts/deviceauth/token',
-        data: {'device_auth_id': deviceAuthId, 'user_code': userCode},
+  ) => _DevicePollRequest(
+    deviceAuthId: _requiredString(data, 'device_auth_id'),
+    userCode: _requiredString(data, 'user_code'),
+    interval: _interval(data['interval']),
+    isCancelled: isCancelled,
+  );
+
+  Future<Map<String, Object?>> _requestDeviceAuthorization(
+    void Function(CodexDeviceCode deviceCode)? onDeviceCode,
+  ) async {
+    final response = await _requestDeviceAuthorizationResponse();
+    final data = _mapResponse(response.data);
+    onDeviceCode?.call(
+      .new(
+        verificationUrl: '${ModelProviderOAuthProfiles.issuer}/codex/device',
+        userCode: _requiredString(data, 'user_code'),
+      ),
+    );
+
+    return data;
+  }
+
+  Future<Response<Object?>> _requestDeviceAuthorizationResponse() =>
+      _dio.post<Object?>(
+        '${ModelProviderOAuthProfiles.issuer}/api/accounts/deviceauth/usercode',
+        data: {'client_id': ModelProviderOAuthProfiles.clientId},
         options: .new(
-          headers: const {'Content-Type': _jsonContentType},
+          headers: const {'Content-Type': CodexOAuthService._jsonContentType},
           responseType: ResponseType.json,
-          validateStatus: (_) => true,
         ),
       );
-      final status = response.statusCode ?? 0;
-      if (status >= HttpStatus.ok && status < HttpStatus.multipleChoices) {
-        return _mapResponse(response.data);
-      }
-      if (status != HttpStatus.forbidden && status != HttpStatus.notFound) {
-        throw Exception('Device auth failed with status $status');
-      }
-      await _delayDevicePoll(interval, isCancelled);
+}
+
+extension _CodexOAuthDevicePolling on CodexOAuthService {
+  Future<HttpServer> _bindServer() async {
+    try {
+      return await HttpServer.bind(InternetAddress.loopbackIPv4, defaultPort);
+    } on SocketException {
+      return await HttpServer.bind(InternetAddress.loopbackIPv4, fallbackPort);
+    }
+  }
+
+  Future<Map<String, dynamic>> _pollDeviceToken(
+    _DevicePollRequest request,
+  ) async {
+    final startedAt = DateTime.now();
+    while (_withinDeviceTimeout(startedAt)) {
+      _throwIfCancelled(request.isCancelled);
+      final result = await _requestDeviceToken(request);
+      if (result != null) return result;
+      await _delayDevicePoll(request.interval, request.isCancelled);
     }
 
     throw TimeoutException('Device auth timed out after 15 minutes');
   }
+}
 
+extension _CodexOAuthResponseHelpers on CodexOAuthService {
   Future<void> _writeHtml(HttpRequest request, String html) async {
     request.response.headers.contentType = .html;
     request.response.write(html);
     final _ = await request.response.close();
   }
 
-  OAuthTokenEntity _tokenFromResponse(Map<String, Object?> data) {
-    return OAuthTokenEntity(
-      accessToken: _requiredString(data, 'access_token'),
-      issuedAt: .now(),
-      refreshToken: data['refresh_token'] as String?,
-      idToken: data['id_token'] as String?,
-      expiresIn: switch (data['expires_in']) {
-        final int value => value,
-        final num value => value.toInt(),
-        _ => null,
-      },
-      tokenType: data['token_type'] as String?,
-      scopes: switch (data['scope'] as String?) {
-        final scope? when scope.isNotEmpty => scope.split(' '),
-        _ => null,
-      },
-    );
-  }
-
-  Map<String, Object?> _mapResponse(Object? data) {
-    if (data is Map<String, Object?>) return data;
-    if (data is Map) return data.cast<String, Object?>();
-
-    throw const FormatException('Invalid OAuth response.');
-  }
-
-  static String _requiredString(Map<String, Object?> data, String key) {
-    final value = data[key];
-    if (value is String && value.isNotEmpty) return value;
-
-    throw FormatException('Missing $key in OAuth response.');
-  }
-
-  Duration _interval(Object? value) {
-    if (value is int) return Duration(seconds: max(value, 1));
-    if (value is String) {
-      const defaultPollSeconds = 5;
-
-      return Duration(
-        seconds: max(int.tryParse(value) ?? defaultPollSeconds, 1),
+  OAuthTokenEntity _tokenFromResponse(Map<String, Object?> data) =>
+      OAuthTokenEntity(
+        accessToken: _requiredString(data, 'access_token'),
+        issuedAt: .now(),
+        refreshToken: data['refresh_token'] as String?,
+        idToken: data['id_token'] as String?,
+        expiresIn: _expiresIn(data['expires_in']),
+        tokenType: data['token_type'] as String?,
+        scopes: _scopes(data['scope']),
       );
-    }
-
-    return const Duration(seconds: 5);
-  }
 
   Future<void> _delayDevicePoll(
     Duration interval,
@@ -363,20 +355,175 @@ class CodexOAuthService {
   ) async {
     final deadline = DateTime.now().add(interval);
     while (DateTime.now().isBefore(deadline)) {
-      if (isCancelled?.call() ?? false) {
-        throw const CodexOAuthCanceledException();
-      }
-      final remaining = deadline.difference(.now());
-      await Future<void>.delayed(
-        remaining < const Duration(milliseconds: 250)
-            ? remaining
-            : const Duration(milliseconds: 250),
-      );
+      _throwIfCancelled(isCancelled);
+      await Future<void>.delayed(_nextPollDelay(deadline));
     }
+  }
+
+  void _throwIfCancelled(bool Function()? isCancelled) {
+    if (isCancelled?.call() ?? false) {
+      throw const CodexOAuthCanceledException();
+    }
+  }
+
+  Future<Map<String, dynamic>?> _requestDeviceToken(
+    _DevicePollRequest request,
+  ) async {
+    final response = await _requestDeviceTokenResponse(request);
+    final status = response.statusCode ?? 0;
+    if (_isSuccessful(status)) return _mapResponse(response.data);
+    if (_isPending(status)) return null;
+
+    throw Exception('Device auth failed with status $status');
+  }
+
+  Future<Response<Object?>> _requestDeviceTokenResponse(
+    _DevicePollRequest request,
+  ) => _dio.post<Object?>(
+    '${ModelProviderOAuthProfiles.issuer}/api/accounts/deviceauth/token',
+    data: {
+      'device_auth_id': request.deviceAuthId,
+      'user_code': request.userCode,
+    },
+    options: .new(
+      headers: const {'Content-Type': CodexOAuthService._jsonContentType},
+      responseType: ResponseType.json,
+      validateStatus: (_) => true,
+    ),
+  );
+}
+
+extension _CodexOAuthTokenRequests on CodexOAuthService {
+  Future<Response<Object?>> _requestCodeToken(_CodeTokenRequest request) =>
+      _dio.post<Object?>(
+        ModelProviderOAuthProfiles.tokenEndpoint,
+        data: _codeTokenData(request),
+        options: _codeTokenOptions(),
+      );
+
+  Map<String, String> _codeTokenData(_CodeTokenRequest request) => {
+    'grant_type': 'authorization_code',
+    'code': request.code,
+    'redirect_uri': request.redirectUri,
+    'client_id': ModelProviderOAuthProfiles.clientId,
+    'code_verifier': request.codeVerifier,
+  };
+
+  Options _codeTokenOptions() => .new(
+    headers: const {'Accept': 'application/json'},
+    responseType: ResponseType.json,
+    contentType: Headers.formUrlEncodedContentType,
+  );
+}
+
+Future<String> _waitForCancellation(Future<void> signal) async {
+  await signal;
+  throw const CodexOAuthCanceledException();
+}
+
+bool _withinDeviceTimeout(DateTime startedAt) =>
+    DateTime.now().difference(startedAt) < const Duration(minutes: 15);
+
+bool _isSuccessful(int status) =>
+    status >= HttpStatus.ok && status < HttpStatus.multipleChoices;
+
+bool _isPending(int status) =>
+    status == HttpStatus.forbidden || status == HttpStatus.notFound;
+
+Map<String, Object?> _mapResponse(Object? data) {
+  if (data is Map<String, Object?>) return data;
+  if (data is Map) return data.cast<String, Object?>();
+
+  throw const FormatException('Invalid OAuth response.');
+}
+
+String _requiredString(Map<String, Object?> data, String key) {
+  final value = data[key];
+  if (value is String && value.isNotEmpty) return value;
+
+  throw FormatException('Missing $key in OAuth response.');
+}
+
+Duration _interval(Object? value) {
+  if (value is int) return Duration(seconds: max(value, 1));
+  if (value is String) {
+    const defaultPollSeconds = 5;
+
+    return Duration(seconds: max(int.tryParse(value) ?? defaultPollSeconds, 1));
+  }
+
+  return const Duration(seconds: 5);
+}
+
+int? _expiresIn(Object? value) => switch (value) {
+  final int seconds => seconds,
+  final num seconds => seconds.toInt(),
+  _ => null,
+};
+
+List<String>? _scopes(Object? value) => switch (value) {
+  final String scope when scope.isNotEmpty => scope.split(' '),
+  _ => null,
+};
+
+class _DevicePollRequest {
+  _DevicePollRequest({
+    required this.deviceAuthId,
+    required this.userCode,
+    required this.interval,
+    required this.isCancelled,
+  });
+
+  final String deviceAuthId;
+  final String userCode;
+  final Duration interval;
+  final bool Function()? isCancelled;
+}
+
+class _CancellationPoller {
+  _CancellationPoller(this.signal, this.isCancelled);
+
+  final Completer<void> signal;
+  final bool Function() isCancelled;
+  Timer? _timer;
+
+  void start() => _check();
+
+  void cancel() => _timer?.cancel();
+
+  void _check() {
+    if (isCancelled()) {
+      signal.complete();
+
+      return;
+    }
+    _timer = Timer(const Duration(milliseconds: 250), _check);
   }
 }
 
 class const CodexOAuthCanceledException() implements Exception;
+
+String? _browserCallbackError(Uri uri, String expectedState) {
+  final error = uri.queryParameters['error'];
+  if (error != null) {
+    return uri.queryParameters['error_description'] ?? error;
+  }
+  if (uri.queryParameters['state'] != expectedState) {
+    return 'OAuth state mismatch';
+  }
+  final code = uri.queryParameters['code'];
+  if (code == null || code.isEmpty) return 'OAuth code not found';
+
+  return null;
+}
+
+Duration _nextPollDelay(DateTime deadline) {
+  final remaining = deadline.difference(.now());
+
+  return remaining < const Duration(milliseconds: 250)
+      ? remaining
+      : const Duration(milliseconds: 250);
+}
 
 class const _Pkce({
   required final String verifier,
@@ -406,18 +553,24 @@ Map<String, Object?>? _jwtClaims(String? token) {
   final parts = token.split('.');
   if (parts.length != 3) return null;
 
+  return _decodeJwtPayload(parts[1]);
+}
+
+Map<String, Object?>? _decodeJwtPayload(String encodedPayload) {
   try {
-    final payload = base64Url.normalize(parts[1]);
+    final payload = base64Url.normalize(encodedPayload);
     final decoded = utf8.decode(base64Url.decode(payload));
-    final Object? json = jsonDecode(decoded);
-    if (json is Map<String, Object?>) return json;
-    if (json is Map) return json.cast<String, Object?>();
+    return _asJsonMap(jsonDecode(decoded));
   } on FormatException {
     return null;
   }
-
-  return null;
 }
+
+Map<String, Object?>? _asJsonMap(Object? value) => switch (value) {
+  final Map<String, Object?> map => map,
+  final Map map => map.cast<String, Object?>(),
+  _ => null,
+};
 
 const _successHtml = '''
 <!doctype html>

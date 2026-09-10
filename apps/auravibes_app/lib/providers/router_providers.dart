@@ -29,22 +29,23 @@ GoRouter router(Ref ref) {
 
   return GoRouter(
     routes: $appRoutes,
-    redirect: (context, state) async {
-      final selection = await ref
-          .read(resolveWorkspaceSelectionUsecaseProvider)
-          .call();
-
-      if (selection == null) return null;
-
-      return WorkspaceRouteResolver.resolveWorkspaceRedirect(
-        state.uri,
-        selection.workspaces,
-        savedWorkspaceId: selection.savedWorkspaceId,
-      );
-    },
+    redirect: (context, state) => _resolveRedirect(ref, state.uri),
     initialLocation: '/',
     observers: [routeObserver],
     navigatorKey: rootNavigatorKey,
+  );
+}
+
+Future<String?> _resolveRedirect(Ref ref, Uri uri) async {
+  final selection = await ref
+      .read(resolveWorkspaceSelectionUsecaseProvider)
+      .call();
+  if (selection == null) return null;
+
+  return WorkspaceRouteResolver.resolveWorkspaceRedirect(
+    uri,
+    selection.workspaces,
+    savedWorkspaceId: selection.savedWorkspaceId,
   );
 }
 

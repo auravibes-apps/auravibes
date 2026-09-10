@@ -7,7 +7,9 @@ part 'workspace_tools_dao.g.dart';
 @DriftAccessor(tables: [Tools])
 class WorkspaceToolsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$WorkspaceToolsDaoMixin {
+    with _$WorkspaceToolsDaoMixin {}
+
+extension WorkspaceToolsDaoMethods on WorkspaceToolsDao {
   // Core operations.
   Future<ToolsTable?> getWorkspaceTool(String workspaceId, String id) =>
       (select(tools)..where(
@@ -35,38 +37,17 @@ class WorkspaceToolsDao(super.attachedDatabase)
     // Check if tool already exists.
     final existing = await getWorkspaceToolByToolId(workspaceId, toolId);
 
-    if (existing != null) {
-      // Update existing tool.
-      final _ =
-          await (update(tools)..where(
-                (tbl) =>
-                    tbl.workspaceId.equals(workspaceId) &
-                    tbl.toolId.equals(toolId) &
-                    tbl.workspaceToolsGroupId.isNull(),
-              ))
-              .write(
-                ToolsCompanion(
-                  updatedAt: .new(DateTime.now()),
-                  isEnabled: .new(isEnabled),
-                ),
-              );
-      // Return updated tool.
-      final updated = await getWorkspaceToolByToolId(workspaceId, toolId);
-      if (updated == null) {
-        throw StateError('Updated workspace tool was not found');
-      }
-
-      return updated;
-    } else {
-      // Insert new tool.
-      return await into(tools).insertReturning(
-        ToolsCompanion(
-          workspaceId: .new(workspaceId),
-          toolId: .new(toolId),
-          isEnabled: .new(isEnabled),
-        ),
-      );
+    if (existing == null) {
+      return _insertWorkspaceTool(workspaceId, toolId, isEnabled);
     }
+
+    await _updateWorkspaceToolEnabled(workspaceId, toolId, isEnabled);
+    final updated = await getWorkspaceToolByToolId(workspaceId, toolId);
+    if (updated == null) {
+      throw StateError('Updated workspace tool was not found');
+    }
+
+    return updated;
   }
 
   /// Sets the enabled status of a workspace tool by its unique table ID.
@@ -78,12 +59,7 @@ class WorkspaceToolsDao(super.attachedDatabase)
     String id, {
     required bool isEnabled,
   }) async {
-    final _ = await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
-      ToolsCompanion(
-        updatedAt: .new(DateTime.now()),
-        isEnabled: .new(isEnabled),
-      ),
-    );
+    await _updateWorkspaceToolById(id, isEnabled);
 
     return await (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
   }
@@ -92,19 +68,7 @@ class WorkspaceToolsDao(super.attachedDatabase)
     String workspaceId,
     String toolId,
     String? config,
-  ) =>
-      (update(tools)..where(
-            (tbl) =>
-                tbl.workspaceId.equals(workspaceId) &
-                tbl.toolId.equals(toolId) &
-                tbl.workspaceToolsGroupId.isNull(),
-          ))
-          .writeReturning(
-            ToolsCompanion(
-              updatedAt: .new(DateTime.now()),
-              config: .new(config),
-            ),
-          );
+  ) => _patchWorkspaceToolConfig(workspaceId, toolId, config);
 
   Future<bool> deleteWorkspaceToolByToolId(
     String workspaceId,
@@ -159,16 +123,7 @@ class WorkspaceToolsDao(super.attachedDatabase)
   Future<ToolsTable?> getEnabledToolByToolName({
     required String toolGroupId,
     required String toolName,
-  }) =>
-      (select(tools)
-            ..where(
-              (tbl) =>
-                  tbl.workspaceToolsGroupId.equals(toolGroupId) &
-                  tbl.toolId.equals(toolName) &
-                  tbl.isEnabled.equals(true),
-            )
-            ..orderBy([(tbl) => OrderingTerm(expression: tbl.toolId)]))
-          .getSingleOrNull();
+  }) => _findEnabledToolByToolName(toolGroupId, toolName);
 
   Future<void> updateToolMetadata({
     required String id,
@@ -191,16 +146,7 @@ class WorkspaceToolsDao(super.attachedDatabase)
   }
 
   Future<bool> isWorkspaceToolEnabled(String workspaceId, String id) async {
-    final result =
-        await (selectOnly(tools)
-              ..addColumns([tools.id.count()])
-              ..where(
-                tools.workspaceId.equals(workspaceId) &
-                    tools.id.equals(id) &
-                    tools.isEnabled.equals(true),
-              ))
-            .map((row) => row.read(tools.id.count()) ?? 0)
-            .getSingle();
+    final result = await _enabledWorkspaceToolCount(workspaceId, id);
 
     return result > 0;
   }
@@ -232,17 +178,10 @@ class WorkspaceToolsDao(super.attachedDatabase)
     String workspaceId,
     String toolId,
   ) async {
-    final result =
-        await (selectOnly(tools)
-              ..addColumns([tools.id.count()])
-              ..where(
-                tools.workspaceId.equals(workspaceId) &
-                    tools.toolId.equals(toolId) &
-                    tools.workspaceToolsGroupId.isNull() &
-                    tools.isEnabled.equals(true),
-              ))
-            .map((row) => row.read(tools.id.count()) ?? 0)
-            .getSingle();
+    final result = await _enabledWorkspaceToolCountByToolId(
+      workspaceId,
+      toolId,
+    );
 
     return result > 0;
   }
@@ -268,12 +207,7 @@ class WorkspaceToolsDao(super.attachedDatabase)
     String id, {
     required PermissionAccess permission,
   }) async {
-    final _ = await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
-      ToolsCompanion(
-        updatedAt: .new(DateTime.now()),
-        permissions: .new(permission),
-      ),
-    );
+    await _updateWorkspaceToolPermission(id, permission);
 
     return await (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
   }
@@ -303,4 +237,131 @@ class WorkspaceToolsDao(super.attachedDatabase)
             ..where((tbl) => tbl.workspaceToolsGroupId.equals(groupId))
             ..orderBy([(tbl) => OrderingTerm(expression: tbl.toolId)]))
           .get();
+
+  Future<ToolsTable> _insertWorkspaceTool(
+    String workspaceId,
+    String toolId,
+    bool isEnabled,
+  ) => into(tools).insertReturning(
+    ToolsCompanion(
+      workspaceId: .new(workspaceId),
+      toolId: .new(toolId),
+      isEnabled: .new(isEnabled),
+    ),
+  );
+
+  Future<int> _updateWorkspaceToolEnabled(
+    String workspaceId,
+    String toolId,
+    bool isEnabled,
+  ) {
+    final statement = update(tools)
+      ..where((tbl) => _nativeWorkspaceToolFilter(tbl, workspaceId, toolId));
+
+    return statement.write(
+      ToolsCompanion(
+        updatedAt: .new(DateTime.now()),
+        isEnabled: .new(isEnabled),
+      ),
+    );
+  }
+
+  Future<int> _updateWorkspaceToolById(String id, bool isEnabled) =>
+      (update(tools)..where((tbl) => tbl.id.equals(id))).write(
+        ToolsCompanion(
+          updatedAt: .new(DateTime.now()),
+          isEnabled: .new(isEnabled),
+        ),
+      );
+
+  Future<List<ToolsTable>> _patchWorkspaceToolConfig(
+    String workspaceId,
+    String toolId,
+    String? config,
+  ) {
+    final statement = update(tools)
+      ..where((tbl) => _nativeWorkspaceToolFilter(tbl, workspaceId, toolId));
+
+    return statement.writeReturning(
+      ToolsCompanion(updatedAt: .new(DateTime.now()), config: .new(config)),
+    );
+  }
+
+  Future<ToolsTable?> _findEnabledToolByToolName(
+    String toolGroupId,
+    String toolName,
+  ) {
+    final statement = select(
+      tools,
+    )..where((tbl) => _enabledToolByToolNameFilter(tbl, toolGroupId, toolName));
+
+    return statement.getSingleOrNull();
+  }
+
+  Future<int> _enabledWorkspaceToolCount(String workspaceId, String id) =>
+      _countSelectedTools(
+        (tbl) => _enabledWorkspaceToolFilter(tbl, workspaceId, id),
+      );
+
+  Future<int> _enabledWorkspaceToolCountByToolId(
+    String workspaceId,
+    String toolId,
+  ) => _countSelectedTools(
+    (tbl) => _enabledWorkspaceToolByToolIdFilter(tbl, workspaceId, toolId),
+  );
+
+  Future<int> _updateWorkspaceToolPermission(
+    String id,
+    PermissionAccess permission,
+  ) => (update(tools)..where((tbl) => tbl.id.equals(id))).write(
+    ToolsCompanion(
+      updatedAt: .new(DateTime.now()),
+      permissions: .new(permission),
+    ),
+  );
+
+  Future<int> _countSelectedTools(
+    Expression<bool> Function($ToolsTable) filter,
+  ) {
+    final statement = selectOnly(tools)
+      ..addColumns([tools.id.count()])
+      ..where(filter(tools));
+
+    return statement.map((row) => row.read(tools.id.count()) ?? 0).getSingle();
+  }
+
+  Expression<bool> _nativeWorkspaceToolFilter(
+    $ToolsTable tbl,
+    String workspaceId,
+    String toolId,
+  ) =>
+      tbl.workspaceId.equals(workspaceId) &
+      tbl.toolId.equals(toolId) &
+      tbl.workspaceToolsGroupId.isNull();
+
+  Expression<bool> _enabledToolByToolNameFilter(
+    $ToolsTable tbl,
+    String toolGroupId,
+    String toolName,
+  ) =>
+      tbl.workspaceToolsGroupId.equals(toolGroupId) &
+      tbl.toolId.equals(toolName) &
+      tbl.isEnabled.equals(true);
+
+  Expression<bool> _enabledWorkspaceToolFilter(
+    $ToolsTable tbl,
+    String workspaceId,
+    String id,
+  ) =>
+      tbl.workspaceId.equals(workspaceId) &
+      tbl.id.equals(id) &
+      tbl.isEnabled.equals(true);
+
+  Expression<bool> _enabledWorkspaceToolByToolIdFilter(
+    $ToolsTable tbl,
+    String workspaceId,
+    String toolId,
+  ) =>
+      _nativeWorkspaceToolFilter(tbl, workspaceId, toolId) &
+      tbl.isEnabled.equals(true);
 }

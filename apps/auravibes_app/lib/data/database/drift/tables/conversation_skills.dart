@@ -18,18 +18,24 @@ ON conversation_skills (conversation_id, app_skill_identifier)
 WHERE app_skill_identifier IS NOT NULL
 ''')
 class ConversationSkills extends Table with TableMixin {
-  TextColumn get conversationId =>
-      text().references(Conversations, #id, onDelete: .cascade)();
+  late final conversationId = text().references(
+    Conversations,
+    #id,
+    onDelete: .cascade,
+  )();
 
-  TextColumn get workspaceSkillId =>
-      text().nullable().references(Skills, #id, onDelete: .cascade)();
+  late final workspaceSkillId = text().nullable().references(
+    Skills,
+    #id,
+    onDelete: .cascade,
+  )();
 
-  TextColumn get appSkillIdentifier => text().nullable()();
+  late final appSkillIdentifier = text().nullable()();
 
-  BoolColumn get isLoaded => boolean().withDefault(const Constant(true))();
+  late final isLoaded = boolean().withDefault(const Constant(true))();
 
   @override
-  List<String> get customConstraints => [
+  late final List<String> customConstraints = [
     'CHECK ((workspace_skill_id IS NULL) != (app_skill_identifier IS NULL))',
   ];
 }

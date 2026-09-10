@@ -39,23 +39,27 @@ List<GroupedToolsViewItem> _defaultToolGroups(
   Map<String?, List<WorkspaceToolEntity>> toolsByGroupId,
 ) {
   final defaultTools = toolsByGroupId[null] ?? [];
-  final builtInTools = defaultTools.where((tool) => !tool.isNative).toList();
-  final nativeTools = defaultTools.where((tool) => tool.isNative).toList();
-
   return [
-    if (builtInTools.isNotEmpty)
-      GroupedToolsViewItem(
-        group: null,
-        tools: builtInTools,
-        defaultGroupType: .builtIn,
-      ),
-    if (nativeTools.isNotEmpty)
-      GroupedToolsViewItem(
-        group: null,
-        tools: nativeTools,
-        defaultGroupType: .native,
-      ),
-  ];
+    _defaultToolGroup(defaultTools, isNative: false, groupType: .builtIn),
+    _defaultToolGroup(defaultTools, isNative: true, groupType: .native),
+  ].whereType<GroupedToolsViewItem>().toList();
+}
+
+GroupedToolsViewItem? _defaultToolGroup(
+  List<WorkspaceToolEntity> tools, {
+  required bool isNative,
+  required DefaultToolGroupType groupType,
+}) {
+  final matchingTools = tools
+      .where((tool) => tool.isNative == isNative)
+      .toList();
+  if (matchingTools.isEmpty) return null;
+
+  return GroupedToolsViewItem(
+    group: null,
+    tools: matchingTools,
+    defaultGroupType: groupType,
+  );
 }
 
 List<GroupedToolsViewItem> _configuredToolGroups({

@@ -6,6 +6,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:genui/genui.dart';
+import 'package:json_schema_builder/json_schema_builder.dart';
 
 const _percentageScale = 100.0;
 
@@ -15,7 +16,116 @@ typedef _DashboardBuilder = Widget Function(
 );
 
 abstract final class AuraDashboardCatalogAdapter {
-  static final _builders = <String, _DashboardBuilder>{
+  /// Adds app-rendered dashboard items to either chat catalog.
+  static List<CatalogItem> items({
+    required IconData Function(String?) resolveIcon,
+  }) => _DashboardCatalog.items(resolveIcon);
+}
+
+abstract final class _DashboardCatalog {
+  static List<CatalogItem> items(IconData Function(String?) resolveIcon) {
+    final builders = <String, _DashboardBuilder>{
+      ..._DashboardBuilders.builders,
+      'EmptyState': (context, data) =>
+          _DashboardBuilders.emptyState(context, data, resolveIcon),
+    };
+
+    return [for (final entry in builders.entries) _catalogItem(entry)];
+  }
+
+  static CatalogItem _catalogItem(MapEntry<String, _DashboardBuilder> entry) {
+    return CatalogItem(
+      name: entry.key,
+      dataSchema: _dataSchema(entry.key),
+      widgetBuilder: (context) => _boundData(context, entry.value),
+      exampleData: [
+        () => jsonEncode([a2uiChatComponentExamples[entry.key]]),
+      ],
+    );
+  }
+
+  static Schema _dataSchema(String name) {
+    final schema = a2uiChatComponentSchemas[name]!;
+
+    return .fromMap({
+      ...schema,
+      'required': [
+        for (final property in schema['required']! as List)
+          if (property != 'id') property,
+      ],
+    });
+  }
+
+  static Widget _boundData(
+    CatalogItemContext context,
+    _DashboardBuilder builder,
+  ) {
+    final data = Map<String, Object?>.from(context.data as Map);
+    final boundKeys = _boundKeys(data);
+
+    return _BoundDashboardData(
+      context: context,
+      data: data,
+      boundKeys: boundKeys,
+      builder: builder,
+    ).build();
+  }
+
+  static List<String> _boundKeys(Map<String, Object?> data) => data.entries
+      .where((entry) {
+        final value = entry.value;
+
+        return value is Map && value['path'] is String;
+      })
+      .map((entry) => entry.key)
+      .toList(growable: false);
+}
+
+class const _BoundDashboardData({
+  required final CatalogItemContext context,
+  required final Map<String, Object?> data,
+  required final List<String> boundKeys,
+  required final _DashboardBuilder builder,
+}) {
+  Widget build() => _resolve(0, data);
+
+  Widget _resolve(int index, Map<String, Object?> resolved) {
+    if (index >= boundKeys.length) return _buildResolved(resolved);
+
+    final key = boundKeys[index];
+
+    return BoundObject(
+      dataContext: context.dataContext,
+      value: data[key],
+      builder: (_, value) => _resolve(index + 1, {...resolved, key: value}),
+    );
+  }
+
+  Widget _buildResolved(Map<String, Object?> resolved) {
+    if (boundKeys.any((key) => resolved[key] is Map)) {
+      return _warning('malformedPayload');
+    }
+
+    final issue = A2uiChatContract.validateMessage({
+      'version': a2uiChatWireVersion,
+      'updateComponents': {
+        'surfaceId': context.surfaceId,
+        'components': [
+          {...resolved, 'id': context.id, 'component': context.type},
+        ],
+      },
+    });
+    if (issue != null) return _warning(issue.name);
+
+    return builder(context, resolved);
+  }
+
+  Widget _warning(String issue) =>
+      ChatA2uiWarning(details: 'component: ${context.id}\nissue: $issue');
+}
+
+abstract final class _DashboardBuilders {
+  static final builders = <String, _DashboardBuilder>{
     'Progress': _progress,
     'Badge': _badge,
     'Avatar': _avatar,
@@ -26,96 +136,18 @@ abstract final class AuraDashboardCatalogAdapter {
     'AnimatedContent': _animated,
   };
 
-  /// Adds app-rendered dashboard items to either chat catalog.
-  static List<CatalogItem> items({
-    required IconData Function(String?) resolveIcon,
-  }) => [
-    for (final entry in {
-      ..._builders,
-      'EmptyState': (CatalogItemContext context, Map<String, Object?> data) =>
-          AuraEmptyState(
-            title: Text(data['title']! as String),
-            description: switch (data['description']) {
-              final String description => Text(description),
-              _ => null,
-            },
-            icon: AuraIcon(resolveIcon(data['icon'] as String? ?? 'info')),
-          ),
-    }.entries)
-      CatalogItem(
-        name: entry.key,
-        dataSchema: .fromMap({
-          ...a2uiChatComponentSchemas[entry.key]!,
-          'required': [
-            for (final property
-                in a2uiChatComponentSchemas[entry.key]!['required']! as List)
-              if (property != 'id') property,
-          ],
-        }),
-        widgetBuilder: (context) => _boundData(context, entry.value),
-        exampleData: [
-          () => jsonEncode([a2uiChatComponentExamples[entry.key]]),
-        ],
-      ),
-  ];
-
-  static Widget _boundData(
+  static Widget emptyState(
     CatalogItemContext context,
-    _DashboardBuilder builder,
-  ) {
-    final data = Map<String, Object?>.from(context.data as Map);
-    final boundKeys = data.entries
-        .where((entry) {
-          final value = entry.value;
-
-          return value is Map && value['path'] is String;
-        })
-        .map((entry) => entry.key)
-        .toList(growable: false);
-
-    Widget resolve(int index, Map<String, Object?> resolved) {
-      if (index < boundKeys.length) {
-        final key = boundKeys[index];
-
-        return BoundObject(
-          dataContext: context.dataContext,
-          value: data[key],
-          builder: (_, value) => resolve(index + 1, {...resolved, key: value}),
-        );
-      }
-      if (boundKeys.any((key) => resolved[key] is Map)) {
-        return ChatA2uiWarning(
-          details: 'component: ${context.id}\nissue: malformedPayload',
-        );
-      }
-      final issue = A2uiChatContract.validateMessage({
-        'version': a2uiChatWireVersion,
-        'updateComponents': {
-          'surfaceId': context.surfaceId,
-          'components': [
-            {...resolved, 'id': context.id, 'component': context.type},
-          ],
-        },
-      });
-      if (issue != null) {
-        return ChatA2uiWarning(
-          details: 'component: ${context.id}\nissue: ${issue.name}',
-        );
-      }
-
-      return builder(context, resolved);
-    }
-
-    return resolve(0, data);
-  }
-
-  static AuraTint _tone(Object? value) =>
-      AuraTint.values.byName(value as String? ?? 'primary');
-
-  static String _string(Object? value) => value is String ? value : '';
-
-  static String? _nullableString(Object? value) =>
-      value is String ? value : null;
+    Map<String, Object?> data,
+    IconData Function(String?) resolveIcon,
+  ) => AuraEmptyState(
+    title: Text(data['title']! as String),
+    description: switch (data['description']) {
+      final String description => Text(description),
+      _ => null,
+    },
+    icon: AuraIcon(resolveIcon(data['icon'] as String? ?? 'info')),
+  );
 
   static Widget _progress(
     CatalogItemContext context,
@@ -140,7 +172,7 @@ abstract final class AuraDashboardCatalogAdapter {
           ),
         AuraLinearProgressIndicator(
           value: value,
-          tint: _tone(data['tone']),
+          tint: _DashboardValues.tone(data['tone']),
           semanticLabel: label,
           semanticValue: value == null
               ? null
@@ -205,7 +237,9 @@ abstract final class AuraDashboardCatalogAdapter {
         .toList(growable: false);
 
     return AuraTable(
-      columns: [for (final column in columns) _string(column['label'])],
+      columns: [
+        for (final column in columns) _DashboardValues.string(column['label']),
+      ],
       rows: [for (final row in rows) (row['cells']! as List).cast<Object?>()],
       caption: switch (data['caption']) {
         final String caption => Text(caption),
@@ -230,9 +264,12 @@ abstract final class AuraDashboardCatalogAdapter {
       sortableColumns: [
         for (final column in columns) column['sortable'] == true,
       ],
-      rowTints: [for (final row in rows) _nullableTone(row['tone'])],
-      emptyText: _nullableString(data['emptyText']),
-      noValueLabel: _nullableString(data['noValueLabel']) ?? 'No value',
+      rowTints: [
+        for (final row in rows) _DashboardValues.nullableTone(row['tone']),
+      ],
+      emptyText: _DashboardValues.nullableString(data['emptyText']),
+      noValueLabel:
+          _DashboardValues.nullableString(data['noValueLabel']) ?? 'No value',
     );
   }
 
@@ -283,7 +320,7 @@ abstract final class AuraDashboardCatalogAdapter {
             for (final value in item['values']! as List)
               (value as num).toDouble(),
           ],
-          tint: _tone(item['tone']),
+          tint: _DashboardValues.tone(item['tone']),
         ),
     ];
     final descriptions = <String>[];
@@ -312,12 +349,12 @@ abstract final class AuraDashboardCatalogAdapter {
       stacked: data['stacked'] == true,
       minY: (data['minY'] as num?)?.toDouble(),
       maxY: (data['maxY'] as num?)?.toDouble(),
-      xAxisTitle: _nullableString(data['xAxisTitle']),
-      yAxisTitle: _nullableString(data['yAxisTitle']),
-      unit: _nullableString(data['unit']),
+      xAxisTitle: _DashboardValues.nullableString(data['xAxisTitle']),
+      yAxisTitle: _DashboardValues.nullableString(data['yAxisTitle']),
+      unit: _DashboardValues.nullableString(data['unit']),
       palette: [
         for (final tone in data['palette'] as List? ?? const <Object?>[])
-          if (tone is String) _tone(tone),
+          if (tone is String) _DashboardValues.tone(tone),
       ],
     );
   }
@@ -339,7 +376,17 @@ abstract final class AuraDashboardCatalogAdapter {
       _ => .fade,
     },
   );
+}
 
-  static AuraTint? _nullableTone(Object? value) =>
-      value is String ? _tone(value) : null;
+abstract final class _DashboardValues {
+  static AuraTint tone(Object? value) =>
+      AuraTint.values.byName(value as String? ?? 'primary');
+
+  static String string(Object? value) => value is String ? value : '';
+
+  static String? nullableString(Object? value) =>
+      value is String ? value : null;
+
+  static AuraTint? nullableTone(Object? value) =>
+      value is String ? tone(value) : null;
 }

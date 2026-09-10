@@ -27,13 +27,14 @@ class AppAgentContinuationAdapter({
   final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase,
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace,
-}) implements
-    AgentContinuationProvider<
-      WorkspaceModelSelectionWithConnectionEntity,
-      MessageEntity,
-      ChatMessage,
-      ToolSpec
-    > {
+}) with _AgentContinuationMessageRoleChecks
+    implements
+        AgentContinuationProvider<
+          WorkspaceModelSelectionWithConnectionEntity,
+          MessageEntity,
+          ChatMessage,
+          ToolSpec
+        > {
   this
     : assert(
         loadConversationToolSpecsUsecase != null ||
@@ -76,31 +77,7 @@ class AppAgentContinuationAdapter({
   Future<WorkspaceModelSelectionWithConnectionEntity> projectSelectedModel(
     WorkspaceModelSelectionWithConnectionEntity model,
   ) async {
-    if (!ModelProviderOAuthProfiles.isCodexProvider(
-      model.modelConnection.modelId,
-    )) {
-      return model;
-    }
-    final openAIModel = await apiModelRepository.getModelByProviderAndModelId(
-      'openai',
-      model.workspaceModelSelection.modelId,
-    );
-    if (openAIModel == null) {
-      throw Exception('OpenAI model catalog is unavailable');
-    }
-    if (!openAIModel.isCodexRuntimeModel) {
-      throw Exception('Selected Codex model is not supported');
-    }
-
-    return model.copyWith(
-      workspaceModelSelection: model.workspaceModelSelection.copyWith(
-        modelName: openAIModel.name,
-        supportsReasoning: openAIModel.supportsReasoning,
-        supportsToolCalls: openAIModel.supportsToolCalls,
-        modalitiesInput: CodexInputModalities.forModel(openAIModel),
-        modalitiesOutput: openAIModel.modalitiesOutput,
-      ),
-    );
+    return _projectSelectedModel(apiModelRepository, model);
   }
 
   @override
@@ -156,19 +133,50 @@ class AppAgentContinuationAdapter({
         ) &&
         !model.workspaceModelSelection.supportsToolCalls;
   }
+}
 
-  @override
+mixin _AgentContinuationMessageRoleChecks {
   bool isSystemMessage(ChatMessage message) {
     return message.role == ChatMessageRole.system;
   }
 
-  @override
   bool isSkillContextMessage(ChatMessage message) => message.isSkillContext;
 
-  @override
   bool isUserMessage(ChatMessage message) {
     return message.role == ChatMessageRole.user;
   }
+}
+
+Future<WorkspaceModelSelectionWithConnectionEntity> _projectSelectedModel(
+  ApiModelRepository apiModelRepository,
+  WorkspaceModelSelectionWithConnectionEntity model,
+) async {
+  if (!ModelProviderOAuthProfiles.isCodexProvider(
+    model.modelConnection.modelId,
+  )) {
+    return model;
+  }
+
+  final openAIModel = await apiModelRepository.getModelByProviderAndModelId(
+    'openai',
+    model.workspaceModelSelection.modelId,
+  );
+  if (openAIModel == null) {
+    throw Exception('OpenAI model catalog is unavailable');
+  }
+  if (!openAIModel.isCodexRuntimeModel) {
+    throw Exception('Selected Codex model is not supported');
+  }
+
+  return model.copyWith(
+    workspaceModelSelection: model.workspaceModelSelection.copyWith(
+      modelName: openAIModel.name,
+      supportsReasoning: openAIModel.supportsReasoning,
+      supportsToolCalls: openAIModel.supportsToolCalls,
+      modalitiesInput: CodexInputModalities.forModel(openAIModel),
+      modalitiesOutput: openAIModel.modalitiesOutput,
+    ),
+  );
 }
 
 final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((

@@ -3,6 +3,8 @@
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
@@ -60,41 +62,8 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
       workspaceSessionForRouteProvider(workspaceId).future,
     );
     _session = session;
-    final toolsGroupsRepo = ref.watch(toolsGroupsRepositoryProvider(session));
-    final groups = await toolsGroupsRepo.getToolsGroupsForWorkspace(
-      workspaceId,
-    );
 
-    final workspaceTools = await ref.watch(
-      workspaceToolsProvider(workspaceId).future,
-    );
-    final mcpConnections = ref.watch(mcpConnectionProvider);
-    final mcpConnectionsByServerId = {
-      for (final connection in mcpConnections) connection.server.id: connection,
-    };
-
-    final groupedTools = const BuildGroupedToolsViewUseCase().call(
-      workspaceTools: workspaceTools,
-      groups: groups,
-      mcpConnections: mcpConnections
-          .map(
-            (connection) => McpConnectionView(
-              serverId: connection.server.id,
-              status: _toMcpConnectionViewStatus(connection.status),
-              errorMessage: connection.errorMessage,
-            ),
-          )
-          .toList(),
-    );
-
-    return groupedTools
-        .map(
-          (item) => _toToolsGroupWithTools(
-            item,
-            mcpConnectionsByServerId[item.mcpServerId],
-          ),
-        )
-        .toList();
+    return await _loadGroupedTools(ref, workspaceId, session);
   }
 
   /// Toggle an MCP group's enabled status.
@@ -105,16 +74,10 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
     String groupId, {
     required bool isEnabled,
   }) async {
-    final repository = ref.read(
-      toolsGroupsRepositoryProvider(_requiredSession),
-    );
-    final isCloud = repository is CloudToolsRepository;
-    final group = await repository.getToolsGroupById(groupId);
-    if (group == null || (!isCloud && group.workspaceId != _workspaceId)) {
-      return;
-    }
+    final operation = await _groupOperation(groupId);
+    if (operation == null) return;
 
-    final didUpdate = await repository.setToolsGroupEnabled(
+    final didUpdate = await operation.repository.setToolsGroupEnabled(
       groupId,
       isEnabled: isEnabled,
     );
@@ -122,18 +85,10 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
       return;
     }
 
-    final mcpServerId = group.mcpServerId;
-    if (!isCloud && group.isMcpGroup && mcpServerId != null) {
-      if (!isEnabled) {
-        ref
-            .read(mcpConnectionProvider.notifier)
-            .disconnectMcpServer(mcpServerId);
-      } else {
-        await ref
-            .read(mcpConnectionProvider.notifier)
-            .reconnectMcpServer(mcpServerId);
-      }
-    }
+    await _syncMcpGroup(ref, operation.group, (
+      isEnabled: isEnabled,
+      isCloud: operation.isCloud,
+    ));
 
     ref.invalidateSelf();
   }
@@ -143,28 +98,10 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   /// This disconnects from the MCP server and deletes it, cascading to its
   /// tools group and tools.
   Future<void> deleteMcpGroup(String groupId) async {
-    final repository = ref.read(
-      toolsGroupsRepositoryProvider(_requiredSession),
-    );
-    final isCloud = repository is CloudToolsRepository;
-    final group = await repository.getToolsGroupById(groupId);
-    if (group == null || (!isCloud && group.workspaceId != _workspaceId)) {
-      return;
-    }
-    final mcpServerId = group.mcpServerId;
-    if (!group.isMcpGroup || mcpServerId == null) {
-      return;
-    }
-
-    if (isCloud) {
-      final _ = await ref
-          .read(mcpServersRepositoryProvider(_requiredSession))
-          .deleteMcpServer(mcpServerId);
-    } else {
-      await ref
-          .read(mcpConnectionProvider.notifier)
-          .deleteMcpServer(mcpServerId);
-    }
+    final operation = await _groupOperation(groupId);
+    if (operation == null) return;
+    final didDelete = await _deleteMcpGroup(operation);
+    if (!didDelete) return;
 
     ref
       ..invalidateSelf()
@@ -186,7 +123,149 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
         .read(mcpConnectionProvider.notifier)
         .reconnectMcpServer(mcpServerId);
   }
+
+  Future<
+    ({
+      ToolsGroupsRepositoryContract repository,
+      ToolsGroupEntity group,
+      bool isCloud,
+    })?
+  >
+  _groupOperation(String groupId) async {
+    final repository = ref.read(
+      toolsGroupsRepositoryProvider(_requiredSession),
+    );
+    final isCloud = repository is CloudToolsRepository;
+    final group = await _findWorkspaceGroup(repository, groupId, (
+      workspaceId: _workspaceId,
+      isCloud: isCloud,
+    ));
+
+    return group == null
+        ? null
+        : (repository: repository, group: group, isCloud: isCloud);
+  }
+
+  Future<bool> _deleteMcpGroup(
+    ({
+      ToolsGroupsRepositoryContract repository,
+      ToolsGroupEntity group,
+      bool isCloud,
+    })
+    operation,
+  ) async {
+    final mcpServerId = operation.group.mcpServerId;
+    if (!operation.group.isMcpGroup || mcpServerId == null) return false;
+
+    await _deleteMcpServer(ref, mcpServerId, (
+      isCloud: operation.isCloud,
+      session: _requiredSession,
+    ));
+
+    return true;
+  }
 }
+
+Future<List<ToolsGroupWithTools>> _loadGroupedTools(
+  Ref ref,
+  String workspaceId,
+  WorkspaceSession session,
+) async {
+  final groupedTools = await _loadGroupedToolItems(ref, workspaceId, session);
+  final connectionsByServerId = _connectionsByServerId(
+    ref.watch(mcpConnectionProvider),
+  );
+
+  return groupedTools
+      .map(
+        (item) => _toToolsGroupWithTools(
+          item,
+          connectionsByServerId[item.mcpServerId],
+        ),
+      )
+      .toList();
+}
+
+Future<List<GroupedToolsViewItem>> _loadGroupedToolItems(
+  Ref ref,
+  String workspaceId,
+  WorkspaceSession session,
+) async {
+  final repository = ref.watch(toolsGroupsRepositoryProvider(session));
+  final groups = await repository.getToolsGroupsForWorkspace(workspaceId);
+  final workspaceTools = await ref.watch(
+    workspaceToolsProvider(workspaceId).future,
+  );
+  final connections = ref.watch(mcpConnectionProvider);
+
+  return _buildGroupedTools(workspaceTools, groups, connections);
+}
+
+Map<String, McpConnectionState> _connectionsByServerId(
+  List<McpConnectionState> connections,
+) => {for (final connection in connections) connection.server.id: connection};
+
+McpConnectionView _toMcpConnectionView(McpConnectionState connection) =>
+    McpConnectionView(
+      serverId: connection.server.id,
+      status: _toMcpConnectionViewStatus(connection.status),
+      errorMessage: connection.errorMessage,
+    );
+
+Future<ToolsGroupEntity?> _findWorkspaceGroup(
+  ToolsGroupsRepositoryContract repository,
+  String groupId,
+  ({String workspaceId, bool isCloud}) context,
+) async {
+  final group = await repository.getToolsGroupById(groupId);
+  if (group == null ||
+      (!context.isCloud && group.workspaceId != context.workspaceId)) {
+    return null;
+  }
+
+  return group;
+}
+
+Future<void> _syncMcpGroup(
+  Ref ref,
+  ToolsGroupEntity group,
+  ({bool isEnabled, bool isCloud}) options,
+) async {
+  final mcpServerId = group.mcpServerId;
+  if (options.isCloud || !group.isMcpGroup || mcpServerId == null) return;
+  final notifier = ref.read(mcpConnectionProvider.notifier);
+  if (options.isEnabled) {
+    await notifier.reconnectMcpServer(mcpServerId);
+  } else {
+    notifier.disconnectMcpServer(mcpServerId);
+  }
+}
+
+Future<void> _deleteMcpServer(
+  Ref ref,
+  String mcpServerId,
+  ({bool isCloud, WorkspaceSession session}) options,
+) async {
+  if (options.isCloud) {
+    final _ = await ref
+        .read(mcpServersRepositoryProvider(options.session))
+        .deleteMcpServer(mcpServerId);
+
+    return;
+  }
+
+  await ref.read(mcpConnectionProvider.notifier).deleteMcpServer(mcpServerId);
+}
+
+List<GroupedToolsViewItem> _buildGroupedTools(
+  List<WorkspaceToolEntity> workspaceTools,
+  List<ToolsGroupEntity> groups,
+  List<McpConnectionState> connections,
+) => const BuildGroupedToolsViewUseCase().call(
+  workspaceTools: workspaceTools,
+  groups: groups,
+  mcpConnections: connections.map(_toMcpConnectionView).toList(),
+);
 
 ToolsGroupWithTools _toToolsGroupWithTools(
   GroupedToolsViewItem item,

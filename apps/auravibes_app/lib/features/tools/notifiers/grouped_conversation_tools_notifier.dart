@@ -26,37 +26,18 @@ class GroupedConversationToolsNotifier
     required String workspaceId,
     String? conversationId,
   }) async {
-    final convId = conversationId;
-    if (convId != null && convId.isNotEmpty) {
-      await ref
-          .read(syncSkillToolPermissionsUsecaseProvider)
-          .call(conversationId: convId, workspaceId: workspaceId);
-    }
-
-    // Get all conversation tool states.
-    final conversationTools = await ref.watch(
-      conversationToolsProvider(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ).future,
+    await _syncConversationSkillPermissions(ref, workspaceId, conversationId);
+    final conversationTools = await _loadConversationTools(
+      ref,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     );
-
-    // Get all tools groups for the workspace.
-    final session = await ref.watch(
-      workspaceSessionForRouteProvider(workspaceId).future,
-    );
-    final toolsGroupsRepo = ref.watch(toolsGroupsRepositoryProvider(session));
-    final groups = await toolsGroupsRepo.getToolsGroupsForWorkspace(
-      workspaceId,
-    );
-
-    // Watch MCP connections for status enrichment.
-    final mcpConnections = ref.watch(mcpConnectionProvider);
+    final groups = await _loadWorkspaceGroups(ref, workspaceId);
 
     return _buildGroups(
       conversationTools: conversationTools,
       groups: groups,
-      mcpConnections: mcpConnections,
+      mcpConnections: ref.watch(mcpConnectionProvider),
     );
   }
 
@@ -77,23 +58,18 @@ class GroupedConversationToolsNotifier
       ).notifier,
     );
 
-    final currentGroups = state.value ?? [];
-    final group = currentGroups.firstWhereOrNull(
-      (g) =>
-          g.group?.id == groupId ||
-          (groupId == null &&
-              g.isDefaultGroup &&
-              g.defaultGroupType == defaultGroupType),
+    final group = _findConversationGroup(
+      state.value ?? [],
+      groupId,
+      defaultGroupType,
     );
     if (group == null) return;
 
-    // Toggle each tool in the group.
-    for (final toolState in group.tools) {
-      final _ = await conversationNotifier.setToolEnabled(
-        toolState.tool.id,
-        isEnabled: enabled,
-      );
-    }
+    await _toggleGroupTools(
+      group,
+      conversationNotifier.setToolEnabled,
+      enabled: enabled,
+    );
 
     // The state will be automatically refreshed via the watch on.
     // ConversationToolsProvider.
@@ -139,27 +115,18 @@ class GroupedConversationToolsNotifier
   List<ConversationToolsGroupWithTools> _buildDefaultGroups(
     List<ConversationToolState> defaultTools,
   ) {
-    final builtInTools = defaultTools
-        .where((toolState) => !toolState.tool.isNative)
-        .toList();
-    final nativeTools = defaultTools
-        .where((toolState) => toolState.tool.isNative)
-        .toList();
-
     return [
-      if (builtInTools.isNotEmpty)
-        ConversationToolsGroupWithTools(
-          group: null,
-          tools: builtInTools,
-          defaultGroupType: .builtIn,
-        ),
-      if (nativeTools.isNotEmpty)
-        ConversationToolsGroupWithTools(
-          group: null,
-          tools: nativeTools,
-          defaultGroupType: .native,
-        ),
-    ];
+      _conversationDefaultGroup(
+        defaultTools,
+        isNative: false,
+        groupType: .builtIn,
+      ),
+      _conversationDefaultGroup(
+        defaultTools,
+        isNative: true,
+        groupType: .native,
+      ),
+    ].whereType<ConversationToolsGroupWithTools>().toList();
   }
 
   List<ConversationToolsGroupWithTools> _buildCustomGroups({
@@ -209,5 +176,77 @@ class GroupedConversationToolsNotifier
     final bDate = b.group?.createdAt ?? DateTime(2099);
 
     return bDate.compareTo(aDate);
+  }
+}
+
+ConversationToolsGroupWithTools? _conversationDefaultGroup(
+  List<ConversationToolState> tools, {
+  required bool isNative,
+  required DefaultToolGroupType groupType,
+}) {
+  final matchingTools = tools
+      .where((toolState) => toolState.tool.isNative == isNative)
+      .toList();
+  if (matchingTools.isEmpty) return null;
+
+  return ConversationToolsGroupWithTools(
+    group: null,
+    tools: matchingTools,
+    defaultGroupType: groupType,
+  );
+}
+
+Future<void> _syncConversationSkillPermissions(
+  Ref ref,
+  String workspaceId,
+  String? conversationId,
+) async {
+  if (conversationId == null || conversationId.isEmpty) return;
+  await ref
+      .read(syncSkillToolPermissionsUsecaseProvider)
+      .call(conversationId: conversationId, workspaceId: workspaceId);
+}
+
+Future<List<ConversationToolState>> _loadConversationTools(
+  Ref ref, {
+  required String workspaceId,
+  required String? conversationId,
+}) => ref.watch(
+  conversationToolsProvider(
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+  ).future,
+);
+
+Future<List<ToolsGroupEntity>> _loadWorkspaceGroups(
+  Ref ref,
+  String workspaceId,
+) async {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
+  final repository = ref.watch(toolsGroupsRepositoryProvider(session));
+  return repository.getToolsGroupsForWorkspace(workspaceId);
+}
+
+ConversationToolsGroupWithTools? _findConversationGroup(
+  List<ConversationToolsGroupWithTools> groups,
+  String? groupId,
+  DefaultToolGroupType? defaultGroupType,
+) => groups.firstWhereOrNull(
+  (group) =>
+      group.group?.id == groupId ||
+      (groupId == null &&
+          group.isDefaultGroup &&
+          group.defaultGroupType == defaultGroupType),
+);
+
+Future<void> _toggleGroupTools(
+  ConversationToolsGroupWithTools group,
+  Future<void> Function(String, {required bool isEnabled}) setToolEnabled, {
+  required bool enabled,
+}) async {
+  for (final toolState in group.tools) {
+    await setToolEnabled(toolState.tool.id, isEnabled: enabled);
   }
 }

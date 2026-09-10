@@ -209,7 +209,9 @@ class const _WorkspaceListActions({
   required final BuildContext context,
   required final WidgetRef ref,
   required final String activeWorkspaceId,
-}) {
+}) {}
+
+extension on _WorkspaceListActions {
   void switchWorkspace(String workspaceId) {
     ref.read(workspaceSwitcherProvider.notifier).switchToWorkspace(workspaceId);
   }
@@ -226,6 +228,21 @@ class const _WorkspaceListActions({
     context.go(WorkspaceCreateRoute(workspaceId: activeWorkspaceId).location);
   }
 
+  void openDetails({required String? accountId, required String? workspaceId}) {
+    _openDetails(context, accountId: accountId, cloudWorkspaceId: workspaceId);
+  }
+
+  String? accountEmail(
+    AsyncValue<List<CloudAccountSession>> accounts,
+    String? accountId,
+  ) => switch (accounts) {
+    AsyncData(:final value) =>
+      value.firstWhereOrNull((account) => account.userId == accountId)?.email,
+    AsyncLoading() || AsyncError() => null,
+  };
+}
+
+extension on _WorkspaceListActions {
   Future<void> edit(String id, String name) async {
     final _ = await WorkspaceManagementMutations.edit.run(ref, (_) {
       return ref.read(editWorkspaceUseCaseProvider).call(id: id, name: name);
@@ -241,48 +258,11 @@ class const _WorkspaceListActions({
     await _deleteAndHandle(workspace);
   }
 
-  Future<void> confirmRemove(WorkspaceEntity workspace) async {
-    final accountId = await _confirmedRemovalAccountId(workspace);
-    if (accountId == null || !context.mounted) return;
-
-    try {
-      await _detachAndSwitch(workspace, accountId);
-    } on Object catch (error, stackTrace) {
-      if (context.mounted) _showError(context, error, stackTrace);
-    }
-  }
-
   Future<void> switchAfterActiveWorkspaceRemoval() async {
     ref.invalidate(allWorkspacesProvider);
     final remaining = await ref.read(allWorkspacesProvider.future);
     if (!context.mounted) return;
     _navigateAfterRemoval(remaining);
-  }
-
-  void openDetails({required String? accountId, required String? workspaceId}) {
-    _openDetails(context, accountId: accountId, cloudWorkspaceId: workspaceId);
-  }
-
-  String? accountEmail(
-    AsyncValue<List<CloudAccountSession>> accounts,
-    String? accountId,
-  ) {
-    return switch (accounts) {
-      AsyncData(:final value) =>
-        value.firstWhereOrNull((account) => account.userId == accountId)?.email,
-      AsyncLoading() || AsyncError() => null,
-    };
-  }
-
-  Future<void> connect(
-    CloudWorkspaceSummary workspace,
-    String accountId,
-  ) async {
-    try {
-      await _attach(workspace, accountId);
-    } on Object catch (error, stackTrace) {
-      if (context.mounted) _showError(context, error, stackTrace);
-    }
   }
 
   void _handleEditResult() {
@@ -359,19 +339,29 @@ class const _WorkspaceListActions({
       await switchAfterActiveWorkspaceRemoval();
     }
   }
+}
 
-  Future<bool?> _confirmDestructive({
-    required Widget title,
-    required Widget message,
-    required AuraConfirmDialogActions actions,
-  }) {
-    return AuraDialogs.confirm(
-      context: context,
-      title: title,
-      message: message,
-      actions: actions,
-      isDestructive: true,
-    );
+extension on _WorkspaceListActions {
+  Future<void> confirmRemove(WorkspaceEntity workspace) async {
+    final accountId = await _confirmedRemovalAccountId(workspace);
+    if (accountId == null || !context.mounted) return;
+
+    try {
+      await _detachAndSwitch(workspace, accountId);
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
+    }
+  }
+
+  Future<void> connect(
+    CloudWorkspaceSummary workspace,
+    String accountId,
+  ) async {
+    try {
+      await _attach(workspace, accountId);
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
+    }
   }
 
   Future<void> _detach(WorkspaceEntity workspace, String accountId) async {
@@ -383,6 +373,18 @@ class const _WorkspaceListActions({
       ..invalidate(allWorkspacesProvider)
       ..invalidate(cloudWorkspaceStateProvider(accountId));
   }
+
+  Future<bool?> _confirmDestructive({
+    required Widget title,
+    required Widget message,
+    required AuraConfirmDialogActions actions,
+  }) => AuraDialogs.confirm(
+    context: context,
+    title: title,
+    message: message,
+    actions: actions,
+    isDestructive: true,
+  );
 
   void _navigateAfterRemoval(List<WorkspaceEntity> remaining) {
     if (remaining.isEmpty) {

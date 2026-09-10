@@ -1,23 +1,22 @@
 enum Flavor { prod, dev, beta }
 
 class AppFlavorConfig {
-  static Flavor? _appFlavor;
+  static final instance = AppFlavorConfig._();
 
-  static Flavor get appFlavor =>
+  AppFlavorConfig._();
+
+  Flavor? _appFlavor;
+
+  Flavor get appFlavor =>
       _appFlavor ?? (throw StateError('appFlavor is not initialized'));
 
-  static String get title {
-    switch (appFlavor) {
-      case .prod:
-        return 'AuraVibes';
-      case .dev:
-        return 'AuraVibes Dev';
-      case .beta:
-        return 'AuraVibes Beta';
-    }
+  String get title => switch (appFlavor) {
+    .prod => 'AuraVibes',
+    .dev => 'AuraVibes Dev',
+    .beta => 'AuraVibes Beta',
+  };
+
+  void setAppFlavor(Flavor value) {
+    _appFlavor = value;
   }
-
-  static String get name => appFlavor.name;
-
-  static set appFlavor(Flavor value) => _appFlavor = value;
 }

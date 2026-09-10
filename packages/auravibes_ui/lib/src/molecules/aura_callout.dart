@@ -28,35 +28,59 @@ class AuraCallout extends StatelessWidget {
   final AuraTint tint;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: context.auraColors.colorFor(tint).withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(
-          context.auraTheme.fromBorderRadius(.md),
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(context.auraTheme.spacing.md),
-        child: Row(
-          crossAxisAlignment: .start,
-          spacing: context.auraTheme.spacing.sm,
-          children: [
-            if (icon case final value?) AuraIcon(value, tint: tint),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: .start,
-                children: [
-                  AuraText(child: Text(title), style: .bodyLarge, tint: tint),
-                  if (description case final value?)
-                    AuraText(child: Text(value), style: .bodySmall),
-                ],
-              ),
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => _AuraCalloutSemantics(callout: this);
+}
+
+class const _AuraCalloutSemantics({required final AuraCallout callout})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Semantics(child: _AuraCalloutSurface(callout: callout), liveRegion: true);
+}
+
+class const _AuraCalloutSurface({required final AuraCallout callout})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: context.auraColors.colorFor(callout.tint).withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(
+        context.auraTheme.fromBorderRadius(.md),
       ),
     ),
-    liveRegion: true,
+    child: _AuraCalloutContent(callout: callout),
+  );
+}
+
+class const _AuraCalloutContent({required final AuraCallout callout})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.all(context.auraTheme.spacing.md),
+    child: Row(
+      crossAxisAlignment: .start,
+      spacing: context.auraTheme.spacing.sm,
+      children: [
+        if (callout.icon case final value?) AuraIcon(value, tint: callout.tint),
+        Expanded(child: _AuraCalloutText(callout: callout)),
+      ],
+    ),
+  );
+}
+
+class const _AuraCalloutText({required final AuraCallout callout})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      AuraText(
+        child: Text(callout.title),
+        style: .bodyLarge,
+        tint: callout.tint,
+      ),
+      if (callout.description case final value?)
+        AuraText(child: Text(value), style: .bodySmall),
+    ],
   );
 }

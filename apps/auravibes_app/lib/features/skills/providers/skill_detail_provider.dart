@@ -8,6 +8,30 @@ import 'package:auravibes_engine/auravibes_engine.dart' show AppSkillDefinition;
 
 part 'skill_detail_provider.g.dart';
 
+typedef _EnabledStateRequest = ({
+  Ref ref,
+  CloudSkillStore? cloud,
+  SkillEntity? sourceSkill,
+  String skillId,
+  String workspaceId,
+});
+
+typedef _SkillDetailRequest = ({
+  Ref ref,
+  CloudSkillStore? cloud,
+  SkillEntity? sourceSkill,
+  AppSkillDefinition? appSkill,
+  String skillId,
+  String workspaceId,
+});
+
+typedef _NativeSkillDetailRequest = ({
+  AppSkillDefinition appSkill,
+  SkillEntity? sourceSkill,
+  String workspaceId,
+  bool isEnabled,
+});
+
 @riverpod
 Future<SkillDetail?> skillDetail(
   Ref ref,
@@ -17,25 +41,53 @@ Future<SkillDetail?> skillDetail(
   final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
   final sourceSkill = await _loadSourceSkill(ref, cloud, skillId);
   final appSkill = ref.watch(appSkillRegistryProvider).getByIdentifier(skillId);
+  return _buildSkillDetail((
+    ref: ref,
+    cloud: cloud,
+    sourceSkill: sourceSkill,
+    appSkill: appSkill,
+    skillId: skillId,
+    workspaceId: workspaceId,
+  ));
+}
+
+Future<SkillDetail?> _buildSkillDetail(_SkillDetailRequest request) async {
+  final sourceSkill = request.sourceSkill;
+  final appSkill = request.appSkill;
   if (sourceSkill != null && !_isNativeAppRecord(sourceSkill, appSkill)) {
     return SkillDetail.fromUserSkill(sourceSkill);
   }
   if (appSkill == null) return null;
 
   final isEnabled = await _loadEnabledState(
-    ref,
-    cloud,
-    sourceSkill,
-    appSkill.identifier,
-    workspaceId,
+    _enabledStateRequest(request, appSkill),
   );
   return _buildNativeSkillDetail(
-    appSkill,
-    sourceSkill,
-    workspaceId: workspaceId,
-    isEnabled: isEnabled,
+    _nativeSkillDetailRequest(request, appSkill, isEnabled),
   );
 }
+
+_EnabledStateRequest _enabledStateRequest(
+  _SkillDetailRequest request,
+  AppSkillDefinition appSkill,
+) => (
+  ref: request.ref,
+  cloud: request.cloud,
+  sourceSkill: request.sourceSkill,
+  skillId: appSkill.identifier,
+  workspaceId: request.workspaceId,
+);
+
+_NativeSkillDetailRequest _nativeSkillDetailRequest(
+  _SkillDetailRequest request,
+  AppSkillDefinition appSkill,
+  bool isEnabled,
+) => (
+  appSkill: appSkill,
+  sourceSkill: request.sourceSkill,
+  workspaceId: request.workspaceId,
+  isEnabled: isEnabled,
+);
 
 Future<SkillEntity?> _loadSourceSkill(
   Ref ref,
@@ -54,45 +106,41 @@ bool _isNativeAppRecord(
     sourceSkill.kind == SkillKind.native &&
     appSkill != null;
 
-Future<bool> _loadEnabledState(
-  Ref ref,
-  CloudSkillStore? cloud,
-  SkillEntity? sourceSkill,
-  String skillId,
-  String workspaceId,
-) async {
-  final sourceEnabled = sourceSkill?.isEnabled;
+Future<bool> _loadEnabledState(_EnabledStateRequest request) async {
+  final sourceEnabled = request.sourceSkill?.isEnabled;
   if (sourceEnabled != null) return sourceEnabled;
-  if (cloud != null) return cloud.isAppSkillEnabled(skillId);
-  return ref
+  if (request.cloud != null) {
+    return request.cloud!.isAppSkillEnabled(request.skillId);
+  }
+  return request.ref
       .watch(appSkillWorkspaceSettingsRepositoryProvider)
-      .isAppSkillEnabled(workspaceId, skillId);
+      .isAppSkillEnabled(request.workspaceId, request.skillId);
 }
 
-SkillDetail _buildNativeSkillDetail(
-  AppSkillDefinition appSkill,
-  SkillEntity? sourceSkill, {
-  required String workspaceId,
-  required bool isEnabled,
-}) {
-  final values = _nativeSkillValues(appSkill, sourceSkill);
+SkillDetail _buildNativeSkillDetail(_NativeSkillDetailRequest request) {
+  return _nativeSkillDetailBuilder(request);
+}
+
+final SkillDetail Function(_NativeSkillDetailRequest request)
+_nativeSkillDetailBuilder = (request) {
+  final values = _nativeSkillValues(request.appSkill, request.sourceSkill);
   return SkillDetail(
     source: SkillSource.app,
-    id: appSkill.identifier,
-    workspaceId: workspaceId,
+    id: request.appSkill.identifier,
+    workspaceId: request.workspaceId,
     kind: .native,
     title: values.title,
     slug: values.slug,
     description: values.description,
     content: values.content,
-    isEnabled: isEnabled,
+    isEnabled: request.isEnabled,
     isCredentialOptional: values.isCredentialOptional,
-    appTools: appSkill.nativeTools,
+    appTools: request.appSkill.nativeTools,
     titleKey: values.titleKey,
     descriptionKey: values.descriptionKey,
     contentKey: values.contentKey,
   );
-}
+};
 
 ({
   String title,

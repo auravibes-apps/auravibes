@@ -211,8 +211,6 @@ class const _DatePickerGrid({required final _DatePicker picker})
 }
 
 class const _DatePickerGridChildren(final _DatePicker picker) {
-  List<Widget> get children => [..._emptyDays, ..._dayWidgets];
-
   List<Widget> get _emptyDays {
     final value = picker.value;
     final firstDay = DateTime(value.year, value.month);
@@ -232,6 +230,10 @@ class const _DatePickerGridChildren(final _DatePicker picker) {
         _DatePickerDay(picker: picker, day: day),
     ];
   }
+
+  List<Widget> get children => buildChildren();
+
+  List<Widget> buildChildren() => [..._emptyDays, ..._dayWidgets];
 }
 
 class const _DatePickerDay({

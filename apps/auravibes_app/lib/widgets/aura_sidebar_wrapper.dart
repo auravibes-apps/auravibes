@@ -54,15 +54,7 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
   final router = GoRouter.of(context);
   final pathSegments = router.routeInformationProvider.value.uri.pathSegments;
 
-  for (var i = 0; i < pathSegments.length; i++) {
-    if (pathSegments[i] == 'chats' && i + 1 < pathSegments.length) {
-      final nextSegment = pathSegments[i + 1];
-
-      if (nextSegment.isNotEmpty && !nextSegment.startsWith('new')) {
-        return -1;
-      }
-    }
-  }
+  if (_isConversationPath(pathSegments)) return -1;
 
   const newChatIndex = 0;
   const appSettingsIndex = 1;
@@ -74,6 +66,17 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
     footerSettingsIndex => footerSettingsIndex, // Settings (footer).
     _ => -1,
   };
+}
+
+bool _isConversationPath(List<String> pathSegments) {
+  for (var i = 0; i < pathSegments.length; i++) {
+    if (pathSegments[i] != 'chats' || i + 1 >= pathSegments.length) continue;
+
+    final nextSegment = pathSegments[i + 1];
+    if (nextSegment.isNotEmpty && !nextSegment.startsWith('new')) return true;
+  }
+
+  return false;
 }
 
 class AuraSidebarWrapper extends HookConsumerWidget {

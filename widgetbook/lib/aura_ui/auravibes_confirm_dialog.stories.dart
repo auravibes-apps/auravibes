@@ -62,6 +62,10 @@ class const ConfirmDialogDemo({
     );
     if (!context.mounted) return;
 
+    _showResultSnackBar(context, result);
+  }
+
+  void _showResultSnackBar(BuildContext context, bool? result) {
     final _ = AuraSnackBars.show(
       context: context,
       content: Text('Result: $result'),

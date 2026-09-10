@@ -20,27 +20,90 @@ class const ToolsWorkspaceListWidget({
   Widget build(BuildContext context, WidgetRef ref) {
     final groupedToolsAsync = ref.watch(groupedToolsProvider(workspaceId));
 
+    return _ToolsWorkspaceListState(
+      groupedToolsAsync: groupedToolsAsync,
+      workspaceId: workspaceId,
+    );
+  }
+}
+
+class const _ToolsWorkspaceListState({
+  required final AsyncValue<List<ToolsGroupWithTools>> groupedToolsAsync,
+  required final String workspaceId,
+}) extends StatelessWidget {
+  final AsyncValue<List<ToolsGroupWithTools>> groupedToolsAsync;
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context) {
     return switch (groupedToolsAsync) {
-      AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncData(value: final groups) when groups.isEmpty => ToolsEmptyState(
-        padding: EdgeInsets.all(context.auraTheme.fromSpacing(.xl)),
+      AsyncLoading() => const _ToolsLoading(),
+      AsyncData(value: final groups) => _ToolsGroupListOrEmpty(
+        groups: groups,
+        workspaceId: workspaceId,
       ),
-      AsyncData(value: final groups) => ListView.builder(
-        padding: EdgeInsets.symmetric(
-          vertical: context.auraTheme.fromSpacing(.sm),
-        ),
-        itemBuilder: (context, index) {
-          return ToolsGroupCard(
-            groupWithTools: groups[index],
-            workspaceId: workspaceId,
-          );
-        },
-        itemCount: groups.length,
-      ),
-      AsyncError(:final error, :final stackTrace) => AppErrorWidget(
+      AsyncError(:final error, :final stackTrace) => _ToolsError(
         error: error,
         stackTrace: stackTrace,
       ),
     };
+  }
+}
+
+class const _ToolsLoading() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Center(child: AuraSpinner());
+}
+
+class const _ToolsGroupListOrEmpty({
+  required final List<ToolsGroupWithTools> groups,
+  required final String workspaceId,
+}) extends StatelessWidget {
+  final List<ToolsGroupWithTools> groups;
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context) {
+    if (groups.isEmpty) {
+      return ToolsEmptyState(
+        padding: EdgeInsets.all(context.auraTheme.fromSpacing(.xl)),
+      );
+    }
+
+    return _ToolsGroupList(groups: groups, workspaceId: workspaceId);
+  }
+}
+
+class const _ToolsError({
+  required final Object error,
+  required final StackTrace stackTrace,
+}) extends StatelessWidget {
+  final Object error;
+  final StackTrace stackTrace;
+
+  @override
+  Widget build(BuildContext context) =>
+      AppErrorWidget(error: error, stackTrace: stackTrace);
+}
+
+class const _ToolsGroupList({
+  required final List<ToolsGroupWithTools> groups,
+  required final String workspaceId,
+}) extends StatelessWidget {
+  final List<ToolsGroupWithTools> groups;
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(
+        vertical: context.auraTheme.fromSpacing(.sm),
+      ),
+      itemBuilder: (context, index) => ToolsGroupCard(
+        groupWithTools: groups[index],
+        workspaceId: workspaceId,
+      ),
+      itemCount: groups.length,
+    );
   }
 }

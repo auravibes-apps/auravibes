@@ -1,4 +1,3 @@
-// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
@@ -7,7 +6,7 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 
-import 'package:riverpod/src/providers/provider.dart';
+import 'package:riverpod/riverpod.dart';
 
 class const UnloadConversationSkillUsecase(
   final SkillsRepository? _skillsRepository,
@@ -21,64 +20,101 @@ class const UnloadConversationSkillUsecase(
     required String slug,
   }) async {
     final cloud = cloudStore;
-    final skillsRepository = _skillsRepository;
-    final userSkill = cloud == null
-        ? await (skillsRepository ??
-                  (throw StateError('Skill store is unavailable')))
-              .getSkillBySlug(workspaceId, slug)
-        : (await cloud.skills())
-              .where(
-                (item) => item.source == SkillSource.user && item.slug == slug,
-              )
-              .firstOrNull;
+    final userSkill = await _findUserSkill(cloud, workspaceId, slug);
     if (userSkill != null) {
-      if (cloud != null) {
-        return await cloud.setConversationSkill(
-          conversationId,
-          userSkill.id,
-          selected: false,
-          isAppSkill: false,
-        );
-      }
-      final conversationSkillsRepository = _conversationSkillsRepository;
-      if (conversationSkillsRepository == null) {
-        throw StateError('Conversation skill store is unavailable');
-      }
-
-      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
-        conversationId,
-        userSkill.id,
-        isLoaded: false,
-      );
+      await _unloadUserSkill(cloud, conversationId, userSkill.id);
 
       return;
     }
+    await _unloadAppSkillBySlug(cloud, conversationId, slug);
+  }
 
+  Future<void> _unloadAppSkillBySlug(
+    CloudSkillStore? cloud,
+    String conversationId,
+    String slug,
+  ) async {
     final appSkill = _appSkillRegistry.getBySlug(slug);
-    if (appSkill != null) {
-      if (cloud != null) {
-        return await cloud.setConversationSkill(
-          conversationId,
-          appSkill.identifier,
-          selected: false,
-          isAppSkill: true,
-        );
-      }
-      final conversationSkillsRepository = _conversationSkillsRepository;
-      if (conversationSkillsRepository == null) {
-        throw StateError('Conversation skill store is unavailable');
-      }
+    if (appSkill == null) {
+      throw StateError('Skill not found for slug: $slug');
+    }
 
-      final _ = await conversationSkillsRepository.setAppSkillLoaded(
+    await _unloadAppSkill(cloud, conversationId, appSkill.identifier);
+  }
+
+  Future<SkillEntity?> _findUserSkill(
+    CloudSkillStore? cloud,
+    String workspaceId,
+    String slug,
+  ) => cloud == null
+      ? _findLocalUserSkill(workspaceId, slug)
+      : _findCloudUserSkill(cloud, slug);
+
+  Future<SkillEntity?> _findCloudUserSkill(
+    CloudSkillStore cloud,
+    String slug,
+  ) async {
+    return (await cloud.skills())
+        .where((item) => item.source == SkillSource.user && item.slug == slug)
+        .firstOrNull;
+  }
+
+  Future<SkillEntity?> _findLocalUserSkill(String workspaceId, String slug) {
+    final repository =
+        _skillsRepository ?? (throw StateError('Skill store is unavailable'));
+    return repository.getSkillBySlug(workspaceId, slug);
+  }
+
+  Future<void> _unloadUserSkill(
+    CloudSkillStore? cloud,
+    String conversationId,
+    String skillId,
+  ) async {
+    if (cloud != null) {
+      await cloud.setConversationSkill(
         conversationId,
-        appSkill.identifier,
-        isLoaded: false,
+        skillId,
+        selected: false,
+        isAppSkill: false,
       );
-
       return;
     }
 
-    throw StateError('Skill not found for slug: $slug');
+    final repository = _conversationSkillsRepository;
+    if (repository == null) {
+      throw StateError('Conversation skill store is unavailable');
+    }
+    final _ = await repository.setWorkspaceSkillLoaded(
+      conversationId,
+      skillId,
+      isLoaded: false,
+    );
+  }
+
+  Future<void> _unloadAppSkill(
+    CloudSkillStore? cloud,
+    String conversationId,
+    String skillId,
+  ) async {
+    if (cloud != null) {
+      await cloud.setConversationSkill(
+        conversationId,
+        skillId,
+        selected: false,
+        isAppSkill: true,
+      );
+      return;
+    }
+
+    final repository = _conversationSkillsRepository;
+    if (repository == null) {
+      throw StateError('Conversation skill store is unavailable');
+    }
+    final _ = await repository.setAppSkillLoaded(
+      conversationId,
+      skillId,
+      isLoaded: false,
+    );
   }
 }
 

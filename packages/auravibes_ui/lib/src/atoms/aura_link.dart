@@ -28,24 +28,37 @@ class AuraLink extends StatelessWidget {
         AuraInteractionScope.of(context).allowsNavigation && onPressed != null;
 
     return Semantics(
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-        child: GestureDetector(
-          child: AuraText(
-            child: Text(
-              label,
-              style: .new(
-                color: context.auraColors.primary,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
-          onTap: enabled ? onPressed : null,
-        ),
+      child: _AuraLinkInteraction(
+        label: label,
+        enabled: enabled,
+        onPressed: onPressed,
       ),
       enabled: enabled,
       link: true,
       label: semanticLabel,
     );
   }
+}
+
+class const _AuraLinkInteraction({
+  required final String label,
+  required final bool enabled,
+  required final VoidCallback? onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+    child: GestureDetector(
+      child: AuraText(
+        child: Text(
+          label,
+          style: .new(
+            color: context.auraColors.primary,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ),
+      onTap: enabled ? onPressed : null,
+    ),
+  );
 }

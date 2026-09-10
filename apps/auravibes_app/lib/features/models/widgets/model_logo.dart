@@ -10,6 +10,15 @@ import 'package:http/http.dart' as http;
 
 /// A reusable widget for displaying model provider logos.
 class const ModelLogo({
+  required super.modelId,
+  super.height,
+  super.width,
+  super.svgBuilder,
+  super.httpClient,
+  super.key,
+}) extends _ModelLogo {}
+
+class const _ModelLogo({
   required final String modelId,
   final double height = 20,
   final double? width,
@@ -25,22 +34,24 @@ class const ModelLogo({
       return svgBuilder(context, url);
     }
 
-    return SvgPicture.network(
-      url,
-      width: width,
-      height: height,
-      placeholderBuilder: (context) {
-        return const AuraSpinner();
-      },
-      colorFilter: .mode(context.auraColors.onBackground, .srcIn),
-      errorBuilder: (context, error, stackTrace) {
-        return const AuraText(
-          child: TextLocale(
-            LocaleKeys.models_screens_add_provider_search_no_icon,
-          ),
-        );
-      },
-      httpClient: httpClient,
-    );
+    return _networkLogo(context, url);
   }
+
+  Widget _networkLogo(BuildContext context, String url) => SvgPicture.network(
+    url,
+    width: width,
+    height: height,
+    placeholderBuilder: (context) {
+      return const AuraSpinner();
+    },
+    colorFilter: .mode(context.auraColors.onBackground, .srcIn),
+    errorBuilder: (context, error, stackTrace) {
+      return const AuraText(
+        child: TextLocale(
+          LocaleKeys.models_screens_add_provider_search_no_icon,
+        ),
+      );
+    },
+    httpClient: httpClient,
+  );
 }

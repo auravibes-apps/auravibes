@@ -1,10 +1,11 @@
-// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
-import 'package:riverpod/src/providers/provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'check_skill_credential_readiness_usecase.g.dart';
 
 class const CheckSkillCredentialReadinessUsecase(
   final SkillCredentialsRepository? _skillCredentialsRepository, {
@@ -22,6 +23,13 @@ class const CheckSkillCredentialReadinessUsecase(
     final cloud = cloudStore;
     if (cloud != null) return await cloud.credentialReady(skill);
 
+    return await _localCredentialsReady(workspaceId, credentialDefinitionId);
+  }
+
+  Future<bool> _localCredentialsReady(
+    String workspaceId,
+    String credentialDefinitionId,
+  ) async {
     final repository = _skillCredentialsRepository;
     if (repository == null) {
       throw StateError('Skill credentials repository is unavailable');
@@ -35,16 +43,15 @@ class const CheckSkillCredentialReadinessUsecase(
   }
 }
 
-final ProviderFamily<CheckSkillCredentialReadinessUsecase, String>
-checkSkillCredentialReadinessUsecaseProvider =
-    Provider.family<CheckSkillCredentialReadinessUsecase, String>((
-      ref,
-      workspaceId,
-    ) {
-      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+@riverpod
+CheckSkillCredentialReadinessUsecase checkSkillCredentialReadinessUsecase(
+  Ref ref,
+  String workspaceId,
+) {
+  final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-      return CheckSkillCredentialReadinessUsecase(
-        cloud == null ? ref.watch(skillCredentialsRepositoryProvider) : null,
-        cloudStore: cloud,
-      );
-    });
+  return CheckSkillCredentialReadinessUsecase(
+    cloud == null ? ref.watch(skillCredentialsRepositoryProvider) : null,
+    cloudStore: cloud,
+  );
+}

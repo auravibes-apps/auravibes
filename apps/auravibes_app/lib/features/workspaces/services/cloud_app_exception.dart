@@ -39,38 +39,49 @@ abstract final class CloudAppErrors {
 
   static Never translateException(Object error, CloudOperationContext context) {
     if (error is CloudAppException) throw error;
-    final translated = switch (error) {
-      CloudWorkspaceException(:final code) => (
-        localizationKey: _workspaceKey(code),
-        code: code.name,
-      ),
-      ConversationException(:final code) => (
-        localizationKey: _conversationKey(code),
-        code: code.name,
-      ),
-      ObjectException(:final code) => (
-        localizationKey: _objectKey(code),
-        code: code.name,
-      ),
-      UnsupportedWorkspaceCapabilityException() => (
-        localizationKey: LocaleKeys.workspace_capabilities_unsupported_error,
-        code: 'unsupportedCapability',
-      ),
-      TypeError() ||
-      FormatException() ||
-      StateError() ||
-      UnsupportedError() => (
-        localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-        code: error.runtimeType.toString(),
-      ),
-      _ => (localizationKey: LocaleKeys.cloud_errors_unavailable, code: null),
-    };
+    final translated = _translatedException(error);
     throw CloudAppException(
       localizationKey: translated.localizationKey,
       context: context,
       code: translated.code,
     );
   }
+
+  static ({String localizationKey, String? code}) _translatedException(
+    Object error,
+  ) => switch (error) {
+    CloudWorkspaceException(:final code) => _workspaceTranslation(code),
+    ConversationException(:final code) => _conversationTranslation(code),
+    ObjectException(:final code) => _objectTranslation(code),
+    UnsupportedWorkspaceCapabilityException() => (
+      localizationKey: LocaleKeys.workspace_capabilities_unsupported_error,
+      code: 'unsupportedCapability',
+    ),
+    TypeError() ||
+    FormatException() ||
+    StateError() ||
+    UnsupportedError() => _malformedTranslation(error),
+    _ => (localizationKey: LocaleKeys.cloud_errors_unavailable, code: null),
+  };
+
+  static ({String localizationKey, String? code}) _workspaceTranslation(
+    CloudWorkspaceErrorCode code,
+  ) => (localizationKey: _workspaceKey(code), code: code.name);
+
+  static ({String localizationKey, String? code}) _conversationTranslation(
+    ConversationErrorCode code,
+  ) => (localizationKey: _conversationKey(code), code: code.name);
+
+  static ({String localizationKey, String? code}) _objectTranslation(
+    ObjectErrorCode code,
+  ) => (localizationKey: _objectKey(code), code: code.name);
+
+  static ({String localizationKey, String? code}) _malformedTranslation(
+    Object error,
+  ) => (
+    localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+    code: error.runtimeType.toString(),
+  );
 }
 
 const _workspaceLocalizationKeys = <CloudWorkspaceErrorCode, String>{
@@ -112,16 +123,19 @@ String _conversationKey(ConversationErrorCode code) => switch (code) {
   .toolDecisionConflict => LocaleKeys.cloud_errors_conflict,
 };
 
-String _objectKey(ObjectErrorCode code) => switch (code) {
-  .objectNotFound => LocaleKeys.cloud_errors_not_found,
-  .invalidRequest ||
-  .unsupportedMediaType ||
-  .sizeLimitExceeded ||
-  .uploadExpired ||
-  .uploadMismatch ||
-  .scanInfected => LocaleKeys.cloud_errors_validation,
-  .staleRevision ||
-  .idempotencyConflict ||
-  .objectReferenced => LocaleKeys.cloud_errors_conflict,
-  .configurationMissing || .scanFailed => LocaleKeys.cloud_errors_unavailable,
+const _objectLocalizationKeys = <ObjectErrorCode, String>{
+  .objectNotFound: LocaleKeys.cloud_errors_not_found,
+  .invalidRequest: LocaleKeys.cloud_errors_validation,
+  .unsupportedMediaType: LocaleKeys.cloud_errors_validation,
+  .sizeLimitExceeded: LocaleKeys.cloud_errors_validation,
+  .uploadExpired: LocaleKeys.cloud_errors_validation,
+  .uploadMismatch: LocaleKeys.cloud_errors_validation,
+  .scanInfected: LocaleKeys.cloud_errors_validation,
+  .staleRevision: LocaleKeys.cloud_errors_conflict,
+  .idempotencyConflict: LocaleKeys.cloud_errors_conflict,
+  .objectReferenced: LocaleKeys.cloud_errors_conflict,
+  .configurationMissing: LocaleKeys.cloud_errors_unavailable,
+  .scanFailed: LocaleKeys.cloud_errors_unavailable,
 };
+
+String _objectKey(ObjectErrorCode code) => _objectLocalizationKeys[code]!;

@@ -51,56 +51,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
   final String? semanticLabel;
 
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final leading = this.leading;
-    final trailing = this.trailing;
-    final child = this.child;
-
-    Widget result = AuraPressable(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          vertical: context.auraTheme.fromSpacing(.sm),
-          horizontal: context.auraTheme.fromSpacing(.md),
-        ),
-        decoration: BoxDecoration(color: _getBackgroundColor(auraColors)),
-        child: Row(
-          children: [
-            if (leading != null) ...[leading, const AuraSizedBox(width: .sm)],
-            Expanded(
-              child:
-                  child ??
-                  AuraText(
-                    child: Text(
-                      value.toString(),
-                      style: .new(
-                        color: isEnabled
-                            ? auraColors.onSurface
-                            : auraColors.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ),
-            ),
-            if (trailing != null) ...[
-              const AuraSizedBox(width: .sm),
-              trailing,
-            ] else if (isSelected) ...[
-              const AuraSizedBox(width: .sm),
-              const AuraIcon(Icons.check, size: .small, tint: .primary),
-            ],
-          ],
-        ),
-      ),
-      color: auraColors.primary,
-      onPressed: isEnabled ? onTap : null,
-    );
-
-    if (semanticLabel != null) {
-      result = Semantics(child: result, label: semanticLabel);
-    }
-
-    return result;
-  }
+  Widget build(BuildContext context) => _AuraDropdownOptionBody(option: this);
 
   Color _getBackgroundColor(AuraColorScheme colors) {
     if (!isEnabled) return DesignColors.transparent;
@@ -108,4 +59,117 @@ class AuraDropdownOption<T> extends StatelessWidget {
 
     return DesignColors.transparent;
   }
+}
+
+class const _AuraDropdownOptionBody<T>({
+  required final AuraDropdownOption<T> option,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final result = _AuraDropdownOptionButton(option: option);
+    final label = option.semanticLabel;
+
+    return label == null ? result : Semantics(child: result, label: label);
+  }
+}
+
+class const _AuraDropdownOptionButton<T>({
+  required final AuraDropdownOption<T> option,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.auraColors;
+
+    return AuraPressable(
+      child: _AuraDropdownOptionContent(option: option, colors: colors),
+      color: colors.primary,
+      onPressed: option.isEnabled ? option.onTap : null,
+    );
+  }
+}
+
+class const _AuraDropdownOptionContent<T>({
+  required final AuraDropdownOption<T> option,
+  required final AuraColorScheme colors,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.symmetric(
+      vertical: context.auraTheme.fromSpacing(.sm),
+      horizontal: context.auraTheme.fromSpacing(.md),
+    ),
+    decoration: BoxDecoration(color: option._getBackgroundColor(colors)),
+    child: _AuraDropdownOptionRow(option: option),
+  );
+}
+
+class const _AuraDropdownOptionRow<T>({
+  required final AuraDropdownOption<T> option,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      _AuraDropdownOptionLeading(option: option),
+      Expanded(child: option.child ?? _AuraDropdownOptionLabel(option: option)),
+      _AuraDropdownOptionTrailing(option: option),
+    ],
+  );
+}
+
+class const _AuraDropdownOptionLeading<T>({
+  required final AuraDropdownOption<T> option,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (option.leading) {
+    final leading? => Row(
+      mainAxisSize: .min,
+      children: [
+        leading,
+        const AuraSizedBox(width: .sm),
+      ],
+    ),
+    null => const SizedBox.shrink(),
+  };
+}
+
+class const _AuraDropdownOptionTrailing<T>({
+  required final AuraDropdownOption<T> option,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (option.trailing case final trailing?) {
+      return Row(
+        mainAxisSize: .min,
+        children: [
+          const AuraSizedBox(width: .sm),
+          trailing,
+        ],
+      );
+    }
+    if (!option.isSelected) return const SizedBox.shrink();
+
+    return const Row(
+      mainAxisSize: .min,
+      children: [
+        AuraSizedBox(width: .sm),
+        AuraIcon(Icons.check, size: .small, tint: .primary),
+      ],
+    );
+  }
+}
+
+class const _AuraDropdownOptionLabel<T>({
+  required final AuraDropdownOption<T> option,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      option.value.toString(),
+      style: .new(
+        color: option.isEnabled
+            ? context.auraColors.onSurface
+            : context.auraColors.onSurface.withValues(alpha: 0.6),
+      ),
+    ),
+  );
 }

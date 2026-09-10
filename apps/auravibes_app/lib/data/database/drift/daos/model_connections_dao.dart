@@ -8,34 +8,17 @@ part 'model_connections_dao.g.dart';
 @DriftAccessor(tables: [ServiceConnections])
 class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
     with _$ModelConnectionsDaoMixin {
-  /// Creates a new [ModelConnectionsDao] instance.
   new(super.attachedDatabase);
+}
 
+extension ModelConnectionsDaoMethods on ModelConnectionsDao {
   Future<List<ServiceConnectionTable>> getAllModelConnectionsByWorkspace({
     required List<String> workspaceIds,
-  }) {
-    return (select(serviceConnections)
-          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)])
-          ..where(
-            (u) =>
-                u.workspaceId.isIn(workspaceIds) &
-                u.kind.equals(ServiceConnectionKindTable.modelProvider.name),
-          ))
-        .get();
-  }
+  }) => _modelConnectionsByWorkspaceQuery(workspaceIds).get();
 
   Stream<List<ServiceConnectionTable>> watchAllModelConnectionsByWorkspace({
     required List<String> workspaceIds,
-  }) {
-    return (select(serviceConnections)
-          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)])
-          ..where(
-            (u) =>
-                u.workspaceId.isIn(workspaceIds) &
-                u.kind.equals(ServiceConnectionKindTable.modelProvider.name),
-          ))
-        .watch();
-  }
+  }) => _modelConnectionsByWorkspaceQuery(workspaceIds).watch();
 
   Future<ServiceConnectionTable?> getModelConnectionById(String id) {
     return (select(serviceConnections)..where(
@@ -75,4 +58,22 @@ class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
         ))
         .go();
   }
+
+  SimpleSelectStatement<$ServiceConnectionsTable, ServiceConnectionTable>
+  _modelConnectionsByWorkspaceQuery(List<String> workspaceIds) {
+    final statement = select(serviceConnections)
+      ..where((t) => _modelConnectionFilter(t, workspaceIds));
+
+    return statement..orderBy(_modelConnectionOrdering());
+  }
+
+  Expression<bool> _modelConnectionFilter(
+    $ServiceConnectionsTable tbl,
+    List<String> workspaceIds,
+  ) =>
+      tbl.workspaceId.isIn(workspaceIds) &
+      tbl.kind.equals(ServiceConnectionKindTable.modelProvider.name);
+
+  List<OrderingTerm Function($ServiceConnectionsTable)>
+  _modelConnectionOrdering() => [(t) => OrderingTerm(expression: t.createdAt)];
 }

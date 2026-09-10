@@ -19,18 +19,26 @@ class AuraCodeBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: context.auraColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(
-          context.auraTheme.fromBorderRadius(.md),
-        ),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: .horizontal,
-        padding: EdgeInsets.all(context.auraTheme.spacing.sm),
-        child: AuraText(child: SelectableText(code), style: .code),
-      ),
+      decoration: _decoration(context),
+      child: _AuraCodeBlockContent(code: code),
     ),
     label: semanticLabel ?? language,
+  );
+
+  BoxDecoration _decoration(BuildContext context) => BoxDecoration(
+    color: context.auraColors.surfaceVariant,
+    borderRadius: BorderRadius.circular(
+      context.auraTheme.fromBorderRadius(.md),
+    ),
+  );
+}
+
+class const _AuraCodeBlockContent({required final String code})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    scrollDirection: .horizontal,
+    padding: EdgeInsets.all(context.auraTheme.spacing.sm),
+    child: AuraText(child: SelectableText(code), style: .code),
   );
 }

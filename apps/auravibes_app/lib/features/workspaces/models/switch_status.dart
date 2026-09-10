@@ -26,4 +26,8 @@ abstract class WorkspaceSwitchState with _$WorkspaceSwitchState {
     String? targetWorkspaceId,
     String? errorLocalizationKey,
   }) = _WorkspaceSwitchState;
+
+  /// Whether a workspace switch is currently running.
+  /// Returns whether [status] represents an active switch.
+  static bool isLoading(SwitchStatus status) => status == SwitchStatus.loading;
 }

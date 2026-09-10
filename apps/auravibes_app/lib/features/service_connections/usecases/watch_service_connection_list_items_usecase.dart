@@ -14,6 +14,13 @@ import 'package:rxdart/rxdart.dart';
 
 final _logger = Logger('watch_service_connection_list_items_usecase');
 
+typedef _ConnectionLists = ({
+  List<ModelConnectionEntity> modelConnections,
+  List<SkillCredentialDefinitionEntity> definitions,
+  List<SkillCredentialEntity> credentials,
+  List<ServiceConnectionListItem> mcpCredentials,
+});
+
 class const WatchServiceConnectionListItemsUsecase(
   final AppDatabase _database,
   final ModelConnectionRepository _modelConnectionRepository,
@@ -29,33 +36,39 @@ class const WatchServiceConnectionListItemsUsecase(
       _credentialDefinitionsRepository.watchDefinitions(workspaceId),
       _credentialsRepository.watchCredentialsForWorkspace(workspaceId),
       _watchMcpCredentialItems(workspaceId),
-      _buildItems,
+      (models, definitions, credentials, mcpCredentials) => _buildItems((
+        modelConnections: models,
+        definitions: definitions,
+        credentials: credentials,
+        mcpCredentials: mcpCredentials,
+      )),
     );
   }
 
-  List<ServiceConnectionListItem> _buildItems(
-    List<ModelConnectionEntity> modelConnections,
+  List<ServiceConnectionListItem> _buildItems(_ConnectionLists input) {
+    return [
+      ...input.modelConnections.map(
+        ServiceConnectionListItem.fromModelConnection,
+      ),
+      ..._skillCredentialItems(input.definitions, input.credentials),
+      ...input.mcpCredentials,
+    ]..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  Iterable<ServiceConnectionListItem> _skillCredentialItems(
     List<SkillCredentialDefinitionEntity> definitions,
     List<SkillCredentialEntity> credentials,
-    List<ServiceConnectionListItem> mcpCredentials,
   ) {
     final definitionsById = {
       for (final definition in definitions) definition.id: definition,
     };
-    final skillCredentialItems = credentials.map((credential) {
-      final definition = definitionsById[credential.credentialDefinitionId];
 
+    return credentials.map((credential) {
       return ServiceConnectionListItem.fromSkillCredential(
         credential: credential,
-        definition: definition,
+        definition: definitionsById[credential.credentialDefinitionId],
       );
     });
-
-    return [
-      ...modelConnections.map(ServiceConnectionListItem.fromModelConnection),
-      ...skillCredentialItems,
-      ...mcpCredentials,
-    ]..sort((a, b) => a.name.compareTo(b.name));
   }
 
   Stream<List<ServiceConnectionListItem>> _watchMcpCredentialItems(
@@ -78,28 +91,38 @@ class const WatchServiceConnectionListItemsUsecase(
   ServiceConnectionListItem _mcpCredentialItem(TypedResult row) {
     final server = row.readTable(_database.mcpServers);
     final credential = row.readTable(_database.serviceConnections);
-    final metadataResult = _decodeMetadata(credential);
-
-    return ServiceConnectionListItem.fromMcpCredential(
-      id: credential.id,
-      workspaceId: credential.workspaceId,
-      name: server.name,
-      url: server.url,
-      mcpServerId: server.id,
-      authenticationType: credential.authenticationType.value,
-      isEnabled: credential.isEnabled,
-      authStatus: credential.authStatus,
-      expiresAt: credential.expiresAt,
-      lastRefreshedAt: credential.lastRefreshedAt,
-      lastAuthError: credential.lastAuthError,
-      metadata: metadataResult.metadata,
-      canRefresh:
-          credential.authenticationType ==
-          ServiceAuthenticationTypeTable.oauth2,
-      now: _now(),
-      hasMetadataError: metadataResult.hasError,
+    return _buildMcpCredentialItem(
+      server: server,
+      credential: credential,
+      metadataResult: _decodeMetadata(credential),
     );
   }
+
+  ServiceConnectionListItem _buildMcpCredentialItem({
+    required McpServersTable server,
+    required ServiceConnectionTable credential,
+    required ({ServiceConnectionMetadata metadata, bool hasError})
+    metadataResult,
+  }) => ServiceConnectionListItem.fromMcpCredential(
+    id: credential.id,
+    workspaceId: credential.workspaceId,
+    name: server.name,
+    url: server.url,
+    mcpServerId: server.id,
+    authenticationType: credential.authenticationType.value,
+    isEnabled: credential.isEnabled,
+    authStatus: credential.authStatus,
+    expiresAt: credential.expiresAt,
+    lastRefreshedAt: credential.lastRefreshedAt,
+    lastAuthError: credential.lastAuthError,
+    metadata: metadataResult.metadata,
+    canRefresh: _canRefresh(credential),
+    now: _now(),
+    hasMetadataError: metadataResult.hasError,
+  );
+
+  bool _canRefresh(ServiceConnectionTable credential) =>
+      credential.authenticationType == ServiceAuthenticationTypeTable.oauth2;
 
   ({ServiceConnectionMetadata metadata, bool hasError}) _decodeMetadata(
     ServiceConnectionTable credential,

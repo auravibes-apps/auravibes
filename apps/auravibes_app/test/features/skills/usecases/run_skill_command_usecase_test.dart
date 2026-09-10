@@ -33,7 +33,7 @@ void main() {
     );
 
     await expectLater(
-      usecase.call(
+      usecase.call((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         commandName: callSkillToolName,
@@ -43,7 +43,7 @@ void main() {
           'args': {'limit': 'wrong'},
           'revision': 'r1',
         },
-      ),
+      )),
       throwsFormatException,
     );
     expect(templateRunner.calls, 0);
@@ -97,7 +97,7 @@ void main() {
         }) async => const {},
       );
 
-      final result = await usecase.call(
+      final result = await usecase.call((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         commandName: callSkillToolName,
@@ -107,7 +107,7 @@ void main() {
           'args': {'title': 'Collision regression'},
           'revision': loadedManifest.revision,
         },
-      );
+      ));
 
       expect(result, {
         'result': {'issueNumber': 42},

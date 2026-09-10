@@ -20,7 +20,6 @@ class const SkillDetail({
   final String? contentKey,
 }) {
   // App skills may not have a persisted workspace row.
-  // ignore: unnecessary-nullable
   factory fromUserSkill(SkillEntity skill) {
     return SkillDetail(
       source: skill.source,
@@ -38,4 +37,6 @@ class const SkillDetail({
   }
 
   bool get isUserSkill => source == SkillSource.user;
+
+  bool hasSource(SkillSource value) => source == value;
 }

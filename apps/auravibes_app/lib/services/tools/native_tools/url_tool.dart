@@ -24,40 +24,47 @@ final class UrlTool({final UrlService? _urlService})
       onCancel: () => responseOperation?.cancel(),
     );
 
-    () async {
-      final resolved = await _buildRequest(toolInput);
-      if (completer.isCanceled) {
-        return;
-      }
-
-      final service = _urlService ?? UrlService();
-      final operation = service.execute(
-        resolved.request,
-        resolvedAddresses: resolved.addresses,
-      );
-      responseOperation = operation;
-
-      final response = await operation.valueOrCancellation();
-      if (response == null || completer.isCanceled) {
-        return;
-      }
-
-      completer.complete(
-        formatUrlToolResponse(
-          response,
-          requestedFormat: resolved.request.format,
-        ),
-      );
-    }().catchError((Object error, StackTrace stackTrace) {
-      if (completer.isCanceled) {
-        return;
-      }
-
-      completer.completeError(error, stackTrace);
-    });
+    _run(
+      toolInput,
+      completer,
+      (operation) => responseOperation = operation,
+    ).catchError(_completeError(completer));
 
     return completer.operation;
   }
+
+  Future<void> _run(
+    String toolInput,
+    CancelableCompleter<String> completer,
+    void Function(CancelableOperation<UrlResponse>) onOperation,
+  ) async {
+    final resolved = await _buildRequest(toolInput);
+    if (completer.isCanceled) return;
+    await _completeRequest(resolved, completer, onOperation);
+  }
+
+  Future<void> _completeRequest(
+    ({UrlRequest request, List<String>? addresses}) resolved,
+    CancelableCompleter<String> completer,
+    void Function(CancelableOperation<UrlResponse>) onOperation,
+  ) async {
+    final operation = (_urlService ?? UrlService()).execute(
+      resolved.request,
+      resolvedAddresses: resolved.addresses,
+    );
+    onOperation(operation);
+    final response = await operation.valueOrCancellation();
+    if (response == null || completer.isCanceled) return;
+    completer.complete(
+      formatUrlToolResponse(response, requestedFormat: resolved.request.format),
+    );
+  }
+
+  void Function(Object, StackTrace) _completeError(
+    CancelableCompleter<String> completer,
+  ) => (Object error, StackTrace stackTrace) {
+    if (!completer.isCanceled) completer.completeError(error, stackTrace);
+  };
 
   Future<({UrlRequest request, List<String>? addresses})> _buildRequest(
     String toolInput,

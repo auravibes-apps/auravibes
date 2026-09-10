@@ -28,33 +28,70 @@ class const ConversationToolTile({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final toolsNotifier = ref.read(
-      conversationToolsProvider(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ).notifier,
+    final toolsNotifier = _conversationToolsNotifier(
+      ref,
+      workspaceId,
+      conversationId,
     );
     final toolId = toolState.tool.id;
+    final onToggle = _useToolToggle(toolsNotifier, toolId);
+    final onPermissionChanged = _useToolPermission(toolsNotifier, toolId);
 
-    void onToggleCallback() {
-      unawaited(toolsNotifier.toggleTool(toolId));
-    }
-
-    final onToggle = useCallback(onToggleCallback, [toolsNotifier, toolId]);
-
-    final onPermissionChanged = useCallback<void Function(ToolPermissionMode?)>(
-      (mode) {
-        if (mode == null) return;
-        unawaited(
-          toolsNotifier.setToolPermission(toolId, permissionMode: mode),
-        );
-      },
-      [toolsNotifier, toolId],
+    return _ToolCard(
+      toolState: toolState,
+      isEnabled: toolState.isEnabled,
+      isWorkspaceEnabled: toolState.isWorkspaceEnabled,
+      onToggle: onToggle,
+      onPermissionChanged: onPermissionChanged,
     );
+  }
+}
 
-    final isEnabled = toolState.isEnabled;
-    final isWorkspaceEnabled = toolState.isWorkspaceEnabled;
+ConversationToolsNotifier _conversationToolsNotifier(
+  WidgetRef ref,
+  String workspaceId,
+  String? conversationId,
+) => ref.read(
+  conversationToolsProvider(
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+  ).notifier,
+);
 
+VoidCallback _useToolToggle(
+  ConversationToolsNotifier toolsNotifier,
+  String toolId,
+) => useCallback(() => unawaited(toolsNotifier.toggleTool(toolId)), [
+  toolsNotifier,
+  toolId,
+]);
+
+ValueChanged<ToolPermissionMode?> _useToolPermission(
+  ConversationToolsNotifier toolsNotifier,
+  String toolId,
+) => useCallback((mode) => _setToolPermission(toolsNotifier, toolId, mode), [
+  toolsNotifier,
+  toolId,
+]);
+
+void _setToolPermission(
+  ConversationToolsNotifier toolsNotifier,
+  String toolId,
+  ToolPermissionMode? mode,
+) {
+  if (mode == null) return;
+  unawaited(toolsNotifier.setToolPermission(toolId, permissionMode: mode));
+}
+
+class const _ToolCard({
+  required final ConversationToolState toolState,
+  required final bool isEnabled,
+  required final bool isWorkspaceEnabled,
+  required final VoidCallback onToggle,
+  required final void Function(ToolPermissionMode?) onPermissionChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return AuraCard(
       child: AuraColumn(
         children: [
@@ -122,13 +159,10 @@ class const _ToolIcon({
     const iconSize = 40.0;
 
     return Container(
-      decoration: BoxDecoration(
-        color: isEnabled && isWorkspaceEnabled
-            ? context.auraColors.primary.withValues(alpha: 0.1)
-            : context.auraColors.surfaceVariant,
-        borderRadius: BorderRadius.all(
-          .circular(context.auraTheme.fromBorderRadius(.md)),
-        ),
+      decoration: _toolIconDecoration(
+        context,
+        isEnabled: isEnabled,
+        isWorkspaceEnabled: isWorkspaceEnabled,
       ),
       width: iconSize,
       height: iconSize,
@@ -136,6 +170,19 @@ class const _ToolIcon({
     );
   }
 }
+
+BoxDecoration _toolIconDecoration(
+  BuildContext context, {
+  required bool isEnabled,
+  required bool isWorkspaceEnabled,
+}) => BoxDecoration(
+  color: isEnabled && isWorkspaceEnabled
+      ? context.auraColors.primary.withValues(alpha: 0.1)
+      : context.auraColors.surfaceVariant,
+  borderRadius: BorderRadius.all(
+    .circular(context.auraTheme.fromBorderRadius(.md)),
+  ),
+);
 
 class const _ToolDescription({
   required final ConversationToolState toolState,
@@ -147,29 +194,38 @@ class const _ToolDescription({
       children: [
         AuraText(child: toolState.tool.getNameWidget()),
         if (isWorkspaceEnabled)
-          AuraText(
-            child: DefaultTextStyle.merge(
-              overflow: .ellipsis,
-              maxLines: 1,
-              child: toolState.tool.getDescriptionWidget(),
-            ),
-            style: .bodySmall,
-          )
+          _ToolDescriptionText(child: toolState.tool.getDescriptionWidget())
         else
-          AuraText(
-            child: DefaultTextStyle.merge(
-              style: const TextStyle(fontStyle: .italic),
-              child: const TextLocale(
-                LocaleKeys.tools_screen_disabled_in_workspace,
-              ),
-            ),
-            style: .bodySmall,
-          ),
+          const _DisabledToolDescription(),
       ],
       spacing: .xs,
       crossAxisAlignment: .start,
     );
   }
+}
+
+class const _ToolDescriptionText({required final Widget child})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: DefaultTextStyle.merge(
+      overflow: .ellipsis,
+      maxLines: 1,
+      child: child,
+    ),
+    style: .bodySmall,
+  );
+}
+
+class const _DisabledToolDescription() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: DefaultTextStyle.merge(
+      style: const TextStyle(fontStyle: .italic),
+      child: const TextLocale(LocaleKeys.tools_screen_disabled_in_workspace),
+    ),
+    style: .bodySmall,
+  );
 }
 
 class const _ToolToggleIcon({

@@ -22,4 +22,8 @@ final class const WorkspaceSession(final WorkspaceRef workspace) {
     final CloudWorkspaceRef cloud => cloud,
     LocalWorkspaceRef() => null,
   };
+
+  /// Returns whether this session supports [capability].
+  bool hasCapability(WorkspaceCapabilities capability) =>
+      capabilities == capability;
 }

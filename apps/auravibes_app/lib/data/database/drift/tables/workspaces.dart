@@ -9,18 +9,18 @@ import 'package:drift/drift.dart';
 @DataClassName('WorkspacesTable')
 class Workspaces extends Table with TableMixin {
   /// Human-readable name of the workspace.
-  TextColumn get name => text()();
+  late final name = text()();
 
   /// Type of workspace (local or remote). Stored as a string to handle enum
   /// conversion.
-  TextColumn get type => textEnum<WorkspaceType>()();
+  late final type = textEnum<WorkspaceType>()();
 
   /// URL for remote workspaces, null for local workspaces.
-  TextColumn get url => text().nullable()();
+  late final url = text().nullable()();
 
   /// Cloud workspace identifier for mirrored cloud workspaces.
-  TextColumn get cloudWorkspaceId => text().nullable()();
+  late final cloudWorkspaceId = text().nullable()();
 
   /// Cloud account identifier that owns this local mirror.
-  TextColumn get cloudAccountId => text().nullable()();
+  late final cloudAccountId = text().nullable()();
 }

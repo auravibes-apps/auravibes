@@ -19,6 +19,8 @@ abstract class NewChatState with _$NewChatState {
     String? agentId,
     @Default(false) bool isLoading,
   }) = _NewChatState;
+
+  bool hasModelSelection() => modelId != null;
 }
 
 @riverpod

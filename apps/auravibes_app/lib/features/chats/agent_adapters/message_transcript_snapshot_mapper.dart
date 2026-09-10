@@ -13,37 +13,14 @@ abstract final class MessageTranscriptSnapshotMapper {
     MessageEntity message,
   ) {
     final metadata = message.metadata;
-    final role = switch (message.messageType) {
-      _ when message.isUser => AgentTranscriptRole.user,
-      .system => AgentTranscriptRole.system,
-      _ => AgentTranscriptRole.model,
-    };
 
     return AgentTranscriptMessageSnapshot(
       id: message.id,
-      role: role,
-      kind: switch (message.messageType) {
-        .text => AgentTranscriptKind.text,
-        .image => AgentTranscriptKind.image,
-        .toolCall => AgentTranscriptKind.toolCall,
-        .system => AgentTranscriptKind.system,
-      },
-      status: switch (message.status) {
-        .sending => AgentTranscriptStatus.sending,
-        .unfinished => AgentTranscriptStatus.unfinished,
-        .sent => AgentTranscriptStatus.sent,
-        .error => AgentTranscriptStatus.error,
-      },
+      role: _roleFor(message),
+      kind: _kindFor(message),
+      status: _statusFor(message),
       textCharacterCount: message.content.length,
-      toolCalls: [
-        for (final toolCall in _toolCallsFor(metadata))
-          AgentTranscriptToolCallSnapshot(
-            id: toolCall.id,
-            lifecycle: AgentToolStatusMapper.toLifecycle(toolCall.resultStatus),
-            argumentCharacterCount: toolCall.argumentsRaw.length,
-            resultCharacterCount: toolCall.responseRaw?.length ?? 0,
-          ),
-      ],
+      toolCalls: _toolCallSnapshots(metadata),
       latestCumulativeTokenCount: metadata?.usedTokens,
       isCompactionSummary: metadata?.isCompactionSummary ?? false,
       compactedThroughMessageId: metadata?.compactedThroughMessageId,
@@ -54,4 +31,39 @@ abstract final class MessageTranscriptSnapshotMapper {
   static Iterable<MessageToolCallEntity> _toolCallsFor(
     MessageMetadataEntity? metadata,
   ) => metadata?.toolCalls ?? const <MessageToolCallEntity>[];
+
+  static AgentTranscriptRole _roleFor(MessageEntity message) =>
+      switch (message.messageType) {
+        _ when message.isUser => AgentTranscriptRole.user,
+        .system => AgentTranscriptRole.system,
+        _ => AgentTranscriptRole.model,
+      };
+
+  static AgentTranscriptKind _kindFor(MessageEntity message) =>
+      switch (message.messageType) {
+        .text => AgentTranscriptKind.text,
+        .image => AgentTranscriptKind.image,
+        .toolCall => AgentTranscriptKind.toolCall,
+        .system => AgentTranscriptKind.system,
+      };
+
+  static AgentTranscriptStatus _statusFor(MessageEntity message) =>
+      switch (message.status) {
+        .sending => AgentTranscriptStatus.sending,
+        .unfinished => AgentTranscriptStatus.unfinished,
+        .sent => AgentTranscriptStatus.sent,
+        .error => AgentTranscriptStatus.error,
+      };
+
+  static List<AgentTranscriptToolCallSnapshot> _toolCallSnapshots(
+    MessageMetadataEntity? metadata,
+  ) => [
+    for (final toolCall in _toolCallsFor(metadata))
+      AgentTranscriptToolCallSnapshot(
+        id: toolCall.id,
+        lifecycle: AgentToolStatusMapper.toLifecycle(toolCall.resultStatus),
+        argumentCharacterCount: toolCall.argumentsRaw.length,
+        resultCharacterCount: toolCall.responseRaw?.length ?? 0,
+      ),
+  ];
 }

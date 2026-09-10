@@ -36,9 +36,10 @@ int _sortProviders(ApiModelProvidersTable a, ApiModelProvidersTable b) {
 @DriftAccessor(tables: [ApiModelProviders])
 class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
     with _$ApiModelProvidersDaoMixin {
-  /// Creates a new [ApiModelProvidersDao] instance.
-  new(super.attachedDatabase);
+  ApiModelProvidersDao(super.attachedDatabase);
+}
 
+extension ApiModelProvidersDaoMethods on ApiModelProvidersDao {
   /// Retrieves all API model providers from the database.
   ///
   /// Returns a list of all providers ordered by popularity first, then by name.

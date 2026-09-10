@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
@@ -273,8 +274,11 @@ class const _SubAgentConversationGate({
 
     return switch (conversation) {
       AsyncData(:final value)
-          when value?.workspaceId == workspaceId &&
-              value?.parentConversationId == parentConversationId =>
+          when _isMatchingConversation(
+            value,
+            workspaceId,
+            parentConversationId,
+          ) =>
         ChatConversationScreen(
           workspaceId: workspaceId,
           chatId: chatId,
@@ -283,6 +287,14 @@ class const _SubAgentConversationGate({
       AsyncData() || AsyncLoading() || AsyncError() => const SizedBox.shrink(),
     };
   }
+
+  static bool _isMatchingConversation(
+    ConversationEntity? conversation,
+    String workspaceId,
+    String parentConversationId,
+  ) =>
+      conversation?.workspaceId == workspaceId &&
+      conversation?.parentConversationId == parentConversationId;
 }
 
 class ToolsRoute({required final String workspaceId})

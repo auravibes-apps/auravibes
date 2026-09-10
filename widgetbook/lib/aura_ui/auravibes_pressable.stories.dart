@@ -55,24 +55,41 @@ class _PressableDemoState extends State<PressableDemo> {
   var _pressed = false;
 
   @override
+  Widget build(BuildContext _) => _PressableControl(
+    demo: widget,
+    pressed: _pressed,
+    onPressed: _markPressed,
+  );
+
+  void _markPressed() => setState(() => _pressed = true);
+}
+
+class const _PressableControl({
+  required final PressableDemo demo,
+  required final bool pressed,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
+    final colors = context.auraColors;
+
     return AuraPressable(
       child: Text(
-        _pressed ? 'Pressed' : widget.label,
-        style: .new(color: context.auraColors.onSurface),
+        pressed ? 'Pressed' : demo.label,
+        style: .new(color: colors.onSurface),
       ),
-      color: context.auraColors.primary,
+      color: colors.primary,
       decoration: BoxDecoration(
-        color: context.auraColors.surface,
-        border: Border.all(color: context.auraColors.outline),
+        color: colors.surface,
+        border: Border.all(color: colors.outline),
         borderRadius: const BorderRadius.all(.circular(12)),
       ),
-      onPressed: widget.enabled ? () => setState(() => _pressed = true) : null,
+      onPressed: demo.enabled ? onPressed : null,
       padding: const AuraEdgeInsetsGeometry.symmetric(
         horizontal: .lg,
         vertical: .sm,
       ),
-      semanticLabel: widget.label,
+      semanticLabel: demo.label,
     );
   }
 }

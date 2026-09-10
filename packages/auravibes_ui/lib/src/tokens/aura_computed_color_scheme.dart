@@ -64,6 +64,14 @@ typedef _ComputedSchemeValues = ({
   Color scrim,
 });
 
+typedef _BrandColorRequest = ({
+  double hue,
+  bool isLight,
+  double lightLightness,
+  double darkLightness,
+  double chroma,
+});
+
 /// AuraColorScheme subclass whose 24 fields are derived from a single hue
 /// and a brightness preset, via OKLCH + APCA (WCAG 3.0 draft).
 ///
@@ -119,6 +127,9 @@ class AuraComputedColorScheme extends AuraColorScheme {
         shadow: values.shadow,
         scrim: values.scrim,
       );
+
+  @override
+  String toString() => 'AuraComputedColorScheme(primary: $primary)';
 }
 
 _ComputedSchemeValues _computedSchemeValues(
@@ -162,6 +173,11 @@ _ComputedSchemeValues _computedSchemeValuesFromPalette(
 }
 
 const _computedShadow = Color(0xFF000000);
+const _brandVariantLightLightness = 0.3;
+const _brandVariantChroma = 0.15;
+const _backgroundDarkLightness = 0.15;
+const _outlineVariantDarkLightness = 0.3;
+const _semanticLightLightness = 0.3;
 
 Color _computedScrim(bool isLight) =>
     isLight ? const Color(0x80000000) : const Color(0xB3000000);
@@ -182,17 +198,27 @@ typedef _ComputedBrandPair = ({
 });
 
 _ComputedBrandPair _computedBrandPair(double hue, bool isLight) => (
-  primary: _brandColor(hue, isLight, 0.4, 0.78, 0.17),
-  variant: _brandColor(hue, isLight, 0.3, 0.68, 0.15),
+  primary: _brandColor((
+    hue: hue,
+    isLight: isLight,
+    lightLightness: 0.4,
+    darkLightness: 0.78,
+    chroma: 0.17,
+  )),
+  variant: _brandColor((
+    hue: hue,
+    isLight: isLight,
+    lightLightness: _brandVariantLightLightness,
+    darkLightness: 0.68,
+    chroma: _brandVariantChroma,
+  )),
 );
 
-AuraComputedColor _brandColor(
-  double hue,
-  bool isLight,
-  double lightLightness,
-  double darkLightness,
-  double chroma,
-) => _computedColor(hue, isLight ? lightLightness : darkLightness, chroma);
+AuraComputedColor _brandColor(_BrandColorRequest request) => _computedColor(
+  request.hue,
+  request.isLight ? request.lightLightness : request.darkLightness,
+  request.chroma,
+);
 
 _ComputedSurfaceValues _computedSurfaceValues(double primaryHue, bool isLight) {
   AuraComputedColor neutral(double lightLightness, double darkLightness) =>
@@ -201,15 +227,15 @@ _ComputedSurfaceValues _computedSurfaceValues(double primaryHue, bool isLight) {
   return (
     surface: neutral(0.98, 0.18),
     surfaceVariant: neutral(0.96, 0.22),
-    background: neutral(0.94, 0.15),
+    background: neutral(0.94, _backgroundDarkLightness),
     outline: neutral(0.65, 0.45),
-    outlineVariant: neutral(0.8, 0.3),
+    outlineVariant: neutral(0.8, _outlineVariantDarkLightness),
   );
 }
 
 _ComputedSemanticValues _computedSemanticValues(bool isLight) {
   AuraComputedColor semantic(double hue) =>
-      _computedColor(hue, isLight ? 0.3 : 0.82, 0.2);
+      _computedColor(hue, isLight ? _semanticLightLightness : 0.82, 0.2);
 
   return (
     error: semantic(HueColorValues.error),

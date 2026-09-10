@@ -5,6 +5,13 @@ abstract final class ChatAttachmentModality {
   static const int maxChatAttachmentBytes = 25 * 1024 * 1024;
   static const int maxChatPromptAttachmentBytes = maxChatAttachmentBytes;
   static const _documentExtensions = ['pdf', 'txt', 'md', 'csv', 'json'];
+  static const _extensionsByModality = <String, List<String>>{
+    'document': _documentExtensions,
+    'pdf': ['pdf'],
+    'image': ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    'audio': ['mp3', 'wav'],
+    'video': ['mp4', 'mov', 'mkv', 'webm'],
+  };
 
   static MessageAttachmentModality forMimeType(String mimeType) {
     return MessageAttachmentModality.values.byName(
@@ -32,16 +39,10 @@ abstract final class ChatAttachmentModality {
     final supported = modalities.map((value) => value.toLowerCase()).toSet();
     if (supported.contains('file')) return null;
 
-    final extensions = <String>{};
-    if (supported.contains('document')) extensions.addAll(_documentExtensions);
-    if (supported.contains('pdf')) extensions.addAll(const ['pdf']);
-    if (supported.contains('image')) {
-      extensions.addAll(const ['jpg', 'jpeg', 'png', 'webp', 'gif']);
-    }
-    if (supported.contains('audio')) extensions.addAll(const ['mp3', 'wav']);
-    if (supported.contains('video')) {
-      extensions.addAll(const ['mp4', 'mov', 'mkv', 'webm']);
-    }
+    final extensions = <String>{
+      for (final entry in _extensionsByModality.entries)
+        if (supported.contains(entry.key)) ...entry.value,
+    };
 
     if (extensions.isNotEmpty) return extensions.toList(growable: false);
 

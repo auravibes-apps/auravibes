@@ -6,6 +6,25 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
+typedef _AuraTileAppearance = ({
+  AuraTile tile,
+  AuraColorScheme colors,
+  AuraTheme theme,
+  bool canInteract,
+  bool focused,
+  double overlayAlpha,
+});
+
+typedef _AuraTileCallbacks = ({
+  VoidCallback? onInvoke,
+  ValueChanged<bool> onFocusHighlight,
+  ValueChanged<bool> onHoverHighlight,
+  GestureTapDownCallback? onTapDown,
+  GestureTapUpCallback? onTapUp,
+  GestureTapCallback? onTap,
+  GestureTapCancelCallback onTapCancel,
+});
+
 /// A customizable tile component following the Aura design system.
 ///
 /// Tiles are horizontally expanded interactive elements similar to buttons
@@ -79,54 +98,198 @@ class _AuraTileState extends State<AuraTile> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final auraTheme = context.auraTheme;
-    final tileChild = widget.child;
-    final content = _AuraTileContent(
-      child: tileChild,
-      leading: widget.leading,
-      trailing: widget.trailing,
-      isLoading: widget.isLoading,
-      isChildEmpty:
-          tileChild is SizedBox &&
-          tileChild.width == 0 &&
-          tileChild.height == 0,
-      loadingColor: _getTextColor(auraColors),
-      textStyle: _getTextStyle(auraColors, typography: auraTheme.typography),
-    );
+  Widget build(BuildContext context) => _AuraTileLayout(
+    appearance: _appearance(context),
+    callbacks: _callbacks(),
+  );
 
-    final tile = AnimatedContainer(
-      padding: _getPadding(spacing: context.auraTheme.spacing),
-      decoration: BoxDecoration(
-        color: _getBackgroundColor(auraColors),
-        border: Border.fromBorderSide(.new(color: _getBorderColor(auraColors))),
-        borderRadius: BorderRadius.all(
-          .circular(context.auraTheme.fromBorderRadius(.lg)),
-        ),
-        boxShadow: _getBoxShadow(),
-      ),
-      child: content,
-      duration: auraTheme.animation.normal,
-    );
+  _AuraTileAppearance _appearance(BuildContext context) => (
+    tile: widget,
+    colors: context.auraColors,
+    theme: context.auraTheme,
+    canInteract: _canInteract,
+    focused: _focused,
+    overlayAlpha: _overlayAlpha,
+  );
 
-    final tileContent = _AuraTileInteraction(
-      tile: tile,
-      enabled: _canInteract,
+  _AuraTileCallbacks _callbacks() {
+    final canInteract = _canInteract;
+
+    return (
       onInvoke: widget.onTap,
-      onFocusHighlight: (value) => setState(() => _focused = value),
-      onHoverHighlight: (value) => setState(() => _hovered = value),
-      onTapDown: _canInteract ? (_) => setState(() => _pressed = true) : null,
-      onTapUp: _canInteract ? (_) => _clearPressed() : null,
-      onTap: _canInteract ? widget.onTap : null,
+      onFocusHighlight: _setFocused,
+      onHoverHighlight: _setHovered,
+      onTapDown: canInteract ? _setPressed : null,
+      onTapUp: canInteract ? _clearPressedOnTap : null,
+      onTap: canInteract ? widget.onTap : null,
       onTapCancel: _clearPressed,
     );
+  }
 
-    final sizedTile = widget.expand
-        ? SizedBox(width: .infinity, child: tileContent)
-        : tileContent;
+  void _setFocused(bool value) => setState(() => _focused = value);
 
-    if (!_canInteract) return sizedTile;
+  void _setHovered(bool value) => setState(() => _hovered = value);
+
+  void _setPressed(TapDownDetails _) => setState(() => _pressed = true);
+
+  void _clearPressedOnTap(TapUpDetails _) => _clearPressed();
+
+  void _clearPressed() {
+    if (!_pressed) return;
+    setState(() => _pressed = false);
+  }
+}
+
+class const _AuraTileLayout({
+  required final _AuraTileAppearance appearance,
+  required final _AuraTileCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final tile = appearance.tile;
+    final enabled = appearance.canInteract;
+
+    return _AuraTileSemantics(
+      tile: _AuraTileInteraction(
+        tile: _AuraTileSurface(appearance: appearance),
+        enabled: enabled,
+        callbacks: callbacks,
+      ),
+      enabled: enabled,
+      expand: tile.expand,
+      semanticLabel: tile.semanticLabel,
+      onTap: tile.onTap,
+    );
+  }
+}
+
+class const _AuraTileSurface({required final _AuraTileAppearance appearance})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AnimatedContainer(
+    padding: _tilePadding(appearance),
+    decoration: _tileDecoration(appearance),
+    child: _AuraTileContent(
+      appearance: appearance,
+      loadingColor: _tileTextColor(appearance),
+      textStyle: _tileTextStyle(appearance),
+    ),
+    duration: appearance.theme.animation.normal,
+  );
+}
+
+class const _AuraTileContent({
+  required final _AuraTileAppearance appearance,
+  required final Color loadingColor,
+  required final TextStyle textStyle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final tile = appearance.tile;
+    if (tile.isLoading) return _AuraTileLoading(color: loadingColor);
+    if (_isEmptyTileChild(tile.child) &&
+        tile.leading != null &&
+        tile.trailing == null) {
+      return Center(child: tile.leading);
+    }
+
+    return _AuraTileRow(
+      child: tile.child,
+      leading: tile.leading,
+      trailing: tile.trailing,
+      textStyle: textStyle,
+    );
+  }
+}
+
+class const _AuraTileLoading({required final Color color})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: AuraLoadingCircle(
+      tint: .primary,
+      size: 20,
+      itemBuilder: (context, _) => DecoratedBox(
+        decoration: BoxDecoration(color: color, shape: .circle),
+      ),
+    ),
+  );
+}
+
+class const _AuraTileRow({
+  required final Widget child,
+  required final Widget? leading,
+  required final Widget? trailing,
+  required final TextStyle textStyle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      if (leading case final value?) ...[value, const AuraSizedBox(width: .sm)],
+      Flexible(
+        fit: .tight,
+        child: DefaultTextStyle(style: textStyle, child: child),
+      ),
+      if (trailing case final value?) ...[
+        const AuraSizedBox(width: .sm),
+        value,
+      ],
+    ],
+  );
+}
+
+class const _AuraTileInteraction({
+  required final Widget tile,
+  required final bool enabled,
+  required final _AuraTileCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FocusableActionDetector(
+    enabled: enabled,
+    actions: {
+      ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: _invoke),
+    },
+    onShowFocusHighlight: callbacks.onFocusHighlight,
+    onShowHoverHighlight: callbacks.onHoverHighlight,
+    mouseCursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+    child: _AuraTileGesture(tile: tile, callbacks: callbacks),
+  );
+
+  Null _invoke(ActivateIntent _) {
+    callbacks.onInvoke?.call();
+
+    return null;
+  }
+}
+
+class const _AuraTileGesture({
+  required final Widget tile,
+  required final _AuraTileCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    child: tile,
+    onTapDown: callbacks.onTapDown,
+    onTapUp: callbacks.onTapUp,
+    onTap: callbacks.onTap,
+    onTapCancel: callbacks.onTapCancel,
+    behavior: .opaque,
+    excludeFromSemantics: true,
+  );
+}
+
+class const _AuraTileSemantics({
+  required final Widget tile,
+  required final bool enabled,
+  required final bool expand,
+  required final String? semanticLabel,
+  required final VoidCallback? onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final sizedTile = expand ? SizedBox(width: .infinity, child: tile) : tile;
+
+    if (!enabled) return sizedTile;
 
     return Semantics(
       child: sizedTile,
@@ -134,193 +297,114 @@ class _AuraTileState extends State<AuraTile> {
       excludeSemantics: true,
       enabled: true,
       button: true,
-      label: widget.semanticLabel ?? 'Tile',
-      onTap: widget.onTap,
-    );
-  }
-
-  void _clearPressed() {
-    if (!_pressed) return;
-    setState(() => _pressed = false);
-  }
-
-  Color _getBackgroundColor(AuraColorScheme colors) {
-    if (!widget.enabled) return colors.outlineVariant;
-
-    final baseColor = switch (widget.variant) {
-      .primary => colors.primary,
-      .surface => colors.surface,
-      .ghost => DesignColors.transparent,
-      .selected => colors.primary.withValues(alpha: 0.1),
-      .error => colors.error,
-    };
-
-    if (!_canInteract) return baseColor;
-
-    final overlayAlpha = _overlayAlpha;
-
-    if (overlayAlpha == 0) return baseColor;
-
-    return Color.alphaBlend(
-      colors.primary.withValues(alpha: overlayAlpha),
-      baseColor,
-    );
-  }
-
-  Color _getBorderColor(AuraColorScheme colors) {
-    if (_focused && _canInteract) return colors.primary;
-
-    return Colors.transparent;
-  }
-
-  List<BoxShadow> _getBoxShadow() {
-    if (widget.variant == AuraTileVariant.surface) {
-      return [DesignShadows.sm];
-    }
-
-    return [];
-  }
-
-  TextStyle _getTextStyle(
-    AuraColorScheme colors, {
-    required AuraTypographyScale typography,
-  }) {
-    final fontSize = switch (widget.size) {
-      .small => typography.fontSizeSm,
-      .medium => typography.fontSizeBase,
-      .large => typography.fontSizeLg,
-    };
-
-    final fontWeight = switch (widget.size) {
-      .small => typography.fontWeightMedium,
-      .medium => typography.fontWeightMedium,
-      .large => typography.fontWeightSemibold,
-    };
-
-    return TextStyle(
-      color: _getTextColor(colors),
-      fontSize: fontSize,
-      fontWeight: fontWeight,
-      height: typography.lineHeightBase,
-    );
-  }
-
-  Color _getTextColor(AuraColorScheme colors) {
-    if (!widget.enabled) return colors.mutedForeground;
-
-    return switch (widget.variant) {
-      .primary => colors.onTint(.primary),
-      .surface => colors.foregroundOnSurface,
-      .ghost => colors.primary,
-      .selected => colors.primary,
-      .error => colors.onTint(.error),
-    };
-  }
-
-  EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
-    return switch (widget.size) {
-      .small => EdgeInsets.symmetric(
-        vertical: spacing.sm,
-        horizontal: spacing.md,
-      ),
-      .medium => EdgeInsets.symmetric(
-        vertical: spacing.md,
-        horizontal: spacing.lg,
-      ),
-      .large => EdgeInsets.symmetric(
-        vertical: spacing.lg,
-        horizontal: spacing.xl,
-      ),
-    };
-  }
-}
-
-class const _AuraTileContent({
-  required final Widget child,
-  required final Widget? leading,
-  required final Widget? trailing,
-  required final bool isLoading,
-  required final bool isChildEmpty,
-  required final Color loadingColor,
-  required final TextStyle textStyle,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return Center(
-        child: AuraLoadingCircle(
-          tint: .primary,
-          size: 20,
-          itemBuilder: (context, _) => DecoratedBox(
-            decoration: BoxDecoration(color: loadingColor, shape: .circle),
-          ),
-        ),
-      );
-    }
-    if (isChildEmpty && leading != null && trailing == null) {
-      return Center(child: leading);
-    }
-
-    return Row(
-      children: [
-        if (leading case final value?) ...[
-          value,
-          const AuraSizedBox(width: .sm),
-        ],
-        Flexible(
-          fit: .tight,
-          child: DefaultTextStyle(style: textStyle, child: child),
-        ),
-        if (trailing case final value?) ...[
-          const AuraSizedBox(width: .sm),
-          value,
-        ],
-      ],
+      label: semanticLabel ?? 'Tile',
+      onTap: onTap,
     );
   }
 }
 
-class const _AuraTileInteraction({
-  required final Widget tile,
-  required final bool enabled,
-  required final VoidCallback? onInvoke,
-  required final ValueChanged<bool> onFocusHighlight,
-  required final ValueChanged<bool> onHoverHighlight,
-  required final GestureTapDownCallback? onTapDown,
-  required final GestureTapUpCallback? onTapUp,
-  required final GestureTapCallback? onTap,
-  required final GestureTapCancelCallback onTapCancel,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return FocusableActionDetector(
-      enabled: enabled,
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (_) {
-            onInvoke?.call();
+BoxDecoration _tileDecoration(_AuraTileAppearance appearance) => BoxDecoration(
+  color: _tileBackgroundColor(appearance),
+  border: Border.fromBorderSide(.new(color: _tileBorderColor(appearance))),
+  borderRadius: BorderRadius.all(
+    .circular(appearance.theme.fromBorderRadius(.lg)),
+  ),
+  boxShadow: _tileBoxShadow(appearance),
+);
 
-            return null;
-          },
-        ),
-      },
-      onShowFocusHighlight: onFocusHighlight,
-      onShowHoverHighlight: onHoverHighlight,
-      mouseCursor: enabled
-          ? SystemMouseCursors.click
-          : SystemMouseCursors.basic,
-      child: GestureDetector(
-        child: tile,
-        onTapDown: onTapDown,
-        onTapUp: onTapUp,
-        onTap: onTap,
-        onTapCancel: onTapCancel,
-        behavior: .opaque,
-        excludeFromSemantics: true,
-      ),
-    );
+Color _tileBackgroundColor(_AuraTileAppearance appearance) {
+  final baseColor = _tileBaseBackgroundColor(appearance);
+  if (!appearance.canInteract || appearance.overlayAlpha == 0) {
+    return baseColor;
   }
+
+  return Color.alphaBlend(
+    appearance.colors.primary.withValues(alpha: appearance.overlayAlpha),
+    baseColor,
+  );
 }
+
+Color _tileBaseBackgroundColor(_AuraTileAppearance appearance) {
+  final tile = appearance.tile;
+  final colors = appearance.colors;
+  if (!tile.enabled) return colors.outlineVariant;
+
+  return switch (tile.variant) {
+    .primary => colors.primary,
+    .surface => colors.surface,
+    .ghost => DesignColors.transparent,
+    .selected => colors.primary.withValues(alpha: 0.1),
+    .error => colors.error,
+  };
+}
+
+Color _tileBorderColor(_AuraTileAppearance appearance) =>
+    appearance.focused && appearance.canInteract
+    ? appearance.colors.primary
+    : Colors.transparent;
+
+List<BoxShadow> _tileBoxShadow(_AuraTileAppearance appearance) =>
+    appearance.tile.variant == AuraTileVariant.surface
+    ? [DesignShadows.sm]
+    : [];
+
+TextStyle _tileTextStyle(_AuraTileAppearance appearance) => TextStyle(
+  color: _tileTextColor(appearance),
+  fontSize: _tileFontSize(appearance),
+  fontWeight: _tileFontWeight(appearance),
+  height: appearance.theme.typography.lineHeightBase,
+);
+
+double _tileFontSize(_AuraTileAppearance appearance) {
+  final typography = appearance.theme.typography;
+
+  return switch (appearance.tile.size) {
+    .small => typography.fontSizeSm,
+    .medium => typography.fontSizeBase,
+    .large => typography.fontSizeLg,
+  };
+}
+
+FontWeight _tileFontWeight(_AuraTileAppearance appearance) =>
+    switch (appearance.tile.size) {
+      .small || .medium => appearance.theme.typography.fontWeightMedium,
+      .large => appearance.theme.typography.fontWeightSemibold,
+    };
+
+Color _tileTextColor(_AuraTileAppearance appearance) {
+  final tile = appearance.tile;
+  final colors = appearance.colors;
+  if (!tile.enabled) return colors.mutedForeground;
+
+  return switch (tile.variant) {
+    .primary => colors.onTint(.primary),
+    .surface => colors.foregroundOnSurface,
+    .ghost || .selected => colors.primary,
+    .error => colors.onTint(.error),
+  };
+}
+
+EdgeInsets _tilePadding(_AuraTileAppearance appearance) {
+  final spacing = appearance.theme.spacing;
+
+  return switch (appearance.tile.size) {
+    .small => EdgeInsets.symmetric(
+      vertical: spacing.sm,
+      horizontal: spacing.md,
+    ),
+    .medium => EdgeInsets.symmetric(
+      vertical: spacing.md,
+      horizontal: spacing.lg,
+    ),
+    .large => EdgeInsets.symmetric(
+      vertical: spacing.lg,
+      horizontal: spacing.xl,
+    ),
+  };
+}
+
+bool _isEmptyTileChild(Widget child) =>
+    child is SizedBox && child.width == 0 && child.height == 0;
 
 /// The visual variant of a [AuraTile].
 enum AuraTileVariant {

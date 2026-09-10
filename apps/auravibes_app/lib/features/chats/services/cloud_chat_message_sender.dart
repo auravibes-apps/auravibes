@@ -22,20 +22,20 @@ class const _QueueMessageInput({
   required final _QueueMessageTarget target,
   required final _QueueMessagePayload payload,
 }) {
-  CloudChatGateway get chat => target.chat;
+  CloudChatGateway get _chat => target.chat;
 
-  String get conversationId => target.conversationId;
+  String get _conversationId => target.conversationId;
 
-  int get projectionRevision =>
+  int get _projectionRevision =>
       target.projection.conversation.projectionRevision;
 
-  String get content => payload.draft.text;
+  String get _content => payload.draft.text;
 
-  List<String> get attachmentIds => payload.uploadedObjects
+  List<String> get _attachmentIds => payload.uploadedObjects
       .map((object) => '${object.objectId}')
       .toList(growable: false);
 
-  String? get metadataJson => payload.draft.metadataJson;
+  String? get _metadataJson => payload.draft.metadataJson;
 }
 
 class const _QueueMessagePayload({
@@ -54,11 +54,13 @@ class const CloudChatMessageSender({
     _capabilities.require(
       supported: draft.attachments.isEmpty || _capabilities.attachments,
     );
-    final chat = await _loadGateway();
-    await _sendDraft(chat, conversationId, draft);
+    final chat = await this._loadGateway();
+    await this._sendDraft(chat, conversationId, draft);
     _invalidateMessages(conversationId);
   }
+}
 
+extension on CloudChatMessageSender {
   Future<void> _sendDraft(
     CloudChatGateway chat,
     String conversationId,
@@ -66,7 +68,7 @@ class const CloudChatMessageSender({
   ) async {
     final input = await _prepareQueueInput(chat, conversationId, draft);
     final snapshot = await _queueMessage(input);
-    await _continueIfReady(chat, conversationId, snapshot);
+    await this._continueIfReady(chat, conversationId, snapshot);
   }
 
   Future<_QueueMessageInput> _prepareQueueInput(
@@ -135,20 +137,22 @@ class const CloudChatMessageSender({
 
   Future<ConversationSnapshot> _queueMessage(_QueueMessageInput input) async {
     try {
-      final queued = await _queueMessageWithoutCleanup(input);
-      _logQueuedMessage(
-        input.conversationId,
+      final queued = await this._queueMessageWithoutCleanup(input);
+      this._logQueuedMessage(
+        input._conversationId,
         queued,
-        input.attachmentIds.length,
+        input._attachmentIds.length,
       );
 
       return queued;
     } on Object catch (error, stackTrace) {
-      await _deleteUploaded(input);
+      await this._deleteUploaded(input);
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
+}
 
+extension on CloudChatMessageSender {
   Future<void> _deleteUploaded(_QueueMessageInput input) async {
     await input.payload.attachments?.deleteUploaded(
       input.payload.uploadedObjects,
@@ -157,14 +161,14 @@ class const CloudChatMessageSender({
 
   Future<ConversationSnapshot> _queueMessageWithoutCleanup(
     _QueueMessageInput input,
-  ) => input.chat.queueConversationMessage(
+  ) => input._chat.queueConversationMessage(
     requestId: _newRequestId(),
-    conversationId: input.conversationId,
-    expectedProjectionRevision: input.projectionRevision,
+    conversationId: input._conversationId,
+    expectedProjectionRevision: input._projectionRevision,
     clientMessageId: _newRequestId(),
-    content: input.content,
-    attachmentIds: input.attachmentIds,
-    metadataJson: input.metadataJson,
+    content: input._content,
+    attachmentIds: input._attachmentIds,
+    metadataJson: input._metadataJson,
   );
 
   String _newRequestId() => const UuidV7().generate();
@@ -196,7 +200,7 @@ class const CloudChatMessageSender({
       conversationId,
       snapshot,
     );
-    _logExecutionAcknowledged(conversationId, execution);
+    this._logExecutionAcknowledged(conversationId, execution);
   }
 
   bool _shouldContinue(ConversationSnapshot snapshot) {

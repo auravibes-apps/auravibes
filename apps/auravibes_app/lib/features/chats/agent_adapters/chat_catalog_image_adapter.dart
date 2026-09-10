@@ -154,28 +154,19 @@ class _ResolvedChatCatalogImage extends StatelessWidget {
   final String? label;
   final String? fallbackText;
 
-  ChatCatalogImageVariant get variant => _imageVariant(data['variant']);
-
-  BoxFit get fit => _imageFit(data['fit']);
-
-  double? get width => (data['width'] as num?)?.toDouble();
-
-  double? get height => (data['height'] as num?)?.toDouble();
-
-  IconData? get fallbackIcon =>
-      _imageFallbackIcon(data['fallbackIcon'], resolveIcon);
-
   @override
-  Widget build(BuildContext context) => ChatCatalogImage(
-    url: url,
-    label: label,
-    variant: variant,
-    fit: fit,
-    width: width,
-    height: height,
-    fallbackText: fallbackText,
-    fallbackIcon: fallbackIcon,
-  );
+  Widget build(BuildContext context) {
+    return ChatCatalogImage(
+      url: url,
+      label: label,
+      variant: _imageVariant(data['variant']),
+      fit: _imageFit(data['fit']),
+      width: (data['width'] as num?)?.toDouble(),
+      height: (data['height'] as num?)?.toDouble(),
+      fallbackText: fallbackText,
+      fallbackIcon: _imageFallbackIcon(data['fallbackIcon'], resolveIcon),
+    );
+  }
 }
 
 ChatCatalogImageVariant _imageVariant(Object? value) => switch (value) {
@@ -270,30 +261,44 @@ class _ChatCatalogImageSizing extends StatelessWidget {
   final ChatCatalogImage image;
   final Future<Uint8List>? future;
 
-  bool get circular => image.variant != ChatCatalogImageVariant.normal;
-
-  double get width =>
-      _dimension(image.width, _defaultImageWidth(image.variant));
-
-  double get height =>
-      _dimension(image.height, circular ? width : _defaultImageHeight);
-
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (_, constraints) =>
-        _ChatCatalogImageConstrained(source: this, constraints: constraints),
-  );
+  Widget build(BuildContext context) {
+    final circular = image.variant != ChatCatalogImageVariant.normal;
+    final width = _dimension(image.width, _defaultImageWidth(image.variant));
+    final height = _dimension(
+      image.height,
+      circular ? width : _defaultImageHeight,
+    );
+
+    return LayoutBuilder(
+      builder: (_, constraints) => _ChatCatalogImageConstrained(
+        image: image,
+        future: future,
+        circular: circular,
+        width: math.min(width, constraints.maxWidth),
+        height: math.min(height, constraints.maxHeight),
+        constraints: constraints,
+      ),
+    );
+  }
 }
 
 class _ChatCatalogImageConstrained extends StatelessWidget {
-  const new({required this.source, required this.constraints});
+  const new({
+    required this.image,
+    required this.future,
+    required this.circular,
+    required this.width,
+    required this.height,
+    required this.constraints,
+  });
 
-  final _ChatCatalogImageSizing source;
+  final ChatCatalogImage image;
+  final Future<Uint8List>? future;
+  final bool circular;
+  final double width;
+  final double height;
   final BoxConstraints constraints;
-
-  double get width => math.min(source.width, constraints.maxWidth);
-
-  double get height => math.min(source.height, constraints.maxHeight);
 
   @override
   Widget build(BuildContext context) => _ChatCatalogImageFrame(source: this);
@@ -323,12 +328,12 @@ class _ChatCatalogImageBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final side = math.min(source.width, source.height);
-    final circular = source.source.circular;
+    final circular = source.circular;
 
     return SizedBox(
       width: circular ? side : source.width,
       height: circular ? side : source.height,
-      child: _ChatCatalogImageShape(source: source.source),
+      child: _ChatCatalogImageShape(source: source),
     );
   }
 }
@@ -336,7 +341,7 @@ class _ChatCatalogImageBox extends StatelessWidget {
 class _ChatCatalogImageShape extends StatelessWidget {
   const new({required this.source});
 
-  final _ChatCatalogImageSizing source;
+  final _ChatCatalogImageConstrained source;
 
   @override
   Widget build(BuildContext context) {
@@ -350,16 +355,6 @@ class _ChatCatalogImageFuture extends StatelessWidget {
   const new({required this.source});
 
   final _ChatCatalogImageSizing source;
-
-  String get url => source.image.url;
-
-  BoxFit get fit => source.image.fit;
-
-  String? get label => source.image.label;
-
-  String? get fallbackText => source.image.fallbackText;
-
-  IconData? get fallbackIcon => source.image.fallbackIcon;
 
   @override
   Widget build(BuildContext context) => FutureBuilder<Uint8List>(
@@ -381,8 +376,8 @@ class _ChatCatalogImageSnapshot extends StatelessWidget {
     if (snapshot.hasError) {
       return _ImageStatus(
         error: true,
-        fallbackText: source.fallbackText,
-        fallbackIcon: source.fallbackIcon,
+        fallbackText: source.source.image.fallbackText,
+        fallbackIcon: source.source.image.fallbackIcon,
       );
     }
     final bytes = snapshot.data;
@@ -407,16 +402,16 @@ class _LoadedChatCatalogImage extends StatelessWidget {
 class _LoadedCatalogAuraImage extends AuraImage {
   new({required this.source, required this.bytes})
     : super(
-        url: source.url,
-        key: ValueKey(source.url),
-        fit: source.fit,
-        semanticLabel: source.label,
+        url: source.source.image.url,
+        key: ValueKey(source.source.image.url),
+        fit: source.source.image.fit,
+        semanticLabel: source.source.image.label,
         imageProvider: MemoryImage(bytes),
         loadingChild: const _ImageStatus(),
         errorChild: _ImageStatus(
           error: true,
-          fallbackText: source.fallbackText,
-          fallbackIcon: source.fallbackIcon,
+          fallbackText: source.source.image.fallbackText,
+          fallbackIcon: source.source.image.fallbackIcon,
         ),
       );
 

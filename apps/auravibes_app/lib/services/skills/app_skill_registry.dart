@@ -18,26 +18,7 @@ const String _createCredentialDescriptionKey =
 class const AppSkillRegistry() {
   List<AppSkillDefinition> getAll() => [
     _localizedSkillsManagerDefinition(),
-    AppSkillDefinition(
-      identifier: agentsSkillSlug,
-      slug: agentsSkillSlug,
-      title: agentsSkillTitle,
-      description: 'Inspect enabled workspace agents.',
-      content: agentsSkillContent,
-      nativeTools: [
-        AppSkillToolDefinition(
-          slug: listAgentsToolSpec.name,
-          title: listAgentsToolSpec.name,
-          description: listAgentsToolSpec.description,
-          inputJsonSchema: Map<String, dynamic>.from(
-            listAgentsToolSpec.inputJsonSchema,
-          ),
-        ),
-      ],
-      titleKey: LocaleKeys.app_skills_agents_title,
-      descriptionKey: LocaleKeys.app_skills_agents_description,
-      contentKey: LocaleKeys.app_skills_agents_content,
-    ),
+    _agentsSkillDefinition(),
     ...serviceSkillDefinitions,
   ];
 
@@ -58,6 +39,27 @@ class const AppSkillRegistry() {
   }
 }
 
+AppSkillDefinition _agentsSkillDefinition() => AppSkillDefinition(
+  identifier: agentsSkillSlug,
+  slug: agentsSkillSlug,
+  title: agentsSkillTitle,
+  description: 'Inspect enabled workspace agents.',
+  content: agentsSkillContent,
+  nativeTools: [_agentsListTool()],
+  titleKey: LocaleKeys.app_skills_agents_title,
+  descriptionKey: LocaleKeys.app_skills_agents_description,
+  contentKey: LocaleKeys.app_skills_agents_content,
+);
+
+AppSkillToolDefinition _agentsListTool() => AppSkillToolDefinition(
+  slug: listAgentsToolSpec.name,
+  title: listAgentsToolSpec.name,
+  description: listAgentsToolSpec.description,
+  inputJsonSchema: Map<String, dynamic>.from(
+    listAgentsToolSpec.inputJsonSchema,
+  ),
+);
+
 AppSkillDefinition _localizedSkillsManagerDefinition() {
   const definition = skillsManagerSkillDefinition;
 
@@ -67,22 +69,22 @@ AppSkillDefinition _localizedSkillsManagerDefinition() {
     title: definition.title,
     description: definition.description,
     content: definition.content,
-    nativeTools: [
-      for (final tool in definition.nativeTools)
-        AppSkillToolDefinition(
-          slug: tool.slug,
-          title: tool.title,
-          description: tool.description,
-          inputJsonSchema: Map<String, dynamic>.from(tool.inputJsonSchema),
-          titleKey: _toolTitleKey(tool.slug),
-          descriptionKey: _toolDescriptionKey(tool.slug),
-        ),
-    ],
+    nativeTools: definition.nativeTools.map(_localizedTool).toList(),
     titleKey: LocaleKeys.app_skills_skills_manager_title,
     descriptionKey: LocaleKeys.app_skills_skills_manager_description,
     contentKey: LocaleKeys.app_skills_skills_manager_content,
   );
 }
+
+AppSkillToolDefinition _localizedTool(AppSkillToolDefinition tool) =>
+    AppSkillToolDefinition(
+      slug: tool.slug,
+      title: tool.title,
+      description: tool.description,
+      inputJsonSchema: Map<String, dynamic>.from(tool.inputJsonSchema),
+      titleKey: _toolTitleKey(tool.slug),
+      descriptionKey: _toolDescriptionKey(tool.slug),
+    );
 
 String? _toolTitleKey(String slug) => switch (slug) {
   'create_user_skill' =>

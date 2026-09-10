@@ -1,4 +1,3 @@
-// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
@@ -7,7 +6,8 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:riverpod/src/providers/provider.dart';
+import 'package:riverpod/misc.dart';
+import 'package:riverpod/riverpod.dart';
 
 class const CreateSkillTemplateToolUsecase(
   final SkillTemplateToolsRepository? _skillTemplateToolsRepository, {
@@ -20,40 +20,62 @@ class const CreateSkillTemplateToolUsecase(
     String skillId,
     SkillTemplateToolToCreate tool,
   ) async {
-    final credentialDefinitions = await _credentialDefinitions(skillId);
-    validateSkillTemplateTool(
-      templateJson: tool.templateJson,
-      inputsJson: tool.inputsJson,
-      credentialDefinitions: credentialDefinitions,
-    );
+    final canonical = await _validatedTool(skillId, tool);
+    return await _createTool(skillId, canonical);
+  }
 
-    final canonical = tool.copyWith(
-      templateJson: canonicalSkillUrlTemplateJson(tool.templateJson),
-    );
+  Future<SkillTemplateToolEntity> _createTool(
+    String skillId,
+    SkillTemplateToolToCreate tool,
+  ) async {
     final cloud = cloudStore;
-    if (cloud != null) return await cloud.createTool(skillId, canonical);
+    if (cloud != null) return await cloud.createTool(skillId, tool);
     final repository = _skillTemplateToolsRepository;
     if (repository == null) {
       throw StateError('Skill template tool store is unavailable');
     }
 
-    return await repository.createTool(skillId, canonical);
+    return await repository.createTool(skillId, tool);
+  }
+
+  Future<SkillTemplateToolToCreate> _validatedTool(
+    String skillId,
+    SkillTemplateToolToCreate tool,
+  ) async {
+    validateSkillTemplateTool(
+      templateJson: tool.templateJson,
+      inputsJson: tool.inputsJson,
+      credentialDefinitions: await _credentialDefinitions(skillId),
+    );
+
+    return tool.copyWith(
+      templateJson: canonicalSkillUrlTemplateJson(tool.templateJson),
+    );
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
   _credentialDefinitions(String skillId) async {
     final cloud = cloudStore;
-    if (cloud != null) {
-      final skill = await cloud.skill(skillId);
-      final credentialDefinitionId = skill?.credentialDefinitionId;
-      if (credentialDefinitionId == null) return const {};
-      final definition = await cloud.definition(credentialDefinitionId);
-      if (definition == null) return const {};
+    if (cloud != null) return _cloudCredentialDefinitions(cloud, skillId);
 
-      return SkillCredentialAttributeDefinition.parseMap(
-        definition.attributesJson,
-      );
-    }
+    return _localCredentialDefinitions(skillId);
+  }
+
+  Future<Map<String, SkillCredentialAttributeDefinition>>
+  _cloudCredentialDefinitions(CloudSkillStore cloud, String skillId) async {
+    final skill = await cloud.skill(skillId);
+    final credentialDefinitionId = skill?.credentialDefinitionId;
+    if (credentialDefinitionId == null) return const {};
+    final definition = await cloud.definition(credentialDefinitionId);
+    if (definition == null) return const {};
+
+    return SkillCredentialAttributeDefinition.parseMap(
+      definition.attributesJson,
+    );
+  }
+
+  Future<Map<String, SkillCredentialAttributeDefinition>>
+  _localCredentialDefinitions(String skillId) async {
     final skillsRepository = this.skillsRepository;
     final credentialDefinitionsRepository =
         skillCredentialDefinitionsRepository;

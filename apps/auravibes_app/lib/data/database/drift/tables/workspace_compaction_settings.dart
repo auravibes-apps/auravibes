@@ -7,15 +7,18 @@ import 'package:drift/drift.dart';
 
 @DataClassName('WorkspaceCompactionSettingsTable')
 class WorkspaceCompactionSettings extends Table with TableMixin {
-  TextColumn get workspaceId =>
-      text().references(Workspaces, #id, onDelete: .cascade)();
+  late final workspaceId = text().references(
+    Workspaces,
+    #id,
+    onDelete: .cascade,
+  )();
 
-  BoolColumn get autoCompactEnabled => boolean().nullable()();
+  late final autoCompactEnabled = boolean().nullable()();
 
-  IntColumn get usagePercentageThreshold => integer().nullable()();
+  late final usagePercentageThreshold = integer().nullable()();
 
-  IntColumn get remainingTokenThreshold => integer().nullable()();
+  late final remainingTokenThreshold = integer().nullable()();
 
   @override
-  Set<Column> get primaryKey => {workspaceId};
+  late final Set<Column> primaryKey = {workspaceId};
 }

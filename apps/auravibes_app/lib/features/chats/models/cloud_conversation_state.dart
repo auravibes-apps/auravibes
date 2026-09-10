@@ -1,4 +1,3 @@
-// ignore_for_file: type=warning
 import 'dart:convert';
 
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -30,24 +29,13 @@ class const CloudConversationState({
     activeExecution: snapshot.activeExecution,
     toolCalls: snapshot.toolCalls,
     sequence: snapshot.sequence,
-    a2uiMessagesByAssistantMessageId: {
-      for (final message in snapshot.messages)
-        if (_a2uiMessages(message.metadataJson) case final messages
-            when messages.isNotEmpty)
-          message.id: messages,
-    },
-    a2uiIssuesByAssistantMessageId: {
-      for (final message in snapshot.messages)
-        if (_a2uiIssues(message.metadataJson) case final issues
-            when issues.isNotEmpty)
-          message.id: issues,
-    },
-    a2uiMessageIssuesByAssistantMessageId: {
-      for (final message in snapshot.messages)
-        if (_a2uiMessageIssues(message.metadataJson) case final issues
-            when issues.isNotEmpty)
-          message.id: issues,
-    },
+    a2uiMessagesByAssistantMessageId: _a2uiMessagesByAssistantId(
+      snapshot.messages,
+    ),
+    a2uiIssuesByAssistantMessageId: _a2uiIssuesByAssistantId(snapshot.messages),
+    a2uiMessageIssuesByAssistantMessageId: _a2uiMessageIssuesByAssistantId(
+      snapshot.messages,
+    ),
   );
 
   /// Complete text currently visible for the active assistant message.
@@ -65,46 +53,19 @@ class const CloudConversationState({
     activeAssistantContent: activeAssistantContent,
     activeAssistantTransientContent: activeAssistantTransientContent,
     a2uiMessagesByAssistantMessageId: {
-      for (final entry in previous.a2uiMessagesByAssistantMessageId.entries)
-        if ((previous.transientA2uiSequenceByAssistantMessageId[entry.key] ??
-                -1) >=
-            sequence)
-          entry.key: {
-            ...entry.value,
-            ...?a2uiMessagesByAssistantMessageId[entry.key],
-          }.toList(),
-      for (final entry in a2uiMessagesByAssistantMessageId.entries)
-        if ((previous.transientA2uiSequenceByAssistantMessageId[entry.key] ??
-                -1) <
-            sequence)
-          entry.key: entry.value,
+      ..._retainedPreviousA2uiMessages(this, previous),
+      ..._retainedCurrentA2uiMessages(this, previous),
     },
-    a2uiIssuesByAssistantMessageId: {
-      ...a2uiIssuesByAssistantMessageId,
-      for (final entry in previous.a2uiIssuesByAssistantMessageId.entries)
-        if ((previous.transientA2uiSequenceByAssistantMessageId[entry.key] ??
-                -1) >=
-            sequence)
-          entry.key: entry.value,
-    },
-    a2uiMessageIssuesByAssistantMessageId: {
-      ...a2uiMessageIssuesByAssistantMessageId,
-      for (final entry
-          in previous.a2uiMessageIssuesByAssistantMessageId.entries)
-        if ((previous.transientA2uiSequenceByAssistantMessageId[entry.key] ??
-                -1) >=
-            sequence)
-          entry.key: entry.value,
-    },
-    transientA2uiSequenceByAssistantMessageId: {
-      ...transientA2uiSequenceByAssistantMessageId,
-      for (final entry
-          in previous.transientA2uiSequenceByAssistantMessageId.entries)
-        if (entry.value >= sequence) entry.key: entry.value,
-    },
-    appliedTransientEventKeys: sequence == previous.sequence
-        ? {...previous.appliedTransientEventKeys, ...appliedTransientEventKeys}
-        : appliedTransientEventKeys,
+    a2uiIssuesByAssistantMessageId: _preservedIssues(this, previous),
+    a2uiMessageIssuesByAssistantMessageId: _preservedMessageIssues(
+      this,
+      previous,
+    ),
+    transientA2uiSequenceByAssistantMessageId: _preservedTransientSequences(
+      this,
+      previous,
+    ),
+    appliedTransientEventKeys: _preservedEventKeys(this, previous),
   );
 
   /// Applies only the next event in the durable ordering.
@@ -134,10 +95,11 @@ class const CloudConversationState({
       sequence: sequence,
       activeAssistantContent: activeAssistantContent,
       activeAssistantTransientContent: activeAssistantTransientContent,
-      a2uiMessagesByAssistantMessageId: {
-        ...a2uiMessagesByAssistantMessageId,
-        assistantMessageId: [...?messages, event.payloadJson],
-      },
+      a2uiMessagesByAssistantMessageId: _appendA2uiMessage(
+        a2uiMessagesByAssistantMessageId,
+        assistantMessageId,
+        event.payloadJson,
+      ),
       a2uiIssuesByAssistantMessageId: a2uiIssuesByAssistantMessageId,
       a2uiMessageIssuesByAssistantMessageId:
           a2uiMessageIssuesByAssistantMessageId,
@@ -152,16 +114,21 @@ class const CloudConversationState({
   CloudConversationState? _applyTextEvent(ConversationStreamEvent event) {
     final delta = event.transientTextDelta;
     final isTransientDelta = delta != null;
-    if (isTransientDelta
-        ? event.sequence != sequence
-        : event.sequence != sequence + 1) {
-      return null;
-    }
+    if (!_isExpectedTextEvent(event, sequence, isTransientDelta)) return null;
     final transientEventKey = _transientEventKey(event, delta);
-    if (transientEventKey != null &&
-        appliedTransientEventKeys.contains(transientEventKey)) {
+    if (_isAppliedTransientEvent(
+      appliedTransientEventKeys,
+      transientEventKey,
+    )) {
       return this;
     }
+
+    final textContent = _textContent((
+      isTransientDelta: isTransientDelta,
+      delta: delta,
+      baseContent: isTransientDelta ? _activeAssistantBaseContent() : '',
+      transientContent: activeAssistantTransientContent,
+    ));
 
     return CloudConversationState(
       conversation: conversation,
@@ -170,13 +137,8 @@ class const CloudConversationState({
       activeExecution: activeExecution,
       toolCalls: toolCalls,
       sequence: event.sequence,
-      activeAssistantContent: isTransientDelta
-          ? '${_activeAssistantBaseContent()}$activeAssistantTransientContent'
-                '$delta'
-          : '',
-      activeAssistantTransientContent: isTransientDelta
-          ? '$activeAssistantTransientContent$delta'
-          : '',
+      activeAssistantContent: textContent.active,
+      activeAssistantTransientContent: textContent.transient,
       a2uiMessagesByAssistantMessageId: a2uiMessagesByAssistantMessageId,
       a2uiIssuesByAssistantMessageId: a2uiIssuesByAssistantMessageId,
       a2uiMessageIssuesByAssistantMessageId:
@@ -184,9 +146,10 @@ class const CloudConversationState({
       transientA2uiSequenceByAssistantMessageId: isTransientDelta
           ? transientA2uiSequenceByAssistantMessageId
           : const {},
-      appliedTransientEventKeys: isTransientDelta
-          ? {...appliedTransientEventKeys, ?transientEventKey}
-          : const {},
+      appliedTransientEventKeys: _eventKeysForTextEvent(
+        isTransientDelta,
+        transientEventKey,
+      ),
     );
   }
 
@@ -208,6 +171,136 @@ class const CloudConversationState({
   }
 }
 
+typedef _TextContentRequest = ({
+  bool isTransientDelta,
+  String? delta,
+  String baseContent,
+  String transientContent,
+});
+
+typedef _TextContent = ({String active, String transient});
+
+Map<String, List<String>> _appendA2uiMessage(
+  Map<String, List<String>> messages,
+  String assistantMessageId,
+  String payload,
+) => {
+  ...messages,
+  assistantMessageId: [...?messages[assistantMessageId], payload],
+};
+
+bool _isExpectedTextEvent(
+  ConversationStreamEvent event,
+  int sequence,
+  bool isTransient,
+) => isTransient ? event.sequence == sequence : event.sequence == sequence + 1;
+
+bool _isAppliedTransientEvent(
+  Set<String> appliedEventKeys,
+  String? transientEventKey,
+) => transientEventKey != null && appliedEventKeys.contains(transientEventKey);
+
+_TextContent _textContent(_TextContentRequest request) => (
+  active: request.isTransientDelta
+      ? '${request.baseContent}${request.transientContent}${request.delta}'
+      : '',
+  transient: request.isTransientDelta
+      ? '${request.transientContent}${request.delta}'
+      : '',
+);
+
+Map<String, List<String>> _a2uiMessagesByAssistantId(
+  Iterable<ConversationMessageView> messages,
+) => {
+  for (final message in messages)
+    if (_a2uiMessages(message.metadataJson) case final values
+        when values.isNotEmpty)
+      message.id: values,
+};
+
+Map<String, Map<String, List<String>>> _a2uiIssuesByAssistantId(
+  Iterable<ConversationMessageView> messages,
+) => {
+  for (final message in messages)
+    if (_a2uiIssues(message.metadataJson) case final values
+        when values.isNotEmpty)
+      message.id: values,
+};
+
+Map<String, List<String>> _a2uiMessageIssuesByAssistantId(
+  Iterable<ConversationMessageView> messages,
+) => {
+  for (final message in messages)
+    if (_a2uiMessageIssues(message.metadataJson) case final values
+        when values.isNotEmpty)
+      message.id: values,
+};
+
+Map<String, List<String>> _retainedPreviousA2uiMessages(
+  CloudConversationState current,
+  CloudConversationState previous,
+) => {
+  for (final entry in previous.a2uiMessagesByAssistantMessageId.entries)
+    if ((previous.transientA2uiSequenceByAssistantMessageId[entry.key] ?? -1) >=
+        current.sequence)
+      entry.key: {
+        ...entry.value,
+        ...?current.a2uiMessagesByAssistantMessageId[entry.key],
+      }.toList(),
+};
+
+Map<String, List<String>> _retainedCurrentA2uiMessages(
+  CloudConversationState current,
+  CloudConversationState previous,
+) => {
+  for (final entry in current.a2uiMessagesByAssistantMessageId.entries)
+    if ((previous.transientA2uiSequenceByAssistantMessageId[entry.key] ?? -1) <
+        current.sequence)
+      entry.key: entry.value,
+};
+
+Map<String, Map<String, List<String>>> _preservedIssues(
+  CloudConversationState current,
+  CloudConversationState previous,
+) => {
+  ...current.a2uiIssuesByAssistantMessageId,
+  for (final entry in previous.a2uiIssuesByAssistantMessageId.entries)
+    if ((previous.transientA2uiSequenceByAssistantMessageId[entry.key] ?? -1) >=
+        current.sequence)
+      entry.key: entry.value,
+};
+
+Map<String, List<String>> _preservedMessageIssues(
+  CloudConversationState current,
+  CloudConversationState previous,
+) => {
+  ...current.a2uiMessageIssuesByAssistantMessageId,
+  for (final entry in previous.a2uiMessageIssuesByAssistantMessageId.entries)
+    if ((previous.transientA2uiSequenceByAssistantMessageId[entry.key] ?? -1) >=
+        current.sequence)
+      entry.key: entry.value,
+};
+
+Map<String, int> _preservedTransientSequences(
+  CloudConversationState current,
+  CloudConversationState previous,
+) => {
+  ...current.transientA2uiSequenceByAssistantMessageId,
+  for (final entry
+      in previous.transientA2uiSequenceByAssistantMessageId.entries)
+    if (entry.value >= current.sequence) entry.key: entry.value,
+};
+
+Set<String> _preservedEventKeys(
+  CloudConversationState current,
+  CloudConversationState previous,
+) => current.sequence == previous.sequence
+    ? {
+        ...previous.appliedTransientEventKeys,
+        ...current.appliedTransientEventKeys,
+      }
+    : current.appliedTransientEventKeys;
+
 List<String> _a2uiMessages(String? metadataJson) {
   if (metadataJson == null) return const [];
   try {
@@ -227,17 +320,17 @@ Map<String, List<String>> _a2uiIssues(String? metadataJson) {
     final issues = metadata is Map ? metadata['a2uiIssuesBySurface'] : null;
     if (issues is! Map) return const {};
 
-    return {
-      for (final entry in issues.entries)
-        if (entry.key is String && entry.value is List)
-          entry.key as String: (entry.value as List)
-              .whereType<String>()
-              .toList(),
-    };
+    return _stringListMap(issues);
   } on Object catch (_) {
     return const {};
   }
 }
+
+Map<String, List<String>> _stringListMap(Map<dynamic, dynamic> values) => {
+  for (final entry in values.entries)
+    if (entry.key is String && entry.value is List)
+      entry.key as String: (entry.value as List).whereType<String>().toList(),
+};
 
 List<String> _a2uiMessageIssues(String? metadataJson) {
   if (metadataJson == null) return const [];

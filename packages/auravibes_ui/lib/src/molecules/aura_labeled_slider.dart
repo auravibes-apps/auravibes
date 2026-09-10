@@ -60,74 +60,208 @@ class AuraLabeledSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveValue = _normalizeValue(value, min, max, step, precision);
-    final format =
-        valueFormatter ?? (value) => _formatSliderValue(value, precision);
+    _validateSliderMarks(this);
+
+    return _AuraLabeledSliderContent(
+      slider: this,
+      effectiveValue: _effectiveSliderValue(this),
+      format: _sliderFormatter(this),
+    );
+  }
+}
+
+void _validateSliderMarks(AuraLabeledSlider slider) {
+  if (slider.marks.any(
+    (mark) => mark.value < slider.min || mark.value > slider.max,
+  )) {
+    throw ArgumentError('Slider marks must be inside the configured range.');
+  }
+}
+
+double _effectiveSliderValue(AuraLabeledSlider slider) => _normalizeValue((
+  value: slider.value,
+  min: slider.min,
+  max: slider.max,
+  step: slider.step,
+  precision: slider.precision,
+));
+
+String Function(double) _sliderFormatter(AuraLabeledSlider slider) =>
+    slider.valueFormatter ??
+    (value) => _formatSliderValue(value, slider.precision);
+
+class const _AuraLabeledSliderContent({
+  required final AuraLabeledSlider slider,
+  required final double effectiveValue,
+  required final String Function(double) format,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _AuraLabeledSliderHeaderAndControl(
+        slider: slider,
+        effectiveValue: effectiveValue,
+        format: format,
+      ),
+      _AuraLabeledSliderFooter(
+        slider: slider,
+        format: format,
+        spacing: context.auraTheme.spacing,
+      ),
+    ],
+  );
+}
+
+class const _AuraLabeledSliderFooter({
+  required final AuraLabeledSlider slider,
+  required final String Function(double) format,
+  required final AuraSpacingScale spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _AuraLabeledSliderMarksSection(
+        slider: slider,
+        format: format,
+        spacing: spacing,
+      ),
+      _AuraLabeledSliderBounds(slider: slider, format: format),
+    ],
+  );
+}
+
+class const _AuraLabeledSliderHeaderAndControl({
+  required final AuraLabeledSlider slider,
+  required final double effectiveValue,
+  required final String Function(double) format,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final spacing = context.auraTheme.spacing;
-    if (marks.any((mark) => mark.value < min || mark.value > max)) {
-      throw ArgumentError('Slider marks must be inside the configured range.');
-    }
 
     return Column(
-      crossAxisAlignment: .stretch,
       children: [
-        Row(
-          children: [
-            if (label case final label?)
-              Expanded(
-                child: AuraText(child: Text(label), style: .bodySmall),
-              )
-            else
-              const Spacer(),
-            AuraText(child: Text(format(effectiveValue)), style: .bodySmall),
-          ],
+        _AuraLabeledSliderHeader(
+          label: slider.label,
+          value: format(effectiveValue),
         ),
         SizedBox(height: spacing.xs),
-        AuraSlider(
-          value: effectiveValue,
-          onChanged: onChanged,
-          min: min,
-          max: max,
-          step: step,
-          precision: precision,
-          enabled: enabled,
-          semanticLabel: semanticLabel ?? label,
-          tint: tint,
-        ),
-        if (marks.isNotEmpty) ...[
-          SizedBox(height: spacing.xs),
-          SizedBox(
-            height: _markLabelHeight,
-            child: Stack(
-              clipBehavior: .none,
-              children: [
-                for (final mark in marks)
-                  Align(
-                    alignment: Alignment(
-                      min == max
-                          ? 0
-                          : ((mark.value - min) / (max - min)) *
-                                    _alignmentRange -
-                                1,
-                      0,
-                    ),
-                    child: AuraText(
-                      child: Text(mark.label ?? format(mark.value)),
-                      style: .caption,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-        Row(
-          mainAxisAlignment: .spaceBetween,
-          children: [
-            AuraText(child: Text(format(min)), style: .caption),
-            AuraText(child: Text(format(max)), style: .caption),
-          ],
-        ),
+        _AuraLabeledSliderControl(slider: slider, value: effectiveValue),
       ],
     );
   }
+}
+
+class const _AuraLabeledSliderMarksSection({
+  required final AuraLabeledSlider slider,
+  required final String Function(double) format,
+  required final AuraSpacingScale spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => slider.marks.isEmpty
+      ? const SizedBox.shrink()
+      : Column(
+          children: [
+            SizedBox(height: spacing.xs),
+            _AuraLabeledSliderMarks(slider: slider, format: format),
+          ],
+        );
+}
+
+class const _AuraLabeledSliderHeader({
+  required final String? label,
+  required final String value,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      if (label case final label?)
+        Expanded(
+          child: AuraText(child: Text(label), style: .bodySmall),
+        )
+      else
+        const Spacer(),
+      AuraText(child: Text(value), style: .bodySmall),
+    ],
+  );
+}
+
+class const _AuraLabeledSliderMarks({
+  required final AuraLabeledSlider slider,
+  required final String Function(double) format,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: _markLabelHeight,
+    child: Stack(
+      clipBehavior: .none,
+      children: [
+        for (final mark in slider.marks)
+          _AuraLabeledSliderMark(mark: mark, slider: slider, format: format),
+      ],
+    ),
+  );
+}
+
+class const _AuraLabeledSliderControl({
+  required final AuraLabeledSlider slider,
+  required final double value,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraSlider(
+    value: value,
+    onChanged: slider.onChanged,
+    min: slider.min,
+    max: slider.max,
+    step: slider.step,
+    precision: slider.precision,
+    enabled: slider.enabled,
+    semanticLabel: slider.semanticLabel ?? slider.label,
+    tint: slider.tint,
+  );
+}
+
+class const _AuraLabeledSliderMark({
+  required final AuraSliderMark mark,
+  required final AuraLabeledSlider slider,
+  required final String Function(double) format,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: _markAlignment(slider, mark),
+    child: _AuraLabeledSliderMarkText(mark: mark, format: format),
+  );
+}
+
+class const _AuraLabeledSliderMarkText({
+  required final AuraSliderMark mark,
+  required final String Function(double) format,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      AuraText(child: Text(mark.label ?? format(mark.value)), style: .caption);
+}
+
+Alignment _markAlignment(AuraLabeledSlider slider, AuraSliderMark mark) {
+  if (slider.min == slider.max) return Alignment.center;
+
+  final progress = (mark.value - slider.min) / (slider.max - slider.min);
+
+  return Alignment(progress * _alignmentRange - 1, 0);
+}
+
+class const _AuraLabeledSliderBounds({
+  required final AuraLabeledSlider slider,
+  required final String Function(double) format,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisAlignment: .spaceBetween,
+    children: [
+      AuraText(child: Text(format(slider.min)), style: .caption),
+      AuraText(child: Text(format(slider.max)), style: .caption),
+    ],
+  );
 }

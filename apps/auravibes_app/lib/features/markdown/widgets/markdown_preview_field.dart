@@ -13,41 +13,61 @@ class const MarkdownPreviewField({
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraCard(
-      child: AuraColumn(
-        children: [
-          AuraRow(
-            children: [
-              Expanded(
-                child: AuraText(child: TextLocale(titleKey), style: .heading6),
-              ),
-              if (!isReadOnly)
-                AuraButton(
-                  onPressed: onEdit,
-                  child: TextLocale(editKey),
-                  variant: .outlined,
-                  size: .small,
-                ),
-            ],
-            spacing: .md,
-          ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
-            builder: (context, value, _) {
-              final text = value.text.trim();
-              if (text.isEmpty) {
-                return EmptyMarkdownPreview(label: emptyKey);
-              }
+  Widget build(BuildContext context) => AuraCard(
+    child: AuraColumn(
+      children: [
+        _MarkdownPreviewHeader(
+          titleKey: titleKey,
+          editKey: editKey,
+          isReadOnly: isReadOnly,
+          onEdit: onEdit,
+        ),
+        _MarkdownPreviewContent(controller: controller, emptyKey: emptyKey),
+      ],
+      spacing: .sm,
+      crossAxisAlignment: .start,
+    ),
+    style: .border,
+  );
+}
 
-              return GptMarkdown(text);
-            },
-          ),
-        ],
-        spacing: .sm,
-        crossAxisAlignment: .start,
+class const _MarkdownPreviewHeader({
+  required final String titleKey,
+  required final String editKey,
+  required final bool isReadOnly,
+  required final VoidCallback onEdit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      Expanded(
+        child: AuraText(child: TextLocale(titleKey), style: .heading6),
       ),
-      style: .border,
-    );
-  }
+      if (!isReadOnly)
+        AuraButton(
+          onPressed: onEdit,
+          child: TextLocale(editKey),
+          variant: .outlined,
+          size: .small,
+        ),
+    ],
+    spacing: .md,
+  );
+}
+
+class const _MarkdownPreviewContent({
+  required final TextEditingController controller,
+  required final String emptyKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, _) {
+          final text = value.text.trim();
+          if (text.isEmpty) return EmptyMarkdownPreview(label: emptyKey);
+
+          return GptMarkdown(text);
+        },
+      );
 }

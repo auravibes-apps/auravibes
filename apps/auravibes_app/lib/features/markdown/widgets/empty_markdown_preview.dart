@@ -10,12 +10,14 @@ class const EmptyMarkdownPreview({required final String label, super.key})
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: auraColors.surfaceVariant.withValues(alpha: 0.45),
-        border: Border.fromBorderSide(.new(color: auraColors.outlineVariant)),
-        borderRadius: const BorderRadius.all(.circular(8)),
-      ),
+      decoration: _emptyPreviewDecoration(auraColors),
       child: AuraText(child: TextLocale(label), style: .caption),
     );
   }
 }
+
+BoxDecoration _emptyPreviewDecoration(AuraColorScheme colors) => BoxDecoration(
+  color: colors.surfaceVariant.withValues(alpha: 0.45),
+  border: Border.fromBorderSide(.new(color: colors.outlineVariant)),
+  borderRadius: const BorderRadius.all(.circular(8)),
+);

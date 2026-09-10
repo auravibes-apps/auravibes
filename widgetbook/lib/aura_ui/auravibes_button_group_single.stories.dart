@@ -68,43 +68,71 @@ class _SingleSelectionDemoState extends State<SingleSelectionDemo> {
   String? _selectedValue = 'option1';
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        AuraButtonGroup<String>.single(
-          items: const [
-            AuraButtonGroupItem(
-              value: 'option1',
-              child: Text('Option 1'),
-              semanticLabel: 'Option 1',
-            ),
-            AuraButtonGroupItem(
-              value: 'option2',
-              child: Text('Option 2'),
-              semanticLabel: 'Option 2',
-            ),
-            AuraButtonGroupItem(
-              value: 'option3',
-              child: Text('Option 3'),
-              semanticLabel: 'Option 3',
-            ),
-          ],
-          selectedValue: _selectedValue,
-          onChanged: (value) => setState(() => _selectedValue = value),
-          key: ValueKey(_selectedValue),
-          size: widget.size,
-          variant: widget.variant,
-          orientation: widget.orientation,
-          disabled: widget.disabled,
-          isLoading: widget.isLoading,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Selected: $_selectedValue',
-          style: .new(color: context.auraColors.onSurface),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => _SingleSelectionPreview(
+    demo: widget,
+    selectedValue: _selectedValue,
+    onChanged: _select,
+  );
+
+  void _select(String? value) => setState(() => _selectedValue = value);
+}
+
+class const _SingleSelectionPreview({
+  required final SingleSelectionDemo demo,
+  required final String? selectedValue,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _SingleSelectionControl(
+        demo: demo,
+        selectedValue: selectedValue,
+        onChanged: onChanged,
+      ),
+      const SizedBox(height: 16),
+      Text(
+        'Selected: $selectedValue',
+        style: .new(color: context.auraColors.onSurface),
+      ),
+    ],
+  );
+}
+
+class const _SingleSelectionControl({
+  required final SingleSelectionDemo demo,
+  required final String? selectedValue,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  static const List<AuraButtonGroupItem<String>> _items = [
+    AuraButtonGroupItem(
+      value: 'option1',
+      child: Text('Option 1'),
+      semanticLabel: 'Option 1',
+    ),
+    AuraButtonGroupItem(
+      value: 'option2',
+      child: Text('Option 2'),
+      semanticLabel: 'Option 2',
+    ),
+    AuraButtonGroupItem(
+      value: 'option3',
+      child: Text('Option 3'),
+      semanticLabel: 'Option 3',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) => AuraButtonGroup<String>.single(
+    items: _items,
+    selectedValue: selectedValue,
+    onChanged: onChanged,
+    key: ValueKey(selectedValue),
+    size: demo.size,
+    variant: demo.variant,
+    orientation: demo.orientation,
+    disabled: demo.disabled,
+    isLoading: demo.isLoading,
+  );
 }

@@ -11,28 +11,28 @@ class SkillsRepository(AppDatabase database) {
   Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async {
     final rows = await _dao.getWorkspaceSkills(workspaceId);
 
-    return rows.map(_tableToEntity).toList();
+    return rows.map(this._tableToEntity).toList();
   }
 
   Future<SkillEntity?> getSkillById(String skillId) async {
     final row = await _dao.getSkillById(skillId);
     if (row == null) return null;
 
-    return _tableToEntity(row);
+    return this._tableToEntity(row);
   }
 
   Future<SkillEntity?> getSkillBySlug(String workspaceId, String slug) async {
     final row = await _dao.getSkillBySlug(workspaceId, slug);
     if (row == null) return null;
 
-    return _tableToEntity(row);
+    return this._tableToEntity(row);
   }
 
   Future<SkillEntity?> getSkillByTitle(String workspaceId, String title) async {
     final row = await _dao.getSkillByTitle(workspaceId, title.trim());
     if (row == null) return null;
 
-    return _tableToEntity(row);
+    return this._tableToEntity(row);
   }
 
   Future<SkillEntity> createSkill(
@@ -40,53 +40,68 @@ class SkillsRepository(AppDatabase database) {
     SkillToCreate skill,
   ) async {
     final table = await _dao.createSkill(
-      .new(
-        source: const Value(SkillSourceTable.user),
-        workspaceId: Value(workspaceId),
-        kind: Value(_mapKindToTable(skill.kind)),
-        title: Value(skill.title.trim()),
-        slug: Value(generateSkillSlug(skill.title)),
-        description: Value(skill.description),
-        content: Value(skill.content),
-        credentialDefinitionId: Value(skill.credentialDefinitionId),
-        isCredentialOptional: Value(skill.isCredentialOptional),
-        isEnabled: Value(skill.isEnabled),
-      ),
+      _createSkillCompanion(workspaceId, skill),
     );
 
-    return _tableToEntity(table);
+    return this._tableToEntity(table);
   }
 
   Future<SkillEntity> updateSkill(String skillId, SkillToUpdate skill) async {
-    final table = await _dao.updateSkill(
-      skillId,
-      .new(
-        updatedAt: Value(DateTime.now()),
-        title: switch (skill.title) {
-          null => const Value.absent(),
-          final title => Value(title.trim()),
-        },
-        description: Value.absentIfNull(skill.description),
-        content: Value.absentIfNull(skill.content),
-        credentialDefinitionId: skill.clearCredentialDefinition
-            ? const Value(null)
-            : Value.absentIfNull(skill.credentialDefinitionId),
-        isCredentialOptional: Value.absentIfNull(skill.isCredentialOptional),
-        isEnabled: Value.absentIfNull(skill.isEnabled),
-      ),
-    );
+    final table = await _dao.updateSkill(skillId, _updateSkillCompanion(skill));
 
-    return _tableToEntity(table);
+    return this._tableToEntity(table);
   }
 
   Future<bool> deleteSkill(String skillId) => _dao.deleteSkill(skillId);
+}
+
+extension on SkillsRepository {
+  SkillsCompanion _createSkillCompanion(
+    String workspaceId,
+    SkillToCreate skill,
+  ) {
+    return SkillsCompanion(
+      source: const Value(SkillSourceTable.user),
+      workspaceId: Value(workspaceId),
+      kind: Value(this._mapKindToTable(skill.kind)),
+      title: Value(skill.title.trim()),
+      slug: Value(generateSkillSlug(skill.title)),
+      description: Value(skill.description),
+      content: Value(skill.content),
+      credentialDefinitionId: Value(skill.credentialDefinitionId),
+      isCredentialOptional: Value(skill.isCredentialOptional),
+      isEnabled: Value(skill.isEnabled),
+    );
+  }
+
+  SkillsCompanion _updateSkillCompanion(SkillToUpdate skill) {
+    return SkillsCompanion(
+      updatedAt: Value(DateTime.now()),
+      title: this._skillTitleValue(skill.title),
+      description: Value.absentIfNull(skill.description),
+      content: Value.absentIfNull(skill.content),
+      credentialDefinitionId: this._credentialDefinitionValue(skill),
+      isCredentialOptional: Value.absentIfNull(skill.isCredentialOptional),
+      isEnabled: Value.absentIfNull(skill.isEnabled),
+    );
+  }
+
+  Value<String?> _skillTitleValue(String? title) {
+    return title == null ? const Value.absent() : Value(title.trim());
+  }
+
+  Value<String?> _credentialDefinitionValue(SkillToUpdate skill) {
+    return skill.clearCredentialDefinition
+        ? const Value(null)
+        : Value.absentIfNull(skill.credentialDefinitionId);
+  }
 
   SkillEntity _tableToEntity(SkillsTable table) {
     return SkillEntity(
-      source: _mapSource(table.source),
+      source: this._mapSource(table.source),
       id: table.id,
       workspaceId: table.workspaceId,
-      kind: _mapKind(table.kind),
+      kind: this._mapKind(table.kind),
       title: table.title,
       slug: table.slug,
       description: table.description,

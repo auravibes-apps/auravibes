@@ -8,34 +8,38 @@ import 'package:drift/drift.dart';
 
 @DataClassName('SkillsTable')
 class Skills extends Table with TableMixin {
-  TextColumn get workspaceId =>
-      text().references(Workspaces, #id, onDelete: .cascade)();
+  late final workspaceId = text().references(
+    Workspaces,
+    #id,
+    onDelete: .cascade,
+  )();
 
-  TextColumn get source => textEnum<SkillSourceTable>()();
+  late final source = textEnum<SkillSourceTable>()();
 
-  TextColumn get kind => textEnum<SkillKindTable>()();
+  late final kind = textEnum<SkillKindTable>()();
 
-  TextColumn get title => text()();
+  late final title = text()();
 
-  TextColumn get slug => text()();
+  late final slug = text()();
 
-  TextColumn get description => text()();
+  late final description = text()();
 
-  TextColumn get content => text()();
+  late final content = text()();
 
-  TextColumn get credentialDefinitionId => text().nullable().references(
+  late final credentialDefinitionId = text().nullable().references(
     SkillCredentialDefinitions,
     #id,
     onDelete: .setNull,
   )();
 
-  BoolColumn get isCredentialOptional =>
-      boolean().withDefault(const Constant(false))();
+  late final isCredentialOptional = boolean().withDefault(
+    const Constant(false),
+  )();
 
-  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+  late final isEnabled = boolean().withDefault(const Constant(true))();
 
   @override
-  List<Set<Column<Object>>> get uniqueKeys => [
+  late final List<Set<Column<Object>>> uniqueKeys = [
     {workspaceId, title},
     {workspaceId, slug},
   ];

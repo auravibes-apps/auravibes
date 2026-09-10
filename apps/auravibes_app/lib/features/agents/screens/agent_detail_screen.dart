@@ -98,7 +98,9 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
 
   @override
   Widget build(BuildContext context) => _AgentDetailScreenView(state: this);
+}
 
+extension _AgentDetailDialogs on _AgentDetailScreenState {
   Future<void> _showSkillsManager({
     required List<WorkspaceSkill> enabledSkills,
     required List<WorkspaceSkill> disabledSkills,
@@ -149,8 +151,10 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       ),
     );
   }
+}
 
-  void _initialize(AgentEntity agent) {
+extension _AgentDetailInitialization on _AgentDetailScreenState {
+  void initialize(AgentEntity agent) {
     _loaded = true;
     _initializeAgentFields(agent);
   }
@@ -181,7 +185,9 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       _toolPermissionModes[toolId] = value;
     });
   }
+}
 
+extension _AgentDetailToolOverrides on _AgentDetailScreenState {
   void _initializeToolOverrides(List<AgentToolOverrideEntity> overrides) {
     _toolOverridesLoaded = true;
     _toolPermissionModes
@@ -211,7 +217,9 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       final _ = _selectedSkills.add(skill.ref);
     }
   }
+}
 
+extension _AgentDetailEditing on _AgentDetailScreenState {
   Future<void> _editPrompt() async {
     final markdown = await MarkdownEditorLauncher.show(
       context,
@@ -262,17 +270,21 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   }
 
   Future<void> _enableSkillInWorkspace(WorkspaceSkill skill) async {
-    await ref
-        .read(disableSkillUsecaseProvider(widget.workspaceId))
-        .call(
-          workspaceId: widget.workspaceId,
-          source: skill.source,
-          skillId: skill.id,
-          isEnabled: true,
-        );
+    await ref.read(disableSkillUsecaseProvider(widget.workspaceId)).call((
+      workspaceId: widget.workspaceId,
+      source: skill.source,
+      skillId: skill.id,
+      isEnabled: true,
+      slug: null,
+      title: null,
+      description: null,
+      content: null,
+    ));
     final _ = ref.invalidate(workspaceSkillsProvider(widget.workspaceId));
   }
+}
 
+extension _AgentDetailSaving on _AgentDetailScreenState {
   Future<void> _save() async {
     final draft = _agentDraft();
     if (!_validateDraft(draft)) return;
@@ -295,7 +307,9 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   void _finishSaving() {
     if (mounted) setState(() => _saving = false);
   }
+}
 
+extension _AgentDetailSummaryActions on _AgentDetailScreenState {
   void _manageSkillsFromSummary(_AgentFormSummary summary) {
     _manageSkills(
       enabledSkills: summary.enabledSkills,
@@ -386,7 +400,7 @@ class const _AgentInitialLoader({
       future: ref
           .read(agentRepositoryProvider(state.widget.workspaceId))
           .getAgentById(agentId),
-      onLoaded: state._initialize,
+      onLoaded: state.initialize,
       onInitialized: state._markAgentLoaded,
     );
   }
@@ -1209,7 +1223,9 @@ class const _SaveBarButtonFromConstraints({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _SaveBarButton(
-    width: constraints.maxWidth < 640 ? double.infinity : 220,
+    width: constraints.maxWidth < _AgentDetailScreenState._compactLayoutWidth
+        ? double.infinity
+        : 220,
     isCompact:
         constraints.maxWidth < _AgentDetailScreenState._compactLayoutWidth,
     isCreate: isCreate,
@@ -1273,16 +1289,6 @@ class _AgentSkillsDialogState extends State<_AgentSkillsDialog> {
   final _searchController = TextEditingController();
   String _query = '';
 
-  _SkillDialogData get _dialogData {
-    final query = _query.trim().toLowerCase();
-
-    return _SkillDialogData(
-      _selectedSkillsFor(),
-      _availableSkillsFor(query),
-      _disabledSkillsFor(query),
-    );
-  }
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -1292,34 +1298,32 @@ class _AgentSkillsDialogState extends State<_AgentSkillsDialog> {
   @override
   Widget build(BuildContext context) =>
       _AgentSkillsDialogView(state: this, data: _dialogData);
+}
 
-  List<WorkspaceSkill> _selectedSkillsFor() {
-    return widget.enabledSkills
-        .where((skill) => widget.selectedSkills.contains(skill.ref))
-        .toList();
-  }
+extension on _AgentSkillsDialogState {
+  _SkillDialogData get _dialogData => _SkillDialogData(
+    _selectedSkillsFor(),
+    _availableSkillsFor(_query.trim().toLowerCase()),
+    _disabledSkillsFor(_query.trim().toLowerCase()),
+  );
 
-  List<WorkspaceSkill> _availableSkillsFor(String query) {
-    return widget.enabledSkills
-        .where(
-          (skill) =>
-              !widget.selectedSkills.contains(skill.ref) &&
-              skill.matches(query),
-        )
-        .toList();
-  }
+  List<WorkspaceSkill> _selectedSkillsFor() => widget.enabledSkills
+      .where((skill) => widget.selectedSkills.contains(skill.ref))
+      .toList();
 
-  List<WorkspaceSkill> _disabledSkillsFor(String query) {
-    return widget.disabledSkills
-        .where((skill) => skill.matches(query))
-        .toList();
-  }
+  List<WorkspaceSkill> _availableSkillsFor(String query) => widget.enabledSkills
+      .where(
+        (skill) =>
+            !widget.selectedSkills.contains(skill.ref) && skill.matches(query),
+      )
+      .toList();
+
+  List<WorkspaceSkill> _disabledSkillsFor(String query) =>
+      widget.disabledSkills.where((skill) => skill.matches(query)).toList();
 
   void _setQuery(String value) => setState(() => _query = value);
 
-  void _enableFromDialog(WorkspaceSkill skill) {
-    unawaited(_enable(skill));
-  }
+  void _enableFromDialog(WorkspaceSkill skill) => unawaited(_enable(skill));
 
   void _removeUnavailable(AgentSkillRef ref) {
     setState(() => widget.owner._removeUnavailableSkill(ref));
@@ -1513,6 +1517,18 @@ class _AgentToolPermissionsDialogState
   final _expandedToolGroups = <String>{};
   String _query = '';
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _AgentToolPermissionsDialogView(state: this, data: _dialogData);
+}
+
+extension on _AgentToolPermissionsDialogState {
   _ToolPermissionDialogData get _dialogData {
     final query = _query.trim().toLowerCase();
     final visibleTools = _visibleTools(query);
@@ -1525,35 +1541,24 @@ class _AgentToolPermissionsDialogState
     );
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  List<WorkspaceToolEntity> _visibleTools(String query) =>
+      widget.tools.where((tool) => tool.matches(query)).toList();
 
-  @override
-  Widget build(BuildContext context) =>
-      _AgentToolPermissionsDialogView(state: this, data: _dialogData);
+  List<WorkspaceToolEntity> _overrideTools(List<WorkspaceToolEntity> tools) =>
+      tools
+          .where(
+            (tool) =>
+                _value(tool.id) != AgentToolPermissionMode.workspaceDefault,
+          )
+          .toList();
 
-  List<WorkspaceToolEntity> _visibleTools(String query) {
-    return widget.tools.where((tool) => tool.matches(query)).toList();
-  }
-
-  List<WorkspaceToolEntity> _overrideTools(List<WorkspaceToolEntity> tools) {
-    return tools
-        .where(
-          (tool) => _value(tool.id) != AgentToolPermissionMode.workspaceDefault,
-        )
-        .toList();
-  }
-
-  List<WorkspaceToolEntity> _defaultTools(List<WorkspaceToolEntity> tools) {
-    return tools
-        .where(
-          (tool) => _value(tool.id) == AgentToolPermissionMode.workspaceDefault,
-        )
-        .toList();
-  }
+  List<WorkspaceToolEntity> _defaultTools(List<WorkspaceToolEntity> tools) =>
+      tools
+          .where(
+            (tool) =>
+                _value(tool.id) == AgentToolPermissionMode.workspaceDefault,
+          )
+          .toList();
 
   void _setQuery(String value) => setState(() => _query = value);
 
@@ -1562,12 +1567,11 @@ class _AgentToolPermissionsDialogState
     List<WorkspaceToolEntity> visibleTools,
   ) {
     final buckets = _ToolGroupBuckets();
-
     for (final tool in tools) {
       _addDefaultTool(tool, visibleTools, buckets);
     }
 
-    return buckets.grouped;
+    return buckets.toGroupedTools();
   }
 
   void _addDefaultTool(
@@ -1577,14 +1581,12 @@ class _AgentToolPermissionsDialogState
   ) {
     if (_isSkillControlTool(tool.toolId)) {
       buckets.skillControls.add(tool);
-
       return;
     }
 
     final parsed = ToolNameFormatter.parseSkillToolName(tool.toolId);
     if (parsed == null) {
       buckets.otherWorkspaceTools.add(tool);
-
       return;
     }
 
@@ -1597,7 +1599,6 @@ class _AgentToolPermissionsDialogState
     _ToolGroupBuckets buckets,
   ) {
     final key = '${parsed.source}:${parsed.skillSlug}';
-
     return buckets.groupByKey.putIfAbsent(
       key,
       () => _createToolGroup(key, parsed, visibleTools, buckets),
@@ -1613,7 +1614,6 @@ class _AgentToolPermissionsDialogState
     final skill = _findSkill(parsed.source, parsed.skillSlug);
     final group = _newToolGroup(key, parsed, skill, visibleTools);
     _addToolGroup(group, skill, buckets);
-
     return group;
   }
 
@@ -1622,18 +1622,16 @@ class _AgentToolPermissionsDialogState
     ({String source, String skillSlug, String toolSlug}) parsed,
     WorkspaceSkill? skill,
     List<WorkspaceToolEntity> visibleTools,
-  ) {
-    return _ToolGroup(
-      key: key,
-      title: _skillGroupTitle(skill, parsed.skillSlug),
-      tools: [],
-      overrideCount: _skillGroupOverrideCount(
-        source: parsed.source,
-        skillSlug: parsed.skillSlug,
-        tools: visibleTools,
-      ),
-    );
-  }
+  ) => _ToolGroup(
+    key: key,
+    title: _skillGroupTitle(skill, parsed.skillSlug),
+    tools: [],
+    overrideCount: _skillGroupOverrideCount(
+      source: parsed.source,
+      skillSlug: parsed.skillSlug,
+      tools: visibleTools,
+    ),
+  );
 
   void _addToolGroup(
     _ToolGroup group,
@@ -1644,8 +1642,6 @@ class _AgentToolPermissionsDialogState
     (selected ? buckets.selectedSkillGroups : buckets.otherSkillGroups).add(
       group,
     );
-
-    return;
   }
 
   WorkspaceSkill? _findSkill(String source, String slug) {
@@ -1656,33 +1652,27 @@ class _AgentToolPermissionsDialogState
       };
       if (expectedSource == source && skill.slug == slug) return skill;
     }
-
     return null;
   }
 
-  String _skillGroupTitle(WorkspaceSkill? skill, String fallbackSlug) {
-    return skill?.title ?? fallbackSlug.toHumanReadable();
-  }
+  String _skillGroupTitle(WorkspaceSkill? skill, String fallbackSlug) =>
+      skill?.title ?? fallbackSlug.toHumanReadable();
 
-  bool _isSkillControlTool(String toolId) {
-    return toolId == 'load_skill' ||
-        toolId == 'unload_skill' ||
-        toolId == 'list_skill_credentials';
-  }
+  bool _isSkillControlTool(String toolId) =>
+      toolId == 'load_skill' ||
+      toolId == 'unload_skill' ||
+      toolId == 'list_skill_credentials';
 
-  AgentToolPermissionMode _value(String toolId) {
-    return widget.values[toolId] ?? AgentToolPermissionMode.workspaceDefault;
-  }
+  AgentToolPermissionMode _value(String toolId) =>
+      widget.values[toolId] ?? AgentToolPermissionMode.workspaceDefault;
 
   int _skillGroupOverrideCount({
     required String source,
     required String skillSlug,
     required List<WorkspaceToolEntity> tools,
-  }) {
-    return tools
-        .where((tool) => _isToolOverrideForGroup(tool, source, skillSlug))
-        .length;
-  }
+  }) => tools
+      .where((tool) => _isToolOverrideForGroup(tool, source, skillSlug))
+      .length;
 
   bool _isToolOverrideForGroup(
     WorkspaceToolEntity tool,
@@ -1690,7 +1680,6 @@ class _AgentToolPermissionsDialogState
     String skillSlug,
   ) {
     final parsed = ToolNameFormatter.parseSkillToolName(tool.toolId);
-
     return parsed?.source == source &&
         parsed?.skillSlug == skillSlug &&
         _value(tool.id) != AgentToolPermissionMode.workspaceDefault;
@@ -1700,13 +1689,11 @@ class _AgentToolPermissionsDialogState
     if (query.isNotEmpty) return true;
     if (_collapsedToolGroups.contains(group.key)) return false;
     if (_expandedToolGroups.contains(group.key)) return true;
-
-    return group.overrideCount > 0;
+    return group.hasOverrides();
   }
 
   void _toggleGroup(_ToolGroup group, String query) {
     if (query.isNotEmpty) return;
-
     final isExpanded = _isGroupExpanded(group, query);
     setState(() => _setGroupExpansion(group.key, isExpanded));
   }
@@ -1715,10 +1702,8 @@ class _AgentToolPermissionsDialogState
     if (isExpanded) {
       final _ = _expandedToolGroups.remove(key);
       final _ = _collapsedToolGroups.add(key);
-
       return;
     }
-
     final _ = _collapsedToolGroups.remove(key);
     final _ = _expandedToolGroups.add(key);
   }
@@ -1938,7 +1923,7 @@ class _ToolGroupBuckets {
   final otherWorkspaceTools = <WorkspaceToolEntity>[];
   final groupByKey = <String, _ToolGroup>{};
 
-  _GroupedTools get grouped => _GroupedTools(
+  _GroupedTools toGroupedTools() => _GroupedTools(
     selectedSkillGroups: selectedSkillGroups,
     otherSkillGroups: otherSkillGroups,
     skillControls: skillControls,
@@ -1951,14 +1936,21 @@ class const _GroupedTools({
   required final List<_ToolGroup> otherSkillGroups,
   required final List<WorkspaceToolEntity> skillControls,
   required final List<WorkspaceToolEntity> otherWorkspaceTools,
-});
+}) {
+  bool containsTool(String toolId) => [
+    ...selectedSkillGroups,
+    ...otherSkillGroups,
+  ].any((group) => group.tools.any((tool) => tool.id == toolId));
+}
 
 class const _ToolGroup({
   required final String key,
   required final String title,
   required final List<WorkspaceToolEntity> tools,
   required final int overrideCount,
-});
+}) {
+  bool hasOverrides() => overrideCount > 0;
+}
 
 class const _AgentManageDialog({
   required final Widget title,

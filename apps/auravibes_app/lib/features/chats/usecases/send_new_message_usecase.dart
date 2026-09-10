@@ -26,41 +26,31 @@ class const SendNewMessageUsecase({
   required final MonitoringService monitoringService,
   final Future<ConversationEntity> Function(ConversationToCreate value)?
   cloudCreate,
-}) {
+}) {}
+
+extension on SendNewMessageUsecase {
   Future<ConversationEntity> call({
     required String workspaceId,
     required ChatDraft draft,
     required String workspaceModelSelectionId,
     String? agentId,
   }) async {
-    // Validate model selection exists before creating conversation.
     final workspaceModelSelection = await (await modelSelectionStore(
       workspaceId,
     )).getById(workspaceModelSelectionId);
-
     if (workspaceModelSelection == null) {
       throw Exception('Selected model not found');
     }
 
-    // Create conversation.
     final value = ConversationToCreate(
       title: 'New Conversation',
       workspaceId: workspaceId,
       modelId: workspaceModelSelectionId,
       agentId: agentId,
     );
-    final createCloudConversation = cloudCreate;
-    final newConversation = createCloudConversation == null
-        ? await conversationRepo.createConversation(value)
-        : await createCloudConversation(value);
-
-    final firstMessage = draft.text.isEmpty
-        ? draft.attachments
-              .map((attachment) => attachment.displayName)
-              .join(', ')
-        : draft.text;
-    if (createCloudConversation == null && firstMessage.isNotEmpty) {
-      // Stream title.
+    final newConversation = await _createConversation(value);
+    final firstMessage = _firstMessage(draft);
+    if (cloudCreate == null && firstMessage.isNotEmpty) {
       generateTitleUsecase.call(
         conversationId: newConversation.id,
         firstMessage: firstMessage,
@@ -68,9 +58,27 @@ class const SendNewMessageUsecase({
       );
     }
 
+    await _sendFirstMessage(newConversation.id, draft);
+
+    return newConversation;
+  }
+
+  Future<ConversationEntity> _createConversation(ConversationToCreate value) {
+    final createCloudConversation = cloudCreate;
+
+    return createCloudConversation == null
+        ? conversationRepo.createConversation(value)
+        : createCloudConversation(value);
+  }
+
+  String _firstMessage(ChatDraft draft) => draft.text.isEmpty
+      ? draft.attachments.map((attachment) => attachment.displayName).join(', ')
+      : draft.text;
+
+  Future<void> _sendFirstMessage(String conversationId, ChatDraft draft) async {
     try {
       await sendMessageUsecase.sendFirstMessage(
-        conversationId: newConversation.id,
+        conversationId: conversationId,
         draft: draft,
         onContinueError: (error, stackTrace) {
           monitoringService.trackError(
@@ -88,8 +96,6 @@ class const SendNewMessageUsecase({
       );
       Error.throwWithStackTrace(error, stackTrace);
     }
-
-    return newConversation;
   }
 }
 

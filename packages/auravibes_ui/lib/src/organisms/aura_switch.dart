@@ -6,6 +6,8 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
+const _switchRadiusDivisor = 2.0;
+
 /// A customizable switch component following the Aura design system.
 ///
 /// This switch supports multiple sizes and states (on/off, disabled, loading)
@@ -53,7 +55,7 @@ class AuraSwitch extends StatefulWidget {
 
 class _AuraSwitchState extends State<AuraSwitch> {
   static const _loadingScale = 0.6;
-  static const _half = 2.0;
+  static const _thumbPaddingMultiplier = 2.0;
   static const _smallTrackWidth = 36.0;
   static const _baseTrackWidth = 44.0;
   static const _largeTrackWidth = 52.0;
@@ -108,7 +110,9 @@ class _AuraSwitchState extends State<AuraSwitch> {
       _getTrackHeight(),
       thumbSize,
       thumbPadding,
-      widget.value ? trackWidth - thumbSize - thumbPadding * 2 : 0.0,
+      widget.value
+          ? trackWidth - thumbSize - thumbPadding * _thumbPaddingMultiplier
+          : 0.0,
     );
   }
 
@@ -289,7 +293,7 @@ BoxDecoration _trackDecoration(_AuraSwitchTrackData data) {
   return BoxDecoration(
     color: data.palette.trackColor,
     borderRadius: BorderRadius.circular(
-      data.dimensions.trackHeight / _AuraSwitchState._half,
+      data.dimensions.trackHeight / _switchRadiusDivisor,
     ),
     boxShadow: _focusShadow(data),
   );

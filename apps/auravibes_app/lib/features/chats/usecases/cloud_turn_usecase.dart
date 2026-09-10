@@ -86,7 +86,9 @@ class const CloudTurnUsecase(final CloudChatGateway _gateway) {
     conversationId: conversationId,
     expectedProjectionRevision: projectionRevision,
   );
+}
 
+extension on CloudTurnUsecase {
   Future<ConversationMutationResult> _retryStaleDecision({
     required String turnId,
     required String toolCallId,

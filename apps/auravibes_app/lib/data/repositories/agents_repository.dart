@@ -22,7 +22,7 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   Future<List<AgentEntity>> getAgentsByWorkspace(String workspaceId) async {
     final rows = await _database.agentsDao.getAgentsByWorkspace(workspaceId);
 
-    return await _mapAgentRows(rows);
+    return await this._mapAgentRows(rows);
   }
 
   @override
@@ -30,7 +30,7 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
     final row = await _database.agentsDao.getAgentById(agentId);
     if (row == null) return null;
 
-    return await _mapToAgent(row);
+    return await this._mapToAgent(row);
   }
 
   @override
@@ -38,7 +38,7 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
     String workspaceId,
     AgentToCreate agent,
   ) async {
-    _validateAgentToCreate(agent);
+    this._validateAgentToCreate(agent);
 
     final created = await _database.agentsDao.createAgent(
       .new(
@@ -49,15 +49,15 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
         isEnabled: Value(agent.isEnabled),
         visibility: Value(agent.visibility.name),
       ),
-      agent.skills.map(_mapSkillRefToCompanion).toList(),
+      agent.skills.map(this._mapSkillRefToCompanion).toList(),
     );
 
-    return await _mapToAgent(created);
+    return await this._mapToAgent(created);
   }
 
   @override
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async {
-    _validateAgentToUpdate(agent);
+    this._validateAgentToUpdate(agent);
 
     final updated = await _database.agentsDao.updateAgent(
       agentId,
@@ -69,16 +69,18 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
         isEnabled: Value(agent.isEnabled),
         visibility: Value(agent.visibility.name),
       ),
-      agent.skills.map(_mapSkillRefToCompanion).toList(),
+      agent.skills.map(this._mapSkillRefToCompanion).toList(),
     );
 
-    return await _mapToAgent(updated);
+    return await this._mapToAgent(updated);
   }
 
   @override
   Future<bool> deleteAgent(String agentId) =>
       _database.agentsDao.deleteAgent(agentId);
+}
 
+extension on AgentsRepository {
   void _validateAgentToCreate(AgentToCreate agent) {
     if (!agent.isValid) {
       throw AgentValidationException(_agentCreateValidationMessage(agent));

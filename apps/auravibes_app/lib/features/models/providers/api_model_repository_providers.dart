@@ -35,21 +35,27 @@ ModelApiService modelApiService(Ref _) {
 ModelSyncService modelSyncService(Ref ref) {
   final repository = ref.watch(apiModelRepositoryProvider);
   final apiService = ref.watch(modelApiServiceProvider);
-  final syncApiModelsUseCase = SyncApiModelsUseCase(
-    repository: repository,
-    apiService: apiService,
+  final service = _createModelSyncService(repository, apiService);
+
+  final timer = Timer.periodic(
+    const Duration(hours: 5),
+    (_) => service.performFullSync(),
   );
-
-  final service = ModelSyncService(syncApiModelsUseCase: syncApiModelsUseCase);
-
-  final timer = Timer.periodic(const Duration(hours: 5), (_) {
-    service.performFullSync();
-  });
 
   final _ = ref.onDispose(timer.cancel);
 
   return service;
 }
+
+ModelSyncService _createModelSyncService(
+  ApiModelRepository repository,
+  ModelApiService apiService,
+) => ModelSyncService(
+  syncApiModelsUseCase: SyncApiModelsUseCase(
+    repository: repository,
+    apiService: apiService,
+  ),
+);
 
 @riverpod
 Future<List<ApiModelProviderEntity>> apiModelProviders(
@@ -59,13 +65,7 @@ Future<List<ApiModelProviderEntity>> apiModelProviders(
   final catalog = await ref.watch(
     modelCatalogStoreProvider(workspaceId).future,
   );
-  final providers = await catalog.getAllProviders();
-  final realProviders = providers
-      .where(
-        (p) =>
-            !ModelProviderOAuthProfiles.isCodexProvider(p.id) && p.type != null,
-      )
-      .toList();
+  final realProviders = _realProviders(await catalog.getAllProviders());
   final openAIProvider = realProviders.firstWhereOrNull(
     (provider) => provider.id == 'openai',
   );
@@ -73,17 +73,27 @@ Future<List<ApiModelProviderEntity>> apiModelProviders(
     return realProviders;
   }
 
-  return [
+  return [_codexProvider(openAIProvider), ...realProviders];
+}
+
+List<ApiModelProviderEntity> _realProviders(
+  List<ApiModelProviderEntity> providers,
+) => providers
+    .where(
+      (provider) =>
+          !ModelProviderOAuthProfiles.isCodexProvider(provider.id) &&
+          provider.type != null,
+    )
+    .toList();
+
+ApiModelProviderEntity _codexProvider(ApiModelProviderEntity openAIProvider) =>
     ApiModelProviderEntity(
       id: ModelProviderOAuthProfiles.providerId,
       name: ModelProviderOAuthProfiles.displayName,
       type: .openai,
       url: openAIProvider.url,
       doc: openAIProvider.doc,
-    ),
-    ...realProviders,
-  ];
-}
+    );
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)

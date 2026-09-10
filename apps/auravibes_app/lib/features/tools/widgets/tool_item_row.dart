@@ -91,30 +91,25 @@ class const _ToolItemColumn({
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      children: _children(),
+      children: [
+        _ToolItemHeader(
+          tool: tool,
+          isEnabled: tool.isEnabled,
+          isExpanded: isExpanded,
+          onEnabledChanged: onEnabledChanged,
+          onToggleExpanded: onToggleExpanded,
+        ),
+        if (isExpanded)
+          _ExpandedToolOptions(
+            tool: tool,
+            workspaceId: workspaceId,
+            isEnabled: tool.isEnabled,
+            permissionMode: tool.permissionMode,
+            showDeleteButton: showDeleteButton,
+          ),
+      ],
       crossAxisAlignment: .start,
     );
-  }
-
-  List<Widget> _children() {
-    final isEnabled = tool.isEnabled;
-    return [
-      _ToolItemHeader(
-        tool: tool,
-        isEnabled: isEnabled,
-        isExpanded: isExpanded,
-        onEnabledChanged: onEnabledChanged,
-        onToggleExpanded: onToggleExpanded,
-      ),
-      if (isExpanded)
-        _ExpandedToolOptions(
-          tool: tool,
-          workspaceId: workspaceId,
-          isEnabled: isEnabled,
-          permissionMode: tool.permissionMode,
-          showDeleteButton: showDeleteButton,
-        ),
-    ];
   }
 }
 
@@ -128,10 +123,7 @@ class const _ExpandedToolOptions({
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        left: _kToolItemIconSize + context.auraTheme.fromSpacing(.sm),
-        top: context.auraTheme.fromSpacing(.sm),
-      ),
+      padding: _toolOptionsPadding(context),
       child: _ToolOptions(
         tool: tool,
         workspaceId: workspaceId,
@@ -142,6 +134,11 @@ class const _ExpandedToolOptions({
     );
   }
 }
+
+EdgeInsets _toolOptionsPadding(BuildContext context) => EdgeInsets.only(
+  left: _kToolItemIconSize + context.auraTheme.fromSpacing(.sm),
+  top: context.auraTheme.fromSpacing(.sm),
+);
 
 /// Options section for an expanded tool item.
 class const _ToolOptions({
@@ -224,19 +221,21 @@ class const _ToolItemIcon({
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: isEnabled
-            ? context.auraColors.primary.withValues(alpha: 0.1)
-            : context.auraColors.surfaceVariant,
-        borderRadius: BorderRadius.all(
-          .circular(context.auraTheme.fromBorderRadius(.sm)),
-        ),
-      ),
+      decoration: _toolIconDecoration(context),
       width: _kToolItemIconSize,
       height: _kToolItemIconSize,
       child: _ToolIconContent(tool: tool, isEnabled: isEnabled),
     );
   }
+
+  BoxDecoration _toolIconDecoration(BuildContext context) => BoxDecoration(
+    color: isEnabled
+        ? context.auraColors.primary.withValues(alpha: 0.1)
+        : context.auraColors.surfaceVariant,
+    borderRadius: BorderRadius.all(
+      .circular(context.auraTheme.fromBorderRadius(.sm)),
+    ),
+  );
 }
 
 class const _ToolIconContent({
@@ -261,17 +260,25 @@ class const _ToolItemDescription({required final WorkspaceToolEntity tool})
     return AuraColumn(
       children: [
         AuraText(child: tool.getNameWidget()),
-        AuraText(
-          child: DefaultTextStyle.merge(
-            overflow: .ellipsis,
-            maxLines: 1,
-            child: tool.getDescriptionWidget(),
-          ),
-          style: .bodySmall,
-        ),
+        _ToolDescriptionText(tool: tool),
       ],
       spacing: .xs,
       crossAxisAlignment: .start,
+    );
+  }
+}
+
+class const _ToolDescriptionText({required final WorkspaceToolEntity tool})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraText(
+      child: DefaultTextStyle.merge(
+        overflow: .ellipsis,
+        maxLines: 1,
+        child: tool.getDescriptionWidget(),
+      ),
+      style: .bodySmall,
     );
   }
 }
@@ -338,18 +345,25 @@ class const _RemoveToolButton({required final VoidCallback onPressed})
       alignment: Alignment.centerRight,
       child: AuraButton(
         onPressed: onPressed,
-        child: const AuraRow(
-          children: [
-            AuraIcon(Icons.delete_outline, size: .small, tint: .error),
-            TextLocale(LocaleKeys.common_remove),
-          ],
-          spacing: .xs,
-          mainAxisSize: .min,
-        ),
+        child: const _RemoveToolLabel(),
         variant: .text,
         tint: .error,
         size: .small,
       ),
+    );
+  }
+}
+
+class const _RemoveToolLabel() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const AuraRow(
+      children: [
+        AuraIcon(Icons.delete_outline, size: .small, tint: .error),
+        TextLocale(LocaleKeys.common_remove),
+      ],
+      spacing: .xs,
+      mainAxisSize: .min,
     );
   }
 }

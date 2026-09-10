@@ -40,57 +40,6 @@ class CloudChatGateway {
   int get _workspaceId => _stateGateway.workspace.cloudWorkspaceId;
   Client get _client => _stateGateway.client;
 
-  Future<BeginUploadResult> beginUpload({
-    required String requestId,
-    required String purpose,
-    required String displayName,
-    required String mimeType,
-    required int sizeBytes,
-    required String checksumSha256,
-  }) => CloudAppErrors.guardCall(
-    .object,
-    () => _client.object.beginUpload(
-      .new(
-        workspaceId: _workspaceId,
-        requestId: requestId,
-        purpose: purpose,
-        displayName: displayName,
-        mimeType: mimeType,
-        sizeBytes: sizeBytes,
-        checksumSha256: checksumSha256,
-      ),
-    ),
-  );
-  Future<ObjectResult> completeUpload({required int objectId}) =>
-      CloudAppErrors.guardCall(
-        .object,
-        () => _client.object.completeUpload(
-          .new(workspaceId: _workspaceId, objectId: objectId),
-        ),
-      );
-  Future<GetDownloadResult> getDownload({required int objectId}) =>
-      CloudAppErrors.guardCall(
-        .object,
-        () => _client.object.getDownload(
-          .new(workspaceId: _workspaceId, objectId: objectId),
-        ),
-      );
-  Future<void> deleteObject({
-    required int objectId,
-    required String requestId,
-    required int expectedRevision,
-  }) => CloudAppErrors.guardCall(
-    .object,
-    () => _client.object.delete(
-      .new(
-        workspaceId: _workspaceId,
-        objectId: objectId,
-        requestId: requestId,
-        expectedRevision: expectedRevision,
-      ),
-    ),
-  );
-
   Future<StartTurnResult> startTurn({
     required String requestId,
     required String conversationId,
@@ -339,4 +288,64 @@ class CloudChatGateway {
           request.copyWith(workspaceId: _workspaceId),
         ),
       );
+}
+
+extension on CloudChatGateway {
+  Future<BeginUploadResult> beginUpload({
+    required String requestId,
+    required String purpose,
+    required String displayName,
+    required String mimeType,
+    required int sizeBytes,
+    required String checksumSha256,
+  }) => CloudAppErrors.guardCall(
+    .object,
+    () => _client.object.beginUpload(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        purpose: purpose,
+        displayName: displayName,
+        mimeType: mimeType,
+        sizeBytes: sizeBytes,
+        checksumSha256: checksumSha256,
+      ),
+    ),
+  );
+
+  Future<ObjectResult> completeUpload({required int objectId}) =>
+      CloudAppErrors.guardCall(
+        .object,
+        () => _client.object.completeUpload(
+          .new(workspaceId: _workspaceId, objectId: objectId),
+        ),
+      );
+
+  Future<GetDownloadResult> getDownload({required int objectId}) =>
+      CloudAppErrors.guardCall(
+        .object,
+        () => _client.object.getDownload(
+          .new(workspaceId: _workspaceId, objectId: objectId),
+        ),
+      );
+
+  Future<void> deleteObject({
+    required int objectId,
+    required String requestId,
+    required int expectedRevision,
+  }) => CloudAppErrors.guardCall(
+    .object,
+    () => _client.object.delete(
+      .new(
+        workspaceId: _workspaceId,
+        objectId: objectId,
+        requestId: requestId,
+        purpose: 'unused',
+        displayName: 'unused',
+        mimeType: 'unused',
+        sizeBytes: 0,
+        checksumSha256: 'unused',
+      ),
+    ),
+  );
 }

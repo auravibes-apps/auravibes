@@ -17,6 +17,10 @@ class ChatA2uiMessageState {
   final Set<ChatA2uiSurfaceIssue> messageIssues = {};
   bool closed = false;
   bool blocking = false;
+
+  bool containsIssue(ChatA2uiSurfaceIssue issue) {
+    return issues.contains(issue) || messageIssues.contains(issue);
+  }
 }
 
 class ChatA2uiProtocolMessage {
@@ -27,16 +31,25 @@ class ChatA2uiProtocolMessage {
   String get payloadJson => envelope.payloadJson;
   String get interactionMode => envelope.interactionMode;
   A2uiOperation get operation => envelope.operation;
+
+  bool isOperation(A2uiOperation candidate) => operation == candidate;
+
+  bool hasInteractionMode(String candidate) => interactionMode == candidate;
 }
 
 class ChatA2uiParseResult {
-  // ignore: unnecessary-nullable, valid and invalid results share one value type.
-  const new valid(this.message) : issue = null, wireSurfaceId = null;
+  const new valid(ChatA2uiProtocolMessage message)
+    : message = message,
+      issue = null,
+      wireSurfaceId = null;
 
-  // ignore: unnecessary-nullable, valid and invalid results share one value type.
-  const new invalid(this.issue, {this.wireSurfaceId}) : message = null;
+  const new invalid(ChatA2uiSurfaceIssue issue, {this.wireSurfaceId})
+    : message = null,
+      issue = issue;
 
   final ChatA2uiProtocolMessage? message;
   final ChatA2uiSurfaceIssue? issue;
   final String? wireSurfaceId;
+
+  bool isValid() => message != null;
 }

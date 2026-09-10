@@ -18,7 +18,18 @@ class AppLogging._() {
 
     Logger.root.level = .ALL;
     _subscription = Logger.root.onRecord.listen(_handleRecord);
+    _configureFlutterErrorHandler();
+    _configurePlatformErrorHandler();
+  }
 
+  @visibleForTesting
+  static void resetForTesting() {
+    _configured = false;
+    _subscription?.cancel();
+    _subscription = null;
+  }
+
+  static void _configureFlutterErrorHandler() {
     final previousFlutterError = FlutterError.onError;
     FlutterError.onError = (details) {
       _logger.severe('Flutter error', details.exception, details.stack);
@@ -28,19 +39,14 @@ class AppLogging._() {
         FlutterError.presentError(details);
       }
     };
+  }
 
+  static void _configurePlatformErrorHandler() {
     PlatformDispatcher.instance.onError = (error, stackTrace) {
       _logger.severe('Uncaught platform error', error, stackTrace);
 
       return false;
     };
-  }
-
-  @visibleForTesting
-  static void resetForTesting() {
-    _configured = false;
-    _subscription?.cancel();
-    _subscription = null;
   }
 
   static void _handleRecord(LogRecord record) {

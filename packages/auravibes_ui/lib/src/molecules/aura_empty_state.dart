@@ -26,25 +26,44 @@ class AuraEmptyState extends StatelessWidget {
   final Widget? action;
 
   @override
+  Widget build(BuildContext context) => _AuraEmptyStateContent(state: this);
+}
+
+class const _AuraEmptyStateContent({required final AuraEmptyState state})
+    extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
     final spacing = context.auraTheme.spacing;
+    final state = this.state;
 
     return Padding(
       padding: EdgeInsets.all(spacing.lg),
-      child: Column(
-        mainAxisSize: .min,
-        spacing: spacing.sm,
-        children: [
-          ?icon,
-          Semantics(
-            child: AuraText(child: title, style: .heading6, textAlign: .center),
-            header: true,
-          ),
-          if (description case final description?)
-            AuraText(child: description, textAlign: .center),
-          ?action,
-        ],
-      ),
+      child: _AuraEmptyStateChildren(state: state, spacing: spacing),
     );
   }
+}
+
+class const _AuraEmptyStateChildren({
+  required final AuraEmptyState state,
+  required final AuraSpacingScale spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    spacing: spacing.sm,
+    children: [
+      ?state.icon,
+      Semantics(
+        child: AuraText(
+          child: state.title,
+          style: .heading6,
+          textAlign: .center,
+        ),
+        header: true,
+      ),
+      if (state.description case final description?)
+        AuraText(child: description, textAlign: .center),
+      ?state.action,
+    ],
+  );
 }

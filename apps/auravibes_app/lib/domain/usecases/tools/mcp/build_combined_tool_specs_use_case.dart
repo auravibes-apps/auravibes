@@ -92,12 +92,27 @@ class const BuildCombinedToolSpecsUseCase({
     final mcpServerId = toolGroup?.mcpServerId;
     if (mcpServerId == null) return null;
 
+    return _buildMcpServerCandidate(workspaceTool, mcpServerId);
+  }
+
+  Future<ToolCatalogCandidate<ResolvedTool>?> _buildMcpServerCandidate(
+    WorkspaceToolEntity workspaceTool,
+    String mcpServerId,
+  ) async {
     final originalSpec = _getMcpToolSpec(
       mcpServerId: mcpServerId,
       toolName: workspaceTool.toolId,
     );
     if (originalSpec == null) return null;
 
+    return _buildMcpToolCandidate(workspaceTool, mcpServerId, originalSpec);
+  }
+
+  ToolCatalogCandidate<ResolvedTool> _buildMcpToolCandidate(
+    WorkspaceToolEntity workspaceTool,
+    String mcpServerId,
+    ToolSpec originalSpec,
+  ) {
     final legacyTarget = const AgentToolNameResolver().resolve(
       originalSpec.name,
     );

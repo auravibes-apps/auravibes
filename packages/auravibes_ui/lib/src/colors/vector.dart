@@ -67,16 +67,16 @@ class MatrixTransformation {
   final Vector third;
 
   /// Transforms vector [v] using this matrix.
-  Vector transform(Vector v) => Vector(
-    first.x * v.x + first.y * v.y + first.z * v.z,
-    second.x * v.x + second.y * v.y + second.z * v.z,
-    third.x * v.x + third.y * v.y + third.z * v.z,
-  );
+  Vector transform(Vector v) =>
+      Vector(_dot(first, v), _dot(second, v), _dot(third, v));
 
   /// Multiplies this matrix with [other] and returns the result.
   MatrixTransformation operator *(MatrixTransformation other) =>
       MatrixTransformation.multiply(this, other);
 }
+
+num _dot(Vector row, Vector value) =>
+    row.x * value.x + row.y * value.y + row.z * value.z;
 
 /// Matrix transformations used by the color conversion pipeline.
 abstract final class ColorSpaceMatrices {

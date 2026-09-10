@@ -19,26 +19,32 @@ abstract final class PinnedHttpClientAdapterIo {
     final resolvedAddress = InternetAddress(firstAddress);
 
     return IOHttpClientAdapter(
-      createHttpClient: () {
-        final configuredClient = current.createHttpClient?.call();
-        if (configuredClient != null) {
-          return configuredClient
-            ..connectionFactory = (target, proxyHost, proxyPort) =>
-                Socket.startConnect(resolvedAddress, target.port);
-        }
-
-        final defaultClient = HttpClient()
-          ..idleTimeout = const Duration(seconds: 3);
-        final client =
-            current.onHttpClientCreate?.call(defaultClient) ?? defaultClient;
-
-        return client
-          ..connectionFactory = (target, proxyHost, proxyPort) =>
-              Socket.startConnect(resolvedAddress, target.port);
-      },
+      createHttpClient: () => _createHttpClient(current, resolvedAddress),
       validateCertificate: current.validateCertificate,
     );
   }
 }
+
+HttpClient _createHttpClient(
+  HttpClientAdapter current,
+  InternetAddress resolvedAddress,
+) {
+  final connectionFactory = _connectionFactory(resolvedAddress);
+  final configuredClient = current.createHttpClient?.call();
+  final client = configuredClient ?? _defaultHttpClient(current);
+
+  return client..connectionFactory = connectionFactory;
+}
+
+HttpClient _defaultHttpClient(HttpClientAdapter current) {
+  final client = HttpClient()..idleTimeout = const Duration(seconds: 3);
+
+  return current.onHttpClientCreate?.call(client) ?? client;
+}
+
+Future<ConnectionTask<Socket>> Function(Uri, String?, int?) _connectionFactory(
+  InternetAddress resolvedAddress,
+) =>
+    (target, _, _) => Socket.startConnect(resolvedAddress, target.port);
 
 typedef PinnedHttpClientAdapterImplementation = PinnedHttpClientAdapterIo;

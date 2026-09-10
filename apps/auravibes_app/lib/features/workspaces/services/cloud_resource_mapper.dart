@@ -9,6 +9,44 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('cloud_resource_mapper');
 
+const _requiredResourceFields = <WorkspaceResourceKind, Map<String, Type>>{
+  .agent: {'name': String, 'content': String, 'visibility': String},
+  .agentAssociation: {'agentId': String},
+  .serviceConnection: {'name': String, 'serviceId': String},
+  .modelConnection: {'name': String, 'modelId': String},
+  .model: {'modelConnectionId': String},
+  .modelSelection: {'modelId': String},
+  .tool: {'toolId': String, 'isEnabled': bool, 'permissionMode': String},
+  .toolGroup: {'name': String, 'isEnabled': bool, 'permissionMode': String},
+  .toolPermission: {'toolId': String, 'permissionMode': String},
+  .mcpServer: {'name': String, 'url': String, 'transport': Map},
+  .skill: {
+    'kind': String,
+    'title': String,
+    'slug': String,
+    'description': String,
+    'content': String,
+    'isEnabled': bool,
+  },
+  .skillDefinition: {'title': String, 'slug': String, 'attributesJson': String},
+  .skillSetting: {'skillId': String, 'isEnabled': bool},
+  .skillTemplateTool: {
+    'skillId': String,
+    'templateType': String,
+    'title': String,
+    'description': String,
+    'slug': String,
+    'templateJson': String,
+    'inputsJson': String,
+    'isEnabled': bool,
+    'requiresCredential': bool,
+  },
+  .conversationToolSelection: {'conversationId': String, 'toolId': String},
+  .conversationSkillSelection: {'conversationId': String, 'skillId': String},
+  .compactionSetting: {},
+  .workspaceSetting: {},
+};
+
 abstract final class CloudResourceMapper {
   static Map<String, dynamic> decode(WorkspaceResource resource) {
     Map<String, dynamic>? decoded;
@@ -20,16 +58,7 @@ abstract final class CloudResourceMapper {
 
       return decoded;
     } on Object catch (error) {
-      final skillMetadata = resource.resourceKind == WorkspaceResourceKind.skill
-          ? ' skillKind=${decoded?['kind']} skillSource=${decoded?['source']}'
-          : '';
-      _logger.warning(
-        'Rejected workspace resource: '
-        'kind=${resource.resourceKind.name} id=${resource.resourceId}'
-        '$skillMetadata errorType=${error.runtimeType}.',
-      );
-
-      return CloudAppErrors.translateException(error, .resource);
+      return _handleDecodeError(resource, decoded, error);
     }
   }
 
@@ -69,62 +98,25 @@ abstract final class CloudResourceMapper {
     ),
   };
 
+  static Never _handleDecodeError(
+    WorkspaceResource resource,
+    Map<String, dynamic>? decoded,
+    Object error,
+  ) {
+    final skillMetadata = resource.resourceKind == WorkspaceResourceKind.skill
+        ? ' skillKind=${decoded?['kind']} skillSource=${decoded?['source']}'
+        : '';
+    _logger.warning(
+      'Rejected workspace resource: '
+      'kind=${resource.resourceKind.name} id=${resource.resourceId}'
+      '$skillMetadata errorType=${error.runtimeType}.',
+    );
+    return CloudAppErrors.translateException(error, .resource);
+  }
+
   static void _validate(WorkspaceResourceKind kind, Map<String, dynamic> data) {
-    final required = switch (kind) {
-      .conversation || .message || .attachment => throw const FormatException(),
-      .agent => const {'name': String, 'content': String, 'visibility': String},
-      .agentAssociation => const {'agentId': String},
-      .serviceConnection => const {'name': String, 'serviceId': String},
-      .modelConnection => const {'name': String, 'modelId': String},
-      .model => const {'modelConnectionId': String},
-      .modelSelection => const {'modelId': String},
-      .tool => const {
-        'toolId': String,
-        'isEnabled': bool,
-        'permissionMode': String,
-      },
-      .toolGroup => const {
-        'name': String,
-        'isEnabled': bool,
-        'permissionMode': String,
-      },
-      .toolPermission => const {'toolId': String, 'permissionMode': String},
-      .mcpServer => const {'name': String, 'url': String, 'transport': Map},
-      .skill => const {
-        'kind': String,
-        'title': String,
-        'slug': String,
-        'description': String,
-        'content': String,
-        'isEnabled': bool,
-      },
-      .skillDefinition => const {
-        'title': String,
-        'slug': String,
-        'attributesJson': String,
-      },
-      .skillSetting => const {'skillId': String, 'isEnabled': bool},
-      .skillTemplateTool => const {
-        'skillId': String,
-        'templateType': String,
-        'title': String,
-        'description': String,
-        'slug': String,
-        'templateJson': String,
-        'inputsJson': String,
-        'isEnabled': bool,
-        'requiresCredential': bool,
-      },
-      .conversationToolSelection => const {
-        'conversationId': String,
-        'toolId': String,
-      },
-      .conversationSkillSelection => const {
-        'conversationId': String,
-        'skillId': String,
-      },
-      .compactionSetting || .workspaceSetting => const <String, Type>{},
-    };
+    final required = _requiredResourceFields[kind];
+    if (required == null) throw const FormatException();
     for (final entry in required.entries) {
       _validateResourceEntry(kind, data, entry);
     }

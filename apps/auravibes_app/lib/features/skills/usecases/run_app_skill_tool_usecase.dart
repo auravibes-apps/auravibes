@@ -2,6 +2,7 @@ import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
+import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/app_skill_http_client_adapter.dart';
@@ -12,6 +13,37 @@ import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod/riverpod.dart';
+
+typedef _RunRequest = ({
+  String workspaceId,
+  String skillSlug,
+  String toolSlug,
+  Map<String, dynamic> arguments,
+});
+
+typedef _ResolvedTool = ({
+  AppSkillDefinition skill,
+  Map<String, String> credentials,
+});
+
+typedef _CredentialRequest = ({
+  String workspaceId,
+  AppSkillDefinition skill,
+  AppSkillToolDefinition tool,
+  Object? credentialId,
+});
+
+typedef _ConnectionRequest = ({
+  String workspaceId,
+  String connectionId,
+  AppSkillDefinition skill,
+});
+
+typedef _SecretAttributesRequest = ({
+  _ConnectionRequest request,
+  ServiceConnectionSecret secret,
+  ServiceConnectionMetadata metadata,
+});
 
 class RunAppSkillToolUsecase(
   final AppSkillRegistry _appSkillRegistry,
@@ -27,154 +59,197 @@ class RunAppSkillToolUsecase(
     required String skillSlug,
     required String toolSlug,
     required Map<String, dynamic> arguments,
-  }) {
-    final operation = callCancelable(
-      workspaceId: workspaceId,
-      skillSlug: skillSlug,
-      toolSlug: toolSlug,
-      arguments: arguments,
-    );
-
-    return operation.valueOrCancellation();
-  }
+  }) => callCancelable(
+    workspaceId: workspaceId,
+    skillSlug: skillSlug,
+    toolSlug: toolSlug,
+    arguments: arguments,
+  ).valueOrCancellation();
 
   CancelableOperation<Object?> callCancelable({
     required String workspaceId,
     required String skillSlug,
     required String toolSlug,
     required Map<String, dynamic> arguments,
-  }) {
-    CancelableOperation<Object?>? innerOperation;
-    final completer = CancelableCompleter<Object?>(
-      onCancel: () => innerOperation?.cancel(),
+  }) => _startCancelable(this, (
+    workspaceId: workspaceId,
+    skillSlug: skillSlug,
+    toolSlug: toolSlug,
+    arguments: arguments,
+  ));
+}
+
+extension on RunAppSkillToolUsecase {
+  Future<_ResolvedTool> _resolveCredentialForTool(_RunRequest request) async {
+    final target = _requiredTool(request.skillSlug, request.toolSlug);
+    final skill = target.skill;
+
+    return (
+      skill: skill,
+      credentials: await _resolveCredential((
+        workspaceId: request.workspaceId,
+        skill: skill,
+        tool: target.tool,
+        credentialId: request.arguments['credentialId'],
+      )),
     );
-
-    () async {
-      try {
-        final resolved = await _resolveCredentialForTool(
-          workspaceId: workspaceId,
-          skillSlug: skillSlug,
-          toolSlug: toolSlug,
-          arguments: arguments,
-        );
-        if (completer.isCanceled) return;
-        innerOperation = _appSkillExecutor.run(
-          skill: resolved.skill,
-          toolSlug: toolSlug,
-          input: arguments,
-          credentials: resolved.credentials,
-        );
-        final result = await innerOperation?.valueOrCancellation();
-        if (!completer.isCanceled) completer.complete(result);
-      } on Object catch (error, stackTrace) {
-        if (!completer.isCanceled) {
-          completer.completeError(error, stackTrace);
-        }
-      }
-    }();
-
-    return completer.operation;
   }
 
-  Future<({AppSkillDefinition skill, Map<String, String> credentials})>
-  _resolveCredentialForTool({
-    required String workspaceId,
-    required String skillSlug,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  }) async {
+  ({AppSkillDefinition skill, AppSkillToolDefinition tool}) _requiredTool(
+    String skillSlug,
+    String toolSlug,
+  ) {
     final skill = _appSkillRegistry.getBySlug(skillSlug);
-    final tool = skill?.nativeTools
-        .where((tool) => tool.slug == toolSlug)
-        .firstOrNull;
+    final tool = _findTool(skill, toolSlug);
     if (skill == null || tool == null) {
       throw UnsupportedError('Unknown app skill tool: $skillSlug/$toolSlug');
     }
 
-    return (
-      skill: skill,
-      credentials: await _resolveCredential(
-        workspaceId: workspaceId,
-        skill: skill,
-        tool: tool,
-        credentialId: arguments['credentialId'],
-      ),
-    );
+    return (skill: skill, tool: tool);
   }
 
-  Future<Map<String, String>> _resolveCredential({
-    required String workspaceId,
-    required AppSkillDefinition skill,
-    required AppSkillToolDefinition tool,
-    required Object? credentialId,
-  }) async {
+  AppSkillToolDefinition? _findTool(
+    AppSkillDefinition? skill,
+    String toolSlug,
+  ) => skill?.nativeTools.where((tool) => tool.slug == toolSlug).firstOrNull;
+
+  Future<Map<String, String>> _resolveCredential(
+    _CredentialRequest request,
+  ) async {
+    final tool = request.tool;
     if (!tool.requiresCredential) return const {};
     final candidates = await _listAppSkillCredentialCandidatesUsecase.call(
-      workspaceId: workspaceId,
-      skill: skill,
+      workspaceId: request.workspaceId,
+      skill: request.skill,
     );
-    final trimmed = switch (credentialId) {
-      final String value when value.trim().isNotEmpty => value.trim(),
-      _ when candidates.length == 1 => candidates.single.id,
-      _ => throw StateError('App skill tool requires a credentialId argument.'),
-    };
-    if (!candidates.any((candidate) => candidate.id == trimmed)) {
-      throw StateError('Credential is not available for this app skill tool.');
-    }
-    if (trimmed.startsWith('skill:')) {
-      return await _skillCredentialsRepository.readCredentialAttributes(
-        trimmed.replaceFirst('skill:', ''),
-      );
-    }
-    if (trimmed.startsWith('service:')) {
-      return await _serviceConnectionAttributes(
-        workspaceId: workspaceId,
-        connectionId: trimmed.replaceFirst('service:', ''),
-        skill: skill,
-      );
-    }
-    if (trimmed.startsWith('model:')) {
-      return await _serviceConnectionAttributes(
-        workspaceId: workspaceId,
-        connectionId: trimmed.replaceFirst('model:', ''),
-        skill: skill,
-      );
-    }
+    final credentialId = _credentialId(request.credentialId, candidates);
+    _validateCredential(candidates, credentialId);
 
-    throw StateError('Unsupported app skill credentialId: $trimmed');
+    return _credentialAttributes(request, credentialId);
   }
 
-  Future<Map<String, String>> _serviceConnectionAttributes({
-    required String workspaceId,
-    required String connectionId,
-    required AppSkillDefinition skill,
-  }) async {
-    final connection = await _serviceConnectionRepository.getById(connectionId);
+  String _credentialId(
+    Object? credentialId,
+    List<AppSkillCredentialCandidate> candidates,
+  ) => switch (credentialId) {
+    final String value when value.trim().isNotEmpty => value.trim(),
+    _ when candidates.length == 1 => candidates.single.id,
+    _ => throw StateError('App skill tool requires a credentialId argument.'),
+  };
+
+  void _validateCredential(
+    List<AppSkillCredentialCandidate> candidates,
+    String credentialId,
+  ) {
+    if (!candidates.any((candidate) => candidate.id == credentialId)) {
+      throw StateError('Credential is not available for this app skill tool.');
+    }
+  }
+}
+
+extension on RunAppSkillToolUsecase {
+  Future<Map<String, String>> _credentialAttributes(
+    _CredentialRequest request,
+    String credentialId,
+  ) {
+    if (credentialId.startsWith('skill:')) {
+      return _skillCredentialsRepository.readCredentialAttributes(
+        credentialId.replaceFirst('skill:', ''),
+      );
+    }
+
+    return _externalCredentialAttributes(request, credentialId);
+  }
+
+  Future<Map<String, String>> _externalCredentialAttributes(
+    _CredentialRequest request,
+    String credentialId,
+  ) {
+    final isServiceCredential = credentialId.startsWith('service:');
+    final isModelCredential = credentialId.startsWith('model:');
+    if (isServiceCredential || isModelCredential) {
+      final prefix = isServiceCredential ? 'service:' : 'model:';
+      return _serviceConnectionAttributes((
+        workspaceId: request.workspaceId,
+        connectionId: credentialId.replaceFirst(prefix, ''),
+        skill: request.skill,
+      ));
+    }
+
+    throw StateError('Unsupported app skill credentialId: $credentialId');
+  }
+
+  Future<Map<String, String>> _serviceConnectionAttributes(
+    _ConnectionRequest request,
+  ) async {
+    final connection = await _availableConnection(request);
+    return await _connectionAttributes(request, connection);
+  }
+
+  Future<ServiceConnectionEntity> _availableConnection(
+    _ConnectionRequest request,
+  ) async {
+    final connection = await _serviceConnectionRepository.getById(
+      request.connectionId,
+    );
     if (connection == null ||
-        connection.workspaceId != workspaceId ||
+        connection.workspaceId != request.workspaceId ||
         !connection.isEnabled) {
       throw StateError('Service connection is not available for this tool.');
     }
 
-    final secret = await _serviceConnectionRepository.readSecret(connectionId);
+    return connection;
+  }
+
+  Future<Map<String, String>> _connectionAttributes(
+    _ConnectionRequest request,
+    ServiceConnectionEntity connection,
+  ) async {
+    final secret = await _serviceConnectionRepository.readSecret(
+      request.connectionId,
+    );
 
     final metadata = ServiceConnectionAuthCodec.decodeMetadata(
       connection.metadataJson,
     );
 
-    return switch (secret) {
-      ServiceConnectionSecretApiKey(:final apiKey) => {
-        'apiKey': apiKey,
-        if (skill.slug == 'searxng') 'baseUrl': apiKey,
-      },
-      ServiceConnectionSecretBearerToken(:final bearerToken) => {
-        'apiKey': bearerToken,
-        'bearerToken': bearerToken,
-      },
+    return await _secretAttributes((
+      request: request,
+      secret: secret,
+      metadata: metadata,
+    ));
+  }
+
+  Future<Map<String, String>> _secretAttributes(
+    _SecretAttributesRequest request,
+  ) async {
+    final connectionRequest = request.request;
+
+    return switch (request.secret) {
+      ServiceConnectionSecretApiKey(:final apiKey) => _apiKeyAttributes(
+        connectionRequest.skill,
+        apiKey,
+      ),
+      ServiceConnectionSecretBearerToken(:final bearerToken) =>
+        _bearerAttributes(bearerToken),
       ServiceConnectionSecretOAuth2(:final accessToken) =>
-        await _oauthAttributes(connectionId, accessToken, metadata),
+        await _oauthAttributes(
+          connectionRequest.connectionId,
+          accessToken,
+          request.metadata,
+        ),
     };
   }
+
+  Map<String, String> _apiKeyAttributes(
+    AppSkillDefinition skill,
+    String apiKey,
+  ) => {'apiKey': apiKey, if (skill.slug == 'searxng') 'baseUrl': apiKey};
+
+  Map<String, String> _bearerAttributes(String bearerToken) => {
+    'apiKey': bearerToken,
+    'bearerToken': bearerToken,
+  };
 
   Future<Map<String, String>> _oauthAttributes(
     String connectionId,
@@ -204,6 +279,58 @@ class RunAppSkillToolUsecase(
     if (service == null) return fallbackAccessToken;
 
     return await service.getValidAccessToken(connectionId);
+  }
+}
+
+CancelableOperation<Object?> _startCancelable(
+  RunAppSkillToolUsecase usecase,
+  _RunRequest request,
+) => _CancelableToolOperation(usecase, request).start();
+
+class _CancelableToolOperation {
+  _CancelableToolOperation(this._usecase, this._request);
+
+  final RunAppSkillToolUsecase _usecase;
+  final _RunRequest _request;
+  CancelableOperation<Object?>? _innerOperation;
+
+  CancelableOperation<Object?> start() {
+    final completer = CancelableCompleter<Object?>(
+      onCancel: () => _innerOperation?.cancel(),
+    );
+    _run(completer);
+
+    return completer.operation;
+  }
+
+  Future<void> _run(CancelableCompleter<Object?> completer) async {
+    try {
+      await _completeSuccess(completer);
+    } on Object catch (error, stackTrace) {
+      if (!completer.isCanceled) {
+        completer.completeError(error, stackTrace);
+      }
+    }
+  }
+
+  Future<void> _completeSuccess(CancelableCompleter<Object?> completer) async {
+    final resolved = await _usecase._resolveCredentialForTool(_request);
+    if (completer.isCanceled) return;
+
+    final result = await _execute(resolved);
+    if (!completer.isCanceled) completer.complete(result);
+  }
+
+  Future<Object?> _execute(_ResolvedTool resolved) {
+    final operation = _usecase._appSkillExecutor.run(
+      skill: resolved.skill,
+      toolSlug: _request.toolSlug,
+      input: _request.arguments,
+      credentials: resolved.credentials,
+    );
+    _innerOperation = operation;
+
+    return operation.valueOrCancellation();
   }
 }
 

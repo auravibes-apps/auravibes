@@ -3,6 +3,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
+import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_group_header.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
@@ -40,51 +41,56 @@ class const ConversationToolsGroupCard({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpanded = useState(initiallyExpanded);
+    final callbacks = _ConversationToolsGroupCardCallbacks(
+      groupWithTools: groupWithTools,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      ref: ref,
+      context: context,
+    );
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.md)),
-      child: AuraCard(
-        child: AuraColumn(
-          children: [
-            // Header.
-            ConversationGroupHeader(
-              groupWithTools: groupWithTools,
-              isExpanded: isExpanded.value,
-              onToggleExpand: () => isExpanded.value = !isExpanded.value,
-              onToggleAllTools: groupWithTools.tools.isNotEmpty
-                  ? (enabled) => _handleToggleAllTools(ref, enabled)
-                  : null,
-              onReconnect: _shouldShowReconnect()
-                  ? () => _handleReconnect(ref)
-                  : null,
-              onViewError: groupWithTools.hasMcpError
-                  ? () => _showErrorDetails(context)
-                  : null,
-            ),
-
-            // Expanded content.
-            if (isExpanded.value) ...[
-              const AuraDivider(),
-              _ToolsList(
-                groupWithTools: groupWithTools,
-                workspaceId: workspaceId,
-                conversationId: conversationId,
-              ),
-            ],
-          ],
-          crossAxisAlignment: .start,
-        ),
-        style: .border,
-      ),
+    return _ConversationToolsGroupCardFrame(
+      groupWithTools: groupWithTools,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      isExpanded: isExpanded.value,
+      onToggleExpand: () => isExpanded.value = !isExpanded.value,
+      callbacks: callbacks,
     );
   }
+}
 
-  bool _shouldShowReconnect() {
-    return groupWithTools.isMcpGroup &&
-        (groupWithTools.hasMcpError || groupWithTools.isMcpDisconnected);
-  }
+class _ConversationToolsGroupCardCallbacks {
+  _ConversationToolsGroupCardCallbacks({
+    required this.groupWithTools,
+    required this.workspaceId,
+    required this.conversationId,
+    required this.ref,
+    required this.context,
+  });
 
-  Future<void> _handleToggleAllTools(WidgetRef ref, bool enabled) async {
+  final ConversationToolsGroupWithTools groupWithTools;
+  final String workspaceId;
+  final String? conversationId;
+  final WidgetRef ref;
+  final BuildContext context;
+
+  late final ValueChanged<bool>? onToggleAllTools =
+      groupWithTools.tools.isNotEmpty ? _handleToggleAllTools : null;
+
+  late final VoidCallback? onReconnect = _shouldShowReconnect
+      ? _handleReconnect
+      : null;
+
+  late final VoidCallback? onViewError = groupWithTools.hasMcpError
+      ? _showErrorDetails
+      : null;
+
+  late final bool _shouldShowReconnect =
+      groupWithTools.isMcpGroup &&
+      (groupWithTools.hasMcpError || groupWithTools.isMcpDisconnected);
+
+  Future<void> _handleToggleAllTools(bool enabled) async {
     await ref
         .read(
           groupedConversationToolsProvider(
@@ -99,7 +105,7 @@ class const ConversationToolsGroupCard({
         );
   }
 
-  Future<void> _handleReconnect(WidgetRef ref) async {
+  Future<void> _handleReconnect() async {
     final mcpServerId = groupWithTools.mcpServerId;
     if (mcpServerId == null) return;
 
@@ -113,7 +119,7 @@ class const ConversationToolsGroupCard({
         .reconnectMcp(mcpServerId);
   }
 
-  void _showErrorDetails(BuildContext context) {
+  void _showErrorDetails() {
     AuraDialogs.alert(
       context: context,
       title: Text(_kMcpErrorTitle.tr()),
@@ -125,6 +131,63 @@ class const ConversationToolsGroupCard({
   }
 }
 
+class const _ConversationToolsGroupCardFrame({
+  required final ConversationToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
+  required final _ConversationToolsGroupCardCallbacks callbacks,
+  final String? conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.md)),
+    child: AuraCard(
+      child: _ConversationToolsGroupCardContent(
+        groupWithTools: groupWithTools,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        isExpanded: isExpanded,
+        onToggleExpand: onToggleExpand,
+        callbacks: callbacks,
+      ),
+      style: .border,
+    ),
+  );
+}
+
+class const _ConversationToolsGroupCardContent({
+  required final ConversationToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
+  required final _ConversationToolsGroupCardCallbacks callbacks,
+  final String? conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      ConversationGroupHeader(
+        groupWithTools: groupWithTools,
+        isExpanded: isExpanded,
+        onToggleExpand: onToggleExpand,
+        onToggleAllTools: callbacks.onToggleAllTools,
+        onReconnect: callbacks.onReconnect,
+        onViewError: callbacks.onViewError,
+      ),
+      if (isExpanded) ...[
+        const AuraDivider(),
+        _ToolsList(
+          groupWithTools: groupWithTools,
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ),
+      ],
+    ],
+    crossAxisAlignment: .start,
+  );
+}
+
 /// List of conversation tools within a group.
 class const _ToolsList({
   required final ConversationToolsGroupWithTools groupWithTools,
@@ -134,32 +197,48 @@ class const _ToolsList({
   @override
   Widget build(BuildContext context) {
     if (groupWithTools.tools.isEmpty) {
-      return Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: context.auraTheme.fromSpacing(.md),
-          horizontal: context.auraTheme.fromSpacing(.sm),
-        ),
-        child: Center(
-          child: AuraText(
-            child: Text(_kNoToolsInGroup.tr()),
-            style: .bodySmall,
-          ),
-        ),
-      );
+      return const _EmptyTools();
     }
 
-    return Padding(
-      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.sm)),
-      child: AuraColumn(
-        children: groupWithTools.tools.map((toolState) {
-          return ConversationToolTile(
+    return _ToolRows(
+      tools: groupWithTools.tools,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    );
+  }
+}
+
+class const _EmptyTools() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.symmetric(
+      vertical: context.auraTheme.fromSpacing(.md),
+      horizontal: context.auraTheme.fromSpacing(.sm),
+    ),
+    child: Center(
+      child: AuraText(child: Text(_kNoToolsInGroup.tr()), style: .bodySmall),
+    ),
+  );
+}
+
+class const _ToolRows({
+  required final List<ConversationToolState> tools,
+  required final String workspaceId,
+  final String? conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.sm)),
+    child: AuraColumn(
+      children: [
+        for (final toolState in tools)
+          ConversationToolTile(
             toolState: toolState,
             workspaceId: workspaceId,
             conversationId: conversationId,
-          );
-        }).toList(),
-        spacing: .sm,
-      ),
-    );
-  }
+          ),
+      ],
+      spacing: .sm,
+    ),
+  );
 }

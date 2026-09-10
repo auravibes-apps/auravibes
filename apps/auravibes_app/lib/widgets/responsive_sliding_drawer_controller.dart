@@ -111,36 +111,6 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     return width;
   }
 
-  double get _gradientStartOpacity {
-    return widget.isDarkMode
-        ? _scrimGradientStartOpacityDarkMode
-        : _scrimGradientStartOpacityLightMode;
-  }
-
-  double get _scrimOpacity {
-    return widget.isDarkMode
-        ? _scrimColorOpacityDarkMode
-        : _scrimColorOpacityLightMode;
-  }
-
-  Color get _scrimColor {
-    return widget.isDarkMode ? _scrimColorDarkMode : _scrimColorLightMode;
-  }
-
-  double get _currentDrawerWidth {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-
-    return isDesktop
-        ? (_desktopDrawerWidth ?? (_desktopOpenRatio * screenWidth))
-        : _openRatio * screenWidth;
-  }
-
-  bool get _drawerFullyOpen =>
-      _requiredController.value >= 1.0 - _drawerFullyOpenThreshold;
-
-  bool get _isDividerHighlighted =>
-      _isHoveringDivider || _isResizing || _resizeOvershoot != 0.0;
-
   @override
   void initState() {
     super.initState();
@@ -185,6 +155,40 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       ? _DesktopDrawerLayout(state: this)
       : _MobileDrawerLayout(state: this);
 
+  void _rebuild(VoidCallback callback) => setState(callback);
+}
+
+extension _ResponsiveSlidingDrawerAppearance on _ResponsiveSlidingDrawerState {
+  double get _gradientStartOpacity => widget.isDarkMode
+      ? _ResponsiveSlidingDrawerState._scrimGradientStartOpacityDarkMode
+      : _ResponsiveSlidingDrawerState._scrimGradientStartOpacityLightMode;
+
+  double get _scrimOpacity => widget.isDarkMode
+      ? _ResponsiveSlidingDrawerState._scrimColorOpacityDarkMode
+      : _ResponsiveSlidingDrawerState._scrimColorOpacityLightMode;
+
+  Color get _scrimColor => widget.isDarkMode
+      ? _ResponsiveSlidingDrawerState._scrimColorDarkMode
+      : _ResponsiveSlidingDrawerState._scrimColorLightMode;
+
+  double get _currentDrawerWidth {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    return isDesktop
+        ? (_desktopDrawerWidth ??
+              (_ResponsiveSlidingDrawerState._desktopOpenRatio * screenWidth))
+        : _ResponsiveSlidingDrawerState._openRatio * screenWidth;
+  }
+
+  bool get _drawerFullyOpen =>
+      _requiredController.value >=
+      1.0 - _ResponsiveSlidingDrawerState._drawerFullyOpenThreshold;
+
+  bool get _isDividerHighlighted =>
+      _isHoveringDivider || _isResizing || _resizeOvershoot != 0.0;
+}
+
+extension _ResponsiveSlidingDrawerAnimation on _ResponsiveSlidingDrawerState {
   void _closeDrawer() {
     const settledThreshold = 0.001;
     if (settledThreshold >= _requiredController.value) {
@@ -192,9 +196,14 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
       return;
     }
-    _requiredController.animateTo(0, duration: _animationDuration).then((_) {
-      _isOpen = false;
-    });
+    _requiredController
+        .animateTo(
+          0,
+          duration: _ResponsiveSlidingDrawerState._animationDuration,
+        )
+        .then((_) {
+          _isOpen = false;
+        });
   }
 
   void _openDrawer() {
@@ -204,18 +213,37 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
       return;
     }
-    _requiredController.animateTo(1, duration: _animationDuration).then((_) {
-      _isOpen = true;
-    });
+    _requiredController
+        .animateTo(
+          1,
+          duration: _ResponsiveSlidingDrawerState._animationDuration,
+        )
+        .then((_) {
+          _isOpen = true;
+        });
   }
 
+  void _toggleDrawer() {
+    if (_isOpen) {
+      _closeDrawer();
+    } else {
+      _openDrawer();
+    }
+  }
+
+  void _handleControllerTick() => _rebuild(() {
+    final _ = Object();
+  });
+}
+
+extension _ResponsiveSlidingDrawerResize on _ResponsiveSlidingDrawerState {
   void _handleDividerPanUpdate(DragUpdateDetails details) {
     if (_requiredController.value < 0.99) return;
     final delta = details.delta.dx;
 
     _applyDesktopResizeDelta(delta);
     _clampDesktopDrawerWidth();
-    setState(() {
+    _rebuild(() {
       final _ = Object();
     });
   }
@@ -229,8 +257,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
     if (_resizeOvershoot == 0.0) {
       _desktopDrawerWidth = (_requiredDesktopDrawerWidth + delta).clamp(
-        _desktopMinDrawerWidth,
-        _desktopMaxDrawerWidth,
+        _ResponsiveSlidingDrawerState._desktopMinDrawerWidth,
+        _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
       );
 
       return;
@@ -239,13 +267,15 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     _applyOvershootRecovery(delta);
   }
 
-  bool _isResizeBeyondMax(double delta) {
-    return _requiredDesktopDrawerWidth >= _desktopMaxDrawerWidth && delta > 0;
-  }
+  bool _isResizeBeyondMax(double delta) =>
+      _requiredDesktopDrawerWidth >=
+          _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth &&
+      delta > 0;
 
-  bool _isResizeBeyondMin(double delta) {
-    return _requiredDesktopDrawerWidth <= _desktopMinDrawerWidth && delta < 0;
-  }
+  bool _isResizeBeyondMin(double delta) =>
+      _requiredDesktopDrawerWidth <=
+          _ResponsiveSlidingDrawerState._desktopMinDrawerWidth &&
+      delta < 0;
 
   void _applyOvershootRecovery(double delta) {
     if (!_isReversingOvershoot(delta)) {
@@ -269,24 +299,39 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
   bool _isDeltaWithinOvershoot(double delta) =>
       delta.abs() < _resizeOvershoot.abs();
+}
 
+extension _ResponsiveSlidingDrawerResizeBounds
+    on _ResponsiveSlidingDrawerState {
   void _applyRemainingResize(double delta) {
     final remaining = delta.abs() - _resizeOvershoot.abs();
     _resizeOvershoot = 0.0;
     final direction = delta > 0 ? remaining : -remaining;
     _desktopDrawerWidth = (_requiredDesktopDrawerWidth + direction).clamp(
-      _desktopMinDrawerWidth,
-      _desktopMaxDrawerWidth,
+      _ResponsiveSlidingDrawerState._desktopMinDrawerWidth,
+      _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
     );
   }
 
   void _clampDesktopDrawerWidth() {
     _desktopDrawerWidth = _requiredDesktopDrawerWidth.clamp(
-      _desktopMinDrawerWidth,
-      _desktopMaxDrawerWidth,
+      _ResponsiveSlidingDrawerState._desktopMinDrawerWidth,
+      _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
     );
   }
 
+  void _setResizing(bool value) {
+    _rebuild(() {
+      _isResizing = value;
+      _resizeOvershoot = 0.0;
+    });
+  }
+
+  void _setDividerHover(bool value) =>
+      _rebuild(() => _isHoveringDivider = value);
+}
+
+extension _ResponsiveSlidingDrawerDrag on _ResponsiveSlidingDrawerState {
   void _handleDragEnd(DragEndDetails details) {
     if (_isResizing || _dragDirection == null) return;
     final velocity = details.velocity.pixelsPerSecond.dx;
@@ -295,7 +340,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   void _settleDrag(double velocity) {
-    if (velocity.abs() >= _swipeVelocityThreshold) {
+    if (velocity.abs() >=
+        _ResponsiveSlidingDrawerState._swipeVelocityThreshold) {
       _settleByVelocity(velocity);
 
       return;
@@ -313,7 +359,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   void _settleByProgress() {
-    if (_requiredController.value >= _dragPercentageThreshold) {
+    if (_requiredController.value >=
+        _ResponsiveSlidingDrawerState._dragPercentageThreshold) {
       _openDrawer();
     } else {
       _closeDrawer();
@@ -324,17 +371,9 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     _dragStartedWhenOpen = null;
     _dragDirection = null;
   }
+}
 
-  void _setResizing(bool value) {
-    setState(() {
-      _isResizing = value;
-      _resizeOvershoot = 0.0;
-    });
-  }
-
-  void _setDividerHover(bool value) =>
-      setState(() => _isHoveringDivider = value);
-
+extension _ResponsiveSlidingDrawerGesture on _ResponsiveSlidingDrawerState {
   bool _isMobilePlatform(BuildContext context) {
     final platform = Theme.of(context).platform;
 
@@ -391,18 +430,6 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
     return null;
   }
-
-  void _toggleDrawer() {
-    if (_isOpen) {
-      _closeDrawer();
-    } else {
-      _openDrawer();
-    }
-  }
-
-  void _handleControllerTick() => setState(() {
-    final _ = Object();
-  });
 
   void _handleDragStart(DragStartDetails _) {
     _dragStartedWhenOpen = _isOpen;

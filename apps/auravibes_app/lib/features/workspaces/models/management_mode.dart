@@ -16,4 +16,8 @@ abstract class const WorkspaceManagementState._()
     @Default(ManagementMode.list) ManagementMode mode,
     WorkspaceEntity? editingWorkspace,
   }) = _WorkspaceManagementState;
+
+  /// Whether the management screen is editing a workspace.
+  /// Returns whether [mode] represents workspace editing.
+  static bool isEditing(ManagementMode mode) => mode == ManagementMode.edit;
 }

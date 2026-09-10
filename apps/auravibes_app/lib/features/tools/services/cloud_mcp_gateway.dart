@@ -3,28 +3,21 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
-  Future<CreateMcpServerResult> createMcpServer({
-    required String requestId,
-    required String name,
-    required String url,
-    required String transport,
-    required bool useHttp2,
-    required String? description,
-    required String? bearerToken,
-  }) => CloudAppErrors.guardCall(
+  Future<CreateMcpServerResult> createMcpServer(
+    ({
+      String requestId,
+      String name,
+      String url,
+      String transport,
+      bool useHttp2,
+      String? description,
+      String? bearerToken,
+    })
+    request,
+  ) => CloudAppErrors.guardCall(
     .mcp,
-    () => _stateGateway.client.mcpServer.create(
-      .new(
-        workspaceId: _stateGateway.workspace.cloudWorkspaceId,
-        requestId: requestId,
-        name: name,
-        url: url,
-        transport: transport,
-        useHttp2: useHttp2,
-        description: description,
-        bearerToken: bearerToken,
-      ),
-    ),
+    () =>
+        _stateGateway.client.mcpServer.create(_createMcpServerRequest(request)),
   );
 
   Future<void> deleteMcpServer({required String mcpServerId}) =>
@@ -48,5 +41,27 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
         mcpServerId: mcpServerId,
       ),
     ),
+  );
+
+  CreateMcpServerRequest _createMcpServerRequest(
+    ({
+      String requestId,
+      String name,
+      String url,
+      String transport,
+      bool useHttp2,
+      String? description,
+      String? bearerToken,
+    })
+    request,
+  ) => CreateMcpServerRequest(
+    workspaceId: _stateGateway.workspace.cloudWorkspaceId,
+    requestId: request.requestId,
+    name: request.name,
+    url: request.url,
+    transport: request.transport,
+    useHttp2: request.useHttp2,
+    description: request.description,
+    bearerToken: request.bearerToken,
   );
 }

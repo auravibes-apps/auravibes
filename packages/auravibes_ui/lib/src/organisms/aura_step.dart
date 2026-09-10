@@ -17,4 +17,7 @@ class AuraStep {
 
   /// Display state.
   final AuraStepState state;
+
+  /// Whether this step has supporting text.
+  bool hasDescription() => description != null;
 }

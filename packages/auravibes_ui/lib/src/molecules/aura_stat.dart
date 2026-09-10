@@ -34,17 +34,59 @@ class AuraStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AuraCard(
-    child: Column(
-      crossAxisAlignment: .start,
-      spacing: context.auraTheme.spacing.xs,
-      children: [
-        if (icon case final value?) AuraIcon(value, tint: tint),
-        AuraText(child: Text(value), style: .heading3),
-        AuraText(child: Text(label), style: .bodySmall),
-        if (delta case final value?)
-          AuraText(child: Text(value), style: .caption),
-      ],
-    ),
+    child: _AuraStatContent(stat: this),
     tint: tint,
+  );
+}
+
+class const _AuraStatContent({required final AuraStat stat})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final spacing = context.auraTheme.spacing;
+    final stat = this.stat;
+
+    return _AuraStatRows(stat: stat, spacing: spacing);
+  }
+}
+
+class const _AuraStatRows({
+  required final AuraStat stat,
+  required final AuraSpacingScale spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    spacing: spacing.xs,
+    children: [
+      if (stat.icon case final icon?)
+        _AuraStatIcon(icon: icon, tint: stat.tint),
+      _AuraStatBody(stat: stat, spacing: spacing),
+    ],
+  );
+}
+
+class const _AuraStatIcon({
+  required final IconData icon,
+  required final AuraTint tint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIcon(icon, tint: tint);
+}
+
+class const _AuraStatBody({
+  required final AuraStat stat,
+  required final AuraSpacingScale spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    spacing: spacing.xs,
+    children: [
+      AuraText(child: Text(stat.value), style: .heading3),
+      AuraText(child: Text(stat.label), style: .bodySmall),
+      if (stat.delta case final delta?)
+        AuraText(child: Text(delta), style: .caption),
+    ],
   );
 }

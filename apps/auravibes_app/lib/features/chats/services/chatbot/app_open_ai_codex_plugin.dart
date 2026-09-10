@@ -28,36 +28,42 @@ class AppOpenAICodexPlugin({
     ActionType actionType,
     String name,
   ) => actionType == ActionType.model ? _createModel(name) : null;
+}
 
-  Model<dynamic> _createModel(String modelName) {
-    return Model<dynamic>(
-      name: '$name/$modelName',
-      fn: (request, context) async {
-        if (request == null) throw ArgumentError.notNull('request');
-        final body = codec.buildRequestBody(
-          modelName: modelName,
-          request: request,
-          stream: context.streamingRequested,
-        );
-        if (!context.streamingRequested) {
-          return await codec.complete(_transport, body);
-        }
+extension on AppOpenAICodexPlugin {
+  Model<dynamic> _createModel(String modelName) => Model<dynamic>(
+    name: '$name/$modelName',
+    fn: (request, context) => _generateModel(modelName, request, context),
+  );
 
-        var sentChunks = false;
-        for (var attempt = 0; ; attempt++) {
-          try {
-            return await codec.stream(_transport, body, (chunk) {
-              sentChunks = true;
-              context.sendChunk(chunk);
-            });
-          } on GenkitException catch (error) {
-            if (!isRetryableCodexError(error) || attempt > 0 || sentChunks) {
-              rethrow;
-            }
-          }
-        }
-      },
+  Future<dynamic> _generateModel(
+    String modelName,
+    dynamic request,
+    dynamic context,
+  ) async {
+    if (request == null) throw ArgumentError.notNull('request');
+    final body = codec.buildRequestBody(
+      modelName: modelName,
+      request: request,
+      stream: context.streamingRequested,
     );
+    if (!context.streamingRequested) {
+      return codec.complete(_transport, body);
+    }
+
+    var sentChunks = false;
+    for (var attempt = 0; ; attempt++) {
+      try {
+        return codec.stream(_transport, body, (chunk) {
+          sentChunks = true;
+          context.sendChunk(chunk);
+        });
+      } on GenkitException catch (error) {
+        if (!isRetryableCodexError(error) || attempt > 0 || sentChunks) {
+          rethrow;
+        }
+      }
+    }
   }
 
   Future<ProviderTransportResponse> _transport(

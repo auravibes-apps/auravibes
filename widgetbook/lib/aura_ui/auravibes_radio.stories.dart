@@ -66,28 +66,91 @@ class _SingleRadioDemoState extends State<SingleRadioDemo> {
   String? _selectedValue;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        for (var index = 0; index < widget.itemCount; index++) ...[
-          AuraRadio<String>(
-            value: 'option${index + 1}',
-            groupValue: _selectedValue,
-            onChanged: widget.disabled
-                ? null
-                : (value) => setState(() => _selectedValue = value),
-            tint: widget.tint,
-            disabled: widget.disabled,
-            semanticLabel: 'Option ${index + 1}',
-          ),
-          if (index < widget.itemCount - 1) const SizedBox(height: 8),
-        ],
-        Text(
-          'Selected: ${_selectedValue ?? 'none'}',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => _RadioPreview(
+    data: (
+      itemCount: widget.itemCount,
+      selectedValue: _selectedValue,
+      tint: widget.tint,
+      disabled: widget.disabled,
+      onChanged: _select,
+    ),
+  );
+
+  void _select(String? value) => setState(() => _selectedValue = value);
+}
+
+typedef _RadioPreviewData = ({
+  int itemCount,
+  String? selectedValue,
+  AuraTint? tint,
+  bool disabled,
+  ValueChanged<String?> onChanged,
+});
+
+class const _RadioPreview({required final _RadioPreviewData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _RadioOptions(data: .new(data: data)),
+      _RadioSelectionLabel(value: data.selectedValue),
+    ],
+  );
+}
+
+class _RadioOptionsData({required final _RadioPreviewData data}) {
+  final List<Widget> options = [
+    for (var index = 0; index < data.itemCount; index++) ...[
+      _RadioOption(data: _radioOptionData(data, index)),
+      if (index < data.itemCount - 1) const SizedBox(height: 8),
+    ],
+  ];
+}
+
+class const _RadioOptions({required final _RadioOptionsData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      Column(mainAxisSize: .min, children: data.options);
+}
+
+_RadioOptionData _radioOptionData(_RadioPreviewData data, int index) => (
+  value: 'option${index + 1}',
+  groupValue: data.selectedValue,
+  tint: data.tint,
+  disabled: data.disabled,
+  semanticLabel: 'Option ${index + 1}',
+  onChanged: data.disabled ? null : data.onChanged,
+);
+
+class const _RadioSelectionLabel({required final String? value})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    'Selected: ${value ?? 'none'}',
+    style: Theme.of(context).textTheme.bodyMedium,
+  );
+}
+
+typedef _RadioOptionData = ({
+  String value,
+  String? groupValue,
+  AuraTint? tint,
+  bool disabled,
+  String semanticLabel,
+  ValueChanged<String?>? onChanged,
+});
+
+class const _RadioOption({required final _RadioOptionData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRadio<String>(
+    value: data.value,
+    groupValue: data.groupValue,
+    onChanged: data.onChanged,
+    tint: data.tint,
+    disabled: data.disabled,
+    semanticLabel: data.semanticLabel,
+  );
 }

@@ -34,23 +34,40 @@ class AuraRating extends StatelessWidget {
     final selected = value.clamp(0, max);
 
     return Semantics(
-      child: Wrap(
-        children: [
-          for (var index = 1; index <= max; index++)
-            IconButton(
-              onPressed: enabled && callback != null
-                  ? () => callback(index)
-                  : null,
-              tooltip: '$index',
-              icon: Icon(
-                index <= selected ? Icons.star : Icons.star_border,
-                color: context.auraColors.warning,
-              ),
-            ),
-        ],
+      child: _AuraRatingStars(
+        max: max,
+        selected: selected,
+        enabled: enabled,
+        callback: callback,
+        color: context.auraColors.warning,
       ),
       label: label,
       value: '$selected of $max',
     );
   }
+}
+
+class const _AuraRatingStars({
+  required final int max,
+  required final int selected,
+  required final bool enabled,
+  required final ValueChanged<int>? callback,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    children: [
+      for (var index = 1; index <= max; index++)
+        IconButton(
+          onPressed: enabled && callback != null
+              ? () => callback!(index)
+              : null,
+          tooltip: '$index',
+          icon: Icon(
+            index <= selected ? Icons.star : Icons.star_border,
+            color: color,
+          ),
+        ),
+    ],
+  );
 }

@@ -1806,6 +1806,13 @@ bool _canContinueCloudState(CloudConversationState? state) {
 
 Future<void> _stopConversation(_ConversationContextRequest request) async {
   final cloud = await _cloudTurnForStop(request);
+  await _stopConversationWithTurn(request, cloud);
+}
+
+Future<void> _stopConversationWithTurn(
+  _ConversationContextRequest request,
+  CloudTurnUsecase? cloud,
+) async {
   if (cloud != null) {
     await _stopCloudConversationForRequest(request, cloud);
 

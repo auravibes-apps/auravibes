@@ -17,22 +17,13 @@ class const AppToolCallActionsDataProvider({
     required String messageId,
     required String toolCallId,
   }) async {
-    final message = await messageRepository.getMessageById(messageId);
+    final message = await _loadMessage(messageId);
     if (message == null) return false;
 
     final metadata = message.metadata ?? const MessageMetadataEntity();
-    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
-      if (toolCall.id != toolCallId) return toolCall;
+    final updatedToolCalls = _skippedToolCalls(metadata.toolCalls, toolCallId);
 
-      return toolCall.copyWith(
-        resultStatus: ToolCallResultStatus.skippedByUser,
-      );
-    }).toList();
-
-    final _ = await messageRepository.patchMessage(
-      messageId,
-      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
-    );
+    await _patchToolCalls(messageId, metadata, updatedToolCalls);
     onToolCallChanged();
 
     return true;
@@ -45,12 +36,36 @@ class const AppToolCallActionsDataProvider({
 
   @override
   Future<void> stopPendingToolCalls({required String messageId}) async {
-    final message = await messageRepository.getMessageById(messageId);
+    final message = await _loadMessage(messageId);
     if (message == null) return;
 
     final metadata = message.metadata ?? const MessageMetadataEntity();
+    final updatedToolCalls = _stoppedToolCalls(metadata.toolCalls);
+    if (updatedToolCalls == null) return;
+
+    await _patchToolCalls(messageId, metadata, updatedToolCalls);
+    onToolCallChanged();
+    _finishActiveSubAgent(message);
+  }
+
+  Future<MessageEntity?> _loadMessage(String messageId) {
+    return messageRepository.getMessageById(messageId);
+  }
+
+  List<MessageToolCallEntity> _skippedToolCalls(
+    List<MessageToolCallEntity> toolCalls,
+    String toolCallId,
+  ) => toolCalls.map((toolCall) {
+    if (toolCall.id != toolCallId) return toolCall;
+
+    return toolCall.copyWith(resultStatus: ToolCallResultStatus.skippedByUser);
+  }).toList();
+
+  List<MessageToolCallEntity>? _stoppedToolCalls(
+    List<MessageToolCallEntity> toolCalls,
+  ) {
     var didUpdate = false;
-    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
+    final updatedToolCalls = toolCalls.map((toolCall) {
       if (!toolCall.isPending) return toolCall;
 
       didUpdate = true;
@@ -59,20 +74,29 @@ class const AppToolCallActionsDataProvider({
         resultStatus: ToolCallResultStatus.stoppedByUser,
       );
     }).toList();
-    if (!didUpdate) return;
 
+    return didUpdate ? updatedToolCalls : null;
+  }
+
+  Future<void> _patchToolCalls(
+    String messageId,
+    MessageMetadataEntity metadata,
+    List<MessageToolCallEntity> toolCalls,
+  ) async {
     final _ = await messageRepository.patchMessage(
       messageId,
-      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+      .new(metadata: metadata.copyWith(toolCalls: toolCalls)),
     );
-    onToolCallChanged();
+  }
+
+  void _finishActiveSubAgent(MessageEntity message) {
     final parentId = activeSubAgents?.parentOf(message.conversationId);
-    if (parentId != null) {
-      activeSubAgents?.finish(
-        parentId: parentId,
-        childId: message.conversationId,
-        status: agent.SubAgentCompletionStatus.stopped,
-      );
-    }
+    if (parentId == null) return;
+
+    activeSubAgents?.finish(
+      parentId: parentId,
+      childId: message.conversationId,
+      status: agent.SubAgentCompletionStatus.stopped,
+    );
   }
 }

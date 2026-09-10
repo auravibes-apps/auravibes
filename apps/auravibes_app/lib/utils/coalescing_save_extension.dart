@@ -36,59 +36,73 @@ class _CoalescingSaver<T>({
   Future<void> _run() async {
     _saving = true;
     try {
-      while (true) {
-        if (_pending != null) {
-          final toSave = _pending as T;
-          _pending = null;
-          try {
-            await _store(toSave);
-            _onSaved(toSave);
-          } on Exception catch (_) {
-            // Swallow exceptions to allow loop to continue.
-          }
-          if (_pending != null) continue;
-        }
-
-        if (_doneRequested) {
-          _closed = true;
-          if (!_doneCompleter.isCompleted) {
-            _doneCompleter.complete();
-          }
-          break;
-        }
-
-        break;
-      }
+      await _savePendingStates();
     } finally {
       _saving = false;
     }
+  }
+
+  Future<void> _savePendingStates() async {
+    while (true) {
+      final didSave = await _savePending();
+      if (didSave && _pending != null) continue;
+      if (_completeIfRequested()) return;
+
+      return;
+    }
+  }
+
+  Future<bool> _savePending() async {
+    final toSave = _pending;
+    if (toSave == null) return false;
+
+    _pending = null;
+    try {
+      await _store(toSave);
+      _onSaved(toSave);
+    } on Exception catch (_) {
+      // Swallow exceptions to allow loop to continue.
+    }
+
+    return true;
+  }
+
+  bool _completeIfRequested() {
+    if (!_doneRequested) return false;
+
+    _closed = true;
+    if (!_doneCompleter.isCompleted) _doneCompleter.complete();
+
+    return true;
   }
 }
 
 extension CoalescingSaveExtension<T> on Stream<T> {
   Stream<T> coalescingSave({required Future<void> Function(T state) store}) {
     final controller = StreamController<T>();
-
     final saver = _CoalescingSaver<T>(store: store, onSaved: controller.add);
-
-    StreamSubscription<T>? subscription;
-
-    subscription = shareReplay().listen(
-      saver.push,
-      onError: controller.addError,
-      onDone: () {
-        unawaited(
-          (() async {
-            await saver.complete();
-            final _ = await controller.close();
-          })(),
-        );
-      },
-      cancelOnError: false,
-    );
-
-    controller.onCancel = () => subscription?.cancel();
+    final subscription = _listenToSharedStream(this, saver, controller);
+    controller.onCancel = subscription.cancel;
 
     return controller.stream;
   }
+}
+
+StreamSubscription<T> _listenToSharedStream<T>(
+  Stream<T> source,
+  _CoalescingSaver<T> saver,
+  StreamController<T> controller,
+) => source.shareReplay().listen(
+  saver.push,
+  onError: controller.addError,
+  onDone: () => unawaited(_closeCoalescedStream(saver, controller)),
+  cancelOnError: false,
+);
+
+Future<void> _closeCoalescedStream<T>(
+  _CoalescingSaver<T> saver,
+  StreamController<T> controller,
+) async {
+  await saver.complete();
+  final _ = await controller.close();
 }

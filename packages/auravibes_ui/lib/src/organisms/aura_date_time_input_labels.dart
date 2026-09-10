@@ -69,4 +69,7 @@ class AuraDateTimeInputLabels {
 
   /// Builds a semantic label for a calendar day.
   final String Function(int day)? dayLabelBuilder;
+
+  /// Whether callers provided a custom day-label builder.
+  bool hasCustomDayLabels() => dayLabelBuilder != null;
 }

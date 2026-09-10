@@ -17,4 +17,7 @@ class AuraChartSeries {
 
   /// Series accent.
   final AuraTint tint;
+
+  /// Whether the series contains samples.
+  bool hasValues() => values.isNotEmpty;
 }

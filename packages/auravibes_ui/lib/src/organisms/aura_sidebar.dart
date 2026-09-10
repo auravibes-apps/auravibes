@@ -50,63 +50,14 @@ class AuraSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final header = this.header;
-    final footer = this.footer;
-    final navigation = Column(
-      children: List.generate(
-        navigationItems.length,
-        (index) => _buildNavigationItem(index, footer: false),
-      ).whereType<Widget>().toList(),
-    );
-    final footerNavigation = Column(
-      children: List.generate(
-        navigationItems.length,
-        (index) => _buildNavigationItem(index, footer: true),
-      ).whereType<Widget>().toList(),
-    );
-
-    return Container(
-      decoration: BoxDecoration(
-        color: context.auraColors.surface,
-        border: BorderDirectional(end: .new(color: context.auraColors.outline)),
-        boxShadow: [
-          BoxShadow(
-            color: context.auraColors.shadow.withValues(alpha: _shadowAlpha),
-            offset: const Offset(2, 0),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      width: isExpanded ? 280 : 80,
-      child: Column(
-        children: [
-          if (header != null) header else const AuraSizedBox(height: .lg),
-          Expanded(child: ListView(children: [navigation, ?middleSection])),
-          SafeArea(top: false, child: footerNavigation),
-
-          if (footer != null)
-            Padding(
-              padding: EdgeInsets.all(context.auraTheme.fromSpacing(.sm)),
-              child: footer,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget? _buildNavigationItem(int index, {required bool footer}) {
-    final item = navigationItems[index];
-    if (item.footer != footer) return null;
-
-    return AuraPadding(
-      child: _AuraSidebarItem(
-        label: isExpanded ? item.label : const SizedBox.shrink(),
-        icon: item.icon,
-        onTap: () => onNavigationTap(index),
-        semanticLabel: item.semanticLabel ?? 'Navigation item',
-        selected: index == selectedIndex,
-      ),
-      padding: const .symmetric(horizontal: .sm, vertical: .xs),
+    return _AuraSidebarShell(
+      isExpanded: isExpanded,
+      navigationItems: navigationItems,
+      selectedIndex: selectedIndex,
+      onNavigationTap: onNavigationTap,
+      header: header,
+      middleSection: middleSection,
+      footer: footer,
     );
   }
 }
@@ -135,39 +86,230 @@ class AuraNavigationData {
 
   /// An accessibility label for this navigation item.
   final String? semanticLabel;
+
+  /// Whether this item provides an accessibility label.
+  bool hasSemanticLabel() => semanticLabel != null;
+}
+
+class const _AuraSidebarShell({
+  required final bool isExpanded,
+  required final List<AuraNavigationData> navigationItems,
+  required final int selectedIndex,
+  required final void Function(int value) onNavigationTap,
+  final Widget? header,
+  final Widget? middleSection,
+  final Widget? footer,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: _decoration(context),
+      width: isExpanded ? 280 : 80,
+      child: _AuraSidebarContent(
+        navigationItems: navigationItems,
+        selectedIndex: selectedIndex,
+        onNavigationTap: onNavigationTap,
+        isExpanded: isExpanded,
+        header: header,
+        middleSection: middleSection,
+        footer: footer,
+      ),
+    );
+  }
+
+  BoxDecoration _decoration(BuildContext context) {
+    return BoxDecoration(
+      color: context.auraColors.surface,
+      border: BorderDirectional(end: .new(color: context.auraColors.outline)),
+      boxShadow: [
+        BoxShadow(
+          color: context.auraColors.shadow.withValues(
+            alpha: AuraSidebar._shadowAlpha,
+          ),
+          offset: const Offset(2, 0),
+          blurRadius: 8,
+        ),
+      ],
+    );
+  }
+}
+
+class const _AuraSidebarContent({
+  required final List<AuraNavigationData> navigationItems,
+  required final int selectedIndex,
+  required final void Function(int value) onNavigationTap,
+  required final bool isExpanded,
+  final Widget? header,
+  final Widget? middleSection,
+  final Widget? footer,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      _AuraSidebarHeader(child: header),
+      Expanded(
+        child: _AuraSidebarBody(
+          navigationItems: navigationItems,
+          selectedIndex: selectedIndex,
+          onNavigationTap: onNavigationTap,
+          isExpanded: isExpanded,
+          middleSection: middleSection,
+        ),
+      ),
+      _AuraSidebarFooterNavigation(
+        navigationItems: navigationItems,
+        selectedIndex: selectedIndex,
+        onNavigationTap: onNavigationTap,
+        isExpanded: isExpanded,
+      ),
+      if (footer case final value?) _AuraSidebarFooter(child: value),
+    ],
+  );
+}
+
+class const _AuraSidebarFooterNavigation({
+  required final List<AuraNavigationData> navigationItems,
+  required final int selectedIndex,
+  required final void Function(int value) onNavigationTap,
+  required final bool isExpanded,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: _AuraSidebarNavigation(
+      navigationItems: navigationItems,
+      selectedIndex: selectedIndex,
+      onNavigationTap: onNavigationTap,
+      isExpanded: isExpanded,
+      footer: true,
+    ),
+  );
+}
+
+class const _AuraSidebarHeader({required final Widget? child})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      child ?? const AuraSizedBox(height: .lg);
+}
+
+class const _AuraSidebarBody({
+  required final List<AuraNavigationData> navigationItems,
+  required final int selectedIndex,
+  required final void Function(int value) onNavigationTap,
+  required final bool isExpanded,
+  final Widget? middleSection,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        _AuraSidebarNavigation(
+          navigationItems: navigationItems,
+          selectedIndex: selectedIndex,
+          onNavigationTap: onNavigationTap,
+          isExpanded: isExpanded,
+        ),
+        ?middleSection,
+      ],
+    );
+  }
+}
+
+class const _AuraSidebarFooter({required final Widget child})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.sm)),
+      child: child,
+    );
+  }
+}
+
+class const _AuraSidebarNavigation({
+  required final List<AuraNavigationData> navigationItems,
+  required final int selectedIndex,
+  required final void Function(int value) onNavigationTap,
+  required final bool isExpanded,
+  final bool footer = false,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(
+        navigationItems.length,
+        _buildNavigationItem,
+      ).whereType<Widget>().toList(),
+    );
+  }
+
+  Widget? _buildNavigationItem(int index) {
+    final item = navigationItems[index];
+    if (item.footer != footer) return null;
+
+    return AuraPadding(
+      padding: const .symmetric(horizontal: .sm, vertical: .xs),
+      child: _AuraSidebarItem(
+        item: item,
+        isExpanded: isExpanded,
+        onTap: () => onNavigationTap(index),
+        selected: index == selectedIndex,
+      ),
+    );
+  }
 }
 
 class const _AuraSidebarItem({
-  required final Widget label,
-  required final Widget icon,
-  required final void Function() onTap,
-  required final String semanticLabel,
+  required final AuraNavigationData item,
+  required final bool isExpanded,
+  required final VoidCallback onTap,
   final bool selected = false,
 }) extends StatelessWidget {
   static const _selectedAlpha = 0.1;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;
 
     return AuraPressable(
-      child: AuraPadding(
-        child: AuraText(
-          child: AuraRow(children: [icon, label], spacing: .sm),
-          tint: selected ? AuraTint.primary : null,
-        ),
-        padding: .small,
+      child: _AuraSidebarItemContent(
+        icon: item.icon,
+        label: isExpanded ? item.label : const SizedBox.shrink(),
+        selected: selected,
       ),
       color: colors.primary,
-      decoration: BoxDecoration(
-        color: selected
-            ? colors.primary.withValues(alpha: _selectedAlpha)
-            : null,
-        borderRadius: BorderRadius.all(
-          .circular(context.auraTheme.fromBorderRadius(.xl)),
-        ),
-      ),
+      decoration: _decoration(context),
       onPressed: onTap,
-      semanticLabel: semanticLabel,
+      semanticLabel: item.semanticLabel ?? 'Navigation item',
+    );
+  }
+
+  BoxDecoration _decoration(BuildContext context) {
+    final colors = context.auraColors;
+
+    return BoxDecoration(
+      color: selected ? colors.primary.withValues(alpha: _selectedAlpha) : null,
+      borderRadius: BorderRadius.all(
+        .circular(context.auraTheme.fromBorderRadius(.xl)),
+      ),
+    );
+  }
+}
+
+class const _AuraSidebarItemContent({
+  required final Widget icon,
+  required final Widget label,
+  required final bool selected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraPadding(
+      child: AuraText(
+        child: AuraRow(children: [icon, label], spacing: .sm),
+        tint: selected ? AuraTint.primary : null,
+      ),
+      padding: .small,
     );
   }
 }

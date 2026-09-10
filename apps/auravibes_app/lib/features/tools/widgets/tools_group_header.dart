@@ -40,8 +40,6 @@ class const ToolsGroupHeader({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final group = groupWithTools.group;
-
     return AuraRow(
       children: [
         // Group icon.
@@ -49,75 +47,169 @@ class const ToolsGroupHeader({
         const AuraSizedBox(width: .sm),
 
         // Group name and status.
-        Expanded(
-          child: AuraColumn(
-            children: [
-              // Name row with status badge.
-              AuraText(
-                child: Text(
-                  groupWithTools.localizedDisplayNameKey?.tr() ??
-                      group?.name ??
-                      '',
-                  overflow: .ellipsis,
-                ),
-                style: .heading6,
-              ),
-
-              if (groupWithTools.isMcpGroup)
-                _McpStatusBadge(
-                  groupWithTools: groupWithTools,
-                  onReconnect: onReconnect,
-                  onViewError: onViewError,
-                ),
-              // Tool count.
-              AuraText(
-                child: Text(
-                  LocaleKeys.tools_screen_tools_count.tr(
-                    namedArgs: {
-                      'enabled': groupWithTools.enabledToolsCount.toString(),
-                      'total': groupWithTools.totalToolsCount.toString(),
-                    },
-                  ),
-                ),
-                style: .bodySmall,
-              ),
-            ],
-            spacing: .xs,
-            crossAxisAlignment: .start,
-          ),
+        _GroupDetails(
+          groupWithTools: groupWithTools,
+          onReconnect: onReconnect,
+          onViewError: onViewError,
         ),
 
         // Actions row.
-        AuraRow(
-          children: [
-            if (groupWithTools.isMcpGroup && onDelete != null)
-              AuraIconButton(
-                icon: Icons.delete_outline,
-                onPressed: onDelete,
-                size: .small,
-                tint: .error,
-                tooltip: LocaleKeys.common_delete.tr(),
-              ),
-            if (!groupWithTools.isDefaultGroup && onToggleEnabled != null)
-              AuraSwitch(
-                value: groupWithTools.isEnabled,
-                onChanged: onToggleEnabled,
-                size: .sm,
-              ),
-            AuraIconButton.custom(
-              child: AnimatedRotation(
-                child: const AuraIcon(Icons.keyboard_arrow_down),
-                turns: isExpanded ? 0.5 : 0,
-                duration: const Duration(milliseconds: 200),
-              ),
-              onPressed: onToggleExpand,
-            ),
-          ],
-          spacing: .xs,
+        _GroupActions(
+          groupWithTools: groupWithTools,
+          isExpanded: isExpanded,
+          onToggleEnabled: onToggleEnabled,
+          onDelete: onDelete,
+          onToggleExpand: onToggleExpand,
         ),
       ],
     );
   }
+}
+
+class const _GroupDetails({
+  required final ToolsGroupWithTools groupWithTools,
+  final VoidCallback? onReconnect,
+  final VoidCallback? onViewError,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: _GroupDetailsContent(
+      groupWithTools: groupWithTools,
+      fallbackName: groupWithTools.group?.name,
+      onReconnect: onReconnect,
+      onViewError: onViewError,
+    ),
+  );
+}
+
+class const _GroupDetailsContent({
+  required final ToolsGroupWithTools groupWithTools,
+  required final String? fallbackName,
+  final VoidCallback? onReconnect,
+  final VoidCallback? onViewError,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _GroupName(groupWithTools: groupWithTools, fallbackName: fallbackName),
+      if (groupWithTools.isMcpGroup)
+        _McpStatusBadge(
+          groupWithTools: groupWithTools,
+          onReconnect: onReconnect,
+          onViewError: onViewError,
+        ),
+      _GroupToolCount(groupWithTools: groupWithTools),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _GroupName({
+  required final ToolsGroupWithTools groupWithTools,
+  required final String? fallbackName,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      groupWithTools.localizedDisplayNameKey?.tr() ?? fallbackName ?? '',
+      overflow: .ellipsis,
+    ),
+    style: .heading6,
+  );
+}
+
+class const _GroupToolCount({required final ToolsGroupWithTools groupWithTools})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      LocaleKeys.tools_screen_tools_count.tr(
+        namedArgs: {
+          'enabled': groupWithTools.enabledToolsCount.toString(),
+          'total': groupWithTools.totalToolsCount.toString(),
+        },
+      ),
+    ),
+    style: .bodySmall,
+  );
+}
+
+class const _GroupActions({
+  required final ToolsGroupWithTools groupWithTools,
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
+  final ValueChanged<bool>? onToggleEnabled,
+  final VoidCallback? onDelete,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      _GroupDeleteButton(groupWithTools: groupWithTools, onDelete: onDelete),
+      _GroupEnabledToggle(
+        groupWithTools: groupWithTools,
+        onToggleEnabled: onToggleEnabled,
+      ),
+      _GroupExpandButton(
+        isExpanded: isExpanded,
+        onToggleExpand: onToggleExpand,
+      ),
+    ],
+    spacing: .xs,
+  );
+}
+
+class const _GroupDeleteButton({
+  required final ToolsGroupWithTools groupWithTools,
+  required final VoidCallback? onDelete,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!groupWithTools.isMcpGroup || onDelete == null) {
+      return const SizedBox.shrink();
+    }
+
+    return AuraIconButton(
+      icon: Icons.delete_outline,
+      onPressed: onDelete,
+      size: .small,
+      tint: .error,
+      tooltip: LocaleKeys.common_delete.tr(),
+    );
+  }
+}
+
+class const _GroupEnabledToggle({
+  required final ToolsGroupWithTools groupWithTools,
+  required final ValueChanged<bool>? onToggleEnabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (groupWithTools.isDefaultGroup || onToggleEnabled == null) {
+      return const SizedBox.shrink();
+    }
+
+    return AuraSwitch(
+      value: groupWithTools.isEnabled,
+      onChanged: onToggleEnabled,
+      size: .sm,
+    );
+  }
+}
+
+class const _GroupExpandButton({
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton.custom(
+    child: AnimatedRotation(
+      child: const AuraIcon(Icons.keyboard_arrow_down),
+      turns: isExpanded ? 0.5 : 0,
+      duration: const Duration(milliseconds: 200),
+    ),
+    onPressed: onToggleExpand,
+  );
 }
 
 /// Icon widget for the group.
@@ -129,26 +221,42 @@ class const _GroupIcon({required final ToolsGroupWithTools groupWithTools})
     final isEnabled = groupWithTools.isEnabled;
     final isMcp = groupWithTools.isMcpGroup;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isEnabled
-            ? context.auraColors.primary.withValues(alpha: 0.1)
-            : context.auraColors.surfaceVariant,
-        borderRadius: BorderRadius.all(
-          .circular(context.auraTheme.fromBorderRadius(.md)),
-        ),
-      ),
-      width: iconSize,
-      height: iconSize,
-      child: Center(
-        child: AuraIcon(
-          isMcp ? Icons.extension : Icons.build_circle_outlined,
-          tint: isEnabled ? AuraTint.primary : null,
-        ),
-      ),
+    return _GroupIconSurface(
+      iconSize: iconSize,
+      isEnabled: isEnabled,
+      isMcp: isMcp,
     );
   }
 }
+
+class const _GroupIconSurface({
+  required final double iconSize,
+  required final bool isEnabled,
+  required final bool isMcp,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: _groupIconDecoration(context, isEnabled),
+    width: iconSize,
+    height: iconSize,
+    child: Center(
+      child: AuraIcon(
+        isMcp ? Icons.extension : Icons.build_circle_outlined,
+        tint: isEnabled ? AuraTint.primary : null,
+      ),
+    ),
+  );
+}
+
+BoxDecoration _groupIconDecoration(BuildContext context, bool isEnabled) =>
+    BoxDecoration(
+      color: isEnabled
+          ? context.auraColors.primary.withValues(alpha: 0.1)
+          : context.auraColors.surfaceVariant,
+      borderRadius: BorderRadius.all(
+        .circular(context.auraTheme.fromBorderRadius(.md)),
+      ),
+    );
 
 /// MCP status badge widget.
 class const _McpStatusBadge({
@@ -157,30 +265,25 @@ class const _McpStatusBadge({
   final VoidCallback? onViewError,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final status = groupWithTools.mcpStatus;
-
-    if (status == null) return const SizedBox.shrink();
-
-    return switch (status) {
-      .connecting => const SizedBox(
-        width: 16,
-        height: 16,
-        child: AuraSpinner(size: .small),
-      ),
-      .connected => AuraBadge.text(
-        child: Text(LocaleKeys.tools_screen_mcp_connected.tr()),
-        variant: .success,
-        size: .small,
-      ),
-      .error => _ErrorBadge(
-        groupWithTools: groupWithTools,
-        onReconnect: onReconnect,
-        onViewError: onViewError,
-      ),
-      .disconnected => _DisconnectedBadge(onReconnect: onReconnect),
-    };
-  }
+  Widget build(BuildContext context) => switch (groupWithTools.mcpStatus) {
+    null => const SizedBox.shrink(),
+    .connecting => const SizedBox(
+      width: 16,
+      height: 16,
+      child: AuraSpinner(size: .small),
+    ),
+    .connected => AuraBadge.text(
+      child: Text(LocaleKeys.tools_screen_mcp_connected.tr()),
+      variant: .success,
+      size: .small,
+    ),
+    .error => _ErrorBadge(
+      groupWithTools: groupWithTools,
+      onReconnect: onReconnect,
+      onViewError: onViewError,
+    ),
+    .disconnected => _DisconnectedBadge(onReconnect: onReconnect),
+  };
 }
 
 /// Error badge with reconnect and view error options.
@@ -193,40 +296,65 @@ class const _ErrorBadge({
   Widget build(BuildContext context) {
     return AuraRow(
       children: [
-        AuraTooltip(
-          message: groupWithTools.mcpErrorMessage ?? '',
-          child: AuraBadge.text(
-            child: AuraRow(
-              children: [
-                const AuraIcon(Icons.error_outline, size: .extraSmall),
-                Text(LocaleKeys.tools_screen_mcp_error.tr()),
-              ],
-              spacing: .xs,
-              mainAxisSize: .min,
-            ),
-            variant: .error,
-            size: .small,
-          ),
+        _ErrorBadgeLabel(message: groupWithTools.mcpErrorMessage ?? ''),
+        _ErrorBadgeActions(
+          groupWithTools: groupWithTools,
+          onViewError: onViewError,
+          onReconnect: onReconnect,
         ),
-        if (onViewError != null && groupWithTools.mcpErrorMessage != null)
-          AuraIconButton(
-            icon: Icons.visibility_outlined,
-            onPressed: onViewError,
-            size: .small,
-            tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
-          ),
-        if (onReconnect != null)
-          AuraIconButton(
-            icon: Icons.refresh,
-            onPressed: onReconnect,
-            size: .small,
-            tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
-          ),
       ],
       spacing: .xs,
       mainAxisSize: .min,
     );
   }
+}
+
+class const _ErrorBadgeLabel({required final String message})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTooltip(
+    message: message,
+    child: AuraBadge.text(
+      child: AuraRow(
+        children: [
+          const AuraIcon(Icons.error_outline, size: .extraSmall),
+          Text(LocaleKeys.tools_screen_mcp_error.tr()),
+        ],
+        spacing: .xs,
+        mainAxisSize: .min,
+      ),
+      variant: .error,
+      size: .small,
+    ),
+  );
+}
+
+class const _ErrorBadgeActions({
+  required final ToolsGroupWithTools groupWithTools,
+  final VoidCallback? onViewError,
+  final VoidCallback? onReconnect,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      if (onViewError != null && groupWithTools.mcpErrorMessage != null)
+        AuraIconButton(
+          icon: Icons.visibility_outlined,
+          onPressed: onViewError,
+          size: .small,
+          tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
+        ),
+      if (onReconnect != null)
+        AuraIconButton(
+          icon: Icons.refresh,
+          onPressed: onReconnect,
+          size: .small,
+          tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
+        ),
+    ],
+    spacing: .xs,
+    mainAxisSize: .min,
+  );
 }
 
 /// Disconnected badge with reconnect button.

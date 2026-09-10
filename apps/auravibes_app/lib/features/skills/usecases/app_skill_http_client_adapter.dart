@@ -13,39 +13,81 @@ class AppSkillHttpClientAdapter {
   final AppSkillUrlGuard _requirePublicUri;
 
   CancelableOperation<UrlResponse> execute(UrlRequest request) {
-    CancelableOperation<UrlResponse>? operation;
-    final completer = CancelableCompleter<UrlResponse>(
-      onCancel: () => operation?.cancel(),
+    late final _PendingAppSkillRequest pending;
+    pending = _PendingAppSkillRequest(
+      CancelableCompleter<UrlResponse>(
+        onCancel: () => pending.operation?.cancel(),
+      ),
     );
 
-    Future<void>(() async {
-      try {
-        final resolved = await _requirePublicUri(request.url);
-        if (completer.isCanceled) return;
+    Future<void>(() => _completeRequest(request, pending));
 
-        final currentOperation = _urlService.execute(
-          .new(
-            url: resolved.uri.toString(),
-            method: request.method,
-            headers: request.headers,
-            body: request.body,
-            timeout: request.timeout,
-            format: request.format,
-          ),
-          resolvedAddresses: resolved.addresses,
-        );
-        operation = currentOperation;
-        final response = await currentOperation.valueOrCancellation();
-        if (response == null || completer.isCanceled) return;
-
-        completer.complete(response);
-      } on Object catch (error, stackTrace) {
-        if (!completer.isCanceled) {
-          completer.completeError(error, stackTrace);
-        }
-      }
-    });
-
-    return completer.operation;
+    return pending.completer.operation;
   }
+
+  Future<void> _completeRequest(
+    UrlRequest request,
+    _PendingAppSkillRequest pending,
+  ) async {
+    try {
+      final resolved = await _requirePublicUri(request.url);
+      if (pending.completer.isCanceled) return;
+
+      await _completeResolvedRequest(request, resolved, pending);
+    } on Object catch (error, stackTrace) {
+      _completeError(pending, error, stackTrace);
+    }
+  }
+
+  Future<void> _completeResolvedRequest(
+    UrlRequest request,
+    PublicUrlResolution resolved,
+    _PendingAppSkillRequest pending,
+  ) async {
+    final operation = _executeResolvedRequest(request, resolved);
+    pending.operation = operation;
+    await _completeResponse(operation, pending);
+  }
+
+  CancelableOperation<UrlResponse> _executeResolvedRequest(
+    UrlRequest request,
+    PublicUrlResolution resolved,
+  ) => _urlService.execute(
+    .new(
+      url: resolved.uri.toString(),
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+      timeout: request.timeout,
+      format: request.format,
+    ),
+    resolvedAddresses: resolved.addresses,
+  );
+
+  Future<void> _completeResponse(
+    CancelableOperation<UrlResponse> operation,
+    _PendingAppSkillRequest pending,
+  ) async {
+    final response = await operation.valueOrCancellation();
+    if (response == null || pending.completer.isCanceled) return;
+
+    pending.completer.complete(response);
+  }
+
+  void _completeError(
+    _PendingAppSkillRequest pending,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (!pending.completer.isCanceled) {
+      pending.completer.completeError(error, stackTrace);
+    }
+  }
+}
+
+class _PendingAppSkillRequest {
+  _PendingAppSkillRequest(this.completer);
+
+  final CancelableCompleter<UrlResponse> completer;
+  CancelableOperation<UrlResponse>? operation;
 }

@@ -50,29 +50,20 @@ class OAuthAuthenticate({
   /// Throws an exception if OAuth discovery fails or authentication is
   /// cancelled.
   Future<OAuthTokenModel> authenticate(OAuthDiscoveryResult oAuthResult) async {
-    final _ = await PublicUrlGuard.requireHttpsUri(
-      oAuthResult.authorizationUrl,
-    );
-    final codeVerifier = _generateRandomString(128);
-    final codeChallenge = generateCodeChallenge(codeVerifier);
-    final stateParam = _generateRandomString(32);
-    final redirectUrl = '$callbackUrlScheme:/';
-    final uri = buildAuthorizationUri(
-      oAuthResult: oAuthResult,
-      redirectUrl: redirectUrl,
-      stateParam: stateParam,
-      codeChallenge: codeChallenge,
+    final request = await _buildAuthenticationRequest(this, oAuthResult);
+
+    final result = await _authenticateInBrowser(request.uri);
+
+    final code = validateGetCode(
+      urlResult: result,
+      stateParam: request.stateParam,
     );
 
-    final result = await _authenticateInBrowser(uri);
-
-    final code = validateGetCode(urlResult: result, stateParam: stateParam);
-
-    return await exchangeCodeForToken(
+    return exchangeCodeForToken(
       code: code,
       oAuthResult: oAuthResult,
-      codeVerifier: codeVerifier,
-      redirectUrl: redirectUrl,
+      codeVerifier: request.codeVerifier,
+      redirectUrl: request.redirectUrl,
     );
   }
 
@@ -105,23 +96,9 @@ class OAuthAuthenticate({
     final returnedUri = Uri.parse(urlResult);
 
     final queryParams = returnedUri.queryParameters;
-    final error = queryParams.get<String?>('error');
+    _validateAuthorizationResponse(queryParams, stateParam);
 
-    if (error != null) {
-      throw Exception('OAuth authorization failed.');
-    }
-
-    if (queryParams.get<String?>('state') != stateParam) {
-      throw Exception('OAuth state mismatch');
-    }
-
-    final code = queryParams.get<String?>('code');
-
-    if (code == null || code.isEmpty) {
-      throw Exception('OAuth code not found in redirect URL');
-    }
-
-    return code;
+    return _requiredAuthorizationCode(queryParams);
   }
 
   Future<OAuthTokenModel> exchangeCodeForToken({
@@ -131,48 +108,15 @@ class OAuthAuthenticate({
     required String redirectUrl,
   }) async {
     final tokenUri = await PublicUrlGuard.requireHttpsUri(oAuthResult.tokenUrl);
-    final response = await _dio.post<Object?>(
-      tokenUri.toString(),
-      data: {
-        'grant_type': 'authorization_code',
-        'code': code,
-        'redirect_uri': redirectUrl,
-        'code_verifier': codeVerifier,
-        if (oAuthResult.clientId case final clientId? when clientId.isNotEmpty)
-          'client_id': clientId,
-      },
-      options: .new(
-        headers: const {'Accept': 'application/json'},
-        responseType: ResponseType.json,
-        contentType: Headers.formUrlEncodedContentType,
-      ),
-    );
+    final response = await _postToken(_dio, (
+      tokenUri: tokenUri,
+      code: code,
+      redirectUrl: redirectUrl,
+      codeVerifier: codeVerifier,
+      clientId: oAuthResult.clientId,
+    ));
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to exchange code for token.');
-    }
-
-    final data = response.data;
-    if (data == null) {
-      throw Exception('No data received from token endpoint');
-    }
-    if (data is! Map<String, dynamic>) {
-      throw Exception('Invalid token response: expected a JSON object');
-    }
-
-    final accessToken = data['access_token'];
-    final tokenType = data['token_type'];
-    if (accessToken is! String) {
-      throw Exception('Invalid token response: access_token must be a string');
-    }
-    if (accessToken.isEmpty) {
-      throw Exception('Invalid token response: access_token cannot be empty');
-    }
-    if (tokenType is! String) {
-      throw Exception('Invalid token response: token_type must be a string');
-    }
-
-    return OAuthTokenModel.fromJson(data);
+    return OAuthTokenModel.fromJson(_validTokenData(response));
   }
 
   static Random _createSecureRandom() {
@@ -213,5 +157,112 @@ class OAuthAuthenticate({
 
       rethrow;
     }
+  }
+}
+
+typedef _OAuthAuthRequest = ({
+  String codeVerifier,
+  String stateParam,
+  String redirectUrl,
+  Uri uri,
+});
+
+typedef _TokenExchangeRequest = ({
+  Uri tokenUri,
+  String code,
+  String redirectUrl,
+  String codeVerifier,
+  String? clientId,
+});
+
+Future<_OAuthAuthRequest> _buildAuthenticationRequest(
+  OAuthAuthenticate authenticator,
+  OAuthDiscoveryResult result,
+) async {
+  final _ = await PublicUrlGuard.requireHttpsUri(result.authorizationUrl);
+  final codeVerifier = _generateRandomString(128);
+  final stateParam = _generateRandomString(32);
+  final redirectUrl = '${authenticator.callbackUrlScheme}:/';
+  final uri = OAuthAuthenticate.buildAuthorizationUri(
+    oAuthResult: result,
+    redirectUrl: redirectUrl,
+    stateParam: stateParam,
+    codeChallenge: OAuthAuthenticate.generateCodeChallenge(codeVerifier),
+  );
+
+  return (
+    codeVerifier: codeVerifier,
+    stateParam: stateParam,
+    redirectUrl: redirectUrl,
+    uri: uri,
+  );
+}
+
+void _validateAuthorizationResponse(
+  Map<String, String> queryParams,
+  String expectedState,
+) {
+  if (queryParams.get<String?>('error') != null) {
+    throw Exception('OAuth authorization failed.');
+  }
+  if (queryParams.get<String?>('state') != expectedState) {
+    throw Exception('OAuth state mismatch');
+  }
+}
+
+String _requiredAuthorizationCode(Map<String, String> queryParams) {
+  final code = queryParams.get<String?>('code');
+  if (code == null || code.isEmpty) {
+    throw Exception('OAuth code not found in redirect URL');
+  }
+
+  return code;
+}
+
+Future<Response<Object?>> _postToken(Dio dio, _TokenExchangeRequest request) =>
+    dio.post<Object?>(
+      request.tokenUri.toString(),
+      data: _tokenRequestData(request),
+      options: .new(
+        headers: const {'Accept': 'application/json'},
+        responseType: ResponseType.json,
+        contentType: Headers.formUrlEncodedContentType,
+      ),
+    );
+
+Map<String, String> _tokenRequestData(_TokenExchangeRequest request) => {
+  'grant_type': 'authorization_code',
+  'code': request.code,
+  'redirect_uri': request.redirectUrl,
+  'code_verifier': request.codeVerifier,
+  if (request.clientId case final clientId? when clientId.isNotEmpty)
+    'client_id': clientId,
+};
+
+Map<String, dynamic> _validTokenData(Response<Object?> response) {
+  if (response.statusCode != 200) {
+    throw Exception('Failed to exchange code for token.');
+  }
+  final data = response.data;
+  if (data == null) throw Exception('No data received from token endpoint');
+  if (data is! Map<String, dynamic>) {
+    throw Exception('Invalid token response: expected a JSON object');
+  }
+
+  _validateTokenFields(data);
+
+  return data;
+}
+
+void _validateTokenFields(Map<String, dynamic> data) {
+  final accessToken = data['access_token'];
+  if (accessToken is! String) {
+    throw Exception('Invalid token response: access_token must be a string');
+  }
+  if (accessToken.isEmpty) {
+    throw Exception('Invalid token response: access_token cannot be empty');
+  }
+  if (data['token_type'] is! String) {
+    throw Exception('Invalid token response: token_type must be a string');
   }
 }

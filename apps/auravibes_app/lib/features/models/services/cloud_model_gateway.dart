@@ -77,7 +77,9 @@ class CloudModelGateway {
     secret: secret,
     expectedRevision: expectedRevision,
   );
+}
 
+extension CloudModelGatewaySecrets on CloudModelGateway {
   Future<ModelSyncResult> testAndSyncModelConnection({
     required String connectionId,
   }) => CloudAppErrors.guardCall(
@@ -105,6 +107,9 @@ class CloudModelGateway {
 
     return _create?.call(request) ?? _client.modelConnection.create(request);
   });
+}
+
+extension CloudModelGatewayConnections on CloudModelGateway {
   Future<List<ModelConnectionView>> listModelConnections() {
     final request = ListModelConnectionsRequest(workspaceId: _workspaceId);
 
@@ -153,6 +158,9 @@ class CloudModelGateway {
 
     return _delete?.call(request) ?? _client.modelConnection.delete(request);
   });
+}
+
+extension CloudModelGatewaySelections on CloudModelGateway {
   Future<List<WorkspaceModelSelectionView>> listModelSelections() =>
       CloudAppErrors.guardCall(.model, () {
         final request = ListWorkspaceModelSelectionsRequest(
@@ -174,6 +182,9 @@ class CloudModelGateway {
           );
         },
       );
+}
+
+extension CloudModelGatewayCatalog on CloudModelGateway {
   Future<List<ApiModelProvider>> listModelCatalogProviders() =>
       CloudAppErrors.guardCall(
         .model,

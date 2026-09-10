@@ -12,9 +12,10 @@ final _log = Logger('dao:api_models');
 @DriftAccessor(tables: [ApiModels])
 class ApiModelsDao extends DatabaseAccessor<AppDatabase>
     with _$ApiModelsDaoMixin {
-  /// Creates a new [ApiModelsDao] instance.
-  new(super.attachedDatabase);
+  ApiModelsDao(super.attachedDatabase);
+}
 
+extension ApiModelsDaoMethods on ApiModelsDao {
   /// Retrieves all API models from the database.
   ///
   /// Returns a list of all models ordered by provider and name.
@@ -156,25 +157,32 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   /// Returns the list of inserted models.
   Future<List<ApiModelsTable>> batchInsertModels(
     List<ApiModelsCompanion> models,
-  ) {
-    return transaction(() async {
-      final results = <ApiModelsTable>[];
-      for (final model in models) {
-        try {
-          final inserted = await upsertModel(model);
-          results.add(inserted);
-        } on Exception catch (error, stackTrace) {
-          // Continue with other models if one fails.
-          _log.severe(
-            'Failed to insert model ${model.id.value}',
-            error,
-            stackTrace,
-          );
-        }
-      }
+  ) => transaction(() => _batchInsertModels(models));
 
-      return results;
-    });
+  Future<List<ApiModelsTable>> _batchInsertModels(
+    List<ApiModelsCompanion> models,
+  ) async {
+    final results = <ApiModelsTable>[];
+    for (final model in models) {
+      final inserted = await _tryInsertModel(model);
+      if (inserted != null) results.add(inserted);
+    }
+
+    return results;
+  }
+
+  Future<ApiModelsTable?> _tryInsertModel(ApiModelsCompanion model) async {
+    try {
+      return await upsertModel(model);
+    } on Exception catch (error, stackTrace) {
+      // Continue with other models if one fails.
+      _log.severe(
+        'Failed to insert model ${model.id.value}',
+        error,
+        stackTrace,
+      );
+      return null;
+    }
   }
 
   /// Batch upserts multiple models into the database.

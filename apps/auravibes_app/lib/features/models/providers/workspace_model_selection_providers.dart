@@ -1,5 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/features/models/models/model_connection_store.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/services/codex_input_modalities.dart';
@@ -25,30 +27,49 @@ workspaceModelSelectionById(
   final selectedModel = await workspaceModelSelectionRepository.getById(
     workspaceModelSelectionId,
   );
-  if (selectedModel == null ||
-      !ModelProviderOAuthProfiles.isCodexProvider(
-        selectedModel.modelConnection.modelId,
-      )) {
+  if (selectedModel == null || !_isCodexSelection(selectedModel)) {
     return selectedModel;
   }
 
-  final openAIModel = await modelCatalogStore.getModelByProviderAndModelId(
-    'openai',
-    selectedModel.workspaceModelSelection.modelId,
+  return WorkspaceModelSelectionProviders.resolve(
+    selectedModel,
+    modelCatalogStore,
   );
-  if (openAIModel == null || !openAIModel.isCodexRuntimeModel) {
-    return selectedModel;
+}
+
+bool _isCodexSelection(WorkspaceModelSelectionWithConnectionEntity selection) =>
+    ModelProviderOAuthProfiles.isCodexProvider(
+      selection.modelConnection.modelId,
+    );
+
+class WorkspaceModelSelectionProviders {
+  static Future<WorkspaceModelSelectionWithConnectionEntity> resolve(
+    WorkspaceModelSelectionWithConnectionEntity selectedModel,
+    ModelCatalogStore modelCatalogStore,
+  ) async {
+    final openAIModel = await _codexRuntimeModel(
+      modelCatalogStore,
+      selectedModel.workspaceModelSelection.modelId,
+    );
+    if (openAIModel == null || !openAIModel.isCodexRuntimeModel) {
+      return selectedModel;
+    }
+
+    return selectedModel.copyWith(
+      workspaceModelSelection: selectedModel.workspaceModelSelection.copyWith(
+        modelName: openAIModel.name,
+        modalitiesInput: CodexInputModalities.forModel(openAIModel),
+        modalitiesOutput: openAIModel.modalitiesOutput,
+        supportsReasoning: openAIModel.supportsReasoning,
+        supportsToolCalls: openAIModel.supportsToolCalls,
+      ),
+    );
   }
 
-  return selectedModel.copyWith(
-    workspaceModelSelection: selectedModel.workspaceModelSelection.copyWith(
-      modelName: openAIModel.name,
-      modalitiesInput: CodexInputModalities.forModel(openAIModel),
-      modalitiesOutput: openAIModel.modalitiesOutput,
-      supportsReasoning: openAIModel.supportsReasoning,
-      supportsToolCalls: openAIModel.supportsToolCalls,
-    ),
-  );
+  static Future<ApiModelEntity?> _codexRuntimeModel(
+    ModelCatalogStore modelCatalogStore,
+    String modelId,
+  ) => modelCatalogStore.getModelByProviderAndModelId('openai', modelId);
 }
 
 @riverpod
@@ -64,14 +85,22 @@ Future<int?> modelContextLimit(
       workspaceModelSelectionId,
     ).future,
   );
-  final modelId = selectedModel?.workspaceModelSelection.modelId;
-  final providerId = selectedModel?.modelsProvider.id;
-  if (modelId == null || providerId == null) return null;
+  final selection = selectedModel;
+  if (selection == null) return null;
+
+  return _modelContextLimit(ref, workspaceId, selection);
+}
+
+Future<int?> _modelContextLimit(
+  Ref ref,
+  String workspaceId,
+  WorkspaceModelSelectionWithConnectionEntity selection,
+) async {
   final value = await ref.watch(
     getModelByProviderAndModelIdProvider(
       workspaceId: workspaceId,
-      providerId: providerId,
-      modelId: modelId,
+      providerId: selection.modelsProvider.id,
+      modelId: selection.workspaceModelSelection.modelId,
     ).future,
   );
 

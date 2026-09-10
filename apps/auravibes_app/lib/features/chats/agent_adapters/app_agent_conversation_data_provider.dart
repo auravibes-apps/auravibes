@@ -53,8 +53,19 @@ class const AppAgentConversationDataProvider({
     required String content,
     Object? payload,
   }) async {
-    final draft = payload is ChatDraft ? payload : ChatDraft(text: content);
+    final draft = _chatDraft(content, payload);
     final message = await messageRepository.createMessage(
+      _queuedUserMessage(conversationId, draft),
+    );
+
+    return AgentCreatedMessage(id: message.id);
+  }
+
+  ChatDraft _chatDraft(String content, Object? payload) {
+    return payload is ChatDraft ? payload : ChatDraft(text: content);
+  }
+
+  MessageToCreate _queuedUserMessage(String conversationId, ChatDraft draft) =>
       .new(
         conversationId: conversationId,
         content: draft.text,
@@ -63,11 +74,7 @@ class const AppAgentConversationDataProvider({
         status: MessageStatus.sending,
         metadata: draft.metadataJson,
         attachments: draft.attachments,
-      ),
-    );
-
-    return AgentCreatedMessage(id: message.id);
-  }
+      );
 
   @override
   Future<void> markMessagesSent(List<String> messageIds) async {
@@ -91,8 +98,20 @@ class const AppAgentConversationDataProvider({
 
     final metadata =
         latestAssistantMessage.metadata ?? const MessageMetadataEntity();
+    final updatedToolCalls = _stoppedPendingToolCalls(metadata.toolCalls);
+    if (updatedToolCalls == null) return;
+
+    final _ = await messageRepository.patchMessage(
+      latestAssistantMessage.id,
+      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+    );
+  }
+
+  List<MessageToolCallEntity>? _stoppedPendingToolCalls(
+    List<MessageToolCallEntity> toolCalls,
+  ) {
     var didUpdate = false;
-    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
+    final updatedToolCalls = toolCalls.map((toolCall) {
       if (!toolCall.isPending) return toolCall;
 
       didUpdate = true;
@@ -101,12 +120,8 @@ class const AppAgentConversationDataProvider({
         resultStatus: ToolCallResultStatus.stoppedByUser,
       );
     }).toList();
-    if (!didUpdate) return;
 
-    final _ = await messageRepository.patchMessage(
-      latestAssistantMessage.id,
-      .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
-    );
+    return didUpdate ? updatedToolCalls : null;
   }
 }
 

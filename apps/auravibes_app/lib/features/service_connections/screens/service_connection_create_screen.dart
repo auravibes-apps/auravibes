@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -21,6 +22,33 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 
 final _logger = Logger('service_connection_create_screen');
+
+typedef _AppSkillCredentialSaveData = ({
+  String appSkillId,
+  String apiKey,
+  String name,
+});
+
+typedef _AppSkillCredentialFailureLogRequest = ({
+  _ServiceConnectionCreateScreenState state,
+  _AppSkillCredentialSaveData data,
+  Object error,
+  StackTrace stackTrace,
+});
+
+typedef _SkillCredentialSuccessLogRequest = ({
+  _ServiceConnectionCreateScreenState state,
+  String definitionId,
+  SkillCredentialEntity credential,
+  Map<String, String> attributes,
+});
+
+typedef _SkillCredentialFailureLogRequest = ({
+  _ServiceConnectionCreateScreenState state,
+  String definitionId,
+  Object error,
+  StackTrace stackTrace,
+});
 
 class const ServiceConnectionCreateScreen({
   required final String workspaceId,
@@ -43,256 +71,558 @@ class _ServiceConnectionCreateScreenState
   String? _appSkillId;
   bool _isSaving = false;
 
+  TextEditingController get _apiKeyController {
+    return _attributeControllers.putIfAbsent(
+      'apiKey',
+      TextEditingController.new,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    final initialAppSkill = _appSkillCredentialOption(widget.initialAppSkillId);
-    _type = initialAppSkill == null && widget.initialAppSkillId != null
-        ? ServiceConnectionCreateType.modelProvider
-        : widget.initialType ?? _type;
-    _definitionId = widget.initialCredentialDefinitionId;
-    _appSkillId = initialAppSkill?.identifier;
+    _initializeCreateState(this);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    for (final controller in _attributeControllers.values) {
-      controller.dispose();
-    }
+    _disposeCreateState(this);
     super.dispose();
   }
 
+  void updateState(VoidCallback callback) => setState(callback);
+
+  @override
+  Widget build(BuildContext context) {
+    return _ServiceConnectionCreateView(form: .fromState(this));
+  }
+}
+
+void _initializeCreateState(_ServiceConnectionCreateScreenState state) {
+  final initialAppSkill = _appSkillCredentialOption(
+    state.widget.initialAppSkillId,
+  );
+  state._type = _initialCreateType(state, initialAppSkill);
+  state._definitionId = state.widget.initialCredentialDefinitionId;
+  state._appSkillId = initialAppSkill?.identifier;
+}
+
+ServiceConnectionCreateType _initialCreateType(
+  _ServiceConnectionCreateScreenState state,
+  AppSkillDefinition? initialAppSkill,
+) {
+  if (initialAppSkill != null || state.widget.initialAppSkillId == null) {
+    return state.widget.initialType ?? state._type;
+  }
+
+  return .modelProvider;
+}
+
+void _disposeCreateState(_ServiceConnectionCreateScreenState state) {
+  state._nameController.dispose();
+  for (final controller in state._attributeControllers.values) {
+    controller.dispose();
+  }
+}
+
+void _handleFieldChanged(_ServiceConnectionCreateScreenState state, String _) {
+  state.updateState(() {
+    final _ = Object();
+  });
+}
+
+void _handleAppSkillChanged(
+  _ServiceConnectionCreateScreenState state,
+  String? value,
+) {
+  state.updateState(() => state._appSkillId = value);
+}
+
+void _handleModelProviderCreated(_ServiceConnectionCreateScreenState state) {
+  unawaited(_closeAfterSave(state));
+}
+
+void _handleSkillCredentialSave(_ServiceConnectionCreateScreenState state) {
+  unawaited(_saveSkillCredential(state));
+}
+
+void _handleAppSkillCredentialSave(_ServiceConnectionCreateScreenState state) {
+  unawaited(_saveAppSkillCredential(state));
+}
+
+Future<void> _saveAppSkillCredential(
+  _ServiceConnectionCreateScreenState state,
+) async {
+  if (state._isSaving) return;
+  final data = _appSkillCredentialSaveData(state);
+  if (data == null) return;
+
+  state.updateState(() => state._isSaving = true);
+  await _saveAppSkillCredentialRequest(state, data);
+}
+
+Future<void> _saveAppSkillCredentialRequest(
+  _ServiceConnectionCreateScreenState state,
+  _AppSkillCredentialSaveData data,
+) async {
+  try {
+    await _createAppSkillCredential(state, data);
+    await _closeAfterSave(state, resetModelMutation: false);
+  } on Object catch (error, stackTrace) {
+    _logAppSkillCredentialSaveFailure((
+      state: state,
+      data: data,
+      error: error,
+      stackTrace: stackTrace,
+    ));
+    _showCredentialSaveError(state);
+  } finally {
+    _finishSaving(state);
+  }
+}
+
+_AppSkillCredentialSaveData? _appSkillCredentialSaveData(
+  _ServiceConnectionCreateScreenState state,
+) {
+  return switch ((
+    appSkillId: state._appSkillId,
+    apiKey: state._attributeControllers['apiKey']?.text.trim(),
+    name: state._nameController.text.trim(),
+  )) {
+    (appSkillId: final appSkillId?, apiKey: final apiKey?, name: final name)
+        when apiKey.isNotEmpty && name.isNotEmpty =>
+      (appSkillId: appSkillId, apiKey: apiKey, name: name),
+    _ => null,
+  };
+}
+
+Future<void> _createAppSkillCredential(
+  _ServiceConnectionCreateScreenState state,
+  _AppSkillCredentialSaveData data,
+) async {
+  final operations = await state.ref.read(
+    serviceConnectionOperationsProvider(state.widget.workspaceId).future,
+  );
+  final _ = await operations.createAppSkillCredential(
+    workspaceId: state.widget.workspaceId,
+    appSkillServiceId: data.appSkillId,
+    name: data.name,
+    apiKey: data.apiKey,
+  );
+}
+
+void _logAppSkillCredentialSaveFailure(
+  _AppSkillCredentialFailureLogRequest request,
+) {
+  _logger.severe(
+    'debug:app skill credential save failed '
+    'workspace=${request.state.widget.workspaceId} '
+    'appSkillId=${request.data.appSkillId} '
+    'nameLength=${request.data.name.length}',
+    request.error,
+    request.stackTrace,
+  );
+}
+
+Future<void> _saveSkillCredential(
+  _ServiceConnectionCreateScreenState state,
+) async {
+  final definitionId = _skillCredentialDefinitionId(state);
+  if (definitionId == null) return;
+
+  state.updateState(() => state._isSaving = true);
+  await _saveSkillCredentialRequest(state, definitionId);
+}
+
+Future<void> _saveSkillCredentialRequest(
+  _ServiceConnectionCreateScreenState state,
+  String definitionId,
+) async {
+  try {
+    await _executeSkillCredentialSave(state, definitionId);
+  } on Object catch (error, stackTrace) {
+    _logSkillCredentialSaveFailure((
+      state: state,
+      definitionId: definitionId,
+      error: error,
+      stackTrace: stackTrace,
+    ));
+    _showCredentialSaveError(state);
+  } finally {
+    _finishSaving(state);
+  }
+}
+
+Future<void> _executeSkillCredentialSave(
+  _ServiceConnectionCreateScreenState state,
+  String definitionId,
+) async {
+  final attributes = _attributeValues(state);
+  final credential = await _createAndLogSkillCredential(
+    state,
+    definitionId,
+    attributes,
+  );
+  await _closeAfterSave(
+    state,
+    refreshServiceConnections: false,
+    resetModelMutation: false,
+  );
+}
+
+Future<SkillCredentialEntity> _createAndLogSkillCredential(
+  _ServiceConnectionCreateScreenState state,
+  String definitionId,
+  Map<String, String> attributes,
+) async {
+  _logSkillCredentialSaveStart(state, definitionId, attributes);
+  final credential = await _createSkillCredential(
+    state,
+    definitionId,
+    attributes,
+  );
+  _logSkillCredentialSaveSuccess((
+    state: state,
+    definitionId: definitionId,
+    credential: credential,
+    attributes: attributes,
+  ));
+  return credential;
+}
+
+String? _skillCredentialDefinitionId(
+  _ServiceConnectionCreateScreenState state,
+) {
+  if (state._isSaving) {
+    _logSkillCredentialSaveIgnored(state);
+    return null;
+  }
+
+  final definitionId = state._definitionId;
+  if (definitionId == null) _logSkillCredentialSaveBlocked(state);
+  return definitionId;
+}
+
+void _logSkillCredentialSaveIgnored(_ServiceConnectionCreateScreenState state) {
+  _logger.info(
+    'debug:skill credential save ignored workspace=${state.widget.workspaceId} '
+    'reason=already_saving type=${state._type.name}',
+  );
+}
+
+void _logSkillCredentialSaveBlocked(_ServiceConnectionCreateScreenState state) {
+  _logger.warning(
+    'debug:skill credential save blocked workspace=${state.widget.workspaceId} '
+    'reason=missing_definition type=${state._type.name}',
+  );
+}
+
+Map<String, String> _attributeValues(
+  _ServiceConnectionCreateScreenState state,
+) => state._attributeControllers.map(
+  (key, controller) => MapEntry(key, controller.text),
+);
+
+Future<SkillCredentialEntity> _createSkillCredential(
+  _ServiceConnectionCreateScreenState state,
+  String definitionId,
+  Map<String, String> attributes,
+) {
+  return state.ref
+      .read(skillCredentialOperationsProvider(state.widget.workspaceId))
+      .create(
+        state.widget.workspaceId,
+        .new(
+          credentialDefinitionId: definitionId,
+          name: state._nameController.text.trim(),
+          attributes: attributes,
+        ),
+      );
+}
+
+void _logSkillCredentialSaveStart(
+  _ServiceConnectionCreateScreenState state,
+  String definitionId,
+  Map<String, String> attributes,
+) {
+  _logger.info(
+    'debug:skill credential save start workspace=${state.widget.workspaceId} '
+    'definitionId=$definitionId type=${state._type.name} '
+    'nameLength=${state._nameController.text.trim().length} '
+    'attributes=${_describeAttributes(attributes)}',
+  );
+}
+
+void _logSkillCredentialSaveSuccess(_SkillCredentialSuccessLogRequest request) {
+  _logger.info(
+    'debug:skill credential save success '
+    'workspace=${request.state.widget.workspaceId} '
+    'definitionId=${request.definitionId} '
+    'credentialId=${request.credential.id} '
+    'attributeKeys=${request.attributes.keys.join(',')}',
+  );
+}
+
+void _logSkillCredentialSaveFailure(_SkillCredentialFailureLogRequest request) {
+  _logger.severe(
+    'debug:skill credential save failed '
+    'workspace=${request.state.widget.workspaceId} '
+    'definitionId=${request.definitionId} type=${request.state._type.name} '
+    'nameLength=${request.state._nameController.text.trim().length} '
+    'attributeKeys=${request.state._attributeControllers.keys.join(',')}',
+    request.error,
+    request.stackTrace,
+  );
+}
+
+void _showCredentialSaveError(_ServiceConnectionCreateScreenState state) {
+  if (!state.mounted) return;
+  final _ = AuraSnackBars.show(
+    context: state.context,
+    content: Text(
+      LocaleKeys.skill_credentials_save_error.tr(context: state.context),
+    ),
+    variant: .error,
+  );
+}
+
+void _finishSaving(_ServiceConnectionCreateScreenState state) {
+  if (state.mounted) state.updateState(() => state._isSaving = false);
+}
+
+Future<void> _closeAfterSave(
+  _ServiceConnectionCreateScreenState state, {
+  bool refreshServiceConnections = true,
+  bool resetModelMutation = true,
+}) async {
+  if (!state.mounted) return;
+  _resetAfterSave(state, refreshServiceConnections, resetModelMutation);
+  if (await Navigator.of(state.context).maybePop(true)) return;
+  if (!state.mounted) return;
+  _goToServiceConnections(state);
+}
+
+void _resetAfterSave(
+  _ServiceConnectionCreateScreenState state,
+  bool refreshServiceConnections,
+  bool resetModelMutation,
+) {
+  if (resetModelMutation) {
+    addCredentialsModelMutationProvider.reset(state.ref);
+  }
+  if (refreshServiceConnections) {
+    state.ref.invalidate(serviceConnectionsProvider(state.widget.workspaceId));
+  }
+}
+
+void _goToServiceConnections(_ServiceConnectionCreateScreenState state) {
+  state.context.go(
+    '/workspaces/${state.widget.workspaceId}/more/service-connections',
+  );
+}
+
+void _onTypeChanged(
+  _ServiceConnectionCreateScreenState state,
+  ServiceConnectionCreateType? value,
+) {
+  if (value == null) return;
+  state.updateState(() {
+    state._type = value;
+    state._definitionId = null;
+    state._appSkillId = null;
+    _resetAttributeControllers(state);
+  });
+}
+
+void _onDefinitionChanged(
+  _ServiceConnectionCreateScreenState state,
+  String? value,
+) {
+  state.updateState(() {
+    state._definitionId = value;
+    _resetAttributeControllers(state);
+  });
+}
+
+void _resetAttributeControllers(_ServiceConnectionCreateScreenState state) {
+  for (final controller in state._attributeControllers.values) {
+    controller.dispose();
+  }
+  state._attributeControllers.clear();
+}
+
+String _describeAttributes(Map<String, String> attributes) => attributes.entries
+    .map(
+      (entry) =>
+          '${entry.key}:length=${entry.value.length},'
+          'empty=${entry.value.isEmpty}',
+    )
+    .join('|');
+
+class const _ServiceConnectionCreateForm({
+  required final String workspaceId,
+  required final ServiceConnectionCreateType type,
+  required final String? selectedDefinitionId,
+  required final String? selectedAppSkillId,
+  required final TextEditingController nameController,
+  required final Map<String, TextEditingController> attributeControllers,
+  required final TextEditingController apiKeyController,
+  required final bool isSaving,
+  required final ValueChanged<ServiceConnectionCreateType?> onTypeChanged,
+  required final ValueChanged<String> onNameChanged,
+  required final ValueChanged<String?> onDefinitionChanged,
+  required final ValueChanged<String?> onAppSkillChanged,
+  required final ValueChanged<String> onApiKeyChanged,
+  required final VoidCallback onModelProviderCreated,
+  required final VoidCallback onSkillCredentialSave,
+  required final VoidCallback onAppSkillCredentialSave,
+}) {
+  _ServiceConnectionCreateForm.fromState(
+    _ServiceConnectionCreateScreenState state,
+  ) : this(
+        workspaceId: state.widget.workspaceId,
+        type: state._type,
+        selectedDefinitionId: state._definitionId,
+        selectedAppSkillId: state._appSkillId,
+        nameController: state._nameController,
+        attributeControllers: state._attributeControllers,
+        apiKeyController: state._apiKeyController,
+        isSaving: state._isSaving,
+        onTypeChanged: (value) => _onTypeChanged(state, value),
+        onNameChanged: (value) => _handleFieldChanged(state, value),
+        onDefinitionChanged: (value) => _onDefinitionChanged(state, value),
+        onAppSkillChanged: (value) => _handleAppSkillChanged(state, value),
+        onApiKeyChanged: (value) => _handleFieldChanged(state, value),
+        onModelProviderCreated: () => _handleModelProviderCreated(state),
+        onSkillCredentialSave: () => _handleSkillCredentialSave(state),
+        onAppSkillCredentialSave: () => _handleAppSkillCredentialSave(state),
+      );
+
+  bool canSaveAppSkillCredential() =>
+      selectedAppSkillId != null &&
+      nameController.text.trim().isNotEmpty &&
+      apiKeyController.text.trim().isNotEmpty;
+}
+
+class const _ServiceConnectionCreateView({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
-      child: AuraColumn(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: _TypeSelector(value: _type, onChanged: _onTypeChanged),
-          ),
-          Expanded(
-            child: switch (_type) {
-              .modelProvider => Padding(
-                padding: const EdgeInsets.all(12),
-                child: AddModelProviderWidget(
-                  workspaceId: widget.workspaceId,
-                  onCreated: () => unawaited(_closeAfterSave()),
-                  showHeader: false,
-                ),
-              ),
-              .skillCredential => _CredentialForm(
-                workspaceId: widget.workspaceId,
-                selectedDefinitionId: _definitionId,
-                nameController: _nameController,
-                attributeControllers: _attributeControllers,
-                isSaving: _isSaving,
-                onNameChanged: (_) => setState(() {
-                  final _ = Object();
-                }),
-                onDefinitionChanged: _onDefinitionChanged,
-                onSave: () => unawaited(_saveSkillCredential()),
-              ),
-              .appSkillCredential => _AppSkillCredentialForm(
-                selectedAppSkillId: _appSkillId,
-                nameController: _nameController,
-                apiKeyController: _attributeControllers.putIfAbsent(
-                  'apiKey',
-                  TextEditingController.new,
-                ),
-                isSaving: _isSaving,
-                onNameChanged: (_) => setState(() {
-                  final _ = Object();
-                }),
-                onAppSkillChanged: (value) {
-                  setState(() => _appSkillId = value);
-                },
-                onApiKeyChanged: (_) => setState(() {
-                  final _ = Object();
-                }),
-                onSave: () => unawaited(_saveAppSkillCredential()),
-              ),
-            },
-          ),
-        ],
-      ),
-      appBar: AuraAppBar(
-        title: const TextLocale(LocaleKeys.service_connections_create_title),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      child: _ServiceConnectionCreateBody(form: form),
+      appBar: const _ServiceConnectionCreateAppBar(),
+    );
+  }
+}
+
+class const _ServiceConnectionCreateAppBar()
+    extends StatelessWidget
+    implements PreferredSizeWidget {
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraAppBar(
+      title: const TextLocale(LocaleKeys.service_connections_create_title),
+      leading: AuraIconButton(
+        icon: Icons.arrow_back,
+        onPressed: () => Navigator.of(context).pop(),
       ),
     );
   }
+}
 
-  Future<void> _saveAppSkillCredential() async {
-    if (_isSaving) return;
-    final appSkillId = _appSkillId;
-    final apiKey = _attributeControllers['apiKey']?.text.trim();
-    final name = _nameController.text.trim();
-    if (appSkillId == null ||
-        name.isEmpty ||
-        apiKey == null ||
-        apiKey.isEmpty) {
-      return;
-    }
-
-    setState(() => _isSaving = true);
-    try {
-      final operations = await ref.read(
-        serviceConnectionOperationsProvider(widget.workspaceId).future,
-      );
-      final _ = await operations.createAppSkillCredential(
-        workspaceId: widget.workspaceId,
-        appSkillServiceId: appSkillId,
-        name: name,
-        apiKey: apiKey,
-      );
-      await _closeAfterSave(resetModelMutation: false);
-    } on Object catch (error, stackTrace) {
-      _logger.severe(
-        'debug:app skill credential save failed '
-        'workspace=${widget.workspaceId} appSkillId=$appSkillId '
-        'nameLength=${name.length}',
-        error,
-        stackTrace,
-      );
-      if (!mounted) return;
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: Text(
-          LocaleKeys.skill_credentials_save_error.tr(context: context),
-        ),
-        variant: .error,
-      );
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+class const _ServiceConnectionCreateBody({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        _CreateTypeSelectorPadding(form: form),
+        Expanded(child: _CreateConnectionTypeContent(form: form)),
+      ],
+    );
   }
+}
 
-  Future<void> _saveSkillCredential() async {
-    if (_isSaving) {
-      _logger.info(
-        'debug:skill credential save ignored workspace=${widget.workspaceId} '
-        'reason=already_saving type=${_type.name}',
-      );
-
-      return;
-    }
-    final definitionId = _definitionId;
-    if (definitionId == null) {
-      _logger.warning(
-        'debug:skill credential save blocked workspace=${widget.workspaceId} '
-        'reason=missing_definition type=${_type.name}',
-      );
-
-      return;
-    }
-    setState(() => _isSaving = true);
-    try {
-      final attributes = _attributeControllers.map(
-        (key, controller) => MapEntry(key, controller.text),
-      );
-      _logger.info(
-        'debug:skill credential save start workspace=${widget.workspaceId} '
-        'definitionId=$definitionId type=${_type.name} '
-        'nameLength=${_nameController.text.trim().length} '
-        'attributes=${_describeAttributes(attributes)}',
-      );
-      final credential = await ref
-          .read(skillCredentialOperationsProvider(widget.workspaceId))
-          .create(
-            widget.workspaceId,
-            .new(
-              credentialDefinitionId: definitionId,
-              name: _nameController.text.trim(),
-              attributes: attributes,
-            ),
-          );
-      _logger.info(
-        'debug:skill credential save success workspace=${widget.workspaceId} '
-        'definitionId=$definitionId credentialId=${credential.id} '
-        'attributeKeys=${attributes.keys.join(',')}',
-      );
-      await _closeAfterSave(
-        refreshServiceConnections: false,
-        resetModelMutation: false,
-      );
-    } on Object catch (error, stackTrace) {
-      _logger.severe(
-        'debug:skill credential save failed workspace=${widget.workspaceId} '
-        'definitionId=$definitionId type=${_type.name} '
-        'nameLength=${_nameController.text.trim().length} '
-        'attributeKeys=${_attributeControllers.keys.join(',')}',
-        error,
-        stackTrace,
-      );
-      if (!mounted) return;
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: Text(
-          LocaleKeys.skill_credentials_save_error.tr(context: context),
-        ),
-        variant: .error,
-      );
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+class const _CreateTypeSelectorPadding({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: _TypeSelector(value: form.type, onChanged: form.onTypeChanged),
+    );
   }
+}
 
-  Future<void> _closeAfterSave({
-    bool refreshServiceConnections = true,
-    bool resetModelMutation = true,
-  }) async {
-    if (!mounted) return;
-    if (resetModelMutation) {
-      addCredentialsModelMutationProvider.reset(ref);
-    }
-    if (refreshServiceConnections) {
-      ref.invalidate(serviceConnectionsProvider(widget.workspaceId));
-    }
-    final didPop = await Navigator.of(context).maybePop(true);
-    if (didPop) {
-      return;
-    }
-    if (!mounted) return;
-    context.go('/workspaces/${widget.workspaceId}/more/service-connections');
+class const _CreateConnectionTypeContent({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return switch (form.type) {
+      .modelProvider => _ModelProviderCreateContent(form: form),
+      .skillCredential => _SkillCredentialCreateContent(form: form),
+      .appSkillCredential => _AppSkillCredentialCreateContent(form: form),
+    };
   }
+}
 
-  void _onTypeChanged(ServiceConnectionCreateType? value) {
-    if (value == null) return;
-    setState(() {
-      _type = value;
-      _definitionId = null;
-      _appSkillId = null;
-      _resetAttributeControllers();
-    });
+class const _ModelProviderCreateContent({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: AddModelProviderWidget(
+        workspaceId: form.workspaceId,
+        onCreated: form.onModelProviderCreated,
+        showHeader: false,
+      ),
+    );
   }
+}
 
-  void _onDefinitionChanged(String? value) {
-    setState(() {
-      _definitionId = value;
-      _resetAttributeControllers();
-    });
+class const _SkillCredentialCreateContent({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return _CredentialForm(
+      workspaceId: form.workspaceId,
+      selectedDefinitionId: form.selectedDefinitionId,
+      nameController: form.nameController,
+      attributeControllers: form.attributeControllers,
+      isSaving: form.isSaving,
+      onNameChanged: form.onNameChanged,
+      onDefinitionChanged: form.onDefinitionChanged,
+      onSave: form.onSkillCredentialSave,
+    );
   }
+}
 
-  void _resetAttributeControllers() {
-    for (final controller in _attributeControllers.values) {
-      controller.dispose();
-    }
-    _attributeControllers.clear();
-  }
-
-  String _describeAttributes(Map<String, String> attributes) {
-    return attributes.entries
-        .map(
-          (entry) =>
-              '${entry.key}:length=${entry.value.length},'
-              'empty=${entry.value.isEmpty}',
-        )
-        .join('|');
+class const _AppSkillCredentialCreateContent({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return _AppSkillCredentialForm(
+      selectedAppSkillId: form.selectedAppSkillId,
+      nameController: form.nameController,
+      apiKeyController: form.apiKeyController,
+      isSaving: form.isSaving,
+      onNameChanged: form.onNameChanged,
+      onAppSkillChanged: form.onAppSkillChanged,
+      onApiKeyChanged: form.onApiKeyChanged,
+      onSave: form.onAppSkillCredentialSave,
+      canSave: form.canSaveAppSkillCredential(),
+    );
   }
 }
 
@@ -320,32 +650,7 @@ class const _TypeSelector({
   @override
   Widget build(BuildContext context) {
     return AuraChoicePicker<ServiceConnectionCreateType>(
-      options: [
-        AuraChoiceOption(
-          value: ServiceConnectionCreateType.modelProvider,
-          label: Text(
-            LocaleKeys.service_connections_type_model_provider.tr(
-              context: context,
-            ),
-          ),
-        ),
-        AuraChoiceOption(
-          value: ServiceConnectionCreateType.skillCredential,
-          label: Text(
-            LocaleKeys.service_connections_type_skill_credential.tr(
-              context: context,
-            ),
-          ),
-        ),
-        AuraChoiceOption(
-          value: ServiceConnectionCreateType.appSkillCredential,
-          label: Text(
-            LocaleKeys.service_connections_type_app_skill_credential.tr(
-              context: context,
-            ),
-          ),
-        ),
-      ],
+      options: _serviceConnectionCreateTypeOptions(context),
       value: [value],
       onChanged: _handleChanged,
       label: Text(
@@ -361,6 +666,39 @@ class const _TypeSelector({
   }
 }
 
+List<AuraChoiceOption<ServiceConnectionCreateType>>
+_serviceConnectionCreateTypeOptions(BuildContext context) {
+  return [
+    for (final type in ServiceConnectionCreateType.values)
+      AuraChoiceOption(
+        value: type,
+        label: Text(_createTypeLabel(context, type)),
+      ),
+  ];
+}
+
+String _createTypeLabel(
+  BuildContext context,
+  ServiceConnectionCreateType type,
+) {
+  final key = switch (type) {
+    .modelProvider => LocaleKeys.service_connections_type_model_provider,
+    .skillCredential => LocaleKeys.service_connections_type_skill_credential,
+    .appSkillCredential =>
+      LocaleKeys.service_connections_type_app_skill_credential,
+  };
+
+  return key.tr(context: context);
+}
+
+List<SkillCredentialDefinitionEntity>? _credentialDefinitions(
+  AsyncValue<List<SkillCredentialDefinitionEntity>> value,
+) => switch (value) {
+  AsyncData(:final value) => value,
+  AsyncLoading(value: final value?, hasValue: true) => value,
+  _ => null,
+};
+
 class const _CredentialForm({
   required final String workspaceId,
   required final String? selectedDefinitionId,
@@ -373,34 +711,15 @@ class const _CredentialForm({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final definitionsAsync = ref.watch(
-      skillCredentialDefinitionsProvider(workspaceId),
+    final definitions = _credentialDefinitions(
+      ref.watch(skillCredentialDefinitionsProvider(workspaceId)),
     );
 
-    return switch (definitionsAsync) {
-      AsyncData(:final value) => _CredentialFormContent(
-        definitions: value,
-        selectedDefinitionId: selectedDefinitionId,
-        nameController: nameController,
-        attributeControllers: attributeControllers,
-        isSaving: isSaving,
-        onNameChanged: onNameChanged,
-        onDefinitionChanged: onDefinitionChanged,
-        onSave: onSave,
-      ),
-      AsyncLoading(value: final value?, hasValue: true) =>
-        _CredentialFormContent(
-          definitions: value,
-          selectedDefinitionId: selectedDefinitionId,
-          nameController: nameController,
-          attributeControllers: attributeControllers,
-          isSaving: isSaving,
-          onNameChanged: onNameChanged,
-          onDefinitionChanged: onDefinitionChanged,
-          onSave: onSave,
-        ),
-      AsyncLoading() || AsyncError() => const Center(child: AuraSpinner()),
-    };
+    if (definitions == null) {
+      return const Center(child: AuraSpinner());
+    }
+
+    return _CredentialFormContent.fromCredentialForm(this, definitions);
   }
 }
 
@@ -413,66 +732,156 @@ class const _AppSkillCredentialForm({
   required final ValueChanged<String?> onAppSkillChanged,
   required final ValueChanged<String> onApiKeyChanged,
   required final VoidCallback onSave,
+  required final bool canSave,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final skills = _appSkillCredentialOptions();
-    final canSave =
-        selectedAppSkillId != null &&
-        nameController.text.trim().isNotEmpty &&
-        apiKeyController.text.trim().isNotEmpty;
-
     return ListView(
       padding: const EdgeInsets.all(12),
-      children: [
-        AuraCard(
-          child: AuraColumn(
-            children: [
-              AuraDropdownSelector<String>(
-                options: [
-                  for (final skill in skills)
-                    AuraDropdownOption(
-                      value: skill.identifier,
-                      child: Text(skill.title),
-                    ),
-                ],
-                value: selectedAppSkillId,
-                onChanged: onAppSkillChanged,
-                label: Text(
-                  LocaleKeys.service_connections_create_app_skill_label.tr(
-                    context: context,
-                  ),
-                ),
-              ),
-              AuraInput(
-                controller: nameController,
-                label: Text(
-                  LocaleKeys.skill_credentials_name_label.tr(context: context),
-                ),
-                onChanged: onNameChanged,
-              ),
-              AuraInput(
-                controller: apiKeyController,
-                label: Text(_credentialValueLabel(context, selectedAppSkillId)),
-                keyboardType: .visiblePassword,
-                obscureText: true,
-                onChanged: onApiKeyChanged,
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: AuraButton(
-                  onPressed: onSave,
-                  child: const TextLocale(LocaleKeys.common_save),
-                  isLoading: isSaving,
-                  disabled: isSaving || !canSave,
-                ),
-              ),
-            ],
-            spacing: .md,
-            crossAxisAlignment: .start,
-          ),
+      children: [_AppSkillCredentialCard._fromForm(this)],
+    );
+  }
+}
+
+class const _AppSkillCredentialCard({
+  required final String? selectedAppSkillId,
+  required final TextEditingController nameController,
+  required final TextEditingController apiKeyController,
+  required final bool isSaving,
+  required final bool canSave,
+  required final ValueChanged<String> onNameChanged,
+  required final ValueChanged<String?> onAppSkillChanged,
+  required final ValueChanged<String> onApiKeyChanged,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
+  _AppSkillCredentialCard._fromForm(_AppSkillCredentialForm form)
+    : this(
+        selectedAppSkillId: form.selectedAppSkillId,
+        nameController: form.nameController,
+        apiKeyController: form.apiKeyController,
+        isSaving: form.isSaving,
+        canSave: form.canSave,
+        onNameChanged: form.onNameChanged,
+        onAppSkillChanged: form.onAppSkillChanged,
+        onApiKeyChanged: form.onApiKeyChanged,
+        onSave: form.onSave,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraCard(
+      child: AuraColumn(
+        children: [
+          _AppSkillCredentialSelector.fromCard(this),
+          _CredentialNameField._fromAppSkillCard(this),
+          _AppSkillCredentialValueField.fromCard(this),
+          _CredentialSaveAction.fromAppSkillCard(this),
+        ],
+        spacing: .md,
+        crossAxisAlignment: .start,
+      ),
+    );
+  }
+}
+
+class const _AppSkillCredentialSelector({
+  required final String? value,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  _AppSkillCredentialSelector.fromCard(_AppSkillCredentialCard card)
+    : this(value: card.selectedAppSkillId, onChanged: card.onAppSkillChanged);
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraDropdownSelector<String>(
+      options: _appSkillCredentialOptions().map(_option).toList(),
+      value: value,
+      onChanged: onChanged,
+      label: Text(
+        LocaleKeys.service_connections_create_app_skill_label.tr(
+          context: context,
         ),
-      ],
+      ),
+    );
+  }
+
+  AuraDropdownOption<String> _option(AppSkillDefinition skill) =>
+      AuraDropdownOption(value: skill.identifier, child: Text(skill.title));
+}
+
+class const _CredentialNameField({
+  required final TextEditingController controller,
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  _CredentialNameField._fromAppSkillCard(_AppSkillCredentialCard card)
+    : this(controller: card.nameController, onChanged: card.onNameChanged);
+
+  _CredentialNameField._fromCredentialCard(_CredentialFormCard card)
+    : this(controller: card.nameController, onChanged: card.onNameChanged);
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraInput(
+      controller: controller,
+      label: Text(LocaleKeys.skill_credentials_name_label.tr(context: context)),
+      onChanged: onChanged,
+    );
+  }
+}
+
+class const _AppSkillCredentialValueField({
+  required final String? appSkillId,
+  required final TextEditingController controller,
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  _AppSkillCredentialValueField.fromCard(_AppSkillCredentialCard card)
+    : this(
+        appSkillId: card.selectedAppSkillId,
+        controller: card.apiKeyController,
+        onChanged: card.onApiKeyChanged,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraInput(
+      controller: controller,
+      label: Text(_credentialValueLabel(context, appSkillId)),
+      keyboardType: .visiblePassword,
+      obscureText: true,
+      onChanged: onChanged,
+    );
+  }
+}
+
+class const _CredentialSaveAction({
+  required final VoidCallback onSave,
+  required final bool isSaving,
+  required final bool disabled,
+}) extends StatelessWidget {
+  _CredentialSaveAction._fromAppSkillCard(_AppSkillCredentialCard card)
+    : this(
+        onSave: card.onSave,
+        isSaving: card.isSaving,
+        disabled: !card.canSave,
+      );
+
+  _CredentialSaveAction._fromCredentialCard(_CredentialFormCard card)
+    : this(
+        onSave: card.onSave,
+        isSaving: card.isSaving,
+        disabled: card.nameController.text.trim().isEmpty,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: AuraButton(
+        onPressed: onSave,
+        child: const TextLocale(LocaleKeys.common_save),
+        isLoading: isSaving,
+        disabled: isSaving || disabled,
+      ),
     );
   }
 }
@@ -518,60 +927,126 @@ class const _CredentialFormContent({
   required final ValueChanged<String?> onDefinitionChanged,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
+  _CredentialFormContent.fromCredentialForm(
+    _CredentialForm form,
+    List<SkillCredentialDefinitionEntity> definitions,
+  ) : this(
+        definitions: definitions,
+        selectedDefinitionId: form.selectedDefinitionId,
+        nameController: form.nameController,
+        attributeControllers: form.attributeControllers,
+        isSaving: form.isSaving,
+        onNameChanged: form.onNameChanged,
+        onDefinitionChanged: form.onDefinitionChanged,
+        onSave: form.onSave,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [_CredentialFormCard.fromContent(this)],
+    );
+  }
+}
+
+class const _CredentialFormCard({
+  required final List<SkillCredentialDefinitionEntity> definitions,
+  required final String? selectedDefinitionId,
+  required final TextEditingController nameController,
+  required final Map<String, TextEditingController> attributeControllers,
+  required final bool isSaving,
+  required final ValueChanged<String> onNameChanged,
+  required final ValueChanged<String?> onDefinitionChanged,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
+  _CredentialFormCard.fromContent(_CredentialFormContent content)
+    : this(
+        definitions: content.definitions,
+        selectedDefinitionId: content.selectedDefinitionId,
+        nameController: content.nameController,
+        attributeControllers: content.attributeControllers,
+        isSaving: content.isSaving,
+        onNameChanged: content.onNameChanged,
+        onDefinitionChanged: content.onDefinitionChanged,
+        onSave: content.onSave,
+      );
+
   @override
   Widget build(BuildContext context) {
     final selectedDefinition = definitions
         .where((definition) => definition.id == selectedDefinitionId)
         .firstOrNull;
 
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        AuraCard(
-          child: AuraColumn(
-            children: [
-              _DefinitionSelector(
-                definitions: definitions,
-                selectedDefinitionId: selectedDefinitionId,
-                onChanged: onDefinitionChanged,
-              ),
-              if (selectedDefinition == null)
-                AuraText(
-                  child: Text(
-                    LocaleKeys.skill_credentials_no_definitions.tr(
-                      context: context,
-                    ),
-                  ),
-                )
-              else ...[
-                AuraInput(
-                  controller: nameController,
-                  label: Text(
-                    LocaleKeys.skill_credentials_name_label.tr(
-                      context: context,
-                    ),
-                  ),
-                  onChanged: onNameChanged,
-                ),
-                _CredentialAttributesFields(
-                  definition: selectedDefinition,
-                  controllers: attributeControllers,
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: AuraButton(
-                    onPressed: onSave,
-                    child: const TextLocale(LocaleKeys.common_save),
-                    isLoading: isSaving,
-                    disabled: isSaving || nameController.text.trim().isEmpty,
-                  ),
-                ),
-              ],
-            ],
-            spacing: .md,
-            crossAxisAlignment: .start,
+    return _CredentialFormCardLayout(
+      card: this,
+      selectedDefinition: selectedDefinition,
+    );
+  }
+}
+
+class const _CredentialFormCardLayout({
+  required final _CredentialFormCard card,
+  required final SkillCredentialDefinitionEntity? selectedDefinition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraCard(
+      child: AuraColumn(
+        children: [
+          _DefinitionSelector._fromCard(card),
+          _CredentialFormDetails(
+            card: card,
+            selectedDefinition: selectedDefinition,
           ),
-        ),
+        ],
+        spacing: .md,
+        crossAxisAlignment: .start,
+      ),
+    );
+  }
+}
+
+class const _CredentialFormDetails({
+  required final _CredentialFormCard card,
+  required final SkillCredentialDefinitionEntity? selectedDefinition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final definition = selectedDefinition;
+    if (definition == null) {
+      return const _NoCredentialDefinitionMessage();
+    }
+
+    return _CredentialFormFieldsColumn(card: card, definition: definition);
+  }
+}
+
+class const _NoCredentialDefinitionMessage() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraText(
+      child: Text(
+        LocaleKeys.skill_credentials_no_definitions.tr(context: context),
+      ),
+    );
+  }
+}
+
+class const _CredentialFormFieldsColumn({
+  required final _CredentialFormCard card,
+  required final SkillCredentialDefinitionEntity definition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      mainAxisSize: .min,
+      spacing: .md,
+      crossAxisAlignment: .start,
+      children: [
+        _CredentialNameField._fromCredentialCard(card),
+        _CredentialAttributesFields._fromCredentialCard(card, definition),
+        _CredentialSaveAction._fromCredentialCard(card),
       ],
     );
   }
@@ -585,13 +1060,7 @@ class const _DefinitionSelector({
   @override
   Widget build(BuildContext context) {
     return AuraDropdownSelector<String>(
-      options: [
-        for (final definition in definitions)
-          AuraDropdownOption(
-            value: definition.id,
-            child: Text(definition.title),
-          ),
-      ],
+      options: definitions.map(_option).toList(),
       value: selectedDefinitionId,
       onChanged: onChanged,
       label: Text(
@@ -599,39 +1068,77 @@ class const _DefinitionSelector({
       ),
     );
   }
+
+  AuraDropdownOption<String> _option(
+    SkillCredentialDefinitionEntity definition,
+  ) => AuraDropdownOption(value: definition.id, child: Text(definition.title));
 }
 
 class const _CredentialAttributesFields({
   required final SkillCredentialDefinitionEntity definition,
   required final Map<String, TextEditingController> controllers,
 }) extends StatelessWidget {
+  _CredentialAttributesFields._fromCredentialCard(
+    _CredentialFormCard card,
+    SkillCredentialDefinitionEntity definition,
+  ) : this(definition: definition, controllers: card.attributeControllers);
+
   @override
   Widget build(BuildContext context) {
     final attributes = SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );
 
-    return AuraColumn(
-      children: [
-        for (final entry in attributes.entries)
-          AuraInput(
-            controller: controllers.putIfAbsent(
-              entry.key,
-              TextEditingController.new,
-            ),
-            label: Text(entry.key),
-            hint: entry.value.description.isEmpty
-                ? null
-                : Text(entry.value.description),
-            isRequired: !entry.value.optional,
-            keyboardType: entry.value.secret
-                ? TextInputType.visiblePassword
-                : TextInputType.text,
-            obscureText: entry.value.secret,
-          ),
-      ],
-      spacing: .md,
-      crossAxisAlignment: .start,
+    return _CredentialAttributeFieldsColumn(
+      attributes: attributes,
+      controllers: controllers,
     );
   }
+}
+
+class const _CredentialAttributeFieldsColumn({
+  required final Map<String, SkillCredentialAttributeDefinition> attributes,
+  required final Map<String, TextEditingController> controllers,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      for (final entry in attributes.entries)
+        _CredentialAttributeField(
+          entry: entry,
+          controller: _credentialAttributeController(controllers, entry.key),
+        ),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .start,
+  );
+}
+
+TextEditingController _credentialAttributeController(
+  Map<String, TextEditingController> controllers,
+  String key,
+) => controllers.putIfAbsent(key, TextEditingController.new);
+
+class const _CredentialAttributeField({
+  required final MapEntry<String, SkillCredentialAttributeDefinition> entry,
+  required final TextEditingController controller,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final attribute = entry.value;
+
+    return AuraInput(
+      controller: controller,
+      label: Text(entry.key),
+      hint: _hint(attribute.description),
+      isRequired: !attribute.optional,
+      keyboardType: _keyboardType(attribute.secret),
+      obscureText: attribute.secret,
+    );
+  }
+
+  Text? _hint(String description) =>
+      description.isEmpty ? null : Text(description);
+
+  TextInputType _keyboardType(bool secret) => secret ? .visiblePassword : .text;
 }

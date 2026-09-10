@@ -54,168 +54,247 @@ class AuraButton extends StatelessWidget {
   final String? semanticLabel;
 
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final effectiveDisabled =
-        disabled || !AuraInteractionScope.of(context).allowsActions;
-    final content = isLoading
-        ? AuraLoadingCircle(
-            tint: tint ?? AuraTint.primary,
-            size: 20,
-            itemBuilder: (context, _) => DecoratedBox(
-              decoration: BoxDecoration(
-                color: _getLoadingColor(
-                  auraColors,
-                  disabled: effectiveDisabled,
-                ),
-                shape: .circle,
-              ),
-            ),
-          )
-        : DefaultTextStyle(
-            style: _getTextStyle(
-              auraColors,
-              typography: context.auraTheme.typography,
-              disabled: effectiveDisabled,
-            ),
-            child: child,
-          );
+  Widget build(BuildContext context) => _AuraButtonLayout(
+    button: this,
+    colors: context.auraColors,
+    typography: context.auraTheme.typography,
+    radius: context.auraTheme.fromBorderRadius(.xl),
+    disabled: disabled || !AuraInteractionScope.of(context).allowsActions,
+  );
+}
 
-    return SizedBox(
-      width: isFullWidth ? double.infinity : null,
-      child: AuraPressable(
-        child: AuraPadding(
-          child: Center(
-            widthFactor: isFullWidth ? null : 1,
-            heightFactor: 1,
-            child: content,
+class const _AuraButtonLayout({
+  required final AuraButton button,
+  required final AuraColorScheme colors,
+  required final AuraTypographyScale typography,
+  required final double radius,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: button.isFullWidth ? double.infinity : null,
+    child: _AuraButtonSurface(
+      button: button,
+      colors: colors,
+      typography: typography,
+      radius: radius,
+      disabled: disabled,
+    ),
+  );
+}
+
+class const _AuraButtonSurface({
+  required final AuraButton button,
+  required final AuraColorScheme colors,
+  required final AuraTypographyScale typography,
+  required final double radius,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPressable(
+    child: _AuraButtonPaddedContent(
+      button: button,
+      colors: colors,
+      typography: typography,
+      disabled: disabled,
+    ),
+    color: _buttonForegroundColor(button, colors, disabled: disabled),
+    decoration: _buttonDecoration(button, colors, radius, disabled: disabled),
+    onPressed: _buttonOnPressed(button, disabled),
+    semanticLabel: button.semanticLabel,
+    isButtonSemantics: true,
+  );
+}
+
+VoidCallback? _buttonOnPressed(AuraButton button, bool disabled) =>
+    disabled || button.isLoading ? null : button.onPressed;
+
+class const _AuraButtonPaddedContent({
+  required final AuraButton button,
+  required final AuraColorScheme colors,
+  required final AuraTypographyScale typography,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPadding(
+    child: _AuraButtonContent(
+      button: button,
+      colors: colors,
+      disabled: disabled,
+      typography: typography,
+    ),
+    padding: _buttonPadding(button.variant, button.size),
+  );
+}
+
+class const _AuraButtonContent({
+  required final AuraButton button,
+  required final AuraColorScheme colors,
+  required final AuraTypographyScale typography,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    widthFactor: button.isFullWidth ? null : 1,
+    heightFactor: 1,
+    child: button.isLoading
+        ? _AuraButtonLoading(button: button, colors: colors, disabled: disabled)
+        : _AuraButtonLabel(
+            button: button,
+            colors: colors,
+            typography: typography,
+            disabled: disabled,
           ),
-          padding: _getPadding(),
-        ),
-        color: _getForegroundColor(auraColors, disabled: effectiveDisabled),
-        decoration: BoxDecoration(
-          color: _getBackgroundColor(auraColors, disabled: effectiveDisabled),
-          border: _getBorder(auraColors, disabled: effectiveDisabled),
-          borderRadius: BorderRadius.all(
-            .circular(context.auraTheme.fromBorderRadius(.xl)),
-          ),
-          boxShadow: _getBoxShadow(disabled: effectiveDisabled),
-        ),
-        onPressed: (effectiveDisabled || isLoading) ? null : onPressed,
-        semanticLabel: semanticLabel,
-        isButtonSemantics: true,
+  );
+}
+
+class const _AuraButtonLoading({
+  required final AuraButton button,
+  required final AuraColorScheme colors,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraLoadingCircle(
+    tint: button.tint ?? AuraTint.primary,
+    size: 20,
+    itemBuilder: (context, _) => DecoratedBox(
+      decoration: BoxDecoration(
+        color: _buttonForegroundColor(button, colors, disabled: disabled),
+        shape: .circle,
       ),
+    ),
+  );
+}
+
+class const _AuraButtonLabel({
+  required final AuraButton button,
+  required final AuraColorScheme colors,
+  required final AuraTypographyScale typography,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DefaultTextStyle(
+    style: _buttonTextStyle(button, colors, typography, disabled: disabled),
+    child: button.child,
+  );
+}
+
+BoxDecoration _buttonDecoration(
+  AuraButton button,
+  AuraColorScheme colors,
+  double radius, {
+  required bool disabled,
+}) => BoxDecoration(
+  color: _buttonBackgroundColor(button, colors, disabled: disabled),
+  border: _buttonBorder(button, colors, disabled: disabled),
+  borderRadius: BorderRadius.all(.circular(radius)),
+  boxShadow: _buttonBoxShadow(button, disabled: disabled),
+);
+
+Color _buttonBackgroundColor(
+  AuraButton button,
+  AuraColorScheme colors, {
+  required bool disabled,
+}) {
+  if (disabled) {
+    return button.variant == AuraButtonVariant.text
+        ? DesignColors.transparent
+        : colors.outlineVariant;
+  }
+
+  return switch (button.variant) {
+    .primary || .elevated => colors.colorFor(button.tint ?? AuraTint.primary),
+    .secondary => colors.secondary,
+    .outlined || .ghost || .text => DesignColors.transparent,
+  };
+}
+
+Color _buttonForegroundColor(
+  AuraButton button,
+  AuraColorScheme colors, {
+  required bool disabled,
+}) {
+  if (disabled) return colors.onSurfaceVariant;
+
+  final primaryColor = colors.colorFor(button.tint ?? AuraTint.primary);
+
+  return switch (button.variant) {
+    .primary || .elevated => colors.onTint(button.tint ?? AuraTint.primary),
+    .secondary => colors.onTint(.secondary),
+    .outlined || .ghost || .text => primaryColor,
+  };
+}
+
+AuraEdgeInsetsGeometry _buttonPadding(
+  AuraButtonVariant variant,
+  AuraButtonSize size,
+) {
+  if (variant == AuraButtonVariant.text) {
+    return const AuraEdgeInsetsGeometry.symmetric(
+      horizontal: .sm,
+      vertical: .xs,
     );
   }
 
-  Color _getBackgroundColor(AuraColorScheme colors, {required bool disabled}) {
-    if (disabled) {
-      if (variant == AuraButtonVariant.text) {
-        // Text buttons should keep a transparent background even when disabled.
-        return DesignColors.transparent;
-      }
+  return switch (size) {
+    .small => const AuraEdgeInsetsGeometry.symmetric(
+      horizontal: .sm,
+      vertical: .xs,
+    ),
+    .medium => const AuraEdgeInsetsGeometry.symmetric(
+      horizontal: .md,
+      vertical: .sm,
+    ),
+    .large => const AuraEdgeInsetsGeometry.symmetric(
+      horizontal: .lg,
+      vertical: .md,
+    ),
+  };
+}
 
-      return colors.outlineVariant;
-    }
-
-    return switch (variant) {
-      .primary => colors.colorFor(tint ?? AuraTint.primary),
-      .secondary => colors.secondary,
-      .outlined => DesignColors.transparent,
-      .ghost => DesignColors.transparent,
-      .elevated => colors.colorFor(tint ?? AuraTint.primary),
-      .text => DesignColors.transparent,
-    };
-  }
-
-  Color _getForegroundColor(AuraColorScheme colors, {required bool disabled}) {
-    if (disabled) return colors.onSurfaceVariant;
-    final primaryColor = colors.colorFor(tint ?? AuraTint.primary);
-
-    return switch (variant) {
-      .primary => colors.onTint(tint ?? AuraTint.primary),
-      .secondary => colors.onTint(.secondary),
-      .outlined => primaryColor,
-      .ghost => primaryColor,
-      .elevated => colors.onTint(tint ?? AuraTint.primary),
-      .text => primaryColor,
-    };
-  }
-
-  Color _getLoadingColor(AuraColorScheme colors, {required bool disabled}) =>
-      _getForegroundColor(colors, disabled: disabled);
-
-  AuraEdgeInsetsGeometry _getPadding() {
-    // Text variant uses minimal/inline padding for dialogs and inline actions.
-    if (variant == AuraButtonVariant.text) {
-      return const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: .sm,
-        vertical: .xs,
-      );
-    }
-
-    return switch (size) {
-      .small => const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: .sm,
-        vertical: .xs,
-      ),
-      .medium => const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: .md,
-        vertical: .sm,
-      ),
-      .large => const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: .lg,
-        vertical: .md,
-      ),
-    };
-  }
-
-  Border? _getBorder(AuraColorScheme colors, {required bool disabled}) {
-    if (variant == AuraButtonVariant.outlined) {
-      return Border.all(
+Border? _buttonBorder(
+  AuraButton button,
+  AuraColorScheme colors, {
+  required bool disabled,
+}) => button.variant == AuraButtonVariant.outlined
+    ? Border.all(
         color: disabled
             ? colors.outlineVariant
-            : colors.colorFor(tint ?? AuraTint.primary),
-      );
-    }
+            : colors.colorFor(button.tint ?? AuraTint.primary),
+      )
+    : null;
 
-    return null;
-  }
+List<BoxShadow> _buttonBoxShadow(AuraButton button, {required bool disabled}) =>
+    disabled || button.variant != AuraButtonVariant.elevated
+    ? const []
+    : [DesignShadows.sm];
 
-  List<BoxShadow> _getBoxShadow({required bool disabled}) {
-    if (disabled) return [];
-    if (variant == AuraButtonVariant.elevated) {
-      return [DesignShadows.sm];
-    }
+TextStyle _buttonTextStyle(
+  AuraButton button,
+  AuraColorScheme colors,
+  AuraTypographyScale typography, {
+  required bool disabled,
+}) => TextStyle(
+  color: _buttonForegroundColor(button, colors, disabled: disabled),
+  fontSize: _buttonFontSize(button.size, typography),
+  fontWeight: _buttonFontWeight(button.size, typography),
+  height: typography.lineHeightBase,
+);
 
-    return [];
-  }
-
-  TextStyle _getTextStyle(
-    AuraColorScheme colors, {
-    required AuraTypographyScale typography,
-    required bool disabled,
-  }) {
-    final fontSize = switch (size) {
+double _buttonFontSize(AuraButtonSize size, AuraTypographyScale typography) =>
+    switch (size) {
       .small => typography.fontSizeSm,
       .medium => typography.fontSizeBase,
       .large => typography.fontSizeLg,
     };
 
-    final fontWeight = switch (size) {
-      .small => typography.fontWeightMedium,
-      .medium => typography.fontWeightMedium,
-      .large => typography.fontWeightSemibold,
-    };
-
-    return TextStyle(
-      color: _getForegroundColor(colors, disabled: disabled),
-      fontSize: fontSize,
-      fontWeight: fontWeight,
-      height: typography.lineHeightBase,
-    );
-  }
-}
+FontWeight _buttonFontWeight(
+  AuraButtonSize size,
+  AuraTypographyScale typography,
+) => switch (size) {
+  .small || .medium => typography.fontWeightMedium,
+  .large => typography.fontWeightSemibold,
+};
 
 /// The visual variant of a [AuraButton].
 enum AuraButtonVariant {

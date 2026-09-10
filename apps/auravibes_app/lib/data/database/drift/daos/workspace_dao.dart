@@ -9,9 +9,10 @@ part 'workspace_dao.g.dart';
 @DriftAccessor(tables: [Workspaces])
 class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     with _$WorkspaceDaoMixin {
-  /// Creates a new [WorkspaceDao] instance.
-  new(super.attachedDatabase);
+  WorkspaceDao(super.attachedDatabase);
+}
 
+extension WorkspaceDaoMethods on WorkspaceDao {
   /// Retrieves all workspaces from the database.
   ///
   /// Returns a list of all workspaces ordered by their creation date.

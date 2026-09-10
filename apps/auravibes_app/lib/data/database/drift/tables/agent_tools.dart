@@ -15,11 +15,10 @@ export 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
   unique: true,
 )
 class AgentTools extends Table with TableMixin {
-  TextColumn get agentId =>
-      text().references(Agents, #id, onDelete: .cascade)();
+  late final agentId = text().references(Agents, #id, onDelete: .cascade)();
 
-  TextColumn get toolId => text().references(Tools, #id, onDelete: .cascade)();
+  late final toolId = text().references(Tools, #id, onDelete: .cascade)();
 
   /// Null is represented by no row. Rows always override workspace permission.
-  TextColumn get permissions => textEnum<PermissionAccess>()();
+  late final permissions = textEnum<PermissionAccess>()();
 }

@@ -44,19 +44,29 @@ class const SaveWorkspaceCompactionSettingsUsecase({
   }
 
   void _validate(CompactionSettings settings, {int? contextLimit}) {
-    if (settings.usagePercentageThreshold < 5 ||
-        settings.usagePercentageThreshold > 100) {
+    _validateUsage(settings.usagePercentageThreshold);
+    _validateRemaining(settings.remainingTokenThreshold);
+    _validateContextLimit(settings.remainingTokenThreshold, contextLimit);
+  }
+
+  void _validateUsage(int value) {
+    if (value < 5 || value > 100) {
       throw const CompactionSettingsValidationException(
         LocaleKeys.compaction_settings_validation_usage_range,
       );
     }
-    if (settings.remainingTokenThreshold <= 0) {
+  }
+
+  void _validateRemaining(int value) {
+    if (value <= 0) {
       throw const CompactionSettingsValidationException(
         LocaleKeys.compaction_settings_validation_remaining_positive,
       );
     }
-    if (contextLimit != null &&
-        settings.remainingTokenThreshold >= contextLimit) {
+  }
+
+  void _validateContextLimit(int value, int? contextLimit) {
+    if (contextLimit != null && value >= contextLimit) {
       throw const CompactionSettingsValidationException(
         LocaleKeys.compaction_settings_validation_remaining_below_limit,
       );
@@ -70,19 +80,23 @@ saveWorkspaceCompactionSettingsUsecase(Ref ref, String workspaceId) async {
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
-  if (session.cloud case final CloudWorkspaceRef _) {
-    final gateway = await ref.watch(
-      cloudWorkspaceStateGatewayProvider(session).future,
-    );
-    if (gateway == null) {
-      throw StateError('Cloud workspace gateway is unavailable');
-    }
-
-    return SaveWorkspaceCompactionSettingsUsecase(cloudAdapter: .new(gateway));
-  }
+  if (session.cloud != null) return _cloudCompactionUsecase(ref, session);
 
   return SaveWorkspaceCompactionSettingsUsecase(
     repository: ref.watch(workspaceCompactionSettingsRepositoryProvider),
   );
+}
+
+Future<SaveWorkspaceCompactionSettingsUsecase> _cloudCompactionUsecase(
+  Ref ref,
+  WorkspaceSession session,
+) async {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
+  if (gateway == null) {
+    throw StateError('Cloud workspace gateway is unavailable');
+  }
+  return SaveWorkspaceCompactionSettingsUsecase(cloudAdapter: .new(gateway));
 }
 // Top-level API/provider declarations are required by their consumers.

@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
 class const ResolveAgentSkillsUsecase(
@@ -20,29 +21,46 @@ class const ResolveAgentSkillsUsecase(
     required String workspaceId,
     required List<AgentSkillRef> refs,
   }) async {
-    final available = <AvailableSkill>[];
-    final unavailable = <AgentSkillRef>[];
+    final result = (
+      available: <AvailableSkill>[],
+      unavailable: <AgentSkillRef>[],
+    );
 
     for (final ref in refs) {
-      final skill = switch (ref) {
-        UserAgentSkillRef(:final skillId) => await _resolveUserSkill(
+      await _appendResolvedSkill(workspaceId, ref, result);
+    }
+
+    return ResolvedAgentSkills(
+      available: result.available,
+      unavailable: result.unavailable,
+    );
+  }
+
+  Future<void> _appendResolvedSkill(
+    String workspaceId,
+    AgentSkillRef ref,
+    ({List<AvailableSkill> available, List<AgentSkillRef> unavailable}) result,
+  ) async {
+    final skill = await _resolveRef(workspaceId, ref);
+    if (skill == null) {
+      result.unavailable.add(ref);
+      return;
+    }
+
+    result.available.add(skill);
+  }
+
+  Future<AvailableSkill?> _resolveRef(String workspaceId, AgentSkillRef ref) =>
+      switch (ref) {
+        UserAgentSkillRef(:final skillId) => _resolveUserSkill(
           workspaceId: workspaceId,
           skillId: skillId,
         ),
-        AppAgentSkillRef(:final identifier) => await _resolveAppSkill(
+        AppAgentSkillRef(:final identifier) => _resolveAppSkill(
           workspaceId: workspaceId,
           identifier: identifier,
         ),
       };
-      if (skill == null) {
-        unavailable.add(ref);
-      } else {
-        available.add(skill);
-      }
-    }
-
-    return ResolvedAgentSkills(available: available, unavailable: unavailable);
-  }
 
   Future<AvailableSkill?> _resolveUserSkill({
     required String workspaceId,
@@ -66,15 +84,7 @@ class const ResolveAgentSkillsUsecase(
     final enabled = await _isAppSkillEnabled(workspaceId, identifier);
     if (skill == null || !enabled) return null;
 
-    return AvailableSkill(
-      source: SkillSource.app,
-      id: skill.identifier,
-      slug: skill.slug,
-      title: skill.title,
-      description: skill.description,
-      content: skill.content,
-      kind: .native,
-    );
+    return _toAvailableAppSkill(skill);
   }
 
   Future<bool> _isAppSkillEnabled(String workspaceId, String identifier) {
@@ -94,6 +104,16 @@ class const ResolveAgentSkillsUsecase(
     );
   }
 }
+
+AvailableSkill _toAvailableAppSkill(AppSkillDefinition skill) => AvailableSkill(
+  source: SkillSource.app,
+  id: skill.identifier,
+  slug: skill.slug,
+  title: skill.title,
+  description: skill.description,
+  content: skill.content,
+  kind: .native,
+);
 
 class const ResolvedAgentSkills({
   required final List<AvailableSkill> available,

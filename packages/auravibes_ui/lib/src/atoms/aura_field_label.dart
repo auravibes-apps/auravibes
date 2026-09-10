@@ -34,40 +34,57 @@ class AuraFieldLabel extends StatelessWidget {
   final String requiredLabel;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: .min,
-      crossAxisAlignment: .start,
-      children: [
-        Flexible(
-          child: AuraText(
-            child: Semantics(
-              child: DefaultTextStyle.merge(
-                style: .new(
-                  fontWeight: context.auraTheme.typography.fontWeightMedium,
-                ),
-                child: child,
-              ),
-              label: semanticLabel,
-            ),
-            style: style ?? AuraTextStyle.bodySmall,
-          ),
-        ),
-        if (isRequired) ...[
-          const AuraSizedBox(width: .xs),
-          AuraText(
-            child: Text(
-              '*',
-              style: .new(
-                fontWeight: context.auraTheme.typography.fontWeightMedium,
-              ),
-              semanticsLabel: requiredLabel,
-            ),
-            style: style ?? AuraTextStyle.bodySmall,
-            tint: .error,
-          ),
-        ],
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      _AuraFieldLabelText(
+        child: child,
+        style: style,
+        semanticLabel: semanticLabel,
+      ),
+      if (isRequired) ...[
+        const AuraSizedBox(width: .xs),
+        _AuraRequiredFieldIndicator(style: style, label: requiredLabel),
       ],
-    );
-  }
+    ],
+  );
+}
+
+class const _AuraFieldLabelText({
+  required final Widget child,
+  required final AuraTextStyle? style,
+  required final String? semanticLabel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Flexible(
+    child: AuraText(
+      child: Semantics(
+        child: DefaultTextStyle.merge(
+          style: .new(
+            fontWeight: context.auraTheme.typography.fontWeightMedium,
+          ),
+          child: child,
+        ),
+        label: semanticLabel,
+      ),
+      style: style ?? AuraTextStyle.bodySmall,
+    ),
+  );
+}
+
+class const _AuraRequiredFieldIndicator({
+  required final AuraTextStyle? style,
+  required final String label,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      '*',
+      style: .new(fontWeight: context.auraTheme.typography.fontWeightMedium),
+      semanticsLabel: label,
+    ),
+    style: style ?? AuraTextStyle.bodySmall,
+    tint: .error,
+  );
 }

@@ -72,6 +72,29 @@ class AuraEdgeInsetsGeometry {
   @override
   int get hashCode => Object.hashAll([left, top, right, bottom]);
 
+  /// Resolves spacing values against the current Aura theme.
+  EdgeInsetsGeometry toEdgeInsets(BuildContext context) {
+    return EdgeInsetsGeometry.only(
+      left: context.auraTheme.fromSpacing(left),
+      right: context.auraTheme.fromSpacing(right),
+      top: context.auraTheme.fromSpacing(top),
+      bottom: context.auraTheme.fromSpacing(bottom),
+    );
+  }
+
+  /// Creates geometry with selected sides replaced.
+  AuraEdgeInsetsGeometry copyWith({
+    AuraSpacing? left,
+    AuraSpacing? top,
+    AuraSpacing? right,
+    AuraSpacing? bottom,
+  }) => AuraEdgeInsetsGeometry.only(
+    left: left ?? this.left,
+    top: top ?? this.top,
+    right: right ?? this.right,
+    bottom: bottom ?? this.bottom,
+  );
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) || // Quick check for same instance.
@@ -81,15 +104,6 @@ class AuraEdgeInsetsGeometry {
           right == other.right && // Compare properties.
           top == other.top && // Compare properties.
           bottom == other.bottom;
-
-  EdgeInsetsGeometry _padding(BuildContext context) {
-    return EdgeInsetsGeometry.only(
-      left: context.auraTheme.fromSpacing(left),
-      right: context.auraTheme.fromSpacing(right),
-      top: context.auraTheme.fromSpacing(top),
-      bottom: context.auraTheme.fromSpacing(bottom),
-    );
-  } // Combine hash codes.
 }
 
 /// Padding for const.
@@ -105,6 +119,6 @@ class AuraPadding extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: padding._padding(context), child: child);
+    return Padding(padding: padding.toEdgeInsets(context), child: child);
   }
 }

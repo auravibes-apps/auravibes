@@ -33,6 +33,35 @@ class const AppAgentToolResumeProvider({
   required final agent.AgentLoopRunner agentLoop,
   required final ActiveSubAgentRuntime? activeSubAgents,
 }) implements agent.AgentToolResumeProvider {
+  late final Future<agent.AgentIterationDecision> Function({
+    required String conversationId,
+    required String workspaceId,
+  })
+  runAllowedTools = ({required conversationId, required workspaceId}) async {
+    final decision = await toolExecutionService.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
+    if (decision != agent.AgentIterationDecision.done) return decision;
+
+    _finishChildIfNeeded(activeSubAgents, conversationId);
+    return decision;
+  };
+
+  late final Future<void> Function({
+    required String conversationId,
+    required agent.AgentIterationContext context,
+  })
+  continueAgent = ({required conversationId, required context}) async {
+    final decision = await agentLoop(
+      conversationId: conversationId,
+      context: context,
+    );
+    if (decision == agent.AgentIterationDecision.waitForToolApproval) return;
+
+    _finishChildIfNeeded(activeSubAgents, conversationId);
+  };
+
   @override
   Future<agent.AgentToolResumeReference?> getResumeReference(
     String messageId,
@@ -50,48 +79,18 @@ class const AppAgentToolResumeProvider({
       workspaceId: conversation.workspaceId,
     );
   }
+}
 
-  @override
-  Future<agent.AgentIterationDecision> runAllowedTools({
-    required String conversationId,
-    required String workspaceId,
-  }) async {
-    final decision = await toolExecutionService.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
-    if (decision != agent.AgentIterationDecision.done) return decision;
+void _finishChildIfNeeded(
+  ActiveSubAgentRuntime? runtime,
+  String conversationId,
+) {
+  if (runtime == null) return;
 
-    final runtime = activeSubAgents;
-    if (runtime == null) return decision;
+  final parentId = runtime.parentOf(conversationId);
+  if (parentId == null) return;
 
-    final parentId = runtime.parentOf(conversationId);
-    if (parentId == null) return decision;
-
-    runtime.finish(parentId: parentId, childId: conversationId);
-
-    return decision;
-  }
-
-  @override
-  Future<void> continueAgent({
-    required String conversationId,
-    required agent.AgentIterationContext context,
-  }) async {
-    final decision = await agentLoop(
-      conversationId: conversationId,
-      context: context,
-    );
-    if (decision == agent.AgentIterationDecision.waitForToolApproval) return;
-
-    final runtime = activeSubAgents;
-    if (runtime == null) return;
-
-    final parentId = runtime.parentOf(conversationId);
-    if (parentId == null) return;
-
-    runtime.finish(parentId: parentId, childId: conversationId);
-  }
+  runtime.finish(parentId: parentId, childId: conversationId);
 }
 
 final agentToolResumeServiceProvider = Provider<AgentToolResumeService>(

@@ -21,31 +21,37 @@ WHERE workspace_tools_group_id IS NOT NULL
 ''')
 class Tools extends Table with TableMixin {
   /// Reference to the workspace this tool belongs to.
-  TextColumn get workspaceId =>
-      text().references(Workspaces, #id, onDelete: .cascade)();
+  late final workspaceId = text().references(
+    Workspaces,
+    #id,
+    onDelete: .cascade,
+  )();
 
-  TextColumn get workspaceToolsGroupId =>
-      text().nullable().references(ToolsGroups, #id, onDelete: .cascade)();
+  late final workspaceToolsGroupId = text().nullable().references(
+    ToolsGroups,
+    #id,
+    onDelete: .cascade,
+  )();
 
   /// Type of tool (for example, 'web_search', 'calculator', etc).
-  TextColumn get toolId => text()();
+  late final toolId = text()();
 
   /// Optional description of the tool (from MCP or user-defined).
-  TextColumn get description => text().nullable()();
+  late final description = text().nullable()();
 
   /// Tool configuration as JSON (optional).
-  TextColumn get config => text().nullable()();
+  late final config = text().nullable()();
 
   /// JSON schema for the tool's input parameters (for MCP tools).
-  TextColumn get inputSchema => text().nullable()();
+  late final inputSchema = text().nullable()();
 
   /// Whether the tool is enabled for this workspace.
-  BoolColumn get isEnabled => boolean().withDefault(const Constant(false))();
+  late final isEnabled = boolean().withDefault(const Constant(false))();
 
-  TextColumn get permissions => textEnum<PermissionAccess>().withDefault(
+  late final permissions = textEnum<PermissionAccess>().withDefault(
     Constant(PermissionAccess.ask.name),
   )();
 
   @override
-  Set<Column> get primaryKey => {id};
+  late final Set<Column> primaryKey = {id};
 }

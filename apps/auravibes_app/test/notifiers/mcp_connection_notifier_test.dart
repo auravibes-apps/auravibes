@@ -936,4 +936,9 @@ class _FakeMcpManagerClient._(final Stream<OAuthTokenEntity>? _tokenUpdates)
 
   @override
   Stream<OAuthTokenEntity>? get onTokenUpdate => _tokenUpdates;
+
+  @override
+  void disconnect() {
+    final _ = Object();
+  }
 }

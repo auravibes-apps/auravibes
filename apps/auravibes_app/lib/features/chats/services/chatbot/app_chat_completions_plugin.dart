@@ -43,25 +43,32 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
     ActionType actionType,
     String name,
   ) => actionType == ActionType.model ? _createModel(name, null) : null;
+}
 
-  Model<dynamic> _createModel(String modelName, ModelInfo? info) {
-    return Model<dynamic>(
-      name: '$name/$modelName',
-      fn: (request, context) async {
-        if (request == null) throw ArgumentError.notNull('request');
-        final body = codec.buildRequestBody(
-          modelName: modelName,
-          request: request,
-          stream: context.streamingRequested,
-        );
-        final transport = _transport;
+extension on AppChatCompletionsPlugin {
+  Model<dynamic> _createModel(String modelName, ModelInfo? info) =>
+      Model<dynamic>(
+        name: '$name/$modelName',
+        fn: (request, context) => _generateModel(modelName, request, context),
+        metadata: {'model': ?info?.toJson()},
+      );
 
-        return context.streamingRequested
-            ? await codec.stream(transport, body, context.sendChunk)
-            : await codec.complete(transport, body);
-      },
-      metadata: {'model': ?info?.toJson()},
+  Future<dynamic> _generateModel(
+    String modelName,
+    dynamic request,
+    dynamic context,
+  ) async {
+    if (request == null) throw ArgumentError.notNull('request');
+    final body = codec.buildRequestBody(
+      modelName: modelName,
+      request: request,
+      stream: context.streamingRequested,
     );
+    final transport = _transport;
+
+    return context.streamingRequested
+        ? codec.stream(transport, body, context.sendChunk)
+        : codec.complete(transport, body);
   }
 
   Future<ProviderTransportResponse> _transport(

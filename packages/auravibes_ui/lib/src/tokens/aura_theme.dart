@@ -91,6 +91,24 @@ typedef _ColorTripletLerpValues = ({
   Color onPrimary,
 });
 
+typedef _ColorTripletLerpRequest = ({
+  Color primary,
+  Color primaryVariant,
+  Color onPrimary,
+  Color otherPrimary,
+  Color otherPrimaryVariant,
+  Color otherOnPrimary,
+  double t,
+});
+
+typedef _ColorPairLerpRequest = ({
+  Color value,
+  Color onValue,
+  Color otherValue,
+  Color otherOnValue,
+  double t,
+});
+
 typedef _BrandLerpValues = ({
   _ColorTripletLerpValues primary,
   _ColorTripletLerpValues secondary,
@@ -892,57 +910,57 @@ _ColorTripletLerpValues _lerpPrimaryValues(
   AuraColorScheme begin,
   AuraColorScheme end,
   double t,
-) => _lerpColorTriplet(
-  begin.primary,
-  begin.primaryVariant,
-  begin.onPrimary,
-  end.primary,
-  end.primaryVariant,
-  end.onPrimary,
-  t,
-);
+) => _lerpColorTriplet((
+  primary: begin.primary,
+  primaryVariant: begin.primaryVariant,
+  onPrimary: begin.onPrimary,
+  otherPrimary: end.primary,
+  otherPrimaryVariant: end.primaryVariant,
+  otherOnPrimary: end.onPrimary,
+  t: t,
+));
 
 _ColorTripletLerpValues _lerpSecondaryValues(
   AuraColorScheme begin,
   AuraColorScheme end,
   double t,
-) => _lerpColorTriplet(
-  begin.secondary,
-  begin.secondaryVariant,
-  begin.onSecondary,
-  end.secondary,
-  end.secondaryVariant,
-  end.onSecondary,
-  t,
-);
+) => _lerpColorTriplet((
+  primary: begin.secondary,
+  primaryVariant: begin.secondaryVariant,
+  onPrimary: begin.onSecondary,
+  otherPrimary: end.secondary,
+  otherPrimaryVariant: end.secondaryVariant,
+  otherOnPrimary: end.onSecondary,
+  t: t,
+));
 
 _ColorTripletLerpValues _lerpTertiaryValues(
   AuraColorScheme begin,
   AuraColorScheme end,
   double t,
-) => _lerpColorTriplet(
-  begin.tertiary,
-  begin.tertiaryVariant,
-  begin.onTertiary,
-  end.tertiary,
-  end.tertiaryVariant,
-  end.onTertiary,
-  t,
-);
+) => _lerpColorTriplet((
+  primary: begin.tertiary,
+  primaryVariant: begin.tertiaryVariant,
+  onPrimary: begin.onTertiary,
+  otherPrimary: end.tertiary,
+  otherPrimaryVariant: end.tertiaryVariant,
+  otherOnPrimary: end.onTertiary,
+  t: t,
+));
 
-_ColorTripletLerpValues _lerpColorTriplet(
-  Color primary,
-  Color primaryVariant,
-  Color onPrimary,
-  Color otherPrimary,
-  Color otherPrimaryVariant,
-  Color otherOnPrimary,
-  double t,
-) => (
-  primary: _lerpColor(primary, otherPrimary, t),
-  primaryVariant: _lerpColor(primaryVariant, otherPrimaryVariant, t),
-  onPrimary: _lerpColor(onPrimary, otherOnPrimary, t),
-);
+_ColorTripletLerpValues _lerpColorTriplet(_ColorTripletLerpRequest request) {
+  final progress = request.t;
+
+  return (
+    primary: _lerpColor(request.primary, request.otherPrimary, progress),
+    primaryVariant: _lerpColor(
+      request.primaryVariant,
+      request.otherPrimaryVariant,
+      progress,
+    ),
+    onPrimary: _lerpColor(request.onPrimary, request.otherOnPrimary, progress),
+  );
+}
 
 _SurfaceLerpValues _lerpSurfaceValues(
   AuraColorScheme begin,
@@ -953,15 +971,9 @@ _SurfaceLerpValues _lerpSurfaceValues(
   background: _lerpSurfaceBackgroundValues(begin, end, t),
 );
 
-_ColorPairLerpValues _lerpPair(
-  Color value,
-  Color onValue,
-  Color otherValue,
-  Color otherOnValue,
-  double t,
-) => (
-  value: _lerpColor(value, otherValue, t),
-  onValue: _lerpColor(onValue, otherOnValue, t),
+_ColorPairLerpValues _lerpPair(_ColorPairLerpRequest request) => (
+  value: _lerpColor(request.value, request.otherValue, request.t),
+  onValue: _lerpColor(request.onValue, request.otherOnValue, request.t),
 );
 
 _ChromeLerpValues _lerpChromeValues(
@@ -1000,14 +1012,20 @@ _StatusPrimaryLerpValues _lerpStatusPrimaryValues(
   AuraColorScheme end,
   double t,
 ) => (
-  error: _lerpPair(begin.error, begin.onError, end.error, end.onError, t),
-  warning: _lerpPair(
-    begin.warning,
-    begin.onWarning,
-    end.warning,
-    end.onWarning,
-    t,
-  ),
+  error: _lerpPair((
+    value: begin.error,
+    onValue: begin.onError,
+    otherValue: end.error,
+    otherOnValue: end.onError,
+    t: t,
+  )),
+  warning: _lerpPair((
+    value: begin.warning,
+    onValue: begin.onWarning,
+    otherValue: end.warning,
+    otherOnValue: end.onWarning,
+    t: t,
+  )),
 );
 
 _StatusSecondaryLerpValues _lerpStatusSecondaryValues(
@@ -1015,14 +1033,20 @@ _StatusSecondaryLerpValues _lerpStatusSecondaryValues(
   AuraColorScheme end,
   double t,
 ) => (
-  success: _lerpPair(
-    begin.success,
-    begin.onSuccess,
-    end.success,
-    end.onSuccess,
-    t,
-  ),
-  info: _lerpPair(begin.info, begin.onInfo, end.info, end.onInfo, t),
+  success: _lerpPair((
+    value: begin.success,
+    onValue: begin.onSuccess,
+    otherValue: end.success,
+    otherOnValue: end.onSuccess,
+    t: t,
+  )),
+  info: _lerpPair((
+    value: begin.info,
+    onValue: begin.onInfo,
+    otherValue: end.info,
+    otherOnValue: end.onInfo,
+    t: t,
+  )),
 );
 
 Color _lerpColor(Color begin, Color end, double t) =>
@@ -1351,9 +1375,12 @@ class AuraAnimationTheme {
 
 /// Extension to get Aura theme from BuildContext.
 extension AuraThemeExtension on BuildContext {
+  /// Resolves the Aura theme attached to [context].
+  static AuraTheme resolve(BuildContext context) =>
+      Theme.of(context).extension<AuraTheme>() ?? AuraTheme.light;
+
   /// Get the current Aura theme.
-  AuraTheme get auraTheme =>
-      Theme.of(this).extension<AuraTheme>() ?? AuraTheme.light;
+  AuraTheme get auraTheme => AuraThemeExtension.resolve(this);
 
   /// Get the current Aura color scheme.
   AuraColorScheme get auraColors => auraTheme.colors;

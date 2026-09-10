@@ -6,14 +6,14 @@ import 'package:uuid/v7.dart';
 
 mixin TableMixin on Table {
   /// Primary key column as string.
-  TextColumn get id => text().clientDefault(() => const UuidV7().generate())();
+  late final id = text().clientDefault(() => const UuidV7().generate())();
 
   /// When was created timestamp.
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  late final createdAt = dateTime().withDefault(currentDateAndTime)();
 
   /// When was last updated timestamp.
-  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  late final updatedAt = dateTime().withDefault(currentDateAndTime)();
 
   @override
-  Set<Column> get primaryKey => {id};
+  late final Set<Column> primaryKey = {id};
 }

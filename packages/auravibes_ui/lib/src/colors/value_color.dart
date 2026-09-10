@@ -22,12 +22,26 @@ abstract class ValueColor {
   ({Vector min, Vector max}) get validLimits;
 
   /// Whether this color has valid component values.
-  bool get isValid {
+  bool get isValid => isVectorWithinLimits(vector);
+
+  /// Whether [candidate] has components inside this color space's limits.
+  bool isVectorWithinLimits(Vector candidate) {
     final (:min, :max) = validLimits;
 
-    return vector.x.isBetween(min.x, max.x) &&
-        vector.y.isBetween(min.y, max.y) &&
-        vector.z.isBetween(min.z, max.z);
+    return candidate.x.isBetween(min.x, max.x) &&
+        candidate.y.isBetween(min.y, max.y) &&
+        candidate.z.isBetween(min.z, max.z);
+  }
+
+  /// Clamps [candidate] to this color space's valid component limits.
+  Vector clampVector(Vector candidate) {
+    final (:min, :max) = validLimits;
+
+    return Vector(
+      candidate.x.fit(min.x, max.x),
+      candidate.y.fit(min.y, max.y),
+      candidate.z.fit(min.z, max.z),
+    );
   }
 }
 

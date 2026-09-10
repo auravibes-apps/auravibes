@@ -20,19 +20,23 @@ class WorkspaceRepository(
   Future<List<WorkspaceEntity>> getAllWorkspaces() async {
     final workspaceTables = await _database.workspaceDao.getAllWorkspaces();
 
-    return workspaceTables.map(_mapToWorkspace).toList();
+    return workspaceTables.map(this._mapToWorkspace).toList();
   }
+}
 
+extension WorkspaceRepositoryOperations on WorkspaceRepository {
   Stream<List<WorkspaceEntity>> watchAllWorkspaces() {
     return _database.workspaceDao.watchAllWorkspaces().map(
-      (tables) => tables.map(_mapToWorkspace).toList(),
+      (tables) => tables.map(this._mapToWorkspace).toList(),
     );
   }
 
   Future<WorkspaceEntity?> getWorkspaceById(String id) async {
     final workspacesTable = await _database.workspaceDao.getWorkspaceById(id);
 
-    return workspacesTable != null ? _mapToWorkspace(workspacesTable) : null;
+    return workspacesTable != null
+        ? this._mapToWorkspace(workspacesTable)
+        : null;
   }
 
   Future<List<WorkspaceEntity>> getWorkspacesByType(WorkspaceType type) async {
@@ -40,21 +44,21 @@ class WorkspaceRepository(
       type,
     );
 
-    return workspaceTables.map(_mapToWorkspace).toList();
+    return workspaceTables.map(this._mapToWorkspace).toList();
   }
 
   Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) async {
     // Validate workspace before creating.
-    if (!await validateWorkspace(workspace)) {
+    if (!await this.validateWorkspace(workspace)) {
       throw const WorkspaceValidationException('Invalid workspace data');
     }
 
-    final workspaceCompanion = _mapToWorkspacesCompanion(workspace);
+    final workspaceCompanion = this._mapToWorkspacesCompanion(workspace);
     final createdWorkspace = await _database.workspaceDao.insertWorkspace(
       workspaceCompanion,
     );
 
-    return _mapToWorkspace(createdWorkspace);
+    return this._mapToWorkspace(createdWorkspace);
   }
 
   Future<WorkspaceEntity> patchWorkspace(
@@ -68,9 +72,12 @@ class WorkspaceRepository(
       throw WorkspaceNotFoundException(id);
     }
 
-    _validateWorkspacePatch(workspace, _mapToWorkspace(currentWorkspaceTable));
+    this._validateWorkspacePatch(
+      workspace,
+      this._mapToWorkspace(currentWorkspaceTable),
+    );
 
-    final workspaceCompanion = _mapPatchToWorkspacesCompanion(workspace);
+    final workspaceCompanion = this._mapPatchToWorkspacesCompanion(workspace);
     final updated = await _database.workspaceDao.patchWorkspace(
       id,
       workspaceCompanion,
@@ -88,24 +95,28 @@ class WorkspaceRepository(
       );
     }
 
-    return _mapToWorkspace(updatedWorkspace);
+    return this._mapToWorkspace(updatedWorkspace);
   }
 
   Future<bool> deleteWorkspace(String id) async {
     // Check if workspace exists.
-    if (!await workspaceExists(id)) {
+    if (!await this.workspaceExists(id)) {
       return false; // Return false instead of throwing for delete operations.
     }
 
-    final attachmentPaths = await _attachmentPathsForWorkspace(id);
+    final attachmentPaths = await this._attachmentPathsForWorkspace(id);
     final deleted = await _database.workspaceDao.deleteWorkspace(id);
     if (deleted) {
-      final _ = await Future.wait(attachmentPaths.map(_deleteAttachmentFile));
+      final _ = await Future.wait(
+        attachmentPaths.map(this._deleteAttachmentFile),
+      );
     }
 
     return deleted;
   }
+}
 
+extension WorkspaceRepositoryCloudOperations on WorkspaceRepository {
   Future<WorkspaceEntity?> getCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
@@ -209,7 +220,9 @@ class WorkspaceRepository(
 
     return deleted;
   }
+}
 
+extension WorkspaceRepositoryQueryOperations on WorkspaceRepository {
   Future<bool> workspaceExists(String id) {
     return _database.workspaceDao.workspaceExists(id);
   }
@@ -248,7 +261,9 @@ class WorkspaceRepository(
 
     return await _database.workspaceDao.patchWorkspaceTimestamp(id);
   }
+}
 
+extension on WorkspaceRepository {
   Future<List<String>> _attachmentPathsForWorkspace(String id) async {
     final rows = await (_database.select(_database.messageAttachments).join([
       innerJoin(

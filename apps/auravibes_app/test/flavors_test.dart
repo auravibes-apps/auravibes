@@ -20,7 +20,7 @@ void main() {
     });
   });
 
-  group('AppFlavorConfig', () {
+  group('App flavor configuration', () {
     test('title switch cases match flavor names', () {
       expect(Flavor.prod.name, 'prod');
       expect(Flavor.dev.name, 'dev');
@@ -29,12 +29,12 @@ void main() {
 
     test('name and title return correct values for assigned flavor', () {
       try {
-        AppFlavorConfig.appFlavor = .prod;
+        AppFlavorConfig.instance.setAppFlavor(.prod);
       } on Object catch (_) {
         // Already set by another test in this process.
       }
-      expect(AppFlavorConfig.name, isNotEmpty);
-      expect(AppFlavorConfig.title, isNotEmpty);
+      expect(AppFlavorConfig.instance.appFlavor.name, isNotEmpty);
+      expect(AppFlavorConfig.instance.title, isNotEmpty);
     });
   });
 }

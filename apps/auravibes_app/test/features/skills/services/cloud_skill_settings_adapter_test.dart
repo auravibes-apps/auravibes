@@ -176,10 +176,13 @@ void main() {
     );
 
     await adapter.setConversationSkill(
-      conversationId: 'conversation-1',
-      skillId: 'agents',
-      isAppSkill: true,
-      selected: true,
+      CloudConversationSkillSelection(
+        conversationId: 'conversation-1',
+        skillId: 'agents',
+        isAppSkill: true,
+        selected: true,
+        expectedRevision: null,
+      ),
     );
 
     final operations =

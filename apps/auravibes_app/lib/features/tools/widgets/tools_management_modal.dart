@@ -29,9 +29,22 @@ class const ToolsManagementModal({
         .watch(workspaceSessionForRouteProvider(workspaceId))
         .requireValue
         .capabilities;
-    if (!capabilities.conversationToolOverrides) {
-      return const _UnsupportedConversationTools();
-    }
+    return _ToolsManagementCapabilityView(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      supported: capabilities.conversationToolOverrides,
+    );
+  }
+}
+
+class const _ToolsManagementCapabilityView({
+  required final String workspaceId,
+  required final bool supported,
+  final String? conversationId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!supported) return const _UnsupportedConversationTools();
 
     return _ToolsManagementDialog(
       workspaceId: workspaceId,
@@ -227,14 +240,17 @@ class const _GroupedToolsListView({
   Widget build(BuildContext context) {
     return ListView.builder(
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-      itemBuilder: (context, index) => _ConversationToolsGroupItem(
-        group: groups[index],
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ),
+      itemBuilder: _itemBuilder,
       itemCount: groups.length,
     );
   }
+
+  Widget _itemBuilder(BuildContext context, int index) =>
+      _ConversationToolsGroupItem(
+        group: groups[index],
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      );
 }
 
 class const _ConversationToolsGroupItem({

@@ -14,14 +14,7 @@ class const AttachmentFileStoreIo({
     final source = File(localPath);
     if (!source.existsSync()) return localPath;
 
-    final attachmentDirectory = Directory(await _attachmentDirectoryPath());
-    final _ = await attachmentDirectory.create(recursive: true);
-    final persistedPath = p.join(
-      attachmentDirectory.path,
-      '${const UuidV7().generate()}-${p.basename(localPath)}',
-    );
-
-    final copied = await source.copy(persistedPath);
+    final copied = await source.copy(await _persistedPath(localPath));
 
     return copied.path;
   }
@@ -33,6 +26,16 @@ class const AttachmentFileStoreIo({
     if (file.existsSync()) {
       final _ = await file.delete();
     }
+  }
+
+  Future<String> _persistedPath(String localPath) async {
+    final attachmentDirectory = Directory(await _attachmentDirectoryPath());
+    final _ = await attachmentDirectory.create(recursive: true);
+
+    return p.join(
+      attachmentDirectory.path,
+      '${const UuidV7().generate()}-${p.basename(localPath)}',
+    );
   }
 
   Future<bool> _canDelete(String localPath) async {

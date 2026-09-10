@@ -10,4 +10,7 @@ class AuraSliderMark {
 
   /// Optional visible caller-localized label.
   final String? label;
+
+  /// Whether this mark has a visible label.
+  bool hasLabel() => label != null;
 }
