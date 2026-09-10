@@ -56,57 +56,195 @@ class AuraDivider extends StatelessWidget {
   /// Optional label to display in the center of the divider.
   final Widget? label;
 
+  /// Whether [orientation] is vertical.
+  static bool isVertical(AuraDividerOrientation orientation) =>
+      orientation == AuraDividerOrientation.vertical;
+
+  /// Returns the margin for [orientation] and its indents.
+  static EdgeInsetsDirectional marginFor({
+    required AuraDividerOrientation orientation,
+    required double indent,
+    required double endIndent,
+  }) => isVertical(orientation)
+      ? EdgeInsetsDirectional.only(top: indent, bottom: endIndent)
+      : EdgeInsetsDirectional.only(start: indent, end: endIndent);
+
   @override
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
     final color = this.color;
-    final dividerColor = color == null
-        ? auraTheme.colors.outline
-        : auraTheme.colors.colorFor(color);
-    final dividerThickness = thickness;
-
-    final label = this.label;
-    if (label != null) {
-      return Container(
-        constraints: .new(minHeight: dividerThickness),
-        margin: EdgeInsetsDirectional.only(start: indent, end: endIndent),
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(color: dividerColor, height: dividerThickness),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: context.auraTheme.fromSpacing(.md),
-              ),
-              child: AuraText(child: label, style: .caption),
-            ),
-            Expanded(
-              child: Container(color: dividerColor, height: dividerThickness),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (orientation == AuraDividerOrientation.vertical) {
-      return Container(
-        width: dividerThickness,
-        margin: EdgeInsetsDirectional.only(top: indent, bottom: endIndent),
-        child: Center(
-          child: Container(color: dividerColor, width: dividerThickness),
-        ),
-      );
-    }
-
-    return Container(
-      height: dividerThickness,
-      margin: EdgeInsetsDirectional.only(start: indent, end: endIndent),
-      child: Center(
-        child: Container(color: dividerColor, height: dividerThickness),
-      ),
+    return _AuraDividerContent(
+      orientation: orientation,
+      thickness: thickness,
+      indent: indent,
+      endIndent: endIndent,
+      label: label,
+      color: color == null
+          ? auraTheme.colors.outline
+          : auraTheme.colors.colorFor(color),
     );
   }
+}
+
+class const _AuraDividerContent({
+  required final AuraDividerOrientation orientation,
+  required final double thickness,
+  required final double indent,
+  required final double endIndent,
+  required final Widget? label,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label = this.label;
+    if (label != null) {
+      return _AuraLabeledDivider(
+        label: label,
+        thickness: thickness,
+        indent: indent,
+        endIndent: endIndent,
+        color: color,
+      );
+    }
+
+    if (AuraDivider.isVertical(orientation)) {
+      return _AuraVerticalDivider(
+        thickness: thickness,
+        indent: indent,
+        endIndent: endIndent,
+        color: color,
+      );
+    }
+
+    return _AuraHorizontalDivider(
+      thickness: thickness,
+      indent: indent,
+      endIndent: endIndent,
+      color: color,
+    );
+  }
+}
+
+class const _AuraLabeledDivider({
+  required final Widget label,
+  required final double thickness,
+  required final double indent,
+  required final double endIndent,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    constraints: .new(minHeight: thickness),
+    margin: AuraDivider.marginFor(
+      orientation: AuraDividerOrientation.horizontal,
+      indent: indent,
+      endIndent: endIndent,
+    ),
+    child: _AuraLabeledDividerContent(
+      label: label,
+      thickness: thickness,
+      color: color,
+    ),
+  );
+}
+
+class const _AuraLabeledDividerContent({
+  required final Widget label,
+  required final double thickness,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: _AuraDividerLine(
+          color: color,
+          thickness: thickness,
+          orientation: AuraDividerOrientation.horizontal,
+        ),
+      ),
+      _AuraDividerLabel(label: label),
+      Expanded(
+        child: _AuraDividerLine(
+          color: color,
+          thickness: thickness,
+          orientation: AuraDividerOrientation.horizontal,
+        ),
+      ),
+    ],
+  );
+}
+
+class const _AuraDividerLabel({required final Widget label})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.symmetric(
+      horizontal: context.auraTheme.fromSpacing(.md),
+    ),
+    child: AuraText(child: label, style: .caption),
+  );
+}
+
+class const _AuraHorizontalDivider({
+  required final double thickness,
+  required final double indent,
+  required final double endIndent,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    height: thickness,
+    margin: AuraDivider.marginFor(
+      orientation: AuraDividerOrientation.horizontal,
+      indent: indent,
+      endIndent: endIndent,
+    ),
+    child: Center(
+      child: _AuraDividerLine(
+        color: color,
+        thickness: thickness,
+        orientation: AuraDividerOrientation.horizontal,
+      ),
+    ),
+  );
+}
+
+class const _AuraVerticalDivider({
+  required final double thickness,
+  required final double indent,
+  required final double endIndent,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    width: thickness,
+    margin: AuraDivider.marginFor(
+      orientation: AuraDividerOrientation.vertical,
+      indent: indent,
+      endIndent: endIndent,
+    ),
+    child: Center(
+      child: _AuraDividerLine(
+        color: color,
+        thickness: thickness,
+        orientation: AuraDividerOrientation.vertical,
+      ),
+    ),
+  );
+}
+
+class const _AuraDividerLine({
+  required final Color color,
+  required final double thickness,
+  required final AuraDividerOrientation orientation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    color: color,
+    height: orientation == AuraDividerOrientation.horizontal ? thickness : null,
+    width: orientation == AuraDividerOrientation.vertical ? thickness : null,
+  );
 }
 
 /// The orientation of a [AuraDivider].
