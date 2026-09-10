@@ -26,22 +26,7 @@ class AgentToolsDao(super.attachedDatabase)
     String agentId,
     String toolId, {
     required PermissionAccess permission,
-  }) {
-    return into(agentTools).insertReturning(
-      AgentToolsCompanion(
-        agentId: .new(agentId),
-        toolId: .new(toolId),
-        permissions: .new(permission),
-      ),
-      onConflict: DoUpdate(
-        (old) => AgentToolsCompanion(
-          updatedAt: .new(DateTime.now()),
-          permissions: .new(permission),
-        ),
-        target: [agentTools.agentId, agentTools.toolId],
-      ),
-    );
-  }
+  }) => _setAgentToolPermission((agentId: agentId, toolId: toolId), permission);
 
   Future<bool> clearAgentToolPermission(String agentId, String toolId) async {
     final count =
@@ -52,4 +37,33 @@ class AgentToolsDao(super.attachedDatabase)
 
     return count > 0;
   }
+
+  Future<AgentToolsTable> _setAgentToolPermission(
+    ({String agentId, String toolId}) ids,
+    PermissionAccess permission,
+  ) => _insertAgentTool(
+    _permissionCompanion(ids.agentId, ids.toolId, permission),
+  );
+
+  Future<AgentToolsTable> _insertAgentTool(AgentToolsCompanion companion) =>
+      into(
+        agentTools,
+      ).insertReturning(companion, onConflict: _permissionConflict(companion));
+
+  DoUpdate<$AgentToolsTable, AgentToolsTable> _permissionConflict(
+    AgentToolsCompanion companion,
+  ) => DoUpdate(
+    (_) => companion.copyWith(updatedAt: .new(DateTime.now())),
+    target: [agentTools.agentId, agentTools.toolId],
+  );
+
+  AgentToolsCompanion _permissionCompanion(
+    String agentId,
+    String toolId,
+    PermissionAccess permission,
+  ) => AgentToolsCompanion(
+    agentId: .new(agentId),
+    toolId: .new(toolId),
+    permissions: .new(permission),
+  );
 }

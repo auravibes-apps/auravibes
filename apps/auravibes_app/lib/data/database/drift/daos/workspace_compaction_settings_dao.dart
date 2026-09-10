@@ -9,7 +9,7 @@ part 'workspace_compaction_settings_dao.g.dart';
 @DriftAccessor(tables: [WorkspaceCompactionSettings])
 class WorkspaceCompactionSettingsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$WorkspaceCompactionSettingsDaoMixin {}
+    with _$WorkspaceCompactionSettingsDaoMixin;
 
 extension WorkspaceCompactionSettingsDaoMethods
     on WorkspaceCompactionSettingsDao {
@@ -38,10 +38,10 @@ extension WorkspaceCompactionSettingsDaoMethods
   ) async {
     final existing = await getByWorkspaceId(workspaceId);
     if (existing == null) {
-      return _insertNew(workspaceId, companion);
+      return await _insertNew(workspaceId, companion);
     }
 
-    return _updateAndRead(existing.id, workspaceId, companion);
+    return await _updateAndRead(existing.id, workspaceId, companion);
   }
 
   Future<int> _updateExisting(
@@ -63,7 +63,7 @@ extension WorkspaceCompactionSettingsDaoMethods
     String workspaceId,
     WorkspaceCompactionSettingsCompanion companion,
   ) async {
-    await _updateExisting(id, companion);
+    final _ = await _updateExisting(id, companion);
     final updated = await getByWorkspaceId(workspaceId);
     if (updated == null) {
       throw StateError('Updated compaction settings were not found');

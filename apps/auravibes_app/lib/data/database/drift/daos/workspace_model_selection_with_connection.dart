@@ -19,9 +19,9 @@ class WorkspaceModelSelectionWithConnection({
 )
 class WorkspaceModelSelectionsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$WorkspaceModelSelectionsDaoMixin {}
+    with _$WorkspaceModelSelectionsDaoMixin;
 
-extension WorkspaceModelSelectionsDaoMethods on WorkspaceModelSelectionsDao {
+extension WorkspaceModelSelectionsDaoWrites on WorkspaceModelSelectionsDao {
   Future<void> insertWorkspaceModelSelections(
     List<WorkspaceModelSelectionsCompanion> modelProvidersToInsert,
   ) async {
@@ -45,7 +45,9 @@ extension WorkspaceModelSelectionsDaoMethods on WorkspaceModelSelectionsDao {
       workspaceModelSelections,
     )..where((table) => table.id.isIn(ids))).go();
   }
+}
 
+extension WorkspaceModelSelectionsDaoReads on WorkspaceModelSelectionsDao {
   Future<List<WorkspaceModelSelectionWithConnection>>
   getAllWorkspaceModelSelectionsByWorkspace({
     required List<String> workspaceIds,
@@ -72,26 +74,30 @@ extension WorkspaceModelSelectionsDaoMethods on WorkspaceModelSelectionsDao {
 
     return query.map(_mapJoin).getSingleOrNull();
   }
+}
 
+extension WorkspaceModelSelectionsDaoJoins on WorkspaceModelSelectionsDao {
   JoinedSelectStatement<HasResultSet, dynamic> _queryJoins() {
-    return select(workspaceModelSelections).join([
-      innerJoin(
-        serviceConnections,
-        serviceConnections.id.equalsExp(
-          workspaceModelSelections.modelConnectionId,
-        ),
-      ),
-      leftOuterJoin(
-        apiModelProviders,
-        apiModelProviders.id.equalsExp(serviceConnections.serviceId),
-      ),
-      leftOuterJoin(
-        apiModels,
-        apiModels.id.equalsExp(workspaceModelSelections.modelId) &
-            apiModels.modelProvider.equalsExp(serviceConnections.serviceId),
-      ),
-    ]);
+    final joins = [_connectionJoin(), _providerJoin(), _modelJoin()];
+
+    return select(workspaceModelSelections).join(joins);
   }
+
+  Join<HasResultSet, dynamic> _connectionJoin() => innerJoin(
+    serviceConnections,
+    serviceConnections.id.equalsExp(workspaceModelSelections.modelConnectionId),
+  );
+
+  Join<HasResultSet, dynamic> _providerJoin() => leftOuterJoin(
+    apiModelProviders,
+    apiModelProviders.id.equalsExp(serviceConnections.serviceId),
+  );
+
+  Join<HasResultSet, dynamic> _modelJoin() => leftOuterJoin(
+    apiModels,
+    apiModels.id.equalsExp(workspaceModelSelections.modelId) &
+        apiModels.modelProvider.equalsExp(serviceConnections.serviceId),
+  );
 
   JoinedSelectStatement<HasResultSet, dynamic>
   _queryWorkspaceModelSelectionsByWorkspace({

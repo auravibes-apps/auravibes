@@ -19,22 +19,10 @@ class SkillsDao(super.attachedDatabase)
   )..where((tbl) => tbl.id.equals(skillId))).getSingleOrNull();
 
   Future<SkillsTable?> getSkillBySlug(String workspaceId, String slug) =>
-      (select(skills)..where(
-            (tbl) =>
-                tbl.workspaceId.equals(workspaceId) &
-                tbl.slug.equals(slug) &
-                tbl.source.equalsValue(SkillSourceTable.user),
-          ))
-          .getSingleOrNull();
+      _getUserSkill(workspaceId, (tbl) => tbl.slug.equals(slug));
 
   Future<SkillsTable?> getSkillByTitle(String workspaceId, String title) =>
-      (select(skills)..where(
-            (tbl) =>
-                tbl.workspaceId.equals(workspaceId) &
-                tbl.title.equals(title) &
-                tbl.source.equalsValue(SkillSourceTable.user),
-          ))
-          .getSingleOrNull();
+      _getUserSkill(workspaceId, (tbl) => tbl.title.equals(title));
 
   Future<SkillsTable> createSkill(SkillsCompanion skill) =>
       into(skills).insertReturning(skill);
@@ -58,4 +46,23 @@ class SkillsDao(super.attachedDatabase)
 
     return count > 0;
   }
+}
+
+extension SkillsDaoQueries on SkillsDao {
+  Future<SkillsTable?> _getUserSkill(
+    String workspaceId,
+    Expression<bool> Function($SkillsTable) matches,
+  ) =>
+      (select(skills)
+            ..where((tbl) => _userSkillFilter(tbl, workspaceId, matches)))
+          .getSingleOrNull();
+
+  Expression<bool> _userSkillFilter(
+    $SkillsTable tbl,
+    String workspaceId,
+    Expression<bool> Function($SkillsTable) matches,
+  ) =>
+      tbl.workspaceId.equals(workspaceId) &
+      matches(tbl) &
+      tbl.source.equalsValue(SkillSourceTable.user);
 }

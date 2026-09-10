@@ -8,7 +8,7 @@ part 'app_skill_workspace_settings_dao.g.dart';
 @DriftAccessor(tables: [AppSkillWorkspaceSettings])
 class AppSkillWorkspaceSettingsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$AppSkillWorkspaceSettingsDaoMixin {}
+    with _$AppSkillWorkspaceSettingsDaoMixin;
 
 extension AppSkillWorkspaceSettingsDaoMethods on AppSkillWorkspaceSettingsDao {
   Future<AppSkillWorkspaceSettingsTable?> getSetting(
@@ -40,25 +40,25 @@ extension AppSkillWorkspaceSettingsDaoMethods on AppSkillWorkspaceSettingsDao {
   }) async {
     final existing = await getSetting(workspaceId, appSkillIdentifier);
     if (existing == null) {
-      return _insertSetting(workspaceId, appSkillIdentifier, isEnabled);
+      return await _insertSetting(workspaceId, appSkillIdentifier, isEnabled);
     }
 
-    return _updateAndRead(
-      existing.id,
-      workspaceId,
-      appSkillIdentifier,
-      isEnabled,
-    );
+    return await _updateAndRead(existing.id, (
+      workspaceId: workspaceId,
+      appSkillIdentifier: appSkillIdentifier,
+    ), isEnabled);
   }
 
   Future<AppSkillWorkspaceSettingsTable> _updateAndRead(
     String id,
-    String workspaceId,
-    String appSkillIdentifier,
+    ({String workspaceId, String appSkillIdentifier}) settingKey,
     bool isEnabled,
   ) async {
-    await _updateSetting(id, isEnabled);
-    final updated = await getSetting(workspaceId, appSkillIdentifier);
+    final _ = await _updateSetting(id, isEnabled);
+    final updated = await getSetting(
+      settingKey.workspaceId,
+      settingKey.appSkillIdentifier,
+    );
     if (updated == null) {
       throw StateError('Updated app skill workspace setting was not found');
     }

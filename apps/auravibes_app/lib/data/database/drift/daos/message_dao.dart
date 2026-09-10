@@ -9,9 +9,9 @@ part 'message_dao.g.dart';
 @DriftAccessor(tables: [Messages])
 class MessageDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$MessageDaoMixin {}
+    with _$MessageDaoMixin;
 
-extension MessageDaoMethods on MessageDao {
+extension MessageDaoCoreOperations on MessageDao {
   // Core CRUD operations.
   Future<MessagesTable> insertMessage(MessagesCompanion message) =>
       into(messages).insertReturning(message);
@@ -37,7 +37,9 @@ extension MessageDaoMethods on MessageDao {
 
     return count > 0;
   }
+}
 
+extension MessageDaoConversationOperations on MessageDao {
   // Business-specific queries.
   Future<List<MessagesTable>> getMessagesByConversation(
     String conversationId,
@@ -78,28 +80,12 @@ extension MessageDaoMethods on MessageDao {
   ) => _messagesByTypeQuery(conversationId, messageType).get();
 
   Future<List<MessagesTable>> getUserMessages(String conversationId) =>
-      (select(messages)
-            ..where(
-              (tbl) =>
-                  tbl.conversationId.equals(conversationId) &
-                  tbl.isUser.equals(true),
-            )
-            ..orderBy([
-              (tbl) => OrderingTerm(expression: tbl.createdAt, mode: .desc),
-            ]))
-          .get();
+      _messagesByUserQuery(conversationId, isUser: true).get();
+}
 
+extension MessageDaoStatusOperations on MessageDao {
   Future<List<MessagesTable>> getSystemMessages(String conversationId) =>
-      (select(messages)
-            ..where(
-              (tbl) =>
-                  tbl.conversationId.equals(conversationId) &
-                  tbl.isUser.equals(false),
-            )
-            ..orderBy([
-              (tbl) => OrderingTerm(expression: tbl.createdAt, mode: .desc),
-            ]))
-          .get();
+      _messagesByUserQuery(conversationId, isUser: false).get();
 
   Future<int> getMessageCountByConversation(String conversationId) =>
       (selectOnly(messages)
@@ -108,16 +94,8 @@ extension MessageDaoMethods on MessageDao {
           .map((row) => row.read(messages.id.count()) ?? 0)
           .getSingle();
 
-  Future<bool> messageExists(String id) async {
-    final result =
-        await (selectOnly(messages)
-              ..addColumns([messages.id.count()])
-              ..where(messages.id.equals(id)))
-            .map((row) => row.read(messages.id.count()) ?? 0)
-            .getSingle();
-
-    return result > 0;
-  }
+  Future<bool> messageExists(String id) async =>
+      await getMessageById(id) != null;
 
   Future<List<MessagesTable>> getMessagesByStatus(
     String conversationId,
@@ -131,7 +109,9 @@ extension MessageDaoMethods on MessageDao {
 
     return _findCompactionSummary(rows);
   }
+}
 
+extension MessageDaoRawQueryOperations on MessageDao {
   Selectable<QueryRow> _latestAssistantMessagesQuery(
     List<String> conversationIds,
   ) {
@@ -161,7 +141,9 @@ extension MessageDaoMethods on MessageDao {
   List<Variable> _latestAssistantMessagesVariables(
     List<String> conversationIds,
   ) => [for (final conversationId in conversationIds) Variable(conversationId)];
+}
 
+extension MessageDaoMappingOperations on MessageDao {
   MessagesTable _messageFromRow(QueryRow row) =>
       MessagesTable.fromJson(_messageJson(row));
 
@@ -202,7 +184,9 @@ extension MessageDaoMethods on MessageDao {
 
   T? _readNullable<T extends Object>(QueryRow row, String column) =>
       row.readNullable<T>(column);
+}
 
+extension MessageDaoQueryOperations on MessageDao {
   SimpleSelectStatement<$MessagesTable, MessagesTable>
   _latestAssistantMessageQuery(String conversationId) {
     final query = select(messages)
@@ -241,6 +225,18 @@ extension MessageDaoMethods on MessageDao {
     return query..orderBy(_descendingCreatedAtOrdering());
   }
 
+  SimpleSelectStatement<$MessagesTable, MessagesTable> _messagesByUserQuery(
+    String conversationId, {
+    required bool isUser,
+  }) => select(messages)
+    ..where(
+      (tbl) =>
+          tbl.conversationId.equals(conversationId) & tbl.isUser.equals(isUser),
+    )
+    ..orderBy(_descendingCreatedAtOrdering());
+}
+
+extension MessageDaoFilterOperations on MessageDao {
   Expression<bool> _assistantMessageFilter(
     $MessagesTable tbl,
     String conversationId,
@@ -274,7 +270,9 @@ extension MessageDaoMethods on MessageDao {
       tbl.conversationId.equals(conversationId) &
       tbl.messageType.equals(MessagesTableType.system.value) &
       tbl.status.equals(MessageTableStatus.sent.value);
+}
 
+extension MessageDaoOrderingOperations on MessageDao {
   List<OrderingTerm Function($MessagesTable)> _latestAssistantOrdering() => [
     (tbl) => OrderingTerm(expression: tbl.createdAt, mode: .desc),
     (tbl) => OrderingTerm(expression: tbl.id, mode: .desc),
@@ -285,17 +283,22 @@ extension MessageDaoMethods on MessageDao {
 
   MessagesTable? _findCompactionSummary(Iterable<MessagesTable> rows) {
     for (final row in rows) {
-      final metadataStr = row.metadata;
-      if (metadataStr == null) continue;
-      try {
-        final json = jsonDecode(metadataStr) as Map<String, dynamic>;
-        if (json['isCompactionSummary'] == true) return row;
-      } on Exception {
-        continue;
-      }
+      if (_isCompactionSummary(row)) return row;
     }
 
     return null;
+  }
+
+  bool _isCompactionSummary(MessagesTable row) {
+    final metadata = row.metadata;
+    if (metadata == null) return false;
+    try {
+      return (jsonDecode(metadata)
+              as Map<String, dynamic>)['isCompactionSummary'] ==
+          true;
+    } on Exception {
+      return false;
+    }
   }
 
   MessagesTableType _messageTypeFromStorage(String value) {

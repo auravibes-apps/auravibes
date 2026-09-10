@@ -9,6 +9,15 @@ part 'model_connections_dao.g.dart';
 class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
     with _$ModelConnectionsDaoMixin {
   new(super.attachedDatabase);
+
+  Future<ServiceConnectionTable?> getModelConnectionById(String id) {
+    return (select(serviceConnections)..where(
+          (t) =>
+              t.id.equals(id) &
+              t.kind.equals(ServiceConnectionKindTable.modelProvider.name),
+        ))
+        .getSingleOrNull();
+  }
 }
 
 extension ModelConnectionsDaoMethods on ModelConnectionsDao {
@@ -19,15 +28,6 @@ extension ModelConnectionsDaoMethods on ModelConnectionsDao {
   Stream<List<ServiceConnectionTable>> watchAllModelConnectionsByWorkspace({
     required List<String> workspaceIds,
   }) => _modelConnectionsByWorkspaceQuery(workspaceIds).watch();
-
-  Future<ServiceConnectionTable?> getModelConnectionById(String id) {
-    return (select(serviceConnections)..where(
-          (t) =>
-              t.id.equals(id) &
-              t.kind.equals(ServiceConnectionKindTable.modelProvider.name),
-        ))
-        .getSingleOrNull();
-  }
 
   Future<ServiceConnectionTable> insertModelConnection(
     ServiceConnectionsCompanion modelConnection,
@@ -40,11 +40,8 @@ extension ModelConnectionsDaoMethods on ModelConnectionsDao {
     ServiceConnectionsCompanion modelConnection,
   ) async {
     final rows =
-        await (update(serviceConnections)..where(
-              (t) =>
-                  t.id.equals(id) &
-                  t.kind.equals(ServiceConnectionKindTable.modelProvider.name),
-            ))
+        await (update(serviceConnections)
+              ..where((t) => _modelConnectionIdFilter(t, id)))
             .writeReturning(modelConnection);
 
     return rows.firstOrNull;
@@ -58,7 +55,9 @@ extension ModelConnectionsDaoMethods on ModelConnectionsDao {
         ))
         .go();
   }
+}
 
+extension ModelConnectionsDaoQueries on ModelConnectionsDao {
   SimpleSelectStatement<$ServiceConnectionsTable, ServiceConnectionTable>
   _modelConnectionsByWorkspaceQuery(List<String> workspaceIds) {
     final statement = select(serviceConnections)
@@ -72,6 +71,13 @@ extension ModelConnectionsDaoMethods on ModelConnectionsDao {
     List<String> workspaceIds,
   ) =>
       tbl.workspaceId.isIn(workspaceIds) &
+      tbl.kind.equals(ServiceConnectionKindTable.modelProvider.name);
+
+  Expression<bool> _modelConnectionIdFilter(
+    $ServiceConnectionsTable tbl,
+    String id,
+  ) =>
+      tbl.id.equals(id) &
       tbl.kind.equals(ServiceConnectionKindTable.modelProvider.name);
 
   List<OrderingTerm Function($ServiceConnectionsTable)>

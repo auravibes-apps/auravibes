@@ -7,9 +7,9 @@ part 'conversation_dao.g.dart';
 @DriftAccessor(tables: [Conversations])
 class ConversationDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$ConversationDaoMixin {}
+    with _$ConversationDaoMixin;
 
-extension ConversationDaoMethods on ConversationDao {
+extension ConversationDaoWriteOperations on ConversationDao {
   Future<ConversationsTable> insertConversation(
     ConversationsCompanion conversation,
   ) => into(conversations).insertReturning(conversation);
@@ -36,7 +36,9 @@ extension ConversationDaoMethods on ConversationDao {
 
     return count > 0;
   }
+}
 
+extension ConversationDaoReadOperations on ConversationDao {
   Stream<ConversationsTable?> watchConversationById(String id) => (select(
     conversations,
   )..where((tbl) => tbl.id.equals(id))).watchSingleOrNull();
@@ -65,23 +67,24 @@ extension ConversationDaoMethods on ConversationDao {
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
   _buildWorkspaceQuery(String workspaceId) {
-    return (select(conversations)
-      ..where(
-        (tbl) =>
-            tbl.workspaceId.equals(workspaceId) &
-            tbl.parentConversationId.isNull(),
-      )
-      ..orderBy([
-        (tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc),
-      ]));
+    return _orderedConversations(
+      (tbl) =>
+          tbl.workspaceId.equals(workspaceId) &
+          tbl.parentConversationId.isNull(),
+    );
   }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
   _buildChildrenQuery(String parentConversationId) {
-    return (select(conversations)
-      ..where((tbl) => tbl.parentConversationId.equals(parentConversationId))
-      ..orderBy([
-        (tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc),
-      ]));
+    return _orderedConversations(
+      (tbl) => tbl.parentConversationId.equals(parentConversationId),
+    );
   }
+
+  SimpleSelectStatement<$ConversationsTable, ConversationsTable>
+  _orderedConversations(
+    Expression<bool> Function($ConversationsTable) filter,
+  ) => select(conversations)
+    ..where(filter)
+    ..orderBy([(tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc)]);
 }

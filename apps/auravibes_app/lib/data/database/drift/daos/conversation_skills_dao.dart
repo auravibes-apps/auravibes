@@ -7,7 +7,7 @@ part 'conversation_skills_dao.g.dart';
 @DriftAccessor(tables: [ConversationSkills])
 class ConversationSkillsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$ConversationSkillsDaoMixin {}
+    with _$ConversationSkillsDaoMixin;
 
 extension ConversationSkillsDaoMethods on ConversationSkillsDao {
   Future<List<ConversationSkillsTable>> getConversationSkills(
@@ -45,19 +45,12 @@ extension ConversationSkillsDaoMethods on ConversationSkillsDao {
     String workspaceSkillId, {
     required bool isLoaded,
   }) async {
-    return _setSkillLoaded(
-      find: () =>
-          getConversationWorkspaceSkill(conversationId, workspaceSkillId),
-      insert: ConversationSkillsCompanion(
-        conversationId: .new(conversationId),
-        workspaceSkillId: .new(workspaceSkillId),
-        isLoaded: .new(isLoaded),
-      ),
-      update: ConversationSkillsCompanion(
-        updatedAt: .new(DateTime.now()),
-        isLoaded: .new(isLoaded),
-      ),
-      notFoundMessage: 'Updated conversation skill was not found',
+    Future<ConversationSkillsTable?> find() =>
+        getConversationWorkspaceSkill(conversationId, workspaceSkillId);
+
+    return await _setSkillLoaded(
+      find,
+      _workspaceSkillMutation(conversationId, workspaceSkillId, isLoaded),
     );
   }
 
@@ -66,35 +59,95 @@ extension ConversationSkillsDaoMethods on ConversationSkillsDao {
     String appSkillIdentifier, {
     required bool isLoaded,
   }) async {
-    return _setSkillLoaded(
-      find: () => getConversationAppSkill(conversationId, appSkillIdentifier),
-      insert: ConversationSkillsCompanion(
-        conversationId: .new(conversationId),
-        appSkillIdentifier: .new(appSkillIdentifier),
-        isLoaded: .new(isLoaded),
-      ),
-      update: ConversationSkillsCompanion(
-        updatedAt: .new(DateTime.now()),
-        isLoaded: .new(isLoaded),
-      ),
-      notFoundMessage: 'Updated conversation app skill was not found',
+    Future<ConversationSkillsTable?> find() =>
+        getConversationAppSkill(conversationId, appSkillIdentifier);
+
+    return await _setSkillLoaded(
+      find,
+      _appSkillMutation(conversationId, appSkillIdentifier, isLoaded),
     );
   }
+}
 
-  Future<ConversationSkillsTable> _setSkillLoaded({
-    required Future<ConversationSkillsTable?> Function() find,
-    required ConversationSkillsCompanion insert,
-    required ConversationSkillsCompanion update,
-    required String notFoundMessage,
-  }) async {
+extension ConversationSkillsDaoPersistence on ConversationSkillsDao {
+  ({
+    ConversationSkillsCompanion insert,
+    ConversationSkillsCompanion update,
+    String error,
+  })
+  _workspaceSkillMutation(String conversationId, String id, bool isLoaded) =>
+      _skillMutation(
+        .new(
+          conversationId: .new(conversationId),
+          workspaceSkillId: .new(id),
+          isLoaded: .new(isLoaded),
+        ),
+        isLoaded,
+        'Updated conversation skill was not found',
+      );
+
+  ({
+    ConversationSkillsCompanion insert,
+    ConversationSkillsCompanion update,
+    String error,
+  })
+  _appSkillMutation(String conversationId, String id, bool isLoaded) =>
+      _skillMutation(
+        .new(
+          conversationId: .new(conversationId),
+          appSkillIdentifier: .new(id),
+          isLoaded: .new(isLoaded),
+        ),
+        isLoaded,
+        'Updated conversation app skill was not found',
+      );
+
+  Future<ConversationSkillsTable> _setSkillLoaded(
+    Future<ConversationSkillsTable?> Function() find,
+    ({
+      ConversationSkillsCompanion insert,
+      ConversationSkillsCompanion update,
+      String error,
+    })
+    mutation,
+  ) async {
     final existing = await find();
     if (existing == null) {
-      return into(conversationSkills).insertReturning(insert);
+      return await into(conversationSkills).insertReturning(mutation.insert);
     }
 
-    await (this.update(
-      conversationSkills,
-    )..where((tbl) => tbl.id.equals(existing.id))).write(update);
+    final _ = await _updateSkill(existing.id, mutation.update);
+
+    return await _requireUpdatedSkill(find, mutation.error);
+  }
+
+  Future<int> _updateSkill(String id, ConversationSkillsCompanion mutation) =>
+      (update(
+        conversationSkills,
+      )..where((tbl) => tbl.id.equals(id))).write(mutation);
+
+  ({
+    ConversationSkillsCompanion insert,
+    ConversationSkillsCompanion update,
+    String error,
+  })
+  _skillMutation(
+    ConversationSkillsCompanion insert,
+    bool isLoaded,
+    String error,
+  ) => (
+    insert: insert,
+    update: ConversationSkillsCompanion(
+      updatedAt: .new(DateTime.now()),
+      isLoaded: .new(isLoaded),
+    ),
+    error: error,
+  );
+
+  Future<ConversationSkillsTable> _requireUpdatedSkill(
+    Future<ConversationSkillsTable?> Function() find,
+    String notFoundMessage,
+  ) async {
     final updated = await find();
     if (updated == null) {
       throw StateError(notFoundMessage);

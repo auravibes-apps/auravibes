@@ -12,10 +12,8 @@ final _log = Logger('dao:api_models');
 @DriftAccessor(tables: [ApiModels])
 class ApiModelsDao extends DatabaseAccessor<AppDatabase>
     with _$ApiModelsDaoMixin {
-  ApiModelsDao(super.attachedDatabase);
-}
+  new(super.attachedDatabase);
 
-extension ApiModelsDaoMethods on ApiModelsDao {
   /// Retrieves all API models from the database.
   ///
   /// Returns a list of all models ordered by provider and name.
@@ -26,7 +24,9 @@ extension ApiModelsDaoMethods on ApiModelsDao {
         ]))
         .get();
   }
+}
 
+extension ApiModelsDaoReadOperations on ApiModelsDao {
   /// Retrieves a model by provider ID + model ID.
   ///
   /// Returns the model matching [providerId] and [modelId], or null if not
@@ -57,7 +57,9 @@ extension ApiModelsDaoMethods on ApiModelsDao {
           ..orderBy([(t) => OrderingTerm(expression: t.name)]))
         .watch();
   }
+}
 
+extension ApiModelsDaoMutationOperations on ApiModelsDao {
   /// Inserts a new model into the database.
   ///
   /// Returns the inserted model.
@@ -113,19 +115,17 @@ extension ApiModelsDaoMethods on ApiModelsDao {
 
     return rows.isNotEmpty;
   }
+}
 
+extension ApiModelsDaoSearchOperations on ApiModelsDao {
   /// Searches for models by name.
   ///
   /// Returns a list of models whose names contain the [query] string.
   /// The search is case-insensitive.
   Future<List<ApiModelsTable>> searchModelsByName(String query) {
-    return (select(apiModels)
-          ..where((t) => t.name.contains(query))
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.modelProvider),
-            (t) => OrderingTerm(expression: t.name),
-          ]))
-        .get();
+    return _filteredModels((t) => t.name.contains(query), [
+      (t) => OrderingTerm(expression: t.modelProvider),
+    ]);
   }
 
   /// Gets the count of all models.
@@ -151,7 +151,9 @@ extension ApiModelsDaoMethods on ApiModelsDao {
 
     return rows.length;
   }
+}
 
+extension ApiModelsDaoBatchInsertOperations on ApiModelsDao {
   /// Batch inserts multiple models into the database.
   ///
   /// Returns the list of inserted models.
@@ -181,10 +183,13 @@ extension ApiModelsDaoMethods on ApiModelsDao {
         error,
         stackTrace,
       );
+
       return null;
     }
   }
+}
 
+extension ApiModelsDaoBatchOperations on ApiModelsDao {
   /// Batch upserts multiple models into the database.
   ///
   /// For each model, it will update if it exists or insert if it doesn't.
@@ -203,7 +208,9 @@ extension ApiModelsDaoMethods on ApiModelsDao {
   Future<int> deleteAllModels() {
     return delete(apiModels).go();
   }
+}
 
+extension ApiModelsDaoFilterOperations on ApiModelsDao {
   /// Retrieves models within a cost range.
   ///
   /// Returns a list of models with input cost between [minInputCost] and
@@ -212,28 +219,20 @@ extension ApiModelsDaoMethods on ApiModelsDao {
     double minInputCost,
     double maxInputCost,
   ) {
-    return (select(apiModels)
-          ..where(
-            (t) => t.costInput.isBetweenValues(minInputCost, maxInputCost),
-          )
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.costInput),
-            (t) => OrderingTerm(expression: t.name),
-          ]))
-        .get();
+    return _filteredModels(
+      (t) => t.costInput.isBetweenValues(minInputCost, maxInputCost),
+      [(t) => OrderingTerm(expression: t.costInput)],
+    );
   }
 
   /// Retrieves models with minimum context limit.
   ///
   /// Returns a list of models with context limit >= [minContextLimit].
   Future<List<ApiModelsTable>> getModelsByMinContextLimit(int minContextLimit) {
-    return (select(apiModels)
-          ..where((t) => t.limitContext.isBiggerOrEqualValue(minContextLimit))
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.limitContext, mode: .desc),
-            (t) => OrderingTerm(expression: t.name),
-          ]))
-        .get();
+    return _filteredModels(
+      (t) => t.limitContext.isBiggerOrEqualValue(minContextLimit),
+      [(t) => OrderingTerm(expression: t.limitContext, mode: .desc)],
+    );
   }
 
   /// Retrieves open weights models.
@@ -260,4 +259,13 @@ extension ApiModelsDaoMethods on ApiModelsDao {
         ]))
         .get();
   }
+
+  Future<List<ApiModelsTable>> _filteredModels(
+    Expression<bool> Function($ApiModelsTable) filter,
+    List<OrderingTerm Function($ApiModelsTable)> ordering,
+  ) =>
+      (select(apiModels)
+            ..where(filter)
+            ..orderBy([...ordering, (t) => OrderingTerm(expression: t.name)]))
+          .get();
 }

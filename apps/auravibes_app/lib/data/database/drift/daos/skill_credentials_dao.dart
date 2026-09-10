@@ -49,13 +49,8 @@ extension SkillCredentialsDaoMethods on SkillCredentialsDao {
     ServiceConnectionsCompanion credential,
   ) async {
     final rows =
-        await (update(serviceConnections)..where(
-              (tbl) =>
-                  tbl.id.equals(credentialId) &
-                  tbl.kind.equals(
-                    ServiceConnectionKindTable.skillCredential.name,
-                  ),
-            ))
+        await (update(serviceConnections)
+              ..where((tbl) => _credentialIdFilter(tbl, credentialId)))
             .writeReturning(credential);
 
     return rows.firstOrNull;
@@ -71,7 +66,9 @@ extension SkillCredentialsDaoMethods on SkillCredentialsDao {
 
     return count;
   }
+}
 
+extension SkillCredentialsDaoQueries on SkillCredentialsDao {
   SimpleSelectStatement<$ServiceConnectionsTable, ServiceConnectionTable>
   _credentialsForDefinitionQuery(
     String workspaceId,
