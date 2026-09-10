@@ -72,7 +72,7 @@ final class ConversationByIdStreamProvider
 }
 
 String _$conversationByIdStreamHash() =>
-    r'74ddcfe17b939c1ea30b2a20b1044a6e31c94d58';
+    r'560c7782b1f362e2785b6dc18be83cc6aa757319';
 
 final class ConversationByIdStreamFamily extends $Family
     with
@@ -163,7 +163,7 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'4649f113236aded18fb8745f215effcb266cdd7b';
+    r'970d04a44a9dc9efc04d8734c64aa06edb5025c3';
 
 final class ConversationsStreamFamily extends $Family
     with
@@ -253,7 +253,7 @@ final class ChildConversationsStreamProvider
 }
 
 String _$childConversationsStreamHash() =>
-    r'2cfba31fe742c833f51c1c382a75f1c65eacdefe';
+    r'df631d95500f70052055cb3207246f738b5f6727';
 
 final class ChildConversationsStreamFamily extends $Family
     with

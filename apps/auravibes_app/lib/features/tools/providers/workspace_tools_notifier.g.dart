@@ -189,7 +189,7 @@ final class WorkspaceToolsNotifierProvider
 }
 
 String _$workspaceToolsNotifierHash() =>
-    r'b5e15665f83dd2a257b5da607072f1868ad99a7d';
+    r'0e5d7af8a4636da34d849f1af844a102f25c64f2';
 
 final class WorkspaceToolsNotifierFamily extends $Family
     with
@@ -312,7 +312,7 @@ final class AvailableToolsToAddProvider
 }
 
 String _$availableToolsToAddHash() =>
-    r'87a48b704d9cb6bf3e014813570d0da2a1048687';
+    r'a992597f5f7f798cdca722f622bc1c8b3b106141';
 
 /// Provider that returns the list of available built-in tools.
 /// That can be added to the workspace.

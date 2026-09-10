@@ -64,7 +64,7 @@ final class SkillDetailProvider
   }
 }
 
-String _$skillDetailHash() => r'488afe4bb566ade0094f6c05c5e9f087df8ada00';
+String _$skillDetailHash() => r'2d637f2a910ae883eb8eed75245c3395f3e57312';
 
 final class SkillDetailFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<SkillDetail?>, (String, String)> {

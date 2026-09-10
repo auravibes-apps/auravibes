@@ -68,7 +68,7 @@ final class WorkspaceModelSelectionByIdProvider
 }
 
 String _$workspaceModelSelectionByIdHash() =>
-    r'3ab2530e76737b4935c811efddf35f9675a13b16';
+    r'72a8d9712a595e45496209dea9ac61475fd5d922';
 
 final class WorkspaceModelSelectionByIdFamily extends $Family
     with
@@ -146,7 +146,7 @@ final class ModelContextLimitProvider
   }
 }
 
-String _$modelContextLimitHash() => r'da03227f2043dd827030c2c3e829b9a1af4bbd62';
+String _$modelContextLimitHash() => r'f2f524314b5b34240425c9b73bbeeca00222e7b9';
 
 final class ModelContextLimitFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<int?>, (String, String)> {

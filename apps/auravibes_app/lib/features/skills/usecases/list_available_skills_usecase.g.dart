@@ -74,7 +74,7 @@ final class ListAvailableSkillsUsecaseProvider
 }
 
 String _$listAvailableSkillsUsecaseHash() =>
-    r'ba57cb81fac1db667584ebdb58b36a2bc5c1d3e9';
+    r'e4b974ffbcd9582e1eb764d7408b603dbdc7a6be';
 
 final class ListAvailableSkillsUsecaseFamily extends $Family
     with $FunctionalFamilyOverride<ListAvailableSkillsUsecase, String> {
