@@ -52,23 +52,27 @@ class const AppBarDemo({
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) {
-    return AuraAppBar(
-      title: Text(title),
-      actions: const [
-        AuraIconButton(
-          icon: Icons.notifications_none,
-          onPressed: StoryHelpers.noopCallback,
-          tooltip: 'Notifications',
-        ),
-      ],
-      leading: showLeading
-          ? const AuraIconButton(
-              icon: Icons.menu,
-              onPressed: StoryHelpers.noopCallback,
-              tooltip: 'Open menu',
-            )
-          : null,
-    );
-  }
+  Widget build(BuildContext context) =>
+      _DemoAppBar(title: title, showLeading: showLeading);
+}
+
+class _DemoAppBar extends AuraAppBar {
+  new({required String title, required bool showLeading})
+    : super(
+        title: Text(title),
+        actions: const [
+          AuraIconButton(
+            icon: Icons.notifications_none,
+            onPressed: StoryHelpers.noopCallback,
+            tooltip: 'Notifications',
+          ),
+        ],
+        leading: showLeading
+            ? const AuraIconButton(
+                icon: Icons.menu,
+                onPressed: StoryHelpers.noopCallback,
+                tooltip: 'Open menu',
+              )
+            : null,
+      );
 }

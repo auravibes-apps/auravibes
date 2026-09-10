@@ -46,20 +46,32 @@ class const LoadingOverlayDemo({
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraLoadingOverlay(
-      isLoading: isLoading,
-      child: ColoredBox(
-        color: context.auraColors.surfaceVariant,
-        child: Center(
-          child: Text(
-            'Workspace content',
-            style: .new(color: context.auraColors.onSurface),
-          ),
-        ),
-      ),
-      message: message,
-      semanticLabel: message ?? 'Loading workspace',
-    );
-  }
+  Widget build(BuildContext context) => _LoadingOverlayData(
+    context: context,
+    isLoading: isLoading,
+    message: message,
+  ).overlay;
+}
+
+class _LoadingOverlayData {
+  new({
+    required BuildContext context,
+    required bool isLoading,
+    required String? message,
+  }) : overlay = AuraLoadingOverlay(
+         isLoading: isLoading,
+         child: ColoredBox(
+           color: context.auraColors.surfaceVariant,
+           child: Center(
+             child: Text(
+               'Workspace content',
+               style: .new(color: context.auraColors.onSurface),
+             ),
+           ),
+         ),
+         message: message,
+         semanticLabel: message ?? 'Loading workspace',
+       );
+
+  final AuraLoadingOverlay overlay;
 }

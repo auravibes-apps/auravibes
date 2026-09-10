@@ -106,25 +106,24 @@ abstract final class StoryHelpers {
     GlobalWidgetsLocalizations.delegate,
   ];
 
-  static String auraIconLabel(IconData icon) {
-    return <IconData, String>{
-          Icons.add: 'Add',
-          Icons.edit: 'Edit',
-          Icons.favorite: 'Favorite',
-          Icons.thumb_up: 'Thumb up',
-          Icons.star: 'Star',
-          Icons.info: 'Information',
-          Icons.settings: 'Settings',
-          Icons.search: 'Search',
-          Icons.home: 'Home',
-          Icons.person: 'Person',
-          Icons.camera_alt: 'Camera',
-          Icons.phone: 'Phone',
-          Icons.map: 'Map',
-          Icons.lock: 'Lock',
-        }[icon] ??
-        'Icon';
-  }
+  static final _auraIconLabels = <IconData, String>{
+    Icons.add: 'Add',
+    Icons.edit: 'Edit',
+    Icons.favorite: 'Favorite',
+    Icons.thumb_up: 'Thumb up',
+    Icons.star: 'Star',
+    Icons.info: 'Information',
+    Icons.settings: 'Settings',
+    Icons.search: 'Search',
+    Icons.home: 'Home',
+    Icons.person: 'Person',
+    Icons.camera_alt: 'Camera',
+    Icons.phone: 'Phone',
+    Icons.map: 'Map',
+    Icons.lock: 'Lock',
+  };
+
+  static String auraIconLabel(IconData icon) => _auraIconLabels[icon] ?? 'Icon';
 
   static ImageProvider<Object> auraSampleImageProvider() {
     return MemoryImage(.fromList(_auraSampleImageBytes));

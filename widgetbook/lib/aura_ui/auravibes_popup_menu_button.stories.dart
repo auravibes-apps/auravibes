@@ -37,26 +37,28 @@ abstract final class _StorybookDefinitions {
 /// Demonstrates a labeled popup-menu trigger and its action entries.
 class const PopupMenuButtonDemo({super.key}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return const Align(
-      alignment: AlignmentDirectional.topEnd,
-      child: AuraPopupMenuButton(
-        items: [
-          AuraPopupMenuItem(
-            title: Text('Edit'),
-            onTap: StoryHelpers.noopCallback,
-          ),
-          AuraPopupMenuItem(
-            title: Text('Duplicate'),
-            onTap: StoryHelpers.noopCallback,
-          ),
-          AuraPopupMenuItem(
-            title: Text('Delete'),
-            onTap: StoryHelpers.noopCallback,
-          ),
-        ],
-        tooltip: 'More actions',
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _PopupMenuButtonData().content;
+}
+
+class _PopupMenuButtonData {
+  final Align content = const Align(
+    alignment: AlignmentDirectional.topEnd,
+    child: AuraPopupMenuButton(
+      items: [
+        AuraPopupMenuItem(
+          title: Text('Edit'),
+          onTap: StoryHelpers.noopCallback,
+        ),
+        AuraPopupMenuItem(
+          title: Text('Duplicate'),
+          onTap: StoryHelpers.noopCallback,
+        ),
+        AuraPopupMenuItem(
+          title: Text('Delete'),
+          onTap: StoryHelpers.noopCallback,
+        ),
+      ],
+      tooltip: 'More actions',
+    ),
+  );
 }

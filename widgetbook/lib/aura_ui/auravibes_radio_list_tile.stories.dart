@@ -77,25 +77,25 @@ class const _RadioListTileControl({
   ValueChanged<String?>? get _optionChanged => demo.disabled ? null : onChanged;
 
   @override
-  Widget build(BuildContext _) {
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        for (final option in _radioListTileOptions)
-          _RadioListTileOption(
-            data: (
-              value: option.value,
-              title: option.title,
-              subtitle: demo.showSubtitle ? option.subtitle : '',
-              groupValue: selectedValue,
-              onChanged: _optionChanged,
-              tint: demo.tint,
-              disabled: demo.disabled,
-            ),
-          ),
-      ],
-    );
-  }
+  Widget build(BuildContext _) => Column(
+    mainAxisSize: .min,
+    children: [
+      for (final option in _radioListTileOptions)
+        _RadioListTileOption(data: _optionData(option)),
+    ],
+  );
+
+  _RadioListTileOptionData _optionData(
+    ({String value, String title, String subtitle}) option,
+  ) => (
+    value: option.value,
+    title: option.title,
+    subtitle: demo.showSubtitle ? option.subtitle : '',
+    groupValue: selectedValue,
+    onChanged: _optionChanged,
+    tint: demo.tint,
+    disabled: demo.disabled,
+  );
 }
 
 typedef _RadioListTileOptionData = ({
@@ -108,16 +108,15 @@ typedef _RadioListTileOptionData = ({
   bool disabled,
 });
 
-class const _RadioListTileOption({required final _RadioListTileOptionData data})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraRadioListTile<String>(
-    value: data.value,
-    groupValue: data.groupValue,
-    onChanged: data.onChanged,
-    title: Text(data.title),
-    subtitle: data.subtitle.isEmpty ? null : Text(data.subtitle),
-    tint: data.tint,
-    disabled: data.disabled,
-  );
+class _RadioListTileOption extends AuraRadioListTile<String> {
+  new({required _RadioListTileOptionData data})
+    : super(
+        value: data.value,
+        groupValue: data.groupValue,
+        onChanged: data.onChanged,
+        title: Text(data.title),
+        subtitle: data.subtitle.isEmpty ? null : Text(data.subtitle),
+        tint: data.tint,
+        disabled: data.disabled,
+      );
 }

@@ -117,24 +117,32 @@ class _A2uiCatalogShowcaseState extends State<A2uiCatalogShowcase> {
   var _tags = const ['planning', 'release'];
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    child: Column(
-      crossAxisAlignment: .stretch,
-      spacing: context.auraTheme.spacing.md,
-      children: [
-        ..._a2uiFeedbackWidgets,
-        ..._a2uiProgressWidgets,
-        ..._a2uiLayoutWidgets,
-        _A2uiRating(value: _rating, onChanged: _setRating),
-        _A2uiTagInput(value: _tags, onChanged: _setTags),
-        ..._a2uiContentWidgets,
-      ],
-    ),
-  );
+  Widget build(BuildContext context) =>
+      _A2uiCatalogData(context: context, state: this).content;
 
   void _setRating(int value) => setState(() => _rating = value);
 
   void _setTags(List<String> value) => setState(() => _tags = value);
+}
+
+class _A2uiCatalogData {
+  new({required BuildContext context, required _A2uiCatalogShowcaseState state})
+    : content = SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: .stretch,
+          spacing: context.auraTheme.spacing.md,
+          children: [
+            ..._a2uiFeedbackWidgets,
+            ..._a2uiProgressWidgets,
+            ..._a2uiLayoutWidgets,
+            _A2uiRating(value: state._rating, onChanged: state._setRating),
+            _A2uiTagInput(value: state._tags, onChanged: state._setTags),
+            ..._a2uiContentWidgets,
+          ],
+        ),
+      );
+
+  final Widget content;
 }
 
 class const _A2uiRating({

@@ -70,26 +70,47 @@ class const _PressableControl({
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final colors = context.auraColors;
+  Widget build(BuildContext context) => _PressableControlData(
+    demo: demo,
+    pressed: pressed,
+    onPressed: onPressed,
+    colors: context.auraColors,
+  ).button;
+}
 
-    return AuraPressable(
-      child: Text(
-        pressed ? 'Pressed' : demo.label,
-        style: .new(color: colors.onSurface),
-      ),
-      color: colors.primary,
-      decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border.all(color: colors.outline),
-        borderRadius: const BorderRadius.all(.circular(12)),
-      ),
-      onPressed: demo.enabled ? onPressed : null,
-      padding: const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: .lg,
-        vertical: .sm,
-      ),
-      semanticLabel: demo.label,
-    );
-  }
+class _PressableControlData({
+  required final PressableDemo demo,
+  required final bool pressed,
+  required final VoidCallback onPressed,
+  required final AuraColorScheme colors,
+}) {
+  final AuraPressable button = .new(
+    child: _PressableLabel(
+      label: demo.label,
+      pressed: pressed,
+      color: colors.onSurface,
+    ),
+    color: colors.primary,
+    decoration: BoxDecoration(
+      color: colors.surface,
+      border: Border.fromBorderSide(.new(color: colors.outline)),
+      borderRadius: const BorderRadius.all(.circular(12)),
+    ),
+    onPressed: demo.enabled ? onPressed : null,
+    padding: const AuraEdgeInsetsGeometry.symmetric(
+      horizontal: .lg,
+      vertical: .sm,
+    ),
+    semanticLabel: demo.label,
+  );
+}
+
+class const _PressableLabel({
+  required final String label,
+  required final bool pressed,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      Text(pressed ? 'Pressed' : label, style: .new(color: color));
 }

@@ -26,21 +26,26 @@ class _FadeDemoState extends State<_FadeDemo> {
   bool _alternate = false;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        AuraAnimatedContent(
-          child: Text(
-            _alternate ? 'Updated content' : 'Initial content',
-            key: ValueKey(_alternate),
+  Widget build(BuildContext context) =>
+      _FadeDemoData(alternate: _alternate, onPressed: _toggle).content;
+
+  void _toggle() => setState(() => _alternate = !_alternate);
+}
+
+class _FadeDemoData {
+  new({required bool alternate, required VoidCallback onPressed})
+    : content = Column(
+        mainAxisSize: .min,
+        children: [
+          AuraAnimatedContent(
+            child: Text(
+              alternate ? 'Updated content' : 'Initial content',
+              key: ValueKey(alternate),
+            ),
           ),
-        ),
-        AuraButton(
-          onPressed: () => setState(() => _alternate = !_alternate),
-          child: const Text('Change content'),
-        ),
-      ],
-    );
-  }
+          AuraButton(onPressed: onPressed, child: const Text('Change content')),
+        ],
+      );
+
+  final Column content;
 }

@@ -92,11 +92,17 @@ class const _SingleSelectionPreview({
         onChanged: onChanged,
       ),
       const SizedBox(height: 16),
-      Text(
-        'Selected: $selectedValue',
-        style: .new(color: context.auraColors.onSurface),
-      ),
+      _SelectedValueLabel(value: selectedValue),
     ],
+  );
+}
+
+class const _SelectedValueLabel({required final String? value})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    'Selected: $value',
+    style: .new(color: context.auraColors.onSurface),
   );
 }
 

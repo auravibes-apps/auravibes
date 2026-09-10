@@ -101,22 +101,19 @@ class const _RadioGroupControl({
       semanticLabel: 'Dark theme',
     ),
   ];
+  static final List<AuraRadioOption<String>> _optionsWithoutSubtitles = _options
+      .map(_withoutSubtitle)
+      .toList();
 
   @override
-  Widget build(BuildContext context) {
-    final options = demo.showSubtitles
-        ? _options
-        : _options.map(_withoutSubtitle).toList();
-
-    return AuraRadioGroup<String>(
-      value: selectedValue,
-      onChanged: onChanged,
-      options: options,
-      label: demo.showLabel ? const Text('Select Theme') : null,
-      direction: demo.direction,
-      tint: demo.tint,
-    );
-  }
+  Widget build(BuildContext context) => AuraRadioGroup<String>(
+    value: selectedValue,
+    onChanged: onChanged,
+    options: demo.showSubtitles ? _options : _optionsWithoutSubtitles,
+    label: demo.showLabel ? const Text('Select Theme') : null,
+    direction: demo.direction,
+    tint: demo.tint,
+  );
 
   static AuraRadioOption<String> _withoutSubtitle(
     AuraRadioOption<String> option,

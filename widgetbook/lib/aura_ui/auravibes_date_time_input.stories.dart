@@ -89,18 +89,20 @@ class _DateTimeInputDemoState extends State<DateTimeInputDemo> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: AuraDateTimeInput(
-        value: _value,
-        enableDate: widget.enableDate,
-        enableTime: widget.enableTime,
-        enabled: widget.enabled,
-        semanticLabel: 'Date and time',
-        onChanged: (value) => setState(() => _value = value),
-        now: () => DateTime(2026, 8, 28, 12),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: AuraDateTimeInput(
+      value: _value,
+      enableDate: widget.enableDate,
+      enableTime: widget.enableTime,
+      enabled: widget.enabled,
+      semanticLabel: 'Date and time',
+      onChanged: _setValue,
+      now: _storyNow,
+    ),
+  );
+
+  void _setValue(DateTime? value) => setState(() => _value = value);
 }
+
+DateTime _storyNow() => DateTime(2026, 8, 28, 12);

@@ -22,14 +22,7 @@ class StoryBridgeBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final source = await buildStep.readAsString(buildStep.inputId);
-    final storyFile = buildStep.inputId.path.split('/').last;
-    final storyNames = _findNames(_storyDeclaration, source);
-    final metaNames = _findNames(_metaDeclaration, source);
-
-    await buildStep.writeAsString(
-      buildStep.inputId.changeExtension('.bridge.g.dart'),
-      _buildBridgeContent(storyFile, storyNames, metaNames),
-    );
+    await _StoryBridgeOutput(buildStep.inputId, source).write(buildStep);
   }
 
   static Iterable<String> _findNames(RegExp expression, String source) =>
@@ -57,4 +50,27 @@ class StoryBridgeBuilder implements Builder {
 
     return '${lines.join('\n')}\n';
   }
+}
+
+class _StoryBridgeOutput {
+  new(this.inputId, String source)
+    : _content = StoryBridgeBuilder._buildBridgeContent(
+        inputId.path.split('/').last,
+        StoryBridgeBuilder._findNames(
+          StoryBridgeBuilder._storyDeclaration,
+          source,
+        ),
+        StoryBridgeBuilder._findNames(
+          StoryBridgeBuilder._metaDeclaration,
+          source,
+        ),
+      );
+
+  final AssetId inputId;
+  final String _content;
+
+  Future<void> write(BuildStep buildStep) => buildStep.writeAsString(
+    inputId.changeExtension('.bridge.g.dart'),
+    _content,
+  );
 }

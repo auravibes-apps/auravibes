@@ -159,17 +159,31 @@ class const _MessageBubbleControl({
   required final VoidCallback? onLongPress,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraMessageBubble(
-    content: demo.content,
-    isUser: demo.isUser,
-    status: demo.status,
-    timestamp: demo.timestamp,
-    contentType: demo.contentType,
+  Widget build(BuildContext context) => _MessageBubbleControlData(
+    demo: demo,
     onTap: onTap,
     onLongPress: onLongPress,
-    maxWidth: demo.maxWidth,
-    manageAlignment: false,
-    now: demo.now,
-    imageProvider: demo.imageProvider,
-  );
+  ).bubble;
+}
+
+class _MessageBubbleControlData {
+  new({
+    required MessageBubbleDemo demo,
+    required VoidCallback? onTap,
+    required VoidCallback? onLongPress,
+  }) : bubble = AuraMessageBubble(
+         content: demo.content,
+         isUser: demo.isUser,
+         status: demo.status,
+         timestamp: demo.timestamp,
+         contentType: demo.contentType,
+         onTap: onTap,
+         onLongPress: onLongPress,
+         maxWidth: demo.maxWidth,
+         manageAlignment: false,
+         now: demo.now,
+         imageProvider: demo.imageProvider,
+       );
+
+  final AuraMessageBubble bubble;
 }
