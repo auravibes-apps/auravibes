@@ -826,9 +826,9 @@ class ConversationToolsException implements Exception {
 
 /// Exception thrown when conversation tool validation fails.
 class ConversationToolsValidationException extends ConversationToolsException {
-  /// Creates a new ConversationToolsValidationException.
   // Null localization keys are valid for non-localized validation failures.
   // ignore: unnecessary-nullable
+  /// Creates a new ConversationToolsValidationException.
   const new(super.message, {super.localizationKey, super.cause});
 
   @override

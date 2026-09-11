@@ -204,9 +204,9 @@ mixin _WorkspaceToolOperations on _CloudToolsRepositoryBase {
 }
 
 mixin _McpServerOperations on _CloudToolsRepositoryBase {
-  @override
   // Null means a tool group has no associated MCP server.
   // ignore: unnecessary-nullable
+  @override
   Future<bool> removeMcpServer(String? id) async {
     if (id == null) return false;
     final resource = await _find(.mcpServer, id);
