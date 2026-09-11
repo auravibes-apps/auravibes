@@ -323,6 +323,14 @@ jobs:
             --shard-index "${{ matrix.shardIndex }}" \
             "${coverage[@]}"
 
+      - name: Upload widgetbook golden failures
+        if: ${{ always() && matrix.package == 'widgetbook' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: widgetbook-golden-failures-${{ github.run_id }}
+          path: widgetbook/test/failures
+          if-no-files-found: ignore
+
       - name: Prepare coverage artifact
         if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
         shell: bash
