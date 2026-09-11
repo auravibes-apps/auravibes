@@ -44,7 +44,7 @@ melos:
       - "packages/**"
   command:
     bootstrap:
-      runPubGetInParallel: false
+      runPubGetInParallel: true
       environment:
         sdk: ^3.13.0
   scripts:

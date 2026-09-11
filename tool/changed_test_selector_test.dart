@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:test/test.dart';
@@ -510,12 +511,16 @@ void main() {
             'shardIndex': 0,
             'totalShards': 2,
             'artifact': 'packages-core-0',
+            'shardMode': 'fixed',
+            'paths': <String>[],
           },
           {
             'package': 'packages/core',
             'shardIndex': 1,
             'totalShards': 2,
             'artifact': 'packages-core-1',
+            'shardMode': 'fixed',
+            'paths': <String>[],
           },
         ],
       });
@@ -553,9 +558,154 @@ void main() {
             'shardIndex': 0,
             'totalShards': 1,
             'artifact': 'packages-core-0',
+            'shardMode': 'fixed',
+            'paths': <String>[],
           },
         ],
       });
+    },
+  );
+
+  test('matrix balances timed paths deterministically', () async {
+    final root = await _runnerFixture();
+    addTearDown(() => root.delete(recursive: true));
+    final matrix = await buildTestMatrix(
+      .new(
+        mode: .affected,
+        packages: {
+          'packages/core': [
+            'test/behavior_test.dart',
+            'test/features/example_test.dart',
+          ],
+        },
+        reason: 'test',
+      ),
+      rootPath: root.path,
+      shardPackage: 'packages/core',
+      shardCount: 2,
+      timings: .new(
+        generatedAt: DateTime.now().toUtc(),
+        sourceSha: 'sha',
+        packages: {
+          'packages/core': {
+            'test/behavior_test.dart': const .new(
+              durationMs: 100,
+              sampleCount: 1,
+            ),
+            'test/features/example_test.dart': const .new(
+              durationMs: 1000,
+              sampleCount: 1,
+            ),
+          },
+        },
+      ),
+    );
+
+    expect(matrix['include'], [
+      {
+        'package': 'packages/core',
+        'shardIndex': 0,
+        'totalShards': 2,
+        'artifact': 'packages-core-0',
+        'shardMode': 'timed',
+        'paths': ['test/features/example_test.dart'],
+      },
+      {
+        'package': 'packages/core',
+        'shardIndex': 1,
+        'totalShards': 2,
+        'artifact': 'packages-core-1',
+        'shardMode': 'timed',
+        'paths': ['test/behavior_test.dart'],
+      },
+    ]);
+  });
+
+  test('timing reports map test events to package-relative paths', () async {
+    final root = await _runnerFixture();
+    addTearDown(() => root.delete(recursive: true));
+    final path = Uri.file('${root.path}/packages/core/test/behavior_test.dart')
+        .toString();
+    final timings = mergeTimingReports(
+      [
+        [
+          _timingReport(path, id: 1, start: 10, end: 45),
+          _timingReport(path, id: 2, start: 50, end: 110),
+        ].join('\n'),
+        _timingReport(path, id: 3, start: 100, end: 160),
+      ],
+      packageRoots: {'packages/core': '${root.path}/packages/core'},
+    );
+
+    final timing = timings['packages/core']?['test/behavior_test.dart'];
+    expect(timing?.durationMs, 78);
+    expect(timing?.sampleCount, 2);
+  });
+
+  test('timing database rejects malformed data and expires after 30 days', () {
+    expect(
+      () => TestTimingDatabase.fromJson(const {
+        'schemaVersion': 2,
+        'generatedAt': '2026-01-01T00:00:00Z',
+        'sourceSha': 'sha',
+        'packages': <String, Object?>{},
+      }),
+      throwsFormatException,
+    );
+    final stale = TestTimingDatabase(
+      generatedAt: DateTime.now().toUtc().subtract(const Duration(days: 31)),
+      sourceSha: 'sha',
+      packages: const <String, Map<String, TestTiming>>{},
+    );
+
+    expect(stale.isFresh, isFalse);
+  });
+
+  test(
+    'runner accepts explicit timed paths without built-in shard flags',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      var capturedArguments = <String>[];
+      final code = await runSelectedTests(
+        .new(
+          mode: .affected,
+          packages: {
+            'packages/core': [
+              'test/behavior_test.dart',
+              'test/features/example_test.dart',
+            ],
+          },
+          reason: 'test',
+        ),
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              capturedArguments = arguments;
+
+              return 0;
+            },
+        packageRoot: 'packages/core',
+        testPaths: ['test/features/example_test.dart'],
+        timingsDir: root.path,
+      );
+
+      expect(code, 0);
+      expect(capturedArguments, contains('test/features/example_test.dart'));
+      expect(
+        capturedArguments,
+        contains(
+          predicate<String>(
+            (argument) => argument.startsWith('--file-reporter=json:'),
+          ),
+        ),
+      );
+      expect(capturedArguments, isNot(contains('--total-shards=2')));
+      expect(capturedArguments, isNot(contains('--shard-index=1')));
     },
   );
 
@@ -955,6 +1105,22 @@ ${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
   }
 
   return root;
+}
+
+String _timingReport(
+  String path, {
+  required int id,
+  required int start,
+  required int end,
+}) {
+  return [
+    jsonEncode({
+      'type': 'testStart',
+      'time': start,
+      'test': {'id': id, 'root_url': path},
+    }),
+    jsonEncode({'type': 'testDone', 'time': end, 'testID': id}),
+  ].join('\n');
 }
 
 const _roots = <String, String>{'core': 'packages/core', 'ui': 'packages/ui'};

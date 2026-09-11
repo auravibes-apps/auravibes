@@ -64,6 +64,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            apps/auravibes_app/android/**/*.gradle*
+            apps/auravibes_app/android/gradle.properties
+            apps/auravibes_app/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: 📦 Install Linux Dependencies
         if: ${{ matrix.platform == 'linux' }}

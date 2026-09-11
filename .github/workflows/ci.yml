@@ -13,10 +13,13 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   format:
     name: format
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -34,6 +37,8 @@ jobs:
 
   analysis:
     name: analysis
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -54,6 +59,8 @@ jobs:
 
   code-health:
     name: code health
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -74,6 +81,8 @@ jobs:
 
   integrity:
     name: integrity
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -133,6 +142,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.platforms.outputs.platforms }}
+      run_code_checks: ${{ steps.platforms.outputs.run_code_checks }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -152,6 +162,7 @@ jobs:
 
           all_platforms='["android","ios","macos","linux","windows","web"]'
           full_build=false
+          run_code_checks=true
           base_sha=''
           head_sha="$GITHUB_SHA"
 
@@ -185,11 +196,13 @@ jobs:
 
           if [[ "$full_build" == true ]]; then
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
+            printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           changed_files="$(git diff --name-only --diff-filter=ACDMRTUXB "$base_sha" "$head_sha")"
           platforms=()
+          run_code_checks=false
 
           add_platform() {
             local platform="$1"
@@ -200,6 +213,17 @@ jobs:
           }
 
           while IFS= read -r path; do
+            case "$path" in
+              .github/*|.fvm/*|.fvmrc|.vscode/settings.json|assets/*|*/assets/*)
+                run_code_checks=true
+                ;;
+              *.md|*.mdx|README|*/README|CHANGELOG|*/CHANGELOG|LICENSE|*/LICENSE|.pi/*|sonar-project.properties)
+                ;;
+              *)
+                run_code_checks=true
+                ;;
+            esac
+
             case "$path" in
               apps/auravibes_app/android/*) add_platform android ;;
               apps/auravibes_app/ios/*) add_platform ios ;;
@@ -218,12 +242,14 @@ jobs:
           done <<< "$changed_files"
 
           if [[ "$full_build" == true ]]; then
+            run_code_checks=true
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
           elif ((${#platforms[@]} == 0)); then
             printf 'platforms=[]\n' >> "$GITHUB_OUTPUT"
           else
             printf '%s\n' "${platforms[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))' | sed 's/^/platforms=/' >> "$GITHUB_OUTPUT"
           fi
+          printf 'run_code_checks=%s\n' "$run_code_checks" >> "$GITHUB_OUTPUT"
 
   platform-builds:
     name: platform builds
@@ -236,6 +262,8 @@ jobs:
 
   test-plan:
     name: test plan
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     outputs:
       mode: ${{ steps.plan.outputs.mode }}
@@ -253,8 +281,43 @@ jobs:
       - name: Determine test plan
         id: plan
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           manifest="$RUNNER_TEMP/changed-tests.json"
+          timings="$RUNNER_TEMP/test-timings.json"
+          timing_download="$RUNNER_TEMP/timing-download"
+          rm -rf "$timing_download"
+          mkdir -p "$timing_download"
+
+          while IFS= read -r run_id; do
+            [ -n "$run_id" ] || continue
+            artifact_id="$(gh api \
+              "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?name=test-timings" \
+              --jq '.artifacts[] | select(.expired == false) | .id' \
+              2>/dev/null | head -n 1 || true)"
+            [ -n "$artifact_id" ] || continue
+            if gh api \
+              "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" \
+              > "$timing_download/timings.zip" \
+              && unzip -p "$timing_download/timings.zip" '*.json' > "$timings" 2>/dev/null \
+              && [ -s "$timings" ]; then
+              echo "Using test timings from main run $run_id"
+              break
+            fi
+            rm -f "$timings"
+          done < <(gh run list \
+            --workflow ci.yml \
+            --branch main \
+            --status success \
+            --limit 20 \
+            --json databaseId \
+            --jq '.[].databaseId')
+
+          if [ ! -s "$timings" ]; then
+            echo 'No usable historical test timing artifact found; using fixed shards.'
+          fi
+
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             if ! dart run tool/changed_test_selector.dart select \
               --base "${{ github.event.pull_request.base.sha }}" \
@@ -267,10 +330,16 @@ jobs:
           fi
 
           mode="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("mode")' "$manifest")"
-          matrix="$(dart run tool/changed_test_selector.dart matrix \
-            --manifest "$manifest" \
+          matrix_args=(
+            matrix
+            --manifest "$manifest"
             --shard-package apps/auravibes_app \
-            --shard-count 3)"
+            --shard-count 3
+          )
+          if [ -s "$timings" ]; then
+            matrix_args+=(--timings "$timings")
+          fi
+          matrix="$(dart run tool/changed_test_selector.dart "${matrix_args[@]}")"
           report_count="$(ruby -rjson -e 'puts JSON.parse(ARGF.read).fetch("include").length' <<< "$matrix")"
 
           {
@@ -288,12 +357,12 @@ jobs:
 
   test:
     name: test (${{ matrix.package }} shard ${{ matrix.shardIndex }})
-    needs: [integrity, test-plan]
+    needs: [test-plan]
     if: ${{ needs.test-plan.outputs.mode != 'none' }}
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
-      max-parallel: 3
+      fail-fast: false
+      max-parallel: 7
       matrix: ${{ fromJSON(needs.test-plan.outputs.matrix) }}
     steps:
       - name: Checkout
@@ -311,17 +380,43 @@ jobs:
 
       - name: Run selected tests
         shell: bash
+        env:
+          MATRIX_PATHS: ${{ toJSON(matrix.paths) }}
         run: |
           coverage=()
+          shards=()
+          paths=()
+          timings=()
           if [ "${{ needs.test-plan.outputs.mode }}" = "full" ]; then
             coverage=(--coverage)
+            timings=(--timings-dir "$RUNNER_TEMP/test-timings")
+          fi
+          if [ "${{ matrix.shardMode }}" = "timed" ]; then
+            paths_file="$RUNNER_TEMP/test-paths.json"
+            printf '%s\n' "$MATRIX_PATHS" > "$paths_file"
+            paths=(--paths-file "$paths_file")
+          else
+            shards=(
+              --total-shards "${{ matrix.totalShards }}"
+              --shard-index "${{ matrix.shardIndex }}"
+            )
           fi
           dart run tool/changed_test_selector.dart run \
             --manifest "$RUNNER_TEMP/test-plan/changed-tests.json" \
             --package "${{ matrix.package }}" \
-            --total-shards "${{ matrix.totalShards }}" \
-            --shard-index "${{ matrix.shardIndex }}" \
-            "${coverage[@]}"
+            "${shards[@]}" \
+            "${coverage[@]}" \
+            "${paths[@]}" \
+            "${timings[@]}"
+
+      - name: Upload shard timing
+        if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: test-timing-${{ matrix.artifact }}
+          path: ${{ runner.temp }}/test-timings
+          if-no-files-found: ignore
 
       - name: Prepare coverage artifact
         if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
@@ -340,10 +435,60 @@ jobs:
           path: ${{ runner.temp }}/coverage/${{ matrix.artifact }}
           if-no-files-found: error
 
+  test-timings:
+    name: test timings
+    needs: [test-plan, test]
+    if: >-
+      ${{
+        github.ref == 'refs/heads/main' &&
+        needs.test-plan.outputs.mode == 'full' &&
+        needs.test.result == 'success'
+      }}
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Download shard timings
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: test-timing-*
+          path: ${{ runner.temp }}/test-timings
+          merge-multiple: false
+
+      - name: Merge test timings
+        run: |
+          dart run tool/changed_test_selector.dart merge-timings \
+            --input-root "$RUNNER_TEMP/test-timings" \
+            --output "$RUNNER_TEMP/test_timings.json" \
+            --source-sha "${{ github.sha }}"
+
+      - name: Upload historical test timings
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: test-timings
+          path: ${{ runner.temp }}/test_timings.json
+          if-no-files-found: error
+          retention-days: 30
+
   coverage:
     name: coverage and Sonar
-    needs: [test-plan, test]
-    if: ${{ always() && needs.test-plan.outputs.mode == 'full' && needs.test.result == 'success' }}
+    needs: [format, analysis, code-health, integrity, test-plan, test]
+    if: >-
+      ${{
+        always() &&
+        needs.format.result == 'success' &&
+        needs.analysis.result == 'success' &&
+        needs.code-health.result == 'success' &&
+        needs.integrity.result == 'success' &&
+        needs.test-plan.outputs.mode == 'full' &&
+        needs.test.result == 'success'
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
