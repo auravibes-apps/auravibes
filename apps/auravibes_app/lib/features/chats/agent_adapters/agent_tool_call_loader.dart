@@ -10,11 +10,6 @@ import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
-typedef ToolToCall = agent.AgentToolToCall<ResolvedTool>;
-
-typedef LoadLatestMessageToolCallsResult =
-    agent.LoadLatestMessageToolCallsResult<ResolvedTool>;
-
 typedef _ToolResolutionRequest = ({
   ConversationRepository conversationRepository,
   LoadConversationToolSpecsUsecase Function(String workspaceId)

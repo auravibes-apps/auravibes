@@ -1,10 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart'
-    as agent_detail;
-import 'package:auravibes_app/features/agents/screens/agents_screen.dart'
-    as agents;
+import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
+import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
@@ -351,7 +349,7 @@ class AgentsRoute({required final String workspaceId})
     with $AgentsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return agents.AgentsScreen(workspaceId: workspaceId);
+    return AgentsScreen(workspaceId: workspaceId);
   }
 }
 
@@ -360,7 +358,7 @@ class AgentCreateRoute({required final String workspaceId})
     with $AgentCreateRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return agent_detail.AgentDetailScreen(workspaceId: workspaceId);
+    return AgentDetailScreen(workspaceId: workspaceId);
   }
 }
 
@@ -370,10 +368,7 @@ class AgentDetailRoute({
 }) extends GoRouteData with $AgentDetailRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return agent_detail.AgentDetailScreen(
-      workspaceId: workspaceId,
-      agentId: agentId,
-    );
+    return AgentDetailScreen(workspaceId: workspaceId, agentId: agentId);
   }
 }
 

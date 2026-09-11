@@ -1,8 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
-    hide ToolToCall;
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_decision_service.dart';

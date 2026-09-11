@@ -1,7 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
-    hide ToolToCall;
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
@@ -12,7 +11,9 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentIterationDecision,
         AgentResolvedToolName,
+        AgentToolToCall,
         AgentToolPermissionResult,
+        LoadLatestMessageToolCallsResult,
         SkillCommandTarget,
         callSkillToolName;
 import 'package:flutter_test/flutter_test.dart';
@@ -412,7 +413,7 @@ void main() {
     });
 
     test('passes raw argument maps to MCP tools', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.mcp(
           tableId: 'server-1',
           toolIdentifier: 'sum',
@@ -514,7 +515,7 @@ void main() {
     test(
       'returns waitForToolApproval when filtering leaves pending tools',
       () async {
-        final tool = ToolToCall(
+        final tool = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
@@ -565,7 +566,7 @@ void main() {
     );
 
     test('persists, executes, and returns final decision', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -638,7 +639,7 @@ void main() {
     });
 
     test('executes multiple granted tools and collects all results', () async {
-      final tool1 = ToolToCall(
+      final tool1 = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -647,7 +648,7 @@ void main() {
         id: 'tool-1',
         argumentsRaw: '{"input": "1+1"}',
       );
-      final tool2 = ToolToCall(
+      final tool2 = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -751,7 +752,7 @@ void main() {
     test(
       'one tool failure does not block other tools from completing',
       () async {
-        final goodTool = ToolToCall(
+        final goodTool = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
@@ -760,7 +761,7 @@ void main() {
           id: 'tool-good',
           argumentsRaw: '{"input": "1+1"}',
         );
-        final badTool = ToolToCall(
+        final badTool = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
@@ -868,7 +869,7 @@ void main() {
     );
 
     test('correctly partitions tools with mixed permissions', () async {
-      final grantedTool = ToolToCall(
+      final grantedTool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -877,7 +878,7 @@ void main() {
         id: 'tool-granted',
         argumentsRaw: '{"input": "1+1"}',
       );
-      final pendingTool = ToolToCall(
+      final pendingTool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'other',
           toolIdentifier: 'other_tool',
@@ -886,7 +887,7 @@ void main() {
         id: 'tool-pending',
         argumentsRaw: '{"input": "test"}',
       );
-      final disabledTool = ToolToCall(
+      final disabledTool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'disabled',
           toolIdentifier: 'disabled_tool',
@@ -1017,7 +1018,7 @@ void main() {
     test(
       'returns waitForToolApproval when all tools need confirmation',
       () async {
-        final tool1 = ToolToCall(
+        final tool1 = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'tool-a',
             toolIdentifier: 'tool_a',
@@ -1026,7 +1027,7 @@ void main() {
           id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
-        final tool2 = ToolToCall(
+        final tool2 = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'tool-b',
             toolIdentifier: 'tool_b',
@@ -1149,7 +1150,7 @@ void main() {
       'T003: native tool with alwaysAsk permission returns needsConfirmation '
       '(not notConfigured)',
       () async {
-        final nativeTool = ToolToCall(
+        final nativeTool = AgentToolToCall(
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
             nativeToolType: .url,
@@ -1207,7 +1208,7 @@ void main() {
     );
 
     test('T004: alwaysAllow native tool executes', () async {
-      final nativeTool = ToolToCall(
+      final nativeTool = AgentToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
           nativeToolType: .url,
@@ -1287,7 +1288,7 @@ void main() {
     });
 
     test('T010: persists notConfigured status', () async {
-      final nativeTool = ToolToCall(
+      final nativeTool = AgentToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
           nativeToolType: .url,
@@ -1366,7 +1367,7 @@ void main() {
     });
 
     test('T014: notConfigured response includes tool details', () async {
-      final nativeTool = ToolToCall(
+      final nativeTool = AgentToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
           nativeToolType: .url,
@@ -1448,7 +1449,7 @@ void main() {
     test(
       'T015: disabledInWorkspace error includes tool name in responseRaw',
       () async {
-        final nativeTool = ToolToCall(
+        final nativeTool = AgentToolToCall(
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
             nativeToolType: .url,
@@ -1586,7 +1587,7 @@ void main() {
     });
 
     test('marks previously failed tool calls with executionError', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -1677,7 +1678,7 @@ void main() {
     test(
       'returns done when cancellation is requested before processing',
       () async {
-        final tool = ToolToCall(
+        final tool = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
@@ -1737,7 +1738,7 @@ void main() {
     );
 
     test('handles disabledInConversation permission result', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -1818,7 +1819,7 @@ void main() {
     });
 
     test('skips tool when message not found for update', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',

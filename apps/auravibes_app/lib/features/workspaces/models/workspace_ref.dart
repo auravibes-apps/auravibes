@@ -14,9 +14,9 @@ final class const CloudWorkspaceRef({
 
 final class WorkspaceSession {
   const new(this.workspace)
-    : capabilities = workspace is CloudWorkspaceRef
-          ? WorkspaceCapabilities.cloud
-          : WorkspaceCapabilities.local,
+    : capabilities = workspace is LocalWorkspaceRef
+          ? WorkspaceCapabilities.local
+          : WorkspaceCapabilities.cloud,
       cloud = workspace is CloudWorkspaceRef ? workspace : null;
 
   final WorkspaceRef workspace;
