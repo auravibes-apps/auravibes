@@ -71,7 +71,8 @@ class const RunSkillTemplateToolUsecase(
   }) async {
     final session = await _workspaceSession(workspaceId);
     _ensureLocalSession(session);
-    return _runEnabledTool((
+
+    return await _runEnabledTool((
       workspaceId: workspaceId,
       skillSlug: skillSlug,
       toolSlug: toolSlug,
@@ -88,7 +89,7 @@ extension on RunSkillTemplateToolUsecase {
     );
     if (skill == null) return null;
 
-    return _runEnabledToolForSkill(request, skill);
+    return await _runEnabledToolForSkill(request, skill);
   }
 
   Future<Object?> _runEnabledToolForSkill(
@@ -98,7 +99,7 @@ extension on RunSkillTemplateToolUsecase {
     final tool = await _loadEnabledTool(skill.id, request.toolSlug);
     if (tool == null) return null;
 
-    return _runTool((
+    return await _runTool((
       workspaceId: request.workspaceId,
       skill: skill,
       tool: tool,
@@ -141,7 +142,7 @@ extension on RunSkillTemplateToolUsecase {
   }
 
   Future<Object?> _runTool(_TemplateToolRequest request) async {
-    return _executeTemplate(await _templateExecutionRequest(request));
+    return await _executeTemplate(await _templateExecutionRequest(request));
   }
 
   Future<_TemplateExecutionRequest> _templateExecutionRequest(

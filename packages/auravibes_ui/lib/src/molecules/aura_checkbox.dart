@@ -56,7 +56,7 @@ class AuraCheckbox extends StatelessWidget {
 }
 
 class _CheckboxBuild extends StatelessWidget {
-  _CheckboxBuild({
+  new({
     required bool value,
     required AuraTint? tint,
     required bool isDisabled,
@@ -166,21 +166,7 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
 }
 
 class _CheckboxInteractionActions extends StatelessWidget {
-  _CheckboxInteractionActions.fromState(_CheckboxInteractionState state)
-    : this(
-        isInteractive:
-            !state.widget.isDisabled && state.widget.onChanged != null,
-        autofocus: state.widget.autofocus,
-        onActivate: state._handleActivate,
-        isDisabled: state.widget.isDisabled,
-        value: state.widget.value,
-        onChanged: state.widget.onChanged,
-        isFocused: state._isFocused,
-        onFocusHighlight: state._setFocused,
-        child: state.widget.child,
-      );
-
-  _CheckboxInteractionActions({
+  new({
     required bool isInteractive,
     required bool autofocus,
     required Null Function(ActivateIntent) onActivate,
@@ -209,6 +195,19 @@ class _CheckboxInteractionActions extends StatelessWidget {
            ),
          ),
        );
+  new fromState(_CheckboxInteractionState state)
+    : this(
+        isInteractive:
+            !state.widget.isDisabled && state.widget.onChanged != null,
+        autofocus: state.widget.autofocus,
+        onActivate: state._handleActivate,
+        isDisabled: state.widget.isDisabled,
+        value: state.widget.value,
+        onChanged: state.widget.onChanged,
+        isFocused: state._isFocused,
+        onFocusHighlight: state._setFocused,
+        child: state.widget.child,
+      );
 
   final Widget _child;
 
@@ -230,7 +229,7 @@ class const _CheckboxActions({
 }
 
 class _CheckboxInteractionFocus extends StatelessWidget {
-  _CheckboxInteractionFocus({
+  new({
     required bool isInteractive,
     required bool autofocus,
     required bool isDisabled,

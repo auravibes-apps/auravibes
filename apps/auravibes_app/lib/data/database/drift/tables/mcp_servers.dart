@@ -9,6 +9,13 @@ import 'package:drift/drift.dart';
 
 export 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 
+// Required: Framework declaration must remain top-level.
+final JsonTypeConverter2<McpTransportType, String, Object?>
+transportTypeConverter = TypeConverter.json2(
+  fromJson: _transportTypeFromJson,
+  toJson: (column) => column.toJson(),
+);
+
 McpTransportType _transportTypeFromJson(Object? json) {
   if (json is! Map<Object?, Object?>) {
     throw const FormatException('Invalid MCP transport type JSON.');
@@ -24,38 +31,32 @@ McpTransportType _transportTypeFromJson(Object? json) {
 /// and transport configurations.
 @DataClassName('McpServersTable')
 class McpServers extends Table with TableMixin {
-  static final JsonTypeConverter2<McpTransportType, String, Object?>
-      transportTypeConverter = TypeConverter.json2(
-    fromJson: _transportTypeFromJson,
-    toJson: (column) => column.toJson(),
-  );
-
   /// Reference to the workspace this MCP server belongs to.
-  late final workspaceId = text().references(
-    Workspaces,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
   /// User-friendly name for the MCP server.
-  late final name = text()();
+  TextColumn get name => text()();
 
   /// URL endpoint for the MCP server.
-  late final url = text()();
+  TextColumn get url => text()();
 
   /// Transport type: 'sse' or 'streamable_http.'.
-  late final transport = text().map(McpServers.transportTypeConverter)();
+  TextColumn get transport => text().map(transportTypeConverter)();
 
   /// Optional credential record used to authenticate this MCP server.
-  late final serviceConnectionId = text().nullable().references(
+  TextColumn get serviceConnectionId => text().nullable().references(
     ServiceConnections,
     #id,
     onDelete: .setNull,
   )();
 
   /// Optional description of what this MCP server provides.
-  late final description = text().nullable()();
+  TextColumn get description => text().nullable()();
 
   /// Whether the MCP server is enabled for connections.
-  late final isEnabled = boolean().withDefault(const Constant(true))();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }

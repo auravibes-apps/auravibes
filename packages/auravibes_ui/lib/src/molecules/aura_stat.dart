@@ -75,7 +75,7 @@ class const _AuraStatIcon({
 }
 
 class _AuraStatBody extends StatelessWidget {
-  _AuraStatBody({required AuraStat stat, required AuraSpacingScale spacing})
+  new({required AuraStat stat, required AuraSpacingScale spacing})
     : _child = Column(
         crossAxisAlignment: .start,
         spacing: spacing.xs,

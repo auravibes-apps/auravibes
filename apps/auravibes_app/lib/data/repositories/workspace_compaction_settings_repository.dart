@@ -39,6 +39,7 @@ class WorkspaceCompactionSettingsRepository(
     if (row == null) return CompactionSettings.defaults;
 
     const defaults = CompactionSettings.defaults;
+
     return CompactionSettings(
       autoCompactionEnabled:
           row.autoCompactEnabled ?? defaults.autoCompactionEnabled,

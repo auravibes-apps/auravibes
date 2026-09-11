@@ -195,7 +195,7 @@ class const _AppSubAgentRequestHandle(
   }
 
   void finishStopped() {
-    finish(SubAgentCompletionStatus.stopped);
+    finish(.stopped);
   }
 }
 

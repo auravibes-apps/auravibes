@@ -64,7 +64,8 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
       return await update(conversation, patch);
     } on CloudAppException catch (error) {
       if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
-      return _retryUpdateModel(conversation.id, patch);
+
+      return await _retryUpdateModel(conversation.id, patch);
     }
   }
 
@@ -92,7 +93,7 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
   ) async {
     final latest = await _gateway.getConversation(conversationId);
 
-    return _gateway.updateConversation(
+    return await _gateway.updateConversation(
       _updateRequest(
         conversationId: conversationId,
         revision: latest.revision,

@@ -26,14 +26,14 @@ class AuraSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _AuraSectionContent(
     title: title,
-    description: description,
     child: child,
     spacing: context.auraTheme.spacing,
+    description: description,
   );
 }
 
 class _AuraSectionContent extends StatelessWidget {
-  _AuraSectionContent({
+  new({
     required String title,
     required Widget child,
     required AuraSpacingScale spacing,

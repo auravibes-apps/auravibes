@@ -136,7 +136,7 @@ extension on ConversationRepository {
       throw ConversationException('Failed to update conversation with ID $id');
     }
 
-    return _updatedConversation(id);
+    return await _updatedConversation(id);
   }
 
   Future<void> _requireConversation(String id) async {
@@ -164,16 +164,17 @@ extension on ConversationRepository {
         .toList();
   }
 
-  Future<List<TypedResult>> _conversationAttachmentRows(String id) async {
-    final query = _database
-        .select(_database.messageAttachments)
-        .join(_conversationAttachmentJoins());
-    query.where(_database.messages.conversationId.equals(id));
+  Future<List<TypedResult>> _conversationAttachmentRows(String id) {
+    final query =
+        _database
+            .select(_database.messageAttachments)
+            .join(_conversationAttachmentJoins())
+          ..where(_database.messages.conversationId.equals(id));
 
     return query.get();
   }
 
-  List<Join> _conversationAttachmentJoins() => [
+  List<Join<HasResultSet, dynamic>> _conversationAttachmentJoins() => [
     innerJoin(
       _database.messages,
       _database.messages.id.equalsExp(_database.messageAttachments.messageId),
@@ -205,6 +206,7 @@ extension on ConversationRepository {
   ) {
     if (conversation.title.isEmpty) return _conversationTitleEmpty;
     if (conversation.workspaceId.isEmpty) return _workspaceIdEmpty;
+
     return _optionalCreateValidationMessage(conversation) ??
         _unknownValidationError;
   }

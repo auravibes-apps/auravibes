@@ -111,7 +111,7 @@ class AuraBadge extends StatelessWidget {
 }
 
 class _AuraBadgeBuilt {
-  _AuraBadgeBuilt({
+  new({
     required AuraBadge badge,
     required AuraColorScheme colors,
     required AuraTheme theme,
@@ -140,7 +140,7 @@ class const _AuraBadgeSemantics({
 }
 
 class _AuraBadgeSurface extends StatelessWidget {
-  _AuraBadgeSurface({
+  new({
     required Widget child,
     required AuraBadgeSize size,
     required Color foreground,

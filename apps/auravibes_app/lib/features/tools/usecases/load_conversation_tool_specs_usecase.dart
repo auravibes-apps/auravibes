@@ -63,7 +63,8 @@ class const LoadConversationToolSpecsUsecase({
   ) async {
     final enabledTools = await _conversationToolsRepository
         .getAvailableToolEntitiesForConversation(conversationId, workspaceId);
-    return _buildCombinedToolSpecsUseCase.call(enabledTools);
+
+    return await _buildCombinedToolSpecsUseCase.call(enabledTools);
   }
 }
 

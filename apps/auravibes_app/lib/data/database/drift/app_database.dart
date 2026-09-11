@@ -136,8 +136,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database creation strategy.
   @override
-  late final MigrationStrategy migration = _migrationStrategy();
-
+  MigrationStrategy get migration => _migrationStrategy();
 
   /// Builds the Drift database name for a hash source.
   static String databaseNameForHashSource(String? dbHashSource) =>

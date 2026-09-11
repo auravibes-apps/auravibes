@@ -82,7 +82,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
       );
     }
 
-    return ref
+    return await ref
         .read(conversationRepositoryProvider)
         .patchConversation(conversation.id, .new(modelId: modelId));
   }
@@ -102,7 +102,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
       );
     }
 
-    return ref
+    return await ref
         .read(conversationRepositoryProvider)
         .patchConversation(conversation.id, patch);
   }

@@ -221,7 +221,7 @@ class const _ThemeTileIcon({required final Color color})
 }
 
 String _themeName(AppTheme theme) => switch (theme) {
-  AppTheme.light => LocaleKeys.settings_screen_theme_light,
-  AppTheme.dark => LocaleKeys.settings_screen_theme_dark,
-  AppTheme.system => LocaleKeys.settings_screen_theme_system,
+  .light => LocaleKeys.settings_screen_theme_light,
+  .dark => LocaleKeys.settings_screen_theme_dark,
+  .system => LocaleKeys.settings_screen_theme_system,
 };

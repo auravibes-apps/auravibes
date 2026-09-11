@@ -16,6 +16,7 @@ class const ConversationContextUsagePill({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(contextUsageProvider(workspaceId, conversationId));
+
     return _ConversationContextUsagePillView(data: data);
   }
 }
@@ -137,6 +138,7 @@ String _tooltip(ContextUsageData data) {
   if (!data.hasLimit) return _contextUsageLimitUnavailable();
 
   final tooltipArgs = data.tooltipArgs();
+
   return switch (data.level) {
     .overflow => _overflowTooltip(data, tooltipArgs),
     .unknown => _contextUsageLimitUnavailable(),
@@ -196,10 +198,10 @@ String _standardSemanticValue(ContextUsageLevel level, ContextUsageData data) {
           .chats_screens_chat_conversation_context_usage_semantic_elevated,
     .warning =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_warning,
-    _ =>
-      LocaleKeys
-          .chats_screens_chat_conversation_context_usage_semantic_limit_unavailable,
+    .overflow || .unknown => null,
   };
+
+  if (key == null) return _semanticLimitUnavailable(data.usageLabel);
 
   return key.tr(
     namedArgs: {'usage': data.usageLabel, 'percent': '${data.percent}'},

@@ -144,6 +144,7 @@ _ModelSearch _useModelSearch(
   String? selectedId,
 ) {
   final search = useState<String>('');
+
   return (
     controller: useTextEditingController(),
     models: _filteredModels(
@@ -481,20 +482,19 @@ class const _ModelCompactChip({
 }
 
 class _SelectedModelChip extends _ModelChip {
-  new({
-    required WorkspaceModelSelectionWithConnectionEntity? selectedModel,
-  }) : super(
-         label: switch (selectedModel?.workspaceModelSelection.modelName ??
-             selectedModel?.workspaceModelSelection.modelId) {
-           final name? => Text(name, overflow: .ellipsis, maxLines: 1),
-           null => const TextLocale(
-             LocaleKeys.models_screens_select_model,
-             softWrap: false,
-             overflow: .ellipsis,
-             maxLines: 1,
-           ),
-         },
-       );
+  new({required WorkspaceModelSelectionWithConnectionEntity? selectedModel})
+    : super(
+        label: switch (selectedModel?.workspaceModelSelection.modelName ??
+            selectedModel?.workspaceModelSelection.modelId) {
+          final name? => Text(name, overflow: .ellipsis, maxLines: 1),
+          null => const TextLocale(
+            LocaleKeys.models_screens_select_model,
+            softWrap: false,
+            overflow: .ellipsis,
+            maxLines: 1,
+          ),
+        },
+      );
 }
 
 WorkspaceModelSelectionWithConnectionEntity? _selectedModel(
@@ -603,6 +603,7 @@ bool _matchesSearch(
   String searchTerm,
 ) {
   final selection = model.workspaceModelSelection;
+
   return [
     selection.modelName,
     selection.modelId,

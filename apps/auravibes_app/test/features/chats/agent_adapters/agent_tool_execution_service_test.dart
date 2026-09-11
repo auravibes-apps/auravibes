@@ -37,7 +37,6 @@ void main() {
     var usecase = AgentToolExecutionService(
       loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
       messageRepository: messageRepository,
-      resolveToolApprovalDecision: resolveToolApprovalDecision,
       runResolvedToolUsecase: .new(
         agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
@@ -55,6 +54,7 @@ void main() {
       ),
       getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
       agentCancellationRuntime: agentCancellationRuntime,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
     );
 
     setUp(() {
@@ -73,7 +73,6 @@ void main() {
       usecase = AgentToolExecutionService(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
-        resolveToolApprovalDecision: resolveToolApprovalDecision,
         runResolvedToolUsecase: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
@@ -91,6 +90,7 @@ void main() {
         ),
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
       );
     });
 
@@ -99,8 +99,6 @@ void main() {
       final provider = AppAllowedToolsDataProvider(
         messageRepository: messageRepository,
         loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
-        resolveToolApprovalDecisionUsecaseForWorkspace: (_) =>
-            workspaceResolver,
         resolvedToolService: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller: ({
@@ -111,6 +109,8 @@ void main() {
         ),
         toolDecisionService: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecisionUsecaseForWorkspace: (_) =>
+            workspaceResolver,
       );
       final tool = ResolvedTool.mcp(
         tableId: 'tool-1',
@@ -150,8 +150,6 @@ void main() {
         return AppAllowedToolsDataProvider(
           messageRepository: messageRepository,
           loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
-          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
-          resolveSkillCommandTarget: resolveSkillTarget,
           resolvedToolService: .new(
             agentCancellationRuntime: agentCancellationRuntime,
             mcpToolCaller: ({
@@ -162,6 +160,8 @@ void main() {
           ),
           toolDecisionService: getAgentIterationDecisionUsecase,
           agentCancellationRuntime: agentCancellationRuntime,
+          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+          resolveSkillCommandTarget: resolveSkillTarget,
         );
       }
 
@@ -1101,7 +1101,6 @@ void main() {
     var usecase = AgentToolExecutionService(
       loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
       messageRepository: messageRepository,
-      resolveToolApprovalDecision: resolveToolApprovalDecision,
       runResolvedToolUsecase: .new(
         agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
@@ -1115,6 +1114,7 @@ void main() {
       ),
       getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
       agentCancellationRuntime: agentCancellationRuntime,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
     );
 
     setUp(() {
@@ -1128,7 +1128,6 @@ void main() {
       usecase = AgentToolExecutionService(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
-        resolveToolApprovalDecision: resolveToolApprovalDecision,
         runResolvedToolUsecase: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
@@ -1142,6 +1141,7 @@ void main() {
         ),
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
       );
     });
 
@@ -1541,7 +1541,6 @@ void main() {
     var usecase = AgentToolExecutionService(
       loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
       messageRepository: messageRepository,
-      resolveToolApprovalDecision: resolveToolApprovalDecision,
       runResolvedToolUsecase: .new(
         agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
@@ -1555,6 +1554,7 @@ void main() {
       ),
       getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
       agentCancellationRuntime: agentCancellationRuntime,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
     );
 
     setUp(() {
@@ -1568,7 +1568,6 @@ void main() {
       usecase = AgentToolExecutionService(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
-        resolveToolApprovalDecision: resolveToolApprovalDecision,
         runResolvedToolUsecase: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
@@ -1582,6 +1581,7 @@ void main() {
         ),
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
       );
     });
 

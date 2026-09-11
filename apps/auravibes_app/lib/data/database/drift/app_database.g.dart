@@ -6496,7 +6496,7 @@ class $McpServersTable extends McpServers
   }
 
   static JsonTypeConverter2<McpTransportType, String, Object?>
-  $convertertransport = McpServers.transportTypeConverter;
+  $convertertransport = transportTypeConverter;
 }
 
 class McpServersTable extends DataClass implements Insertable<McpServersTable> {

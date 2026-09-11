@@ -141,45 +141,36 @@ class AuraSnackBarController {
 
 /// Provides a static API for showing an Aura-styled snackbar notification.
 abstract final class AuraSnackBars {
+  const new _();
+
   /// Shows a snackbar in the nearest [AuraSnackBarHost].
   ///
   /// Displays a themed overlay, auto-dismissed after its duration, with an
   /// optional action.
-  static final AuraSnackBarController Function({
+  static AuraSnackBarController show({
     required BuildContext context,
     required Widget content,
-    AuraSnackBarVariant variant,
-    Duration duration,
+    AuraSnackBarVariant variant = AuraSnackBarVariant.default_,
+    Duration duration = const Duration(seconds: 4),
     String? actionLabel,
     VoidCallback? onAction,
-  })
-  show =
-      ({
-        required context,
-        required content,
-        variant = AuraSnackBarVariant.default_,
-        duration = const Duration(seconds: 4),
-        actionLabel,
-        onAction,
-      }) => _showSnackBar(
-        _AuraSnackBarShowRequest(
-          context: context,
-          content: content,
-          variant: variant,
-          duration: duration,
-          actionLabel: actionLabel,
-          onAction: onAction,
-        ),
-      );
-
-  const AuraSnackBars._();
+  }) => _showSnackBar(
+    .new(
+      context: context,
+      content: content,
+      variant: variant,
+      duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
+    ),
+  );
 
   @override
   String toString() => 'AuraSnackBars';
 }
 
 class _AuraSnackBarShowRequest {
-  const _AuraSnackBarShowRequest({
+  const new({
     required this.context,
     required this.content,
     required this.variant,
@@ -198,11 +189,12 @@ class _AuraSnackBarShowRequest {
 
 AuraSnackBarController _showSnackBar(_AuraSnackBarShowRequest request) {
   final host = _requiredSnackBarHost(request.context);
+
   return host.show(_AuraSnackBarRequestData(request).value);
 }
 
 class _AuraSnackBarRequestData {
-  _AuraSnackBarRequestData(_AuraSnackBarShowRequest request)
+  new(_AuraSnackBarShowRequest request)
     : value = _AuraSnackBarRequest(
         backgroundColor: _getBackgroundColor(
           request.variant,

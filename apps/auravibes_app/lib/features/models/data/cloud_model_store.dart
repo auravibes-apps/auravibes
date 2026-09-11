@@ -44,7 +44,7 @@ mixin _CloudModelStoreConnectionMethods {
     final created = await _createConnection(_usecases, id, connection);
 
     return _connectionEntity(
-      CloudModelConnection.fromView(created),
+      .fromView(created),
       _workspaceId,
       hasKeyOverride: connection.authMode == ModelProviderAuthMode.apiKey,
     );
@@ -52,6 +52,7 @@ mixin _CloudModelStoreConnectionMethods {
 
   Future<ModelConnectionForEdit?> getModelConnectionForEdit(String id) async {
     final item = await _connectionById(id);
+
     return item == null ? null : _modelConnectionForEdit(item, _workspaceId);
   }
 
@@ -65,7 +66,7 @@ mixin _CloudModelStoreConnectionMethods {
     final updated = await _updateConnection(_usecases, existing, update);
 
     return _connectionEntity(
-      CloudModelConnection.fromView(updated),
+      .fromView(updated),
       _workspaceId,
       hasKeyOverride: _updatedKeyOverride(update.key),
     );
@@ -88,12 +89,11 @@ mixin _CloudModelStoreSelectionMethods {
   String get _workspaceId;
   CloudModelConnectionUsecases get _usecases;
 
-  Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
-    String workspaceId,
-  ) => _usecases.watchSelections().map(
-    (items) =>
-        items.map((item) => _selectionEntity(item, _workspaceId)).toList(),
-  );
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(String _) =>
+      _usecases.watchSelections().map(
+        (items) =>
+            items.map((item) => _selectionEntity(item, _workspaceId)).toList(),
+      );
 
   Future<WorkspaceModelSelectionWithConnectionEntity?> getById(
     String id,

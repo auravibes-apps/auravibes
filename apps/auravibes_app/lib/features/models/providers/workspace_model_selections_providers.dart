@@ -52,6 +52,7 @@ class WorkspaceModelSelectionsProviders {
     _controller
       ..onListen = listen
       ..onCancel = cancel;
+
     return _controller.stream;
   }
 
@@ -66,19 +67,18 @@ class WorkspaceModelSelectionsProviders {
 
 extension on WorkspaceModelSelectionsProviders {
   void _emit() {
-    if ((_latestSelections, _latestProviders, _latestOpenAIModels) case (
-      final selections?,
-      final providers?,
-      final models?,
-    )) {
-      _controller.add(
-        _WorkspaceModelSelectionTransforms.withCodexProjections(
-          selections,
-          providers,
-          models,
-        ),
-      );
-    }
+    final selections = _latestSelections;
+    final providers = _latestProviders;
+    final models = _latestOpenAIModels;
+    if (selections == null || providers == null || models == null) return;
+
+    _controller.add(
+      _WorkspaceModelSelectionTransforms.withCodexProjections(
+        selections,
+        providers,
+        models,
+      ),
+    );
   }
 
   void _listenStreams() {
@@ -129,6 +129,7 @@ class _WorkspaceModelSelectionTransforms {
     for (final provider in providers) {
       if (provider.id == 'openai') return provider;
     }
+
     return null;
   }
 
@@ -138,6 +139,7 @@ class _WorkspaceModelSelectionTransforms {
     List<ApiModelEntity> openAIModels,
   ) {
     final modelsById = _CodexModelProjection.modelsById(openAIModels);
+
     return [
       for (final model in models)
         if (!_isCodexSelection(model))
@@ -173,6 +175,7 @@ class _WorkspaceModelSelectionTransforms {
     }
 
     final sortedKeys = _sortedProviderKeys(grouped);
+
     return {for (final key in sortedKeys) key: grouped[key]!};
   }
 
@@ -200,6 +203,7 @@ class _ProviderGroupOrdering {
     if (providerCompare != 0) return providerCompare;
 
     final connectionCompare = _compareConnections(models.left, models.right);
+
     return connectionCompare != 0 ? connectionCompare : left.compareTo(right);
   }
 

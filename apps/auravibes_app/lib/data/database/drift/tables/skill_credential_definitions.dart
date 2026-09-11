@@ -7,24 +7,18 @@ import 'package:drift/drift.dart';
 
 @DataClassName('SkillCredentialDefinitionsTable')
 class SkillCredentialDefinitions extends Table with TableMixin {
-  late final workspaceId = text().references(
-    Workspaces,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
-  late final title = text()();
+  TextColumn get title => text()();
 
-  late final slug = text()();
+  TextColumn get slug => text()();
 
-  late final attributesJson = text()();
+  TextColumn get attributesJson => text()();
 
   @override
   List<Set<Column<Object>>> get uniqueKeys => [
     {workspaceId, title},
     {workspaceId, slug},
   ];
-
-  bool isUniqueColumn(Column column) =>
-      uniqueKeys.any((key) => key.contains(column));
 }

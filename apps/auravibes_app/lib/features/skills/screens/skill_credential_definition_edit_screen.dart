@@ -49,6 +49,8 @@ class _SkillCredentialDefinitionEditScreenState
 
     return _screen(definitionAsync);
   }
+
+  void _updateState(VoidCallback callback) => setState(callback);
 }
 
 extension on _SkillCredentialDefinitionEditScreenState {
@@ -95,7 +97,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
   }
 
   Future<void> _save(BuildContext context) async {
-    setState(() => _isSaving = true);
+    _updateState(() => _isSaving = true);
     try {
       await _saveDefinition();
       if (!context.mounted) return;
@@ -104,7 +106,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
       if (!context.mounted) return;
       _showSaveError(context);
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) _updateState(() => _isSaving = false);
     }
   }
 
@@ -134,7 +136,10 @@ extension on _SkillCredentialDefinitionEditScreenState {
     final usecase = ref.read(
       updateSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
     );
-    await usecase.call(definitionId, _definitionUpdate(attributesJson));
+    final _ = await usecase.call(
+      definitionId,
+      _definitionUpdate(attributesJson),
+    );
     ref.invalidate(
       skillCredentialDefinitionProvider(widget.workspaceId, definitionId),
     );
@@ -146,17 +151,17 @@ extension on _SkillCredentialDefinitionEditScreenState {
 
 extension on _SkillCredentialDefinitionEditScreenState {
   void _addAttributeRow() {
-    setState(() => _attributeRows.add(_AttributeFormRow()));
+    _updateState(() => _attributeRows.add(_AttributeFormRow()));
   }
 
   void _onFormChanged() {
-    setState(() {
+    _updateState(() {
       final _ = Object();
     });
   }
 
   void _deleteAttributeRow(_AttributeFormRow row) {
-    setState(() {
+    _updateState(() {
       final removed = _attributeRows.remove(row);
       if (removed) row.dispose();
       if (_attributeRows.isEmpty) _attributeRows.add(_AttributeFormRow());
@@ -205,14 +210,14 @@ extension on _SkillCredentialDefinitionEditScreenState {
   }
 
   Future<void> _performDelete(BuildContext context, String definitionId) async {
-    setState(() => _isSaving = true);
+    _updateState(() => _isSaving = true);
     try {
       await _deleteDefinitionAndClose(context, definitionId);
     } on Object {
       if (!context.mounted) return;
       _showSaveError(context);
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) _updateState(() => _isSaving = false);
     }
   }
 
@@ -387,21 +392,19 @@ class const _SkillCredentialDefinitionAppBar({
 }
 
 class _CredentialDefinitionAppBarData {
-  new({
-    required _SkillCredentialDefinitionEditScreenState state,
-  }) : child = AuraAppBar(
-         title: TextLocale(
-           state._isCreate
-               ? LocaleKeys.skill_credentials_definitions_create_title
-               : LocaleKeys.skill_credentials_definitions_edit_title,
-         ),
-         actions: [
-           if (!state._isCreate)
-             _CredentialDefinitionDeleteButton(state: state),
-           _CredentialDefinitionAppBarSaveButton(state: state),
-         ],
-         leading: _CredentialDefinitionBackButton(),
-       );
+  new({required _SkillCredentialDefinitionEditScreenState state})
+    : child = AuraAppBar(
+        title: TextLocale(
+          state._isCreate
+              ? LocaleKeys.skill_credentials_definitions_create_title
+              : LocaleKeys.skill_credentials_definitions_edit_title,
+        ),
+        actions: [
+          if (!state._isCreate) _CredentialDefinitionDeleteButton(state: state),
+          _CredentialDefinitionAppBarSaveButton(state: state),
+        ],
+        leading: _CredentialDefinitionBackButton(),
+      );
 
   final Widget child;
 }

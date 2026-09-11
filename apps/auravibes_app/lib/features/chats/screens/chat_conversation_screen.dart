@@ -1530,7 +1530,7 @@ Future<bool> _canSetModelWithAttachmentWarning(
   ));
   if (!request.context.mounted) return false;
 
-  return _confirmModelSwitch(request.context, missing);
+  return await _confirmModelSwitch(request.context, missing);
 }
 
 Future<void> _setModelAfterAttachmentCheck(
@@ -1870,10 +1870,11 @@ Future<_StopConversationFailure?> _stopLocalConversation(
 Future<_StopConversationFailure?> _stopChildConversations(
   WidgetRef ref,
   String conversationId,
-) async {
+) {
   final childIds = ref
       .read(activeSubAgentRuntimeProvider.notifier)
       .childrenOf(conversationId);
+
   return _stopChildConversationsInOrder(ref, conversationId, childIds);
 }
 
@@ -1920,6 +1921,7 @@ Future<_StopConversationFailure?> _stopAgentConversation(
 }) async {
   try {
     await _stopAgent(ref, conversationId);
+
     return null;
   } on Object catch (error, stackTrace) {
     return _stopAgentFailure((

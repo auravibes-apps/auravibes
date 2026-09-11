@@ -193,21 +193,19 @@ class const _AuraSliderStateView({
 }
 
 class _AuraSliderInteractionView extends StatelessWidget {
-  _AuraSliderInteractionView({
-    required _AuraSliderState state,
-    required _SliderBuildValues values,
-  }) : _child = _AuraSliderInteraction(
-         enabled: values.enabled,
-         value: values.value,
-         min: state.widget.min,
-         max: state.widget.max,
-         tint: state.widget.tint,
-         isFocused: state._isFocused,
-         onChanged: state._changeValue,
-         onIncrease: state._increase,
-         onDecrease: state._decrease,
-         onShowFocusHighlight: state._setFocusHighlight,
-       );
+  new({required _AuraSliderState state, required _SliderBuildValues values})
+    : _child = _AuraSliderInteraction(
+        enabled: values.enabled,
+        value: values.value,
+        min: state.widget.min,
+        max: state.widget.max,
+        tint: state.widget.tint,
+        isFocused: state._isFocused,
+        onChanged: state._changeValue,
+        onIncrease: state._increase,
+        onDecrease: state._decrease,
+        onShowFocusHighlight: state._setFocusHighlight,
+      );
 
   final Widget _child;
 
@@ -257,7 +255,7 @@ class const _AuraSliderInteraction({
 }
 
 class _AuraSliderInteractionFocus extends StatelessWidget {
-  _AuraSliderInteractionFocus({required _AuraSliderInteraction interaction})
+  new({required _AuraSliderInteraction interaction})
     : _child = FocusableActionDetector(
         enabled: interaction.enabled,
         shortcuts: _sliderShortcuts,
@@ -344,7 +342,7 @@ class const _AuraSliderTrack({
 }
 
 class _AuraSliderTrackLayout extends StatelessWidget {
-  _AuraSliderTrackLayout({
+  new({
     required double width,
     required bool enabled,
     required double value,
@@ -414,7 +412,7 @@ class const _AuraSliderGesture({
 }
 
 class _AuraSliderTrackCanvas extends StatelessWidget {
-  _AuraSliderTrackCanvas({
+  new({
     required bool enabled,
     required double value,
     required double min,

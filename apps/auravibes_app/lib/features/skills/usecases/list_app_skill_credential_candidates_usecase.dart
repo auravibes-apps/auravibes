@@ -28,7 +28,7 @@ class const ListAppSkillCredentialCandidatesUsecase(
       return _cloudCandidates(cloudConnections, skill.identifier);
     }
 
-    return _localCandidates(workspaceId, skill);
+    return await _localCandidates(workspaceId, skill);
   }
 
   bool isCredentialRequired(AppSkillDefinition skill) {

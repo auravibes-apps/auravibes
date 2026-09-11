@@ -25,7 +25,7 @@ class const UpdateSkillTemplateToolUsecase(
   Future<SkillTemplateToolEntity> call(
     String toolId,
     SkillTemplateToolToUpdate tool,
-  ) async => _updateTool(toolId, await _validatedTool(toolId, tool));
+  ) async => await _updateTool(toolId, await _validatedTool(toolId, tool));
 
   Future<SkillTemplateToolToUpdate> _validatedTool(
     String toolId,
@@ -51,7 +51,7 @@ class const UpdateSkillTemplateToolUsecase(
     final credentialDefinitions = await _credentialDefinitions(
       existing.skillId,
     );
-    await _validateToolFields((
+    _validateToolFields((
       tool: tool,
       existing: existing,
       credentialDefinitions: credentialDefinitions,
@@ -73,7 +73,7 @@ extension _UpdateSkillTemplateValidationOperations
           templateJson: canonicalSkillUrlTemplateJson(templateJson),
         );
 
-  Future<void> _validateToolFields(_ToolValidationRequest request) async {
+  void _validateToolFields(_ToolValidationRequest request) {
     validateSkillTemplateTool(
       templateJson: request.tool.templateJson ?? request.existing.templateJson,
       inputsJson: request.tool.inputsJson ?? request.existing.inputsJson,
@@ -113,9 +113,11 @@ extension _UpdateSkillTemplateCredentialOperations
   Future<Map<String, SkillCredentialAttributeDefinition>>
   _credentialDefinitions(String skillId) async {
     final cloud = cloudStore;
-    if (cloud != null) return _cloudCredentialDefinitions(cloud, skillId);
+    if (cloud != null) {
+      return await _cloudCredentialDefinitions(cloud, skillId);
+    }
 
-    return _localCredentialDefinitions(skillId);
+    return await _localCredentialDefinitions(skillId);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
@@ -139,7 +141,8 @@ extension _UpdateSkillTemplateCredentialOperations
       return const {};
     }
     final skill = await skillsRepository.getSkillById(skillId);
-    return _credentialDefinitionValues(
+
+    return await _credentialDefinitionValues(
       definitionsRepository,
       skill?.credentialDefinitionId,
     );

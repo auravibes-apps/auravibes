@@ -86,9 +86,9 @@ class CloudModelGateway {
   int get _workspaceId => _stateGateway.workspace.cloudWorkspaceId;
   Client get _client => _stateGateway.client;
 
-
   Future<List<ModelConnectionView>> listModelConnections() {
     final request = ListModelConnectionsRequest(workspaceId: _workspaceId);
+
     return CloudAppErrors.guardCall(
       .model,
       () => _list?.call(request) ?? _client.modelConnection.list(request),
@@ -121,6 +121,7 @@ extension CloudModelGatewayConnections on CloudModelGateway {
     ({String connectionId, String name, String providerId, String? url}) value,
   ) {
     final request = _createRequest(_workspaceId, value);
+
     return CloudAppErrors.guardCall(
       .model,
       () => _create?.call(request) ?? _client.modelConnection.create(request),
@@ -154,6 +155,7 @@ extension CloudModelGatewayConnections on CloudModelGateway {
     value,
   ) {
     final request = _updateRequest(_workspaceId, value);
+
     return CloudAppErrors.guardCall(
       .model,
       () => _update?.call(request) ?? _client.modelConnection.update(request),
@@ -172,6 +174,7 @@ extension CloudModelGatewayConnections on CloudModelGateway {
     ({String connectionId, int expectedRevision}) value,
   ) {
     final request = _deleteRequest(_workspaceId, value);
+
     return CloudAppErrors.guardCall(
       .model,
       () => _delete?.call(request) ?? _client.modelConnection.delete(request),
@@ -184,6 +187,7 @@ extension CloudModelGatewaySelections on CloudModelGateway {
     final request = ListWorkspaceModelSelectionsRequest(
       workspaceId: _workspaceId,
     );
+
     return CloudAppErrors.guardCall(
       .model,
       () =>
@@ -245,6 +249,7 @@ extension CloudModelGatewayCatalog on CloudModelGateway {
     ({String transactionId, String state, String code}) value,
   ) {
     final request = _completeRequest(value);
+
     return CloudAppErrors.guardCall(
       .oauth,
       () => _completeCodexOAuthCall(value, request),

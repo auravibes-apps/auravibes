@@ -37,17 +37,17 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
       approvals: AppApproveToolCallDataProvider(
         messageRepository: ref.watch(messageRepositoryProvider),
         conversationRepository: ref.watch(conversationRepositoryProvider),
+        toolResolverService: const ToolResolverService(),
+        agentToolResumeService: agentToolResumeService,
+        runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
+        agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+        onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),
         conversationToolsRepositoryForWorkspace: (workspaceId) =>
             ref.read(conversationToolsRepositoryProvider(workspaceId)),
         resolveToolApprovalDecisionUsecaseForWorkspace: (workspaceId) =>
             ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
         loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) =>
             ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
-        toolResolverService: const ToolResolverService(),
-        agentToolResumeService: agentToolResumeService,
-        runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
-        agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
-        onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),
       ),
       skips: toolCallActions,
       stopPending: toolCallActions,

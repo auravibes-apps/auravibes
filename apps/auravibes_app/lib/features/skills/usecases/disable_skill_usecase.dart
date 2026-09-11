@@ -59,6 +59,7 @@ class const DisableSkillUsecase(
     final cloud = cloudStore;
     if (cloud != null) {
       final _ = await cloud.updateSkill(skillId, .new(isEnabled: isEnabled));
+
       return;
     }
 
@@ -71,6 +72,7 @@ class const DisableSkillUsecase(
     final cloud = cloudStore;
     if (cloud != null) {
       await _disableCloudAppSkill(cloud, request);
+
       return;
     }
 

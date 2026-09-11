@@ -30,44 +30,50 @@ class ResolvedTool._({
   final AgentResolvedToolName? target,
 }) {
   /// Creates a resolved MCP tool.
-  static final ResolvedTool Function({
+  static const ResolvedTool Function({
     required String tableId,
     required String toolIdentifier,
     required String mcpServerId,
     required String mcpSlug,
-  }) mcp = _mcp;
+  })
+  mcp = _mcp;
 
   /// Creates a resolved built-in tool.
-  static final ResolvedTool Function({
+  static const ResolvedTool Function({
     required String tableId,
     required String toolIdentifier,
     required UserToolType tooltype,
-  }) builtIn = _builtIn;
+  })
+  builtIn = _builtIn;
 
-  static final ResolvedTool Function({
+  static const ResolvedTool Function({
     required String tableId,
     required NativeToolType nativeToolType,
-  }) native = _native;
+  })
+  native = _native;
 
-  static final ResolvedTool Function({required String toolIdentifier})
-      skillControl = _skillControl;
+  static const ResolvedTool Function({required String toolIdentifier})
+  skillControl = _skillControl;
 
-  static final ResolvedTool Function({
+  static const ResolvedTool Function({
     required String commandName,
     AgentResolvedToolName? target,
-  }) skillCommand = _skillCommand;
+  })
+  skillCommand = _skillCommand;
 
-  static final ResolvedTool Function({
+  static const ResolvedTool Function({
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
-  }) skillTemplate = _skillTemplate;
+  })
+  skillTemplate = _skillTemplate;
 
-  static final ResolvedTool Function({
+  static const ResolvedTool Function({
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
-  }) skillNative = _skillNative;
+  })
+  skillNative = _skillNative;
 
   final bool isBuiltIn = type == .builtIn;
   final bool isMcp = type == .mcp;

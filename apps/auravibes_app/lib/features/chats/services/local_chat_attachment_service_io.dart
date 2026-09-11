@@ -281,19 +281,16 @@ extension on LocalChatAttachmentServiceIo {
   Future<String?> _stopMacVoiceRecording() async {
     final path = _recordingPath;
     final pcmBytes = await _stopMacVoiceStream();
-    if (!_hasRecordingData(path, pcmBytes)) return null;
+    if (path == null || pcmBytes == null || pcmBytes.isEmpty) {
+      _logger.warning('Voice stream stopped without audio bytes');
 
-    _logger.fine('Voice stream captured ${pcmBytes!.length} PCM bytes');
-    await _writeMacRecording(path!, pcmBytes);
+      return null;
+    }
+
+    _logger.fine('Voice stream captured ${pcmBytes.length} PCM bytes');
+    await _writeMacRecording(path, pcmBytes);
 
     return path;
-  }
-
-  bool _hasRecordingData(String? path, Uint8List? pcmBytes) {
-    if (path != null && pcmBytes != null && pcmBytes.isNotEmpty) return true;
-
-    _logger.warning('Voice stream stopped without audio bytes');
-    return false;
   }
 
   Future<void> _writeMacRecording(String path, Uint8List pcmBytes) async {
@@ -376,17 +373,18 @@ typedef _WavFormat = ({int sampleRate, int channels});
 const _wavDataChunkOffset = 36;
 const _wavFormatChunkSize = 16;
 const _pcmFormat = 1;
+const _waveFormatOffset = 8;
+const _waveFormatChunkOffset = 12;
 
 Uint8List _wavBytes(Uint8List pcmBytes) {
   const wavHeaderSize = 44;
-  final bytes = Uint8List(pcmBytes.length + wavHeaderSize)
-    ..setAll(0, 'RIFF'.codeUnits)
-    ..setAll(8, 'WAVE'.codeUnits)
-    ..setAll(12, 'fmt '.codeUnits)
-    ..setAll(36, 'data'.codeUnits)
-    ..setAll(wavHeaderSize, pcmBytes);
 
-  return bytes;
+  return Uint8List(pcmBytes.length + wavHeaderSize)
+    ..setAll(0, 'RIFF'.codeUnits)
+    ..setAll(_waveFormatOffset, 'WAVE'.codeUnits)
+    ..setAll(_waveFormatChunkOffset, 'fmt '.codeUnits)
+    ..setAll(_wavDataChunkOffset, 'data'.codeUnits)
+    ..setAll(wavHeaderSize, pcmBytes);
 }
 
 _WavHeaderRequest _wavHeaderRequest(

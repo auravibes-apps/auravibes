@@ -63,6 +63,7 @@ extension on BuildLoadedSkillManifestsUsecase {
     required List<AvailableSkill> extraSkills,
   }) async {
     final loadedSkills = await _loadLoadedSkills(conversationId, workspaceId);
+
     return _uniqueSkills(loadedSkills, extraSkills);
   }
 
@@ -200,15 +201,16 @@ extension on BuildLoadedSkillManifestsUsecase {
   Map<String, Object?> _manifestPayload(
     AvailableSkill skill,
     List<SkillManifestTool> tools,
-  ) =>
-      _canonicalJson({
-            'identity': _identity(skill),
-            'slug': skill.slug,
-            'title': skill.title,
-            'instructions': skill.content,
-            'tools': [for (final tool in tools) tool.toJson()],
-          })!
-          as Map<String, Object?>;
+  ) => switch (_canonicalJson({
+    'identity': _identity(skill),
+    'slug': skill.slug,
+    'title': skill.title,
+    'instructions': skill.content,
+    'tools': [for (final tool in tools) tool.toJson()],
+  })) {
+    final Map<String, Object?> map => map,
+    _ => throw StateError('Manifest payload must be a map'),
+  };
 
   String _identity(AvailableSkill skill) => '${skill.source.name}:${skill.id}';
 }

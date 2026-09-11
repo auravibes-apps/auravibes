@@ -58,12 +58,12 @@ extension SkillTemplateToolsCompanionMappings on SkillTemplateToolsRepository {
     SkillTemplateToolToCreate tool,
   ) {
     return _addToolCreationFields(
-      SkillTemplateToolsCompanion(
-        skillId: Value(skillId),
-        templateType: Value(_mapTypeToTable(tool.templateType)),
-        title: Value(tool.title.trim()),
-        description: Value(tool.description.trim()),
-        slug: Value(generateSkillSlug(tool.title)),
+      .new(
+        skillId: .new(skillId),
+        templateType: .new(_mapTypeToTable(tool.templateType)),
+        title: .new(tool.title.trim()),
+        description: .new(tool.description.trim()),
+        slug: .new(generateSkillSlug(tool.title)),
       ),
       tool,
     );
@@ -73,19 +73,16 @@ extension SkillTemplateToolsCompanionMappings on SkillTemplateToolsRepository {
     SkillTemplateToolsCompanion companion,
     SkillTemplateToolToCreate tool,
   ) => companion.copyWith(
-    templateJson: Value(tool.templateJson),
-    inputsJson: Value(tool.inputsJson),
-    requiresCredential: Value(tool.requiresCredential),
-    isEnabled: Value(tool.isEnabled),
+    templateJson: .new(tool.templateJson),
+    inputsJson: .new(tool.inputsJson),
+    requiresCredential: .new(tool.requiresCredential),
+    isEnabled: .new(tool.isEnabled),
   );
 
   SkillTemplateToolsCompanion _updateToolCompanion(
     SkillTemplateToolToUpdate tool,
   ) {
-    return _addToolUpdateFields(
-      SkillTemplateToolsCompanion(updatedAt: Value(DateTime.now())),
-      tool,
-    );
+    return _addToolUpdateFields(.new(updatedAt: .new(DateTime.now())), tool);
   }
 
   SkillTemplateToolsCompanion _addToolUpdateFields(
@@ -94,14 +91,14 @@ extension SkillTemplateToolsCompanionMappings on SkillTemplateToolsRepository {
   ) => companion.copyWith(
     title: _trimmedValue(tool.title),
     description: _trimmedValue(tool.description),
-    templateJson: Value.absentIfNull(tool.templateJson),
-    inputsJson: Value.absentIfNull(tool.inputsJson),
-    requiresCredential: Value.absentIfNull(tool.requiresCredential),
-    isEnabled: Value.absentIfNull(tool.isEnabled),
+    templateJson: .absentIfNull(tool.templateJson),
+    inputsJson: .absentIfNull(tool.inputsJson),
+    requiresCredential: .absentIfNull(tool.requiresCredential),
+    isEnabled: .absentIfNull(tool.isEnabled),
   );
 
   Value<String>? _trimmedValue(String? value) {
-    return value == null ? const Value.absent() : Value(value.trim());
+    return value == null ? const Value.absent() : .new(value.trim());
   }
 }
 
@@ -162,7 +159,7 @@ extension on SkillTemplateToolsRepository {
 final _emptySkillTemplateToolEntity = SkillTemplateToolEntity(
   id: '',
   skillId: '',
-  templateType: SkillTemplateToolType.url,
+  templateType: .url,
   title: '',
   description: '',
   slug: '',
@@ -170,6 +167,6 @@ final _emptySkillTemplateToolEntity = SkillTemplateToolEntity(
   inputsJson: '',
   isEnabled: false,
   requiresCredential: false,
-  createdAt: DateTime(0),
-  updatedAt: DateTime(0),
+  createdAt: .new(0),
+  updatedAt: .new(0),
 );

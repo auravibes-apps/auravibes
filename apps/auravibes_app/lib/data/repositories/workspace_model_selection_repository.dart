@@ -54,7 +54,7 @@ _ModelCapabilities _modelCapabilitiesFor(ApiModelsTable apiModel) => (
 
 List<String> _modelList(List<String>? values) => values ?? const [];
 
-bool _modelFlag(bool? value) => value ?? false;
+bool _modelFlag(bool value) => value;
 
 String _providerId(_ModelProviderInput data) =>
     data.modelProvider?.id ?? data.serviceId;

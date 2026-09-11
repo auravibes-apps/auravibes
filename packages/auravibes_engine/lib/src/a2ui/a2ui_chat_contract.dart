@@ -335,8 +335,10 @@ CATALOG_END
     );
   }
 
-  static bool _hasUnsupportedKeys(Map value, Set<String> allowed) =>
-      value.keys.any((key) => key is! String || !allowed.contains(key));
+  static bool _hasUnsupportedKeys(
+    Map<Object?, Object?> value,
+    Set<String> allowed,
+  ) => value.keys.any((key) => key is! String || !allowed.contains(key));
 
   static bool isCatalogAllowedForMode(String catalogId, String mode) {
     return switch (mode) {
@@ -499,7 +501,7 @@ CATALOG_END
   // ignore: unnecessary-nullable, action metadata is an untrusted boundary.
   static bool isValidAction(Object? value, {required String conversationId}) {
     if (!_isValidActionPayload(value)) return false;
-    final action = Map<String, Object?>.from(value as Map);
+    final action = Map<String, Object?>.from(value! as Map);
     if (!_hasValidActionFields(action, conversationId)) return false;
     return _hasValidActionDetails(action);
   }
@@ -756,7 +758,7 @@ CATALOG_END
 
   static bool _hasUnsupportedComponentKeys(
     Map<Object?, Object?> value,
-    Map properties,
+    Map<Object?, Object?> properties,
   ) {
     final allowed = properties.keys.whereType<String>().toSet();
     return value.keys.any((key) => !_isAllowedComponentKey(key, allowed));
@@ -769,7 +771,7 @@ CATALOG_END
   static bool _hasValidSchemaValues(
     String component,
     Map<Object?, Object?> value,
-    Map properties,
+    Map<Object?, Object?> properties,
   ) {
     for (final entry in value.entries) {
       if (_isLegacyComponentProperty(component, entry.key, entry.value)) {
@@ -805,7 +807,7 @@ CATALOG_END
   };
 
   static bool _hasMissingRequiredFields(
-    List required,
+    List<Object?> required,
     Map<Object?, Object?> value,
   ) => required.any((field) => field is! String || !value.containsKey(field));
 
@@ -938,7 +940,7 @@ CATALOG_END
     return schema['pattern'] != '^/' || value.startsWith('/');
   }
 
-  static bool _matchesAnySchema(Object? value, List oneOf) =>
+  static bool _matchesAnySchema(Object? value, List<Object?> oneOf) =>
       oneOf.whereType<Map<Object?, Object?>>().any(
         (candidate) =>
             _matchesSchema(value, Map<Object?, Object?>.from(candidate)),
@@ -984,16 +986,18 @@ CATALOG_END
     return !properties.containsKey('path') || _nonEmpty(value['path']);
   }
 
-  static bool _hasRequiredProperties(Map value, Object? required) =>
-      required is! List || required.every(value.containsKey);
+  static bool _hasRequiredProperties(
+    Map<Object?, Object?> value,
+    Object? required,
+  ) => required is! List || required.every(value.containsKey);
 
   static bool _hasOnlySchemaProperties(
-    Map value,
+    Map<Object?, Object?> value,
     Map<Object?, Object?> properties,
   ) => value.keys.every((key) => key is String && properties.containsKey(key));
 
   static bool _matchesObjectProperties(
-    Map value,
+    Map<Object?, Object?> value,
     Map<Object?, Object?> properties,
   ) {
     for (final entry in value.entries) {
@@ -1109,12 +1113,12 @@ CATALOG_END
     return null;
   }
 
-  static bool _hasValidTableColumns(List columns) => columns.every(
+  static bool _hasValidTableColumns(List<Object?> columns) => columns.every(
     (column) =>
         column is String || (column is Map && column['label'] is String),
   );
 
-  static bool _hasValidTableRows(List rows, int columnCount) {
+  static bool _hasValidTableRows(List<Object?> rows, int columnCount) {
     for (final row in rows) {
       final cells = row is Map ? row['cells'] : row;
       if (cells is! List || cells.length != columnCount) return false;
@@ -1149,7 +1153,7 @@ CATALOG_END
     return null;
   }
 
-  static bool _hasInvalidChartSeries(List series, int labelCount) {
+  static bool _hasInvalidChartSeries(List<Object?> series, int labelCount) {
     for (final item in series) {
       if (item is! Map) return true;
       final values = item['values'];
@@ -1165,7 +1169,7 @@ CATALOG_END
   static bool _hasInvalidChartSample(Object? sample) =>
       sample is! num || !sample.isFinite;
 
-  static bool _hasInvalidPieSeries(List series, Object? variant) {
+  static bool _hasInvalidPieSeries(List<Object?> series, Object? variant) {
     if (variant != 'pie' && variant != 'donut') return false;
     if (series.length != 1) return true;
     final seriesItem = series.single;
@@ -1273,7 +1277,7 @@ CATALOG_END
     return null;
   }
 
-  static bool _hasValidChoiceOptions(List options) => options.every(
+  static bool _hasValidChoiceOptions(List<Object?> options) => options.every(
     (option) =>
         option is Map && option['value'] != null && option['label'] is String,
   );

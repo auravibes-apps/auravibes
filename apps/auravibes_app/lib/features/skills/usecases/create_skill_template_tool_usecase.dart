@@ -21,6 +21,7 @@ class const CreateSkillTemplateToolUsecase(
     SkillTemplateToolToCreate tool,
   ) async {
     final canonical = await _validatedTool(skillId, tool);
+
     return await _createTool(skillId, canonical);
   }
 
@@ -56,9 +57,11 @@ class const CreateSkillTemplateToolUsecase(
   Future<Map<String, SkillCredentialAttributeDefinition>>
   _credentialDefinitions(String skillId) async {
     final cloud = cloudStore;
-    if (cloud != null) return _cloudCredentialDefinitions(cloud, skillId);
+    if (cloud != null) {
+      return await _cloudCredentialDefinitions(cloud, skillId);
+    }
 
-    return _localCredentialDefinitions(skillId);
+    return await _localCredentialDefinitions(skillId);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
@@ -82,7 +85,8 @@ class const CreateSkillTemplateToolUsecase(
       return const {};
     }
     final skill = await skillsRepository.getSkillById(skillId);
-    return _credentialDefinitionValues(
+
+    return await _credentialDefinitionValues(
       definitionsRepository,
       skill?.credentialDefinitionId,
     );

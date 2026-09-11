@@ -29,6 +29,7 @@ class ThemeNotifier extends _$ThemeNotifier {
   @override
   Future<AppTheme> build() async {
     final prefs = await ref.watch(sharedPreferencesProvider.future);
+
     return _appThemeFromStoredValue(prefs.get(_themeKey));
   }
 
@@ -43,5 +44,6 @@ AppTheme _appThemeFromStoredValue(Object? value) {
   if (value is int && value >= 0 && value < AppTheme.values.length) {
     return .values[value];
   }
+
   return .system;
 }

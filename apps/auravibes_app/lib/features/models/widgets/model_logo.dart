@@ -36,8 +36,8 @@ class const _ModelLogo({
 
     return _NetworkModelLogo(
       url: url,
-      width: width,
       height: height,
+      width: width,
       color: context.auraColors.onBackground,
       httpClient: httpClient,
     );

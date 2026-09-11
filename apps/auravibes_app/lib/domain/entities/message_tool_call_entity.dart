@@ -180,6 +180,7 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
     if (metadata == null) return null;
     try {
       final json = jsonDecode(metadata) as Map<String, dynamic>;
+
       return _metadataFromDecodedJson(json);
     } on Exception catch (_) {
       return null;

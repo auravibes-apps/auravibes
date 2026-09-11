@@ -31,19 +31,16 @@ class AuraStepper extends StatelessWidget {
 }
 
 class _AuraStepperItem extends StatelessWidget {
-  _AuraStepperItem({
-    required AuraStep step,
-    required bool isLast,
-    required double spacing,
-  }) : _child = Row(
-         crossAxisAlignment: .start,
-         spacing: spacing,
-         children: [
-           _AuraStepperIcon(state: step.state),
-           Expanded(child: _AuraStepperText(step: step)),
-           if (!isLast) const SizedBox.shrink(),
-         ],
-       );
+  new({required AuraStep step, required bool isLast, required double spacing})
+    : _child = Row(
+        crossAxisAlignment: .start,
+        spacing: spacing,
+        children: [
+          _AuraStepperIcon(state: step.state),
+          Expanded(child: _AuraStepperText(step: step)),
+          if (!isLast) const SizedBox.shrink(),
+        ],
+      );
 
   final Widget _child;
 

@@ -64,7 +64,7 @@ class AuraConfirmDialog extends StatelessWidget {
 }
 
 class _AuraConfirmDialogData {
-  _AuraConfirmDialogData({required AuraConfirmDialog dialog})
+  new({required AuraConfirmDialog dialog})
     : child = AuraDialogShell(
         title: dialog.title,
         message: dialog.message,
@@ -147,73 +147,54 @@ class AuraConfirmDialogActions {
 /// Returns `true` if confirmed, `false` if cancelled,
 /// `null` if dismissed (e.g., by tapping outside).
 abstract final class AuraDialogs {
+  const new _();
+
   /// Shows a confirmation dialog and returns the user's selection.
-  static final Future<bool?> Function({
+  static Future<bool?> confirm({
     required BuildContext context,
     required Widget title,
     required Widget message,
-    AuraConfirmDialogActions actions,
-    bool isDestructive,
-    bool barrierDismissible,
+    AuraConfirmDialogActions actions = const AuraConfirmDialogActions(),
+    bool isDestructive = false,
+    bool barrierDismissible = true,
     AuraTint? tint,
-  })
-  confirm =
-      ({
-        required context,
-        required title,
-        required message,
-        actions = const AuraConfirmDialogActions(),
-        isDestructive = false,
-        barrierDismissible = true,
-        tint,
-      }) => _showConfirmationDialog(
-        _AuraConfirmationRequest(
-          context: context,
-          title: title,
-          message: message,
-          actions: actions,
-          isDestructive: isDestructive,
-          barrierDismissible: barrierDismissible,
-          tint: tint,
-        ),
-      );
+  }) => _showConfirmationDialog(
+    .new(
+      context: context,
+      title: title,
+      message: message,
+      actions: actions,
+      isDestructive: isDestructive,
+      barrierDismissible: barrierDismissible,
+      tint: tint,
+    ),
+  );
 
   /// Shows an alert dialog and dismisses on button tap.
-  static final Future<void> Function({
+  static Future<void> alert({
     required BuildContext context,
     required Widget title,
     required Widget message,
     Widget? dismissLabel,
     AuraTint? tint,
-    bool barrierDismissible,
-  })
-  alert =
-      ({
-        required context,
-        required title,
-        required message,
-        dismissLabel,
-        tint,
-        barrierDismissible = true,
-      }) => _showAlertDialog(
-        _AuraAlertRequest(
-          context: context,
-          title: title,
-          message: message,
-          dismissLabel: dismissLabel,
-          tint: tint,
-          barrierDismissible: barrierDismissible,
-        ),
-      );
-
-  const AuraDialogs._();
+    bool barrierDismissible = true,
+  }) => _showAlertDialog(
+    .new(
+      context: context,
+      title: title,
+      message: message,
+      dismissLabel: dismissLabel,
+      tint: tint,
+      barrierDismissible: barrierDismissible,
+    ),
+  );
 
   @override
   String toString() => 'AuraDialogs';
 }
 
 class _AuraConfirmationRequest {
-  const _AuraConfirmationRequest({
+  const new({
     required this.context,
     required this.title,
     required this.message,
@@ -236,7 +217,7 @@ Future<bool?> _showConfirmationDialog(_AuraConfirmationRequest request) =>
     _showAuraDialog<bool>(_AuraConfirmationDialogData(request).value);
 
 class _AuraConfirmationDialogData {
-  _AuraConfirmationDialogData(_AuraConfirmationRequest request)
+  new(_AuraConfirmationRequest request)
     : value = (
         context: request.context,
         child: AuraConfirmDialog(
@@ -254,7 +235,7 @@ class _AuraConfirmationDialogData {
 }
 
 class _AuraAlertRequest {
-  const _AuraAlertRequest({
+  const new({
     required this.context,
     required this.title,
     required this.message,
@@ -290,7 +271,7 @@ Future<T?> _showGeneralDialog<T>(_AuraDialogRequest request) =>
     _AuraGeneralDialogData<T>(request).future;
 
 class _AuraGeneralDialogData<T> {
-  _AuraGeneralDialogData(_AuraDialogRequest request)
+  new(_AuraDialogRequest request)
     : future = showGeneralDialog<T>(
         context: request.context,
         pageBuilder: _auraDialogPageBuilder(request.child),

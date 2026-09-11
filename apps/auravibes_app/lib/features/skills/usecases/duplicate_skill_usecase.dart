@@ -56,8 +56,9 @@ extension on DuplicateSkillUsecase {
   }
 
   Future<void> _copyTools(String skillId, String duplicateId) async {
-    final tools = cloudStore != null
-        ? await cloudStore!.tools(skillId)
+    final store = cloudStore;
+    final tools = store != null
+        ? await store.tools(skillId)
         : await _localTools(skillId);
     for (final tool in tools) {
       await _copyTool(duplicateId, tool);
@@ -84,6 +85,7 @@ extension on DuplicateSkillUsecase {
     final cloud = cloudStore;
     if (cloud != null) {
       final _ = await cloud.createTool(duplicateId, value);
+
       return;
     }
 

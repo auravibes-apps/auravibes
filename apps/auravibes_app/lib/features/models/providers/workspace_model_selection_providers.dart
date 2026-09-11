@@ -22,7 +22,7 @@ workspaceModelSelectionById(
     workspaceModelSelectionId,
   );
 
-  return _resolveSelectedModel(selectedModel, stores.catalog);
+  return await _resolveSelectedModel(selectedModel, stores.catalog);
 }
 
 Future<({ModelSelectionStore selections, ModelCatalogStore catalog})>
@@ -107,7 +107,7 @@ Future<int?> modelContextLimit(
   final selection = selectedModel;
   if (selection == null) return null;
 
-  return _modelContextLimit(ref, workspaceId, selection);
+  return await _modelContextLimit(ref, workspaceId, selection);
 }
 
 Future<int?> _modelContextLimit(

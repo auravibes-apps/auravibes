@@ -191,7 +191,7 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
 }
 
 class _AuraRadioPresentation extends StatelessWidget {
-  const _AuraRadioPresentation({
+  const new({
     required this.isDisabled,
     required this.isSelected,
     required this.isFocused,
@@ -203,10 +203,8 @@ class _AuraRadioPresentation extends StatelessWidget {
     required this.onFocusChange,
   });
 
-  _AuraRadioPresentation.fromState(
-    _AuraRadioState<dynamic> state,
-    BuildContext context,
-  ) : this(
+  new fromState(_AuraRadioState<dynamic> state, BuildContext context)
+    : this(
         isDisabled: state._isDisabled(context),
         isSelected: state.widget.value == state.widget.groupValue,
         isFocused: state._isFocused,
@@ -307,7 +305,7 @@ class const _AuraRadioIndicator({
 class _AuraRadioPaint extends StatelessWidget {
   static const _radioSize = 24.0;
 
-  _AuraRadioPaint({required _AuraRadioPresentation presentation})
+  new({required _AuraRadioPresentation presentation})
     : _child = Opacity(
         opacity: presentation.isDisabled ? 0.6 : 1.0,
         child: SizedBox(

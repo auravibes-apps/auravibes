@@ -67,7 +67,6 @@ class const _ToolItemBody({
   @override
   Widget build(BuildContext context) {
     return AuraPadding(
-      padding: const .symmetric(vertical: .xs),
       child: _ToolItemColumn(
         tool: tool,
         workspaceId: workspaceId,
@@ -76,6 +75,7 @@ class const _ToolItemBody({
         onEnabledChanged: onEnabledChanged,
         onToggleExpanded: onToggleExpanded,
       ),
+      padding: const .symmetric(vertical: .xs),
     );
   }
 }

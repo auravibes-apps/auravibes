@@ -74,18 +74,27 @@ class AuraPopupMenu extends StatefulWidget {
 
 class _AuraPopupMenuState extends State<AuraPopupMenu> {
   FocusNode? _focusNode;
-  late final FocusScopeNode _menuFocusScopeNode;
+  FocusScopeNode? _menuFocusScopeNode;
   bool _ownsFocusNode = false;
   bool _visible = false;
+
+  FocusScopeNode get _requiredMenuFocusScopeNode {
+    final node = _menuFocusScopeNode;
+    if (node == null) {
+      throw StateError('Menu focus scope node not initialized');
+    }
+
+    return node;
+  }
 
   @override
   void initState() {
     super.initState();
-    _initializePopupMenuFocus();
     _menuFocusScopeNode = .new(
       debugLabel: 'AuraPopupMenu menu',
       onKeyEvent: _handleMenuKeyEvent,
     );
+    _initializePopupMenuFocus();
     widget.controller._state = this;
   }
 
@@ -96,7 +105,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     if (_ownsFocusNode) {
       _requiredFocusNode.dispose();
     }
-    _menuFocusScopeNode.dispose();
+    _requiredMenuFocusScopeNode.dispose();
     super.dispose();
   }
 
@@ -142,7 +151,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   @override
   Widget build(BuildContext context) => _AuraPopupMenuData(
     visible: _visible,
-    menuFocusScopeNode: _menuFocusScopeNode,
+    menuFocusScopeNode: _requiredMenuFocusScopeNode,
     items: widget.items,
     close: close,
     trigger: widget.child,
@@ -191,14 +200,15 @@ void _updatePopupMenuFocusNode(
   if (state._ownsFocusNode) state._requiredFocusNode.dispose();
 
   final focus = _popupFocusNode(newFocusNode);
-  state._focusNode = focus.node;
-  state._ownsFocusNode = focus.ownsNode;
+  state
+    .._focusNode = focus.node
+    .._ownsFocusNode = focus.ownsNode;
 }
 
 void _requestMenuFocus(_AuraPopupMenuState state) {
   if (!state.mounted || !state._visible) return;
 
-  state._menuFocusScopeNode.requestFocus();
+  state._requiredMenuFocusScopeNode.requestFocus();
 }
 
 KeyEventResult _handlePopupMenuKey(_PopupMenuKeyRequest request) {
@@ -231,7 +241,7 @@ bool _shouldClosePopupMenu(_PopupMenuKeyRequest request, KeyDownEvent event) =>
     request.visible && event.logicalKey == LogicalKeyboardKey.escape;
 
 class _AuraPopupMenuData {
-  _AuraPopupMenuData({
+  new({
     required bool visible,
     required FocusScopeNode menuFocusScopeNode,
     required List<AuraPopupMenuEntry> items,

@@ -131,7 +131,7 @@ BoxDecoration _sidebarDecoration(AuraColorScheme colors) => BoxDecoration(
 );
 
 class _AuraSidebarContent extends StatelessWidget {
-  _AuraSidebarContent({
+  new({
     required List<AuraNavigationData> navigationItems,
     required int selectedIndex,
     required void Function(int value) onNavigationTap,
@@ -258,7 +258,7 @@ class const _AuraSidebarNavigation({
 }
 
 class _AuraSidebarNavigationItem extends StatelessWidget {
-  _AuraSidebarNavigationItem({
+  new({
     required AuraNavigationData item,
     required bool isExpanded,
     required VoidCallback onTap,
@@ -299,7 +299,7 @@ class const _AuraSidebarItem({
 }
 
 class _AuraSidebarItemButton extends StatelessWidget {
-  _AuraSidebarItemButton({
+  new({
     required AuraNavigationData item,
     required bool isExpanded,
     required VoidCallback onTap,

@@ -174,6 +174,7 @@ Future<bool> _updateMcpGroup(
     isEnabled: request.isEnabled,
     isCloud: operation.isCloud,
   ));
+
   return true;
 }
 

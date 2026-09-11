@@ -39,6 +39,7 @@ List<GroupedToolsViewItem> _defaultToolGroups(
   Map<String?, List<WorkspaceToolEntity>> toolsByGroupId,
 ) {
   final defaultTools = toolsByGroupId[null] ?? [];
+
   return [
     _defaultToolGroup(defaultTools, isNative: false, groupType: .builtIn),
     _defaultToolGroup(defaultTools, isNative: true, groupType: .native),

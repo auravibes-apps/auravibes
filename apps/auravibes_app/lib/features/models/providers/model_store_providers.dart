@@ -12,28 +12,25 @@ part 'local_model_selection_store.dart';
 part 'model_store_providers.g.dart';
 
 @riverpod
-Future<ModelConnectionStore> modelConnectionStore(
-  Ref ref,
-  String workspaceId,
-) async {
+Future<ModelConnectionStore> modelConnectionStore(Ref ref, String workspaceId) {
   final keepAlive = ref.keepAlive();
+
   return _connectionStore(ref, workspaceId).whenComplete(keepAlive.close);
 }
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)
-Future<ModelSelectionStore> modelSelectionStore(
-  Ref ref,
-  String workspaceId,
-) async {
+Future<ModelSelectionStore> modelSelectionStore(Ref ref, String workspaceId) {
   final keepAlive = ref.keepAlive();
+
   return _selectionStore(ref, workspaceId).whenComplete(keepAlive.close);
 }
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)
-Future<ModelCatalogStore> modelCatalogStore(Ref ref, String workspaceId) async {
+Future<ModelCatalogStore> modelCatalogStore(Ref ref, String workspaceId) {
   final keepAlive = ref.keepAlive();
+
   return _catalogStore(ref, workspaceId).whenComplete(keepAlive.close);
 }
 
@@ -49,25 +46,34 @@ Future<ModelConnectionStore> _connectionStore(
   String workspaceId,
 ) async {
   final gateway = await _cloudGateway(ref, workspaceId);
-  return gateway == null
-      ? ref.watch(modelConnectionRepositoryProvider)
-      : CloudModelStore(workspaceId, .new(.new(gateway)));
+
+  return await Future.value(
+    gateway == null
+        ? ref.watch(modelConnectionRepositoryProvider)
+        : CloudModelStore(workspaceId, .new(.new(gateway))),
+  );
 }
 
 Future<ModelSelectionStore> _selectionStore(Ref ref, String workspaceId) async {
   final gateway = await _cloudGateway(ref, workspaceId);
-  return gateway == null
-      ? _LocalModelSelectionStore(
-          ref.watch(workspaceModelSelectionRepositoryProvider),
-        )
-      : CloudModelStore(workspaceId, .new(.new(gateway)));
+
+  return await Future.value(
+    gateway == null
+        ? _LocalModelSelectionStore(
+            ref.watch(workspaceModelSelectionRepositoryProvider),
+          )
+        : CloudModelStore(workspaceId, .new(.new(gateway))),
+  );
 }
 
 Future<ModelCatalogStore> _catalogStore(Ref ref, String workspaceId) async {
   final gateway = await _cloudGateway(ref, workspaceId);
-  return gateway == null
-      ? ref.watch(apiModelRepositoryProvider)
-      : CloudModelCatalogStore(.new(gateway));
+
+  return await Future.value(
+    gateway == null
+        ? ref.watch(apiModelRepositoryProvider)
+        : CloudModelCatalogStore(.new(gateway)),
+  );
 }
 
 // Top-level API/provider declarations are required by their consumers.

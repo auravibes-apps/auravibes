@@ -375,7 +375,7 @@ extension<T> on _AuraButtonGroupItemState<T> {
 }
 
 class _AuraButtonGroupVariantBackground {
-  const _AuraButtonGroupVariantBackground({
+  const new({
     required this.colors,
     required this.isActive,
     required this.isHovered,
@@ -385,23 +385,39 @@ class _AuraButtonGroupVariantBackground {
   final bool isActive;
   final bool isHovered;
 
-  Color get _filled => isActive
-      ? colors.primary
-      : colors.primary.withValues(
-          alpha: isHovered ? 0.8 : _AuraButtonGroupItemState._selectedAlpha,
-        );
+  Color get _filled {
+    if (isActive) return colors.primary;
 
-  Color get _outlined => isActive
-      ? colors.primary
-      : isHovered
-      ? colors.primary.withValues(alpha: _AuraButtonGroupItemState._hoverAlpha)
-      : DesignColors.transparent;
+    return colors.primary.withValues(
+      alpha: isHovered ? 0.8 : _AuraButtonGroupItemState._selectedAlpha,
+    );
+  }
 
-  Color get _ghost => isActive
-      ? colors.primary.withValues(alpha: _AuraButtonGroupItemState._activeAlpha)
-      : isHovered
-      ? colors.primary.withValues(alpha: _AuraButtonGroupItemState._hoverAlpha)
-      : DesignColors.transparent;
+  Color get _outlined {
+    if (isActive) return colors.primary;
+    if (isHovered) {
+      return colors.primary.withValues(
+        alpha: _AuraButtonGroupItemState._hoverAlpha,
+      );
+    }
+
+    return DesignColors.transparent;
+  }
+
+  Color get _ghost {
+    if (isActive) {
+      return colors.primary.withValues(
+        alpha: _AuraButtonGroupItemState._activeAlpha,
+      );
+    }
+    if (isHovered) {
+      return colors.primary.withValues(
+        alpha: _AuraButtonGroupItemState._hoverAlpha,
+      );
+    }
+
+    return DesignColors.transparent;
+  }
 
   Color _forVariant(AuraButtonGroupVariant variant) => switch (variant) {
     .filled => _filled,

@@ -66,14 +66,14 @@ class const _AuraDialogShellTitle({required final Widget title})
 }
 
 class _AuraDialogShellTitleContent extends StatelessWidget {
-  _AuraDialogShellTitleContent({
+  new({
     required Widget title,
     required AuraTheme theme,
     required AuraColorScheme colors,
   }) : _child = Padding(
          padding: _dialogShellTitlePadding(theme),
          child: DefaultTextStyle(
-           style: TextStyle(
+           style: .new(
              color: colors.onSurface,
              fontSize: theme.typography.fontSizeLg,
              fontWeight: theme.typography.fontWeightSemibold,

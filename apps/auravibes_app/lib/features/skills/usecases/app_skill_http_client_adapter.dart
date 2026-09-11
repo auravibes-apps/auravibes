@@ -21,14 +21,12 @@ class AppSkillHttpClientAdapter {
   }
 
   _PendingAppSkillRequest _newPendingRequest() {
-    late final _PendingAppSkillRequest pending;
-    pending = _PendingAppSkillRequest(
-      CancelableCompleter<UrlResponse>(
-        onCancel: () => pending.operation?.cancel(),
-      ),
+    _PendingAppSkillRequest? pending;
+    final completer = CancelableCompleter<UrlResponse>(
+      onCancel: () => pending?.operation?.cancel(),
     );
 
-    return pending;
+    return pending = _PendingAppSkillRequest(completer);
   }
 
   Future<void> _completeRequest(

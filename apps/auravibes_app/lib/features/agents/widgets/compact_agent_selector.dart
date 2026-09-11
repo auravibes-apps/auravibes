@@ -39,9 +39,9 @@ class const CompactAgentSelector({
     return _CompactAgentSelectorContent(
       agentsAsync: agentsAsync,
       agentId: agentId,
+      onChanged: onChanged,
       compactMode: compactMode,
       sheetMode: sheetMode,
-      onChanged: onChanged,
     );
   }
 }
@@ -62,19 +62,25 @@ class _CompactAgentSelectorContent extends StatelessWidget {
   final bool sheetMode;
 
   @override
-  Widget build(BuildContext _) => sheetMode
-      ? _AgentSheetMode(
-          agentsAsync: agentsAsync,
-          agentId: agentId,
-          onChanged: onChanged,
-        )
-      : compactMode
-      ? _AgentCompactMode(agentsAsync: agentsAsync, agentId: agentId)
-      : _AgentDropdownMode(
-          agentsAsync: agentsAsync,
-          agentId: agentId,
-          onChanged: onChanged,
-        );
+  Widget build(BuildContext _) {
+    if (sheetMode) {
+      return _AgentSheetMode(
+        agentsAsync: agentsAsync,
+        agentId: agentId,
+        onChanged: onChanged,
+      );
+    }
+
+    if (compactMode) {
+      return _AgentCompactMode(agentsAsync: agentsAsync, agentId: agentId);
+    }
+
+    return _AgentDropdownMode(
+      agentsAsync: agentsAsync,
+      agentId: agentId,
+      onChanged: onChanged,
+    );
+  }
 }
 
 class const _AgentSheetMode({
@@ -300,20 +306,17 @@ class _AgentSheetBody extends StatelessWidget {
 }
 
 class _AgentSheetList extends StatelessWidget {
-  new({
-    required this.agents,
-    required this.agentId,
-    required this.onSelect,
-  }) : _child = ListView.separated(
-         itemBuilder: (context, index) => _AgentSheetListItem(
-           agents: agents,
-           agentId: agentId,
-           index: index,
-           onSelect: onSelect,
-         ),
-         separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
-         itemCount: agents.length + 1,
-       );
+  new({required this.agents, required this.agentId, required this.onSelect})
+    : _child = ListView.separated(
+        itemBuilder: (context, index) => _AgentSheetListItem(
+          agents: agents,
+          agentId: agentId,
+          index: index,
+          onSelect: onSelect,
+        ),
+        separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
+        itemCount: agents.length + 1,
+      );
 
   final List<AgentEntity> agents;
   final String? agentId;
@@ -340,6 +343,7 @@ class const _AgentSheetListItem({
     }
 
     final agent = agents[index - 1];
+
     return _AgentSheetAgentItem(
       agent: agent,
       isSelected: agent.id == agentId,

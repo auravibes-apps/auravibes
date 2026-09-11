@@ -136,7 +136,7 @@ Future<_LocalCompactionContext?> _localCompactionContextForConversation(
   );
   if (loadedModel == null) return null;
 
-  return _localCompactionContextForLoadedModel(
+  return await _localCompactionContextForLoadedModel(
     dependencies,
     conversationId,
     loadedModel,

@@ -1,7 +1,6 @@
 // Required: Existing argument values intentionally repeat.
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
-
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
@@ -26,9 +25,6 @@ abstract class ConversationToolState with _$ConversationToolState {
     /// Whether this tool is enabled at the workspace level.
     required bool isWorkspaceEnabled,
   }) = _ConversationToolState;
-
-  /// Returns whether this state represents [toolId].
-  bool hasToolId(String toolId) => tool.id == toolId;
 }
 
 @riverpod
@@ -42,6 +38,7 @@ ConversationToolsRepository conversationToolsRepository(
   session.capabilities.require(
     supported: session.capabilities.conversationToolOverrides,
   );
+
   return ConversationToolsRepository(
     ref.watch(appDatabaseProvider),
     ref.watch(workspaceToolsRepositoryProvider(session))
@@ -111,7 +108,7 @@ void _applyConversationToolOverride(
 }
 
 int _toolStateIndex(List<ConversationToolState> states, String toolId) =>
-    states.indexWhere((tool) => tool.hasToolId(toolId));
+    states.indexWhere((tool) => tool.tool.id == toolId);
 
 /// Provider for managing conversation tool settings
 ///
@@ -120,7 +117,7 @@ int _toolStateIndex(List<ConversationToolState> states, String toolId) =>
 class ConversationToolsNotifier extends _$ConversationToolsNotifier
     with _ConversationToolsNotifierActions {
   @override
-  String? _workspaceIdValue;
+  String _workspaceIdValue = '';
 
   @override
   Future<List<ConversationToolState>> build({
@@ -151,7 +148,10 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier
     final index = _toolStateIndex(currentState, toolId);
     if (index == -1) return false;
 
-    return setToolEnabled(toolId, isEnabled: !currentState[index].isEnabled);
+    return await setToolEnabled(
+      toolId,
+      isEnabled: !currentState[index].isEnabled,
+    );
   }
 
   /// Enable or disable a conversation tool.
@@ -200,11 +200,11 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier
 }
 
 mixin _ConversationToolsNotifierActions on _$ConversationToolsNotifier {
-  String? get _workspaceIdValue;
+  String get _workspaceIdValue;
 
-  String get _workspaceId =>
-      _workspaceIdValue ??
-      (throw StateError('Conversation tools are not initialized'));
+  String get _workspaceId => _workspaceIdValue.isNotEmpty
+      ? _workspaceIdValue
+      : (throw StateError('Conversation tools are not initialized'));
 
   ConversationToolsRepository get _repository =>
       ref.read(conversationToolsRepositoryProvider(_workspaceId));

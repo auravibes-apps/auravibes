@@ -86,6 +86,7 @@ extension on BuildSkillTemplateToolSpecsUsecase {
     List<AvailableSkill> extraSkills,
   ) {
     final skillKeys = <String>{};
+
     return [...loadedSkills, ...extraSkills]
         .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
         .toList();
@@ -220,7 +221,7 @@ extension on BuildSkillTemplateToolSpecsUsecase {
       return _optionalCredentialIds(tool);
     }
 
-    return _credentialIdsForDefinition(
+    return await _credentialIdsForDefinition(
       workspaceId,
       credentialDefinitionId,
       tool,

@@ -41,7 +41,7 @@ class const _AuraCalloutSemantics({required final AuraCallout callout})
 }
 
 class _AuraCalloutSurface extends StatelessWidget {
-  _AuraCalloutSurface({
+  new({
     required AuraCallout callout,
     required AuraColorScheme colors,
     required AuraTheme theme,
@@ -53,7 +53,7 @@ class _AuraCalloutSurface extends StatelessWidget {
          child: _AuraCalloutContent(callout: callout, spacing: theme.spacing),
        );
 
-  _AuraCalloutSurface.fromContext(AuraCallout callout, BuildContext context)
+  new fromContext(AuraCallout callout, BuildContext context)
     : this(
         callout: callout,
         colors: context.auraColors,
@@ -67,21 +67,19 @@ class _AuraCalloutSurface extends StatelessWidget {
 }
 
 class _AuraCalloutContent extends StatelessWidget {
-  _AuraCalloutContent({
-    required AuraCallout callout,
-    required AuraSpacingScale spacing,
-  }) : _child = Padding(
-         padding: EdgeInsets.all(spacing.md),
-         child: Row(
-           crossAxisAlignment: .start,
-           spacing: spacing.sm,
-           children: [
-             if (callout.icon case final value?)
-               AuraIcon(value, tint: callout.tint),
-             Expanded(child: _AuraCalloutText(callout: callout)),
-           ],
-         ),
-       );
+  new({required AuraCallout callout, required AuraSpacingScale spacing})
+    : _child = Padding(
+        padding: EdgeInsets.all(spacing.md),
+        child: Row(
+          crossAxisAlignment: .start,
+          spacing: spacing.sm,
+          children: [
+            if (callout.icon case final value?)
+              AuraIcon(value, tint: callout.tint),
+            Expanded(child: _AuraCalloutText(callout: callout)),
+          ],
+        ),
+      );
 
   final Widget _child;
 

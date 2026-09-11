@@ -74,12 +74,11 @@ extension on AppChatCompletionsPlugin {
     return await codec.complete(transport, body);
   }
 
-  Future<ProviderTransportResponse> _transport(
-    Map<String, dynamic> body,
-  ) async {
+  Future<ProviderTransportResponse> _transport(Map<String, dynamic> body) {
     _ensureApiKey();
     final request = _request(body);
     final client = httpClient ?? http.Client();
+
     return _sendRequest(client, request);
   }
 

@@ -160,6 +160,7 @@ ToolSpec? _appSkillToolSpec(
   List<AppSkillCredentialCandidate> candidates,
 ) {
   final name = _appSkillToolName(skill, tool);
+
   return materializeSkillTool(
     .new(
       name: name,

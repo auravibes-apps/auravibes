@@ -92,10 +92,10 @@ class SkillCredentialDefinitionsRepository(AppDatabase database) {
 SkillCredentialDefinitionsCompanion _updateDefinitionCompanion(
   SkillCredentialDefinitionToUpdate definition,
 ) => SkillCredentialDefinitionsCompanion(
-  updatedAt: Value(DateTime.now()),
+  updatedAt: .new(DateTime.now()),
   title: switch (definition.title) {
     null => const Value.absent(),
-    final title => Value(title.trim()),
+    final title => .new(title.trim()),
   },
-  attributesJson: Value.absentIfNull(definition.attributesJson),
+  attributesJson: .absentIfNull(definition.attributesJson),
 );

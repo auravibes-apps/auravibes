@@ -44,27 +44,25 @@ class const _AuraEmptyStateContent({required final AuraEmptyState state})
 }
 
 class _AuraEmptyStateChildren extends StatelessWidget {
-  _AuraEmptyStateChildren({
-    required AuraEmptyState state,
-    required AuraSpacingScale spacing,
-  }) : _child = Column(
-         mainAxisSize: .min,
-         spacing: spacing.sm,
-         children: [
-           ?state.icon,
-           Semantics(
-             child: AuraText(
-               child: state.title,
-               style: .heading6,
-               textAlign: .center,
-             ),
-             header: true,
-           ),
-           if (state.description case final description?)
-             AuraText(child: description, textAlign: .center),
-           ?state.action,
-         ],
-       );
+  new({required AuraEmptyState state, required AuraSpacingScale spacing})
+    : _child = Column(
+        mainAxisSize: .min,
+        spacing: spacing.sm,
+        children: [
+          ?state.icon,
+          Semantics(
+            child: AuraText(
+              child: state.title,
+              style: .heading6,
+              textAlign: .center,
+            ),
+            header: true,
+          ),
+          if (state.description case final description?)
+            AuraText(child: description, textAlign: .center),
+          ?state.action,
+        ],
+      );
 
   final Widget _child;
 

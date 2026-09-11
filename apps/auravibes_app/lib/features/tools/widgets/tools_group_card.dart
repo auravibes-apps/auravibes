@@ -63,23 +63,19 @@ class _ToolsGroupCardCallbacks {
   final WidgetRef ref;
   final BuildContext context;
 
-  late final ValueChanged<bool>? onToggleEnabled = groupWithTools.isDefaultGroup
-      ? null
-      : _handleToggleEnabled;
+  ValueChanged<bool>? get onToggleEnabled =>
+      groupWithTools.isDefaultGroup ? null : _handleToggleEnabled;
 
-  late final VoidCallback? onReconnect = _shouldShowReconnect
-      ? _handleReconnect
-      : null;
+  VoidCallback? get onReconnect =>
+      _shouldShowReconnect ? _handleReconnect : null;
 
-  late final VoidCallback? onDelete = groupWithTools.isMcpGroup
-      ? _handleDelete
-      : null;
+  VoidCallback? get onDelete =>
+      groupWithTools.isMcpGroup ? _handleDelete : null;
 
-  late final VoidCallback? onViewError = groupWithTools.hasMcpError()
-      ? _showErrorDetails
-      : null;
+  VoidCallback? get onViewError =>
+      groupWithTools.hasMcpError() ? _showErrorDetails : null;
 
-  late final bool _shouldShowReconnect =
+  bool get _shouldShowReconnect =>
       groupWithTools.isMcpGroup &&
       (groupWithTools.hasMcpError() || groupWithTools.isMcpDisconnected());
 

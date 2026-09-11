@@ -31,21 +31,16 @@ class const CloudServiceConnection({
         isEnabled: fields.isEnabled,
       );
 
+  new _fromResourceData(WorkspaceResource resource, Map<String, dynamic> data)
+    : this._fromResourceFields(resource, _cloudServiceConnectionFields(data));
+
   factory fromResource(WorkspaceResource resource) {
     final data = CloudResourceMapper.decode(resource);
 
-    return _fromResourceData(resource, data);
+    return CloudServiceConnection._fromResourceData(resource, data);
   }
 
   bool isConfigured() => hasSecret;
-
-  static CloudServiceConnection _fromResourceData(
-    WorkspaceResource resource,
-    Map<String, dynamic> data,
-  ) => CloudServiceConnection._fromResourceFields(
-    resource,
-    _cloudServiceConnectionFields(data),
-  );
 }
 
 typedef _CloudServiceConnectionFields = ({

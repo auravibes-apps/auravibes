@@ -12,8 +12,6 @@ abstract class MessagesStreamingState with _$MessagesStreamingState {
     required CompositeSubscription streamSubscription,
     ChatResult<ChatMessage>? lastResult,
   }) = _MessagesStreamingState;
-
-  bool hasResult() => lastResult != null;
 }
 
 @riverpod

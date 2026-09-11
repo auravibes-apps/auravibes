@@ -136,7 +136,7 @@ extension on _AuraMessageStatusState {
 }
 
 class _AuraMessageStatusView extends StatelessWidget {
-  _AuraMessageStatusView({
+  new({
     required AuraMessageStatus status,
     required AuraColorScheme colors,
     required AnimationController? rotationController,
@@ -162,7 +162,7 @@ class _AuraMessageStatusView extends StatelessWidget {
 }
 
 class _AuraMessageStatusIcon extends StatelessWidget {
-  _AuraMessageStatusIcon({
+  new({
     required AuraMessageStatus status,
     required AuraColorScheme colors,
     required AnimationController? rotationController,
@@ -191,21 +191,15 @@ class _AuraMessageStatusIcon extends StatelessWidget {
 }
 
 class _AuraMessageStatusAnimation extends StatelessWidget {
-  _AuraMessageStatusAnimation({
-    required AuraMessageDeliveryStatus status,
-    required bool showAnimation,
-    required Widget icon,
-    required AnimationController? rotationController,
-    required Animation<double>? rotationAnimation,
-    required AnimationController? scaleController,
-    required Animation<double>? scaleAnimation,
-  }) : _status = status,
-       _showAnimation = showAnimation,
-       _icon = icon,
-       _rotationController = rotationController,
-       _rotationAnimation = rotationAnimation,
-       _scaleController = scaleController,
-       _scaleAnimation = scaleAnimation;
+  const new({
+    required this._status,
+    required this._showAnimation,
+    required this._icon,
+    required this._rotationController,
+    required this._rotationAnimation,
+    required this._scaleController,
+    required this._scaleAnimation,
+  });
 
   final AuraMessageDeliveryStatus _status;
   final bool _showAnimation;
@@ -250,7 +244,7 @@ class const _AuraMessageStatusAnimationChoice({
 }
 
 class _AuraMessageStatusRotationChoice extends StatelessWidget {
-  _AuraMessageStatusRotationChoice({
+  new({
     required AuraMessageDeliveryStatus status,
     required Widget icon,
     required AnimationController? rotationController,
@@ -258,7 +252,7 @@ class _AuraMessageStatusRotationChoice extends StatelessWidget {
     required AnimationController? scaleController,
     required Animation<double>? scaleAnimation,
   }) : _child = switch (status) {
-         AuraMessageDeliveryStatus.sending => _AuraMessageStatusRotationOrScale(
+         .sending => _AuraMessageStatusRotationOrScale(
            icon: icon,
            rotationController: rotationController,
            rotationAnimation: rotationAnimation,

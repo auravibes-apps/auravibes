@@ -53,15 +53,6 @@ class AppSubAgentConversationStore(
   final ConversationRepository _conversationRepository,
 ) implements agent.SubAgentConversationStore {
   @override
-  dynamic noSuchMethod(Invocation invocation) {
-    if (invocation.memberName == #createChildConversation) {
-      return _createChildConversationFromInvocation(invocation);
-    }
-
-    return super.noSuchMethod(invocation);
-  }
-
-  @override
   Future<agent.SubAgentConversationRecord?> getConversation(
     String conversationId,
   ) async {
@@ -73,12 +64,20 @@ class AppSubAgentConversationStore(
     return _toRecord(conversation);
   }
 
-  Future<agent.SubAgentConversationRecord>
-  _createChildConversationFromInvocation(Invocation invocation) =>
-      _createChildConversation(
-        _conversationRepository,
-        _createChildConversationRequest(invocation.namedArguments),
-      );
+  @override
+  Future<agent.SubAgentConversationRecord> createChildConversation({
+    required String parentConversationId,
+    required String workspaceId,
+    required String? modelId,
+    required String? agentId,
+    required String title,
+  }) => _createChildConversation(_conversationRepository, (
+    parentConversationId: parentConversationId,
+    workspaceId: workspaceId,
+    modelId: modelId,
+    agentId: agentId,
+    title: title,
+  ));
 
   Future<agent.SubAgentConversationRecord> _createChildConversation(
     ConversationRepository repository,
@@ -113,21 +112,6 @@ class AppSubAgentConversationStore(
     );
   }
 }
-
-({
-  String parentConversationId,
-  String workspaceId,
-  String? modelId,
-  String? agentId,
-  String title,
-})
-_createChildConversationRequest(Map<Symbol, dynamic> arguments) => (
-  parentConversationId: arguments[#parentConversationId] as String,
-  workspaceId: arguments[#workspaceId] as String,
-  modelId: arguments[#modelId] as String?,
-  agentId: arguments[#agentId] as String?,
-  title: arguments[#title] as String,
-);
 
 class const AppSubAgentMessageStore(final MessageRepository _messageRepository)
     implements agent.SubAgentMessageStore {

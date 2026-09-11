@@ -28,9 +28,6 @@ abstract class const ConversationToolsGroupWithTools._()
   bool get areAllToolsEnabled =>
       tools.isNotEmpty && tools.every((t) => t.isEnabled);
 
-  @override
-  bool get isDefaultGroup => group == null;
-
   bool areAnyToolsEnabled() => tools.any((t) => t.isEnabled);
 
   bool containsTool(String toolId) =>

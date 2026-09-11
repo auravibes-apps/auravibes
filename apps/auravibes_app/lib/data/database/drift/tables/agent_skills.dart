@@ -18,21 +18,16 @@ ON agent_skills (agent_id, app_skill_identifier)
 WHERE app_skill_identifier IS NOT NULL
 ''')
 class AgentSkills extends Table with TableMixin {
-  late final agentId = text().references(Agents, #id, onDelete: .cascade)();
+  TextColumn get agentId =>
+      text().references(Agents, #id, onDelete: .cascade)();
 
-  late final workspaceSkillId = text().nullable().references(
-    Skills,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get workspaceSkillId =>
+      text().nullable().references(Skills, #id, onDelete: .cascade)();
 
-  late final appSkillIdentifier = text().nullable()();
+  TextColumn get appSkillIdentifier => text().nullable()();
 
   @override
   List<String> get customConstraints => [
     'CHECK ((workspace_skill_id IS NULL) != (app_skill_identifier IS NULL))',
   ];
-
-  bool hasCustomConstraint(String constraint) =>
-      customConstraints.contains(constraint);
 }

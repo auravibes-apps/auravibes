@@ -113,6 +113,7 @@ class const _CompactedDetailsContent({required final String content})
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+
     return AuraColumn(
       children: [
         const AuraSizedBox(height: .md),

@@ -14,11 +14,8 @@ import 'package:drift/drift.dart';
 )
 class WorkspaceModelSelections extends Table with TableMixin {
   /// Model unique identifier.
-  late final modelId = text()();
+  TextColumn get modelId => text()();
 
-  late final modelConnectionId = text().references(
-    ServiceConnections,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get modelConnectionId =>
+      text().references(ServiceConnections, #id, onDelete: .cascade)();
 }

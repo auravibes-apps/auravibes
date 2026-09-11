@@ -47,6 +47,7 @@ class const SaveAgentToolOverridesUsecase(
     final permission = entry.value.overridePermission;
     if (permission == null) {
       final _ = await _repository.clearAgentToolPermission(agentId, entry.key);
+
       return;
     }
 

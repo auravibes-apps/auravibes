@@ -140,8 +140,14 @@ class _ModelInput extends AuraInput {
   }) : super(
          placeholder: TextLocale(fieldData.placeholder),
          label: TextLocale(fieldData.label),
-         hint: fieldData.hint == null ? null : TextLocale(fieldData.hint!),
-         error: fieldData.error == null ? null : Text(fieldData.error!),
+         hint: switch (fieldData.hint) {
+           final hint? => TextLocale(hint),
+           _ => null,
+         },
+         error: switch (fieldData.error) {
+           final error? => Text(error),
+           _ => null,
+         },
          isRequired: fieldType._isRequired,
          state: fieldData.error == null
              ? AuraInputState.normal

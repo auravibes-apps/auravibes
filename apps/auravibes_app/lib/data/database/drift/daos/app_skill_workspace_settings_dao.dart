@@ -43,10 +43,12 @@ extension AppSkillWorkspaceSettingsDaoMethods on AppSkillWorkspaceSettingsDao {
       return await _insertSetting(workspaceId, appSkillIdentifier, isEnabled);
     }
 
-    return await _updateAndRead(existing.id, (
+    final key = (
       workspaceId: workspaceId,
       appSkillIdentifier: appSkillIdentifier,
-    ), isEnabled);
+    );
+
+    return await _updateAndRead(existing.id, key, isEnabled);
   }
 
   Future<AppSkillWorkspaceSettingsTable> _updateAndRead(

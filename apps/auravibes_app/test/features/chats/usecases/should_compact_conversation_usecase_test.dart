@@ -329,7 +329,7 @@ void main() {
           selectedProviderId: 'provider-1',
           maxOutputTokens: 4096,
           contextLimit: 128000,
-          trigger: CompactionTrigger.manual,
+          trigger: .manual,
         );
 
         expect(decision.shouldCompact, isTrue);
@@ -359,7 +359,7 @@ void main() {
         selectedProviderId: 'provider-1',
         maxOutputTokens: 4096,
         contextLimit: 128000,
-        trigger: CompactionTrigger.manual,
+        trigger: .manual,
       );
 
       expect(decision.shouldCompact, isTrue);

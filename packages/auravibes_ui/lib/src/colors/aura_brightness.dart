@@ -132,9 +132,6 @@ class AuraComputedColor extends OKLCHColor {
     super.chroma = _defaultChroma,
   });
 
-  @override
-  Color toColor() => super.toColor();
-
   /// Foreground color that meets APCA [targetLc] against this surface.
   ///
   /// Scans the OKLCH `L` axis (keeping this color's hue and chroma) for the

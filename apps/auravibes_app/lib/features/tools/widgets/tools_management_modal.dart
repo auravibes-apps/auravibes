@@ -29,10 +29,11 @@ class const ToolsManagementModal({
         .watch(workspaceSessionForRouteProvider(workspaceId))
         .requireValue
         .capabilities;
+
     return _ToolsManagementCapabilityView(
       workspaceId: workspaceId,
-      conversationId: conversationId,
       supported: capabilities.conversationToolOverrides,
+      conversationId: conversationId,
     );
   }
 }
@@ -245,12 +246,11 @@ class const _GroupedToolsListView({
     );
   }
 
-  Widget _itemBuilder(BuildContext context, int index) =>
-      _ConversationToolsGroupItem(
-        group: groups[index],
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      );
+  Widget _itemBuilder(BuildContext _, int index) => _ConversationToolsGroupItem(
+    group: groups[index],
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+  );
 }
 
 class const _ConversationToolsGroupItem({

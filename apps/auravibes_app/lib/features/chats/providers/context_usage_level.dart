@@ -106,6 +106,7 @@ class const ContextUsageData({
 
 int _normalizeLimit(int? limitTokens) {
   final limit = limitTokens ?? 0;
+
   return limit < 0 ? 0 : limit;
 }
 
@@ -124,6 +125,7 @@ ContextUsageData _withoutLimit(int usedTokens, int normalizedLimit) =>
 
 ContextUsageData _withLimit(int usedTokens, int normalizedLimit) {
   final percent = ((usedTokens / normalizedLimit) * 100).round();
+
   return _limitedUsageData(usedTokens, normalizedLimit, percent);
 }
 

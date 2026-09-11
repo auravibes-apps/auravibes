@@ -857,11 +857,7 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
     throw UnimplementedError();
   }
 
-  @override
-  Future<bool> validateWorkspaceToolSetting(
-    String workspaceId,
-    String toolType,
-  ) {
+  Future<bool> validateWorkspaceToolSetting(String _, String _) {
     throw UnimplementedError();
   }
 }

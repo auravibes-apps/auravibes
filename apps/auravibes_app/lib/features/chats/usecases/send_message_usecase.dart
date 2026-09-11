@@ -115,7 +115,7 @@ class SendMessageUsecase {
     }
     final busyState = await getBusyState.call(conversationId: conversationId);
     if (busyState.isBusy) {
-      queue.enqueue(conversationId: conversationId, draft: draft);
+      final _ = queue.enqueue(conversationId: conversationId, draft: draft);
 
       return;
     }

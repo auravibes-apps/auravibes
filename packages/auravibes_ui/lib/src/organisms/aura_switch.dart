@@ -77,7 +77,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
 }
 
 class _AuraSwitchBuildData {
-  _AuraSwitchBuildData(_AuraSwitchState state, BuildContext context)
+  new(_AuraSwitchState state, BuildContext context)
     : child = _AuraSwitchPresentationData(
         state,
         _AuraSwitchTrackDataBuilder(state, context).value,
@@ -87,10 +87,8 @@ class _AuraSwitchBuildData {
 }
 
 class _AuraSwitchPresentationData {
-  _AuraSwitchPresentationData(
-    _AuraSwitchState state,
-    _AuraSwitchTrackData track,
-  ) : child = _AuraSwitchPresentation(
+  new(_AuraSwitchState state, _AuraSwitchTrackData track)
+    : child = _AuraSwitchPresentation(
         enabled: _switchIsInteractive(state.widget, track.state.isDisabled),
         value: state.widget.value,
         label: state.widget.semanticLabel,
@@ -103,7 +101,7 @@ class _AuraSwitchPresentationData {
 }
 
 class _AuraSwitchTrackDataBuilder {
-  _AuraSwitchTrackDataBuilder(_AuraSwitchState state, BuildContext context)
+  new(_AuraSwitchState state, BuildContext context)
     : value = _switchTrackDataForState(state, context);
 
   final _AuraSwitchTrackData value;
@@ -147,7 +145,7 @@ _AuraSwitchTrackData _switchTrackData(_AuraSwitchBuildRequest request) {
     request.animation,
     _switchDimensions(widget),
     _switchPalette(widget, request.colors, request.isDisabled),
-    _AuraSwitchStateData(
+    .new(
       isDisabled: request.isDisabled,
       isLoading: widget.isLoading,
       isFocused: request.isFocused,
@@ -177,7 +175,7 @@ _AuraSwitchPalette _switchPalette(
 ) => _AuraSwitchPalette(
   _switchTrackColor(widget, colors, isDisabled),
   colors.surface,
-  AuraTint.primary,
+  .primary,
 );
 
 double _switchTrackWidth(AuraSwitchSize size) => switch (size) {

@@ -58,9 +58,9 @@ class const ToolsGroupHeader({
         _GroupActions(
           groupWithTools: groupWithTools,
           isExpanded: isExpanded,
+          onToggleExpand: onToggleExpand,
           onToggleEnabled: onToggleEnabled,
           onDelete: onDelete,
-          onToggleExpand: onToggleExpand,
         ),
       ],
     );

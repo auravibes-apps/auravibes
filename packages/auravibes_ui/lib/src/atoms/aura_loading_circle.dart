@@ -199,7 +199,7 @@ class const _LoadingCircleItemTransform({
 }
 
 class _LoadingCircleItemTransformData {
-  _LoadingCircleItemTransformData({required _LoadingCircleItem item})
+  new({required _LoadingCircleItem item})
     : child = Transform(
         transform: .rotationZ((360 / item.itemCount) * item.index * 0.0174533),
         child: Align(

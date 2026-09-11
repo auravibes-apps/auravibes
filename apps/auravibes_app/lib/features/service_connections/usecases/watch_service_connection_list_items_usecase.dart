@@ -67,6 +67,7 @@ class const WatchServiceConnectionListItemsUsecase(
   ServiceConnectionListItem _mcpCredentialItem(TypedResult row) {
     final server = row.readTable(_database.mcpServers);
     final credential = row.readTable(_database.serviceConnections);
+
     return ServiceConnectionListItem.fromMcpCredential(
       _buildMcpCredentialItem((
         server: server,
@@ -80,8 +81,8 @@ class const WatchServiceConnectionListItemsUsecase(
     _McpCredentialItemRequest request,
   ) => _McpCredentialItem(
     request,
-    _canRefresh(request.credential),
     _now(),
+    canRefresh: _canRefresh(request.credential),
   ).value;
 
   bool _canRefresh(ServiceConnectionTable credential) =>
@@ -113,25 +114,25 @@ class const WatchServiceConnectionListItemsUsecase(
 class _McpCredentialItem {
   new(
     _McpCredentialItemRequest request,
-    bool canRefresh,
-    DateTime now,
-  ) : value = (
-        id: request.credential.id,
-        workspaceId: request.credential.workspaceId,
-        name: request.server.name,
-        url: request.server.url,
-        mcpServerId: request.server.id,
-        authenticationType: request.credential.authenticationType.value,
-        isEnabled: request.credential.isEnabled,
-        authStatus: request.credential.authStatus,
-        expiresAt: request.credential.expiresAt,
-        lastRefreshedAt: request.credential.lastRefreshedAt,
-        lastAuthError: request.credential.lastAuthError,
-        metadata: request.metadataResult.metadata,
-        canRefresh: canRefresh,
-        now: now,
-        hasMetadataError: request.metadataResult.hasError,
-      );
+    DateTime now, {
+    required bool canRefresh,
+  }) : value = (
+         id: request.credential.id,
+         workspaceId: request.credential.workspaceId,
+         name: request.server.name,
+         url: request.server.url,
+         mcpServerId: request.server.id,
+         authenticationType: request.credential.authenticationType.value,
+         isEnabled: request.credential.isEnabled,
+         authStatus: request.credential.authStatus,
+         expiresAt: request.credential.expiresAt,
+         lastRefreshedAt: request.credential.lastRefreshedAt,
+         lastAuthError: request.credential.lastAuthError,
+         metadata: request.metadataResult.metadata,
+         canRefresh: canRefresh,
+         now: now,
+         hasMetadataError: request.metadataResult.hasError,
+       );
 
   final ServiceConnectionMcpCredential value;
 }

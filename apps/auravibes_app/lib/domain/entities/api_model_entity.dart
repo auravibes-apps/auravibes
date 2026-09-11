@@ -71,7 +71,7 @@ abstract class const ApiModelEntity._() with _$ApiModelEntity {
   ]) {
     return _fromCapabilities(
       modelProvider,
-      ModelCapabilities.fromJson(modelProvider, json, canonicalModelIds),
+      .fromJson(modelProvider, json, canonicalModelIds),
     );
   }
 

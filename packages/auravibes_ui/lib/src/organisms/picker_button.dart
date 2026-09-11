@@ -60,7 +60,7 @@ class const _PickerButtonThemedSurface({
 }
 
 class _PickerButtonThemedContent extends StatelessWidget {
-  _PickerButtonThemedContent({
+  new({
     required Widget child,
     required Decoration? decoration,
     required String label,

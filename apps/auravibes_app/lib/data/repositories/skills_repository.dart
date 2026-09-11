@@ -61,12 +61,12 @@ extension SkillsRepositoryCompanionMappings on SkillsRepository {
     SkillToCreate skill,
   ) {
     return _addSkillCreationFields(
-      SkillsCompanion(
+      .new(
         source: const Value(SkillSourceTable.user),
-        workspaceId: Value(workspaceId),
-        kind: Value(_mapKindToTable(skill.kind)),
-        title: Value(skill.title.trim()),
-        slug: Value(generateSkillSlug(skill.title)),
+        workspaceId: .new(workspaceId),
+        kind: .new(_mapKindToTable(skill.kind)),
+        title: .new(skill.title.trim()),
+        slug: .new(generateSkillSlug(skill.title)),
       ),
       skill,
     );
@@ -76,18 +76,15 @@ extension SkillsRepositoryCompanionMappings on SkillsRepository {
     SkillsCompanion companion,
     SkillToCreate skill,
   ) => companion.copyWith(
-    description: Value(skill.description),
-    content: Value(skill.content),
-    credentialDefinitionId: Value(skill.credentialDefinitionId),
-    isCredentialOptional: Value(skill.isCredentialOptional),
-    isEnabled: Value(skill.isEnabled),
+    description: .new(skill.description),
+    content: .new(skill.content),
+    credentialDefinitionId: .new(skill.credentialDefinitionId),
+    isCredentialOptional: .new(skill.isCredentialOptional),
+    isEnabled: .new(skill.isEnabled),
   );
 
   SkillsCompanion _updateSkillCompanion(SkillToUpdate skill) {
-    return _addSkillUpdateFields(
-      SkillsCompanion(updatedAt: Value(DateTime.now())),
-      skill,
-    );
+    return _addSkillUpdateFields(.new(updatedAt: .new(DateTime.now())), skill);
   }
 
   SkillsCompanion _addSkillUpdateFields(
@@ -95,15 +92,15 @@ extension SkillsRepositoryCompanionMappings on SkillsRepository {
     SkillToUpdate skill,
   ) => companion.copyWith(
     title: _skillTitleValue(skill.title),
-    description: Value.absentIfNull(skill.description),
-    content: Value.absentIfNull(skill.content),
+    description: .absentIfNull(skill.description),
+    content: .absentIfNull(skill.content),
     credentialDefinitionId: _credentialDefinitionValue(skill),
-    isCredentialOptional: Value.absentIfNull(skill.isCredentialOptional),
-    isEnabled: Value.absentIfNull(skill.isEnabled),
+    isCredentialOptional: .absentIfNull(skill.isCredentialOptional),
+    isEnabled: .absentIfNull(skill.isEnabled),
   );
 
   Value<String>? _skillTitleValue(String? title) {
-    return title == null ? const Value.absent() : Value(title.trim());
+    return title == null ? const Value.absent() : .new(title.trim());
   }
 
   Value<String?> _credentialDefinitionValue(SkillToUpdate skill) {
@@ -155,30 +152,30 @@ extension SkillsRepositoryEntityMappings on SkillsRepository {
 
   SkillKind _mapKind(SkillKindTable kind) {
     return switch (kind) {
-      .template => SkillKind.template,
-      .native => SkillKind.native,
+      .template => .template,
+      .native => .native,
     };
   }
 
   SkillKindTable _mapKindToTable(SkillKind kind) {
     return switch (kind) {
-      .template => SkillKindTable.template,
-      .native => SkillKindTable.native,
+      .template => .template,
+      .native => .native,
     };
   }
 }
 
 final _emptySkillEntity = SkillEntity(
+  source: SkillSource.user,
   id: '',
   workspaceId: '',
-  source: SkillSource.user,
-  kind: SkillKind.template,
+  kind: .template,
   title: '',
   slug: '',
   description: '',
   content: '',
   isEnabled: false,
   isCredentialOptional: false,
-  createdAt: DateTime(0),
-  updatedAt: DateTime(0),
+  createdAt: .new(0),
+  updatedAt: .new(0),
 );

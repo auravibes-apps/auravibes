@@ -106,6 +106,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
   @override
   Widget build(BuildContext context) {
     final chat = widget.chat;
+
     return _ChatTileProvider(
       chat: chat,
       workspaceId: widget.workspaceId,
@@ -246,9 +247,9 @@ class const _ChatTileRow({
       Expanded(
         child: _ChatTileInfo(chat: chat, title: title),
       ),
-      if (modelDisplayName != null) ...[
+      if (modelDisplayName case final displayName?) ...[
         const SizedBox(width: 8),
-        AuraBadge.text(child: Text(modelDisplayName!), variant: .info),
+        AuraBadge.text(child: Text(displayName), variant: .info),
       ],
       const SizedBox(width: 8),
       _ChatTileMenu(

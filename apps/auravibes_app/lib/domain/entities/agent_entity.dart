@@ -129,11 +129,4 @@ sealed class AgentSkillRef with _$AgentSkillRef {
 
   @override
   bool operator ==(Object other);
-
-  String skillIdentifier() => switch (this) {
-    UserAgentSkillRef(:final skillId) => skillId,
-    AppAgentSkillRef(:final identifier) => identifier,
-  };
-
-  bool isAppSkill() => this is AppAgentSkillRef;
 }

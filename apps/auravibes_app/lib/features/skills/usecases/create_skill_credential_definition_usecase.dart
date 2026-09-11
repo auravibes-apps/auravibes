@@ -19,7 +19,7 @@ class const CreateSkillCredentialDefinitionUsecase(
   ) async {
     await _validateNewDefinition(workspaceId, definition);
 
-    return _createDefinition(workspaceId, definition);
+    return await _createDefinition(workspaceId, definition);
   }
 
   Future<void> _validateNewDefinition(
@@ -50,10 +50,10 @@ class const CreateSkillCredentialDefinitionUsecase(
     String slug,
   ) async {
     final cloud = cloudStore;
-    if (cloud != null) return _cloudDefinition(cloud, slug);
+    if (cloud != null) return await _cloudDefinition(cloud, slug);
     final repository = _skillCredentialDefinitionsRepository;
     if (repository != null) {
-      return repository.getDefinitionBySlug(workspaceId, slug);
+      return await repository.getDefinitionBySlug(workspaceId, slug);
     }
     throw StateError('Credential definition store is unavailable');
   }

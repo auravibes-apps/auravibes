@@ -17,7 +17,7 @@ class const DuplicateSkillTemplateToolUsecase(
     final tool = await _loadTool(toolId);
     final title = await _copyTitle(tool);
 
-    return _createTool(tool, title);
+    return await _createTool(tool, title);
   }
 
   Future<SkillTemplateToolEntity> _loadTool(String toolId) async {

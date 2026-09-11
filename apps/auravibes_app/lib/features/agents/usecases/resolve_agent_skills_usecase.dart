@@ -44,6 +44,7 @@ class const ResolveAgentSkillsUsecase(
     final skill = await _resolveRef(workspaceId, ref);
     if (skill == null) {
       result.unavailable.add(ref);
+
       return;
     }
 

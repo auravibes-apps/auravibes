@@ -131,6 +131,7 @@ Future<List<UserToolType>> availableToolsToAdd(
   final workspaceTools = await ref.watch(
     workspaceToolsProvider(workspaceId).future,
   );
+
   return _availableTools(workspaceTools);
 }
 

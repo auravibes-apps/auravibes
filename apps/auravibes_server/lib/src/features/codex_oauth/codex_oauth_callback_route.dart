@@ -7,7 +7,7 @@ import 'repositories/codex_oauth_repository.dart';
 import 'usecases/codex_oauth_usecases.dart';
 
 class CodexOAuthCallbackRoute extends Route {
-  CodexOAuthCallbackRoute();
+  new();
 
   @override
   Future<Result> handleCall(Session session, Request request) async {

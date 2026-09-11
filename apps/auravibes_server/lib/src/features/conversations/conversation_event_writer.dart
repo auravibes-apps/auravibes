@@ -10,7 +10,7 @@ typedef ConversationWakeupPublisher = Future<void> Function(
 });
 
 class ConversationEventWriter {
-  ConversationEventWriter({
+  new({
     ConversationWakeupPublisher? publishConversation,
   }) : _publishConversation =
            publishConversation ?? SyncWakeups.publishConversation;

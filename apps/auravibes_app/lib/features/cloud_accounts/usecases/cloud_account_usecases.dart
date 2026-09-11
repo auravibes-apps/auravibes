@@ -22,7 +22,7 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
     final client = _newCloudClient();
     final auth = await client.emailIdp.login(email: email, password: password);
 
-    return _saveSignedInAccount(client, auth);
+    return await _saveSignedInAccount(client, auth);
   }
 
   Future<CloudAccountSession> finishRegistration({
@@ -35,7 +35,7 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
       password: password,
     );
 
-    return _saveSignedInAccount(client, auth);
+    return await _saveSignedInAccount(client, auth);
   }
 
   Future<void> remove({
@@ -60,7 +60,8 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
     client.authSessionManager = sessionManager;
     final _ = await sessionManager.initialize();
     await client.auth.updateSignedInUser(auth);
-    return _saveCurrentAccount(_store, client);
+
+    return await _saveCurrentAccount(_store, client);
   }
 }
 

@@ -546,9 +546,9 @@ class const _ConnectionTileDetails({
       if (connection.metadataValues.isNotEmpty)
         _ConnectionMetadata(values: connection.metadataValues),
     ],
-    mainAxisSize: .min,
     spacing: .xs,
     crossAxisAlignment: .start,
+    mainAxisSize: .min,
   );
 }
 

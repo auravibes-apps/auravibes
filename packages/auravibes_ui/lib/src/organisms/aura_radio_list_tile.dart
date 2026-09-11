@@ -81,7 +81,7 @@ class const _AuraRadioListTileSemantics<T>({
 }
 
 class _AuraRadioListTileSemanticsData<T> {
-  _AuraRadioListTileSemanticsData({
+  new({
     required T value,
     required T? groupValue,
     required ValueChanged<T?>? onChanged,
@@ -143,7 +143,7 @@ class const _AuraRadioListTileInteraction<T>({
 }
 
 class _AuraRadioListTileInteractionData<T> {
-  _AuraRadioListTileInteractionData({
+  new({
     required T value,
     required T? groupValue,
     required ValueChanged<T?>? onChanged,
@@ -197,7 +197,7 @@ class const _AuraRadioListTileContent<T>({
 }
 
 class _AuraRadioListTileContentData<T> {
-  _AuraRadioListTileContentData({
+  new({
     required T value,
     required T? groupValue,
     required ValueChanged<T?>? onChanged,
@@ -239,7 +239,7 @@ class const _AuraRadioListTileText({
 }
 
 class _AuraRadioListTileTextData {
-  _AuraRadioListTileTextData({
+  new({
     required Widget title,
     required Widget? subtitle,
     required BuildContext context,
@@ -268,22 +268,20 @@ class const _AuraRadioListTileSubtitle({required final Widget child})
 }
 
 class _AuraRadioListTileSubtitleData {
-  _AuraRadioListTileSubtitleData({
-    required Widget child,
-    required BuildContext context,
-  }) : child = Padding(
-         padding: const EdgeInsets.only(top: 4),
-         child: DefaultTextStyle(
-           style:
-               Theme.of(context).textTheme.bodySmall
-                   ?.copyWith(color: context.auraColors.onSurfaceVariant) ??
-               TextStyle(
-                 color: context.auraColors.onSurfaceVariant,
-                 fontSize: 14,
-               ),
-           child: child,
-         ),
-       );
+  new({required Widget child, required BuildContext context})
+    : child = Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: DefaultTextStyle(
+          style:
+              Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: context.auraColors.onSurfaceVariant) ??
+              TextStyle(
+                color: context.auraColors.onSurfaceVariant,
+                fontSize: 14,
+              ),
+          child: child,
+        ),
+      );
 
   final Widget child;
 }

@@ -8,44 +8,37 @@ import 'package:drift/drift.dart';
 
 @DataClassName('SkillsTable')
 class Skills extends Table with TableMixin {
-  late final workspaceId = text().references(
-    Workspaces,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
-  late final source = textEnum<SkillSourceTable>()();
+  TextColumn get source => textEnum<SkillSourceTable>()();
 
-  late final kind = textEnum<SkillKindTable>()();
+  TextColumn get kind => textEnum<SkillKindTable>()();
 
-  late final title = text()();
+  TextColumn get title => text()();
 
-  late final slug = text()();
+  TextColumn get slug => text()();
 
-  late final description = text()();
+  TextColumn get description => text()();
 
-  late final content = text()();
+  TextColumn get content => text()();
 
-  late final credentialDefinitionId = text().nullable().references(
+  TextColumn get credentialDefinitionId => text().nullable().references(
     SkillCredentialDefinitions,
     #id,
     onDelete: .setNull,
   )();
 
-  late final isCredentialOptional = boolean().withDefault(
-    const Constant(false),
-  )();
+  BoolColumn get isCredentialOptional =>
+      boolean().withDefault(const Constant(false))();
 
-  late final isEnabled = boolean().withDefault(const Constant(true))();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 
   @override
   List<Set<Column<Object>>> get uniqueKeys => [
     {workspaceId, title},
     {workspaceId, slug},
   ];
-
-  bool isUniqueColumn(Column column) =>
-      uniqueKeys.any((key) => key.contains(column));
 }
 
 enum SkillSourceTable(final String value) {

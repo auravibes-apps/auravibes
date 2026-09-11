@@ -280,19 +280,19 @@ extension SkillCredentialsRepositoryMapping on SkillCredentialsRepository {
   ServiceConnectionsCompanion _createCredentialCompanion(
     _CreateCredentialData data,
   ) => _createCredentialBase(data).copyWith(
-    encryptedAuthValue: Value(data.encryptedAttributes),
-    keySuffix: Value(data.keySuffix),
-    metadataJson: Value(_metadataJson(data.nonSecretAttributes)),
+    encryptedAuthValue: .new(data.encryptedAttributes),
+    keySuffix: .new(data.keySuffix),
+    metadataJson: .new(_metadataJson(data.nonSecretAttributes)),
   );
 
   ServiceConnectionsCompanion _createCredentialBase(
     _CreateCredentialData data,
   ) => ServiceConnectionsCompanion(
-    name: Value(data.credential.name),
-    serviceId: Value(data.credential.credentialDefinitionId),
+    name: .new(data.credential.name),
+    serviceId: .new(data.credential.credentialDefinitionId),
     kind: const Value(ServiceConnectionKindTable.skillCredential),
     authenticationType: const Value(ServiceAuthenticationTypeTable.apiKey),
-    workspaceId: Value(data.workspaceId),
+    workspaceId: .new(data.workspaceId),
   );
 }
 
@@ -308,10 +308,10 @@ extension SkillCredentialsUpdateMapping on SkillCredentialsRepository {
   ServiceConnectionsCompanion _updateCredentialCompanion(
     _UpdateCredentialData data,
   ) => ServiceConnectionsCompanion(
-    name: Value.absentIfNull(data.credential.name),
-    encryptedAuthValue: Value(data.encryptedAttributes),
-    keySuffix: Value(data.keySuffix),
-    metadataJson: Value(_metadataJson(data.nonSecretAttributes)),
+    name: .absentIfNull(data.credential.name),
+    encryptedAuthValue: .new(data.encryptedAttributes),
+    keySuffix: .new(data.keySuffix),
+    metadataJson: .new(_metadataJson(data.nonSecretAttributes)),
   );
 }
 
@@ -424,6 +424,7 @@ extension SkillCredentialsAttributeDecoding on SkillCredentialsRepository {
   Map<String, String> _nonSecretAttributes(ServiceConnectionTable table) {
     final metadata = table.metadataJson;
     if (metadata == null || metadata.isEmpty) return {};
+
     return _decodeNonSecretAttributes(metadata);
   }
 

@@ -282,7 +282,7 @@ extension CloudSkillStoreToolOperations on CloudSkillStore {
   ) async {
     final resource = await _required(.skillTemplateTool, id);
 
-    return _updateToolValue(id, resource, value);
+    return await _updateToolValue(id, resource, value);
   }
 
   Future<SkillTemplateToolEntity> _updateToolValue(
@@ -615,6 +615,7 @@ extension _CloudSkillStoreToolMapping on CloudSkillStore {
     request,
   ) {
     final value = request.value;
+
     return _toolCreateState(
       _toolCreateText(
         _toolCreateIdentity(
@@ -883,7 +884,7 @@ extension _CloudSkillStoreCredentialState on CloudSkillStore {
   ) async {
     final secretRevision = _credentialSecretRevision(request.resource);
     if (_writesCredentialSecret(request.value)) {
-      return _updateCredentialSecret(
+      return await _updateCredentialSecret(
         _credentialSecretUpdateRequest(request, secretRevision),
       );
     }

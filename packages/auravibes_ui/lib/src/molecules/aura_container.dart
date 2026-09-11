@@ -95,22 +95,20 @@ class const _AuraContainerMargins({
 }
 
 class _AuraContainerDecorated extends StatelessWidget {
-  _AuraContainerDecorated({
-    required AuraContainer container,
-    required AuraTheme theme,
-  }) : _child = Container(
-         alignment: container.alignment,
-         decoration: _containerDecoration(container, theme),
-         width: container.width,
-         height: container.height,
-         child: switch (container.padding) {
-           final padding? => AuraPadding(
-             child: container.child,
-             padding: padding,
-           ),
-           null => container.child,
-         },
-       );
+  new({required AuraContainer container, required AuraTheme theme})
+    : _child = Container(
+        alignment: container.alignment,
+        decoration: _containerDecoration(container, theme),
+        width: container.width,
+        height: container.height,
+        child: switch (container.padding) {
+          final padding? => AuraPadding(
+            child: container.child,
+            padding: padding,
+          ),
+          null => container.child,
+        },
+      );
 
   final Widget _child;
 

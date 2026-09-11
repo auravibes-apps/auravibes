@@ -38,6 +38,7 @@ class ResolveWorkspaceSelectionUsecase({
     }
 
     await _clearStaleSelection(savedWorkspaceId);
+
     return null;
   }
 

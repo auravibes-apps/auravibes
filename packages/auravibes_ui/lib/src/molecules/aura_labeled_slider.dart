@@ -92,7 +92,7 @@ String Function(double) _sliderFormatter(AuraLabeledSlider slider) =>
     (value) => _formatSliderValue(value, slider.precision);
 
 class _AuraLabeledSliderContent extends StatelessWidget {
-  _AuraLabeledSliderContent({
+  new({
     required AuraLabeledSlider slider,
     required double effectiveValue,
     required String Function(double) format,

@@ -140,7 +140,7 @@ extension AddModelProviderStateActions on AddModelProviderState {
     final input = _validatedInput();
     if (input == null) return null;
 
-    return _addValidatedModelProvider(input, (
+    return await _addValidatedModelProvider(input, (
       codexOAuthMethod: codexOAuthMethod,
       onCodexDeviceCode: onCodexDeviceCode,
       isCodexOAuthCancelled: isCodexOAuthCancelled,
@@ -178,7 +178,9 @@ extension AddModelProviderStateActions on AddModelProviderState {
       codexOAuthMethod: request.codexOAuthMethod,
     ));
 
-    return _addModelConnection(await _connectionRequest(request, session));
+    final connection = await _connectionRequest(request, session);
+
+    return await _addModelConnection(connection);
   }
 
   ({String name, String modelId})? _validatedInput() {
@@ -213,6 +215,7 @@ extension _AddModelProviderStateDependencies on AddModelProviderState {
     WorkspaceSession session,
   ) async {
     final input = request.input;
+
     return (
       repo: await _modelConnectionStore(),
       session: session,
@@ -262,11 +265,7 @@ extension on AddModelProviderState {
       );
     }
 
-    return _addApiKeyModelProvider(
-      request.repo,
-      request.name,
-      request.modelId,
-    );
+    return _addApiKeyModelProvider(request.repo, request.name, request.modelId);
   }
 
   _OAuthModelProviderRequest _oauthRequest(_ModelConnectionRequest request) => (
@@ -300,7 +299,7 @@ extension on AddModelProviderState {
     );
     if (gateway == null) throw StateError('Cloud workspace unavailable');
     final connection = await _createCloudConnection(request);
-    await _startCloudOAuth(CloudModelGateway(gateway), connection.id);
+    await _startCloudOAuth(.new(gateway), connection.id);
 
     return connection;
   }
@@ -350,7 +349,8 @@ extension on AddModelProviderState {
     _validateOAuthClient();
     final modelIds = await _codexRuntimeModelIds();
     final token = await _authenticateCodex(request);
-    return _createOAuthConnection(request, modelIds, token);
+
+    return await _createOAuthConnection(request, modelIds, token);
   }
 }
 
@@ -437,6 +437,7 @@ extension on AddModelProviderState {
       modelCatalogStoreProvider(_workspace).future,
     );
     final openAIModels = await catalog.getModelsByProvider('openai');
+
     return _requireRuntimeModelIds(
       openAIModels
           .where((model) => model.isCodexRuntimeModel)

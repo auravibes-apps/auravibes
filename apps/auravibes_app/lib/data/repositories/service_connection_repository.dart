@@ -172,8 +172,7 @@ GenericServiceConnectionRecord _genericServiceConnectionRecord(
   keySuffix: row.keySuffix,
 );
 
-bool _isAppSkillCredential(ServiceConnectionTable? row, String workspaceId) =>
-    row != null &&
+bool _isAppSkillCredential(ServiceConnectionTable row, String workspaceId) =>
     row.workspaceId == workspaceId &&
     row.kind == ServiceConnectionKindTable.appSkillCredential;
 

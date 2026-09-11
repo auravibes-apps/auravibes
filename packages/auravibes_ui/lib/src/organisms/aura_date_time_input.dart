@@ -273,7 +273,7 @@ extension on AuraDateTimeInput {
 }
 
 class _AuraDateTimeInputField extends StatelessWidget {
-  _AuraDateTimeInputField({
+  new({
     required AuraDateTimeInput input,
     required VoidCallback? onTap,
     required bool isEnabled,
@@ -381,7 +381,7 @@ class _AuraDateTimePickerPageState extends State<_AuraDateTimePickerPage> {
 }
 
 class _AuraDateTimePickerDialog extends StatelessWidget {
-  _AuraDateTimePickerDialog({
+  new({
     required AuraDateTimeInput input,
     required DateTime value,
     required ValueChanged<DateTime> onChanged,
@@ -619,7 +619,7 @@ class const _AuraDateTimePickerFrame({
 }
 
 class _AuraDateTimePickerBody extends StatelessWidget {
-  _AuraDateTimePickerBody({
+  new({
     required AuraDateTimeInput input,
     required DateTime value,
     required AuraColorScheme colors,
@@ -674,7 +674,7 @@ class const _AuraDateTimePickerHeader({
 }
 
 class _AuraDateTimePickerSelection extends StatelessWidget {
-  _AuraDateTimePickerSelection({
+  new({
     required AuraDateTimeInput input,
     required DateTime value,
     required AuraColorScheme colors,
@@ -702,7 +702,7 @@ class _AuraDateTimePickerSelection extends StatelessWidget {
 }
 
 class _AuraDateTimePickerActions extends StatelessWidget {
-  _AuraDateTimePickerActions({
+  new({
     required AuraDateTimeInput input,
     required AuraColorScheme colors,
     required VoidCallback onCancel,
@@ -731,7 +731,7 @@ class _AuraDateTimePickerActions extends StatelessWidget {
 }
 
 class _AuraDateTimePickerCancelButton extends StatelessWidget {
-  _AuraDateTimePickerCancelButton({
+  new({
     required AuraDateTimeInput input,
     required AuraColorScheme colors,
     required VoidCallback onPressed,
@@ -740,10 +740,10 @@ class _AuraDateTimePickerCancelButton extends StatelessWidget {
          onPressed: onPressed,
          child: Text(
            input.labels.cancel,
-           style: TextStyle(
+           style: .new(
              color: colors.primary,
              fontSize: AuraDateTimeInput._pickerActionFontSize,
-             fontWeight: FontWeight.w600,
+             fontWeight: .w600,
            ),
          ),
          width: AuraDateTimeInput._pickerActionWidth,
@@ -857,7 +857,7 @@ class const _AuraDateTimePickerFrameSurface({
 }
 
 class _AuraDateTimePickerFrameContent extends StatelessWidget {
-  _AuraDateTimePickerFrameContent.fromContext({
+  new fromContext({
     required BuildContext context,
     required AuraDateTimeInput input,
     required DateTime value,

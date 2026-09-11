@@ -133,7 +133,7 @@ class const _AuraDropdownOptionLeading<T>({
 }
 
 class _AuraDropdownOptionTrailing<T> extends StatelessWidget {
-  _AuraDropdownOptionTrailing({required AuraDropdownOption<T> option})
+  new({required AuraDropdownOption<T> option})
     : _child = switch (option.trailing) {
         final trailing? => Row(
           mainAxisSize: .min,

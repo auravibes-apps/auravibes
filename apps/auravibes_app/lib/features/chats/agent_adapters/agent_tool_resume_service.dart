@@ -45,6 +45,7 @@ class const AppAgentToolResumeProvider({
     if (decision != agent.AgentIterationDecision.done) return decision;
 
     _finishChildIfNeeded(activeSubAgents, conversationId);
+
     return decision;
   }
 

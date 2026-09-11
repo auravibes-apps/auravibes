@@ -98,7 +98,7 @@ class const _AuraButtonLayout({
 }
 
 class _AuraButtonSurface extends StatelessWidget {
-  _AuraButtonSurface({
+  new({
     required AuraButton button,
     required AuraColorScheme colors,
     required AuraTypographyScale typography,
@@ -172,7 +172,7 @@ class const _AuraButtonContent({
 }
 
 class _AuraButtonLoading extends StatelessWidget {
-  _AuraButtonLoading({
+  new({
     required AuraButton button,
     required AuraColorScheme colors,
     required bool disabled,
@@ -218,7 +218,7 @@ BoxDecoration _buttonDecorationFrom(_ButtonDecorationRequest request) =>
     _ButtonDecorationData(request).value;
 
 class _ButtonDecorationData {
-  _ButtonDecorationData(_ButtonDecorationRequest request)
+  new(_ButtonDecorationRequest request)
     : value = BoxDecoration(
         color: _buttonBackgroundColor(
           request.button,
@@ -316,7 +316,7 @@ TextStyle _buttonTextStyle(_ButtonTextStyleRequest request) =>
     _ButtonTextStyleData(request).value;
 
 class _ButtonTextStyleData {
-  _ButtonTextStyleData(_ButtonTextStyleRequest request)
+  new(_ButtonTextStyleRequest request)
     : value = TextStyle(
         color: _buttonForegroundColor(
           request.button,

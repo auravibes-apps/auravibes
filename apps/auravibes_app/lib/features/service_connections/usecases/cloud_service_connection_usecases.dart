@@ -60,9 +60,11 @@ class const CloudServiceConnectionUsecases(
   Stream<List<CloudServiceConnection>> watch() =>
       _store.watch(.serviceConnection).map(_cloudConnections);
 
-  Future<CloudServiceConnection?> getById(String id) => watch().first.then(
-    (items) => items.where((item) => item.id == id).firstOrNull,
-  );
+  Future<CloudServiceConnection?> getById(String id) async {
+    final items = await watch().first;
+
+    return items.where((item) => item.id == id).firstOrNull;
+  }
 
   Future<void> updateGeneric({
     required CloudServiceConnection connection,
@@ -99,7 +101,7 @@ Future<void> _create(
   CloudWorkspaceResourceStore store,
   _CreateRequest request,
 ) async {
-  await store.mutateCredential(
+  final _ = await store.mutateCredential(
     operation: .create,
     kind: .serviceConnection,
     id: request.id,

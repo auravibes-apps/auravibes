@@ -31,7 +31,7 @@ class AuraAvatarGroup extends StatelessWidget {
 }
 
 class _AuraAvatarGroupContent extends StatelessWidget {
-  _AuraAvatarGroupContent({
+  new({
     required List<Widget> children,
     required int maxVisible,
     required String? overflowSemanticLabel,

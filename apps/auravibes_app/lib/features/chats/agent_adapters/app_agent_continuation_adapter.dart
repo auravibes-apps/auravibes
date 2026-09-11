@@ -77,7 +77,7 @@ class AppAgentContinuationAdapter({
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity> projectSelectedModel(
     WorkspaceModelSelectionWithConnectionEntity model,
-  ) async {
+  ) {
     return _projectSelectedModel(apiModelRepository, model);
   }
 
@@ -163,18 +163,20 @@ Future<WorkspaceModelSelectionWithConnectionEntity> _projectSelectedModel(
     'openai',
     model.workspaceModelSelection.modelId,
   );
-  _ensureCodexModel(openAIModel);
+  final codexModel = _ensureCodexModel(openAIModel);
 
-  return _copyWithCodexModel(model, openAIModel!);
+  return _copyWithCodexModel(model, codexModel);
 }
 
-void _ensureCodexModel(ApiModelEntity? model) {
+ApiModelEntity _ensureCodexModel(ApiModelEntity? model) {
   if (model == null) {
     throw Exception('OpenAI model catalog is unavailable');
   }
   if (!model.isCodexRuntimeModel) {
     throw Exception('Selected Codex model is not supported');
   }
+
+  return model;
 }
 
 WorkspaceModelSelectionWithConnectionEntity _copyWithCodexModel(

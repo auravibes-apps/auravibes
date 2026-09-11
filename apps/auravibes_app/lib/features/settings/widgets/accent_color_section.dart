@@ -142,7 +142,13 @@ class const _HueDialog({
 }
 
 class _HueDialogState extends State<_HueDialog> {
-  late double _hue = widget.hue;
+  double _hue = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _hue = widget.hue;
+  }
 
   @override
   Widget build(BuildContext context) => AuraColumn(

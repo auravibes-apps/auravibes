@@ -255,7 +255,7 @@ class const _SkillsScreenAsyncContent({
         onOpenSkill: onOpenSkill,
         onDeleteSkill: (skill) => onDeleteSkill(context, ref, skill),
         onSkillEnabledChanged: (skill, value) =>
-            onSkillEnabledChanged(ref, skill, (isEnabled: value)),
+            onSkillEnabledChanged(ref, skill, value),
       ).child;
 }
 
@@ -265,7 +265,7 @@ class _SkillsScreenAsyncContentData {
     required VoidCallback onCreateSkill,
     required ValueChanged<WorkspaceSkill> onOpenSkill,
     required ValueChanged<WorkspaceSkill> onDeleteSkill,
-    required void Function(WorkspaceSkill skill, bool value)
+    required void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
     onSkillEnabledChanged,
   }) : child = switch (_loadedSkills(skillsAsync)) {
          null => _SkillsScreenPendingState(skillsAsync: skillsAsync),
@@ -286,49 +286,23 @@ List<WorkspaceSkill>? _loadedSkills(
 ) => switch (skillsAsync) {
   AsyncData(:final value) => value,
   AsyncLoading(value: final value, hasValue: true) => value,
-  _ => null,
+  AsyncLoading() => null,
+  AsyncError() => null,
 };
 
-class const _SkillsScreenPendingState({required final AsyncValue<List<WorkspaceSkill>> skillsAsync})
-    extends StatelessWidget {
+class const _SkillsScreenPendingState({
+  required final AsyncValue<List<WorkspaceSkill>> skillsAsync,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (skillsAsync) {
     AsyncLoading() => const Center(child: AuraSpinner()),
     AsyncError(:final error) => _SkillsScreenError(error: error),
-    _ => const SizedBox.shrink(),
+    AsyncData() => const SizedBox.shrink(),
   };
 }
 
-class const _SkillsScreenLoadedAsyncState({
-  required final List<WorkspaceSkill> skills,
-  required final VoidCallback onCreateSkill,
-  required final ValueChanged<WorkspaceSkill> onOpenSkill,
-  required final Future<void> Function(
-    BuildContext context,
-    WidgetRef ref,
-    WorkspaceSkill skill,
-  )
-  onDeleteSkill,
-  required final Future<void> Function(
-    WidgetRef ref,
-    WorkspaceSkill skill,
-    ({bool isEnabled}) change,
-  )
-  onSkillEnabledChanged,
-}) extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      _SkillsScreenLoadedContent(
-        skills: skills,
-        onCreateSkill: onCreateSkill,
-        onOpenSkill: onOpenSkill,
-        onDeleteSkill: (skill) => onDeleteSkill(context, ref, skill),
-        onSkillEnabledChanged: (skill, value) =>
-            onSkillEnabledChanged(ref, skill, (isEnabled: value)),
-      );
-}
-
-class const _SkillsScreenError({required final Object error}) extends StatelessWidget {
+class const _SkillsScreenError({required final Object error})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: AuraText(child: TextLocale(CloudAppErrors.localizationKey(error))),
@@ -340,7 +314,7 @@ class const _SkillsScreenLoadedContent({
   required final VoidCallback onCreateSkill,
   required final ValueChanged<WorkspaceSkill> onOpenSkill,
   required final ValueChanged<WorkspaceSkill> onDeleteSkill,
-  required final void Function(WorkspaceSkill skill, bool value)
+  required final void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
   onSkillEnabledChanged,
 }) extends StatelessWidget {
   @override
@@ -393,7 +367,7 @@ class const _SkillsList({
   required final List<WorkspaceSkill> skills,
   required final ValueChanged<WorkspaceSkill> onOpenSkill,
   required final ValueChanged<WorkspaceSkill> onDeleteSkill,
-  required final void Function(WorkspaceSkill skill, bool value)
+  required final void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
   onSkillEnabledChanged,
 }) extends StatelessWidget {
   @override
@@ -408,8 +382,10 @@ class const _SkillsList({
   );
 }
 
-class const _SkillsListView({required final List<WorkspaceSkill> skills, required final IndexedWidgetBuilder itemBuilder})
-    extends StatelessWidget {
+class const _SkillsListView({
+  required final List<WorkspaceSkill> skills,
+  required final IndexedWidgetBuilder itemBuilder,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView.separated(
     padding: const EdgeInsets.all(_skillScreenListPadding),
@@ -423,7 +399,7 @@ class const _SkillListItem({
   required final WorkspaceSkill skill,
   required final ValueChanged<WorkspaceSkill> onOpenSkill,
   required final ValueChanged<WorkspaceSkill> onDeleteSkill,
-  required final void Function(WorkspaceSkill skill, bool value)
+  required final void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
   onSkillEnabledChanged,
 }) extends StatelessWidget {
   @override
@@ -432,7 +408,7 @@ class const _SkillListItem({
       skill: skill,
       onOpen: () => onOpenSkill(skill),
       onDelete: () => onDeleteSkill(skill),
-      onChanged: (value) => onSkillEnabledChanged(skill, value),
+      onChanged: (value) => onSkillEnabledChanged(skill, (isEnabled: value)),
     );
   }
 }

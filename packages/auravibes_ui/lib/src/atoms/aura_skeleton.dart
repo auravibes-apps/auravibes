@@ -35,7 +35,7 @@ class AuraSkeleton extends StatelessWidget {
 }
 
 class _AuraSkeletonContent {
-  _AuraSkeletonContent({
+  new({
     required double? width,
     required double height,
     required bool circular,

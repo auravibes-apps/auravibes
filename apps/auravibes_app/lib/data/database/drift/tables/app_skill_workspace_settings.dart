@@ -12,13 +12,10 @@ import 'package:drift/drift.dart';
   unique: true,
 )
 class AppSkillWorkspaceSettings extends Table with TableMixin {
-  late final workspaceId = text().references(
-    Workspaces,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
-  late final appSkillIdentifier = text()();
+  TextColumn get appSkillIdentifier => text()();
 
-  late final isEnabled = boolean().withDefault(const Constant(true))();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 }

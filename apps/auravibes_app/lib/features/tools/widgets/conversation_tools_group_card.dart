@@ -46,10 +46,10 @@ class const ConversationToolsGroupCard({
     return _ConversationToolsGroupCardFrame(
       groupWithTools: groupWithTools,
       workspaceId: workspaceId,
-      conversationId: conversationId,
       isExpanded: isExpanded.value,
       onToggleExpand: () => isExpanded.value = !isExpanded.value,
       callbacks: callbacks,
+      conversationId: conversationId,
     );
   }
 
@@ -80,18 +80,16 @@ class _ConversationToolsGroupCardCallbacks {
   final WidgetRef ref;
   final BuildContext context;
 
-  late final ValueChanged<bool>? onToggleAllTools =
+  ValueChanged<bool>? get onToggleAllTools =>
       groupWithTools.tools.isNotEmpty ? _handleToggleAllTools : null;
 
-  late final VoidCallback? onReconnect = _shouldShowReconnect
-      ? _handleReconnect
-      : null;
+  VoidCallback? get onReconnect =>
+      _shouldShowReconnect ? _handleReconnect : null;
 
-  late final VoidCallback? onViewError = groupWithTools.hasMcpError()
-      ? _showErrorDetails
-      : null;
+  VoidCallback? get onViewError =>
+      groupWithTools.hasMcpError() ? _showErrorDetails : null;
 
-  late final bool _shouldShowReconnect =
+  bool get _shouldShowReconnect =>
       groupWithTools.isMcpGroup &&
       (groupWithTools.hasMcpError() || groupWithTools.isMcpDisconnected());
 
@@ -151,10 +149,10 @@ class const _ConversationToolsGroupCardFrame({
       child: _ConversationToolsGroupCardContent(
         groupWithTools: groupWithTools,
         workspaceId: workspaceId,
-        conversationId: conversationId,
         isExpanded: isExpanded,
         onToggleExpand: onToggleExpand,
         callbacks: callbacks,
+        conversationId: conversationId,
       ),
       style: .border,
     ),

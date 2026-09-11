@@ -229,8 +229,8 @@ mixin _CloudAgentRepositoryWrite {
     );
   }
 
-  Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) =>
-      _updateAgentResponse(agentId, agent).then(_decodeUpdatedAgent);
+  Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async =>
+      _decodeUpdatedAgent(await _updateAgentResponse(agentId, agent));
 
   Future<bool> deleteAgent(String agentId) async {
     final resources = await read();

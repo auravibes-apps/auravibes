@@ -47,15 +47,12 @@ class const ListConversationAgentSkillsUsecase(
     required String workspaceId,
   }) async {
     final conversation = await _loadConversation(conversationId, workspaceId);
-    if (!_isConversationForWorkspace(conversation, workspaceId)) return null;
+    if (conversation == null || conversation.workspaceId != workspaceId) {
+      return null;
+    }
 
-    return _loadVisibleAgent(workspaceId, conversation!);
+    return await _loadVisibleAgent(workspaceId, conversation);
   }
-
-  bool _isConversationForWorkspace(
-    ConversationEntity? conversation,
-    String workspaceId,
-  ) => conversation != null && conversation.workspaceId == workspaceId;
 
   Future<AgentEntity?> _loadVisibleAgent(
     String workspaceId,

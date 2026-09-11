@@ -186,37 +186,31 @@ class _GatewayCredentialCallHandler {
     required CloudWorkspaceRef workspace,
     required Client? client,
     required WorkspaceCredentialMutation? mutateCredential,
-  }) : _workspace = workspace,
-       _client = client,
-       _mutateCredential = mutateCredential;
+  }) : call =
+           (({
+             required requestId,
+             required resourceOperation,
+             required secretKind,
+             required scope,
+             required secret,
+             required clearSecret,
+             expectedSecretRevision,
+           }) => _mutateCredentialRequest((
+             workspace: workspace,
+             client: client,
+             mutateCredential: mutateCredential,
+             input: (
+               requestId: requestId,
+               resourceOperation: resourceOperation,
+               secretKind: secretKind,
+               scope: scope,
+               secret: secret,
+               clearSecret: clearSecret,
+               expectedSecretRevision: expectedSecretRevision,
+             ),
+           )));
 
-  late final WorkspaceCredentialCall call =
-      ({
-        required requestId,
-        required resourceOperation,
-        required secretKind,
-        required scope,
-        required secret,
-        required clearSecret,
-        expectedSecretRevision,
-      }) => _mutateCredentialRequest((
-        workspace: _workspace,
-        client: _client,
-        mutateCredential: _mutateCredential,
-        input: (
-          requestId: requestId,
-          resourceOperation: resourceOperation,
-          secretKind: secretKind,
-          scope: scope,
-          secret: secret,
-          clearSecret: clearSecret,
-          expectedSecretRevision: expectedSecretRevision,
-        ),
-      ));
-
-  final CloudWorkspaceRef _workspace;
-  final Client? _client;
-  final WorkspaceCredentialMutation? _mutateCredential;
+  final WorkspaceCredentialCall call;
 }
 
 class CloudWorkspaceStateGateway {

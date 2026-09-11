@@ -29,21 +29,19 @@ enum ModelProvidersTableType {
 @DataClassName('ApiModelProvidersTable')
 class ApiModelProviders extends Table {
   // Model id.
-  late final id = text()();
+  TextColumn get id => text()();
 
   /// Human-readable name of the model.
-  late final name = text()();
+  TextColumn get name => text()();
 
   /// Type of chat model (local or remote). Stored as a string to handle enum
   /// conversion.
-  late final type = textEnum<ModelProvidersTableType>().nullable()();
+  TextColumn get type => textEnum<ModelProvidersTableType>().nullable()();
 
-  late final url = text().nullable()();
+  TextColumn get url => text().nullable()();
 
-  late final doc = text().nullable()();
+  TextColumn get doc => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
-
-  bool isPrimaryKeyColumn(Column column) => primaryKey.contains(column);
 }

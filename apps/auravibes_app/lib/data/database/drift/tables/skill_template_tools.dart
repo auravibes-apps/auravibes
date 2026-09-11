@@ -7,34 +7,31 @@ import 'package:drift/drift.dart';
 
 @DataClassName('SkillTemplateToolsTable')
 class SkillTemplateTools extends Table with TableMixin {
-  late final skillId = text().references(Skills, #id, onDelete: .cascade)();
+  TextColumn get skillId =>
+      text().references(Skills, #id, onDelete: .cascade)();
 
-  late final templateType = textEnum<SkillTemplateToolTypeTable>()();
+  TextColumn get templateType => textEnum<SkillTemplateToolTypeTable>()();
 
-  late final title = text()();
+  TextColumn get title => text()();
 
-  late final description = text().withDefault(const Constant(''))();
+  TextColumn get description => text().withDefault(const Constant(''))();
 
-  late final slug = text()();
+  TextColumn get slug => text()();
 
-  late final templateJson = text()();
+  TextColumn get templateJson => text()();
 
-  late final inputsJson = text()();
+  TextColumn get inputsJson => text()();
 
-  late final requiresCredential = boolean().withDefault(
-    const Constant(false),
-  )();
+  BoolColumn get requiresCredential =>
+      boolean().withDefault(const Constant(false))();
 
-  late final isEnabled = boolean().withDefault(const Constant(true))();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 
   @override
   List<Set<Column<Object>>> get uniqueKeys => [
     {skillId, title},
     {skillId, slug},
   ];
-
-  bool isUniqueColumn(Column column) =>
-      uniqueKeys.any((key) => key.contains(column));
 }
 
 enum SkillTemplateToolTypeTable(final String value) {

@@ -105,75 +105,69 @@ typedef _WorkspaceCredentialCall =
 class _SecretWriter {
   new(this._putSecret);
 
-  late final _WorkspaceSecretWrite call =
-      ({
-        required kind,
-        required scope,
-        required resourceId,
-        required secret,
-        revision,
-      }) => _sendSecret(_putSecret, (
-        kind: kind,
-        scope: scope,
-        resourceId: resourceId,
-        secret: secret,
-        revision: revision,
-      ));
-
   final _WorkspaceSecretCall _putSecret;
+
+  Future<PutWorkspaceSecretResponse> call({
+    required WorkspaceSecretKind kind,
+    required WorkspaceSecretScope scope,
+    required String resourceId,
+    required String? secret,
+    int? revision,
+  }) => _sendSecret(_putSecret, (
+    kind: kind,
+    scope: scope,
+    resourceId: resourceId,
+    secret: secret,
+    revision: revision,
+  ));
 }
 
 class _CredentialWriter {
   new(this._send);
 
-  late final _WorkspaceCredentialWrite call =
-      ({
-        required operation,
-        required kind,
-        required id,
-        required secretKind,
-        required scope,
-        required secret,
-        clearSecret = false,
-        data,
-        resourceRevision,
-        secretRevision,
-      }) => _send((
-        operation: operation,
-        kind: kind,
-        id: id,
-        secretKind: secretKind,
-        scope: scope,
-        secret: secret,
-        clearSecret: clearSecret,
-        data: data,
-        resourceRevision: resourceRevision,
-        secretRevision: secretRevision,
-      ));
-
   final _WorkspaceCredentialSend _send;
+
+  Future<MutateWorkspaceCredentialResponse> call({
+    required WorkspacePatchOperationKind operation,
+    required WorkspaceResourceKind kind,
+    required String id,
+    required WorkspaceSecretKind secretKind,
+    required WorkspaceSecretScope scope,
+    required String? secret,
+    bool clearSecret = false,
+    Map<String, Object?>? data,
+    int? resourceRevision,
+    int? secretRevision,
+  }) => _send((
+    operation: operation,
+    kind: kind,
+    id: id,
+    secretKind: secretKind,
+    scope: scope,
+    secret: secret,
+    clearSecret: clearSecret,
+    data: data,
+    resourceRevision: resourceRevision,
+    secretRevision: secretRevision,
+  ));
 }
 
 class _CredentialSender {
   new(this._mutateCredential);
 
-  late final _WorkspaceCredentialSend call = (input) => _mutateCredential(
+  final _WorkspaceCredentialCall _mutateCredential;
+
+  Future<MutateWorkspaceCredentialResponse> call(
+    _WorkspaceCredentialInput input,
+  ) => _mutateCredential(
     requestId: const Uuid().v4(),
-    resourceOperation: _resourceOperation((
-      operation: input.operation,
-      kind: input.kind,
-      id: input.id,
-      data: input.data,
-      revision: input.resourceRevision,
-    )),
+    resourceOperation: _credentialResourceOperation(input),
     secretKind: input.secretKind,
     scope: input.scope,
     secret: input.secret,
     clearSecret: input.clearSecret,
     expectedSecretRevision: input.secretRevision,
   );
-
-  final _WorkspaceCredentialCall _mutateCredential;
 }
 
 class CloudWorkspaceResourceStore {
@@ -250,6 +244,16 @@ WorkspacePatchOperation _resourceOperation(
   fieldMask: const [],
   expectedRevision: input.revision,
 );
+
+WorkspacePatchOperation _credentialResourceOperation(
+  _WorkspaceCredentialInput input,
+) => _resourceOperation((
+  operation: input.operation,
+  kind: input.kind,
+  id: input.id,
+  data: input.data,
+  revision: input.resourceRevision,
+));
 
 _WorkspaceCredentialWrite _credentialWriter(_WorkspaceCredentialSend send) =>
     _CredentialWriter(send).call;
@@ -349,49 +353,47 @@ typedef _WorkspaceUpdate = Future<void> Function({
 class _DeferredPutSecretCall {
   new(this._gateway);
 
-  late final _WorkspaceSecretCall call =
-      ({
-        required requestId,
-        required secretKind,
-        required scope,
-        required resourceId,
-        secret,
-        expectedRevision,
-      }) => _deferredPutSecret(_gateway, (
-        requestId: requestId,
-        secretKind: secretKind,
-        scope: scope,
-        resourceId: resourceId,
-        secret: secret,
-        expectedRevision: expectedRevision,
-      ));
-
   final Future<CloudWorkspaceStateGateway?> _gateway;
+
+  Future<PutWorkspaceSecretResponse> call({
+    required String requestId,
+    required WorkspaceSecretKind secretKind,
+    required WorkspaceSecretScope scope,
+    required String resourceId,
+    String? secret,
+    int? expectedRevision,
+  }) => _deferredPutSecret(_gateway, (
+    requestId: requestId,
+    secretKind: secretKind,
+    scope: scope,
+    resourceId: resourceId,
+    secret: secret,
+    expectedRevision: expectedRevision,
+  ));
 }
 
 class _DeferredMutateCredentialCall {
   new(this._gateway);
 
-  late final _WorkspaceCredentialCall call =
-      ({
-        required requestId,
-        required resourceOperation,
-        required secretKind,
-        required scope,
-        required secret,
-        required clearSecret,
-        expectedSecretRevision,
-      }) => _deferredMutateCredential(_gateway, (
-        requestId: requestId,
-        resourceOperation: resourceOperation,
-        secretKind: secretKind,
-        scope: scope,
-        secret: secret,
-        clearSecret: clearSecret,
-        expectedSecretRevision: expectedSecretRevision,
-      ));
-
   final Future<CloudWorkspaceStateGateway?> _gateway;
+
+  Future<MutateWorkspaceCredentialResponse> call({
+    required String requestId,
+    required WorkspacePatchOperation resourceOperation,
+    required WorkspaceSecretKind secretKind,
+    required WorkspaceSecretScope scope,
+    required String? secret,
+    required bool clearSecret,
+    required int? expectedSecretRevision,
+  }) => _deferredMutateCredential(_gateway, (
+    requestId: requestId,
+    resourceOperation: resourceOperation,
+    secretKind: secretKind,
+    scope: scope,
+    secret: secret,
+    clearSecret: clearSecret,
+    expectedSecretRevision: expectedSecretRevision,
+  ));
 }
 
 Future<ReadWorkspaceStateResponse> _deferredRead(

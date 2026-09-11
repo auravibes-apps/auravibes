@@ -15,16 +15,6 @@ abstract final class StreamingMessageMetadata {
     MessageMetadataEntity streaming,
   ) =>
       _mergeContentMetadata(_mergeTokenMetadata(current, streaming), streaming);
-
-  static T? _prefer<T>(T? streaming, T? current) => streaming ?? current;
-
-  static List<T> _preferNonEmpty<T>(List<T> streaming, List<T> current) =>
-      streaming.isEmpty ? current : streaming;
-
-  static Map<K, V> _preferNonEmptyMap<K, V>(
-    Map<K, V> streaming,
-    Map<K, V> current,
-  ) => streaming.isEmpty ? current : streaming;
 }
 
 MessageMetadataEntity _mergeTokenMetadata(

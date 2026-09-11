@@ -115,8 +115,15 @@ extension on _AuraTileState {
     theme: context.auraTheme,
     canInteract: _canInteract,
     focused: _focused,
-    overlayAlpha: _pressed ? 0.16 : (_hovered || _focused ? 0.08 : 0),
+    overlayAlpha: _overlayAlpha,
   );
+
+  double get _overlayAlpha {
+    if (_pressed) return 0.16;
+    if (_hovered || _focused) return 0.08;
+
+    return 0;
+  }
 
   _AuraTileCallbacks _callbacks() {
     final canInteract = _canInteract;
@@ -134,7 +141,7 @@ extension on _AuraTileState {
 }
 
 class _AuraTileLayout extends StatelessWidget {
-  _AuraTileLayout({
+  new({
     required _AuraTileAppearance appearance,
     required _AuraTileCallbacks callbacks,
   }) : _child = _AuraTileSemantics(
@@ -171,27 +178,45 @@ class const _AuraTileSurface({required final _AuraTileAppearance appearance})
 }
 
 class _AuraTileContent extends StatelessWidget {
-  _AuraTileContent({
+  new({
     required _AuraTileAppearance appearance,
     required Color loadingColor,
     required TextStyle textStyle,
-  }) : _child = appearance.tile.isLoading
-           ? _AuraTileLoading(color: loadingColor)
-           : _isEmptyTileChild(appearance.tile.child) &&
-                 appearance.tile.leading != null &&
-                 appearance.tile.trailing == null
-           ? Center(child: appearance.tile.leading)
-           : _AuraTileRow(
-               child: appearance.tile.child,
-               leading: appearance.tile.leading,
-               trailing: appearance.tile.trailing,
-               textStyle: textStyle,
-             );
+  }) : _child = _AuraTileContentBuilder.build(
+         appearance: appearance,
+         loadingColor: loadingColor,
+         textStyle: textStyle,
+       );
 
   final Widget _child;
 
   @override
   Widget build(BuildContext context) => _child;
+}
+
+abstract final class _AuraTileContentBuilder {
+  static Widget build({
+    required _AuraTileAppearance appearance,
+    required Color loadingColor,
+    required TextStyle textStyle,
+  }) {
+    if (appearance.tile.isLoading) {
+      return _AuraTileLoading(color: loadingColor);
+    }
+
+    if (_isEmptyTileChild(appearance.tile.child) &&
+        appearance.tile.leading != null &&
+        appearance.tile.trailing == null) {
+      return Center(child: appearance.tile.leading);
+    }
+
+    return _AuraTileRow(
+      child: appearance.tile.child,
+      leading: appearance.tile.leading,
+      trailing: appearance.tile.trailing,
+      textStyle: textStyle,
+    );
+  }
 }
 
 class const _AuraTileLoading({required final Color color})
@@ -209,7 +234,7 @@ class const _AuraTileLoading({required final Color color})
 }
 
 class _AuraTileRow extends StatelessWidget {
-  _AuraTileRow({
+  new({
     required Widget child,
     required Widget? leading,
     required Widget? trailing,
@@ -238,7 +263,7 @@ class _AuraTileRow extends StatelessWidget {
 }
 
 class _AuraTileInteraction extends StatelessWidget {
-  _AuraTileInteraction({
+  new({
     required Widget tile,
     required bool enabled,
     required _AuraTileCallbacks callbacks,

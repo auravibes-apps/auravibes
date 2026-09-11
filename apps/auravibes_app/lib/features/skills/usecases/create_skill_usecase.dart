@@ -15,7 +15,7 @@ class const CreateSkillUsecase(
   Future<SkillEntity> call(String workspaceId, SkillToCreate skill) async {
     await _validateNewSkill(workspaceId, skill);
 
-    return _createSkill(workspaceId, skill);
+    return await _createSkill(workspaceId, skill);
   }
 }
 

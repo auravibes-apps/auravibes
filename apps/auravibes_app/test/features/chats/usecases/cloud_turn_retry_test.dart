@@ -13,6 +13,17 @@ class _Turn extends Mock implements ConversationTurnView;
 
 class _ToolCall extends Mock implements ConversationToolCallView;
 
+typedef _SubmitToolDecisionRequest = ({
+  String requestId,
+  String turnId,
+  String toolCallId,
+  String argumentsDigest,
+  int expectedTurnRevision,
+  String decision,
+  bool stopAll,
+  String? editedArgumentsJson,
+});
+
 void main() {
   test('get delegates to cloud gateway', () async {
     final gateway = _Gateway();
@@ -97,7 +108,8 @@ void main() {
       when(() => pendingCall.status).thenReturn('pending');
       when(() => pendingCall.argumentsDigest).thenReturn('digest-2');
       when(() => gateway.submitToolDecision(any())).thenAnswer((invocation) {
-        final request = invocation.positionalArguments.single as dynamic;
+        final request =
+            invocation.positionalArguments.single as _SubmitToolDecisionRequest;
         if (request.toolCallId == 'call-1') return Future.value(first);
         if (request.expectedTurnRevision == 2) {
           throw const CloudAppException(
@@ -159,20 +171,22 @@ void main() {
     when(() => pendingCall.argumentsDigest).thenReturn('digest-1');
     when(() => gateway.getTurn(turnId: 'turn-1'))
         .thenAnswer((_) async => snapshot);
-    when(() => gateway.submitToolDecision(any()))
-        .thenAnswer((invocation) async {
-          final request = invocation.positionalArguments.single as dynamic;
-          requestIds.add(request.requestId as String);
-          if (attempts++ == 0) {
-            throw const CloudAppException(
-              localizationKey: 'unused',
-              context: .conversation,
-              code: 'staleRevision',
-            );
-          }
+    when(() => gateway.submitToolDecision(any())).thenAnswer((
+      invocation,
+    ) async {
+      final request =
+          invocation.positionalArguments.single as _SubmitToolDecisionRequest;
+      requestIds.add(request.requestId);
+      if (attempts++ == 0) {
+        throw const CloudAppException(
+          localizationKey: 'unused',
+          context: .conversation,
+          code: 'staleRevision',
+        );
+      }
 
-          return result;
-        });
+      return result;
+    });
 
     expect(
       await CloudTurnUsecase(gateway).decide((

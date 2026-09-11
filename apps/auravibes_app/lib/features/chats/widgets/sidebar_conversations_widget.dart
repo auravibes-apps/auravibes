@@ -41,10 +41,11 @@ class const SidebarConversationsWidget({
     final chatListAsync = ref.watch(
       conversationsStreamProvider(workspaceId: workspaceId, limit: limit),
     );
+
     return _SidebarConversationsContent(
       chatListAsync: chatListAsync,
-      currentChatId: currentChatId,
       workspaceId: workspaceId,
+      currentChatId: currentChatId,
     );
   }
 }

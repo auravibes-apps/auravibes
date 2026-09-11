@@ -35,14 +35,17 @@ class _ServiceConnectionEditScreenState
   final _nonSecretControllers = <String, TextEditingController>{};
   final _secretControllers = <String, TextEditingController>{};
   final _clearedSecrets = <String>{};
-  Future<_ConnectionEditState>? _future;
+  Future<_ConnectionEditState>? _futureValue;
   bool _initialized = false;
   bool _isSaving = false;
+
+  Future<_ConnectionEditState> get _future =>
+      _futureValue ?? (throw StateError('Edit state is not initialized'));
 
   @override
   void initState() {
     super.initState();
-    _future = _loadConnectionEditState(
+    _futureValue = _loadConnectionEditState(
       ref,
       widget.workspaceId,
       widget.connectionId,
@@ -701,7 +704,6 @@ class const _SkillCredentialEditAttributes({
 }
 
 abstract class _SkillCredentialAttributeInput extends StatelessWidget {
-
   factory(
     MapEntry<String, SkillCredentialAttributeDefinition> entry, {
     required _SkillCredentialEditState editState,
@@ -1029,10 +1031,8 @@ class const _GenericServiceConnectionSecretInput({
 }
 
 class _GenericServiceConnectionSecretAuraInput extends AuraInput {
-  new(
-    _GenericServiceConnectionSecretInput input,
-    BuildContext context,
-  ) : super(
+  new(_GenericServiceConnectionSecretInput input, BuildContext context)
+    : super(
         controller: input.owner._modelKeyController,
         placeholder: switch (_genericSecretPlaceholder(
           context,

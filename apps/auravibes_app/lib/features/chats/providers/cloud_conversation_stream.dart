@@ -11,7 +11,8 @@ export 'cloud_conversation_key.dart';
 
 final Logger _logger = .new('cloud_conversation');
 
-final StreamProviderFamily<CloudConversationState, CloudConversationKey> cloudConversationStateProvider = StreamProvider.autoDispose
+final StreamProviderFamily<CloudConversationState, CloudConversationKey>
+cloudConversationStateProvider = StreamProvider.autoDispose
     .family<CloudConversationState, CloudConversationKey>(
       _watchCloudConversation,
     );
@@ -47,9 +48,10 @@ abstract final class CloudConversationStream {
   ) async {
     _logEvent(key, event);
     final next = state.apply(event);
-    if (!_needsSnapshot(next, event)) return next!;
+    if (next != null && !_needsSnapshot(next, event)) return next;
 
     _logSnapshotRecovery(key, event, state);
+
     return CloudConversationState.fromSnapshot(
       await chat.getConversationSnapshot(key.conversationId),
     ).preserveTransientA2uiFrom(state);
@@ -95,13 +97,16 @@ class _CloudConversationStreamRunner {
   final CloudChatGateway _chat;
   final CloudConversationKey _key;
   final Future<void> Function(Duration duration)? _delay;
-  late CloudConversationState _state;
+  CloudConversationState? _state;
   var _retryCount = 0;
+
+  CloudConversationState get _currentState =>
+      _state ?? (throw StateError('Conversation snapshot not loaded'));
 
   Stream<CloudConversationState> run() async* {
     _state = await _loadSnapshot();
     _logInitialSnapshot();
-    yield _state;
+    yield _currentState;
 
     while (true) {
       yield* _subscribe();
@@ -111,14 +116,13 @@ class _CloudConversationStreamRunner {
 
   Future<CloudConversationState> _recoverAfterSubscription() async {
     _retryCount++;
-    _state = await _loadSnapshot().then(
-      (state) => state.preserveTransientA2uiFrom(_state),
-    );
+    final state = await _loadSnapshot();
+    _state = state.preserveTransientA2uiFrom(_currentState);
     await (_delay ?? Future<void>.delayed)(
       .new(seconds: _retryCount.clamp(1, 8)),
     );
 
-    return _state;
+    return _currentState;
   }
 
   Future<CloudConversationState> _loadSnapshot() async =>
@@ -130,16 +134,16 @@ class _CloudConversationStreamRunner {
     try {
       await for (final event in _chat.subscribeConversation(
         _key.conversationId,
-        afterSequence: _state.sequence,
+        afterSequence: _currentState.sequence,
       )) {
         _state = await CloudConversationStream._applyEvent(
           _chat,
           _key,
-          _state,
+          _currentState,
           event,
         );
         _retryCount = 0;
-        yield _state;
+        yield _currentState;
       }
       _logClosedStream();
     } on Object catch (error, stackTrace) {
@@ -150,23 +154,26 @@ class _CloudConversationStreamRunner {
   void _logInitialSnapshot() {
     _logger.info(
       'Cloud conversation snapshot: workspaceId=${_key.workspaceId}, '
-      'conversationId=${_key.conversationId}, sequence=${_state.sequence}, '
-      'executionState=${_state.conversation.executionState}, '
-      'activeExecutionId=${_state.activeExecution?.id}.',
+      'conversationId=${_key.conversationId}, '
+      'sequence=${_currentState.sequence}, '
+      'executionState=${_currentState.conversation.executionState}, '
+      'activeExecutionId=${_currentState.activeExecution?.id}.',
     );
   }
 
   void _logClosedStream() {
     _logger.warning(
       'Cloud conversation stream closed: workspaceId=${_key.workspaceId}, '
-      'conversationId=${_key.conversationId}, sequence=${_state.sequence}.',
+      'conversationId=${_key.conversationId}, '
+      'sequence=${_currentState.sequence}.',
     );
   }
 
   void _logFailedStream(Object error, StackTrace stackTrace) {
     _logger.warning(
       'Cloud conversation stream failed: workspaceId=${_key.workspaceId}, '
-      'conversationId=${_key.conversationId}, sequence=${_state.sequence}.',
+      'conversationId=${_key.conversationId}, '
+      'sequence=${_currentState.sequence}.',
       error,
       stackTrace,
     );

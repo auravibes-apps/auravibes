@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
+import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -400,11 +401,7 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
     throw UnimplementedError();
   }
 
-  @override
-  Future<bool> validateWorkspaceToolSetting(
-    String workspaceId,
-    String toolType,
-  ) {
+  Future<bool> validateWorkspaceToolSetting(String _, String _) {
     throw UnimplementedError();
   }
 }

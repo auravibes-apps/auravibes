@@ -264,7 +264,7 @@ Future<void> _executeSkillCredentialSave(
   String definitionId,
 ) async {
   final attributes = _attributeValues(state);
-  await _createAndLogSkillCredential(state, definitionId, attributes);
+  final _ = await _createAndLogSkillCredential(state, definitionId, attributes);
   await _closeAfterSave(
     state,
     refreshServiceConnections: false,
@@ -289,6 +289,7 @@ Future<SkillCredentialEntity> _createAndLogSkillCredential(
     credential: credential,
     attributes: attributes,
   ));
+
   return credential;
 }
 
@@ -435,9 +436,10 @@ void _onTypeChanged(
 ) {
   if (value == null) return;
   state.updateState(() {
-    state._type = value;
-    state._definitionId = null;
-    state._appSkillId = null;
+    state
+      .._type = value
+      .._definitionId = null
+      .._appSkillId = null;
     _resetAttributeControllers(state);
   });
 }
@@ -1053,9 +1055,9 @@ class const _CredentialFormFieldsColumn({
         _CredentialAttributesFields._fromCredentialCard(card, definition),
         _CredentialSaveAction._fromCredentialCard(card),
       ],
-      mainAxisSize: .min,
       spacing: .md,
       crossAxisAlignment: .start,
+      mainAxisSize: .min,
     );
   }
 }

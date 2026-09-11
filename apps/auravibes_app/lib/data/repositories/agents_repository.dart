@@ -1,7 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
-import 'package:drift/drift.dart';
 
 const _agentContentEmpty = 'Agent content cannot be empty';
 const _agentDescriptionEmpty = 'Agent description cannot be empty';
@@ -114,6 +113,7 @@ extension AgentsRepositoryPersistence on AgentsRepository {
     final skills = await _database.agentsDao.getSkillsForAgents(
       rows.map((row) => row.id),
     );
+
     return _mapAgentRowsWithSkills(rows, skills);
   }
 
@@ -186,21 +186,21 @@ AgentsCompanion _agentToCreateCompanion(
   String workspaceId,
   AgentToCreate agent,
 ) => AgentsCompanion(
-  workspaceId: Value(workspaceId),
-  name: Value(agent.name.trim()),
-  description: Value(agent.description.trim()),
-  content: Value(agent.content.trim()),
-  isEnabled: Value(agent.isEnabled),
-  visibility: Value(agent.visibility.name),
+  workspaceId: .new(workspaceId),
+  name: .new(agent.name.trim()),
+  description: .new(agent.description.trim()),
+  content: .new(agent.content.trim()),
+  isEnabled: .new(agent.isEnabled),
+  visibility: .new(agent.visibility.name),
 );
 
 AgentsCompanion _agentToUpdateCompanion(AgentToUpdate agent) => AgentsCompanion(
-  updatedAt: Value(DateTime.now()),
-  name: Value(agent.name.trim()),
-  description: Value(agent.description.trim()),
-  content: Value(agent.content.trim()),
-  isEnabled: Value(agent.isEnabled),
-  visibility: Value(agent.visibility.name),
+  updatedAt: .new(DateTime.now()),
+  name: .new(agent.name.trim()),
+  description: .new(agent.description.trim()),
+  content: .new(agent.content.trim()),
+  isEnabled: .new(agent.isEnabled),
+  visibility: .new(agent.visibility.name),
 );
 
 List<AgentSkillsCompanion> _mapSkillRefsToCompanions(
@@ -224,8 +224,8 @@ final _emptyAgentEntity = AgentEntity(
   name: '',
   content: '',
   skills: const [],
-  createdAt: DateTime(0),
-  updatedAt: DateTime(0),
+  createdAt: .new(0),
+  updatedAt: .new(0),
 );
 
 class const AgentException(final String message, [final Exception? cause])

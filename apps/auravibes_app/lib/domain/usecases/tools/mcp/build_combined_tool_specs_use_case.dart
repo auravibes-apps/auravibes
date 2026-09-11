@@ -152,6 +152,7 @@ ToolSpec _mcpSpec(WorkspaceToolEntity workspaceTool, ToolSpec originalSpec) =>
 
 String _mcpSlug(ToolSpec originalSpec, String mcpServerId) {
   final legacyTarget = const AgentToolNameResolver().resolve(originalSpec.name);
+
   return legacyTarget?.mcpSlug ?? mcpServerId;
 }
 
@@ -170,6 +171,7 @@ ToolCatalogCandidate<ResolvedTool> _mcpCandidate(
     spec: _mcpSpec(workspaceTool, request.originalSpec),
     target: _mcpTarget(workspaceTool, request.mcpServerId, request.mcpSlug),
     sourceId:
-        'mcp:${request.mcpServerId}:${workspaceTool.id}:${workspaceTool.toolId}',
+        'mcp:${request.mcpServerId}:${workspaceTool.id}:'
+        '${workspaceTool.toolId}',
   );
 }

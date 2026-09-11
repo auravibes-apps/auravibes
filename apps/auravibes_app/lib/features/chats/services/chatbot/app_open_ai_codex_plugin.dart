@@ -48,7 +48,7 @@ extension on AppOpenAICodexPlugin {
       return await codec.complete(_transport, body);
     }
 
-    return _streamWithRetry(body, context);
+    return await _streamWithRetry(body, context);
   }
 
   Map<String, dynamic> _requestBody(
@@ -78,20 +78,17 @@ extension on AppOpenAICodexPlugin {
         context.sendChunk(chunk);
       });
     } on GenkitException catch (error) {
-      if (!isRetryableCodexError(error) || attempt > 0 || sentChunks) {
-        rethrow;
-      }
+      if (!_shouldRetryStream(error, attempt, sentChunks)) rethrow;
 
-      return _streamAttempt(body, context, attempt + 1);
+      return await _streamAttempt(body, context, attempt + 1);
     }
   }
 
-  Future<ProviderTransportResponse> _transport(
-    Map<String, dynamic> body,
-  ) async {
+  Future<ProviderTransportResponse> _transport(Map<String, dynamic> body) {
     _ensureAccessToken();
     final request = _request(body);
     final client = httpClient ?? http.Client();
+
     return _sendRequest(client, request);
   }
 
@@ -137,6 +134,9 @@ extension on AppOpenAICodexPlugin {
     }
   }
 }
+
+bool _shouldRetryStream(GenkitException error, int attempt, bool sentChunks) =>
+    attempt == 0 && !sentChunks && isRetryableCodexError(error);
 
 Stream<List<int>> _closeAfter(
   Stream<List<int>> stream,

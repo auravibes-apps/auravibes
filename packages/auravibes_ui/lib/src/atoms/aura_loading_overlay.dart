@@ -78,7 +78,7 @@ class const _AuraLoadingOverlayView({
 }
 
 class _AuraLoadingOverlayFrame extends StatelessWidget {
-  _AuraLoadingOverlayFrame.fromView({
+  new fromView({
     required _AuraLoadingOverlayView view,
     required AuraTheme theme,
     required AuraColorScheme colors,
@@ -116,7 +116,7 @@ class const _AuraLoadingOverlayStack({
 }
 
 class _AuraLoadingOverlayLayer extends StatelessWidget {
-  _AuraLoadingOverlayLayer({
+  new({
     required String? message,
     required Color? backgroundColor,
     required AuraSpinnerSize spinnerSize,
@@ -151,7 +151,7 @@ class _AuraLoadingOverlayLayer extends StatelessWidget {
 }
 
 class _AuraLoadingPanel extends StatelessWidget {
-  _AuraLoadingPanel({
+  new({
     required String? message,
     required AuraSpinnerSize spinnerSize,
     required AuraTint? spinnerTint,
@@ -178,7 +178,7 @@ class _AuraLoadingPanel extends StatelessWidget {
 }
 
 class _AuraLoadingPanelContent extends StatelessWidget {
-  _AuraLoadingPanelContent({
+  new({
     required String? message,
     required AuraSpinnerSize spinnerSize,
     required AuraTint? spinnerTint,
@@ -207,7 +207,7 @@ class _AuraLoadingPanelContent extends StatelessWidget {
 }
 
 class _AuraLoadingMessage extends StatelessWidget {
-  _AuraLoadingMessage({
+  new({
     required String message,
     required AuraSpinnerSize spinnerSize,
     required AuraTint? spinnerTint,
@@ -230,7 +230,7 @@ class _AuraLoadingMessage extends StatelessWidget {
 }
 
 class _AuraLoadingMessageBody extends StatelessWidget {
-  _AuraLoadingMessageBody({
+  new({
     required String message,
     required AuraSpinnerSize spinnerSize,
     required AuraTint? spinnerTint,

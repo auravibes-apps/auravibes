@@ -160,6 +160,7 @@ WorkspaceToCreate _mergedWorkspace(
 
 String? _mergedValidationError(WorkspaceToCreate workspace) {
   final hasCloudMirror = _hasCloudMirror(workspace);
+
   return _firstValidationError([
     _emptyWorkspaceNameError(workspace),
     _localWorkspaceError(workspace, hasCloudMirror),

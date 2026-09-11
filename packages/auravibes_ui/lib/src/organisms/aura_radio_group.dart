@@ -78,7 +78,7 @@ class const _AuraRadioGroupContent<T>({
 }
 
 class _AuraRadioGroupContentData<T> extends StatelessWidget {
-  _AuraRadioGroupContentData({
+  new({
     required this.value,
     required this.onChanged,
     required this.options,
@@ -125,17 +125,13 @@ class _AuraRadioGroupContentData<T> extends StatelessWidget {
 }
 
 class _AuraRadioOptions<T> extends StatelessWidget {
-  _AuraRadioOptions({
-    required T? value,
-    required ValueChanged<T?>? onChanged,
-    required List<AuraRadioOption<T>> options,
-    required Axis direction,
-    required AuraTint? tint,
-  }) : _value = value,
-       _onChanged = onChanged,
-       _options = options,
-       _tint = tint,
-       _direction = direction;
+  const new({
+    required this._value,
+    required this._onChanged,
+    required this._options,
+    required this._direction,
+    required this._tint,
+  });
 
   final T? _value;
   final ValueChanged<T?>? _onChanged;
@@ -155,7 +151,7 @@ class _AuraRadioOptions<T> extends StatelessWidget {
 }
 
 class _AuraRadioOptionsData<T> {
-  _AuraRadioOptionsData({
+  new({
     required T? value,
     required ValueChanged<T?>? onChanged,
     required List<AuraRadioOption<T>> options,
@@ -182,7 +178,7 @@ class _AuraRadioOptionsData<T> {
 }
 
 class _AuraRadioVerticalOptions<T> extends StatelessWidget {
-  _AuraRadioVerticalOptions({
+  new({
     required T? value,
     required ValueChanged<T?>? onChanged,
     required List<AuraRadioOption<T>> options,
@@ -225,7 +221,7 @@ class _AuraRadioVerticalOptionsData<T> {
 }
 
 class _AuraRadioHorizontalOptions<T> extends StatelessWidget {
-  _AuraRadioHorizontalOptions({
+  new({
     required T? value,
     required ValueChanged<T?>? onChanged,
     required List<AuraRadioOption<T>> options,
@@ -270,7 +266,7 @@ class const _AuraRadioOption<T>({
 }
 
 class _AuraRadioOptionLayout<T> extends StatelessWidget {
-  _AuraRadioOptionLayout({
+  new({
     required AuraRadioOption<T> option,
     required T? groupValue,
     required ValueChanged<T?>? onChanged,
@@ -340,7 +336,7 @@ class const _AuraRadioOptionInteractiveData<T>({
 }
 
 class _AuraRadioOptionSemantics<T> extends StatelessWidget {
-  _AuraRadioOptionSemantics({required _AuraRadioOptionInteractiveData<T> data})
+  new({required _AuraRadioOptionInteractiveData<T> data})
     : _child = Semantics(
         child: _AuraRadioOptionGesture<T>(data: data),
         excludeSemantics: true,
@@ -376,7 +372,7 @@ class const _AuraRadioOptionGesture<T>({
 }
 
 class _AuraRadioOptionRow<T> extends StatelessWidget {
-  _AuraRadioOptionRow({
+  new({
     required AuraRadioOption<T> option,
     required T? groupValue,
     required ValueChanged<T?>? onChanged,

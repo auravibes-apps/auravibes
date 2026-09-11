@@ -71,9 +71,9 @@ extension on LoadConversationSkillUsecase {
       request.slug,
       request.cloud,
     );
-    if (userSkill == null) return _loadAppSkillBySlug(request);
+    if (userSkill == null) return await _loadAppSkillBySlug(request);
 
-    return _loadUserSkillFromRequest(request, userSkill);
+    return await _loadUserSkillFromRequest(request, userSkill);
   }
 
   Future<void> _loadUserSkillFromRequest(
@@ -109,7 +109,7 @@ extension on LoadConversationSkillUsecase {
   ) async {
     if (cloud != null) return await _findCloudUserSkill(cloud, slug);
 
-    return _findLocalUserSkill(workspaceId, slug);
+    return await _findLocalUserSkill(workspaceId, slug);
   }
 
   Future<SkillEntity?> _findLocalUserSkill(

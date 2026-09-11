@@ -219,7 +219,7 @@ extension on CompactConversationUsecase {
     final conversation = await getCloudConversation(conversationId);
     if (conversation == null) throw const CompactionUnavailableException();
 
-    return cloud(conversation: conversation, trigger: trigger);
+    return await cloud(conversation: conversation, trigger: trigger);
   }
 
   Future<CompactionExecutionState> _compactLocal({

@@ -63,11 +63,9 @@ class AuraSpinner extends StatelessWidget {
 }
 
 class _AuraSpinnerContent extends StatelessWidget {
-  _AuraSpinnerContent({required double size, required Widget indicator})
-    : _size = size,
-      _indicator = indicator;
+  const new({required this._size, required this._indicator});
 
-  _AuraSpinnerContent.fromSpinner({
+  new fromSpinner({
     required AuraSpinner spinner,
     required AuraColorScheme colors,
   }) : this(

@@ -763,6 +763,7 @@ class const _CodexCreateAction({
 }) extends StatelessWidget {
   bool get _hidden {
     final request = values.request;
+
     return request.runtime.selection.isCodex &&
         request.runtime.controls.isSubmitting &&
         values.state.deviceCode.value != null;
@@ -780,6 +781,7 @@ class const _CodexPendingAction({
 }) extends StatelessWidget {
   bool get _visible {
     final request = values.request;
+
     return request.runtime.selection.isCodex &&
         request.runtime.controls.isSubmitting &&
         values.state.deviceCode.value == null;
@@ -1167,6 +1169,7 @@ class const _CodexDeviceAction({
 
 bool _supportsCodexDevice(_AddModelProviderFormValues values) {
   final request = values.request;
+
   return !request.runtime.selection.isCodex ||
       request.capabilities.modelDeviceOAuth;
 }
@@ -1620,7 +1623,8 @@ class _CodexDeviceLinkRowContent extends Column {
        );
 }
 
-class const _CodexDeviceStepLabel(final String localeKey) extends StatelessWidget {
+class const _CodexDeviceStepLabel(final String localeKey)
+    extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraText(child: TextLocale(localeKey));
 }
@@ -1708,6 +1712,7 @@ class const _SelectModelProvider({required final String workspaceId})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = _useModelProviderSelection(ref, workspaceId);
+
     return _ModelProviderSelectionContent(
       workspaceId: workspaceId,
       ref: ref,
@@ -2000,13 +2005,17 @@ class const _SelectedModelHeaderContent({
   required final AddModelProviderState notifier,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => details == null
-      ? const SizedBox.shrink()
-      : _SelectedModelHeaderView(
-          modelId: details!.modelId,
-          modelName: details!.modelName,
-          onBack: () => notifier.setModel(null),
-        );
+  Widget build(BuildContext _) {
+    if (details case final selected?) {
+      return _SelectedModelHeaderView(
+        modelId: selected.modelId,
+        modelName: selected.modelName,
+        onBack: () => notifier.setModel(null),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
 }
 
 typedef _SelectedModelHeaderState = ({
@@ -2045,6 +2054,7 @@ _SelectedModelHeaderDetails? _selectedModelHeaderDetails(
 _selectedModelHeaderInput(_SelectedModelHeaderState state) {
   final modelId = state.selectedModelId;
   final models = state.models;
+
   return modelId == null || models == null
       ? null
       : (modelId: modelId, models: models);

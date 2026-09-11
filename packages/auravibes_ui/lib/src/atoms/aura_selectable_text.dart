@@ -82,11 +82,7 @@ class AuraSelectableText extends StatelessWidget {
     final auraColors = context.auraColors;
 
     return _AuraSelectableTextContent(
-      _AuraSelectableTextConfiguration(
-        text: this,
-        context: context,
-        colors: auraColors,
-      ),
+      .new(text: this, context: context, colors: auraColors),
     );
   }
 
@@ -112,7 +108,7 @@ class AuraSelectableText extends StatelessWidget {
 }
 
 class _AuraSelectableTextConfiguration {
-  _AuraSelectableTextConfiguration({
+  new({
     required AuraSelectableText text,
     required BuildContext context,
     required AuraColorScheme colors,

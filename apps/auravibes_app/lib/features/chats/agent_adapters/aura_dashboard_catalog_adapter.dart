@@ -174,7 +174,7 @@ final _dashboardBuilders = <String, _DashboardBuilder>{
   'Table': _DashboardTableBuilder.table,
   'Chart': _DashboardChartBuilder.chart,
   'LoadingIndicator': _DashboardLoadingBuilder.loading,
-  'AnimatedContent': _DashboardChartBuilder.animated,
+  'AnimatedContent': _DashboardAnimationBuilder.animated,
 };
 
 abstract final class _DashboardPrimitiveBuilders {
@@ -293,8 +293,9 @@ class const _ProgressLabelRow({
     spacing: context.auraTheme.spacing.base,
     runSpacing: context.auraTheme.spacing.xs,
     children: [
-      if (label != null) _ProgressLabelText(label!),
-      if (showValue && value != null) _ProgressLabelValue(value!),
+      if (label case final labelValue?) _ProgressLabelText(labelValue),
+      if (showValue)
+        if (value case final valueValue?) _ProgressLabelValue(valueValue),
     ],
   );
 }
@@ -425,8 +426,7 @@ List<AuraTableValueFormat> _tableColumnFormats(
 ];
 
 class _DashboardTable extends StatelessWidget {
-  new(Map<String, Object?> data)
-    : _table = _DashboardTableConfig(data).build();
+  new(Map<String, Object?> data) : _table = _DashboardTableConfig(data).build();
 
   final AuraTable _table;
 
@@ -487,26 +487,8 @@ abstract final class _DashboardLoadingBuilder {
 }
 
 abstract final class _DashboardChartBuilder {
-  static Widget animated(
-    CatalogItemContext context,
-    Map<String, Object?> data,
-  ) => AuraAnimatedContent(
-    child: KeyedSubtree(
-      key: ValueKey(
-        data['trigger'] == 'keyChange' ? data['child'] : context.id,
-      ),
-      child: context.buildChild(data['child']! as String),
-    ),
-    transition: switch (data['transition']) {
-      'none' => .none,
-      'slide' => .slide,
-      'scale' => .scale,
-      _ => .fade,
-    },
-  );
-
   static Widget chart(CatalogItemContext _, Map<String, Object?> data) =>
-      _DashboardChart(_DashboardChartConfig(data));
+      _DashboardChart(.new(data));
 
   static _DashboardChartData _chartData(Map<String, Object?> data) {
     return (content: _chartContent(data), options: _chartOptions(data));
@@ -553,9 +535,16 @@ abstract final class _DashboardChartBuilder {
     List<AuraChartSeries> series,
   ) => [
     if (data['label'] case final String label) label,
-    for (final item in series)
-      '${item.label}: ${[for (var i = 0; i < labels.length; i++) '${labels[i]}: ${item.values[i]}'].join(', ')}',
+    for (final item in series) _chartSeriesSummary(item, labels),
   ].join('\n');
+
+  static String _chartSeriesSummary(AuraChartSeries item, List<String> labels) {
+    final values = [
+      for (var i = 0; i < labels.length; i++) '${labels[i]}: ${item.values[i]}',
+    ].join(', ');
+
+    return '${item.label}: $values';
+  }
 
   static AuraChartType _chartType(Map<String, Object?> data) =>
       switch (data['variant']) {
@@ -571,9 +560,29 @@ abstract final class _DashboardChartBuilder {
   ];
 }
 
-List<double> _chartValues(Object? values) => [
-  for (final value in values! as List) (value as num).toDouble(),
-];
+abstract final class _DashboardAnimationBuilder {
+  static Widget animated(
+    CatalogItemContext context,
+    Map<String, Object?> data,
+  ) => AuraAnimatedContent(
+    child: KeyedSubtree(
+      key: ValueKey(
+        data['trigger'] == 'keyChange' ? data['child'] : context.id,
+      ),
+      child: context.buildChild(data['child']! as String),
+    ),
+    transition: switch (data['transition']) {
+      'none' => .none,
+      'slide' => .slide,
+      'scale' => .scale,
+      _ => .fade,
+    },
+  );
+}
+
+List<double> _chartValues(Object? values) => values is List
+    ? [for (final value in values) (value as num).toDouble()]
+    : const [];
 
 class _DashboardChart extends StatelessWidget {
   const new(this.config);

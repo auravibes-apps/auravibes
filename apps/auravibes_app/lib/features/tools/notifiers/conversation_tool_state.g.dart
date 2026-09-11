@@ -152,7 +152,7 @@ final class ConversationToolsNotifierProvider
 }
 
 String _$conversationToolsNotifierHash() =>
-    r'ca2b178fbe681c5e52a0c7451bd9937fa41cde6f';
+    r'84b5525f2f2e1102120af4f71b852bb42dd5ce95';
 
 /// Provider for managing conversation tool settings
 ///

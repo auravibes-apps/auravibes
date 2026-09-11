@@ -48,7 +48,7 @@ class _AuraAccordionState extends State<AuraAccordion> {
   void _toggleExpanded(int index) {
     if (_expanded.remove(index)) return;
 
-    _expanded.add(index);
+    if (!_expanded.add(index)) return;
   }
 }
 

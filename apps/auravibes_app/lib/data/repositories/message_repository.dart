@@ -159,11 +159,10 @@ extension MessageRepositoryReadOperations on MessageRepository {
 
 extension on MessageRepository {
   Stream<List<TypedResult>> _watchMessagesQuery(String conversationId) {
-    final query = _database
-        .select(_database.messages)
-        .join(_messageAttachmentJoins());
-    query.where(_database.messages.conversationId.equals(conversationId));
-    query.orderBy(_messageOrderTerms());
+    final query =
+        _database.select(_database.messages).join(_messageAttachmentJoins())
+          ..where(_database.messages.conversationId.equals(conversationId))
+          ..orderBy(_messageOrderTerms());
 
     return query.watch();
   }
@@ -323,7 +322,7 @@ extension MessageRepositoryQueryOperations on MessageRepository {
 
     await _deleteDraftAttachmentFiles(message.attachments);
 
-    return _mapToMessageWithAttachments(createdMessage);
+    return await _mapToMessageWithAttachments(createdMessage);
   }
 }
 
@@ -788,12 +787,6 @@ class MessageException implements Exception {
 class MessageValidationException extends MessageException {
   /// Creates a new MessageValidationException.
   const new(super.message, [super.cause]);
-
-  @override
-  String toString() {
-    final value = super.toString();
-    return value;
-  }
 }
 
 /// Exception thrown when a message is not found.
@@ -804,10 +797,4 @@ class MessageNotFoundException extends MessageException {
 
   /// ID of the message that was not found.
   final String messageId;
-
-  @override
-  String toString() {
-    final value = super.toString();
-    return value;
-  }
 }

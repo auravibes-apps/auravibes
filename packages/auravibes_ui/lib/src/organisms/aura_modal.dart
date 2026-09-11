@@ -163,7 +163,7 @@ class const _AuraModalDisabledEntry({required final AuraModal widget})
 }
 
 class _AuraModalInteractiveEntry extends StatelessWidget {
-  const _AuraModalInteractiveEntry({
+  const new({
     required this.widget,
     required this.onShow,
     required this.onPointerDown,
@@ -172,17 +172,15 @@ class _AuraModalInteractiveEntry extends StatelessWidget {
     required this.onPointerCancel,
   });
 
-  _AuraModalInteractiveEntry.fromState({
-    required AuraModal widget,
-    required _AuraModalState state,
-  }) : this(
-         widget: widget,
-         onShow: () => unawaited(state._show(state.context)),
-         onPointerDown: state._onPointerDown,
-         onPointerMove: state._onPointerMove,
-         onPointerUp: state._onPointerUp,
-         onPointerCancel: state._onPointerCancel,
-       );
+  new fromState({required AuraModal widget, required _AuraModalState state})
+    : this(
+        widget: widget,
+        onShow: () => unawaited(state._show(state.context)),
+        onPointerDown: state._onPointerDown,
+        onPointerMove: state._onPointerMove,
+        onPointerUp: state._onPointerUp,
+        onPointerCancel: state._onPointerCancel,
+      );
 
   final AuraModal widget;
   final VoidCallback onShow;
@@ -202,23 +200,21 @@ class _AuraModalInteractiveEntry extends StatelessWidget {
 }
 
 class _AuraModalInteractiveFocus extends StatelessWidget {
-  _AuraModalInteractiveFocus({
-    required AuraModal widget,
-    required VoidCallback onShow,
-  }) : _child = FocusableActionDetector(
-         descendantsAreFocusable: false,
-         actions: <Type, Action<Intent>>{
-           ActivateIntent: CallbackAction<ActivateIntent>(
-             onInvoke: (_) {
-               onShow();
+  new({required AuraModal widget, required VoidCallback onShow})
+    : _child = FocusableActionDetector(
+        descendantsAreFocusable: false,
+        actions: <Type, Action<Intent>>{
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              onShow();
 
-               return null;
-             },
-           ),
-         },
-         mouseCursor: SystemMouseCursors.click,
-         child: _AuraModalEntrySemantics(widget: widget, onShow: onShow),
-       );
+              return null;
+            },
+          ),
+        },
+        mouseCursor: SystemMouseCursors.click,
+        child: _AuraModalEntrySemantics(widget: widget, onShow: onShow),
+      );
 
   final Widget _child;
 
@@ -286,10 +282,8 @@ class const _AuraModalSurfaceFrame({required final _AuraModalSurface surface})
 }
 
 class _AuraModalSurfaceFrameContent extends StatelessWidget {
-  _AuraModalSurfaceFrameContent.fromContext(
-    BuildContext context,
-    _AuraModalSurface surface,
-  ) : _child = _AuraModalSurfaceFrameLayout.fromContext(context, surface);
+  new fromContext(BuildContext context, _AuraModalSurface surface)
+    : _child = _AuraModalSurfaceFrameLayout.fromContext(context, surface);
 
   final Widget _child;
 
@@ -298,19 +292,7 @@ class _AuraModalSurfaceFrameContent extends StatelessWidget {
 }
 
 class _AuraModalSurfaceFrameLayout extends StatelessWidget {
-  _AuraModalSurfaceFrameLayout.fromContext(
-    BuildContext context,
-    _AuraModalSurface surface,
-  ) : this(
-        surface: surface,
-        spacing: context.auraTheme.fromSpacing(.md),
-        maxHeight:
-            MediaQuery.sizeOf(context).height -
-            context.auraTheme.fromSpacing(.md) * 2,
-        decoration: _modalSurfaceDecoration(context),
-      );
-
-  _AuraModalSurfaceFrameLayout({
+  new({
     required _AuraModalSurface surface,
     required double spacing,
     required double maxHeight,
@@ -325,6 +307,15 @@ class _AuraModalSurfaceFrameLayout extends StatelessWidget {
            ),
          ),
        );
+  new fromContext(BuildContext context, _AuraModalSurface surface)
+    : this(
+        surface: surface,
+        spacing: context.auraTheme.fromSpacing(.md),
+        maxHeight:
+            MediaQuery.sizeOf(context).height -
+            context.auraTheme.fromSpacing(.md) * 2,
+        decoration: _modalSurfaceDecoration(context),
+      );
 
   final Widget _child;
 
@@ -333,7 +324,7 @@ class _AuraModalSurfaceFrameLayout extends StatelessWidget {
 }
 
 class _AuraModalSurfaceBox extends StatelessWidget {
-  _AuraModalSurfaceBox({
+  new({
     required _AuraModalSurface surface,
     required double spacing,
     required double maxHeight,
@@ -367,20 +358,18 @@ BoxDecoration _modalSurfaceDecoration(BuildContext context) => BoxDecoration(
 );
 
 class _AuraModalSurfaceContent extends StatelessWidget {
-  _AuraModalSurfaceContent({
-    required _AuraModalSurface surface,
-    required double spacing,
-  }) : _child = Column(
-         mainAxisSize: .min,
-         crossAxisAlignment: .stretch,
-         children: [
-           if (surface.title != null || surface.closeLabel != null)
-             _AuraModalHeader(surface: surface),
-           if (surface.title != null || surface.closeLabel != null)
-             SizedBox(height: spacing),
-           Flexible(child: SingleChildScrollView(child: surface.content)),
-         ],
-       );
+  new({required _AuraModalSurface surface, required double spacing})
+    : _child = Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
+        children: [
+          if (surface.title != null || surface.closeLabel != null)
+            _AuraModalHeader(surface: surface),
+          if (surface.title != null || surface.closeLabel != null)
+            SizedBox(height: spacing),
+          Flexible(child: SingleChildScrollView(child: surface.content)),
+        ],
+      );
 
   final Widget _child;
 
@@ -389,7 +378,7 @@ class _AuraModalSurfaceContent extends StatelessWidget {
 }
 
 class _AuraModalHeader extends StatelessWidget {
-  _AuraModalHeader({required _AuraModalSurface surface})
+  new({required _AuraModalSurface surface})
     : _child = Row(
         crossAxisAlignment: .start,
         children: [

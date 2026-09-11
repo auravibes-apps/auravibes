@@ -9,42 +9,41 @@ import 'package:drift/drift.dart';
 @DataClassName('ServiceConnectionTable')
 class ServiceConnections extends Table with TableMixin {
   /// Human-readable name of the external service connection.
-  late final name = text()();
+  TextColumn get name => text()();
 
   /// Service-specific ID, such as openai, anthropic, gmail, or custom slug.
-  late final serviceId = text()();
+  TextColumn get serviceId => text()();
 
-  late final kind = textEnum<ServiceConnectionKindTable>()();
+  TextColumn get kind => textEnum<ServiceConnectionKindTable>()();
 
-  late final authenticationType = textEnum<ServiceAuthenticationTypeTable>()();
+  TextColumn get authenticationType =>
+      textEnum<ServiceAuthenticationTypeTable>()();
 
   /// Base URL for services that support custom endpoints.
-  late final url = text().nullable()();
+  TextColumn get url => text().nullable()();
 
   /// Encrypted auth payload. Shape depends on [authenticationType].
-  late final encryptedAuthValue = text().nullable()();
+  TextColumn get encryptedAuthValue => text().nullable()();
 
   /// Last visible secret characters, stored in plain text for display only.
-  late final keySuffix = text().nullable()();
+  TextColumn get keySuffix => text().nullable()();
 
   /// Non-secret service-specific JSON config.
-  late final metadataJson = text().nullable()();
+  TextColumn get metadataJson => text().nullable()();
 
-  late final authStatus = textEnum<ServiceConnectionAuthStatus>().nullable()();
+  TextColumn get authStatus =>
+      textEnum<ServiceConnectionAuthStatus>().nullable()();
 
-  late final expiresAt = dateTime().nullable()();
+  DateTimeColumn get expiresAt => dateTime().nullable()();
 
-  late final lastRefreshedAt = dateTime().nullable()();
+  DateTimeColumn get lastRefreshedAt => dateTime().nullable()();
 
-  late final lastAuthError = text().nullable()();
+  TextColumn get lastAuthError => text().nullable()();
 
-  late final workspaceId = text().references(
-    Workspaces,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
-  late final isEnabled = boolean().withDefault(const Constant(true))();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 }
 
 enum ServiceConnectionKindTable(final String value) {

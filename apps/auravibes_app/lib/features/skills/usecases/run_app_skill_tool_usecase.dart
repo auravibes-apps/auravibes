@@ -125,7 +125,7 @@ extension _RunAppSkillCredentialOperations on RunAppSkillToolUsecase {
     final credentialId = _credentialId(request.credentialId, candidates);
     _validateCredential(candidates, credentialId);
 
-    return _credentialAttributes(request, credentialId);
+    return await _credentialAttributes(request, credentialId);
   }
 
   String _credentialId(
@@ -169,6 +169,7 @@ extension on RunAppSkillToolUsecase {
     final isModelCredential = credentialId.startsWith('model:');
     if (isServiceCredential || isModelCredential) {
       final prefix = isServiceCredential ? 'service:' : 'model:';
+
       return _serviceConnectionAttributes((
         workspaceId: request.workspaceId,
         connectionId: credentialId.replaceFirst(prefix, ''),
@@ -183,6 +184,7 @@ extension on RunAppSkillToolUsecase {
     _ConnectionRequest request,
   ) async {
     final connection = await _availableConnection(request);
+
     return await _connectionAttributes(request, connection);
   }
 
@@ -225,7 +227,7 @@ extension _RunAppSkillSecretOperations on RunAppSkillToolUsecase {
   Future<Map<String, String>> _secretAttributes(
     _SecretAttributesRequest request,
   ) async {
-    return switch (request.secret) {
+    return await switch (request.secret) {
       ServiceConnectionSecretApiKey(:final apiKey) => _apiKeyAttributes(
         request.request.skill,
         apiKey,

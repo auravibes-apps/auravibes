@@ -3,7 +3,8 @@ import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 
 abstract final class AgentToolStatusMapper {
-  static const Map<agent.AgentToolResultStatus, ToolCallResultStatus> _resultStatuses = {
+  static const Map<agent.AgentToolResultStatus, ToolCallResultStatus>
+  _resultStatuses = {
     agent.AgentToolResultStatus.success: ToolCallResultStatus.success,
     agent.AgentToolResultStatus.toolNotFound: ToolCallResultStatus.toolNotFound,
     agent.AgentToolResultStatus.executionError:

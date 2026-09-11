@@ -10,6 +10,13 @@ import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
+typedef _NewMessageRequest = ({
+  String workspaceId,
+  ChatDraft draft,
+  String workspaceModelSelectionId,
+  String? agentId,
+});
+
 void main() {
   group('NewChatState', () {
     test('default state has null modelId', () {
@@ -199,11 +206,11 @@ class _FakeSendNewMessageUsecase implements SendNewMessageUsecase {
   MonitoringService get monitoringService => throw UnimplementedError();
 
   @override
-  Future<ConversationEntity> call(dynamic request) async {
+  Future<ConversationEntity> call(_NewMessageRequest request) async {
     return ConversationEntity(
       id: 'new-conv',
       title: 'New',
-      workspaceId: request.workspaceId as String,
+      workspaceId: request.workspaceId,
       isPinned: false,
       createdAt: .new(2026),
       updatedAt: .new(2026),
@@ -233,7 +240,7 @@ class _ErrorSendNewMessageUsecase implements SendNewMessageUsecase {
   MonitoringService get monitoringService => throw UnimplementedError();
 
   @override
-  Future<ConversationEntity> call(dynamic request) async {
+  Future<ConversationEntity> call(_NewMessageRequest _) async {
     throw Exception('send failed');
   }
 }

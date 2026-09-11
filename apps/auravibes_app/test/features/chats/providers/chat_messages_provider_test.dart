@@ -639,15 +639,13 @@ class _FakeApiModelRepository({required final List<ApiModelEntity> models})
     throw UnimplementedError();
   }
 
-  @override
   Future<List<ApiModelProviderEntity>> batchUpsertProviders(
-    List<ApiModelProviderEntity> providers,
+    List<ApiModelProviderEntity> _,
   ) {
     throw UnimplementedError();
   }
 
-  @override
-  Future<List<ApiModelEntity>> batchUpsertModels(List<ApiModelEntity> models) {
+  Future<List<ApiModelEntity>> batchUpsertModels(List<ApiModelEntity> _) {
     throw UnimplementedError();
   }
 

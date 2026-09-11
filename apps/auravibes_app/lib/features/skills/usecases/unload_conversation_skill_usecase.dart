@@ -65,6 +65,7 @@ extension on UnloadConversationSkillUsecase {
   Future<SkillEntity?> _findLocalUserSkill(String workspaceId, String slug) {
     final repository =
         _skillsRepository ?? (throw StateError('Skill store is unavailable'));
+
     return repository.getSkillBySlug(workspaceId, slug);
   }
 
@@ -80,6 +81,7 @@ extension on UnloadConversationSkillUsecase {
         selected: false,
         isAppSkill: false,
       );
+
       return;
     }
 
@@ -113,6 +115,7 @@ extension on UnloadConversationSkillUsecase {
         selected: false,
         isAppSkill: true,
       );
+
       return;
     }
 

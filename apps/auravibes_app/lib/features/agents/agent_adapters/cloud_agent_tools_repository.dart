@@ -50,8 +50,8 @@ class const CloudAgentToolsRepository({
     String toolId, {
     required ToolPermissionMode permissionMode,
   }) => _setAgentToolPermission(
-    read: read,
     patch: patch,
+    read: read,
     request: (agentId: agentId, toolId: toolId, permissionMode: permissionMode),
   );
 

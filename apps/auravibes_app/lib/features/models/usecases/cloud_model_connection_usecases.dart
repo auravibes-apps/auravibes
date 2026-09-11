@@ -96,11 +96,7 @@ extension on CloudModelConnectionUsecases {
     final secret = request.secret;
     if (secret == null) return request.connection;
 
-    final secretState = await _putSecret(
-      gateway,
-      request.resourceId,
-      secret,
-    );
+    final secretState = await _putSecret(gateway, request.resourceId, secret);
 
     return request.connection.copyWith(
       hasSecret: secretState.configured,

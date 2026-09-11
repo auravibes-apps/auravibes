@@ -90,9 +90,11 @@ class const UpdateSkillCredentialDefinitionUsecase(
   Future<SkillCredentialDefinitionEntity?> _cloudDuplicateTitle(
     CloudSkillStore cloud,
     String slug,
-  ) => cloud.definitions().then(
-    (definitions) => definitions.where((item) => item.slug == slug).firstOrNull,
-  );
+  ) async {
+    final definitions = await cloud.definitions();
+
+    return definitions.where((item) => item.slug == slug).firstOrNull;
+  }
 
   Future<SkillCredentialDefinitionEntity> _updateDefinition(
     String definitionId,

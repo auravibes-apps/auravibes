@@ -102,7 +102,7 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
 }
 
 class _AuraTypingIndicatorView extends StatelessWidget {
-  _AuraTypingIndicatorView({
+  new({
     required AuraTypingIndicator indicator,
     required List<Animation<double>> dotAnimations,
   }) : _child = _AuraTypingIndicatorContainer(

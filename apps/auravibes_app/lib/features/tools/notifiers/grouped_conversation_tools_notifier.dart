@@ -255,7 +255,8 @@ Future<List<ToolsGroupEntity>> _loadWorkspaceGroups(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
   final repository = ref.watch(toolsGroupsRepositoryProvider(session));
-  return repository.getToolsGroupsForWorkspace(workspaceId);
+
+  return await repository.getToolsGroupsForWorkspace(workspaceId);
 }
 
 ConversationToolsGroupWithTools? _findConversationGroup(

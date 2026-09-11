@@ -539,12 +539,6 @@ class WorkspaceException implements Exception {
 class WorkspaceValidationException extends WorkspaceException {
   /// Creates a new WorkspaceValidationException.
   const new(super.message, {super.localizationKey, super.cause});
-
-  @override
-  String toString() {
-    final value = super.toString();
-    return value;
-  }
 }
 
 /// Exception thrown when a workspace is not found.
@@ -558,10 +552,4 @@ class WorkspaceNotFoundException extends WorkspaceException {
 
   /// ID of the workspace that was not found.
   final String workspaceId;
-
-  @override
-  String toString() {
-    final value = super.toString();
-    return value;
-  }
 }

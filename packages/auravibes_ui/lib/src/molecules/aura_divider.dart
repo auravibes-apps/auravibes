@@ -3,6 +3,15 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
+typedef _AuraDividerInput = ({
+  AuraDividerOrientation orientation,
+  double thickness,
+  double indent,
+  double endIndent,
+  Widget? label,
+  Color color,
+});
+
 /// A customizable divider component following the Aura design system.
 ///
 /// This divider widget provides consistent visual separation between
@@ -75,49 +84,34 @@ class AuraDivider extends StatelessWidget {
 }
 
 class _AuraDividerContent extends StatelessWidget {
-  _AuraDividerContent({
+  new({
     required AuraDividerOrientation orientation,
     required double thickness,
     required double indent,
     required double endIndent,
     required Widget? label,
     required Color color,
-  }) : _child = label != null
-           ? _AuraLabeledDivider(
-               label: label,
-               thickness: thickness,
-               indent: indent,
-               endIndent: endIndent,
-               color: color,
-             )
-           : AuraDivider.isVertical(orientation)
-           ? _AuraVerticalDivider(
-               thickness: thickness,
-               indent: indent,
-               endIndent: endIndent,
-               color: color,
-             )
-           : _AuraHorizontalDivider(
-               thickness: thickness,
-               indent: indent,
-               endIndent: endIndent,
-               color: color,
-             );
+  }) : _child = _AuraDividerBuilder.build((
+         orientation: orientation,
+         thickness: thickness,
+         indent: indent,
+         endIndent: endIndent,
+         label: label,
+         color: color,
+       ));
 
-  _AuraDividerContent.from({
-    required AuraDivider divider,
-    required AuraColorScheme colors,
-  }) : this(
-         orientation: divider.orientation,
-         thickness: divider.thickness,
-         indent: divider.indent,
-         endIndent: divider.endIndent,
-         label: divider.label,
-         color: switch (divider.color) {
-           final tint? => colors.colorFor(tint),
-           null => colors.outline,
-         },
-       );
+  new from({required AuraDivider divider, required AuraColorScheme colors})
+    : this(
+        orientation: divider.orientation,
+        thickness: divider.thickness,
+        indent: divider.indent,
+        endIndent: divider.endIndent,
+        label: divider.label,
+        color: switch (divider.color) {
+          final tint? => colors.colorFor(tint),
+          null => colors.outline,
+        },
+      );
 
   final Widget _child;
 
@@ -125,8 +119,38 @@ class _AuraDividerContent extends StatelessWidget {
   Widget build(BuildContext context) => _child;
 }
 
+abstract final class _AuraDividerBuilder {
+  static Widget build(_AuraDividerInput input) {
+    if (input.label case final label?) {
+      return _AuraLabeledDivider(
+        label: label,
+        thickness: input.thickness,
+        indent: input.indent,
+        endIndent: input.endIndent,
+        color: input.color,
+      );
+    }
+
+    if (AuraDivider.isVertical(input.orientation)) {
+      return _AuraVerticalDivider(
+        thickness: input.thickness,
+        indent: input.indent,
+        endIndent: input.endIndent,
+        color: input.color,
+      );
+    }
+
+    return _AuraHorizontalDivider(
+      thickness: input.thickness,
+      indent: input.indent,
+      endIndent: input.endIndent,
+      color: input.color,
+    );
+  }
+}
+
 class _AuraLabeledDivider extends StatelessWidget {
-  _AuraLabeledDivider({
+  new({
     required Widget label,
     required double thickness,
     required double indent,
@@ -153,29 +177,26 @@ class _AuraLabeledDivider extends StatelessWidget {
 }
 
 class _AuraLabeledDividerContent extends StatelessWidget {
-  _AuraLabeledDividerContent({
-    required Widget label,
-    required double thickness,
-    required Color color,
-  }) : _child = Row(
-         children: [
-           Expanded(
-             child: _AuraDividerLine(
-               color: color,
-               thickness: thickness,
-               orientation: .horizontal,
-             ),
-           ),
-           _AuraDividerLabel(label: label),
-           Expanded(
-             child: _AuraDividerLine(
-               color: color,
-               thickness: thickness,
-               orientation: .horizontal,
-             ),
-           ),
-         ],
-       );
+  new({required Widget label, required double thickness, required Color color})
+    : _child = Row(
+        children: [
+          Expanded(
+            child: _AuraDividerLine(
+              color: color,
+              thickness: thickness,
+              orientation: .horizontal,
+            ),
+          ),
+          _AuraDividerLabel(label: label),
+          Expanded(
+            child: _AuraDividerLine(
+              color: color,
+              thickness: thickness,
+              orientation: .horizontal,
+            ),
+          ),
+        ],
+      );
 
   final Widget _child;
 
@@ -195,7 +216,7 @@ class const _AuraDividerLabel({required final Widget label})
 }
 
 class _AuraHorizontalDivider extends StatelessWidget {
-  _AuraHorizontalDivider({
+  new({
     required double thickness,
     required double indent,
     required double endIndent,
@@ -223,7 +244,7 @@ class _AuraHorizontalDivider extends StatelessWidget {
 }
 
 class _AuraVerticalDivider extends StatelessWidget {
-  _AuraVerticalDivider({
+  new({
     required double thickness,
     required double indent,
     required double endIndent,

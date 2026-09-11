@@ -16,10 +16,6 @@ abstract class AntropicResponseModelsItem with _$AntropicResponseModelsItem {
 
   factory fromJson(Map<String, dynamic> json) =>
       _$AntropicResponseModelsItemFromJson(json);
-
-  bool hasDisplayName() => displayName.isNotEmpty;
-
-  bool hasId() => id.isNotEmpty;
 }
 
 @Freezed(toJson: false, toStringOverride: false)
@@ -32,10 +28,6 @@ abstract class AntropicResponseModelsErrorMessage
 
   factory fromJson(Map<String, dynamic> json) =>
       _$AntropicResponseModelsErrorMessageFromJson(json);
-
-  bool hasMessage() => message.isNotEmpty;
-
-  bool hasType() => type.isNotEmpty;
 }
 
 @Freezed(toJson: false, toStringOverride: false)
@@ -68,13 +60,4 @@ abstract class AntropicResponseModels with _$AntropicResponseModels {
       );
     }
   }
-
-  bool isErrorResponse() => this is AntropicResponseModelsError;
-
-  bool isDataResponse() => this is AntropicResponseModelsData;
-
-  bool hasMorePages() => switch (this) {
-    AntropicResponseModelsData(:final hasMore) => hasMore,
-    _ => false,
-  };
 }

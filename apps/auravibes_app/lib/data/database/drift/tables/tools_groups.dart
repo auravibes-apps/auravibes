@@ -17,24 +17,21 @@ WHERE mcp_server_id IS NOT NULL
 ''')
 class ToolsGroups extends Table with TableMixin {
   /// Reference to the workspace this tools group belongs to.
-  late final workspaceId = text().references(
-    Workspaces,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
   /// Optional reference to the MCP server this group belongs to.
   /// When the MCP server is deleted, this group and its tools are also deleted.
-  late final mcpServerId = text().nullable().references(
-    McpServers,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get mcpServerId =>
+      text().nullable().references(McpServers, #id, onDelete: .cascade)();
 
-  late final name = text()();
+  TextColumn get name => text()();
 
   /// Whether the tool is enabled for this workspace.
-  late final isEnabled = boolean().withDefault(const Constant(true))();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 
-  late final permissions = textEnum<PermissionAccess>()();
+  TextColumn get permissions => textEnum<PermissionAccess>()();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }

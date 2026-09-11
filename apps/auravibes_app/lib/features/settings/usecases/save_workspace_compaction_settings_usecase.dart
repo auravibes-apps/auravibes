@@ -80,7 +80,7 @@ saveWorkspaceCompactionSettingsUsecase(Ref ref, String workspaceId) async {
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
-  if (session.cloud != null) return _cloudCompactionUsecase(ref, session);
+  if (session.cloud != null) return await _cloudCompactionUsecase(ref, session);
 
   return SaveWorkspaceCompactionSettingsUsecase(
     repository: ref.watch(workspaceCompactionSettingsRepositoryProvider),
@@ -97,6 +97,7 @@ Future<SaveWorkspaceCompactionSettingsUsecase> _cloudCompactionUsecase(
   if (gateway == null) {
     throw StateError('Cloud workspace gateway is unavailable');
   }
+
   return SaveWorkspaceCompactionSettingsUsecase(cloudAdapter: .new(gateway));
 }
 // Top-level API/provider declarations are required by their consumers.

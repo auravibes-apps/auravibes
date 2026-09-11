@@ -77,13 +77,13 @@ class const _AuraCardContent({
 }
 
 class _AuraCardSurface extends StatelessWidget {
-  _AuraCardSurface({
+  new({
     required AuraCard card,
     required AuraColorScheme colors,
     required double radius,
   }) : _child = _AuraCardSemantics(
          child: _AuraCardVariant(
-           data: _AuraCardVariantData(
+           data: .new(
              card: card,
              content: _AuraCardContent(
                card: card,
@@ -209,26 +209,23 @@ class const _AuraSolidCard({
 }
 
 class _AuraCardAppearance {
-  _AuraCardAppearance({
-    required this.colors,
-    required this.style,
-    required this.tint,
-  }) : _shadows = switch (style) {
-         .glass => [DesignShadows.glass],
-         .border => const [],
-         .elevated => [
-           BoxShadow(
-             color: colors.shadow.withValues(alpha: 0.06),
-             offset: const Offset(0, 12),
-             blurRadius: 28,
-           ),
-           BoxShadow(
-             color: colors.shadow.withValues(alpha: 0.02),
-             offset: const Offset(0, 1),
-             blurRadius: 4,
-           ),
-         ],
-       };
+  new({required this.colors, required this.style, required this.tint})
+    : _shadows = switch (style) {
+        .glass => [DesignShadows.glass],
+        .border => const [],
+        .elevated => [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: 0.06),
+            offset: const Offset(0, 12),
+            blurRadius: 28,
+          ),
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: 0.02),
+            offset: const Offset(0, 1),
+            blurRadius: 4,
+          ),
+        ],
+      };
 
   final AuraColorScheme colors;
   final AuraCardStyle style;

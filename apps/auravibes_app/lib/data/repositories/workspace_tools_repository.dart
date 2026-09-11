@@ -294,10 +294,4 @@ class WorkspaceToolsException implements Exception {
 class WorkspaceToolsValidationException extends WorkspaceToolsException {
   /// Creates a new WorkspaceToolsValidationException.
   const new(super.message, [super.cause]);
-
-  @override
-  String toString() {
-    final value = super.toString();
-    return value;
-  }
 }

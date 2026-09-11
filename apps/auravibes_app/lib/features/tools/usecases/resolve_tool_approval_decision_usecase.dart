@@ -43,7 +43,7 @@ class ResolveToolApprovalDecisionUsecase({
       return _notConfiguredDecision(toolCallId);
     }
 
-    return _configuredDecision(conversationToolsRepository, (
+    return await _configuredDecision(conversationToolsRepository, (
       conversationId: conversationId,
       workspaceId: workspaceId,
       toolCallId: toolCallId,
@@ -57,7 +57,7 @@ class ResolveToolApprovalDecisionUsecase({
     required ResolvedTool resolvedTool,
   }) async {
     if (_isSkillTool(resolvedTool)) {
-      return _resolveSkillPermission(
+      return await _resolveSkillPermission(
         conversationId: conversationId,
         workspaceId: workspaceId,
         resolvedTool: resolvedTool,
@@ -69,7 +69,10 @@ class ResolveToolApprovalDecisionUsecase({
       return resolvedTool.tableId;
     }
 
-    return _resolveMcpPermission(mcpServerId, resolvedTool.toolIdentifier);
+    return await _resolveMcpPermission(
+      mcpServerId,
+      resolvedTool.toolIdentifier,
+    );
   }
 
   Future<String?> _resolveSkillPermission({
@@ -103,6 +106,7 @@ class ResolveToolApprovalDecisionUsecase({
           toolGroupId: toolGroup.id,
           toolName: toolName,
         );
+
     return workspaceTool?.id;
   }
 
@@ -138,6 +142,7 @@ Future<ToolApprovalDecision> _configuredDecision(
     workspaceId: request.workspaceId,
     toolId: request.permissionTableId,
   );
+
   return ToolApprovalDecision(
     toolCallId: request.toolCallId,
     permissionResult: permissionResult,

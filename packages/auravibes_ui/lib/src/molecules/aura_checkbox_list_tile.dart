@@ -70,24 +70,22 @@ class const _AuraCheckboxTileGesture({
 }
 
 class _AuraCheckboxTileRow extends StatelessWidget {
-  _AuraCheckboxTileRow({
-    required AuraCheckboxListTile tile,
-    required bool isDisabled,
-  }) : _child = Row(
-         crossAxisAlignment: .start,
-         children: [
-           AuraCheckbox(
-             value: tile.value,
-             onChanged: isDisabled ? null : tile.onChanged,
-             tint: tile.tint,
-             disabled: isDisabled,
-             autofocus: tile.autofocus,
-             semanticLabel: tile.semanticLabel,
-           ),
-           const SizedBox(width: 12),
-           Expanded(child: _AuraCheckboxTileText(tile: tile)),
-         ],
-       );
+  new({required AuraCheckboxListTile tile, required bool isDisabled})
+    : _child = Row(
+        crossAxisAlignment: .start,
+        children: [
+          AuraCheckbox(
+            value: tile.value,
+            onChanged: isDisabled ? null : tile.onChanged,
+            tint: tile.tint,
+            disabled: isDisabled,
+            autofocus: tile.autofocus,
+            semanticLabel: tile.semanticLabel,
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: _AuraCheckboxTileText(tile: tile)),
+        ],
+      );
 
   final Widget _child;
 

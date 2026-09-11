@@ -20,7 +20,7 @@ class AuraKeyValue extends StatelessWidget {
 }
 
 class _AuraKeyValueContent extends StatelessWidget {
-  _AuraKeyValueContent({
+  new({
     required List<AuraKeyValueEntry> entries,
     required AuraSpacingScale spacing,
   }) : _child = Column(

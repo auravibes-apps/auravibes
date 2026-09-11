@@ -783,10 +783,10 @@ extension ModelConnectionMapping on ModelConnectionRepository {
     hasKey: modelConnection.encryptedAuthValue?.isNotEmpty == true,
   );
 
-  String? _nextConnectionUrl(String? url) {
-    final updatedUrl = url?.trim();
+  String? _nextConnectionUrl(String url) {
+    final updatedUrl = url.trim();
 
-    return updatedUrl?.isEmpty == true ? null : updatedUrl;
+    return updatedUrl.isEmpty ? null : updatedUrl;
   }
 
   ServiceConnectionsCompanion _modelProviderToCreateToCompanion(

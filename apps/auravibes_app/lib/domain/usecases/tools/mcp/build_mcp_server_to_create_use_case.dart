@@ -10,14 +10,8 @@ class const BuildMcpServerToCreateUseCase({
     final serverInfo = _serverInfo(serverToCreate);
 
     return switch (serverToCreate.authenticationType) {
-      McpAuthenticationTypeOptions.bearerToken => _withBearerToken(
-        serverInfo,
-        serverToCreate.bearerToken,
-      ),
-      McpAuthenticationTypeOptions.oauth => await _withOAuth(
-        serverInfo,
-        serverToCreate.url,
-      ),
+      .bearerToken => _withBearerToken(serverInfo, serverToCreate.bearerToken),
+      .oauth => await _withOAuth(serverInfo, serverToCreate.url),
       _ => serverInfo,
     };
   }

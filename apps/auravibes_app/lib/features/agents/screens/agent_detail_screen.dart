@@ -1269,9 +1269,7 @@ class _SaveBarButton({
           width: width,
           child: AuraButton(
             onPressed: onSave,
-            child: TextLocale(
-              _label(isCreate: isCreate),
-            ),
+            child: TextLocale(_label(isCreate: isCreate)),
           ),
         )
       : Align(
@@ -1280,9 +1278,7 @@ class _SaveBarButton({
             width: width,
             child: AuraButton(
               onPressed: onSave,
-              child: TextLocale(
-                _label(isCreate: isCreate),
-              ),
+              child: TextLocale(_label(isCreate: isCreate)),
             ),
           ),
         );

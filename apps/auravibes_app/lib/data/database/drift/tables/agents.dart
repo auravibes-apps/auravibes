@@ -7,19 +7,16 @@ import 'package:drift/drift.dart';
 
 @DataClassName('AgentsTable')
 class Agents extends Table with TableMixin {
-  late final workspaceId = text().references(
-    Workspaces,
-    #id,
-    onDelete: .cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
 
-  late final name = text()();
+  TextColumn get name => text()();
 
-  late final description = text().withDefault(const Constant(''))();
+  TextColumn get description => text().withDefault(const Constant(''))();
 
-  late final content = text()();
+  TextColumn get content => text()();
 
-  late final isEnabled = boolean().withDefault(const Constant(true))();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 
-  late final visibility = text().withDefault(const Constant('both'))();
+  TextColumn get visibility => text().withDefault(const Constant('both'))();
 }

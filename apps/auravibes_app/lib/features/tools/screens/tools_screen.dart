@@ -91,8 +91,8 @@ class const _ToolsScreenAddToolButton({
       right: context.auraTheme.fromSpacing(.md),
       bottom: context.auraTheme.fromSpacing(.md),
       child: Visibility(
-        visible: visible,
         child: _AddToolButton(workspaceId: workspaceId),
+        visible: visible,
       ),
     );
   }

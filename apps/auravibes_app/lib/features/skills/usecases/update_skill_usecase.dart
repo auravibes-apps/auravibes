@@ -78,9 +78,11 @@ class const UpdateSkillUsecase(
   Future<SkillEntity?> _cloudDuplicateSkillTitle(
     CloudSkillStore cloud,
     String title,
-  ) => cloud.skills().then(
-    (skills) => skills.where((item) => item.title == title.trim()).firstOrNull,
-  );
+  ) async {
+    final skills = await cloud.skills();
+
+    return skills.where((item) => item.title == title.trim()).firstOrNull;
+  }
 }
 
 final ProviderFamily<UpdateSkillUsecase, String> updateSkillUsecaseProvider =
