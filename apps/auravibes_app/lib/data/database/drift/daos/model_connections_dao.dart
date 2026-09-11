@@ -7,7 +7,7 @@ part 'model_connections_dao.g.dart';
 /// Data Access Object for workspace operations.
 @DriftAccessor(tables: [ServiceConnections])
 class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
-    with _$ModelConnectionsDaoMixin {
+    with _$ModelConnectionsDaoMixin, _ModelConnectionsDaoApi {
   new(super.attachedDatabase);
 
   Future<ServiceConnectionTable?> getModelConnectionById(String id) {
@@ -18,6 +18,37 @@ class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
         ))
         .getSingleOrNull();
   }
+}
+
+mixin _ModelConnectionsDaoApi {
+  Future<List<ServiceConnectionTable>> getAllModelConnectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) =>
+      ModelConnectionsDaoMethods(this as ModelConnectionsDao)
+          .getAllModelConnectionsByWorkspace(workspaceIds: workspaceIds);
+
+  Stream<List<ServiceConnectionTable>> watchAllModelConnectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) =>
+      ModelConnectionsDaoMethods(this as ModelConnectionsDao)
+          .watchAllModelConnectionsByWorkspace(workspaceIds: workspaceIds);
+
+  Future<ServiceConnectionTable> insertModelConnection(
+    ServiceConnectionsCompanion modelConnection,
+  ) =>
+      ModelConnectionsDaoMethods(this as ModelConnectionsDao)
+          .insertModelConnection(modelConnection);
+
+  Future<ServiceConnectionTable?> updateModelConnection(
+    String id,
+    ServiceConnectionsCompanion modelConnection,
+  ) =>
+      ModelConnectionsDaoMethods(this as ModelConnectionsDao)
+          .updateModelConnection(id, modelConnection);
+
+  Future<void> deleteModelConnection(String id) =>
+      ModelConnectionsDaoMethods(this as ModelConnectionsDao)
+          .deleteModelConnection(id);
 }
 
 extension ModelConnectionsDaoMethods on ModelConnectionsDao {

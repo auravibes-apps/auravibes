@@ -7,7 +7,127 @@ part 'conversation_tools_dao.g.dart';
 @DriftAccessor(tables: [ConversationTools])
 class ConversationToolsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$ConversationToolsDaoMixin;
+    with
+        _$ConversationToolsDaoMixin,
+        _ConversationToolsDaoPrimaryApi,
+        _ConversationToolsDaoStateApi,
+        _ConversationToolsDaoLegacyApi;
+
+mixin _ConversationToolsDaoPrimaryApi {
+  Future<ConversationToolsTable?> getConversationTool(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+          .getConversationTool(conversationId, toolId);
+
+  Future<List<ConversationToolsTable>> getConversationTools(
+    String conversationId,
+  ) =>
+      ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+          .getConversationTools(conversationId);
+
+  Future<ConversationToolsTable> Function(
+    String,
+    String, {
+    required bool isEnabled,
+    required PermissionAccess permission,
+  })
+  get upsertConversationTool =>
+      ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+          .upsertConversationTool;
+
+  Future<ConversationToolsTable> setConversationToolEnabled(
+    String conversationId,
+    String toolId, {
+    required bool isEnabled,
+  }) => ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+      .setConversationToolEnabled(conversationId, toolId, isEnabled: isEnabled);
+
+  Future<ConversationToolsTable> setConversationToolPermission(
+    String conversationId,
+    String toolId, {
+    required PermissionAccess permission,
+  }) => ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+      .setConversationToolPermission(
+        conversationId,
+        toolId,
+        permission: permission,
+      );
+
+  Future<bool> deleteConversationTool(String conversationId, String toolId) =>
+      ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+          .deleteConversationTool(conversationId, toolId);
+}
+
+mixin _ConversationToolsDaoStateApi {
+  Future<bool> isConversationToolEnabled(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsDaoStateOperations(this as ConversationToolsDao)
+          .isConversationToolEnabled(conversationId, toolId);
+
+  Future<int> getConversationToolsCount(String conversationId) =>
+      ConversationToolsDaoStateOperations(this as ConversationToolsDao)
+          .getConversationToolsCount(conversationId);
+
+  Future<void> removeToolsForConversation(String conversationId) =>
+      ConversationToolsDaoStateOperations(this as ConversationToolsDao)
+          .removeToolsForConversation(conversationId);
+
+  Future<void> copyConversationTools(
+    String sourceConversationId,
+    String targetConversationId,
+  ) =>
+      ConversationToolsDaoStateOperations(this as ConversationToolsDao)
+          .copyConversationTools(sourceConversationId, targetConversationId);
+}
+
+mixin _ConversationToolsDaoLegacyApi {
+  Future<ConversationToolsTable?> getDisabledConversationTool(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .getDisabledConversationTool(conversationId, toolId);
+
+  Future<void> disableConversationTools(
+    String conversationId,
+    List<String> toolIds,
+  ) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .disableConversationTools(conversationId, toolIds);
+
+  Future<bool> enableConversationTool(String conversationId, String toolId) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .enableConversationTool(conversationId, toolId);
+
+  Future<bool> toggleConversationTool(String conversationId, String toolId) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .toggleConversationTool(conversationId, toolId);
+
+  Future<bool> isConversationToolDisabled(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .isConversationToolDisabled(conversationId, toolId);
+
+  Future<List<ConversationToolsTable>> getDisabledConversationTools(
+    String conversationId,
+  ) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .getDisabledConversationTools(conversationId);
+
+  Future<int> getDisabledConversationToolsCount(String conversationId) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .getDisabledConversationToolsCount(conversationId);
+
+  Future<void> removeDisabledToolsForConversation(String conversationId) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .removeDisabledToolsForConversation(conversationId);
+}
 
 extension ConversationToolsDaoPrimaryOperations on ConversationToolsDao {
   /// Get a specific conversation tool setting.

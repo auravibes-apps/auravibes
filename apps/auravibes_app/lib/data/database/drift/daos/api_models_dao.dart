@@ -11,7 +11,14 @@ final _log = Logger('dao:api_models');
 /// Data Access Object for API models operations.
 @DriftAccessor(tables: [ApiModels])
 class ApiModelsDao extends DatabaseAccessor<AppDatabase>
-    with _$ApiModelsDaoMixin {
+    with
+        _$ApiModelsDaoMixin,
+        _ApiModelsDaoReadApi,
+        _ApiModelsDaoMutationApi,
+        _ApiModelsDaoSearchApi,
+        _ApiModelsDaoBatchInsertApi,
+        _ApiModelsDaoBatchApi,
+        _ApiModelsDaoFilterApi {
   new(super.attachedDatabase);
 
   /// Retrieves all API models from the database.
@@ -24,6 +31,96 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
         ]))
         .get();
   }
+}
+
+mixin _ApiModelsDaoReadApi {
+  Future<ApiModelsTable?> getModelByProviderAndModelId(
+    String providerId,
+    String modelId,
+  ) =>
+      ApiModelsDaoReadOperations(this as ApiModelsDao)
+          .getModelByProviderAndModelId(providerId, modelId);
+
+  Future<List<ApiModelsTable>> getModelsByProvider(String providerId) =>
+      ApiModelsDaoReadOperations(this as ApiModelsDao)
+          .getModelsByProvider(providerId);
+
+  Stream<List<ApiModelsTable>> watchModelsByProvider(String providerId) =>
+      ApiModelsDaoReadOperations(this as ApiModelsDao)
+          .watchModelsByProvider(providerId);
+}
+
+mixin _ApiModelsDaoMutationApi {
+  Future<ApiModelsTable> upsertModel(ApiModelsCompanion model) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao).upsertModel(model);
+
+  Future<bool> deleteModel(String id) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao).deleteModel(id);
+
+  Future<bool> deleteModelByProviderAndId(String providerId, String id) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao)
+          .deleteModelByProviderAndId(providerId, id);
+
+  Future<int> deleteModelsByProvider(String providerId) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao)
+          .deleteModelsByProvider(providerId);
+
+  Future<bool> modelExists(String id) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao).modelExists(id);
+}
+
+mixin _ApiModelsDaoSearchApi {
+  Future<List<ApiModelsTable>> searchModelsByName(String query) =>
+      ApiModelsDaoSearchOperations(this as ApiModelsDao)
+          .searchModelsByName(query);
+
+  Future<int> getModelCount() =>
+      ApiModelsDaoSearchOperations(this as ApiModelsDao).getModelCount();
+
+  Future<int> getModelCountByProvider(String providerId) =>
+      ApiModelsDaoSearchOperations(this as ApiModelsDao)
+          .getModelCountByProvider(providerId);
+}
+
+mixin _ApiModelsDaoBatchInsertApi {
+  Future<List<ApiModelsTable>> batchInsertModels(
+    List<ApiModelsCompanion> models,
+  ) =>
+      ApiModelsDaoBatchInsertOperations(this as ApiModelsDao)
+          .batchInsertModels(models);
+}
+
+mixin _ApiModelsDaoBatchApi {
+  Future<List<ApiModelsTable>> batchUpsertModels(
+    List<ApiModelsCompanion> models,
+  ) =>
+      ApiModelsDaoBatchOperations(this as ApiModelsDao)
+          .batchUpsertModels(models);
+
+  Future<int> deleteAllModels() =>
+      ApiModelsDaoBatchOperations(this as ApiModelsDao).deleteAllModels();
+}
+
+mixin _ApiModelsDaoFilterApi {
+  Future<List<ApiModelsTable>> getModelsByCostRange(
+    double minInputCost,
+    double maxInputCost,
+  ) =>
+      ApiModelsDaoFilterOperations(this as ApiModelsDao)
+          .getModelsByCostRange(minInputCost, maxInputCost);
+
+  Future<List<ApiModelsTable>> getModelsByMinContextLimit(
+    int minContextLimit,
+  ) =>
+      ApiModelsDaoFilterOperations(this as ApiModelsDao)
+          .getModelsByMinContextLimit(minContextLimit);
+
+  Future<List<ApiModelsTable>> getOpenWeightsModels() =>
+      ApiModelsDaoFilterOperations(this as ApiModelsDao).getOpenWeightsModels();
+
+  Future<List<ApiModelsTable>> getModelsByCostEfficiency() =>
+      ApiModelsDaoFilterOperations(this as ApiModelsDao)
+          .getModelsByCostEfficiency();
 }
 
 extension ApiModelsDaoReadOperations on ApiModelsDao {

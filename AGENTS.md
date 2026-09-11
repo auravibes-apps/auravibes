@@ -92,6 +92,8 @@
 - Drift schema changes require `schemaVersion` bump and migration logic.
 - User-facing strings must be localized; user-facing errors use typed exceptions carrying localization keys.
 - If `.fvmrc` changes, run `fvm use` and commit the resulting `.vscode/settings.json` sync.
+- Freezed 4 classes must not declare abstract `hashCode`, `toString`, or `==`; those declarations suppress generated implementations. Run build runner after model changes and review generated output.
+- DCL metric/rule ignores are allowed only for generated-backed Freezed declarations, Drift schema DSL, or symbols required by generated Drift output, with a reason; keep checks enabled for handwritten behavior.
 
 ## Architecture
 

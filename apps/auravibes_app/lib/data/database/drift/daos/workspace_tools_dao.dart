@@ -7,7 +7,142 @@ part 'workspace_tools_dao.g.dart';
 @DriftAccessor(tables: [Tools])
 class WorkspaceToolsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$WorkspaceToolsDaoMixin;
+    with
+        _$WorkspaceToolsDaoMixin,
+        _WorkspaceToolsDaoCoreApi,
+        _WorkspaceToolsDaoQueryApi,
+        _WorkspaceToolsDaoMetadataApi,
+        _WorkspaceToolsDaoPermissionApi,
+        _WorkspaceToolsDaoBatchApi;
+
+mixin _WorkspaceToolsDaoCoreApi {
+  Future<ToolsTable?> getWorkspaceTool(String workspaceId, String id) =>
+      WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
+          .getWorkspaceTool(workspaceId, id);
+
+  Future<ToolsTable?> getWorkspaceToolByToolId(
+    String workspaceId,
+    String toolId,
+  ) =>
+      WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
+          .getWorkspaceToolByToolId(workspaceId, toolId);
+
+  Future<ToolsTable> setWorkspaceToolEnabled(
+    String workspaceId,
+    String toolId, {
+    required bool isEnabled,
+  }) =>
+      WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
+          .setWorkspaceToolEnabled(workspaceId, toolId, isEnabled: isEnabled);
+
+  Future<ToolsTable> setWorkspaceToolEnabledById(
+    String id, {
+    required bool isEnabled,
+  }) =>
+      WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
+          .setWorkspaceToolEnabledById(id, isEnabled: isEnabled);
+
+  Future<List<ToolsTable>> patchWorkspaceToolConfig(
+    String workspaceId,
+    String toolId,
+    String? config,
+  ) =>
+      WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
+          .patchWorkspaceToolConfig(workspaceId, toolId, config);
+
+  Future<bool> deleteWorkspaceToolByToolId(String workspaceId, String toolId) =>
+      WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
+          .deleteWorkspaceToolByToolId(workspaceId, toolId);
+
+  Future<bool> deleteWorkspaceTool(String workspaceId, String id) =>
+      WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
+          .deleteWorkspaceTool(workspaceId, id);
+
+  Future<bool> deleteWorkspaceToolById(String id) =>
+      WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
+          .deleteWorkspaceToolById(id);
+}
+
+mixin _WorkspaceToolsDaoQueryApi {
+  Future<List<ToolsTable>> getWorkspaceTools(String workspaceId) =>
+      WorkspaceToolsDaoQueryMethods(this as WorkspaceToolsDao)
+          .getWorkspaceTools(workspaceId);
+
+  Future<List<ToolsTable>> getEnabledWorkspaceTools(String workspaceId) =>
+      WorkspaceToolsDaoQueryMethods(this as WorkspaceToolsDao)
+          .getEnabledWorkspaceTools(workspaceId);
+
+  Future<ToolsTable?> getEnabledToolByToolName({
+    required String toolGroupId,
+    required String toolName,
+  }) => WorkspaceToolsDaoQueryMethods(this as WorkspaceToolsDao)
+      .getEnabledToolByToolName(toolGroupId: toolGroupId, toolName: toolName);
+}
+
+mixin _WorkspaceToolsDaoMetadataApi {
+  Future<void> updateToolMetadata({
+    required String id,
+    required String description,
+    required String inputSchema,
+  }) => WorkspaceToolsDaoMetadata(this as WorkspaceToolsDao).updateToolMetadata(
+    id: id,
+    description: description,
+    inputSchema: inputSchema,
+  );
+
+  Future<bool> isWorkspaceToolEnabled(String workspaceId, String id) =>
+      WorkspaceToolsDaoMetadata(this as WorkspaceToolsDao)
+          .isWorkspaceToolEnabled(workspaceId, id);
+
+  Future<String?> getWorkspaceToolConfig(String workspaceId, String id) =>
+      WorkspaceToolsDaoMetadata(this as WorkspaceToolsDao)
+          .getWorkspaceToolConfig(workspaceId, id);
+
+  Future<String?> getWorkspaceToolConfigByToolId(
+    String workspaceId,
+    String toolId,
+  ) =>
+      WorkspaceToolsDaoMetadata(this as WorkspaceToolsDao)
+          .getWorkspaceToolConfigByToolId(workspaceId, toolId);
+
+  Future<bool> isWorkspaceToolEnabledByToolId(
+    String workspaceId,
+    String toolId,
+  ) =>
+      WorkspaceToolsDaoMetadata(this as WorkspaceToolsDao)
+          .isWorkspaceToolEnabledByToolId(workspaceId, toolId);
+
+  Future<int> getWorkspaceToolsCount(String workspaceId) =>
+      WorkspaceToolsDaoMetadata(this as WorkspaceToolsDao)
+          .getWorkspaceToolsCount(workspaceId);
+
+  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) =>
+      WorkspaceToolsDaoMetadata(this as WorkspaceToolsDao)
+          .getEnabledWorkspaceToolsCount(workspaceId);
+}
+
+mixin _WorkspaceToolsDaoPermissionApi {
+  Future<ToolsTable> setWorkspaceToolPermission(
+    String id, {
+    required PermissionAccess permission,
+  }) =>
+      WorkspaceToolsDaoPermissionMethods(this as WorkspaceToolsDao)
+          .setWorkspaceToolPermission(id, permission: permission);
+}
+
+mixin _WorkspaceToolsDaoBatchApi {
+  Future<void> insertToolsBatch(List<ToolsCompanion> companions) =>
+      WorkspaceToolsDaoBatchMethods(this as WorkspaceToolsDao)
+          .insertToolsBatch(companions);
+
+  Future<int> deleteToolsByGroupId(String groupId) =>
+      WorkspaceToolsDaoBatchMethods(this as WorkspaceToolsDao)
+          .deleteToolsByGroupId(groupId);
+
+  Future<List<ToolsTable>> getToolsByGroupId(String groupId) =>
+      WorkspaceToolsDaoBatchMethods(this as WorkspaceToolsDao)
+          .getToolsByGroupId(groupId);
+}
 
 extension WorkspaceToolsDaoCoreMethods on WorkspaceToolsDao {
   // Core operations.

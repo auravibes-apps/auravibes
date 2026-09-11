@@ -1,5 +1,7 @@
 // coverage:ignore-file
 // Required: Drift table definitions are schema declarations.
+// DCL cannot score Drift's generated table behavior from schema declarations.
+// ignore_for_file: number-of-methods, weight-of-class
 
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
@@ -9,7 +11,8 @@ import 'package:drift/drift.dart';
 
 export 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 
-// Required: Framework declaration must remain top-level.
+// Drift's generated table code and converter tests require this top-level name.
+// ignore: prefer-static-class
 final JsonTypeConverter2<McpTransportType, String, Object?>
 transportTypeConverter = TypeConverter.json2(
   fromJson: _transportTypeFromJson,

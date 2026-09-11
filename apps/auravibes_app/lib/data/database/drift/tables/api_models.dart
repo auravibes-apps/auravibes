@@ -3,6 +3,8 @@
 // Call _isGenerated() which throws at runtime. The generated subclass.
 // Overrides every column getter with late final GeneratedColumn fields, and.
 // TableInfo mixin overrides primaryKey. No code here executes at runtime.
+// DCL cannot score Drift's generated table behavior from schema declarations.
+// ignore_for_file: number-of-methods, weight-of-class
 import 'package:auravibes_app/data/database/drift/converters/list_converter.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:drift/drift.dart';

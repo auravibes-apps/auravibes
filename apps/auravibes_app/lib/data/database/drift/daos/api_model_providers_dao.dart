@@ -24,7 +24,7 @@ int _popularProviderIndex(ApiModelProvidersTable provider) =>
 /// Data Access Object for API model providers operations.
 @DriftAccessor(tables: [ApiModelProviders])
 class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
-    with _$ApiModelProvidersDaoMixin {
+    with _$ApiModelProvidersDaoMixin, _ApiModelProvidersDaoApi {
   new(super.attachedDatabase);
 
   /// Retrieves a provider by its ID.
@@ -35,6 +35,52 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
       apiModelProviders,
     )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
+}
+
+mixin _ApiModelProvidersDaoApi {
+  Future<List<ApiModelProvidersTable>> getAllProviders() =>
+      ApiModelProvidersDaoReadOperations(this as ApiModelProvidersDao)
+          .getAllProviders();
+
+  Stream<List<ApiModelProvidersTable>> watchAllProviders() =>
+      ApiModelProvidersDaoReadOperations(this as ApiModelProvidersDao)
+          .watchAllProviders();
+
+  Future<List<ApiModelProvidersTable>> getProvidersByType(String type) =>
+      ApiModelProvidersDaoReadOperations(this as ApiModelProvidersDao)
+          .getProvidersByType(type);
+
+  Future<ApiModelProvidersTable> upsertProvider(
+    ApiModelProvidersCompanion provider,
+  ) =>
+      ApiModelProvidersDaoReadOperations(this as ApiModelProvidersDao)
+          .upsertProvider(provider);
+
+  Future<bool> deleteProvider(String id) =>
+      ApiModelProvidersDaoReadOperations(this as ApiModelProvidersDao)
+          .deleteProvider(id);
+
+  Future<bool> providerExists(String id) =>
+      ApiModelProvidersDaoReadOperations(this as ApiModelProvidersDao)
+          .providerExists(id);
+
+  Future<List<ApiModelProvidersTable>> searchProvidersByName(String query) =>
+      ApiModelProvidersDaoReadOperations(this as ApiModelProvidersDao)
+          .searchProvidersByName(query);
+
+  Future<int> getProviderCount() =>
+      ApiModelProvidersDaoWriteOperations(this as ApiModelProvidersDao)
+          .getProviderCount();
+
+  Future<List<ApiModelProvidersTable>> batchUpsertProviders(
+    List<ApiModelProvidersCompanion> providers,
+  ) =>
+      ApiModelProvidersDaoWriteOperations(this as ApiModelProvidersDao)
+          .batchUpsertProviders(providers);
+
+  Future<int> deleteAllProviders() =>
+      ApiModelProvidersDaoWriteOperations(this as ApiModelProvidersDao)
+          .deleteAllProviders();
 }
 
 extension ApiModelProvidersDaoReadOperations on ApiModelProvidersDao {

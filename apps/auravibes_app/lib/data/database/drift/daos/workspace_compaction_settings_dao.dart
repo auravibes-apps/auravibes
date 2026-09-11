@@ -9,7 +9,35 @@ part 'workspace_compaction_settings_dao.g.dart';
 @DriftAccessor(tables: [WorkspaceCompactionSettings])
 class WorkspaceCompactionSettingsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$WorkspaceCompactionSettingsDaoMixin;
+    with
+        _$WorkspaceCompactionSettingsDaoMixin,
+        _WorkspaceCompactionSettingsDaoApi;
+
+mixin _WorkspaceCompactionSettingsDaoApi {
+  Future<WorkspaceCompactionSettingsTable?> getByWorkspaceId(
+    String workspaceId,
+  ) => WorkspaceCompactionSettingsDaoMethods(
+    this as WorkspaceCompactionSettingsDao,
+  ).getByWorkspaceId(workspaceId);
+
+  Stream<WorkspaceCompactionSettingsTable?> watchByWorkspaceId(
+    String workspaceId,
+  ) => WorkspaceCompactionSettingsDaoMethods(
+    this as WorkspaceCompactionSettingsDao,
+  ).watchByWorkspaceId(workspaceId);
+
+  Future<WorkspaceCompactionSettingsTable> upsert(
+    String workspaceId,
+    WorkspaceCompactionSettingsCompanion companion,
+  ) => WorkspaceCompactionSettingsDaoMethods(
+    this as WorkspaceCompactionSettingsDao,
+  ).upsert(workspaceId, companion);
+
+  Future<void> deleteByWorkspaceId(String workspaceId) =>
+      WorkspaceCompactionSettingsDaoMethods(
+        this as WorkspaceCompactionSettingsDao,
+      ).deleteByWorkspaceId(workspaceId);
+}
 
 extension WorkspaceCompactionSettingsDaoMethods
     on WorkspaceCompactionSettingsDao {
