@@ -44,10 +44,30 @@ typedef _BeginUploadRequest = ({
   String checksumSha256,
 });
 
-class CloudChatGateway {
-  new(this._stateGateway)
-    : _subscribeConversation = null,
-      _getConversationSnapshot = null;
+abstract class _CloudChatGatewayBase {
+  new(
+    this._stateGateway,
+    this._subscribeConversation,
+    this._getConversationSnapshot,
+  );
+
+  final CloudWorkspaceStateGateway _stateGateway;
+  final Stream<ConversationStreamEvent> Function(
+    ConversationSubscribeRequest request,
+  )?
+  _subscribeConversation;
+  final Future<ConversationSnapshot> Function(String conversationId)?
+  _getConversationSnapshot;
+
+  int get _workspaceId => _stateGateway.workspace.cloudWorkspaceId;
+
+  Client get _client => _stateGateway.client;
+}
+
+class CloudChatGateway extends _CloudChatGatewayBase
+    with _CloudChatGatewayConversationApi, _CloudChatGatewayTurnApi {
+  new(CloudWorkspaceStateGateway stateGateway)
+    : super(stateGateway, null, null);
 
   factory forConversationTesting({
     required CloudWorkspaceStateGateway stateGateway,
@@ -64,22 +84,10 @@ class CloudChatGateway {
   );
 
   new _forConversationTesting(
-    this._stateGateway,
-    this._subscribeConversation,
-    this._getConversationSnapshot,
+    super._stateGateway,
+    super._subscribeConversation,
+    super._getConversationSnapshot,
   );
-
-  final CloudWorkspaceStateGateway _stateGateway;
-
-  final Stream<ConversationStreamEvent> Function(
-    ConversationSubscribeRequest request,
-  )?
-  _subscribeConversation;
-  final Future<ConversationSnapshot> Function(String conversationId)?
-  _getConversationSnapshot;
-
-  int get _workspaceId => _stateGateway.workspace.cloudWorkspaceId;
-  Client get _client => _stateGateway.client;
 
   Stream<ConversationStreamEvent> subscribeConversation(
     String conversationId, {
@@ -96,6 +104,102 @@ class CloudChatGateway {
     return _subscribeConversation?.call(request) ??
         _client.conversation.subscribeConversation(request);
   }
+}
+
+mixin _CloudChatGatewayConversationApi on _CloudChatGatewayBase {
+  Future<ConversationSnapshot> continueConversation({
+    required String requestId,
+    required String conversationId,
+    required int expectedProjectionRevision,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.continueConversation(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedProjectionRevision: expectedProjectionRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+      ),
+    ),
+  );
+
+  Future<ConversationSnapshot> queueConversationMessage(
+    _QueueConversationMessageRequest request,
+  ) => _guardConversation(
+    () => _client.conversation.queueConversationMessage(
+      _queueConversationMessageRequest(_workspaceId, request),
+    ),
+  );
+
+  Future<ConversationMutationResult> submitToolDecision(
+    _SubmitToolDecisionRequest request,
+  ) => _guardConversation(
+    () => _client.conversation.submitToolDecision(
+      _submitToolDecisionRequest(_workspaceId, request),
+    ),
+  );
+
+  Future<ConversationSummary> getConversation(String conversationId) =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.get(
+          .new(workspaceId: _workspaceId, conversationId: conversationId),
+        ),
+      );
+
+  Future<ConversationSummary> updateConversation(
+    UpdateConversationRequest request,
+  ) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.update(
+      request.copyWith(workspaceId: _workspaceId),
+    ),
+  );
+}
+
+mixin _CloudChatGatewayTurnApi on _CloudChatGatewayBase {
+  Future<ConversationMutationResult> continueTurn({
+    required String requestId,
+    required String conversationId,
+    required int expectedConversationRevision,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.continueTurn(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedConversationRevision: expectedConversationRevision,
+        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+      ),
+    ),
+  );
+
+  Future<TurnSnapshot> getTurn({required String turnId}) =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.getTurn(
+          .new(
+            workspaceId: _workspaceId,
+            turnId: turnId,
+            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+          ),
+        ),
+      );
+
+  Future<ConversationSnapshot> getConversationSnapshot(String conversationId) =>
+      _getConversationSnapshot?.call(conversationId) ??
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.getConversationSnapshot(
+          .new(
+            workspaceId: _workspaceId,
+            conversationId: conversationId,
+            a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+          ),
+        ),
+      );
 }
 
 Future<T> _guardConversation<T>(Future<T> Function() call) =>

@@ -9,6 +9,8 @@ part 'new_chat_state.freezed.dart';
 part 'new_chat_state.g.dart';
 
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class NewChatState with _$NewChatState {
   const factory({
     String? modelId,

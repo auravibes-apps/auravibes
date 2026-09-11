@@ -1201,18 +1201,9 @@ class const _ChatComposer({required final _LoadedChatConversationData data})
   );
 }
 
-class const _ChatComposerInput({
-  required final _LoadedChatConversationData data,
-  required final VoidCallback? onContinueAgent,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) =>
-      _ChatComposerChatInput(data: data, onContinueAgent: onContinueAgent);
-}
-
-class _ChatComposerChatInput extends ChatInputWidget {
-  new({required this.data, required super.onContinueAgent})
-    : super(
+class _ChatComposerInput extends StatelessWidget {
+  new({required this.data, required this.onContinueAgent})
+    : input = ChatInputWidget(
         workspaceId: data.workspaceId,
         onSendMessage: data.callbacks.hooks.onSendMessage,
         onToolsPress: data.callbacks.hooks.onToolsPress,
@@ -1238,6 +1229,7 @@ class _ChatComposerChatInput extends ChatInputWidget {
         ),
         modalitiesInput: data.state.modalitiesInput,
         onSkillsPress: data.callbacks.selectors.onSkillsPress,
+        onContinueAgent: onContinueAgent,
         isBusy: data.state.isInputBusy,
         showStopButton: data.state.isInputBusy && !data.hidesStoppedRun,
         onStop: data.callbacks.hooks.onStop,
@@ -1246,6 +1238,11 @@ class _ChatComposerChatInput extends ChatInputWidget {
       );
 
   final _LoadedChatConversationData data;
+  final VoidCallback? onContinueAgent;
+  final ChatInputWidget input;
+
+  @override
+  Widget build(BuildContext context) => input;
 }
 
 class const _ChatComposerModelSheetControl({

@@ -36,23 +36,6 @@ typedef _DeferredReadInput = ({
   int eventLimit,
   int? afterSequence,
 });
-typedef _DeferredSecretInput = ({
-  String requestId,
-  WorkspaceSecretKind secretKind,
-  WorkspaceSecretScope scope,
-  String resourceId,
-  String? secret,
-  int? expectedRevision,
-});
-typedef _DeferredCredentialInput = ({
-  String requestId,
-  WorkspacePatchOperation resourceOperation,
-  WorkspaceSecretKind secretKind,
-  WorkspaceSecretScope scope,
-  String? secret,
-  bool clearSecret,
-  int? expectedSecretRevision,
-});
 typedef _WorkspaceSecretInput = ({
   WorkspaceSecretKind kind,
   WorkspaceSecretScope scope,
@@ -83,91 +66,72 @@ typedef _WorkspaceCredentialSend =
     Future<MutateWorkspaceCredentialResponse> Function(
       _WorkspaceCredentialInput input,
     );
-typedef _WorkspaceSecretCall = Future<PutWorkspaceSecretResponse> Function({
-  required String requestId,
-  required WorkspaceSecretKind secretKind,
-  required WorkspaceSecretScope scope,
-  required String resourceId,
-  String? secret,
-  int? expectedRevision,
-});
-typedef _WorkspaceCredentialCall =
-    Future<MutateWorkspaceCredentialResponse> Function({
-      required String requestId,
-      required WorkspacePatchOperation resourceOperation,
-      required WorkspaceSecretKind secretKind,
-      required WorkspaceSecretScope scope,
-      required String? secret,
-      required bool clearSecret,
-      required int? expectedSecretRevision,
-    });
+typedef _WorkspaceSecretCall = WorkspaceSecretCall;
+typedef _WorkspaceCredentialCall = WorkspaceCredentialCall;
 
 class _SecretWriter {
-  new(this._putSecret);
+  new(_WorkspaceSecretCall putSecret)
+    : call =
+          (({
+            required kind,
+            required scope,
+            required resourceId,
+            required secret,
+            revision,
+          }) => _sendSecret(putSecret, (
+            kind: kind,
+            scope: scope,
+            resourceId: resourceId,
+            secret: secret,
+            revision: revision,
+          )));
 
-  final _WorkspaceSecretCall _putSecret;
-
-  Future<PutWorkspaceSecretResponse> call({
-    required WorkspaceSecretKind kind,
-    required WorkspaceSecretScope scope,
-    required String resourceId,
-    required String? secret,
-    int? revision,
-  }) => _sendSecret(_putSecret, (
-    kind: kind,
-    scope: scope,
-    resourceId: resourceId,
-    secret: secret,
-    revision: revision,
-  ));
+  final _WorkspaceSecretWrite call;
 }
 
 class _CredentialWriter {
-  new(this._send);
+  new(_WorkspaceCredentialSend send)
+    : call =
+          (({
+            required operation,
+            required kind,
+            required id,
+            required secretKind,
+            required scope,
+            required secret,
+            clearSecret = false,
+            data,
+            resourceRevision,
+            secretRevision,
+          }) => send((
+            operation: operation,
+            kind: kind,
+            id: id,
+            secretKind: secretKind,
+            scope: scope,
+            secret: secret,
+            clearSecret: clearSecret,
+            data: data,
+            resourceRevision: resourceRevision,
+            secretRevision: secretRevision,
+          )));
 
-  final _WorkspaceCredentialSend _send;
-
-  Future<MutateWorkspaceCredentialResponse> call({
-    required WorkspacePatchOperationKind operation,
-    required WorkspaceResourceKind kind,
-    required String id,
-    required WorkspaceSecretKind secretKind,
-    required WorkspaceSecretScope scope,
-    required String? secret,
-    bool clearSecret = false,
-    Map<String, Object?>? data,
-    int? resourceRevision,
-    int? secretRevision,
-  }) => _send((
-    operation: operation,
-    kind: kind,
-    id: id,
-    secretKind: secretKind,
-    scope: scope,
-    secret: secret,
-    clearSecret: clearSecret,
-    data: data,
-    resourceRevision: resourceRevision,
-    secretRevision: secretRevision,
-  ));
+  final _WorkspaceCredentialWrite call;
 }
 
 class _CredentialSender {
-  new(this._mutateCredential);
+  new(_WorkspaceCredentialCall mutateCredential)
+    : call = ((input) => mutateCredential((
+        requestId: const Uuid().v4(),
+        resourceOperation: _credentialResourceOperation(input),
+        secretKind: input.secretKind,
+        scope: input.scope,
+        secret: input.secret,
+        clearSecret: input.clearSecret,
+        expectedSecretRevision: input.secretRevision,
+      )));
 
-  final _WorkspaceCredentialCall _mutateCredential;
-
-  Future<MutateWorkspaceCredentialResponse> call(
-    _WorkspaceCredentialInput input,
-  ) => _mutateCredential(
-    requestId: const Uuid().v4(),
-    resourceOperation: _credentialResourceOperation(input),
-    secretKind: input.secretKind,
-    scope: input.scope,
-    secret: input.secret,
-    clearSecret: input.clearSecret,
-    expectedSecretRevision: input.secretRevision,
-  );
+  final _WorkspaceCredentialSend call;
 }
 
 class CloudWorkspaceResourceStore {
@@ -225,14 +189,14 @@ _WorkspaceSecretWrite _secretWriter(_WorkspaceSecretCall putSecret) =>
 Future<PutWorkspaceSecretResponse> _sendSecret(
   _WorkspaceSecretCall putSecret,
   _WorkspaceSecretInput input,
-) => putSecret(
+) => putSecret((
   requestId: const Uuid().v4(),
   secretKind: input.kind,
   scope: input.scope,
   resourceId: input.resourceId,
   secret: input.secret,
   expectedRevision: input.revision,
-);
+));
 
 WorkspacePatchOperation _resourceOperation(
   _WorkspaceResourceOperationInput input,
@@ -351,49 +315,17 @@ typedef _WorkspaceUpdate = Future<void> Function({
 });
 
 class _DeferredPutSecretCall {
-  new(this._gateway);
+  new(Future<CloudWorkspaceStateGateway?> gateway)
+    : call = ((input) => _deferredPutSecret(gateway, input));
 
-  final Future<CloudWorkspaceStateGateway?> _gateway;
-
-  Future<PutWorkspaceSecretResponse> call({
-    required String requestId,
-    required WorkspaceSecretKind secretKind,
-    required WorkspaceSecretScope scope,
-    required String resourceId,
-    String? secret,
-    int? expectedRevision,
-  }) => _deferredPutSecret(_gateway, (
-    requestId: requestId,
-    secretKind: secretKind,
-    scope: scope,
-    resourceId: resourceId,
-    secret: secret,
-    expectedRevision: expectedRevision,
-  ));
+  final _WorkspaceSecretCall call;
 }
 
 class _DeferredMutateCredentialCall {
-  new(this._gateway);
+  new(Future<CloudWorkspaceStateGateway?> gateway)
+    : call = ((input) => _deferredMutateCredential(gateway, input));
 
-  final Future<CloudWorkspaceStateGateway?> _gateway;
-
-  Future<MutateWorkspaceCredentialResponse> call({
-    required String requestId,
-    required WorkspacePatchOperation resourceOperation,
-    required WorkspaceSecretKind secretKind,
-    required WorkspaceSecretScope scope,
-    required String? secret,
-    required bool clearSecret,
-    required int? expectedSecretRevision,
-  }) => _deferredMutateCredential(_gateway, (
-    requestId: requestId,
-    resourceOperation: resourceOperation,
-    secretKind: secretKind,
-    scope: scope,
-    secret: secret,
-    clearSecret: clearSecret,
-    expectedSecretRevision: expectedSecretRevision,
-  ));
+  final _WorkspaceCredentialCall call;
 }
 
 Future<ReadWorkspaceStateResponse> _deferredRead(
@@ -458,28 +390,13 @@ Future<PatchWorkspaceStateResponse> _deferredPatch(
 
 Future<PutWorkspaceSecretResponse> _deferredPutSecret(
   Future<CloudWorkspaceStateGateway?> gateway,
-  _DeferredSecretInput input,
-) async => await (await _requireGateway(gateway)).putSecret(
-  requestId: input.requestId,
-  secretKind: input.secretKind,
-  scope: input.scope,
-  resourceId: input.resourceId,
-  secret: input.secret,
-  expectedRevision: input.expectedRevision,
-);
+  WorkspaceSecretInput input,
+) async => await (await _requireGateway(gateway)).putSecret(input);
 
 Future<MutateWorkspaceCredentialResponse> _deferredMutateCredential(
   Future<CloudWorkspaceStateGateway?> gateway,
-  _DeferredCredentialInput input,
-) async => await (await _requireGateway(gateway)).mutateCredential(
-  requestId: input.requestId,
-  resourceOperation: input.resourceOperation,
-  secretKind: input.secretKind,
-  scope: input.scope,
-  secret: input.secret,
-  clearSecret: input.clearSecret,
-  expectedSecretRevision: input.expectedSecretRevision,
-);
+  WorkspaceCredentialInput input,
+) async => await (await _requireGateway(gateway)).mutateCredential(input);
 
 Future<ReadWorkspaceStateResponse> _unsupportedRead({
   required List<WorkspaceResourcePageRequest> pages,

@@ -2,14 +2,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-typedef _PutSecret = Future<PutWorkspaceSecretResponse> Function({
-  required String requestId,
-  required WorkspaceSecretKind secretKind,
-  required WorkspaceSecretScope scope,
-  required String resourceId,
-  required String secret,
-  int? expectedRevision,
-});
+typedef _PutSecret = WorkspaceSecretCall;
 
 typedef _CreateModelConnection = Future<ModelConnectionView> Function({
   required String connectionId,

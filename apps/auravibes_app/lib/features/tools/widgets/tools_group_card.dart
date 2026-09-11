@@ -20,6 +20,13 @@ const _kDeleteMcpTitle = 'tools_screen.delete_mcp_title';
 const _kDeleteMcpConfirm = 'tools_screen.delete_mcp_confirm';
 const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
 
+typedef _McpDeleteInput = ({
+  ToolsGroupWithTools groupWithTools,
+  String workspaceId,
+  WidgetRef ref,
+  BuildContext context,
+});
+
 /// A collapsible card widget that displays a tools group.
 ///
 /// Shows a group header with icon, name, status, toggle, and expand chevron;
@@ -52,90 +59,102 @@ class const ToolsGroupCard({
 
 class _ToolsGroupCardCallbacks {
   new({
-    required this.groupWithTools,
-    required this.workspaceId,
-    required this.ref,
-    required this.context,
-  });
+    required ToolsGroupWithTools groupWithTools,
+    required String workspaceId,
+    required WidgetRef ref,
+    required BuildContext context,
+  }) : onToggleEnabled = groupWithTools.isDefaultGroup
+           ? null
+           : ((enabled) =>
+                 _toggleMcpGroup(groupWithTools, workspaceId, ref, enabled)),
+       onReconnect = _shouldShowReconnect(groupWithTools)
+           ? (() => _reconnectMcp(groupWithTools, workspaceId, ref))
+           : null,
+       onDelete = groupWithTools.isMcpGroup
+           ? (() => _deleteMcpGroup((
+               groupWithTools: groupWithTools,
+               workspaceId: workspaceId,
+               ref: ref,
+               context: context,
+             )))
+           : null,
+       onViewError = groupWithTools.hasMcpError()
+           ? (() => _showMcpError(groupWithTools, context))
+           : null;
 
-  final ToolsGroupWithTools groupWithTools;
-  final String workspaceId;
-  final WidgetRef ref;
-  final BuildContext context;
+  final ValueChanged<bool>? onToggleEnabled;
+  final VoidCallback? onReconnect;
+  final VoidCallback? onDelete;
+  final VoidCallback? onViewError;
+}
 
-  ValueChanged<bool>? get onToggleEnabled =>
-      groupWithTools.isDefaultGroup ? null : _handleToggleEnabled;
+bool _shouldShowReconnect(ToolsGroupWithTools groupWithTools) =>
+    groupWithTools.isMcpGroup &&
+    (groupWithTools.hasMcpError() || groupWithTools.isMcpDisconnected());
 
-  VoidCallback? get onReconnect =>
-      _shouldShowReconnect ? _handleReconnect : null;
+void _toggleMcpGroup(
+  ToolsGroupWithTools groupWithTools,
+  String workspaceId,
+  WidgetRef ref,
+  bool enabled,
+) {
+  final group = groupWithTools.group;
+  if (group == null) return;
 
-  VoidCallback? get onDelete =>
-      groupWithTools.isMcpGroup ? _handleDelete : null;
+  ref
+      .read(groupedToolsProvider(workspaceId).notifier)
+      .setMcpGroupEnabled(group.id, isEnabled: enabled);
+}
 
-  VoidCallback? get onViewError =>
-      groupWithTools.hasMcpError() ? _showErrorDetails : null;
+Future<void> _reconnectMcp(
+  ToolsGroupWithTools groupWithTools,
+  String workspaceId,
+  WidgetRef ref,
+) async {
+  final mcpServerId = groupWithTools.mcpServerId;
+  if (mcpServerId == null) return;
 
-  bool get _shouldShowReconnect =>
-      groupWithTools.isMcpGroup &&
-      (groupWithTools.hasMcpError() || groupWithTools.isMcpDisconnected());
+  await ref
+      .read(groupedToolsProvider(workspaceId).notifier)
+      .reconnectMcp(mcpServerId);
+}
 
-  void _handleToggleEnabled(bool enabled) {
-    final group = groupWithTools.group;
-    if (group == null) return;
+Future<void> _deleteMcpGroup(_McpDeleteInput input) async {
+  final (:groupWithTools, :workspaceId, :ref, :context) = input;
+  final group = groupWithTools.group;
+  if (group == null) return;
 
-    ref
-        .read(groupedToolsProvider(workspaceId).notifier)
-        .setMcpGroupEnabled(group.id, isEnabled: enabled);
-  }
+  if (!await _confirmMcpDelete(context)) return;
 
-  Future<void> _handleReconnect() async {
-    final mcpServerId = groupWithTools.mcpServerId;
-    if (mcpServerId == null) return;
+  await ref
+      .read(groupedToolsProvider(workspaceId).notifier)
+      .deleteMcpGroup(group.id);
+}
 
-    await ref
-        .read(groupedToolsProvider(workspaceId).notifier)
-        .reconnectMcp(mcpServerId);
-  }
+Future<bool> _confirmMcpDelete(BuildContext context) async {
+  final confirmed = await AuraDialogs.confirm(
+    context: context,
+    title: Text(_kDeleteMcpTitle.tr()),
+    message: Text(_kDeleteMcpConfirm.tr()),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.common_delete),
+      cancelLabel: TextLocale(LocaleKeys.common_cancel),
+    ),
+    isDestructive: true,
+  );
 
-  Future<void> _handleDelete() async {
-    final group = groupWithTools.group;
-    if (group == null) return;
-    if (!await _confirmDelete()) return;
+  return confirmed ?? false;
+}
 
-    await _deleteGroup(group.id);
-  }
-
-  Future<void> _deleteGroup(String groupId) async {
-    await ref
-        .read(groupedToolsProvider(workspaceId).notifier)
-        .deleteMcpGroup(groupId);
-  }
-
-  Future<bool> _confirmDelete() async {
-    final confirmed = await AuraDialogs.confirm(
-      context: context,
-      title: Text(_kDeleteMcpTitle.tr()),
-      message: Text(_kDeleteMcpConfirm.tr()),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.common_delete),
-        cancelLabel: TextLocale(LocaleKeys.common_cancel),
-      ),
-      isDestructive: true,
-    );
-
-    return confirmed ?? false;
-  }
-
-  void _showErrorDetails() {
-    AuraDialogs.alert(
-      context: context,
-      title: Text(_kDeleteMcpTitle.tr()),
-      message: AuraSelectableText(
-        groupWithTools.mcpErrorMessage ?? 'Unknown error',
-      ),
-      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
-    );
-  }
+void _showMcpError(ToolsGroupWithTools groupWithTools, BuildContext context) {
+  AuraDialogs.alert(
+    context: context,
+    title: Text(_kDeleteMcpTitle.tr()),
+    message: AuraSelectableText(
+      groupWithTools.mcpErrorMessage ?? 'Unknown error',
+    ),
+    dismissLabel: const TextLocale(LocaleKeys.common_cancel),
+  );
 }
 
 class const _ToolsGroupCardLayout({

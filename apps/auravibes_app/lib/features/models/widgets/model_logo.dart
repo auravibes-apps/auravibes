@@ -34,24 +34,24 @@ class const _ModelLogo({
       return svgBuilder(context, url);
     }
 
-    return _NetworkModelLogo(
+    return _ModelLogoNetwork(
       url: url,
-      height: height,
-      width: width,
       color: context.auraColors.onBackground,
+      width: width,
+      height: height,
       httpClient: httpClient,
     );
   }
 }
 
-class _NetworkModelLogo extends SvgPicture {
+class _ModelLogoNetwork extends StatelessWidget {
   new({
-    required String url,
-    required double height,
-    required double? width,
-    required Color color,
-    required http.Client? httpClient,
-  }) : super.network(
+    required this.url,
+    required this.color,
+    this.width,
+    this.height,
+    this.httpClient,
+  }) : picture = SvgPicture.network(
          url,
          width: width,
          height: height,
@@ -64,4 +64,14 @@ class _NetworkModelLogo extends SvgPicture {
          ),
          httpClient: httpClient,
        );
+
+  final String url;
+  final Color color;
+  final double? height;
+  final double? width;
+  final http.Client? httpClient;
+  final SvgPicture picture;
+
+  @override
+  Widget build(BuildContext context) => picture;
 }

@@ -488,7 +488,7 @@ abstract final class _DashboardLoadingBuilder {
 
 abstract final class _DashboardChartBuilder {
   static Widget chart(CatalogItemContext _, Map<String, Object?> data) =>
-      _DashboardChart(.new(data));
+      _DashboardChart(.fromData(data));
 
   static _DashboardChartData _chartData(Map<String, Object?> data) {
     return (content: _chartContent(data), options: _chartOptions(data));
@@ -594,17 +594,14 @@ class _DashboardChart extends StatelessWidget {
 }
 
 class _DashboardChartConfig {
-  const new(this.data);
+  factory fromData(Map<String, Object?> data) {
+    final values = _DashboardChartBuilder._chartData(data);
 
-  final Map<String, Object?> data;
+    return _DashboardChartConfig._(data, values);
+  }
 
-  AuraChart build() =>
-      _DashboardAuraChart(_DashboardChartBuilder._chartData(data));
-}
-
-class _DashboardAuraChart extends AuraChart {
-  new(_DashboardChartData values)
-    : super(
+  new _(this.data, _DashboardChartData values)
+    : chart = AuraChart(
         labels: values.content.labels,
         series: values.content.series,
         semanticLabel: values.content.semanticLabel,
@@ -617,6 +614,11 @@ class _DashboardAuraChart extends AuraChart {
         unit: values.options.axes.unit,
         palette: values.options.palette,
       );
+
+  final Map<String, Object?> data;
+  final AuraChart chart;
+
+  AuraChart build() => chart;
 }
 
 abstract final class _DashboardValues {

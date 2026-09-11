@@ -65,30 +65,13 @@ class AppSubAgentConversationStore(
   }
 
   @override
-  Future<agent.SubAgentConversationRecord> createChildConversation({
-    required String parentConversationId,
-    required String workspaceId,
-    required String? modelId,
-    required String? agentId,
-    required String title,
-  }) => _createChildConversation(_conversationRepository, (
-    parentConversationId: parentConversationId,
-    workspaceId: workspaceId,
-    modelId: modelId,
-    agentId: agentId,
-    title: title,
-  ));
+  Future<agent.SubAgentConversationRecord> createChildConversation(
+    agent.SubAgentChildConversationRequest request,
+  ) => _createChildConversation(_conversationRepository, request);
 
   Future<agent.SubAgentConversationRecord> _createChildConversation(
     ConversationRepository repository,
-    ({
-      String parentConversationId,
-      String workspaceId,
-      String? modelId,
-      String? agentId,
-      String title,
-    })
-    request,
+    agent.SubAgentChildConversationRequest request,
   ) async {
     final conversation = await repository.createConversation(
       .new(

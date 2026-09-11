@@ -240,7 +240,14 @@ String? _requestThinking(GenerateResponseChunk<Object?> chunk) {
 Stream<String> _streamTitle(_TitleRequest request) async* {
   try {
     final responseStream = await _titleStream(request);
-    yield* _normalizedTitles(responseStream, request.firstMessage);
+    final accumulatedTitle = StringBuffer();
+    await for (final event in responseStream) {
+      accumulatedTitle.write(event.text);
+      yield normalizeConversationTitle(
+        accumulatedTitle.toString(),
+        request.firstMessage,
+      );
+    }
   } on Exception catch (_) {
     yield fallbackConversationTitle(request.firstMessage);
   }
@@ -271,18 +278,6 @@ _createTitleStream(Genkit ai, _TitleRequest request) {
       ),
     ],
   );
-}
-
-Stream<String> _normalizedTitles(
-  ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
-  responseStream,
-  String firstMessage,
-) async* {
-  final accumulatedTitle = StringBuffer();
-  await for (final event in responseStream) {
-    accumulatedTitle.write(event.text);
-    yield normalizeConversationTitle(accumulatedTitle.toString(), firstMessage);
-  }
 }
 
 extension on ChatbotService {

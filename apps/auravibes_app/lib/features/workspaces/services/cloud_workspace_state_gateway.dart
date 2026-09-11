@@ -14,31 +14,7 @@ typedef WorkspaceStreamSubscribe = Stream<WorkspaceStreamEnvelope> Function(
 typedef WorkspaceSecretPut = Future<PutWorkspaceSecretResponse> Function(
   PutWorkspaceSecretRequest request,
 );
-typedef WorkspaceSecretCall = Future<PutWorkspaceSecretResponse> Function({
-  required String requestId,
-  required WorkspaceSecretKind secretKind,
-  required WorkspaceSecretScope scope,
-  required String resourceId,
-  String? secret,
-  int? expectedRevision,
-});
-typedef WorkspaceCredentialMutation =
-    Future<MutateWorkspaceCredentialResponse> Function(
-      MutateWorkspaceCredentialRequest request,
-    );
-typedef WorkspaceCredentialCall =
-    Future<MutateWorkspaceCredentialResponse> Function({
-      required String requestId,
-      required WorkspacePatchOperation resourceOperation,
-      required WorkspaceSecretKind secretKind,
-      required WorkspaceSecretScope scope,
-      required String? secret,
-      required bool clearSecret,
-      int? expectedSecretRevision,
-    });
-typedef WorkspaceReconnectDelay = Future<void> Function(Duration duration);
-
-typedef _PutSecretInput = ({
+typedef WorkspaceSecretInput = ({
   String requestId,
   WorkspaceSecretKind secretKind,
   WorkspaceSecretScope scope,
@@ -46,13 +22,14 @@ typedef _PutSecretInput = ({
   String? secret,
   int? expectedRevision,
 });
-typedef _PutSecretContext = ({
-  CloudWorkspaceRef workspace,
-  Client? client,
-  WorkspaceSecretPut? putSecret,
-  _PutSecretInput input,
-});
-typedef _MutateCredentialInput = ({
+typedef WorkspaceSecretCall = Future<PutWorkspaceSecretResponse> Function(
+  WorkspaceSecretInput input,
+);
+typedef WorkspaceCredentialMutation =
+    Future<MutateWorkspaceCredentialResponse> Function(
+      MutateWorkspaceCredentialRequest request,
+    );
+typedef WorkspaceCredentialInput = ({
   String requestId,
   WorkspacePatchOperation resourceOperation,
   WorkspaceSecretKind secretKind,
@@ -61,11 +38,23 @@ typedef _MutateCredentialInput = ({
   bool clearSecret,
   int? expectedSecretRevision,
 });
+typedef WorkspaceCredentialCall =
+    Future<MutateWorkspaceCredentialResponse> Function(
+      WorkspaceCredentialInput input,
+    );
+typedef WorkspaceReconnectDelay = Future<void> Function(Duration duration);
+
+typedef _PutSecretContext = ({
+  CloudWorkspaceRef workspace,
+  Client? client,
+  WorkspaceSecretPut? putSecret,
+  WorkspaceSecretInput input,
+});
 typedef _MutateCredentialContext = ({
   CloudWorkspaceRef workspace,
   Client? client,
   WorkspaceCredentialMutation? mutateCredential,
-  _MutateCredentialInput input,
+  WorkspaceCredentialInput input,
 });
 typedef _WatchUpdatesInput<T> = ({
   Set<String> resourceKinds,
@@ -156,27 +145,12 @@ class _GatewaySecretCallHandler {
     required CloudWorkspaceRef workspace,
     required Client? client,
     required WorkspaceSecretPut? putSecret,
-  }) : call =
-           (({
-             required requestId,
-             required secretKind,
-             required scope,
-             required resourceId,
-             secret,
-             expectedRevision,
-           }) => _putSecretRequest((
-             workspace: workspace,
-             client: client,
-             putSecret: putSecret,
-             input: (
-               requestId: requestId,
-               secretKind: secretKind,
-               scope: scope,
-               resourceId: resourceId,
-               secret: secret,
-               expectedRevision: expectedRevision,
-             ),
-           )));
+  }) : call = ((input) => _putSecretRequest((
+         workspace: workspace,
+         client: client,
+         putSecret: putSecret,
+         input: input,
+       )));
 
   final WorkspaceSecretCall call;
 }
@@ -186,34 +160,47 @@ class _GatewayCredentialCallHandler {
     required CloudWorkspaceRef workspace,
     required Client? client,
     required WorkspaceCredentialMutation? mutateCredential,
-  }) : call =
-           (({
-             required requestId,
-             required resourceOperation,
-             required secretKind,
-             required scope,
-             required secret,
-             required clearSecret,
-             expectedSecretRevision,
-           }) => _mutateCredentialRequest((
-             workspace: workspace,
-             client: client,
-             mutateCredential: mutateCredential,
-             input: (
-               requestId: requestId,
-               resourceOperation: resourceOperation,
-               secretKind: secretKind,
-               scope: scope,
-               secret: secret,
-               clearSecret: clearSecret,
-               expectedSecretRevision: expectedSecretRevision,
-             ),
-           )));
+  }) : call = ((input) => _mutateCredentialRequest((
+         workspace: workspace,
+         client: client,
+         mutateCredential: mutateCredential,
+         input: input,
+       )));
 
   final WorkspaceCredentialCall call;
 }
 
-class CloudWorkspaceStateGateway {
+abstract class _CloudWorkspaceStateGatewayBase {
+  new(
+    this.readTimeout,
+    this._workspace,
+    this._readState,
+    this._subscribe,
+    this._delay,
+    this._client,
+    this._calls,
+  );
+
+  final Duration readTimeout;
+  final CloudWorkspaceRef _workspace;
+  final WorkspaceStateRead _readState;
+  final WorkspaceStreamSubscribe _subscribe;
+  final WorkspaceReconnectDelay _delay;
+  final Client? _client;
+  final _GatewayCallHandlers _calls;
+  Future<void> _readTail = .value();
+  bool _disposed = false;
+  final _disposedSignal = Completer<bool>();
+
+  Future<ReadWorkspaceStateResponse> read({
+    required List<WorkspaceResourcePageRequest> pages,
+    int? afterSequence,
+    int eventLimit,
+  });
+}
+
+class CloudWorkspaceStateGateway extends _CloudWorkspaceStateGatewayBase
+    with _CloudWorkspaceStateMutationApi, _CloudWorkspaceStateWatchApi {
   static const _pageSize = 100;
   static const _stateReadTimeout = Duration(seconds: 15);
   static const _initialReconnectDelay = Duration(milliseconds: 250);
@@ -221,46 +208,64 @@ class CloudWorkspaceStateGateway {
   new({
     required Client client,
     required CloudWorkspaceRef workspace,
-    this.readTimeout = _stateReadTimeout,
-  }) : _workspace = workspace,
-       _client = client,
-       _readState = client.workspaceState.read,
-       _subscribe = client.workspaceStream.subscribe,
-       _delay = _defaultDelay,
-       _calls = _GatewayCallHandlers(
-         workspace: workspace,
-         client: client,
-         putSecret: null,
-         mutateCredential: null,
+    Duration readTimeout = _stateReadTimeout,
+  }) : super(
+         readTimeout,
+         workspace,
+         client.workspaceState.read,
+         client.workspaceStream.subscribe,
+         _defaultDelay,
+         client,
+         .new(
+           workspace: workspace,
+           client: client,
+           putSecret: null,
+           mutateCredential: null,
+         ),
        );
 
   new forTesting({
-    required this._workspace,
-    required this._readState,
-    required this._subscribe,
+    required CloudWorkspaceRef workspace,
+    required WorkspaceStateRead readState,
+    required WorkspaceStreamSubscribe subscribe,
     WorkspaceSecretPut? putSecret,
     WorkspaceCredentialMutation? mutateCredential,
-    this._delay = _defaultDelay,
-    this.readTimeout = _stateReadTimeout,
-  }) : _client = null,
-       _calls = _GatewayCallHandlers(
-         workspace: _workspace,
-         client: null,
-         putSecret: putSecret,
-         mutateCredential: mutateCredential,
+    WorkspaceReconnectDelay delay = _defaultDelay,
+    Duration readTimeout = _stateReadTimeout,
+  }) : super(
+         readTimeout,
+         workspace,
+         readState,
+         subscribe,
+         delay,
+         null,
+         .new(
+           workspace: workspace,
+           client: null,
+           putSecret: putSecret,
+           mutateCredential: mutateCredential,
+         ),
        );
 
-  final Duration readTimeout;
-  final CloudWorkspaceRef _workspace;
-  final WorkspaceStateRead _readState;
-  final WorkspaceStreamSubscribe _subscribe;
-  final WorkspaceReconnectDelay _delay;
+  bool isDisposed() => _disposed;
 
-  final Client? _client;
-  final _GatewayCallHandlers _calls;
-  Future<void> _readTail = .value();
-  bool _disposed = false;
-  final _disposedSignal = Completer<bool>();
+  static Future<void> _defaultDelay(Duration duration) =>
+      Future<void>.delayed(duration);
+}
+
+mixin _CloudWorkspaceStateMutationApi on _CloudWorkspaceStateGatewayBase {
+  Future<PutWorkspaceSecretResponse> putSecret(WorkspaceSecretInput input) =>
+      _calls.putSecretCall(input);
+
+  Future<MutateWorkspaceCredentialResponse> mutateCredential(
+    WorkspaceCredentialInput input,
+  ) => _calls.mutateCredentialCall(input);
+}
+
+mixin _CloudWorkspaceStateWatchApi on _CloudWorkspaceStateGatewayBase {
+  Client get client => _requireClient(_client);
+
+  CloudWorkspaceRef get workspace => _workspace;
 
   void dispose() {
     if (_disposed) return;
@@ -268,6 +273,7 @@ class CloudWorkspaceStateGateway {
     _disposedSignal.complete(false);
   }
 
+  @override
   Future<ReadWorkspaceStateResponse> read({
     required List<WorkspaceResourcePageRequest> pages,
     int? afterSequence,
@@ -289,7 +295,7 @@ class CloudWorkspaceStateGateway {
     required List<WorkspacePatchOperation> operations,
   }) => CloudAppErrors.guardCall(
     .state,
-    () => _requiredClient.workspaceState.patch(
+    () => _requireClient(_client).workspaceState.patch(
       .new(
         workspaceId: _workspace.cloudWorkspaceId,
         requestId: requestId,
@@ -297,21 +303,6 @@ class CloudWorkspaceStateGateway {
       ),
     ),
   );
-
-  static Future<void> _defaultDelay(Duration duration) =>
-      Future<void>.delayed(duration);
-}
-
-extension CloudWorkspaceStateGatewayWatchCalls on CloudWorkspaceStateGateway {
-  bool isDisposed() => _disposed;
-
-  Client get client => _requiredClient;
-
-  CloudWorkspaceRef get workspace => _workspace;
-
-  WorkspaceSecretCall get putSecret => _calls.putSecretCall;
-
-  WorkspaceCredentialCall get mutateCredential => _calls.mutateCredentialCall;
 
   Stream<List<WorkspaceResource>> watchResources(
     List<WorkspaceResourceKind> kinds, {
@@ -334,18 +325,9 @@ extension CloudWorkspaceStateGatewayWatchCalls on CloudWorkspaceStateGateway {
       lastSequence: snapshot.currentSequence,
     ));
   }
-
-  Client get _requiredClient {
-    final client = _client;
-    if (client == null) {
-      throw StateError('Client operations are unavailable in test gateways');
-    }
-
-    return client;
-  }
 }
 
-extension on CloudWorkspaceStateGateway {
+extension on _CloudWorkspaceStateGatewayBase {
   Future<({List<WorkspaceResource> value, int currentSequence})> _readResources(
     List<WorkspaceResourceKind> kinds,
     int limit,
@@ -437,7 +419,7 @@ Client _requireClient(Client? client) =>
     client ??
     (throw StateError('Client operations are unavailable in test gateways'));
 
-extension CloudWorkspaceStateGatewayWatch on CloudWorkspaceStateGateway {
+extension CloudWorkspaceStateGatewayWatch on _CloudWorkspaceStateGatewayBase {
   Stream<T> _watchUpdates<T>(_WatchUpdatesInput<T> input) async* {
     final watchState = _WatchState(
       input.lastSequence,
@@ -523,16 +505,20 @@ Stream<T> _yieldWatchValues<T>(
   lastSequence: snapshot.currentSequence,
 );
 
-extension on CloudWorkspaceStateGateway {
+extension on _CloudWorkspaceStateGatewayBase {
   Stream<T> _watchUpdateCycle<T>(
     _WatchUpdatesInput<T> input,
     _WatchState watchState,
   ) async* {
-    await for (final value in _yieldWatchValues(
-      _watchCycle<T>(_watchCycleInput(input, watchState.sequence)),
-      watchState,
-    )) {
-      yield value;
+    try {
+      await for (final value in _yieldWatchValues(
+        _watchCycle<T>(_watchCycleInput(input, watchState.sequence)),
+        watchState,
+      )) {
+        yield value;
+      }
+    } on Object catch (error) {
+      _handleWatchError(error);
     }
     await _waitForReconnect(watchState.reconnectDelay);
     _advanceReconnect(watchState);
@@ -636,7 +622,7 @@ extension on CloudWorkspaceStateGateway {
       code == CloudWorkspaceErrorCode.workspaceNotFound.name;
 }
 
-extension on CloudWorkspaceStateGateway {
+extension on _CloudWorkspaceStateGatewayBase {
   Future<ReadWorkspaceStateResponse> _enqueueRead(
     ReadWorkspaceStateRequest request,
   ) async {
@@ -787,7 +773,7 @@ extension on CloudWorkspaceStateGateway {
   }
 }
 
-extension on CloudWorkspaceStateGateway {
+extension on _CloudWorkspaceStateGatewayBase {
   Future<ReadWorkspaceStateResponse> _readPage(
     WorkspaceResourceKind kind,
     String? cursor,

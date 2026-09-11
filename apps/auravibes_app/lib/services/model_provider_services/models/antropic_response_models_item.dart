@@ -4,6 +4,8 @@ part 'antropic_response_models_item.freezed.dart';
 part 'antropic_response_models_item.g.dart';
 
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class AntropicResponseModelsItem with _$AntropicResponseModelsItem {
   // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: FieldRename.snake)
@@ -19,6 +21,8 @@ abstract class AntropicResponseModelsItem with _$AntropicResponseModelsItem {
 }
 
 @Freezed(toJson: false, toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class AntropicResponseModelsErrorMessage
     with _$AntropicResponseModelsErrorMessage {
   // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
@@ -31,6 +35,8 @@ abstract class AntropicResponseModelsErrorMessage
 }
 
 @Freezed(toJson: false, toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class AntropicResponseModels with _$AntropicResponseModels {
   // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: FieldRename.snake, createToJson: false)

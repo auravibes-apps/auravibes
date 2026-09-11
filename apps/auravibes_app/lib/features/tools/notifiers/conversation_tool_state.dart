@@ -16,6 +16,8 @@ part 'conversation_tool_state.g.dart';
 
 /// State for a single tool in a conversation context.
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class ConversationToolState with _$ConversationToolState {
   const factory({
     required WorkspaceToolEntity tool,

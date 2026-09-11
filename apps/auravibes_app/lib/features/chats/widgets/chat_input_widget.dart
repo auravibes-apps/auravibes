@@ -1193,7 +1193,7 @@ class const _ChatInputModeControls({required final _ChatInputState state})
     return Expanded(
       child: Row(
         children: [
-          _ChatInputBrowseControls(state: state),
+          Expanded(child: _ChatInputBrowseControls(state: state)),
           if (state.capabilities.attachments.supportsAudio)
             _ChatInputAudioControl(state: state),
         ],

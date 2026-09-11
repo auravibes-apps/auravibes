@@ -19,6 +19,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
 const _kMcpErrorTitle = 'tools_screen.mcp_error';
 
+typedef _ConversationToolsCallbackInput = ({
+  ConversationToolsGroupWithTools groupWithTools,
+  String workspaceId,
+  String? conversationId,
+  WidgetRef ref,
+});
+
 /// A collapsible card widget that displays a conversation tools group.
 ///
 /// Shows:
@@ -67,71 +74,93 @@ class const ConversationToolsGroupCard({
 
 class _ConversationToolsGroupCardCallbacks {
   new({
-    required this.groupWithTools,
-    required this.workspaceId,
-    required this.conversationId,
-    required this.ref,
-    required this.context,
-  });
+    required ConversationToolsGroupWithTools groupWithTools,
+    required String workspaceId,
+    required String? conversationId,
+    required WidgetRef ref,
+    required BuildContext context,
+  }) : onToggleAllTools = groupWithTools.tools.isNotEmpty
+           ? _toggleConversationGroupCallback((
+               groupWithTools: groupWithTools,
+               workspaceId: workspaceId,
+               conversationId: conversationId,
+               ref: ref,
+             ))
+           : null,
+       onReconnect = _shouldShowReconnect(groupWithTools)
+           ? (() => _reconnectConversationGroup((
+               groupWithTools: groupWithTools,
+               workspaceId: workspaceId,
+               conversationId: conversationId,
+               ref: ref,
+             )))
+           : null,
+       onViewError = groupWithTools.hasMcpError()
+           ? (() => _showConversationMcpError(groupWithTools, context))
+           : null;
 
-  final ConversationToolsGroupWithTools groupWithTools;
-  final String workspaceId;
-  final String? conversationId;
-  final WidgetRef ref;
-  final BuildContext context;
+  final ValueChanged<bool>? onToggleAllTools;
+  final VoidCallback? onReconnect;
+  final VoidCallback? onViewError;
+}
 
-  ValueChanged<bool>? get onToggleAllTools =>
-      groupWithTools.tools.isNotEmpty ? _handleToggleAllTools : null;
+bool _shouldShowReconnect(ConversationToolsGroupWithTools groupWithTools) =>
+    groupWithTools.isMcpGroup &&
+    (groupWithTools.hasMcpError() || groupWithTools.isMcpDisconnected());
 
-  VoidCallback? get onReconnect =>
-      _shouldShowReconnect ? _handleReconnect : null;
+Future<void> _toggleConversationGroup(
+  _ConversationToolsCallbackInput input,
+  bool enabled,
+) async {
+  final (:groupWithTools, :workspaceId, :conversationId, :ref) = input;
+  await ref
+      .read(
+        groupedConversationToolsProvider(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ).notifier,
+      )
+      .toggleGroupTools(
+        groupWithTools.group?.id,
+        enabled: enabled,
+        defaultGroupType: groupWithTools.defaultGroupType,
+      );
+}
 
-  VoidCallback? get onViewError =>
-      groupWithTools.hasMcpError() ? _showErrorDetails : null;
+ValueChanged<bool> _toggleConversationGroupCallback(
+  _ConversationToolsCallbackInput input,
+) =>
+    (enabled) => _toggleConversationGroup(input, enabled);
 
-  bool get _shouldShowReconnect =>
-      groupWithTools.isMcpGroup &&
-      (groupWithTools.hasMcpError() || groupWithTools.isMcpDisconnected());
+Future<void> _reconnectConversationGroup(
+  _ConversationToolsCallbackInput input,
+) async {
+  final (:groupWithTools, :workspaceId, :conversationId, :ref) = input;
+  final mcpServerId = groupWithTools.mcpServerId;
+  if (mcpServerId == null) return;
 
-  Future<void> _handleToggleAllTools(bool enabled) async {
-    await ref
-        .read(
-          groupedConversationToolsProvider(
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-          ).notifier,
-        )
-        .toggleGroupTools(
-          groupWithTools.group?.id,
-          enabled: enabled,
-          defaultGroupType: groupWithTools.defaultGroupType,
-        );
-  }
+  await ref
+      .read(
+        groupedConversationToolsProvider(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ).notifier,
+      )
+      .reconnectMcp(mcpServerId);
+}
 
-  Future<void> _handleReconnect() async {
-    final mcpServerId = groupWithTools.mcpServerId;
-    if (mcpServerId == null) return;
-
-    await ref
-        .read(
-          groupedConversationToolsProvider(
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-          ).notifier,
-        )
-        .reconnectMcp(mcpServerId);
-  }
-
-  void _showErrorDetails() {
-    AuraDialogs.alert(
-      context: context,
-      title: Text(_kMcpErrorTitle.tr()),
-      message: AuraSelectableText(
-        groupWithTools.mcpErrorMessage ?? 'Unknown error',
-      ),
-      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
-    );
-  }
+void _showConversationMcpError(
+  ConversationToolsGroupWithTools groupWithTools,
+  BuildContext context,
+) {
+  AuraDialogs.alert(
+    context: context,
+    title: Text(_kMcpErrorTitle.tr()),
+    message: AuraSelectableText(
+      groupWithTools.mcpErrorMessage ?? 'Unknown error',
+    ),
+    dismissLabel: const TextLocale(LocaleKeys.common_cancel),
+  );
 }
 
 class const _ConversationToolsGroupCardFrame({

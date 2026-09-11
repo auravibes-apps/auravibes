@@ -274,6 +274,27 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     await _reconnectStoredMcp(serverId);
   }
 
+  /// Disconnect from a specific MCP server without deleting.
+  void disconnectMcpServer(String serverId) {
+    if (_isCloud) return;
+    final index = _connectionIndex(serverId);
+    if (index == -1) return;
+
+    final connection = _currentState[index];
+    _disconnectLocalConnection(serverId, connection);
+    _setState(_disconnectedState(index, connection));
+  }
+
+  /// Delete an MCP server by identifier.
+  Future<void> deleteMcpServer(String serverId) async {
+    final connection = _currentState.firstWhereOrNull(
+      (c) => c.server.id == serverId,
+    );
+    if (connection != null) _disconnectDeletedConnection(serverId, connection);
+    _removeConnection(serverId);
+    await _deleteMcpServerRecord(serverId);
+  }
+
   @override
   List<McpConnectionState> build() {
     _resetBuildState();
@@ -334,17 +355,6 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
           .where((c) => c.status == McpConnectionStatus.connecting)
           .toList();
 
-  /// Disconnect from a specific MCP server without deleting.
-  void disconnectMcpServer(String serverId) {
-    if (_isCloud) return;
-    final index = _connectionIndex(serverId);
-    if (index == -1) return;
-
-    final connection = _currentState[index];
-    _disconnectLocalConnection(serverId, connection);
-    _setState(_disconnectedState(index, connection));
-  }
-
   /// Returns when the specified MCP servers have finished connecting.
   Future<void> waitForConnectionsReady({
     required List<String> mcpServerIds,
@@ -357,16 +367,6 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     if (_connectionsReady(ids, _currentState)) return;
 
     await _waitForConnections(ids, effectiveTimeout);
-  }
-
-  /// Delete an MCP server by identifier.
-  Future<void> deleteMcpServer(String serverId) async {
-    final connection = _currentState.firstWhereOrNull(
-      (c) => c.server.id == serverId,
-    );
-    if (connection != null) _disconnectDeletedConnection(serverId, connection);
-    _removeConnection(serverId);
-    await _deleteMcpServerRecord(serverId);
   }
 }
 

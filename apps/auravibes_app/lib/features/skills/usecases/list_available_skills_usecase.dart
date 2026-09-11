@@ -25,7 +25,23 @@ class const ListAvailableSkillsUsecase(
   final ListAppSkillCredentialCandidatesUsecase?
   _listAppSkillCredentialCandidatesUsecase,
   final CloudSkillStore? cloudStore,
-]);
+]) {
+  Future<List<AvailableSkill>> call({
+    required String conversationId,
+    required String workspaceId,
+    required SkillLoadFilter filter,
+  }) async {
+    final cloud = cloudStore;
+    final inputs = await _loadInputs(cloud, conversationId, workspaceId);
+
+    return await _collectAvailableSkills((
+      cloud: cloud,
+      inputs: inputs,
+      workspaceId: workspaceId,
+      filter: filter,
+    ));
+  }
+}
 
 typedef _UserSkillListRequest = ({
   CloudSkillStore? cloud,
@@ -99,22 +115,6 @@ extension ListAvailableSkillsUsecaseCall on ListAvailableSkillsUsecase {
     }
 
     return repository;
-  }
-
-  Future<List<AvailableSkill>> call({
-    required String conversationId,
-    required String workspaceId,
-    required SkillLoadFilter filter,
-  }) async {
-    final cloud = cloudStore;
-    final inputs = await _loadInputs(cloud, conversationId, workspaceId);
-
-    return await _collectAvailableSkills((
-      cloud: cloud,
-      inputs: inputs,
-      workspaceId: workspaceId,
-      filter: filter,
-    ));
   }
 
   Future<_LoadedSkillInputs> _loadInputs(

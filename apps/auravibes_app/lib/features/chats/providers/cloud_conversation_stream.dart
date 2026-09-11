@@ -4,8 +4,8 @@ import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:logging/logging.dart';
+import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod/src/providers/stream_provider.dart';
 
 export 'cloud_conversation_key.dart';
 

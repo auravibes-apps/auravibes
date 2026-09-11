@@ -108,11 +108,12 @@ extension on CloudModelConnectionUsecases {
     CloudModelGateway gateway,
     String resourceId,
     String secret,
-  ) => gateway.putSecret(
+  ) => gateway.putSecret((
     requestId: const Uuid().v4(),
     secretKind: .provider,
     scope: .workspace,
     resourceId: resourceId,
     secret: secret,
-  );
+    expectedRevision: null,
+  ));
 }
