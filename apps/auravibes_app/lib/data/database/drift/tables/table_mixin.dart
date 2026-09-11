@@ -1,6 +1,8 @@
 // coverage:ignore-file
 // Required: Drift table DSL is unreachable at runtime.
 // (See api_models.dart).
+// DCL cannot score Drift's generated table behavior from schema declarations.
+// ignore_for_file: number-of-methods, weight-of-class
 import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
 

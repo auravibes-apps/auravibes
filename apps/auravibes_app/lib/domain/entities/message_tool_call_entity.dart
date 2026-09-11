@@ -48,9 +48,6 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
 
   String identity() => '$id:$name';
 
-  @override
-  String toString();
-
   /// Gets the response to send to the AI.
   ///
   /// Returns [responseRaw] if available, otherwise falls back to
@@ -92,6 +89,8 @@ enum MessageAttachmentModality { image, audio, file }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
   const factory({
     required String id,
@@ -105,19 +104,12 @@ abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _MessageAttachmentEntity;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
   const factory({
     required String localPath,
@@ -127,19 +119,12 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
     required MessageAttachmentModality modality,
     required int sizeBytes,
   }) = _MessageAttachmentToCreate;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
   const factory({
     @Default(<MessageToolCallEntity>[]) List<MessageToolCallEntity> toolCalls,
@@ -163,18 +148,9 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
   factory fromJson(Map<String, dynamic> json) =>
       _$MessageMetadataEntityFromJson(json);
 
-  @override
-  int get hashCode;
-
   int get usedTokens {
     return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
   }
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 
   static MessageMetadataEntity? fromJsonString(String? metadata) {
     if (metadata == null) return null;
@@ -209,6 +185,8 @@ MessageMetadataEntity _metadataFromDecodedJson(Map<String, dynamic> json) {
 /// for communication within a conversation.
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const MessageEntity._() with _$MessageEntity {
   const factory({
     /// Unique identifier for the message.
@@ -242,9 +220,6 @@ abstract class const MessageEntity._() with _$MessageEntity {
     List<MessageAttachmentEntity> attachments,
   }) = _MessageEntity;
 
-  @override
-  int get hashCode;
-
   /// Returns true if the message has valid content.
   bool get hasValidContent =>
       content.trim().isNotEmpty || attachments.isNotEmpty;
@@ -256,17 +231,13 @@ abstract class const MessageEntity._() with _$MessageEntity {
 
   bool isForConversation(String conversationId) =>
       this.conversationId == conversationId;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 /// Entity for creating a new message.
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const MessageToCreate._() with _$MessageToCreate {
   /// Creates a new MessageToCreate instance.
   const factory({
@@ -290,9 +261,6 @@ abstract class const MessageToCreate._() with _$MessageToCreate {
     @Default(<MessageAttachmentToCreate>[])
     List<MessageAttachmentToCreate> attachments,
   }) = _MessageToCreate;
-
-  @override
-  int get hashCode;
 
   /// Returns true if the message has valid content.
   bool get hasValidContent {
@@ -324,12 +292,6 @@ abstract class const MessageToCreate._() with _$MessageToCreate {
 
   bool isForConversation(String conversationId) =>
       this.conversationId == conversationId;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 bool _isValidMetadataJson(String metadata, {bool allowEmpty = true}) {
@@ -354,38 +316,22 @@ abstract class const MessagePatch._() with _$MessagePatch {
     MessageStatus? status,
   }) = _MessagePatch;
 
-  @override
-  int get hashCode;
-
   /// Returns true if the message is in a valid state.
   bool get isValid {
     return content != null || metadata != null || status != null;
   }
 
   bool changesStatusTo(MessageStatus value) => status == value;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const ToolToCall._() with _$ToolToCall {
   const factory({
     required ResolvedTool tool,
     required String id,
     required String argumentsRaw,
   }) = _ToolToCall;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }

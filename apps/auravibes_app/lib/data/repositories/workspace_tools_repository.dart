@@ -291,6 +291,8 @@ class WorkspaceToolsException implements Exception {
 }
 
 /// Exception thrown when workspace tool validation fails.
+// DCL sees no methods on this exception subtype.
+// ignore: weight-of-class
 class WorkspaceToolsValidationException extends WorkspaceToolsException {
   /// Creates a new WorkspaceToolsValidationException.
   const new(super.message, [super.cause]);

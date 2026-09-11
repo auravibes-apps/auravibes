@@ -9,6 +9,8 @@ part 'agent_entity.freezed.dart';
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const AgentEntity._() with _$AgentEntity {
   const factory({
     required String id,
@@ -22,14 +24,6 @@ abstract class const AgentEntity._() with _$AgentEntity {
     @Default(true) bool isEnabled,
     @Default(AgentVisibility.both) AgentVisibility visibility,
   }) = _AgentEntity;
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 extension AgentEntityHelpers on AgentEntity {
@@ -66,18 +60,9 @@ abstract class const AgentToCreate._() with _$AgentToCreate {
         content.trim().isNotEmpty;
   }
 
-  @override
-  int get hashCode;
-
   bool hasRequiredName() => name.trim().isNotEmpty;
 
   bool hasRequiredContent() => content.trim().isNotEmpty;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
@@ -100,33 +85,17 @@ abstract class const AgentToUpdate._() with _$AgentToUpdate {
         content.trim().isNotEmpty;
   }
 
-  @override
-  int get hashCode;
-
   bool hasRequiredName() => name.trim().isNotEmpty;
 
   bool hasRequiredContent() => content.trim().isNotEmpty;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 sealed class AgentSkillRef with _$AgentSkillRef {
   const factory user(String skillId) = UserAgentSkillRef;
 
   const factory app(String identifier) = AppAgentSkillRef;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }

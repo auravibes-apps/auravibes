@@ -63,16 +63,7 @@ abstract class const OAuthTokenModel._() with _$OAuthTokenModel {
       _$OAuthTokenModelFromJson(json);
 
   @override
-  int get hashCode;
-
-  @override
   Map<String, dynamic> toJson();
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 
   OAuthTokenEntity toEntity() {
     return OAuthTokenEntity(
@@ -123,9 +114,6 @@ abstract class const OAuthTokenEntity._() with _$OAuthTokenEntity {
 
   bool hasRefreshToken() => refreshToken != null;
 
-  @override
-  String toString();
-
   Future<OAuthTokenEntity> copyCryptor(
     Future<String> Function(String) encryptor,
   ) async {
@@ -167,9 +155,6 @@ sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
 
   factory fromJson(Map<String, dynamic> json) =>
       _$McpAuthenticationTypeFromJson(json);
-
-  @override
-  String toString();
 
   @override
   Map<String, dynamic> toJson();
@@ -217,9 +202,6 @@ abstract class const McpServerToCreate._() with _$McpServerToCreate {
     String? description,
   }) = _McpServerToCreate;
 
-  @override
-  int get hashCode;
-
   String get slugServerName {
     final slug = name
         .toLowerCase()
@@ -230,12 +212,6 @@ abstract class const McpServerToCreate._() with _$McpServerToCreate {
   }
 
   bool hasDescription() => description?.isNotEmpty == true;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 /// Entity representing an MCP (Model Context Protocol) server configuration.
@@ -244,6 +220,8 @@ abstract class const McpServerToCreate._() with _$McpServerToCreate {
 /// for extending AI capabilities with external tools and resources.
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const McpServerEntity._()
     extends McpServerToCreate
     with _$McpServerEntity {
@@ -283,15 +261,6 @@ abstract class const McpServerEntity._()
     @Default(true) bool isEnabled,
   }) = _McpServerEntity;
   this : super._();
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 enum McpAuthenticationTypeOptions { none, oauth, bearerToken }
@@ -300,6 +269,8 @@ enum McpTransportTypeOptions { streamableHttp, sse }
 
 @immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
   const factory({
     required String name,
@@ -314,9 +285,6 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
 
     String? description,
   }) = _McpServerFormToCreate;
-
-  @override
-  int get hashCode;
 
   bool get isValid {
     if (name.isEmpty || url.isEmpty) {
@@ -343,10 +311,4 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
 
   bool hasValidAuthentication() =>
       authenticationType != .bearerToken || bearerToken?.isNotEmpty == true;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }

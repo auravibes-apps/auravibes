@@ -784,12 +784,16 @@ class MessageException implements Exception {
 }
 
 /// Exception thrown when message validation fails.
+// DCL sees no methods on this exception subtype.
+// ignore: weight-of-class
 class MessageValidationException extends MessageException {
   /// Creates a new MessageValidationException.
   const new(super.message, [super.cause]);
 }
 
 /// Exception thrown when a message is not found.
+// DCL sees no methods on this exception subtype.
+// ignore: weight-of-class
 class MessageNotFoundException extends MessageException {
   /// Creates a new MessageNotFoundException.
   const new(this.messageId, [Exception? cause])

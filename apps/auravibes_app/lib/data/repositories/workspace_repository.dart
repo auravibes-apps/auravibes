@@ -536,12 +536,16 @@ class WorkspaceException implements Exception {
 }
 
 /// Exception thrown when workspace validation fails.
+// DCL sees no methods on this exception subtype.
+// ignore: weight-of-class
 class WorkspaceValidationException extends WorkspaceException {
   /// Creates a new WorkspaceValidationException.
   const new(super.message, {super.localizationKey, super.cause});
 }
 
 /// Exception thrown when a workspace is not found.
+// DCL sees no methods on this exception subtype.
+// ignore: weight-of-class
 class WorkspaceNotFoundException extends WorkspaceException {
   /// Creates a new WorkspaceNotFoundException.
   const new(this.workspaceId, {super.cause})

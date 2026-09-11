@@ -544,11 +544,12 @@ extension on ConversationToolsRepository {
     required String workspaceId,
     required WorkspaceToolEntity tool,
   }) async {
-    final isAvailable = await _isAvailableWorkspaceTool(
+    final permission = await checkToolPermission(
       conversationId: conversationId,
       workspaceId: workspaceId,
       toolId: tool.toolId,
     );
+    final isAvailable = _isPermissionAvailable(permission);
 
     return (tool: tool, isAvailable: isAvailable);
   }

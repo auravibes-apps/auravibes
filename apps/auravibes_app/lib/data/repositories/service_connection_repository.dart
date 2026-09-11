@@ -81,7 +81,7 @@ typedef _ConnectionInsertRequest = ({
 class const ServiceConnectionRepository(
   final AppDatabase _database,
   final EncryptionService _encryptionService,
-) {
+) with _ServiceConnectionRepositoryQueries {
   Future<GenericServiceConnectionRecord?> getAppSkillCredentialForEdit(
     String id, {
     required String workspaceId,
@@ -114,6 +114,22 @@ class const ServiceConnectionRepository(
 
   Future<void> deleteOwnedMcpCredential(String id) =>
       _deleteOwnedMcpCredential(this, id);
+}
+
+mixin _ServiceConnectionRepositoryQueries {
+  Future<ServiceConnectionEntity?> getById(String id) =>
+      ServiceConnectionRepositoryQueries(this as ServiceConnectionRepository)
+          .getById(id);
+
+  Stream<List<ServiceConnectionEntity>> watchWorkspaceConnections(
+    String workspaceId,
+  ) =>
+      ServiceConnectionRepositoryQueries(this as ServiceConnectionRepository)
+          .watchWorkspaceConnections(workspaceId);
+
+  Future<void> markReauthRequired(String id, {String? error}) =>
+      ServiceConnectionRepositoryQueries(this as ServiceConnectionRepository)
+          .markReauthRequired(id, error: error);
 }
 
 extension ServiceConnectionRepositoryQueries on ServiceConnectionRepository {
