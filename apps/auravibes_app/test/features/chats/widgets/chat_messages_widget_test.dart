@@ -495,9 +495,9 @@ void main() {
           overrides: [
             messageConversationByIdProvider.overrideWith(
               (ref, key) => _createMessage(
-                id: key.$3,
-                content: 'Message ${key.$3}',
-                isUser: key.$3 == 'msg-1',
+                id: key.messageId,
+                content: 'Message ${key.messageId}',
+                isUser: key.messageId == 'msg-1',
               ),
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),

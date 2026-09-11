@@ -68,7 +68,7 @@ final class ListWorkspaceModelSelectionsProvider
 }
 
 String _$listWorkspaceModelSelectionsHash() =>
-    r'e17c864877cf711ca47b2b456084d1d94cae5fc6';
+    r'4000d449a488e7d5b98aaeb857c3cc826a701e8d';
 
 final class ListWorkspaceModelSelectionsFamily extends $Family
     with
@@ -169,7 +169,7 @@ final class ListModelsGroupedByProviderProvider
 }
 
 String _$listModelsGroupedByProviderHash() =>
-    r'cb244814a31ca1aeb323f3f965073fb66447d0d0';
+    r'4545ffdf15c7858c5d71f60fa7076023280d88f2';
 
 /// Groups models by connection id for two-step model selection.
 /// Returns a map where keys are credential-backed connection ids.

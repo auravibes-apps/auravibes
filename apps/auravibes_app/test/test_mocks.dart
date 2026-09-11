@@ -1,13 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
-import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
@@ -57,6 +52,7 @@ void registerTestFallbackValues() {
   _fallbackValuesRegistered = true;
 
   registerFallbackValue(_FakeAgentIterationContext());
+  registerFallbackValue(const ChatbotMessageOptions());
   registerFallbackValue(_FakeConversationPatch());
   registerFallbackValue(_FakeConversationsCompanion());
   registerFallbackValue(_FakeConversationToCreate());

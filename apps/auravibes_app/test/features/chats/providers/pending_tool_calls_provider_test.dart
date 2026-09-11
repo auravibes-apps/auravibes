@@ -343,11 +343,11 @@ void main() {
                 for (final messageId in messageIds)
                   ref
                       .watch(
-                        messageConversationByIdProvider(
-                          'ws-1',
-                          'conv-1',
-                          messageId,
-                        ),
+                        messageConversationByIdProvider((
+                          workspaceId: 'ws-1',
+                          conversationId: 'conv-1',
+                          messageId: messageId,
+                        )),
                       )
                       ?.content,
               ].nonNulls.join('|');

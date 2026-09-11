@@ -106,7 +106,7 @@ void main() {
         ],
         defaultGroupType: .builtIn,
       );
-      expect(group.areAnyToolsEnabled, isTrue);
+      expect(group.areAnyToolsEnabled(), isTrue);
     });
 
     test('areAnyToolsEnabled returns false when all disabled', () {
@@ -115,7 +115,7 @@ void main() {
         tools: [_toolState(isEnabled: false)],
         defaultGroupType: .builtIn,
       );
-      expect(group.areAnyToolsEnabled, isFalse);
+      expect(group.areAnyToolsEnabled(), isFalse);
     });
 
     test('assertion fails when both group and defaultGroupType are null', () {
@@ -173,7 +173,7 @@ void main() {
         ),
       );
       expect(group.isMcpGroup, isTrue);
-      expect(group.isMcpConnected, isTrue);
+      expect(group.isMcpConnected(), isTrue);
     });
   });
 }

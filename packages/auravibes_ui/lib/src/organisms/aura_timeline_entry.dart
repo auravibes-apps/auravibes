@@ -21,4 +21,7 @@ class AuraTimelineEntry {
 
   /// Entry marker tint.
   final AuraTint tint;
+
+  /// Whether this entry contains supporting text.
+  bool hasDetails() => description != null || time != null;
 }

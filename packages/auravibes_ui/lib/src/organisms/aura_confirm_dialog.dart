@@ -10,6 +10,12 @@ import 'package:flutter/material.dart';
 
 export 'aura_alert_dialog.dart';
 
+typedef _AuraDialogRequest = ({
+  BuildContext context,
+  Widget child,
+  bool barrierDismissible,
+});
+
 /// A custom confirmation dialog with customizable title, message, and actions.
 ///
 /// Provides both a widget for composition and helper function
@@ -53,32 +59,72 @@ class AuraConfirmDialog extends StatelessWidget {
   final AuraTint? tint;
 
   @override
+  Widget build(BuildContext context) =>
+      _AuraConfirmDialogData(dialog: this).child;
+}
+
+class _AuraConfirmDialogData {
+  new({required AuraConfirmDialog dialog})
+    : child = AuraDialogShell(
+        title: dialog.title,
+        message: dialog.message,
+        actions: [
+          _AuraConfirmCancelButton(
+            label: dialog.cancelLabel,
+            onCancel: dialog.onCancel,
+          ),
+          const SizedBox(width: 8),
+          _AuraConfirmButton(
+            label: dialog.confirmLabel,
+            onConfirm: dialog.onConfirm,
+            isDestructive: dialog.isDestructive,
+            tint: dialog.tint,
+          ),
+        ],
+      );
+
+  final Widget child;
+}
+
+class const _AuraConfirmCancelButton({
+  required final Widget label,
+  required final VoidCallback? onCancel,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
-    return AuraDialogShell(
-      title: title,
-      message: message,
-      actions: [
-        AuraButton(
-          onPressed: () {
-            Navigator.of(context).pop(false);
-            onCancel?.call();
-          },
-          child: cancelLabel,
-          variant: .text,
-        ),
-        const SizedBox(width: 8),
-        AuraButton(
-          onPressed: () {
-            Navigator.of(context).pop(true);
-            onConfirm?.call();
-          },
-          child: confirmLabel,
-          variant: .text,
-          tint: isDestructive ? AuraTint.error : tint ?? AuraTint.primary,
-        ),
-      ],
+    return AuraButton(
+      onPressed: _onPressed(context),
+      child: label,
+      variant: .text,
     );
   }
+
+  VoidCallback _onPressed(BuildContext context) => () {
+    Navigator.of(context).pop(false);
+    onCancel?.call();
+  };
+}
+
+class const _AuraConfirmButton({
+  required final Widget label,
+  required final VoidCallback? onConfirm,
+  required final bool isDestructive,
+  required final AuraTint? tint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraButton(
+      onPressed: _onPressed(context),
+      child: label,
+      variant: .text,
+      tint: isDestructive ? AuraTint.error : tint ?? AuraTint.primary,
+    );
+  }
+
+  VoidCallback _onPressed(BuildContext context) => () {
+    Navigator.of(context).pop(true);
+    onConfirm?.call();
+  };
 }
 
 /// Labels used by [AuraDialogs.confirm].
@@ -91,6 +137,9 @@ class AuraConfirmDialogActions {
 
   /// Label for the cancel action.
   final Widget? cancelLabel;
+
+  /// Whether either action label was provided explicitly.
+  bool hasCustomLabels() => confirmLabel != null || cancelLabel != null;
 }
 
 /// Shows a confirmation dialog and returns user selection.
@@ -98,9 +147,11 @@ class AuraConfirmDialogActions {
 /// Returns `true` if confirmed, `false` if cancelled,
 /// `null` if dismissed (e.g., by tapping outside).
 abstract final class AuraDialogs {
-  static const _transitionScale = 0.95;
+  const new _();
 
   /// Shows a confirmation dialog and returns the user's selection.
+  // Public named arguments preserve the existing confirmation API.
+  // ignore: number-of-parameters
   static Future<bool?> confirm({
     required BuildContext context,
     required Widget title,
@@ -109,37 +160,21 @@ abstract final class AuraDialogs {
     bool isDestructive = false,
     bool barrierDismissible = true,
     AuraTint? tint,
-  }) {
-    return showGeneralDialog<bool>(
+  }) => _showConfirmationDialog(
+    .new(
       context: context,
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return AuraConfirmDialog(
-          title: title,
-          message: message,
-          confirmLabel: actions.confirmLabel ?? const Text('Confirm'),
-          cancelLabel: actions.cancelLabel ?? const Text('Cancel'),
-          isDestructive: isDestructive,
-          tint: tint,
-        );
-      },
+      title: title,
+      message: message,
+      actions: actions,
+      isDestructive: isDestructive,
       barrierDismissible: barrierDismissible,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: context.auraColors.scrim,
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: _transitionScale, end: 1).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOut),
-            ),
-            child: child,
-          ),
-        );
-      },
-    );
-  }
+      tint: tint,
+    ),
+  );
 
   /// Shows an alert dialog and dismisses on button tap.
+  // Public named arguments preserve the existing alert API.
+  // ignore: number-of-parameters
   static Future<void> alert({
     required BuildContext context,
     required Widget title,
@@ -147,31 +182,140 @@ abstract final class AuraDialogs {
     Widget? dismissLabel,
     AuraTint? tint,
     bool barrierDismissible = true,
-  }) async {
-    await showGeneralDialog<void>(
+  }) => _showAlertDialog(
+    .new(
       context: context,
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return AuraAlertDialog(
-          title: title,
-          message: message,
-          dismissLabel: dismissLabel ?? const Text('OK'),
-          tint: tint,
-        );
-      },
+      title: title,
+      message: message,
+      dismissLabel: dismissLabel,
+      tint: tint,
       barrierDismissible: barrierDismissible,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: context.auraColors.scrim,
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: _transitionScale, end: 1).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOut),
-            ),
-            child: child,
-          ),
-        );
-      },
+    ),
+  );
+
+  @override
+  String toString() => 'AuraDialogs';
+}
+
+class _AuraConfirmationRequest {
+  const new({
+    required this.context,
+    required this.title,
+    required this.message,
+    required this.actions,
+    required this.isDestructive,
+    required this.barrierDismissible,
+    this.tint,
+  });
+
+  final BuildContext context;
+  final Widget title;
+  final Widget message;
+  final AuraConfirmDialogActions actions;
+  final bool isDestructive;
+  final bool barrierDismissible;
+  final AuraTint? tint;
+}
+
+Future<bool?> _showConfirmationDialog(_AuraConfirmationRequest request) =>
+    _showAuraDialog<bool>(_AuraConfirmationDialogData(request).value);
+
+class _AuraConfirmationDialogData {
+  new(_AuraConfirmationRequest request)
+    : value = (
+        context: request.context,
+        child: AuraConfirmDialog(
+          title: request.title,
+          message: request.message,
+          confirmLabel: request.actions.confirmLabel ?? const Text('Confirm'),
+          cancelLabel: request.actions.cancelLabel ?? const Text('Cancel'),
+          isDestructive: request.isDestructive,
+          tint: request.tint,
+        ),
+        barrierDismissible: request.barrierDismissible,
+      );
+
+  final _AuraDialogRequest value;
+}
+
+class _AuraAlertRequest {
+  const new({
+    required this.context,
+    required this.title,
+    required this.message,
+    required this.dismissLabel,
+    required this.tint,
+    required this.barrierDismissible,
+  });
+
+  final BuildContext context;
+  final Widget title;
+  final Widget message;
+  final Widget? dismissLabel;
+  final AuraTint? tint;
+  final bool barrierDismissible;
+}
+
+Future<void> _showAlertDialog(_AuraAlertRequest request) =>
+    _showAuraDialog<void>((
+      context: request.context,
+      child: AuraAlertDialog(
+        title: request.title,
+        message: request.message,
+        dismissLabel: request.dismissLabel ?? const Text('OK'),
+        tint: request.tint,
+      ),
+      barrierDismissible: request.barrierDismissible,
+    ));
+
+Future<T?> _showAuraDialog<T>(_AuraDialogRequest request) =>
+    _showGeneralDialog(request);
+
+Future<T?> _showGeneralDialog<T>(_AuraDialogRequest request) =>
+    _AuraGeneralDialogData<T>(request).future;
+
+class _AuraGeneralDialogData<T> {
+  new(_AuraDialogRequest request)
+    : future = showGeneralDialog<T>(
+        context: request.context,
+        pageBuilder: _auraDialogPageBuilder(request.child),
+        barrierDismissible: request.barrierDismissible,
+        barrierLabel: MaterialLocalizations.of(request.context)
+            .modalBarrierDismissLabel,
+        barrierColor: request.context.auraColors.scrim,
+        transitionBuilder: (_, animation, _, child) =>
+            _AuraDialogTransition(animation: animation, child: child),
+      );
+
+  final Future<T?> future;
+}
+
+typedef _AuraDialogPageBuilder = Widget Function(
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+);
+
+_AuraDialogPageBuilder _auraDialogPageBuilder(Widget child) =>
+    (_, _, _) => child;
+
+class const _AuraDialogTransition({
+  required final Animation<double> animation,
+  required final Widget child,
+}) extends StatelessWidget {
+  static const _transitionScale = 0.95;
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+        scale: Tween<double>(
+          begin: _transitionScale,
+          end: 1,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+        child: child,
+      ),
     );
   }
 }

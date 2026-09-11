@@ -26,31 +26,80 @@ class AuraRating extends StatelessWidget {
   final String? label;
 
   @override
-  Widget build(BuildContext context) {
-    final enabled =
+  Widget build(BuildContext context) => _AuraRatingSemantics(
+    max: max,
+    selected: value.clamp(0, max),
+    enabled:
         AuraInteractionScope.of(context).allowsValueChanges &&
-        onChanged != null;
-    final callback = onChanged;
-    final selected = value.clamp(0, max);
+        onChanged != null,
+    callback: onChanged,
+    label: label,
+    color: context.auraColors.warning,
+  );
+}
 
-    return Semantics(
-      child: Wrap(
-        children: [
-          for (var index = 1; index <= max; index++)
-            IconButton(
-              onPressed: enabled && callback != null
-                  ? () => callback(index)
-                  : null,
-              tooltip: '$index',
-              icon: Icon(
-                index <= selected ? Icons.star : Icons.star_border,
-                color: context.auraColors.warning,
-              ),
-            ),
-        ],
-      ),
-      label: label,
-      value: '$selected of $max',
+class const _AuraRatingSemantics({
+  required final int max,
+  required final int selected,
+  required final bool enabled,
+  required final ValueChanged<int>? callback,
+  required final String? label,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: _AuraRatingStars(
+      max: max,
+      selected: selected,
+      enabled: enabled,
+      callback: callback,
+      color: color,
+    ),
+    label: label,
+    value: '$selected of $max',
+  );
+}
+
+class const _AuraRatingStars({
+  required final int max,
+  required final int selected,
+  required final bool enabled,
+  required final ValueChanged<int>? callback,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    children: [
+      for (var index = 1; index <= max; index++)
+        _AuraRatingStar(
+          index: index,
+          selected: index <= selected,
+          enabled: enabled,
+          callback: callback,
+          color: color,
+        ),
+    ],
+  );
+}
+
+class const _AuraRatingStar({
+  required final int index,
+  required final bool selected,
+  required final bool enabled,
+  required final ValueChanged<int>? callback,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final onPressed = switch ((enabled: enabled, callback: callback)) {
+      (enabled: true, callback: final callback?) => () => callback(index),
+      _ => null,
+    };
+
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: '$index',
+      icon: Icon(selected ? Icons.star : Icons.star_border, color: color),
     );
   }
 }

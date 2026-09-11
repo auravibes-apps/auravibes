@@ -18,7 +18,7 @@ typedef ModelCatalogFetcher = Future<Object?> Function(
 );
 
 class ModelConnectionUseCases {
-  ModelConnectionUseCases(
+  new(
     this._repository, {
     ModelCatalogFetcher? fetch,
     Future<List<InternetAddress>> Function(String host)? lookup,

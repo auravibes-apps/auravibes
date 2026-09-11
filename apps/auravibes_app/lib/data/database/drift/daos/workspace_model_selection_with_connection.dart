@@ -19,7 +19,50 @@ class WorkspaceModelSelectionWithConnection({
 )
 class WorkspaceModelSelectionsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$WorkspaceModelSelectionsDaoMixin {
+    with
+        _$WorkspaceModelSelectionsDaoMixin,
+        _WorkspaceModelSelectionsDaoWriteApi,
+        _WorkspaceModelSelectionsDaoReadApi;
+
+mixin _WorkspaceModelSelectionsDaoWriteApi {
+  Future<void> insertWorkspaceModelSelections(
+    List<WorkspaceModelSelectionsCompanion> modelProvidersToInsert,
+  ) =>
+      WorkspaceModelSelectionsDaoWrites(this as WorkspaceModelSelectionsDao)
+          .insertWorkspaceModelSelections(modelProvidersToInsert);
+
+  Future<List<WorkspaceModelSelectionTable>> getByModelConnectionId(
+    String modelConnectionId,
+  ) =>
+      WorkspaceModelSelectionsDaoWrites(this as WorkspaceModelSelectionsDao)
+          .getByModelConnectionId(modelConnectionId);
+
+  Future<int> deleteByIds(Set<String> ids) =>
+      WorkspaceModelSelectionsDaoWrites(this as WorkspaceModelSelectionsDao)
+          .deleteByIds(ids);
+}
+
+mixin _WorkspaceModelSelectionsDaoReadApi {
+  Future<List<WorkspaceModelSelectionWithConnection>>
+  getAllWorkspaceModelSelectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) => WorkspaceModelSelectionsDaoReads(this as WorkspaceModelSelectionsDao)
+      .getAllWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds);
+
+  Stream<List<WorkspaceModelSelectionWithConnection>>
+  watchAllWorkspaceModelSelectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) => WorkspaceModelSelectionsDaoReads(this as WorkspaceModelSelectionsDao)
+      .watchAllWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds);
+
+  Future<WorkspaceModelSelectionWithConnection?> getWorkspaceModelSelectionById(
+    String id,
+  ) =>
+      WorkspaceModelSelectionsDaoReads(this as WorkspaceModelSelectionsDao)
+          .getWorkspaceModelSelectionById(id);
+}
+
+extension WorkspaceModelSelectionsDaoWrites on WorkspaceModelSelectionsDao {
   Future<void> insertWorkspaceModelSelections(
     List<WorkspaceModelSelectionsCompanion> modelProvidersToInsert,
   ) async {
@@ -43,7 +86,9 @@ class WorkspaceModelSelectionsDao(super.attachedDatabase)
       workspaceModelSelections,
     )..where((table) => table.id.isIn(ids))).go();
   }
+}
 
+extension WorkspaceModelSelectionsDaoReads on WorkspaceModelSelectionsDao {
   Future<List<WorkspaceModelSelectionWithConnection>>
   getAllWorkspaceModelSelectionsByWorkspace({
     required List<String> workspaceIds,
@@ -70,26 +115,30 @@ class WorkspaceModelSelectionsDao(super.attachedDatabase)
 
     return query.map(_mapJoin).getSingleOrNull();
   }
+}
 
+extension WorkspaceModelSelectionsDaoJoins on WorkspaceModelSelectionsDao {
   JoinedSelectStatement<HasResultSet, dynamic> _queryJoins() {
-    return select(workspaceModelSelections).join([
-      innerJoin(
-        serviceConnections,
-        serviceConnections.id.equalsExp(
-          workspaceModelSelections.modelConnectionId,
-        ),
-      ),
-      leftOuterJoin(
-        apiModelProviders,
-        apiModelProviders.id.equalsExp(serviceConnections.serviceId),
-      ),
-      leftOuterJoin(
-        apiModels,
-        apiModels.id.equalsExp(workspaceModelSelections.modelId) &
-            apiModels.modelProvider.equalsExp(serviceConnections.serviceId),
-      ),
-    ]);
+    final joins = [_connectionJoin(), _providerJoin(), _modelJoin()];
+
+    return select(workspaceModelSelections).join(joins);
   }
+
+  Join<HasResultSet, dynamic> _connectionJoin() => innerJoin(
+    serviceConnections,
+    serviceConnections.id.equalsExp(workspaceModelSelections.modelConnectionId),
+  );
+
+  Join<HasResultSet, dynamic> _providerJoin() => leftOuterJoin(
+    apiModelProviders,
+    apiModelProviders.id.equalsExp(serviceConnections.serviceId),
+  );
+
+  Join<HasResultSet, dynamic> _modelJoin() => leftOuterJoin(
+    apiModels,
+    apiModels.id.equalsExp(workspaceModelSelections.modelId) &
+        apiModels.modelProvider.equalsExp(serviceConnections.serviceId),
+  );
 
   JoinedSelectStatement<HasResultSet, dynamic>
   _queryWorkspaceModelSelectionsByWorkspace({

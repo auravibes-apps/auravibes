@@ -12,6 +12,15 @@ class const SaveAgentToolOverridesUsecase(
     required Map<String, AgentToolPermissionMode> permissionsByToolId,
   }) async {
     final existing = await _repository.getAgentTools(agentId);
+    await _clearRemoved(agentId, permissionsByToolId, existing);
+    await _savePermissions(agentId, permissionsByToolId);
+  }
+
+  Future<void> _clearRemoved(
+    String agentId,
+    Map<String, AgentToolPermissionMode> permissionsByToolId,
+    List<AgentToolOverrideEntity> existing,
+  ) async {
     for (final override in existing) {
       if (permissionsByToolId.containsKey(override.toolId)) continue;
 
@@ -20,23 +29,33 @@ class const SaveAgentToolOverridesUsecase(
         override.toolId,
       );
     }
+  }
 
+  Future<void> _savePermissions(
+    String agentId,
+    Map<String, AgentToolPermissionMode> permissionsByToolId,
+  ) async {
     for (final entry in permissionsByToolId.entries) {
-      final permission = entry.value.overridePermission;
-      if (permission == null) {
-        final _ = await _repository.clearAgentToolPermission(
-          agentId,
-          entry.key,
-        );
-        continue;
-      }
-
-      final _ = await _repository.setAgentToolPermission(
-        agentId,
-        entry.key,
-        permissionMode: permission,
-      );
+      await _savePermission(agentId, entry);
     }
+  }
+
+  Future<void> _savePermission(
+    String agentId,
+    MapEntry<String, AgentToolPermissionMode> entry,
+  ) async {
+    final permission = entry.value.overridePermission;
+    if (permission == null) {
+      final _ = await _repository.clearAgentToolPermission(agentId, entry.key);
+
+      return;
+    }
+
+    final _ = await _repository.setAgentToolPermission(
+      agentId,
+      entry.key,
+      permissionMode: permission,
+    );
   }
 }
 

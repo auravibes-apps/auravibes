@@ -39,32 +39,7 @@ abstract final class CloudAppErrors {
 
   static Never translateException(Object error, CloudOperationContext context) {
     if (error is CloudAppException) throw error;
-    final translated = switch (error) {
-      CloudWorkspaceException(:final code) => (
-        localizationKey: _workspaceKey(code),
-        code: code.name,
-      ),
-      ConversationException(:final code) => (
-        localizationKey: _conversationKey(code),
-        code: code.name,
-      ),
-      ObjectException(:final code) => (
-        localizationKey: _objectKey(code),
-        code: code.name,
-      ),
-      UnsupportedWorkspaceCapabilityException() => (
-        localizationKey: LocaleKeys.workspace_capabilities_unsupported_error,
-        code: 'unsupportedCapability',
-      ),
-      TypeError() ||
-      FormatException() ||
-      StateError() ||
-      UnsupportedError() => (
-        localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-        code: error.runtimeType.toString(),
-      ),
-      _ => (localizationKey: LocaleKeys.cloud_errors_unavailable, code: null),
-    };
+    final translated = _translatedException(error);
     throw CloudAppException(
       localizationKey: translated.localizationKey,
       context: context,
@@ -73,29 +48,72 @@ abstract final class CloudAppErrors {
   }
 }
 
-String _workspaceKey(CloudWorkspaceErrorCode code) => switch (code) {
-  .authenticationRequired ||
-  .emailAccountRequired => LocaleKeys.cloud_errors_authentication_required,
-  .workspaceNotFound || .inviteNotFound => LocaleKeys.cloud_errors_not_found,
-  .membershipRequired ||
-  .permissionDenied ||
-  .ownerRequired => LocaleKeys.cloud_errors_permission_denied,
-  .validationFailed ||
-  .invalidRole ||
-  .confirmationNameMismatch ||
-  .invalidCursor => LocaleKeys.cloud_errors_validation,
-  .ownerCannotLeave ||
-  .ownerCannotBeRemoved ||
-  .ownershipTransferRequired ||
-  .inviteExpired ||
-  .inviteRevoked ||
-  .inviteEmailMismatch ||
-  .duplicateInvite ||
-  .duplicateMembership ||
-  .staleRevision ||
-  .idempotencyConflict ||
-  .conflict => LocaleKeys.cloud_errors_conflict,
+({String localizationKey, String? code}) _translatedException(Object error) =>
+    switch (error) {
+      CloudWorkspaceException(:final code) => _workspaceTranslation(code),
+      ConversationException(:final code) => _conversationTranslation(code),
+      ObjectException(:final code) => _objectTranslation(code),
+      UnsupportedWorkspaceCapabilityException() => (
+        localizationKey: LocaleKeys.workspace_capabilities_unsupported_error,
+        code: 'unsupportedCapability',
+      ),
+      _ => _genericTranslation(error),
+    };
+
+({String localizationKey, String? code}) _genericTranslation(Object error) =>
+    switch (error) {
+      TypeError() ||
+      FormatException() ||
+      StateError() ||
+      UnsupportedError() => _malformedTranslation(error),
+      _ => (localizationKey: LocaleKeys.cloud_errors_unavailable, code: null),
+    };
+
+({String localizationKey, String? code}) _workspaceTranslation(
+  CloudWorkspaceErrorCode code,
+) => (localizationKey: _workspaceKey(code), code: code.name);
+
+({String localizationKey, String? code}) _conversationTranslation(
+  ConversationErrorCode code,
+) => (localizationKey: _conversationKey(code), code: code.name);
+
+({String localizationKey, String? code}) _objectTranslation(
+  ObjectErrorCode code,
+) => (localizationKey: _objectKey(code), code: code.name);
+
+({String localizationKey, String? code}) _malformedTranslation(Object error) =>
+    (
+      localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+      code: error.runtimeType.toString(),
+    );
+
+const _workspaceLocalizationKeys = <CloudWorkspaceErrorCode, String>{
+  .authenticationRequired: LocaleKeys.cloud_errors_authentication_required,
+  .emailAccountRequired: LocaleKeys.cloud_errors_authentication_required,
+  .workspaceNotFound: LocaleKeys.cloud_errors_not_found,
+  .inviteNotFound: LocaleKeys.cloud_errors_not_found,
+  .membershipRequired: LocaleKeys.cloud_errors_permission_denied,
+  .permissionDenied: LocaleKeys.cloud_errors_permission_denied,
+  .ownerRequired: LocaleKeys.cloud_errors_permission_denied,
+  .validationFailed: LocaleKeys.cloud_errors_validation,
+  .invalidRole: LocaleKeys.cloud_errors_validation,
+  .confirmationNameMismatch: LocaleKeys.cloud_errors_validation,
+  .invalidCursor: LocaleKeys.cloud_errors_validation,
+  .ownerCannotLeave: LocaleKeys.cloud_errors_conflict,
+  .ownerCannotBeRemoved: LocaleKeys.cloud_errors_conflict,
+  .ownershipTransferRequired: LocaleKeys.cloud_errors_conflict,
+  .inviteExpired: LocaleKeys.cloud_errors_conflict,
+  .inviteRevoked: LocaleKeys.cloud_errors_conflict,
+  .inviteEmailMismatch: LocaleKeys.cloud_errors_conflict,
+  .duplicateInvite: LocaleKeys.cloud_errors_conflict,
+  .duplicateMembership: LocaleKeys.cloud_errors_conflict,
+  .staleRevision: LocaleKeys.cloud_errors_conflict,
+  .idempotencyConflict: LocaleKeys.cloud_errors_conflict,
+  .conflict: LocaleKeys.cloud_errors_conflict,
 };
+
+String _workspaceKey(CloudWorkspaceErrorCode code) =>
+    _workspaceLocalizationKeys[code]!;
 
 String _conversationKey(ConversationErrorCode code) => switch (code) {
   .authenticationRequired => LocaleKeys.cloud_errors_authentication_required,
@@ -108,16 +126,19 @@ String _conversationKey(ConversationErrorCode code) => switch (code) {
   .toolDecisionConflict => LocaleKeys.cloud_errors_conflict,
 };
 
-String _objectKey(ObjectErrorCode code) => switch (code) {
-  .objectNotFound => LocaleKeys.cloud_errors_not_found,
-  .invalidRequest ||
-  .unsupportedMediaType ||
-  .sizeLimitExceeded ||
-  .uploadExpired ||
-  .uploadMismatch ||
-  .scanInfected => LocaleKeys.cloud_errors_validation,
-  .staleRevision ||
-  .idempotencyConflict ||
-  .objectReferenced => LocaleKeys.cloud_errors_conflict,
-  .configurationMissing || .scanFailed => LocaleKeys.cloud_errors_unavailable,
+const _objectLocalizationKeys = <ObjectErrorCode, String>{
+  .objectNotFound: LocaleKeys.cloud_errors_not_found,
+  .invalidRequest: LocaleKeys.cloud_errors_validation,
+  .unsupportedMediaType: LocaleKeys.cloud_errors_validation,
+  .sizeLimitExceeded: LocaleKeys.cloud_errors_validation,
+  .uploadExpired: LocaleKeys.cloud_errors_validation,
+  .uploadMismatch: LocaleKeys.cloud_errors_validation,
+  .scanInfected: LocaleKeys.cloud_errors_validation,
+  .staleRevision: LocaleKeys.cloud_errors_conflict,
+  .idempotencyConflict: LocaleKeys.cloud_errors_conflict,
+  .objectReferenced: LocaleKeys.cloud_errors_conflict,
+  .configurationMissing: LocaleKeys.cloud_errors_unavailable,
+  .scanFailed: LocaleKeys.cloud_errors_unavailable,
 };
+
+String _objectKey(ObjectErrorCode code) => _objectLocalizationKeys[code]!;

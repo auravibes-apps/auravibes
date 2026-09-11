@@ -10,8 +10,7 @@ import 'mcp_server_policy.dart';
 typedef McpAddressLookup = Future<List<InternetAddress>> Function(String host);
 
 class McpServerProbe {
-  McpServerProbe({McpAddressLookup? lookup})
-    : _lookup = lookup ?? InternetAddress.lookup;
+  new({McpAddressLookup? lookup}) : _lookup = lookup ?? InternetAddress.lookup;
 
   static const _timeout = Duration(seconds: 10);
   final McpAddressLookup _lookup;

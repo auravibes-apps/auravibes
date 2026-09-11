@@ -10,51 +10,130 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
+typedef _AddToolSpecRequest = ({
+  List<ToolSpec> specs,
+  String workspaceId,
+  AvailableSkill skill,
+  SkillTemplateToolEntity tool,
+});
+
+typedef _MaterializeToolSpecRequest = ({
+  AvailableSkill skill,
+  SkillTemplateToolEntity tool,
+  Map<String, SkillTemplateInputDefinition> inputDefinitions,
+  List<String> credentialIds,
+});
+
 class const BuildSkillTemplateToolSpecsUsecase(
   final ListAvailableSkillsUsecase Function(String workspaceId)
   _listAvailableSkillsUsecase,
   final SkillTemplateToolsRepository _skillTemplateToolsRepository,
   final SkillCredentialsRepository _skillCredentialsRepository, {
-  final Future<WorkspaceSession> Function(String workspaceId)?
-  _workspaceSession,
+  final Future<WorkspaceSession> Function(String workspaceId)? workspaceSession,
 }) {
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
   }) async {
-    final session = await _workspaceSession?.call(workspaceId);
-    if (session?.cloud != null) {
+    final runtimeSkills = await _runtimeSkills(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      extraSkills: extraSkills,
+    );
+
+    return await _buildToolSpecs(workspaceId, runtimeSkills);
+  }
+}
+
+extension on BuildSkillTemplateToolSpecsUsecase {
+  Future<List<AvailableSkill>> _runtimeSkills({
+    required String conversationId,
+    required String workspaceId,
+    required List<AvailableSkill> extraSkills,
+  }) async {
+    await _ensureLocalSession(workspaceId);
+    final loadedSkills = await _loadedSkills(conversationId, workspaceId);
+
+    return _uniqueSkills(loadedSkills, extraSkills);
+  }
+
+  Future<void> _ensureLocalSession(String workspaceId) async {
+    final getSession = this.workspaceSession;
+    if (getSession == null) return;
+
+    final session = await getSession(workspaceId);
+    if (session.cloud != null) {
       throw StateError(
         'Cloud template tools execute in the server agent loop.',
       );
     }
-    final loadedSkills = await _listAvailableSkillsUsecase(workspaceId).call(
+  }
+
+  Future<List<AvailableSkill>> _loadedSkills(
+    String conversationId,
+    String workspaceId,
+  ) {
+    return _listAvailableSkillsUsecase(workspaceId).call(
       conversationId: conversationId,
       workspaceId: workspaceId,
       filter: .loaded,
     );
+  }
+
+  List<AvailableSkill> _uniqueSkills(
+    List<AvailableSkill> loadedSkills,
+    List<AvailableSkill> extraSkills,
+  ) {
     final skillKeys = <String>{};
-    final runtimeSkills = [...loadedSkills, ...extraSkills]
+
+    return [...loadedSkills, ...extraSkills]
         .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
         .toList();
+  }
+
+  Future<List<ToolSpec>> _buildToolSpecs(
+    String workspaceId,
+    List<AvailableSkill> runtimeSkills,
+  ) async {
     final specs = <ToolSpec>[];
 
     for (final skill in runtimeSkills.where(
       (skill) => skill.source == SkillSource.user,
     )) {
-      final tools = await _skillTemplateToolsRepository.getSkillTools(skill.id);
-      for (final tool in tools.where((tool) => tool.isEnabled)) {
-        final spec = await _buildToolSpec(
-          workspaceId: workspaceId,
-          skill: skill,
-          tool: tool,
-        );
-        if (spec != null) specs.add(spec);
-      }
+      await _addSkillToolSpecs(
+        workspaceId: workspaceId,
+        skill: skill,
+        specs: specs,
+      );
     }
 
     return specs;
+  }
+
+  Future<void> _addSkillToolSpecs({
+    required String workspaceId,
+    required AvailableSkill skill,
+    required List<ToolSpec> specs,
+  }) async {
+    final tools = await _skillTemplateToolsRepository.getSkillTools(skill.id);
+    for (final tool in tools.where((tool) => tool.isEnabled)) {
+      await _addToolSpec((
+        specs: specs,
+        workspaceId: workspaceId,
+        skill: skill,
+        tool: tool,
+      ));
+    }
+  }
+
+  Future<void> _addToolSpec(_AddToolSpecRequest request) async {
+    final spec = await _buildToolSpec(
+      workspaceId: request.workspaceId,
+      skill: request.skill,
+      tool: request.tool,
+    );
+    if (spec != null) request.specs.add(spec);
   }
 
   Future<ToolSpec?> _buildToolSpec({
@@ -62,21 +141,6 @@ class const BuildSkillTemplateToolSpecsUsecase(
     required AvailableSkill skill,
     required SkillTemplateToolEntity tool,
   }) async {
-    final inputDefinitions = SkillTemplateInputDefinition.parseMap(
-      tool.inputsJson,
-    );
-    final inputProperties = {
-      for (final entry in inputDefinitions.entries)
-        entry.key: {
-          'type': entry.value.type,
-          'description': entry.value.description,
-        },
-    };
-    final requiredInputs = [
-      for (final entry in inputDefinitions.entries)
-        if (!entry.value.optional) entry.key,
-    ];
-
     final credentialIds = await _credentialIds(
       workspaceId: workspaceId,
       skill: skill,
@@ -84,28 +148,69 @@ class const BuildSkillTemplateToolSpecsUsecase(
     );
     if (credentialIds == null) return null;
 
+    return _materializeToolSpec((
+      skill: skill,
+      tool: tool,
+      inputDefinitions: SkillTemplateInputDefinition.parseMap(tool.inputsJson),
+      credentialIds: credentialIds,
+    ));
+  }
+
+  ToolSpec? _materializeToolSpec(_MaterializeToolSpecRequest request) {
+    final skill = request.skill;
+    final tool = request.tool;
+
     return materializeSkillTool(
       .new(
-        name: AgentResolvedToolName.skillTemplate(
-          tableId: tool.slug,
-          skillSlug: skill.slug,
-          toolIdentifier: tool.slug,
-        ).fullName,
-        description: tool.description.trim().isEmpty
-            ? '${tool.title}: ${skill.description}'
-            : tool.description,
-        schema: {
-          'type': 'object',
-          'properties': inputProperties,
-          'required': requiredInputs,
-          'additionalProperties': false,
-        },
+        name: _toolName(skill, tool),
+        description: _toolDescription(skill, tool),
+        schema: _inputSchema(request.inputDefinitions),
         requiresCredential: tool.requiresCredential,
-        credentialIds: credentialIds,
+        credentialIds: request.credentialIds,
       ),
     );
   }
 
+  String _toolName(AvailableSkill skill, SkillTemplateToolEntity tool) =>
+      AgentResolvedToolName.skillTemplate(
+        tableId: tool.slug,
+        skillSlug: skill.slug,
+        toolIdentifier: tool.slug,
+      ).fullName;
+
+  Map<String, dynamic> _inputSchema(
+    Map<String, SkillTemplateInputDefinition> inputDefinitions,
+  ) => {
+    'type': 'object',
+    'properties': _inputProperties(inputDefinitions),
+    'required': _requiredInputs(inputDefinitions),
+    'additionalProperties': false,
+  };
+
+  Map<String, dynamic> _inputProperties(
+    Map<String, SkillTemplateInputDefinition> inputDefinitions,
+  ) => {
+    for (final entry in inputDefinitions.entries)
+      entry.key: {
+        'type': entry.value.type,
+        'description': entry.value.description,
+      },
+  };
+
+  List<String> _requiredInputs(
+    Map<String, SkillTemplateInputDefinition> inputDefinitions,
+  ) => [
+    for (final entry in inputDefinitions.entries)
+      if (!entry.value.optional) entry.key,
+  ];
+
+  String _toolDescription(AvailableSkill skill, SkillTemplateToolEntity tool) =>
+      tool.description.trim().isEmpty
+      ? '${tool.title}: ${skill.description}'
+      : tool.description;
+}
+
+extension on BuildSkillTemplateToolSpecsUsecase {
   Future<List<String>?> _credentialIds({
     required String workspaceId,
     required AvailableSkill skill,
@@ -113,20 +218,35 @@ class const BuildSkillTemplateToolSpecsUsecase(
   }) async {
     final credentialDefinitionId = skill.credentialDefinitionId;
     if (credentialDefinitionId == null) {
-      return tool.requiresCredential ? null : const [];
+      return _optionalCredentialIds(tool);
     }
 
+    return await _credentialIdsForDefinition(
+      workspaceId,
+      credentialDefinitionId,
+      tool,
+    );
+  }
+
+  Future<List<String>?> _credentialIdsForDefinition(
+    String workspaceId,
+    String credentialDefinitionId,
+    SkillTemplateToolEntity tool,
+  ) async {
     final credentials = await _skillCredentialsRepository
         .getCredentialsForDefinition(
           workspaceId: workspaceId,
           credentialDefinitionId: credentialDefinitionId,
         );
     if (credentials.isEmpty) {
-      return tool.requiresCredential ? null : const [];
+      return _optionalCredentialIds(tool);
     }
 
     return [for (final credential in credentials) credential.id];
   }
+
+  List<String>? _optionalCredentialIds(SkillTemplateToolEntity tool) =>
+      tool.requiresCredential ? null : const [];
 }
 
 final buildSkillTemplateToolSpecsUsecaseProvider =

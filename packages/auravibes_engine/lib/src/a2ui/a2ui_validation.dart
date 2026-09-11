@@ -19,25 +19,37 @@ A2uiIssueCode? a2uiIssueCodeFromName(String value) {
 
 /// Validates the documented A2UI date/time wire value for [variant].
 bool isValidA2uiDateTimeValue(Object? variant, String value) {
-  bool isDate(String candidate) {
-    final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(candidate);
-    if (match == null) return false;
-    final year = int.parse(match[1]!);
-    final month = int.parse(match[2]!);
-    final day = int.parse(match[3]!);
-    final parsed = DateTime.utc(year, month, day);
-    return parsed.year == year && parsed.month == month && parsed.day == day;
-  }
+  return switch (variant) {
+    'date' => _isA2uiDate(value),
+    'time' => _isA2uiTime(value),
+    _ => _isA2uiDateTime(value),
+  };
+}
 
-  if (variant == 'date') return isDate(value);
-  if (variant == 'time') {
-    final match = RegExp(r'^(\d{2}):(\d{2})$').firstMatch(value);
-    return match != null &&
-        int.parse(match[1]!) <= 23 &&
-        int.parse(match[2]!) <= 59;
-  }
-  return value.length >= 10 &&
-      isDate(value.substring(0, 10)) &&
-      DateTime.tryParse(value) != null &&
-      (value.endsWith('Z') || RegExp(r'[+-]\d{2}:\d{2}$').hasMatch(value));
+bool _isA2uiDate(String value) {
+  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(value);
+  if (match == null) return false;
+
+  final year = int.parse(match[1]!);
+  final month = int.parse(match[2]!);
+  final day = int.parse(match[3]!);
+  final parsed = DateTime.utc(year, month, day);
+
+  return parsed.year == year && parsed.month == month && parsed.day == day;
+}
+
+bool _isA2uiTime(String value) {
+  final match = RegExp(r'^(\d{2}):(\d{2})$').firstMatch(value);
+
+  return match != null &&
+      int.parse(match[1]!) <= 23 &&
+      int.parse(match[2]!) <= 59;
+}
+
+bool _isA2uiDateTime(String value) {
+  if (value.length < 10) return false;
+  if (!_isA2uiDate(value.substring(0, 10))) return false;
+  if (DateTime.tryParse(value) == null) return false;
+
+  return value.endsWith('Z') || RegExp(r'[+-]\d{2}:\d{2}$').hasMatch(value);
 }

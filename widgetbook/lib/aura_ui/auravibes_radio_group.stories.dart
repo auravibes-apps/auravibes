@@ -64,6 +64,23 @@ class const RadioGroupDemo({
 }
 
 class _RadioGroupDemoState extends State<RadioGroupDemo> {
+  String? _selectedValue = 'system';
+
+  @override
+  Widget build(BuildContext context) => _RadioGroupControl(
+    demo: widget,
+    selectedValue: _selectedValue,
+    onChanged: _select,
+  );
+
+  void _select(String? value) => setState(() => _selectedValue = value);
+}
+
+class const _RadioGroupControl({
+  required final RadioGroupDemo demo,
+  required final String? selectedValue,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
   static const List<AuraRadioOption<String>> _options = [
     AuraRadioOption(
       value: 'system',
@@ -84,27 +101,25 @@ class _RadioGroupDemoState extends State<RadioGroupDemo> {
       semanticLabel: 'Dark theme',
     ),
   ];
-  String? _selectedValue = 'system';
+  static final List<AuraRadioOption<String>> _optionsWithoutSubtitles = _options
+      .map(_withoutSubtitle)
+      .toList();
 
   @override
-  Widget build(BuildContext context) {
-    return AuraRadioGroup<String>(
-      value: _selectedValue,
-      onChanged: (value) => setState(() => _selectedValue = value),
-      options: widget.showSubtitles
-          ? _options
-          : _options
-                .map(
-                  (o) => AuraRadioOption<String>(
-                    value: o.value,
-                    label: o.label,
-                    semanticLabel: o.semanticLabel,
-                  ),
-                )
-                .toList(),
-      label: widget.showLabel ? const Text('Select Theme') : null,
-      direction: widget.direction,
-      tint: widget.tint,
-    );
-  }
+  Widget build(BuildContext context) => AuraRadioGroup<String>(
+    value: selectedValue,
+    onChanged: onChanged,
+    options: demo.showSubtitles ? _options : _optionsWithoutSubtitles,
+    label: demo.showLabel ? const Text('Select Theme') : null,
+    direction: demo.direction,
+    tint: demo.tint,
+  );
+
+  static AuraRadioOption<String> _withoutSubtitle(
+    AuraRadioOption<String> option,
+  ) => AuraRadioOption<String>(
+    value: option.value,
+    label: option.label,
+    semanticLabel: option.semanticLabel,
+  );
 }

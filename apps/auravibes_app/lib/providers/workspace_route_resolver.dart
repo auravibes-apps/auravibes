@@ -2,12 +2,14 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:collection/collection.dart';
 
+const _workspacePathSegmentCount = 2;
+
 /// Resolves workspace-aware routes and legacy locations.
 abstract final class WorkspaceRouteResolver {
   /// Returns the workspace id encoded in a route, if present.
   static String? matchWorkspaceId(Uri uri) {
     final pathSegments = uri.pathSegments;
-    if (pathSegments.length < 2) return null;
+    if (pathSegments.length < _workspacePathSegmentCount) return null;
     if (pathSegments.firstOrNull != 'workspaces') return null;
 
     return pathSegments[1];
@@ -19,32 +21,39 @@ abstract final class WorkspaceRouteResolver {
     List<WorkspaceEntity> workspaces, {
     String? savedWorkspaceId,
   }) {
-    final workspaceMatch = matchWorkspaceId(currentUri);
     final firstWorkspaceId = workspaces.firstOrNull?.id;
-    final savedWorkspace = workspaces.firstWhereOrNull(
-      (workspace) => workspace.id == savedWorkspaceId,
-    );
     if (firstWorkspaceId == null) {
-      return currentUri.path == introPath ? null : introPath;
+      return _redirectWithoutWorkspace(currentUri);
     }
 
-    final fallbackWorkspaceId = savedWorkspace?.id ?? firstWorkspaceId;
-    if (currentUri.path == introPath) {
-      return NewChatRoute(workspaceId: fallbackWorkspaceId).location;
-    }
-    if (workspaceMatch == null) {
-      return _mapLegacyRoute(
-            currentUri,
-            fallbackWorkspaceId: fallbackWorkspaceId,
-          ) ??
-          NewChatRoute(workspaceId: fallbackWorkspaceId).location;
-    }
-    if (workspaces.any((workspace) => workspace.id == workspaceMatch)) {
-      return null;
-    }
-
-    return NewChatRoute(workspaceId: firstWorkspaceId).location;
+    return _redirectForWorkspace(
+      currentUri,
+      _workspaceRedirectContext((
+        currentUri: currentUri,
+        workspaces: workspaces,
+        firstWorkspaceId: firstWorkspaceId,
+        savedWorkspaceId: savedWorkspaceId,
+      )),
+    );
   }
+
+  static String? _redirectForWorkspace(
+    Uri currentUri,
+    _WorkspaceRedirectContext context,
+  ) {
+    if (currentUri.path == introPath) {
+      return NewChatRoute(workspaceId: context.fallbackWorkspaceId).location;
+    }
+    if (context.workspaceMatch == null) {
+      return _legacyRedirect(currentUri, context.fallbackWorkspaceId);
+    }
+
+    return _redirectForMatchedWorkspace(context);
+  }
+
+  static String _legacyRedirect(Uri uri, String fallbackWorkspaceId) =>
+      _mapLegacyRoute(uri, fallbackWorkspaceId: fallbackWorkspaceId) ??
+      NewChatRoute(workspaceId: fallbackWorkspaceId).location;
 
   static String? _mapLegacyRoute(
     Uri uri, {
@@ -53,30 +62,121 @@ abstract final class WorkspaceRouteResolver {
     final pathSegments = uri.pathSegments;
     if (pathSegments.isEmpty) return null;
 
-    final location = switch (pathSegments) {
-      ['chat', 'new'] => NewChatRoute(
-        workspaceId: fallbackWorkspaceId,
-      ).location,
-      ['chats'] => ChatsRoute(workspaceId: fallbackWorkspaceId).location,
-      ['chats', final chatId] => ConversationRoute(
-        workspaceId: fallbackWorkspaceId,
-        chatId: chatId,
-      ).location,
-      ['tools'] => ToolsRoute(workspaceId: fallbackWorkspaceId).location,
-      ['models'] => ServiceConnectionsRoute(
-        workspaceId: fallbackWorkspaceId,
-      ).location,
-      ['service-connections'] => ServiceConnectionsRoute(
-        workspaceId: fallbackWorkspaceId,
-      ).location,
-      ['settings'] => SettingsRoute(workspaceId: fallbackWorkspaceId).location,
-      _ => null,
-    };
+    final location = _legacyLocation(pathSegments, fallbackWorkspaceId);
     if (location == null) return null;
-    if (!uri.hasQuery && uri.fragment.isEmpty) return location;
 
-    return Uri.parse(location)
-        .replace(query: uri.query, fragment: uri.fragment)
-        .toString();
+    return _preserveRouteSuffix(uri, location);
   }
+
+  static String? _legacyLocation(
+    List<String> pathSegments,
+    String fallbackWorkspaceId,
+  ) {
+    if (pathSegments.length == _workspacePathSegmentCount) {
+      final location = _twoSegmentLegacyLocation(
+        pathSegments,
+        fallbackWorkspaceId,
+      );
+      if (location != null) return location;
+    }
+    if (pathSegments.length != 1) return null;
+
+    return _singleLegacyLocation(pathSegments.single, fallbackWorkspaceId);
+  }
+
+  static String? _singleLegacyLocation(
+    String segment,
+    String fallbackWorkspaceId,
+  ) => switch (segment) {
+    'chats' => ChatsRoute(workspaceId: fallbackWorkspaceId).location,
+    'tools' => ToolsRoute(workspaceId: fallbackWorkspaceId).location,
+    'models' => ServiceConnectionsRoute(
+      workspaceId: fallbackWorkspaceId,
+    ).location,
+    'service-connections' => ServiceConnectionsRoute(
+      workspaceId: fallbackWorkspaceId,
+    ).location,
+    'settings' => SettingsRoute(workspaceId: fallbackWorkspaceId).location,
+    _ => null,
+  };
+}
+
+typedef _WorkspaceRedirectContext = ({
+  List<WorkspaceEntity> workspaces,
+  String? workspaceMatch,
+  String fallbackWorkspaceId,
+  String firstWorkspaceId,
+});
+
+typedef _WorkspaceRedirectInput = ({
+  Uri currentUri,
+  List<WorkspaceEntity> workspaces,
+  String firstWorkspaceId,
+  String? savedWorkspaceId,
+});
+
+_WorkspaceRedirectContext _workspaceRedirectContext(
+  _WorkspaceRedirectInput input,
+) => (
+  workspaces: input.workspaces,
+  workspaceMatch: WorkspaceRouteResolver.matchWorkspaceId(input.currentUri),
+  fallbackWorkspaceId: _fallbackWorkspaceId(
+    input.workspaces,
+    input.firstWorkspaceId,
+    input.savedWorkspaceId,
+  ),
+  firstWorkspaceId: input.firstWorkspaceId,
+);
+
+String? _redirectWithoutWorkspace(Uri uri) =>
+    uri.path == introPath ? null : introPath;
+
+String _fallbackWorkspaceId(
+  List<WorkspaceEntity> workspaces,
+  String firstWorkspaceId,
+  String? savedWorkspaceId,
+) =>
+    workspaces
+        .firstWhereOrNull((workspace) => workspace.id == savedWorkspaceId)
+        ?.id ??
+    firstWorkspaceId;
+
+String? _redirectForMatchedWorkspace(
+  ({
+    List<WorkspaceEntity> workspaces,
+    String? workspaceMatch,
+    String fallbackWorkspaceId,
+    String firstWorkspaceId,
+  })
+  context,
+) =>
+    context.workspaces.any(
+      (workspace) => workspace.id == context.workspaceMatch,
+    )
+    ? null
+    : NewChatRoute(workspaceId: context.firstWorkspaceId).location;
+
+String _preserveRouteSuffix(Uri uri, String location) {
+  if (!uri.hasQuery && uri.fragment.isEmpty) return location;
+
+  return Uri.parse(location)
+      .replace(query: uri.query, fragment: uri.fragment)
+      .toString();
+}
+
+String? _twoSegmentLegacyLocation(
+  List<String> pathSegments,
+  String fallbackWorkspaceId,
+) {
+  if (pathSegments.firstOrNull == 'chat' && pathSegments.lastOrNull == 'new') {
+    return NewChatRoute(workspaceId: fallbackWorkspaceId).location;
+  }
+  if (pathSegments.firstOrNull != 'chats') return null;
+  final chatId = pathSegments.lastOrNull;
+  if (chatId == null) return null;
+
+  return ConversationRoute(
+    workspaceId: fallbackWorkspaceId,
+    chatId: chatId,
+  ).location;
 }

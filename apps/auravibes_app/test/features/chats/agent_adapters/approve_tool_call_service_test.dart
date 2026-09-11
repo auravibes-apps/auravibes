@@ -24,9 +24,6 @@ void main() {
     var provider = AppApproveToolCallDataProvider(
       messageRepository: messageRepository,
       conversationRepository: conversationRepository,
-      conversationToolsRepository: conversationToolsRepository,
-      resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
-      loadConversationToolSpecsUsecase: loadToolSpecs,
       toolResolverService: const ToolResolverService(),
       agentToolResumeService: agentToolResumeService,
       runResolvedToolUsecase: .new(
@@ -39,6 +36,9 @@ void main() {
       ),
       agentCancellationRuntime: .new(),
       onToolCallChanged: _noop,
+      conversationToolsRepository: conversationToolsRepository,
+      resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+      loadConversationToolSpecsUsecase: loadToolSpecs,
     );
 
     const messageId = 'message-1';
@@ -88,9 +88,6 @@ void main() {
       provider = AppApproveToolCallDataProvider(
         messageRepository: messageRepository,
         conversationRepository: conversationRepository,
-        conversationToolsRepository: conversationToolsRepository,
-        resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
-        loadConversationToolSpecsUsecase: loadToolSpecs,
         toolResolverService: const ToolResolverService(),
         agentToolResumeService: agentToolResumeService,
         runResolvedToolUsecase: .new(
@@ -103,6 +100,9 @@ void main() {
         ),
         agentCancellationRuntime: .new(),
         onToolCallChanged: _noop,
+        conversationToolsRepository: conversationToolsRepository,
+        resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+        loadConversationToolSpecsUsecase: loadToolSpecs,
       );
     });
 

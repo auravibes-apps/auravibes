@@ -1,6 +1,4 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';

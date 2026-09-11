@@ -11,8 +11,14 @@ final _log = Logger('dao:api_models');
 /// Data Access Object for API models operations.
 @DriftAccessor(tables: [ApiModels])
 class ApiModelsDao extends DatabaseAccessor<AppDatabase>
-    with _$ApiModelsDaoMixin {
-  /// Creates a new [ApiModelsDao] instance.
+    with
+        _$ApiModelsDaoMixin,
+        _ApiModelsDaoReadApi,
+        _ApiModelsDaoMutationApi,
+        _ApiModelsDaoSearchApi,
+        _ApiModelsDaoBatchInsertApi,
+        _ApiModelsDaoBatchApi,
+        _ApiModelsDaoFilterApi {
   new(super.attachedDatabase);
 
   /// Retrieves all API models from the database.
@@ -25,7 +31,99 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
         ]))
         .get();
   }
+}
 
+mixin _ApiModelsDaoReadApi {
+  Future<ApiModelsTable?> getModelByProviderAndModelId(
+    String providerId,
+    String modelId,
+  ) =>
+      ApiModelsDaoReadOperations(this as ApiModelsDao)
+          .getModelByProviderAndModelId(providerId, modelId);
+
+  Future<List<ApiModelsTable>> getModelsByProvider(String providerId) =>
+      ApiModelsDaoReadOperations(this as ApiModelsDao)
+          .getModelsByProvider(providerId);
+
+  Stream<List<ApiModelsTable>> watchModelsByProvider(String providerId) =>
+      ApiModelsDaoReadOperations(this as ApiModelsDao)
+          .watchModelsByProvider(providerId);
+}
+
+mixin _ApiModelsDaoMutationApi {
+  Future<ApiModelsTable> upsertModel(ApiModelsCompanion model) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao).upsertModel(model);
+
+  Future<bool> deleteModel(String id) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao).deleteModel(id);
+
+  Future<bool> deleteModelByProviderAndId(String providerId, String id) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao)
+          .deleteModelByProviderAndId(providerId, id);
+
+  Future<int> deleteModelsByProvider(String providerId) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao)
+          .deleteModelsByProvider(providerId);
+
+  Future<bool> modelExists(String id) =>
+      ApiModelsDaoMutationOperations(this as ApiModelsDao).modelExists(id);
+}
+
+mixin _ApiModelsDaoSearchApi {
+  Future<List<ApiModelsTable>> searchModelsByName(String query) =>
+      ApiModelsDaoSearchOperations(this as ApiModelsDao)
+          .searchModelsByName(query);
+
+  Future<int> getModelCount() =>
+      ApiModelsDaoSearchOperations(this as ApiModelsDao).getModelCount();
+
+  Future<int> getModelCountByProvider(String providerId) =>
+      ApiModelsDaoSearchOperations(this as ApiModelsDao)
+          .getModelCountByProvider(providerId);
+}
+
+mixin _ApiModelsDaoBatchInsertApi {
+  Future<List<ApiModelsTable>> batchInsertModels(
+    List<ApiModelsCompanion> models,
+  ) =>
+      ApiModelsDaoBatchInsertOperations(this as ApiModelsDao)
+          .batchInsertModels(models);
+}
+
+mixin _ApiModelsDaoBatchApi {
+  Future<List<ApiModelsTable>> batchUpsertModels(
+    List<ApiModelsCompanion> models,
+  ) =>
+      ApiModelsDaoBatchOperations(this as ApiModelsDao)
+          .batchUpsertModels(models);
+
+  Future<int> deleteAllModels() =>
+      ApiModelsDaoBatchOperations(this as ApiModelsDao).deleteAllModels();
+}
+
+mixin _ApiModelsDaoFilterApi {
+  Future<List<ApiModelsTable>> getModelsByCostRange(
+    double minInputCost,
+    double maxInputCost,
+  ) =>
+      ApiModelsDaoFilterOperations(this as ApiModelsDao)
+          .getModelsByCostRange(minInputCost, maxInputCost);
+
+  Future<List<ApiModelsTable>> getModelsByMinContextLimit(
+    int minContextLimit,
+  ) =>
+      ApiModelsDaoFilterOperations(this as ApiModelsDao)
+          .getModelsByMinContextLimit(minContextLimit);
+
+  Future<List<ApiModelsTable>> getOpenWeightsModels() =>
+      ApiModelsDaoFilterOperations(this as ApiModelsDao).getOpenWeightsModels();
+
+  Future<List<ApiModelsTable>> getModelsByCostEfficiency() =>
+      ApiModelsDaoFilterOperations(this as ApiModelsDao)
+          .getModelsByCostEfficiency();
+}
+
+extension ApiModelsDaoReadOperations on ApiModelsDao {
   /// Retrieves a model by provider ID + model ID.
   ///
   /// Returns the model matching [providerId] and [modelId], or null if not
@@ -56,7 +154,9 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
           ..orderBy([(t) => OrderingTerm(expression: t.name)]))
         .watch();
   }
+}
 
+extension ApiModelsDaoMutationOperations on ApiModelsDao {
   /// Inserts a new model into the database.
   ///
   /// Returns the inserted model.
@@ -112,19 +212,17 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
 
     return rows.isNotEmpty;
   }
+}
 
+extension ApiModelsDaoSearchOperations on ApiModelsDao {
   /// Searches for models by name.
   ///
   /// Returns a list of models whose names contain the [query] string.
   /// The search is case-insensitive.
   Future<List<ApiModelsTable>> searchModelsByName(String query) {
-    return (select(apiModels)
-          ..where((t) => t.name.contains(query))
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.modelProvider),
-            (t) => OrderingTerm(expression: t.name),
-          ]))
-        .get();
+    return _filteredModels((t) => t.name.contains(query), [
+      (t) => OrderingTerm(expression: t.modelProvider),
+    ]);
   }
 
   /// Gets the count of all models.
@@ -150,33 +248,45 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
 
     return rows.length;
   }
+}
 
+extension ApiModelsDaoBatchInsertOperations on ApiModelsDao {
   /// Batch inserts multiple models into the database.
   ///
   /// Returns the list of inserted models.
   Future<List<ApiModelsTable>> batchInsertModels(
     List<ApiModelsCompanion> models,
-  ) {
-    return transaction(() async {
-      final results = <ApiModelsTable>[];
-      for (final model in models) {
-        try {
-          final inserted = await upsertModel(model);
-          results.add(inserted);
-        } on Exception catch (error, stackTrace) {
-          // Continue with other models if one fails.
-          _log.severe(
-            'Failed to insert model ${model.id.value}',
-            error,
-            stackTrace,
-          );
-        }
-      }
+  ) => transaction(() => _batchInsertModels(models));
 
-      return results;
-    });
+  Future<List<ApiModelsTable>> _batchInsertModels(
+    List<ApiModelsCompanion> models,
+  ) async {
+    final results = <ApiModelsTable>[];
+    for (final model in models) {
+      final inserted = await _tryInsertModel(model);
+      if (inserted != null) results.add(inserted);
+    }
+
+    return results;
   }
 
+  Future<ApiModelsTable?> _tryInsertModel(ApiModelsCompanion model) async {
+    try {
+      return await upsertModel(model);
+    } on Exception catch (error, stackTrace) {
+      // Continue with other models if one fails.
+      _log.severe(
+        'Failed to insert model ${model.id.value}',
+        error,
+        stackTrace,
+      );
+
+      return null;
+    }
+  }
+}
+
+extension ApiModelsDaoBatchOperations on ApiModelsDao {
   /// Batch upserts multiple models into the database.
   ///
   /// For each model, it will update if it exists or insert if it doesn't.
@@ -195,7 +305,9 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   Future<int> deleteAllModels() {
     return delete(apiModels).go();
   }
+}
 
+extension ApiModelsDaoFilterOperations on ApiModelsDao {
   /// Retrieves models within a cost range.
   ///
   /// Returns a list of models with input cost between [minInputCost] and
@@ -204,28 +316,20 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
     double minInputCost,
     double maxInputCost,
   ) {
-    return (select(apiModels)
-          ..where(
-            (t) => t.costInput.isBetweenValues(minInputCost, maxInputCost),
-          )
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.costInput),
-            (t) => OrderingTerm(expression: t.name),
-          ]))
-        .get();
+    return _filteredModels(
+      (t) => t.costInput.isBetweenValues(minInputCost, maxInputCost),
+      [(t) => OrderingTerm(expression: t.costInput)],
+    );
   }
 
   /// Retrieves models with minimum context limit.
   ///
   /// Returns a list of models with context limit >= [minContextLimit].
   Future<List<ApiModelsTable>> getModelsByMinContextLimit(int minContextLimit) {
-    return (select(apiModels)
-          ..where((t) => t.limitContext.isBiggerOrEqualValue(minContextLimit))
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.limitContext, mode: .desc),
-            (t) => OrderingTerm(expression: t.name),
-          ]))
-        .get();
+    return _filteredModels(
+      (t) => t.limitContext.isBiggerOrEqualValue(minContextLimit),
+      [(t) => OrderingTerm(expression: t.limitContext, mode: .desc)],
+    );
   }
 
   /// Retrieves open weights models.
@@ -252,4 +356,13 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
         ]))
         .get();
   }
+
+  Future<List<ApiModelsTable>> _filteredModels(
+    Expression<bool> Function($ApiModelsTable) filter,
+    List<OrderingTerm Function($ApiModelsTable)> ordering,
+  ) =>
+      (select(apiModels)
+            ..where(filter)
+            ..orderBy([...ordering, (t) => OrderingTerm(expression: t.name)]))
+          .get();
 }

@@ -24,7 +24,7 @@ typedef ConversationJobPublisher = Future<void> Function(
 );
 
 class ConversationUseCases {
-  ConversationUseCases(
+  new(
     this._repository, {
     ConversationJobPublisher? publishConversationJob,
   }) : _publishConversationJob =

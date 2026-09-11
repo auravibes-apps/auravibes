@@ -65,13 +65,11 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   @override
   void clear(String conversationId, AgentCancellationScope scope) {
     if (!identical(_entries[conversationId], scope)) return;
-    _clear(conversationId);
+    forceClear(conversationId);
   }
 
   @override
-  void forceClear(String conversationId) => _clear(conversationId);
-
-  void _clear(String conversationId) {
+  void forceClear(String conversationId) {
     _entries.remove(conversationId)?.requestStop();
     final _ = _pendingStops.remove(conversationId);
   }
@@ -121,22 +119,10 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
     required String childId,
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
   }) {
-    final completion = _completionByChildId.remove(childId);
-    if (status == SubAgentCompletionStatus.stopped) {
-      final _ = _stoppedChildIds.add(childId);
-    } else {
-      final _ = _stoppedChildIds.remove(childId);
-    }
-    if (completion != null && !completion.isCompleted) {
-      completion.complete(status);
-    }
+    _completeChild(childId, status);
 
     final children = {...state[parentId] ?? const <String>{}}..remove(childId);
-    state = {
-      for (final entry in state.entries)
-        if (entry.key != parentId) entry.key: entry.value,
-      if (children.isNotEmpty) parentId: children,
-    };
+    state = _stateAfterChildCompletion(parentId, children);
   }
 
   @override
@@ -164,6 +150,29 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
   }
 
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
+
+  void _completeChild(String childId, SubAgentCompletionStatus status) {
+    final completion = _completionByChildId.remove(childId);
+    if (status == SubAgentCompletionStatus.stopped) {
+      final _ = _stoppedChildIds.add(childId);
+    } else {
+      final _ = _stoppedChildIds.remove(childId);
+    }
+    if (completion != null && !completion.isCompleted) {
+      completion.complete(status);
+    }
+  }
+
+  Map<String, Set<String>> _stateAfterChildCompletion(
+    String parentId,
+    Set<String> children,
+  ) {
+    return {
+      for (final entry in state.entries)
+        if (entry.key != parentId) entry.key: entry.value,
+      if (children.isNotEmpty) parentId: children,
+    };
+  }
 }
 
 class const _AppSubAgentRequestHandle(
@@ -183,6 +192,10 @@ class const _AppSubAgentRequestHandle(
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
   ]) {
     _runtime.finish(parentId: _parentId, childId: _childId, status: status);
+  }
+
+  void finishStopped() {
+    finish(.stopped);
   }
 }
 

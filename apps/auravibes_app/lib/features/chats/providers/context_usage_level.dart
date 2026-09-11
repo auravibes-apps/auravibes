@@ -9,6 +9,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'context_usage_level.g.dart';
 
+const _elevatedUsageRatio = 0.7;
+const _warningUsageRatio = 0.85;
+const _minimumUsagePercent = 0;
+const _maximumUsagePercent = 100;
+
 @riverpod
 ContextUsageData contextUsage(
   Ref ref,
@@ -41,8 +46,8 @@ enum ContextUsageLevel {
   }) {
     if (usedTokens > limitTokens) return ContextUsageLevel.overflow;
     final ratio = limitTokens > 0 ? usedTokens / limitTokens : 0.0;
-    if (ratio >= 0.85) return ContextUsageLevel.warning;
-    if (ratio >= 0.7) return ContextUsageLevel.elevated;
+    if (ratio >= _warningUsageRatio) return ContextUsageLevel.warning;
+    if (ratio >= _elevatedUsageRatio) return ContextUsageLevel.elevated;
 
     return ContextUsageLevel.normal;
   }
@@ -84,48 +89,12 @@ class const ContextUsageData({
   required final String percentLabel,
 }) {
   factory compute({required int usedTokens, required int? limitTokens}) {
-    final normalizedLimit = (limitTokens ?? 0) < 0 ? 0 : (limitTokens ?? 0);
-    final hasLimit = normalizedLimit > 0;
-    final percent = hasLimit
-        ? ((usedTokens / normalizedLimit) * 100).round()
-        : 0;
-    final progress = percent.clamp(0, 100) / 100;
-
-    final usageLabel = hasLimit
-        ? '${_compactFormat.format(usedTokens)}/${_compactFormat.format(normalizedLimit)}'
-        : '${_compactFormat.format(usedTokens)}/--';
-
-    if (!hasLimit) {
-      return ContextUsageData(
-        usedTokens: usedTokens,
-        normalizedLimit: normalizedLimit,
-        hasLimit: false,
-        percent: 0,
-        progress: 0,
-        level: .unknown,
-        overflowTokens: 0,
-        usageLabel: usageLabel,
-        percentLabel: '--',
-      );
+    final normalizedLimit = _normalizeLimit(limitTokens);
+    if (normalizedLimit == 0) {
+      return _withoutLimit(usedTokens, normalizedLimit);
     }
 
-    final level = ContextUsageLevel.fromUsage(
-      usedTokens: usedTokens,
-      limitTokens: normalizedLimit,
-    );
-    final overflowTokens = usedTokens - normalizedLimit;
-
-    return ContextUsageData(
-      usedTokens: usedTokens,
-      normalizedLimit: normalizedLimit,
-      hasLimit: true,
-      percent: percent,
-      progress: progress,
-      level: level,
-      overflowTokens: overflowTokens,
-      usageLabel: usageLabel,
-      percentLabel: '$percent%',
-    );
+    return _withLimit(usedTokens, normalizedLimit);
   }
 
   Map<String, String> tooltipArgs() => {
@@ -134,6 +103,58 @@ class const ContextUsageData({
     'percent': '$percent',
   };
 }
+
+int _normalizeLimit(int? limitTokens) {
+  final limit = limitTokens ?? 0;
+
+  return limit < 0 ? 0 : limit;
+}
+
+ContextUsageData _withoutLimit(int usedTokens, int normalizedLimit) =>
+    ContextUsageData(
+      usedTokens: usedTokens,
+      normalizedLimit: normalizedLimit,
+      hasLimit: false,
+      percent: 0,
+      progress: 0,
+      level: .unknown,
+      overflowTokens: 0,
+      usageLabel: '${_compactFormat.format(usedTokens)}/--',
+      percentLabel: '--',
+    );
+
+ContextUsageData _withLimit(int usedTokens, int normalizedLimit) {
+  final percent = ((usedTokens / normalizedLimit) * 100).round();
+
+  return _limitedUsageData(usedTokens, normalizedLimit, percent);
+}
+
+ContextUsageData _limitedUsageData(
+  int usedTokens,
+  int normalizedLimit,
+  int percent,
+) {
+  return ContextUsageData(
+    usedTokens: usedTokens,
+    normalizedLimit: normalizedLimit,
+    hasLimit: true,
+    percent: percent,
+    progress:
+        percent.clamp(_minimumUsagePercent, _maximumUsagePercent) /
+        _maximumUsagePercent,
+    level: _usageLevel(usedTokens, normalizedLimit),
+    overflowTokens: usedTokens - normalizedLimit,
+    usageLabel:
+        '${_compactFormat.format(usedTokens)}/${_compactFormat.format(normalizedLimit)}',
+    percentLabel: '$percent%',
+  );
+}
+
+ContextUsageLevel _usageLevel(int usedTokens, int normalizedLimit) =>
+    ContextUsageLevel.fromUsage(
+      usedTokens: usedTokens,
+      limitTokens: normalizedLimit,
+    );
 
 // Ponytail. Top-level compact format; default locale follows Intl.systemLocale.
 // Upgrade path. Thread the app locale through a provider if the device locale

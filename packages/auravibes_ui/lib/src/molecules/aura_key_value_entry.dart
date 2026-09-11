@@ -10,4 +10,7 @@ class AuraKeyValueEntry {
 
   /// Visible value.
   final String value;
+
+  /// Whether the key contains visible text.
+  bool hasLabel() => label.isNotEmpty;
 }

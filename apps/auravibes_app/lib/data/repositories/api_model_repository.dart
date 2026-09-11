@@ -10,7 +10,9 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 /// This class provides a concrete implementation of API model and provider
 /// data operations using the Drift database. It handles the mapping between
 /// domain entities and database records, and provides proper error handling.
-class ApiModelRepository implements ModelCatalogStore {
+class ApiModelRepository
+    with _ApiModelRepositoryBatchApi
+    implements ModelCatalogStore {
   new(this._database);
 
   /// The database instance for API model operations.
@@ -76,9 +78,18 @@ class ApiModelRepository implements ModelCatalogStore {
         .watchModelsByProvider(providerId)
         .map((models) => models.map(_mapToModelEntity).toList());
   }
+}
 
-  // Batch operations.
+mixin _ApiModelRepositoryBatchApi {
+  Future<void> replaceAllData({
+    required List<ApiModelProviderEntity> providers,
+    required List<ApiModelEntity> models,
+  }) =>
+      ApiModelRepositoryBatchOperations(this as ApiModelRepository)
+          .replaceAllData(providers: providers, models: models);
+}
 
+extension ApiModelRepositoryBatchOperations on ApiModelRepository {
   Future<List<ApiModelProviderEntity>> batchUpsertProviders(
     List<ApiModelProviderEntity> providers,
   ) async {
@@ -113,39 +124,63 @@ class ApiModelRepository implements ModelCatalogStore {
     required List<ApiModelProviderEntity> providers,
     required List<ApiModelEntity> models,
   }) async {
-    await _database.transaction(() async {
-      final _ = await batchUpsertProviders(providers);
-      final _ = await batchUpsertModels(models);
-      final nextProviderIds = providers.map((provider) => provider.id).toSet();
-      final nextModelKeys = models
+    await _database.transaction(
+      () => _replaceAllData(providers: providers, models: models),
+    );
+  }
+
+  Future<void> _replaceAllData({
+    required List<ApiModelProviderEntity> providers,
+    required List<ApiModelEntity> models,
+  }) async {
+    final _ = await batchUpsertProviders(providers);
+    final _ = await batchUpsertModels(models);
+    await _removeStaleModels(models);
+    await _removeStaleProviders(providers);
+  }
+
+  Future<void> _removeStaleModels(List<ApiModelEntity> models) async {
+    final nextModelKeys = _modelKeys(models);
+    final existingModels = await _database.apiModelsDao.getAllModels();
+
+    for (final model in existingModels) {
+      final key = (provider: model.modelProvider, id: model.id);
+      if (nextModelKeys.contains(key)) continue;
+
+      await _deleteStaleModel(model);
+    }
+  }
+
+  Set<({String provider, String id})> _modelKeys(List<ApiModelEntity> models) =>
+      models
           .map((model) => (provider: model.modelProvider, id: model.id))
           .toSet();
 
-      final existingModels = await _database.apiModelsDao.getAllModels();
-      for (final model in existingModels) {
-        final key = (provider: model.modelProvider, id: model.id);
-        if (nextModelKeys.contains(key)) continue;
-
-        final _ = await _database.apiModelsDao.deleteModelByProviderAndId(
-          model.modelProvider,
-          model.id,
-        );
-      }
-
-      final existingProviders = await _database.apiModelProvidersDao
-          .getAllProviders();
-      for (final provider in existingProviders) {
-        if (nextProviderIds.contains(provider.id)) continue;
-
-        final _ = await _database.apiModelProvidersDao.deleteProvider(
-          provider.id,
-        );
-      }
-    });
+  Future<void> _deleteStaleModel(ApiModelsTable model) async {
+    final _ = await _database.apiModelsDao.deleteModelByProviderAndId(
+      model.modelProvider,
+      model.id,
+    );
   }
 
-  // Helper methods.
+  Future<void> _removeStaleProviders(
+    List<ApiModelProviderEntity> providers,
+  ) async {
+    final nextProviderIds = providers.map((provider) => provider.id).toSet();
+    final existingProviders = await _database.apiModelProvidersDao
+        .getAllProviders();
 
+    for (final provider in existingProviders) {
+      if (nextProviderIds.contains(provider.id)) continue;
+
+      final _ = await _database.apiModelProvidersDao.deleteProvider(
+        provider.id,
+      );
+    }
+  }
+}
+
+extension ApiModelRepositoryProviderMappings on ApiModelRepository {
   /// Maps a database table record to a domain entity.
   ApiModelProviderEntity _mapToProviderEntity(
     ApiModelProvidersTable providerTable,
@@ -190,49 +225,91 @@ class ApiModelRepository implements ModelCatalogStore {
       .openrouter => .openrouter,
     };
   }
+}
 
+extension ApiModelRepositoryModelMappings on ApiModelRepository {
   /// Maps a database table record to a domain entity.
   ApiModelEntity _mapToModelEntity(ApiModelsTable modelTable) {
-    return ApiModelEntity(
-      modelProvider: modelTable.modelProvider,
-      id: modelTable.id,
-      name: modelTable.name,
-      limitContext: modelTable.limitContext,
-      limitOutput: modelTable.limitOutput,
-      modalitiesInput: modelTable.modalitiesInput ?? [],
-      modalitiesOutput: modelTable.modalitiesOutput ?? [],
-      family: modelTable.family,
-      costInput: modelTable.costInput,
-      costCacheRead: modelTable.costCacheRead,
-      costOutput: modelTable.costOutput,
-      openWeights: modelTable.openWeights,
-      supportsReasoning: modelTable.supportsReasoning,
-      isCanonical: modelTable.isCanonical,
-      supportsPriorityMode: modelTable.supportsPriorityMode,
-      supportsToolCalls: modelTable.supportsToolCalls,
-    );
+    return _addModelCapabilities(_baseModelEntity(modelTable), modelTable);
   }
+
+  ApiModelEntity _baseModelEntity(ApiModelsTable modelTable) => ApiModelEntity(
+    modelProvider: modelTable.modelProvider,
+    id: modelTable.id,
+    name: modelTable.name,
+    limitContext: modelTable.limitContext,
+    limitOutput: modelTable.limitOutput,
+    modalitiesInput: modelTable.modalitiesInput ?? [],
+    modalitiesOutput: modelTable.modalitiesOutput ?? [],
+  );
+
+  ApiModelEntity _addModelCapabilities(
+    ApiModelEntity model,
+    ApiModelsTable modelTable,
+  ) => model.copyWith(
+    family: modelTable.family,
+    costInput: modelTable.costInput,
+    costCacheRead: modelTable.costCacheRead,
+    costOutput: modelTable.costOutput,
+    openWeights: modelTable.openWeights,
+    supportsReasoning: modelTable.supportsReasoning,
+    isCanonical: modelTable.isCanonical,
+    supportsPriorityMode: modelTable.supportsPriorityMode,
+    supportsToolCalls: modelTable.supportsToolCalls,
+  );
 
   ApiModelsCompanion? _mapEntityToCompanion(ApiModelEntity? entity) {
     if (entity == null) return null;
 
-    return ApiModelsCompanion(
-      modelProvider: .new(entity.modelProvider),
-      id: .new(entity.id),
-      name: .new(entity.name),
-      family: .new(entity.family),
-      modalitiesInput: .new(entity.modalitiesInput),
-      modalitiesOutput: .new(entity.modalitiesOutput),
-      openWeights: .new(entity.openWeights),
-      supportsReasoning: .new(entity.supportsReasoning),
-      isCanonical: .new(entity.isCanonical),
-      supportsPriorityMode: .new(entity.supportsPriorityMode),
-      supportsToolCalls: .new(entity.supportsToolCalls),
-      costInput: .new(entity.costInput),
-      costOutput: .new(entity.costOutput),
-      costCacheRead: .new(entity.costCacheRead),
-      limitContext: .new(entity.limitContext),
-      limitOutput: .new(entity.limitOutput),
-    );
+    return _addModelMetadata(_baseModelCompanion(entity), entity);
   }
+
+  ApiModelsCompanion _baseModelCompanion(ApiModelEntity entity) =>
+      ApiModelsCompanion(
+        modelProvider: .new(entity.modelProvider),
+        id: .new(entity.id),
+        name: .new(entity.name),
+      );
+
+  ApiModelsCompanion _addModelMetadata(
+    ApiModelsCompanion companion,
+    ApiModelEntity entity,
+  ) => _addModelCostMetadata(
+    _addModelCapabilityMetadata(
+      _addModelDescriptionMetadata(companion, entity),
+      entity,
+    ),
+    entity,
+  );
 }
+
+ApiModelsCompanion _addModelDescriptionMetadata(
+  ApiModelsCompanion companion,
+  ApiModelEntity entity,
+) => companion.copyWith(
+  family: .new(entity.family),
+  modalitiesInput: .new(entity.modalitiesInput),
+  modalitiesOutput: .new(entity.modalitiesOutput),
+);
+
+ApiModelsCompanion _addModelCapabilityMetadata(
+  ApiModelsCompanion companion,
+  ApiModelEntity entity,
+) => companion.copyWith(
+  openWeights: .new(entity.openWeights),
+  supportsReasoning: .new(entity.supportsReasoning),
+  isCanonical: .new(entity.isCanonical),
+  supportsPriorityMode: .new(entity.supportsPriorityMode),
+  supportsToolCalls: .new(entity.supportsToolCalls),
+);
+
+ApiModelsCompanion _addModelCostMetadata(
+  ApiModelsCompanion companion,
+  ApiModelEntity entity,
+) => companion.copyWith(
+  costInput: .new(entity.costInput),
+  costOutput: .new(entity.costOutput),
+  costCacheRead: .new(entity.costCacheRead),
+  limitContext: .new(entity.limitContext),
+  limitOutput: .new(entity.limitOutput),
+);

@@ -330,12 +330,7 @@ class const UrlContentTransformer() {
         _processBlockquote(element, buffer);
         return;
       case 'img':
-        final alt = element.attributes['alt'] ?? '';
-        final src = element.attributes['src'] ?? '';
-        if (alt.isNotEmpty || src.isNotEmpty) {
-          _ensureNewline(buffer);
-          buffer.writeln('![$alt]($src)');
-        }
+        _processImage(element, buffer);
         return;
       case 'ul':
       case 'ol':
@@ -365,6 +360,15 @@ class const UrlContentTransformer() {
         } else {
           _processChildren(element, buffer, depth);
         }
+    }
+  }
+
+  void _processImage(dom.Element element, StringBuffer buffer) {
+    final alt = element.attributes['alt'] ?? '';
+    final src = element.attributes['src'] ?? '';
+    if (alt.isNotEmpty || src.isNotEmpty) {
+      _ensureNewline(buffer);
+      buffer.writeln('![$alt]($src)');
     }
   }
 

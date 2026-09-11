@@ -1,8 +1,6 @@
-// Required: Existing thresholds and limits use numeric values.
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -12,12 +10,14 @@ import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
-// ignore: unused-code, existing app harness tests import these helper aliases.
-typedef ToolToCall = agent.AgentToolToCall<ResolvedTool>;
-
-// ignore: unused-code, existing app harness tests import these helper aliases.
-typedef LoadLatestMessageToolCallsResult =
-    agent.LoadLatestMessageToolCallsResult<ResolvedTool>;
+typedef _ToolResolutionRequest = ({
+  ConversationRepository conversationRepository,
+  LoadConversationToolSpecsUsecase Function(String workspaceId)
+  loadConversationToolSpecsUsecaseForWorkspace,
+  ToolResolverService toolResolverService,
+  String conversationId,
+  String toolName,
+});
 
 class AgentToolCallLoader({
   required MessageRepository messageRepository,
@@ -60,42 +60,64 @@ class const AppAgentToolCallProvider({
   Future<ResolvedTool?> resolveTool({
     required String conversationId,
     required String toolName,
-  }) async {
-    final conversation = await conversationRepository.getConversationById(
-      conversationId,
-    );
-    final catalog = conversation == null
-        ? agent.buildToolCatalog<ResolvedTool>([])
-        : await loadConversationToolSpecsUsecaseForWorkspace(
-            conversation.workspaceId,
-          ).buildCatalog(
-            conversationId: conversationId,
-            workspaceId: conversation.workspaceId,
-          );
-
-    return toolResolverService.resolveTool(toolName, catalog);
-  }
-
-  agent.AgentToolMessage _toAgentToolMessage(MessageEntity message) {
-    return agent.AgentToolMessage(
-      id: message.id,
-      isUser: message.isUser,
-      toolCalls: [
-        for (final toolCall
-            in message.metadata?.toolCalls ?? const <MessageToolCallEntity>[])
-          if (!toolCall.isRunning)
-            agent.AgentMessageToolCall(
-              id: toolCall.id,
-              name: toolCall.name,
-              argumentsRaw: toolCall.argumentsRaw,
-              lifecycle: AgentToolStatusMapper.toLifecycle(
-                toolCall.resultStatus,
-              ),
-            ),
-      ],
-    );
+  }) {
+    return _resolveTool((
+      conversationRepository: conversationRepository,
+      loadConversationToolSpecsUsecaseForWorkspace:
+          loadConversationToolSpecsUsecaseForWorkspace,
+      toolResolverService: toolResolverService,
+      conversationId: conversationId,
+      toolName: toolName,
+    ));
   }
 }
+
+Future<ResolvedTool?> _resolveTool(_ToolResolutionRequest request) async {
+  final conversation = await request.conversationRepository.getConversationById(
+    request.conversationId,
+  );
+  final catalog = await _catalog(request, conversation);
+
+  return request.toolResolverService.resolveTool(request.toolName, catalog);
+}
+
+Future<agent.ToolCatalog<ResolvedTool>> _catalog(
+  _ToolResolutionRequest request,
+  ConversationEntity? conversation,
+) => conversation == null
+    ? Future.value(agent.buildToolCatalog<ResolvedTool>([]))
+    : _conversationCatalog(request, conversation);
+
+Future<agent.ToolCatalog<ResolvedTool>> _conversationCatalog(
+  _ToolResolutionRequest request,
+  ConversationEntity conversation,
+) => request
+    .loadConversationToolSpecsUsecaseForWorkspace(conversation.workspaceId)
+    .buildCatalog(
+      conversationId: request.conversationId,
+      workspaceId: conversation.workspaceId,
+    );
+
+agent.AgentToolMessage _toAgentToolMessage(MessageEntity message) {
+  return agent.AgentToolMessage(
+    id: message.id,
+    isUser: message.isUser,
+    toolCalls: _agentToolCalls(message.metadata?.toolCalls),
+  );
+}
+
+List<agent.AgentMessageToolCall> _agentToolCalls(
+  Iterable<MessageToolCallEntity>? toolCalls,
+) => [
+  for (final toolCall in toolCalls ?? const <MessageToolCallEntity>[])
+    if (!toolCall.isRunning)
+      agent.AgentMessageToolCall(
+        id: toolCall.id,
+        name: toolCall.name,
+        argumentsRaw: toolCall.argumentsRaw,
+        lifecycle: AgentToolStatusMapper.toLifecycle(toolCall.resultStatus),
+      ),
+];
 
 final agentToolCallLoaderProvider = Provider<AgentToolCallLoader>((ref) {
   return AgentToolCallLoader(

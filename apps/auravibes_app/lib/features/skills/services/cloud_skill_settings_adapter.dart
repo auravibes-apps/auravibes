@@ -16,32 +16,27 @@ class const CloudSkillSettingsAdapter(
   CloudWorkspaceResourceStore get _store =>
       CloudWorkspaceResourceStore(_gateway);
 
-  Stream<List<WorkspaceSkill>> watchSkills() {
-    return _store
-        .watchResources(const [
-          WorkspaceResourceKind.skill,
-          WorkspaceResourceKind.skillSetting,
-        ])
-        .map(_mapSkills);
-  }
+  Stream<List<WorkspaceSkill>> watchSkills() => _store
+      .watchResources(const [
+        WorkspaceResourceKind.skill,
+        WorkspaceResourceKind.skillSetting,
+      ])
+      .map(_mapSkills);
+}
 
+class const CloudConversationSkillSelection({
+  required final String conversationId,
+  required final String skillId,
+  required final bool isAppSkill,
+  required final bool selected,
+  required final int? expectedRevision,
+});
+
+extension CloudSkillSettingsAdapterStreams on CloudSkillSettingsAdapter {
   Stream<({CompactionSettings settings, int? revision})>
-  watchCompactionSettingsState() {
-    return _store
-        .watchResources(const [WorkspaceResourceKind.compactionSetting])
-        .map((resources) {
-          final active = resources.where((item) => item.deletedAt == null);
-          if (active.isEmpty) {
-            return (settings: CompactionSettings.defaults, revision: null);
-          }
-          final resource = active.single;
-
-          return (
-            settings: CompactionSettings.fromJson(_decode(resource)),
-            revision: resource.revision,
-          );
-        });
-  }
+  watchCompactionSettingsState() => _store
+      .watchResources(const [WorkspaceResourceKind.compactionSetting])
+      .map(_compactionSettingsState);
 
   Stream<CompactionSettings> watchCompactionSettings() =>
       watchCompactionSettingsState().map((state) => state.settings);
@@ -49,25 +44,7 @@ class const CloudSkillSettingsAdapter(
   Future<CompactionSettings> saveCompactionSettings(
     CompactionSettings settings, {
     int? expectedRevision,
-  }) async {
-    final _ = await _store.patch(
-      requestId: const UuidV7().generate(),
-      operations: [
-        WorkspacePatchOperation(
-          operation: expectedRevision == null
-              ? WorkspacePatchOperationKind.create
-              : WorkspacePatchOperationKind.update,
-          resourceKind: .compactionSetting,
-          resourceId: 'workspace',
-          data: jsonEncode(settings.toJson()),
-          fieldMask: const [],
-          expectedRevision: expectedRevision,
-        ),
-      ],
-    );
-
-    return settings;
-  }
+  }) => _saveCompactionSettings(_store, settings, expectedRevision);
 
   Future<CompactionSettings> saveCurrentCompactionSettings(
     CompactionSettings settings,
@@ -79,62 +56,19 @@ class const CloudSkillSettingsAdapter(
       expectedRevision: state.revision,
     );
   }
+}
 
+extension CloudSkillSettingsAdapterMutations on CloudSkillSettingsAdapter {
   Future<void> resetCompactionSettings() async {
-    final state = await watchCompactionSettingsState().first;
-    final revision = state.revision;
+    final revision = (await watchCompactionSettingsState().first).revision;
     if (revision == null) return;
-    final _ = await _store.patch(
-      requestId: const UuidV7().generate(),
-      operations: [
-        WorkspacePatchOperation(
-          operation: .delete,
-          resourceKind: .compactionSetting,
-          resourceId: 'workspace',
-          fieldMask: const [],
-          expectedRevision: revision,
-        ),
-      ],
-    );
+
+    await _deleteCompactionSettings(_store, revision);
   }
 
-  Future<void> setConversationSkill({
-    required String conversationId,
-    required String skillId,
-    required bool isAppSkill,
-    required bool selected,
-    int? expectedRevision,
-  }) async {
-    final resourceId = '$conversationId:$skillId';
-    final WorkspacePatchOperationKind operation;
-    if (!selected) {
-      operation = WorkspacePatchOperationKind.delete;
-    } else if (expectedRevision == null) {
-      operation = WorkspacePatchOperationKind.create;
-    } else {
-      operation = WorkspacePatchOperationKind.update;
-    }
-    final _ = await _store.patch(
-      requestId: const UuidV7().generate(),
-      operations: [
-        WorkspacePatchOperation(
-          operation: operation,
-          resourceKind: .conversationSkillSelection,
-          resourceId: resourceId,
-          data: selected
-              ? jsonEncode({
-                  'id': resourceId,
-                  'conversationId': conversationId,
-                  'skillId': skillId,
-                  if (isAppSkill) 'source': 'app',
-                })
-              : null,
-          fieldMask: const [],
-          expectedRevision: expectedRevision,
-        ),
-      ],
-    );
-  }
+  Future<void> setConversationSkill(
+    CloudConversationSkillSelection selection,
+  ) => _patchConversationSkill(_store, selection);
 
   Future<void> putCredentialSecret({
     required String credentialId,
@@ -153,53 +87,172 @@ class const CloudSkillSettingsAdapter(
   Future<ConversationMutationResult> compactConversation({
     required String conversationId,
     required int expectedRevision,
-  }) {
-    return CloudChatGateway(_gateway).compactConversation(
-      requestId: const UuidV7().generate(),
-      conversationId: conversationId,
-      expectedConversationRevision: expectedRevision,
-    );
-  }
-
-  static List<WorkspaceSkill> _mapSkills(List<WorkspaceResource> resources) {
-    final settings = <String, bool>{};
-    for (final resource in resources.where(
-      (item) =>
-          item.deletedAt == null &&
-          item.resourceKind == WorkspaceResourceKind.skillSetting,
-    )) {
-      final data = _decode(resource);
-      settings[data['skillId'] as String] = data['isEnabled'] as bool;
-    }
-
-    return resources
-        .where(
-          (item) =>
-              item.deletedAt == null &&
-              item.resourceKind == WorkspaceResourceKind.skill,
-        )
-        .map((resource) {
-          final data = _decode(resource);
-          final kind = SkillKind.values.byName(data['kind'] as String);
-
-          return WorkspaceSkill(
-            source: SkillSource.values.byName(
-              data['source'] as String? ?? SkillSource.user.name,
-            ),
-            id: resource.resourceId,
-            slug: data['slug'] as String,
-            title: data['title'] as String,
-            description: data['description'] as String,
-            kind: kind,
-            isEnabled:
-                settings[resource.resourceId] ?? data['isEnabled'] as bool,
-          );
-        })
-        .toList()
-      ..sort((a, b) => a.title.compareTo(b.title));
-  }
-
-  static Map<String, dynamic> _decode(WorkspaceResource resource) {
-    return CloudResourceMapper.decode(resource);
-  }
+  }) => CloudChatGateway(_gateway).compactConversation(
+    requestId: const UuidV7().generate(),
+    conversationId: conversationId,
+    expectedConversationRevision: expectedRevision,
+  );
 }
+
+Future<CompactionSettings> _saveCompactionSettings(
+  CloudWorkspaceResourceStore store,
+  CompactionSettings settings,
+  int? expectedRevision,
+) async {
+  final _ = await store.patch(
+    requestId: const UuidV7().generate(),
+    operations: [_compactionSettingsPatch(settings, expectedRevision)],
+  );
+
+  return settings;
+}
+
+WorkspacePatchOperation _compactionSettingsPatch(
+  CompactionSettings settings,
+  int? expectedRevision,
+) => WorkspacePatchOperation(
+  operation: expectedRevision == null
+      ? WorkspacePatchOperationKind.create
+      : WorkspacePatchOperationKind.update,
+  resourceKind: .compactionSetting,
+  resourceId: 'workspace',
+  data: jsonEncode(settings.toJson()),
+  fieldMask: const [],
+  expectedRevision: expectedRevision,
+);
+
+Future<void> _deleteCompactionSettings(
+  CloudWorkspaceResourceStore store,
+  int revision,
+) async {
+  final _ = await store.patch(
+    requestId: const UuidV7().generate(),
+    operations: [_compactionSettingsDelete(revision)],
+  );
+}
+
+WorkspacePatchOperation _compactionSettingsDelete(int revision) =>
+    WorkspacePatchOperation(
+      operation: .delete,
+      resourceKind: .compactionSetting,
+      resourceId: 'workspace',
+      fieldMask: const [],
+      expectedRevision: revision,
+    );
+
+Future<void> _patchConversationSkill(
+  CloudWorkspaceResourceStore store,
+  CloudConversationSkillSelection selection,
+) async {
+  final _ = await store.patch(
+    requestId: const UuidV7().generate(),
+    operations: [_conversationSkillPatch(selection)],
+  );
+}
+
+WorkspacePatchOperation _conversationSkillPatch(
+  CloudConversationSkillSelection selection,
+) => WorkspacePatchOperation(
+  operation: _conversationSkillOperation(selection),
+  resourceKind: .conversationSkillSelection,
+  resourceId: '${selection.conversationId}:${selection.skillId}',
+  data: _conversationSkillData(selection),
+  fieldMask: const [],
+  expectedRevision: selection.expectedRevision,
+);
+
+WorkspacePatchOperationKind _conversationSkillOperation(
+  CloudConversationSkillSelection selection,
+) {
+  if (!selection.selected) return .delete;
+  if (selection.expectedRevision == null) return .create;
+
+  return .update;
+}
+
+String? _conversationSkillData(CloudConversationSkillSelection selection) =>
+    selection.selected
+    ? jsonEncode({
+        'id': '${selection.conversationId}:${selection.skillId}',
+        'conversationId': selection.conversationId,
+        'skillId': selection.skillId,
+        if (selection.isAppSkill) 'source': 'app',
+      })
+    : null;
+
+({CompactionSettings settings, int? revision}) _compactionSettingsState(
+  List<WorkspaceResource> resources,
+) {
+  final active = resources.where((item) => item.deletedAt == null);
+  if (active.isEmpty) {
+    return (settings: CompactionSettings.defaults, revision: null);
+  }
+  final resource = active.single;
+
+  return (
+    settings: CompactionSettings.fromJson(_decode(resource)),
+    revision: resource.revision,
+  );
+}
+
+List<WorkspaceSkill> _mapSkills(List<WorkspaceResource> resources) {
+  final settings = _skillSettings(resources);
+
+  return resources
+      .where(_isActiveSkill)
+      .map((resource) => _workspaceSkill(resource, settings))
+      .toList()
+    ..sort((a, b) => a.title.compareTo(b.title));
+}
+
+Map<String, bool> _skillSettings(List<WorkspaceResource> resources) {
+  final settings = <String, bool>{};
+  for (final resource in resources.where(_isActiveSkillSetting)) {
+    final data = _decode(resource);
+    settings[data['skillId'] as String] = data['isEnabled'] as bool;
+  }
+
+  return settings;
+}
+
+bool _isActiveSkillSetting(WorkspaceResource resource) =>
+    resource.deletedAt == null &&
+    resource.resourceKind == WorkspaceResourceKind.skillSetting;
+
+bool _isActiveSkill(WorkspaceResource resource) =>
+    resource.deletedAt == null &&
+    resource.resourceKind == WorkspaceResourceKind.skill;
+
+WorkspaceSkill _workspaceSkill(
+  WorkspaceResource resource,
+  Map<String, bool> settings,
+) => _workspaceSkillFromData(resource, settings, _decode(resource));
+
+WorkspaceSkill _workspaceSkillFromData(
+  WorkspaceResource resource,
+  Map<String, bool> settings,
+  Map<String, dynamic> data,
+) => WorkspaceSkill(
+  source: _skillSource(data),
+  id: resource.resourceId,
+  slug: data['slug'] as String,
+  title: data['title'] as String,
+  description: data['description'] as String,
+  kind: _skillKind(data),
+  isEnabled: _skillEnabled(resource, settings, data),
+);
+
+SkillSource _skillSource(Map<String, dynamic> data) => SkillSource.values
+    .byName(data['source'] as String? ?? SkillSource.user.name);
+
+SkillKind _skillKind(Map<String, dynamic> data) =>
+    SkillKind.values.byName(data['kind'] as String);
+
+bool _skillEnabled(
+  WorkspaceResource resource,
+  Map<String, bool> settings,
+  Map<String, dynamic> data,
+) => settings[resource.resourceId] ?? data['isEnabled'] as bool;
+
+Map<String, dynamic> _decode(WorkspaceResource resource) =>
+    CloudResourceMapper.decode(resource);

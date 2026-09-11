@@ -4,7 +4,6 @@ import 'dart:convert';
 
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -12,6 +11,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'message_tool_call_entity.freezed.dart';
 part 'message_tool_call_entity.g.dart';
 
+@immutable
 @Freezed(toStringOverride: false)
 abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
   const factory({
@@ -38,22 +38,14 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
   factory fromJson(Map<String, dynamic> json) =>
       _$MessageToolCallEntityFromJson(json);
 
-  Map<String, dynamic> get arguments {
-    return JsonCodec.decode(argumentsRaw) ?? {};
-  }
-
   /// Whether this tool call has been resolved (success or failure).
   bool get isResolved => resultStatus?.agentLifecycle.isResolved ?? false;
-
-  /// Whether this tool call is waiting for permission.
-  bool get isAwaitingApproval => resultStatus == null;
-
-  /// Whether this tool call is currently running.
-  bool get isRunning => resultStatus?.agentLifecycle.isPending ?? false;
 
   /// Whether this tool call is still pending
   /// (waiting for permission or execution).
   bool get isPending => isAwaitingApproval || isRunning;
+
+  String identity() => '$id:$name';
 
   /// Gets the response to send to the AI.
   ///
@@ -62,6 +54,24 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
   String getResponseForAI() {
     return responseRaw ?? resultStatus?.toResponseString() ?? '';
   }
+}
+
+extension MessageToolCallEntityHelpers on MessageToolCallEntity {
+  Map<String, dynamic> get arguments {
+    return JsonCodec.decode(argumentsRaw) ?? {};
+  }
+
+  /// Whether this tool call is waiting for permission.
+  bool get isAwaitingApproval => resultStatus == null;
+
+  /// Whether this tool call is currently running.
+  bool get isRunning => resultStatus?.agentLifecycle.isPending ?? false;
+
+  bool hasArguments() => argumentsRaw.trim().isNotEmpty;
+
+  bool hasResponse() => responseRaw != null;
+
+  bool hasResultStatus() => resultStatus != null;
 }
 
 ToolCallResultStatus? _toolCallResultStatusFromJson(String? json) {
@@ -76,7 +86,10 @@ enum CompactionKind { manual, auto }
 
 enum MessageAttachmentModality { image, audio, file }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
   const factory({
     required String id,
@@ -92,7 +105,10 @@ abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
   }) = _MessageAttachmentEntity;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
   const factory({
     required String localPath,
@@ -104,7 +120,10 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
   }) = _MessageAttachmentToCreate;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
   const factory({
     @Default(<MessageToolCallEntity>[]) List<MessageToolCallEntity> toolCalls,
@@ -136,31 +155,37 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
     if (metadata == null) return null;
     try {
       final json = jsonDecode(metadata) as Map<String, dynamic>;
-      final conversationId = json['conversationId'];
-      if (conversationId is String) {
-        final action = A2uiChatContract.decodeActionMetadata(
-          json,
-          conversationId: conversationId,
-        );
-        if (action != null) {
-          return MessageMetadataEntity(
-            modelMetadata: {a2uiChatActionMetadataKey: action.toJson()},
-          );
-        }
-      }
 
-      return MessageMetadataEntity.fromJson(json);
+      return _metadataFromDecodedJson(json);
     } on Exception catch (_) {
       return null;
     }
   }
 }
 
+MessageMetadataEntity _metadataFromDecodedJson(Map<String, dynamic> json) {
+  final conversationId = json['conversationId'];
+  if (conversationId is! String) return MessageMetadataEntity.fromJson(json);
+
+  final action = A2uiChatContract.decodeActionMetadata(
+    json,
+    conversationId: conversationId,
+  );
+  if (action == null) return MessageMetadataEntity.fromJson(json);
+
+  return MessageMetadataEntity(
+    modelMetadata: {a2uiChatActionMetadataKey: action.toJson()},
+  );
+}
+
 /// Entity representing a message in a conversation.
 ///
 /// A message contains the actual content and metadata
 /// for communication within a conversation.
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const MessageEntity._() with _$MessageEntity {
   const factory({
     /// Unique identifier for the message.
@@ -202,10 +227,16 @@ abstract class const MessageEntity._() with _$MessageEntity {
   bool get isValid {
     return hasValidContent && conversationId.isNotEmpty;
   }
+
+  bool isForConversation(String conversationId) =>
+      this.conversationId == conversationId;
 }
 
 /// Entity for creating a new message.
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const MessageToCreate._() with _$MessageToCreate {
   /// Creates a new MessageToCreate instance.
   const factory({
@@ -232,39 +263,45 @@ abstract class const MessageToCreate._() with _$MessageToCreate {
 
   /// Returns true if the message has valid content.
   bool get hasValidContent {
-    if (content.trim().isNotEmpty) {
-      return true;
-    }
+    if (content.trim().isNotEmpty || attachments.isNotEmpty) return true;
 
-    if (attachments.isNotEmpty) {
-      return true;
-    }
-
-    final metadata = this.metadata;
-
-    if (status == MessageStatus.unfinished && !isUser) {
-      return metadata == null ||
-          metadata.trim().isEmpty ||
-          JsonCodec.decode(metadata) != null;
-    }
-
-    if (status == MessageStatus.sent) {
-      return false;
-    }
-
-    return !isUser &&
-        metadata != null &&
-        metadata.trim().isNotEmpty &&
-        JsonCodec.decode(metadata) != null;
+    return _hasValidMetadata;
   }
 
   /// Returns true if the message is in a valid state.
   bool get isValid {
     return hasValidContent && conversationId.isNotEmpty;
   }
+
+  bool get _hasValidMetadata {
+    final metadata = this.metadata;
+
+    if (status == MessageStatus.sent) {
+      return false;
+    }
+
+    if (status == MessageStatus.unfinished && !isUser) {
+      return metadata == null || _isValidMetadataJson(metadata);
+    }
+
+    return !isUser &&
+        metadata != null &&
+        _isValidMetadataJson(metadata, allowEmpty: false);
+  }
+
+  bool isForConversation(String conversationId) =>
+      this.conversationId == conversationId;
+}
+
+bool _isValidMetadataJson(String metadata, {bool allowEmpty = true}) {
+  final normalizedMetadata = metadata.trim();
+  if (allowEmpty && normalizedMetadata.isEmpty) return true;
+
+  return normalizedMetadata.isNotEmpty && JsonCodec.decode(metadata) != null;
 }
 
 /// Entity for patching an existing message.
+@immutable
 @freezed
 abstract class const MessagePatch._() with _$MessagePatch {
   /// Creates a new MessagePatch instance.
@@ -282,13 +319,6 @@ abstract class const MessagePatch._() with _$MessagePatch {
   bool get isValid {
     return content != null || metadata != null || status != null;
   }
-}
 
-@Freezed(toStringOverride: false)
-abstract class const ToolToCall._() with _$ToolToCall {
-  const factory({
-    required ResolvedTool tool,
-    required String id,
-    required String argumentsRaw,
-  }) = _ToolToCall;
+  bool changesStatusTo(MessageStatus value) => status == value;
 }

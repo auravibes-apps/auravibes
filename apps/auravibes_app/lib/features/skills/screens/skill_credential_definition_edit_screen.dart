@@ -45,121 +45,34 @@ class _SkillCredentialDefinitionEditScreenState
 
   @override
   Widget build(BuildContext context) {
-    final definitionId = widget.definitionId;
-    final definitionAsync = definitionId == null
-        ? null
-        : ref.watch(
-            skillCredentialDefinitionProvider(widget.workspaceId, definitionId),
-          );
-    final currentDefinition = definitionAsync?.value;
-    final Widget child;
-    if (definitionAsync == null) {
-      _initializeForm(null);
-      child = _SkillCredentialDefinitionForm(
-        definition: null,
-        titleController: _titleController,
-        attributeRows: _attributeRows,
-        isSaving: _isSaving,
-        onAddAttributeRow: _addAttributeRow,
-        onDeleteAttributeRow: _deleteAttributeRow,
-        onSave: () => _save(context),
-        onChanged: () => setState(() {
-          final _ = Object();
-        }),
-      );
-    } else {
-      child = switch (definitionAsync) {
-        AsyncData(value: null) => const Center(
-          child: TextLocale(LocaleKeys.skill_credentials_definitions_not_found),
-        ),
-        AsyncData(value: final definition?) => () {
-          _initializeForm(definition);
+    final definitionAsync = _watchDefinition();
 
-          return _SkillCredentialDefinitionForm(
-            definition: definition,
-            titleController: _titleController,
-            attributeRows: _attributeRows,
-            isSaving: _isSaving,
-            onAddAttributeRow: _addAttributeRow,
-            onDeleteAttributeRow: _deleteAttributeRow,
-            onSave: () => _save(context),
-            onChanged: () => setState(() {
-              final _ = Object();
-            }),
-          );
-        }(),
-        AsyncLoading() when currentDefinition != null => () {
-          _initializeForm(currentDefinition);
-
-          return _SkillCredentialDefinitionForm(
-            definition: currentDefinition,
-            titleController: _titleController,
-            attributeRows: _attributeRows,
-            isSaving: _isSaving,
-            onAddAttributeRow: _addAttributeRow,
-            onDeleteAttributeRow: _deleteAttributeRow,
-            onSave: () => _save(context),
-            onChanged: () => setState(() {
-              final _ = Object();
-            }),
-          );
-        }(),
-        AsyncLoading() => const Center(child: AuraSpinner()),
-        AsyncError() => const Center(
-          child: TextLocale(LocaleKeys.skill_credentials_definitions_error),
-        ),
-      };
-    }
-
-    return AuraScreen(
-      child: child,
-      appBar: AuraAppBar(
-        title: TextLocale(
-          _isCreate
-              ? LocaleKeys.skill_credentials_definitions_create_title
-              : LocaleKeys.skill_credentials_definitions_edit_title,
-        ),
-        actions: [
-          if (!_isCreate)
-            AuraIconButton(
-              icon: Icons.delete_outline,
-              onPressed: _isSaving ? null : () => _confirmDelete(context),
-              tooltip: LocaleKeys.skill_credentials_definitions_delete_title.tr(
-                context: context,
-              ),
-            ),
-          AuraIconButton(
-            icon: Icons.save_outlined,
-            onPressed: _isSaving ? null : () => _save(context),
-            tooltip: LocaleKeys.skill_credentials_definitions_save.tr(
-              context: context,
-            ),
-          ),
-        ],
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-    );
+    return _screen(definitionAsync);
   }
+
+  void _updateState(VoidCallback callback) => setState(callback);
+}
+
+extension on _SkillCredentialDefinitionEditScreenState {
+  AsyncValue<SkillCredentialDefinitionEntity?>? _watchDefinition() =>
+      _watchCredentialDefinition(ref, widget.workspaceId, widget.definitionId);
+
+  Widget _screen(
+    AsyncValue<SkillCredentialDefinitionEntity?>? definitionAsync,
+  ) => AuraScreen(
+    child: _SkillCredentialDefinitionBody(
+      state: this,
+      definitionAsync: definitionAsync,
+      currentDefinition: definitionAsync?.value,
+    ),
+    appBar: _SkillCredentialDefinitionAppBar(state: this),
+  );
 
   void _initializeForm(SkillCredentialDefinitionEntity? definition) {
     if (_initialized) return;
     if (definition != null) {
       _titleController.text = definition.title;
-      _attributeRows.addAll(
-        SkillCredentialAttributeDefinition.parseMap(definition.attributesJson)
-            .entries
-            .map(
-              (entry) => _AttributeFormRow(
-                variable: entry.key,
-                description: entry.value.description,
-                optional: entry.value.optional,
-                secret: entry.value.secret,
-              ),
-            ),
-      );
+      _attributeRows.addAll(_parseAttributeRows(definition.attributesJson));
     }
     if (_attributeRows.isEmpty) {
       _attributeRows.add(_AttributeFormRow());
@@ -167,57 +80,88 @@ class _SkillCredentialDefinitionEditScreenState
     _initialized = true;
   }
 
+  List<_AttributeFormRow> _parseAttributeRows(String attributesJson) {
+    final attributes = SkillCredentialAttributeDefinition.parseMap(
+      attributesJson,
+    );
+
+    return [
+      for (final entry in attributes.entries)
+        _AttributeFormRow(
+          variable: entry.key,
+          description: entry.value.description,
+          optional: entry.value.optional,
+          secret: entry.value.secret,
+        ),
+    ];
+  }
+
   Future<void> _save(BuildContext context) async {
-    setState(() => _isSaving = true);
+    _updateState(() => _isSaving = true);
     try {
-      final attributesJson = _buildAttributesJson();
-      if (_isCreate) {
-        final usecase = ref.read(
-          createSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
-        );
-        final _ = await usecase.call(
-          widget.workspaceId,
-          .new(title: _titleController.text, attributesJson: attributesJson),
-        );
-      } else {
-        final definitionId = widget.definitionId;
-        if (definitionId == null) return;
-        final usecase = ref.read(
-          updateSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
-        );
-        final _ = await usecase.call(
-          definitionId,
-          .new(title: _titleController.text, attributesJson: attributesJson),
-        );
-        ref.invalidate(
-          skillCredentialDefinitionProvider(widget.workspaceId, definitionId),
-        );
-      }
-      ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
+      await _saveDefinition();
       if (!context.mounted) return;
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: Text(
-          LocaleKeys.skill_credentials_definitions_save_error.tr(
-            context: context,
-          ),
-        ),
-        variant: .error,
-      );
+      _showSaveError(context);
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) _updateState(() => _isSaving = false);
     }
   }
 
+  Future<void> _saveDefinition() async {
+    final attributesJson = _buildAttributesJson();
+    if (_isCreate) {
+      await _createDefinition(attributesJson);
+    } else {
+      await _updateDefinition(attributesJson);
+    }
+    ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
+  }
+
+  Future<void> _createDefinition(String attributesJson) async {
+    final usecase = ref.read(
+      createSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
+    );
+    final _ = await usecase.call(
+      widget.workspaceId,
+      .new(title: _titleController.text, attributesJson: attributesJson),
+    );
+  }
+
+  Future<void> _updateDefinition(String attributesJson) async {
+    final definitionId = widget.definitionId;
+    if (definitionId == null) return;
+    final usecase = ref.read(
+      updateSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
+    );
+    final _ = await usecase.call(
+      definitionId,
+      _definitionUpdate(attributesJson),
+    );
+    ref.invalidate(
+      skillCredentialDefinitionProvider(widget.workspaceId, definitionId),
+    );
+  }
+
+  SkillCredentialDefinitionToUpdate _definitionUpdate(String attributesJson) =>
+      .new(title: _titleController.text, attributesJson: attributesJson);
+}
+
+extension on _SkillCredentialDefinitionEditScreenState {
   void _addAttributeRow() {
-    setState(() => _attributeRows.add(_AttributeFormRow()));
+    _updateState(() => _attributeRows.add(_AttributeFormRow()));
+  }
+
+  void _onFormChanged() {
+    _updateState(() {
+      final _ = Object();
+    });
   }
 
   void _deleteAttributeRow(_AttributeFormRow row) {
-    setState(() {
+    _updateState(() {
       final removed = _attributeRows.remove(row);
       if (removed) row.dispose();
       if (_attributeRows.isEmpty) _attributeRows.add(_AttributeFormRow());
@@ -228,141 +172,463 @@ class _SkillCredentialDefinitionEditScreenState
     final attributes = <String, Map<String, Object>>{};
     for (final row in _attributeRows) {
       final variable = row.variableController.text.trim();
-      if (variable.isEmpty) {
-        throw const FormatException('Attribute variable is required.');
-      }
-      if (attributes.containsKey(variable)) {
-        throw FormatException('Duplicate attribute variable: $variable');
-      }
-      attributes[variable] = {
-        'description': row.descriptionController.text.trim(),
-        if (row.optional) 'optional': true,
-        if (!row.secret) 'secret': false,
-      };
+      attributes[variable] = _attributeValues(row, variable, attributes);
     }
 
     return jsonEncode(attributes);
   }
 
-  Future<void> _confirmDelete(BuildContext context) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (_) => AuraConfirmDialog(
-        title: const TextLocale(
-          LocaleKeys.skill_credentials_definitions_delete_title,
-        ),
-        message: const TextLocale(
-          LocaleKeys.skill_credentials_definitions_delete_confirm,
-        ),
-        confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
-        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
-        isDestructive: true,
-      ),
-    );
-    if (shouldDelete != true) return;
-    if (!mounted) return;
-
-    final definitionId = widget.definitionId;
-    if (definitionId == null) return;
-
-    setState(() => _isSaving = true);
-    try {
-      await ref.read(
-        deleteSkillCredentialDefinitionProvider(widget.workspaceId),
-      )(definitionId);
-      ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
-      if (!context.mounted) return;
-      Navigator.of(context).pop();
-    } on Object {
-      if (!context.mounted) return;
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: Text(
-          LocaleKeys.skill_credentials_definitions_save_error.tr(
-            context: context,
-          ),
-        ),
-        variant: .error,
-      );
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+  Map<String, Object> _attributeValues(
+    _AttributeFormRow row,
+    String variable,
+    Map<String, Map<String, Object>> attributes,
+  ) {
+    if (variable.isEmpty) {
+      throw const FormatException('Attribute variable is required.');
     }
+    if (attributes.containsKey(variable)) {
+      throw FormatException('Duplicate attribute variable: $variable');
+    }
+
+    return {
+      'description': row.descriptionController.text.trim(),
+      if (row.optional) 'optional': true,
+      if (!row.secret) 'secret': false,
+    };
   }
 }
 
-class const _SkillCredentialDefinitionForm({
+extension on _SkillCredentialDefinitionEditScreenState {
+  Future<void> _confirmDelete(BuildContext context) async {
+    final shouldDelete = await _showDeleteConfirmation(context);
+    final definitionId = widget.definitionId;
+    if (shouldDelete != true || !context.mounted || definitionId == null) {
+      return;
+    }
+
+    await _performDelete(context, definitionId);
+  }
+
+  Future<void> _performDelete(BuildContext context, String definitionId) async {
+    _updateState(() => _isSaving = true);
+    try {
+      await _deleteDefinitionAndClose(context, definitionId);
+    } on Object {
+      if (!context.mounted) return;
+      _showSaveError(context);
+    } finally {
+      if (mounted) _updateState(() => _isSaving = false);
+    }
+  }
+
+  Future<bool?> _showDeleteConfirmation(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (_) => _CredentialDefinitionDeleteDialog(),
+    );
+  }
+
+  Future<void> _deleteDefinition(String definitionId) async {
+    await ref.read(deleteSkillCredentialDefinitionProvider(widget.workspaceId))(
+      definitionId,
+    );
+    ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
+  }
+
+  Future<void> _deleteDefinitionAndClose(
+    BuildContext context,
+    String definitionId,
+  ) async {
+    await _deleteDefinition(definitionId);
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+  }
+
+  void _showSaveError(BuildContext context) {
+    if (!context.mounted) return;
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(
+        LocaleKeys.skill_credentials_definitions_save_error.tr(
+          context: context,
+        ),
+      ),
+      variant: .error,
+    );
+  }
+}
+
+AsyncValue<SkillCredentialDefinitionEntity?>? _watchCredentialDefinition(
+  WidgetRef ref,
+  String workspaceId,
+  String? definitionId,
+) => definitionId == null
+    ? null
+    : ref.watch(skillCredentialDefinitionProvider(workspaceId, definitionId));
+
+class const _SkillCredentialDefinitionBody({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final AsyncValue<SkillCredentialDefinitionEntity?>? definitionAsync,
+  required final SkillCredentialDefinitionEntity? currentDefinition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final state = this.state;
+    final definitionAsync = this.definitionAsync;
+    if (definitionAsync == null) {
+      state._initializeForm(null);
+
+      return _SkillCredentialDefinitionForm(state: state, definition: null);
+    }
+
+    return _CredentialDefinitionAsyncBody(
+      state: state,
+      definitionAsync: definitionAsync,
+      currentDefinition: currentDefinition,
+    );
+  }
+}
+
+class const _CredentialDefinitionAsyncBody({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final AsyncValue<SkillCredentialDefinitionEntity?> definitionAsync,
+  required final SkillCredentialDefinitionEntity? currentDefinition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final state = this.state;
+    final definitionAsync = this.definitionAsync;
+
+    return switch (definitionAsync) {
+      AsyncData(:final value) => _CredentialDefinitionDataState(
+        state: state,
+        definition: value,
+      ),
+      AsyncLoading() => _CredentialDefinitionLoadingState(
+        state: state,
+        definition: currentDefinition,
+      ),
+      AsyncError() => _CredentialDefinitionError(),
+    };
+  }
+}
+
+class const _CredentialDefinitionDataState({
+  required final _SkillCredentialDefinitionEditScreenState state,
   required final SkillCredentialDefinitionEntity? definition,
-  required final TextEditingController titleController,
-  required final List<_AttributeFormRow> attributeRows,
-  required final bool isSaving,
-  required final VoidCallback onAddAttributeRow,
-  required final ValueChanged<_AttributeFormRow> onDeleteAttributeRow,
-  required final VoidCallback onSave,
-  required final VoidCallback onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final definition = this.definition;
+    if (definition == null) return _CredentialDefinitionNotFound();
+
+    return _CredentialDefinitionReadyForm(state: state, definition: definition);
+  }
+}
+
+class const _CredentialDefinitionLoadingState({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final SkillCredentialDefinitionEntity? definition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final definition = this.definition;
+    if (definition == null) return _CredentialDefinitionLoading();
+
+    return _CredentialDefinitionReadyForm(state: state, definition: definition);
+  }
+}
+
+class const _CredentialDefinitionReadyForm({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final SkillCredentialDefinitionEntity? definition,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final definition = this.definition;
 
+    if (definition == null) return _CredentialDefinitionLoading();
+
+    state._initializeForm(definition);
+
+    return _SkillCredentialDefinitionForm(state: state, definition: definition);
+  }
+}
+
+class _CredentialDefinitionNotFound extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: TextLocale(LocaleKeys.skill_credentials_definitions_not_found),
+    );
+  }
+}
+
+class _CredentialDefinitionLoading extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: AuraSpinner());
+  }
+}
+
+class _CredentialDefinitionError extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: TextLocale(LocaleKeys.skill_credentials_definitions_error),
+    );
+  }
+}
+
+class const _SkillCredentialDefinitionAppBar({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget implements PreferredSizeWidget {
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) =>
+      _CredentialDefinitionAppBarData(state: state).child;
+}
+
+class _CredentialDefinitionAppBarData {
+  new({required _SkillCredentialDefinitionEditScreenState state})
+    : child = AuraAppBar(
+        title: TextLocale(
+          state._isCreate
+              ? LocaleKeys.skill_credentials_definitions_create_title
+              : LocaleKeys.skill_credentials_definitions_edit_title,
+        ),
+        actions: [
+          if (!state._isCreate) _CredentialDefinitionDeleteButton(state: state),
+          _CredentialDefinitionAppBarSaveButton(state: state),
+        ],
+        leading: _CredentialDefinitionBackButton(),
+      );
+
+  final Widget child;
+}
+
+class const _CredentialDefinitionDeleteButton({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraIconButton(
+      icon: Icons.delete_outline,
+      onPressed: state._isSaving ? null : () => state._confirmDelete(context),
+      tooltip: LocaleKeys.skill_credentials_definitions_delete_title.tr(
+        context: context,
+      ),
+    );
+  }
+}
+
+class const _CredentialDefinitionAppBarSaveButton({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraIconButton(
+      icon: Icons.save_outlined,
+      onPressed: state._isSaving ? null : () => state._save(context),
+      tooltip: LocaleKeys.skill_credentials_definitions_save.tr(
+        context: context,
+      ),
+    );
+  }
+}
+
+class _CredentialDefinitionBackButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraIconButton(
+      icon: Icons.arrow_back,
+      onPressed: () => Navigator.of(context).pop(),
+    );
+  }
+}
+
+class _CredentialDefinitionDeleteDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraConfirmDialog(
+      title: const TextLocale(
+        LocaleKeys.skill_credentials_definitions_delete_title,
+      ),
+      message: const TextLocale(
+        LocaleKeys.skill_credentials_definitions_delete_confirm,
+      ),
+      confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
+      cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
+      isDestructive: true,
+    );
+  }
+}
+
+class const _SkillCredentialDefinitionForm({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final SkillCredentialDefinitionEntity? definition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        AuraCard(
-          child: AuraColumn(
-            children: [
-              const AuraText(
-                child: TextLocale(
-                  LocaleKeys.skill_credentials_definitions_hint,
-                ),
-              ),
-              if (definition != null) AuraSelectableText(definition.slug),
-              AuraInput(
-                controller: titleController,
-                label: Text(
-                  LocaleKeys.skills_screen_title_label.tr(context: context),
-                ),
-              ),
-              AuraColumn(
-                children: [
-                  const AuraText(
-                    child: TextLocale(
-                      LocaleKeys.skill_credentials_definitions_attributes_label,
-                    ),
-                  ),
-                  for (final row in attributeRows)
-                    _AttributeRowEditor(
-                      row: row,
-                      canDelete: attributeRows.length > 1,
-                      onChanged: onChanged,
-                      onDelete: () => onDeleteAttributeRow(row),
-                      key: ValueKey(row),
-                    ),
-                  AuraButton(
-                    onPressed: onAddAttributeRow,
-                    child: const TextLocale(
-                      LocaleKeys.skill_credentials_definitions_add_attribute,
-                    ),
-                  ),
-                ],
-                spacing: .sm,
-                crossAxisAlignment: .start,
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: AuraButton(
-                  onPressed: onSave,
-                  child: const TextLocale(
-                    LocaleKeys.skill_credentials_definitions_save,
-                  ),
-                  disabled: isSaving,
-                ),
-              ),
-            ],
-            spacing: .md,
-            crossAxisAlignment: .start,
-          ),
+        _CredentialDefinitionFormCard(state: state, definition: definition),
+      ],
+    );
+  }
+}
+
+class const _CredentialDefinitionFormCard({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final SkillCredentialDefinitionEntity? definition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final definition = this.definition;
+
+    return AuraCard(
+      child: AuraColumn(
+        children: [
+          _CredentialDefinitionFormHeader(state: state, definition: definition),
+          _CredentialDefinitionAttributes(state: state),
+          _CredentialDefinitionSaveButton(state: state),
+        ],
+        spacing: .md,
+        crossAxisAlignment: .start,
+      ),
+    );
+  }
+}
+
+class const _CredentialDefinitionFormHeader({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final SkillCredentialDefinitionEntity? definition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        _CredentialDefinitionHint(),
+        if (definition case final definition?)
+          AuraSelectableText(definition.slug),
+        _CredentialDefinitionTitleField(controller: state._titleController),
+      ],
+      spacing: .sm,
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+class _CredentialDefinitionHint extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const AuraText(
+      child: TextLocale(LocaleKeys.skill_credentials_definitions_hint),
+    );
+  }
+}
+
+class const _CredentialDefinitionTitleField({
+  required final TextEditingController controller,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraInput(
+      controller: controller,
+      label: Text(LocaleKeys.skills_screen_title_label.tr(context: context)),
+    );
+  }
+}
+
+class const _CredentialDefinitionAttributes({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        _CredentialDefinitionAttributesLabel(),
+        _CredentialDefinitionAttributeRows(state: state),
+        _CredentialDefinitionAddAttributeButton(
+          onPressed: state._addAttributeRow,
         ),
       ],
+      spacing: .sm,
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+class _CredentialDefinitionAttributesLabel extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const AuraText(
+      child: TextLocale(
+        LocaleKeys.skill_credentials_definitions_attributes_label,
+      ),
+    );
+  }
+}
+
+class const _CredentialDefinitionAttributeRows({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        for (final row in state._attributeRows)
+          _CredentialDefinitionAttributeRow(state: state, row: row),
+      ],
+      spacing: .sm,
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+class const _CredentialDefinitionAttributeRow({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final _AttributeFormRow row,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AttributeRowEditor(
+    row: row,
+    canDelete: state._attributeRows.length > 1,
+    onChanged: state._onFormChanged,
+    onDelete: () => state._deleteAttributeRow(row),
+    key: ValueKey(row),
+  );
+}
+
+class const _CredentialDefinitionAddAttributeButton({
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraButton(
+      onPressed: onPressed,
+      child: const TextLocale(
+        LocaleKeys.skill_credentials_definitions_add_attribute,
+      ),
+    );
+  }
+}
+
+class const _CredentialDefinitionSaveButton({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: AuraButton(
+        onPressed: () => state._save(context),
+        child: const TextLocale(LocaleKeys.skill_credentials_definitions_save),
+        disabled: state._isSaving,
+      ),
     );
   }
 }
@@ -390,91 +656,230 @@ class const _AttributeRowEditor({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final variableLabel = LocaleKeys
+    return _AttributeRowCard(
+      row: row,
+      canDelete: canDelete,
+      onChanged: onChanged,
+      onDelete: onDelete,
+    );
+  }
+}
+
+class const _AttributeRowCard({
+  required final _AttributeFormRow row,
+  required final bool canDelete,
+  required final VoidCallback onChanged,
+  required final VoidCallback onDelete,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: _attributeRowDecoration(context),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: _AttributeRowContent(
+          row: row,
+          canDelete: canDelete,
+          onChanged: onChanged,
+          onDelete: onDelete,
+        ),
+      ),
+    );
+  }
+}
+
+BoxDecoration _attributeRowDecoration(BuildContext context) => BoxDecoration(
+  border: Border.all(color: Theme.of(context).dividerColor),
+  borderRadius: const BorderRadius.all(.circular(8)),
+);
+
+class _AttributeRowContent extends StatelessWidget {
+  new({
+    required _AttributeFormRow row,
+    required bool canDelete,
+    required VoidCallback onChanged,
+    required VoidCallback onDelete,
+  }) : _child = AuraColumn(
+         children: [
+           _AttributeRowFields(
+             row: row,
+             canDelete: canDelete,
+             onChanged: onChanged,
+             onDelete: onDelete,
+           ),
+           _AttributeRowToggles(row: row, onChanged: onChanged),
+         ],
+         spacing: .sm,
+         crossAxisAlignment: .start,
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AttributeRowToggles({
+  required final _AttributeFormRow row,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _AttributeOptionalToggle(row: row, onChanged: onChanged),
+      _AttributeSecretToggle(row: row, onChanged: onChanged),
+    ],
+  );
+}
+
+class const _AttributeOptionalToggle({
+  required final _AttributeFormRow row,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return _AttributeRowToggle(
+      value: row.optional,
+      labelKey: LocaleKeys.skill_credentials_definitions_attribute_optional,
+      onChanged: (value) {
+        row.optional = value;
+        onChanged();
+      },
+    );
+  }
+}
+
+class const _AttributeSecretToggle({
+  required final _AttributeFormRow row,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return _AttributeRowToggle(
+      value: row.secret,
+      labelKey: LocaleKeys.skill_credentials_definitions_attribute_secret,
+      onChanged: (value) {
+        row.secret = value;
+        onChanged();
+      },
+    );
+  }
+}
+
+class _AttributeRowFields extends StatelessWidget {
+  new({
+    required _AttributeFormRow row,
+    required bool canDelete,
+    required VoidCallback onChanged,
+    required VoidCallback onDelete,
+  }) : _child = AuraColumn(
+         children: [
+           _AttributeRowFieldLine(
+             row: row,
+             canDelete: canDelete,
+             onChanged: onChanged,
+             onDelete: onDelete,
+           ),
+           _AttributeDescriptionField(
+             controller: row.descriptionController,
+             onChanged: onChanged,
+           ),
+         ],
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AttributeRowFieldLine({
+  required final _AttributeFormRow row,
+  required final bool canDelete,
+  required final VoidCallback onChanged,
+  required final VoidCallback onDelete,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: .start,
+    children: [
+      Expanded(
+        child: _AttributeVariableField(
+          controller: row.variableController,
+          onChanged: onChanged,
+        ),
+      ),
+      const SizedBox(width: 8),
+      _AttributeDeleteButton(canDelete: canDelete, onPressed: onDelete),
+    ],
+  );
+}
+
+class const _AttributeVariableField({
+  required final TextEditingController controller,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label = LocaleKeys
         .skill_credentials_definitions_attribute_variable_label
         .tr(context: context);
-    final descriptionLabel = LocaleKeys
+
+    return AuraInput(
+      controller: controller,
+      label: Text(label),
+      onChanged: (_) => onChanged(),
+    );
+  }
+}
+
+class const _AttributeDeleteButton({
+  required final bool canDelete,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraIconButton(
+      icon: Icons.delete_outline,
+      onPressed: canDelete ? onPressed : null,
+      tooltip: LocaleKeys.skill_credentials_definitions_delete_attribute.tr(
+        context: context,
+      ),
+    );
+  }
+}
+
+class const _AttributeDescriptionField({
+  required final TextEditingController controller,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label = LocaleKeys
         .skill_credentials_definitions_attribute_description_label
         .tr(context: context);
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: const BorderRadius.all(.circular(8)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: AuraColumn(
-          children: [
-            Row(
-              crossAxisAlignment: .start,
-              children: [
-                Expanded(
-                  child: AuraInput(
-                    controller: row.variableController,
-                    label: Text(variableLabel),
-                    onChanged: (_) => onChanged(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                AuraIconButton(
-                  icon: Icons.delete_outline,
-                  onPressed: canDelete ? onDelete : null,
-                  tooltip: LocaleKeys
-                      .skill_credentials_definitions_delete_attribute
-                      .tr(context: context),
-                ),
-              ],
-            ),
-            AuraInput(
-              controller: row.descriptionController,
-              label: Text(descriptionLabel),
-              onChanged: (_) => onChanged(),
-            ),
-            AuraRow(
-              children: [
-                AuraSwitch(
-                  value: row.optional,
-                  onChanged: (value) {
-                    row.optional = value;
-                    onChanged();
-                  },
-                ),
-                const Expanded(
-                  child: AuraText(
-                    child: TextLocale(
-                      LocaleKeys
-                          .skill_credentials_definitions_attribute_optional,
-                    ),
-                  ),
-                ),
-              ],
-              spacing: .md,
-            ),
-            AuraRow(
-              children: [
-                AuraSwitch(
-                  value: row.secret,
-                  onChanged: (value) {
-                    row.secret = value;
-                    onChanged();
-                  },
-                ),
-                const Expanded(
-                  child: AuraText(
-                    child: TextLocale(
-                      LocaleKeys.skill_credentials_definitions_attribute_secret,
-                    ),
-                  ),
-                ),
-              ],
-              spacing: .md,
-            ),
-          ],
-          spacing: .sm,
-          crossAxisAlignment: .start,
-        ),
-      ),
+    return AuraInput(
+      controller: controller,
+      label: Text(label),
+      onChanged: (_) => onChanged(),
+    );
+  }
+}
+
+class const _AttributeRowToggle({
+  required final bool value,
+  required final String labelKey,
+  required final ValueChanged<bool> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraRow(
+      children: [
+        AuraSwitch(value: value, onChanged: onChanged),
+        Expanded(child: AuraText(child: TextLocale(labelKey))),
+      ],
+      spacing: .md,
     );
   }
 }

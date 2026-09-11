@@ -7,6 +7,7 @@ part 'tools_group_entity.freezed.dart';
 ///
 /// Tools groups organize related tools together, such as tools from
 /// a single MCP server.
+@immutable
 @freezed
 abstract class const ToolsGroupEntity._() with _$ToolsGroupEntity {
   /// Creates a new ToolsGroupEntity instance.
@@ -39,10 +40,15 @@ abstract class const ToolsGroupEntity._() with _$ToolsGroupEntity {
 
   /// Returns true if this group is linked to an MCP server.
   bool get isMcpGroup => mcpServerId?.isNotEmpty ?? false;
+
+  bool isForWorkspace(String workspaceId) => this.workspaceId == workspaceId;
 }
 
 /// Entity for creating/updating tools group settings.
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const ToolsGroupToCreate._() with _$ToolsGroupToCreate {
   /// Creates a new ToolsGroupToCreate instance.
   const factory({
@@ -64,4 +70,6 @@ abstract class const ToolsGroupToCreate._() with _$ToolsGroupToCreate {
 
   /// Returns true if the configuration is valid.
   bool get isValid => hasValidName;
+
+  bool hasServerLink() => mcpServerId?.isNotEmpty == true;
 }

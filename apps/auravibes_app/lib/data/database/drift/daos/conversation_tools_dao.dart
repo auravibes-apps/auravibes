@@ -7,7 +7,129 @@ part 'conversation_tools_dao.g.dart';
 @DriftAccessor(tables: [ConversationTools])
 class ConversationToolsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$ConversationToolsDaoMixin {
+    with
+        _$ConversationToolsDaoMixin,
+        _ConversationToolsDaoPrimaryApi,
+        _ConversationToolsDaoStateApi,
+        _ConversationToolsDaoLegacyApi;
+
+mixin _ConversationToolsDaoPrimaryApi {
+  Future<ConversationToolsTable?> getConversationTool(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+          .getConversationTool(conversationId, toolId);
+
+  Future<List<ConversationToolsTable>> getConversationTools(
+    String conversationId,
+  ) =>
+      ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+          .getConversationTools(conversationId);
+
+  Future<ConversationToolsTable> Function(
+    String,
+    String, {
+    required bool isEnabled,
+    required PermissionAccess permission,
+  })
+  get upsertConversationTool =>
+      ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+          .upsertConversationTool;
+
+  Future<ConversationToolsTable> setConversationToolEnabled(
+    String conversationId,
+    String toolId, {
+    required bool isEnabled,
+  }) => ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+      .setConversationToolEnabled(conversationId, toolId, isEnabled: isEnabled);
+
+  Future<ConversationToolsTable> setConversationToolPermission(
+    String conversationId,
+    String toolId, {
+    required PermissionAccess permission,
+  }) => ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+      .setConversationToolPermission(
+        conversationId,
+        toolId,
+        permission: permission,
+      );
+
+  Future<bool> deleteConversationTool(String conversationId, String toolId) =>
+      ConversationToolsDaoPrimaryOperations(this as ConversationToolsDao)
+          .deleteConversationTool(conversationId, toolId);
+}
+
+mixin _ConversationToolsDaoStateApi {
+  Future<bool> isConversationToolEnabled(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsDaoStateOperations(this as ConversationToolsDao)
+          .isConversationToolEnabled(conversationId, toolId);
+
+  Future<int> getConversationToolsCount(String conversationId) =>
+      ConversationToolsDaoStateOperations(this as ConversationToolsDao)
+          .getConversationToolsCount(conversationId);
+
+  Future<void> removeToolsForConversation(String conversationId) =>
+      ConversationToolsDaoStateOperations(this as ConversationToolsDao)
+          .removeToolsForConversation(conversationId);
+
+  Future<void> copyConversationTools(
+    String sourceConversationId,
+    String targetConversationId,
+  ) =>
+      ConversationToolsDaoStateOperations(this as ConversationToolsDao)
+          .copyConversationTools(sourceConversationId, targetConversationId);
+}
+
+mixin _ConversationToolsDaoLegacyApi {
+  Future<ConversationToolsTable?> getDisabledConversationTool(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .getDisabledConversationTool(conversationId, toolId);
+
+  Future<void> disableConversationTools(
+    String conversationId,
+    List<String> toolIds,
+  ) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .disableConversationTools(conversationId, toolIds);
+
+  Future<bool> enableConversationTool(String conversationId, String toolId) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .enableConversationTool(conversationId, toolId);
+
+  Future<bool> toggleConversationTool(String conversationId, String toolId) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .toggleConversationTool(conversationId, toolId);
+
+  Future<bool> isConversationToolDisabled(
+    String conversationId,
+    String toolId,
+  ) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .isConversationToolDisabled(conversationId, toolId);
+
+  Future<List<ConversationToolsTable>> getDisabledConversationTools(
+    String conversationId,
+  ) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .getDisabledConversationTools(conversationId);
+
+  Future<int> getDisabledConversationToolsCount(String conversationId) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .getDisabledConversationToolsCount(conversationId);
+
+  Future<void> removeDisabledToolsForConversation(String conversationId) =>
+      ConversationToolsDaoLegacyOperations(this as ConversationToolsDao)
+          .removeDisabledToolsForConversation(conversationId);
+}
+
+extension ConversationToolsDaoPrimaryOperations on ConversationToolsDao {
   /// Get a specific conversation tool setting.
   Future<ConversationToolsTable?> getConversationTool(
     String conversationId,
@@ -30,25 +152,28 @@ class ConversationToolsDao(super.attachedDatabase)
           .get();
 
   /// Upsert a conversation tool setting (enabled with permission).
-  Future<ConversationToolsTable> upsertConversationTool(
-    String conversationId,
-    String toolId, {
+  Future<ConversationToolsTable> Function(
+    String,
+    String, {
     required bool isEnabled,
     required PermissionAccess permission,
-  }) {
+  })
+  get upsertConversationTool =>
+      (conversationId, toolId, {required isEnabled, required permission}) =>
+          _upsertConversationTool(
+            (conversationId: conversationId, toolId: toolId),
+            (isEnabled: isEnabled, permission: permission),
+          );
+
+  Future<ConversationToolsTable> _upsertConversationTool(
+    ({String conversationId, String toolId}) ids,
+    ({bool isEnabled, PermissionAccess permission}) state,
+  ) {
     return into(conversationTools).insertReturning(
-      ConversationToolsCompanion(
-        conversationId: .new(conversationId),
-        toolId: .new(toolId),
-        isEnabled: .new(isEnabled),
-        permissions: .new(permission),
-      ),
+      _conversationToolInsertCompanion(ids, state),
       onConflict: DoUpdate(
-        (old) => ConversationToolsCompanion(
-          updatedAt: .new(DateTime.now()),
-          isEnabled: .new(isEnabled),
-          permissions: .new(permission),
-        ),
+        (_) =>
+            _conversationToolUpdateCompanion(state.isEnabled, state.permission),
       ),
     );
   }
@@ -62,36 +187,15 @@ class ConversationToolsDao(super.attachedDatabase)
     // Check if exists first.
     final existing = await getConversationTool(conversationId, toolId);
 
-    if (existing != null) {
-      // Update existing.
-      final _ =
-          await (update(conversationTools)..where(
-                (tbl) =>
-                    tbl.conversationId.equals(conversationId) &
-                    tbl.toolId.equals(toolId),
-              ))
-              .write(
-                ConversationToolsCompanion(
-                  updatedAt: .new(DateTime.now()),
-                  isEnabled: .new(isEnabled),
-                ),
-              );
-      final updated = await getConversationTool(conversationId, toolId);
-      if (updated == null) {
-        throw StateError('Updated conversation tool was not found');
-      }
-
-      return updated;
-    } else {
-      // Insert new.
-      return await into(conversationTools).insertReturning(
-        ConversationToolsCompanion(
-          conversationId: .new(conversationId),
-          toolId: .new(toolId),
-          isEnabled: .new(isEnabled),
-        ),
-      );
+    if (existing == null) {
+      return await _insertConversationTool(conversationId, toolId, isEnabled);
     }
+
+    return await _updateAndRequireConversationTool(
+      (conversationId: conversationId, toolId: toolId),
+      .new(updatedAt: .new(DateTime.now()), isEnabled: .new(isEnabled)),
+      'Updated conversation tool was not found',
+    );
   }
 
   /// Set the permission for a conversation tool.
@@ -102,35 +206,19 @@ class ConversationToolsDao(super.attachedDatabase)
   }) async {
     final existing = await getConversationTool(conversationId, toolId);
 
-    if (existing != null) {
-      final _ =
-          await (update(conversationTools)..where(
-                (tbl) =>
-                    tbl.conversationId.equals(conversationId) &
-                    tbl.toolId.equals(toolId),
-              ))
-              .write(
-                ConversationToolsCompanion(
-                  updatedAt: .new(DateTime.now()),
-                  permissions: .new(permission),
-                ),
-              );
-      final updated = await getConversationTool(conversationId, toolId);
-      if (updated == null) {
-        throw StateError('Updated conversation tool was not found');
-      }
-
-      return updated;
-    } else {
-      return await into(conversationTools).insertReturning(
-        ConversationToolsCompanion(
-          conversationId: .new(conversationId),
-          toolId: .new(toolId),
-          isEnabled: const Value(true),
-          permissions: .new(permission),
-        ),
+    if (existing == null) {
+      return await _insertConversationToolWithPermission(
+        conversationId,
+        toolId,
+        permission,
       );
     }
+
+    return await _updateAndRequireConversationTool(
+      (conversationId: conversationId, toolId: toolId),
+      _permissionUpdate(permission),
+      'Updated conversation tool was not found',
+    );
   }
 
   /// Delete a conversation tool setting.
@@ -148,7 +236,9 @@ class ConversationToolsDao(super.attachedDatabase)
 
     return count > 0;
   }
+}
 
+extension ConversationToolsDaoStateOperations on ConversationToolsDao {
   /// Check if a tool is enabled for a conversation.
   Future<bool> isConversationToolEnabled(
     String conversationId,
@@ -190,7 +280,9 @@ class ConversationToolsDao(super.attachedDatabase)
       );
     }
   }
+}
 
+extension ConversationToolsDaoLegacyOperations on ConversationToolsDao {
   // Legacy methods for backward compatibility.
   Future<ConversationToolsTable?> getDisabledConversationTool(
     String conversationId,
@@ -257,4 +349,96 @@ class ConversationToolsDao(super.attachedDatabase)
 
   Future<void> removeDisabledToolsForConversation(String conversationId) =>
       removeToolsForConversation(conversationId);
+}
+
+extension ConversationToolsDaoPersistence on ConversationToolsDao {
+  ConversationToolsCompanion _permissionUpdate(PermissionAccess permission) =>
+      .new(updatedAt: .new(DateTime.now()), permissions: .new(permission));
+
+  Future<ConversationToolsTable> _insertConversationTool(
+    String conversationId,
+    String toolId,
+    bool isEnabled,
+  ) => into(conversationTools).insertReturning(
+    ConversationToolsCompanion(
+      conversationId: .new(conversationId),
+      toolId: .new(toolId),
+      isEnabled: .new(isEnabled),
+    ),
+  );
+
+  Future<ConversationToolsTable> _insertConversationToolWithPermission(
+    String conversationId,
+    String toolId,
+    PermissionAccess permission,
+  ) => into(conversationTools).insertReturning(
+    ConversationToolsCompanion(
+      conversationId: .new(conversationId),
+      toolId: .new(toolId),
+      isEnabled: const Value(true),
+      permissions: .new(permission),
+    ),
+  );
+
+  ConversationToolsCompanion _conversationToolInsertCompanion(
+    ({String conversationId, String toolId}) ids,
+    ({bool isEnabled, PermissionAccess permission}) state,
+  ) => ConversationToolsCompanion(
+    conversationId: .new(ids.conversationId),
+    toolId: .new(ids.toolId),
+    isEnabled: .new(state.isEnabled),
+    permissions: .new(state.permission),
+  );
+
+  ConversationToolsCompanion _conversationToolUpdateCompanion(
+    bool isEnabled,
+    PermissionAccess permission,
+  ) => ConversationToolsCompanion(
+    updatedAt: .new(DateTime.now()),
+    isEnabled: .new(isEnabled),
+    permissions: .new(permission),
+  );
+
+  Future<int> _updateConversationTool(
+    String conversationId,
+    String toolId,
+    ConversationToolsCompanion companion,
+  ) =>
+      (update(conversationTools)..where(
+            (tbl) =>
+                tbl.conversationId.equals(conversationId) &
+                tbl.toolId.equals(toolId),
+          ))
+          .write(companion);
+
+  Future<ConversationToolsTable> _updateAndRequireConversationTool(
+    ({String conversationId, String toolId}) ids,
+    ConversationToolsCompanion companion,
+    String error,
+  ) async {
+    final _ = await _updateConversationTool(
+      ids.conversationId,
+      ids.toolId,
+      companion,
+    );
+
+    return await _requireConversationTool(
+      ids.conversationId,
+      ids.toolId,
+      error,
+    );
+  }
+
+  Future<ConversationToolsTable> _requireConversationTool(
+    String conversationId,
+    String toolId,
+    String notFoundMessage,
+  ) async {
+    final updated = await getConversationTool(conversationId, toolId);
+    if (updated == null) {
+      throw StateError(notFoundMessage);
+    }
+
+    return updated;
+  }
 }

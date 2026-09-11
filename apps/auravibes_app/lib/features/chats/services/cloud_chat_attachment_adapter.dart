@@ -30,12 +30,20 @@ class CloudChatAttachmentAdapter({
   }
 
   Future<void> _uploadBytes(BeginUploadResult upload, Uint8List bytes) async {
-    final response = await _dio.put<void>(
+    final response = await _putBytes(upload, bytes);
+    _ensureUploadSucceeded(response.statusCode);
+  }
+
+  Future<Response<void>> _putBytes(BeginUploadResult upload, Uint8List bytes) {
+    return _dio.put<void>(
       upload.uploadUrl,
       data: Stream<List<int>>.value(bytes),
       options: .new(headers: upload.headers),
     );
-    final status = response.statusCode ?? 0;
+  }
+
+  void _ensureUploadSucceeded(int? statusCode) {
+    final status = statusCode ?? 0;
     if (status < 200 || status >= 300) {
       throw StateError('Attachment upload failed.');
     }

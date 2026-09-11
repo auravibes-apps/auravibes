@@ -5,6 +5,15 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show AuraBorderRadius, AuraTint, DesignColors;
 import 'package:flutter/material.dart';
 
+typedef _AuraIconButtonValues = ({
+  double iconSize,
+  Color foregroundColor,
+  Color backgroundColor,
+  AuraBorderRadius borderRadius,
+});
+
+const _minimumButtonSize = 48.0;
+
 /// A specialized icon button component following the Aura design system.
 class AuraIconButton extends StatelessWidget {
   static const _extraSmallButtonSize = 24.0;
@@ -77,60 +86,8 @@ class AuraIconButton extends StatelessWidget {
   /// The tooltip message to display when the button is long-pressed.
   final String? tooltip;
 
-  @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final buttonSize = _getButtonSize().clamp(48.0, double.infinity);
-    final iconSize = _getIconSize();
-    final tooltip = this.tooltip;
-    final effectiveSemanticLabel = semanticLabel ?? tooltip ?? 'Icon button';
-
-    final foregroundColor = _getIconColor(auraColors);
-    final iconContent =
-        child ??
-        Icon(
-          icon ?? (throw StateError('AuraIconButton requires icon or child')),
-          size: iconSize,
-          color: foregroundColor,
-          semanticLabel: effectiveSemanticLabel,
-        );
-
-    Widget button = SizedBox(
-      width: buttonSize,
-      height: buttonSize,
-      child: IconButton(
-        iconSize: iconSize,
-        padding: EdgeInsets.zero,
-        alignment: Alignment.center,
-        onPressed: disabled ? null : onPressed,
-        constraints: .new(minWidth: buttonSize, minHeight: buttonSize),
-        style: IconButton.styleFrom(
-          alignment: Alignment.center,
-          padding: EdgeInsets.zero,
-          foregroundColor: foregroundColor,
-          backgroundColor: _getBackgroundColor(auraColors),
-          elevation: variant == AuraIconButtonVariant.elevated ? 2 : 0,
-          shape: RoundedRectangleBorder(
-            side: variant == AuraIconButtonVariant.outlined
-                ? BorderSide(color: auraColors.outline)
-                : BorderSide.none,
-            borderRadius: BorderRadius.circular(
-              context.auraTheme.fromBorderRadius(_getBorderRadius()),
-            ),
-          ),
-        ),
-        icon: iconContent,
-      ),
-    );
-
-    if (tooltip != null) {
-      button = AuraTooltip(message: tooltip, child: button);
-    }
-
-    return button;
-  }
-
-  double _getButtonSize() {
+  /// Returns the outer button size for [size].
+  static double buttonSizeFor(AuraIconSize size) {
     return switch (size) {
       .extraSmall => _extraSmallButtonSize,
       .small => _smallButtonSize,
@@ -141,14 +98,28 @@ class AuraIconButton extends StatelessWidget {
     };
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final tooltip = this.tooltip;
+    final button = _AuraIconButtonContent(button: this);
+
+    if (tooltip == null) {
+      return button;
+    }
+
+    return AuraTooltip(message: tooltip, child: button);
+  }
+}
+
+extension on AuraIconButton {
   double _getIconSize() {
     return switch (size) {
-      .extraSmall => _extraSmallIconSize,
-      .small => _smallIconSize,
-      .medium => _mediumIconSize,
-      .large => _largeIconSize,
-      .extraLarge => _extraLargeIconSize,
-      .huge => _hugeIconSize,
+      .extraSmall => AuraIconButton._extraSmallIconSize,
+      .small => AuraIconButton._smallIconSize,
+      .medium => AuraIconButton._mediumIconSize,
+      .large => AuraIconButton._largeIconSize,
+      .extraLarge => AuraIconButton._extraLargeIconSize,
+      .huge => AuraIconButton._hugeIconSize,
     };
   }
 
@@ -163,15 +134,13 @@ class AuraIconButton extends StatelessWidget {
   Color _getIconColor(AuraColorScheme colors) {
     if (disabled) return colors.onSurfaceVariant.withValues(alpha: 0.6);
 
+    return _getEnabledIconColor(colors);
+  }
+
+  Color _getEnabledIconColor(AuraColorScheme colors) {
     final tint = this.tint;
 
-    return switch (variant) {
-      .ghost =>
-        tint == null ? colors.foregroundOnSurface : colors.colorFor(tint),
-      .filled => colors.onTint(tint ?? AuraTint.primary),
-      .outlined => colors.colorFor(tint ?? AuraTint.primary),
-      .elevated => colors.onTint(tint ?? AuraTint.primary),
-    };
+    return _iconColorForVariant(variant, colors, tint);
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
@@ -184,6 +153,144 @@ class AuraIconButton extends StatelessWidget {
         colors.colorFor(tint ?? AuraTint.primary),
     };
   }
+}
+
+Color _iconColorForVariant(
+  AuraIconButtonVariant variant,
+  AuraColorScheme colors,
+  AuraTint? tint,
+) => switch (variant) {
+  .ghost => tint == null ? colors.foregroundOnSurface : colors.colorFor(tint),
+  .filled || .elevated => colors.onTint(tint ?? AuraTint.primary),
+  .outlined => colors.colorFor(tint ?? AuraTint.primary),
+};
+
+class const _AuraIconButtonContent({required final AuraIconButton button})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _AuraIconButtonControl(button: button, colors: context.auraColors);
+}
+
+class const _AuraIconButtonIcon({
+  required final IconData? icon,
+  required final double size,
+  required final Color color,
+  required final String semanticLabel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Icon(
+    icon ?? (throw StateError('AuraIconButton requires icon or child')),
+    size: size,
+    color: color,
+    semanticLabel: semanticLabel,
+  );
+}
+
+class const _AuraIconButtonControl({
+  required final AuraIconButton button,
+  required final AuraColorScheme colors,
+}) extends StatelessWidget {
+  double get _buttonSize =>
+      AuraIconButton.buttonSizeFor(button.size)
+          .clamp(_minimumButtonSize, double.infinity);
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: _buttonSize,
+    height: _buttonSize,
+    child: _AuraIconButtonButton(button: button, colors: colors),
+  );
+}
+
+class const _AuraIconButtonButton({
+  required final AuraIconButton button,
+  required final AuraColorScheme colors,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraIconButtonButtonData(
+    button: button,
+    colors: colors,
+    theme: context.auraTheme,
+  ).toWidget();
+}
+
+class _AuraIconButtonButtonData {
+  new({
+    required AuraIconButton button,
+    required AuraColorScheme colors,
+    required AuraTheme theme,
+  }) : this.fromValues(
+         button: button,
+         colors: colors,
+         theme: theme,
+         values: _iconButtonValues(button, colors),
+       );
+
+  new fromValues({
+    required AuraIconButton button,
+    required AuraColorScheme colors,
+    required AuraTheme theme,
+    required _AuraIconButtonValues values,
+  }) : _widget = IconButton(
+         iconSize: values.iconSize,
+         padding: EdgeInsets.zero,
+         alignment: Alignment.center,
+         onPressed: _iconButtonOnPressed(button),
+         style: IconButton.styleFrom(
+           alignment: Alignment.center,
+           padding: EdgeInsets.zero,
+           foregroundColor: values.foregroundColor,
+           backgroundColor: values.backgroundColor,
+           elevation: button.variant == AuraIconButtonVariant.elevated ? 2 : 0,
+           shape: RoundedRectangleBorder(
+             side: button.variant == AuraIconButtonVariant.outlined
+                 ? BorderSide(color: colors.outline)
+                 : BorderSide.none,
+             borderRadius: BorderRadius.circular(
+               theme.fromBorderRadius(values.borderRadius),
+             ),
+           ),
+         ),
+         icon: _AuraIconButtonIconContent(
+           button: button,
+           size: values.iconSize,
+           color: values.foregroundColor,
+         ),
+       );
+
+  final Widget _widget;
+
+  Widget toWidget() => _widget;
+}
+
+_AuraIconButtonValues _iconButtonValues(
+  AuraIconButton button,
+  AuraColorScheme colors,
+) => (
+  iconSize: button._getIconSize(),
+  foregroundColor: button._getIconColor(colors),
+  backgroundColor: button._getBackgroundColor(colors),
+  borderRadius: button._getBorderRadius(),
+);
+
+VoidCallback? _iconButtonOnPressed(AuraIconButton button) =>
+    button.disabled ? null : button.onPressed;
+
+class const _AuraIconButtonIconContent({
+  required final AuraIconButton button,
+  required final double size,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      button.child ??
+      _AuraIconButtonIcon(
+        icon: button.icon,
+        size: size,
+        color: color,
+        semanticLabel: button.semanticLabel ?? button.tooltip ?? 'Icon button',
+      );
 }
 
 /// The size of an [AuraIcon] or [AuraIconButton].

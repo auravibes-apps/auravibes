@@ -80,34 +80,102 @@ class AuraSelectableText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final tint = this.tint;
-    final cursorTint = this.cursorTint;
-    final baseStyle = AuraTextStyles.resolve(
-      style: style,
-      colors: auraColors,
-      typography: context.auraTheme.typography,
-    );
-    // Only override color when tint is provided.
-    final textStyle = tint != null
-        ? baseStyle.copyWith(color: auraColors.colorFor(tint))
-        : baseStyle;
 
-    return SelectableText(
-      data,
-      style: textStyle,
-      textAlign: textAlign,
-      showCursor: showCursor,
-      autofocus: autofocus,
-      minLines: minLines,
-      maxLines: maxLines,
-      cursorWidth: cursorWidth,
-      cursorHeight: cursorHeight,
-      cursorRadius: cursorRadius,
-      cursorColor: cursorTint != null
-          ? auraColors.colorFor(cursorTint)
-          : auraColors.primary,
-      onTap: onTap,
-      onSelectionChanged: onSelectionChanged,
+    return _AuraSelectableTextContent(
+      .new(text: this, context: context, colors: auraColors),
     );
   }
+
+  Color _cursorColor(AuraColorScheme colors) {
+    final tint = cursorTint;
+    if (tint == null) return colors.primary;
+
+    return colors.colorFor(tint);
+  }
+
+  TextStyle _textStyle(BuildContext context, AuraColorScheme colors) {
+    final baseStyle = AuraTextStyles.resolve(
+      style: style,
+      colors: colors,
+      typography: context.auraTheme.typography,
+    );
+
+    // Only override color when tint is provided.
+    final tint = this.tint;
+
+    return _applyTint(baseStyle, tint, colors);
+  }
+}
+
+class _AuraSelectableTextConfiguration {
+  new({
+    required AuraSelectableText text,
+    required BuildContext context,
+    required AuraColorScheme colors,
+  }) : data = text.data,
+       style = text._textStyle(context, colors),
+       textAlign = text.textAlign,
+       showCursor = text.showCursor,
+       autofocus = text.autofocus,
+       minLines = text.minLines,
+       maxLines = text.maxLines,
+       cursorWidth = text.cursorWidth,
+       cursorHeight = text.cursorHeight,
+       cursorRadius = text.cursorRadius,
+       cursorColor = text._cursorColor(colors),
+       onTap = text.onTap,
+       onSelectionChanged = text.onSelectionChanged;
+
+  final String data;
+  final TextStyle style;
+  final TextAlign? textAlign;
+  final bool showCursor;
+  final bool autofocus;
+  final int? minLines;
+  final int? maxLines;
+  final double cursorWidth;
+  final double? cursorHeight;
+  final Radius? cursorRadius;
+  final Color cursorColor;
+  final GestureTapCallback? onTap;
+  final SelectionChangedCallback? onSelectionChanged;
+}
+
+TextStyle _applyTint(
+  TextStyle baseStyle,
+  AuraTint? tint,
+  AuraColorScheme colors,
+) =>
+    tint == null ? baseStyle : baseStyle.copyWith(color: colors.colorFor(tint));
+
+class const _AuraSelectableTextContent(
+  final _AuraSelectableTextConfiguration configuration,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _AuraSelectableTextWidget(configuration);
+}
+
+class _AuraSelectableTextWidget extends StatelessWidget {
+  new(_AuraSelectableTextConfiguration configuration)
+    : _selectableText = SelectableText(
+        configuration.data,
+        style: configuration.style,
+        textAlign: configuration.textAlign,
+        showCursor: configuration.showCursor,
+        autofocus: configuration.autofocus,
+        minLines: configuration.minLines,
+        maxLines: configuration.maxLines,
+        cursorWidth: configuration.cursorWidth,
+        cursorHeight: configuration.cursorHeight,
+        cursorRadius: configuration.cursorRadius,
+        cursorColor: configuration.cursorColor,
+        onTap: configuration.onTap,
+        onSelectionChanged: configuration.onSelectionChanged,
+      );
+
+  final SelectableText _selectableText;
+
+  @override
+  Widget build(BuildContext context) => _selectableText;
 }

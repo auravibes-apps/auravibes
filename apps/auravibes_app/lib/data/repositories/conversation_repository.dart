@@ -13,6 +13,33 @@ const _parentConversationIdEmpty = 'Parent conversation ID cannot be empty';
 const _unknownValidationError = 'Unknown validation error';
 const _workspaceIdEmpty = 'Workspace ID cannot be empty';
 
+String _conversationPatchValidationMessage(ConversationPatch conversation) =>
+    _emptyPatchTitle(conversation) ??
+    _emptyPatchModelId(conversation) ??
+    _emptyPatchAgentId(conversation) ??
+    _unknownValidationError;
+
+String? _emptyPatchTitle(ConversationPatch conversation) {
+  final title = conversation.title;
+  if (title != null && title.isEmpty) return _conversationTitleEmpty;
+
+  return null;
+}
+
+String? _emptyPatchModelId(ConversationPatch conversation) {
+  final modelId = conversation.modelId;
+  if (modelId != null && modelId.isEmpty) return _modelIdEmpty;
+
+  return null;
+}
+
+String? _emptyPatchAgentId(ConversationPatch conversation) {
+  final agentId = conversation.agentId;
+  if (agentId != null && agentId.isEmpty) return _agentIdEmpty;
+
+  return null;
+}
+
 class ConversationRepository(
   final AppDatabase _database, {
   final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
@@ -76,31 +103,7 @@ class ConversationRepository(
     ConversationPatch conversation,
   ) async {
     _validateConversationPatch(conversation);
-
-    if (!await _conversationExists(id)) {
-      throw ConversationNotFoundException(id);
-    }
-
-    final conversationCompanion = _mapPatchToConversationsCompanion(
-      conversation,
-    );
-    final updated = await _database.conversationDao.patchConversation(
-      id,
-      conversationCompanion,
-    );
-
-    if (!updated) {
-      throw ConversationException('Failed to update conversation with ID $id');
-    }
-
-    final updatedConversation = await _database.conversationDao
-        .getConversationById(id);
-
-    if (updatedConversation == null) {
-      throw ConversationException(
-        'Failed to retrieve updated conversation with ID $id',
-      );
-    }
+    final updatedConversation = await _patchConversation(id, conversation);
 
     return _mapToConversation(updatedConversation);
   }
@@ -116,20 +119,67 @@ class ConversationRepository(
 
     return deleted;
   }
+}
+
+extension on ConversationRepository {
+  Future<ConversationsTable> _patchConversation(
+    String id,
+    ConversationPatch conversation,
+  ) async {
+    await _requireConversation(id);
+
+    final updated = await _database.conversationDao.patchConversation(
+      id,
+      _mapPatchToConversationsCompanion(conversation),
+    );
+    if (!updated) {
+      throw ConversationException('Failed to update conversation with ID $id');
+    }
+
+    return await _updatedConversation(id);
+  }
+
+  Future<void> _requireConversation(String id) async {
+    if (!await _conversationExists(id)) {
+      throw ConversationNotFoundException(id);
+    }
+  }
+
+  Future<ConversationsTable> _updatedConversation(String id) async {
+    final result = await _database.conversationDao.getConversationById(id);
+    if (result == null) {
+      throw ConversationException(
+        'Failed to retrieve updated conversation with ID $id',
+      );
+    }
+
+    return result;
+  }
 
   Future<List<String>> _attachmentPathsForConversation(String id) async {
-    final rows = await (_database.select(_database.messageAttachments).join([
-      innerJoin(
-        _database.messages,
-        _database.messages.id.equalsExp(_database.messageAttachments.messageId),
-      ),
-    ])..where(_database.messages.conversationId.equals(id))).get();
+    final rows = await _conversationAttachmentRows(id);
 
-    return [
-      for (final row in rows)
-        row.readTable(_database.messageAttachments).localPath,
-    ];
+    return rows
+        .map((row) => row.readTable(_database.messageAttachments).localPath)
+        .toList();
   }
+
+  Future<List<TypedResult>> _conversationAttachmentRows(String id) {
+    final query =
+        _database
+            .select(_database.messageAttachments)
+            .join(_conversationAttachmentJoins())
+          ..where(_database.messages.conversationId.equals(id));
+
+    return query.get();
+  }
+
+  List<Join<HasResultSet, dynamic>> _conversationAttachmentJoins() => [
+    innerJoin(
+      _database.messages,
+      _database.messages.id.equalsExp(_database.messageAttachments.messageId),
+    ),
+  ];
 
   Future<void> _deleteAttachmentFile(String localPath) async {
     try {
@@ -156,49 +206,29 @@ class ConversationRepository(
   ) {
     if (conversation.title.isEmpty) return _conversationTitleEmpty;
     if (conversation.workspaceId.isEmpty) return _workspaceIdEmpty;
-    final modelId = conversation.modelId;
-    if (modelId != null && modelId.isEmpty) {
-      return _modelIdEmpty;
-    }
 
-    final agentId = conversation.agentId;
-    if (agentId != null && agentId.isEmpty) {
-      return _agentIdEmpty;
-    }
+    return _optionalCreateValidationMessage(conversation) ??
+        _unknownValidationError;
+  }
 
-    final parentConversationId = conversation.parentConversationId;
-    if (parentConversationId != null && parentConversationId.isEmpty) {
+  String? _optionalCreateValidationMessage(ConversationToCreate conversation) {
+    if (conversation.modelId?.isEmpty == true) return _modelIdEmpty;
+    if (conversation.agentId?.isEmpty == true) return _agentIdEmpty;
+    if (conversation.parentConversationId?.isEmpty == true) {
       return _parentConversationIdEmpty;
     }
 
-    return _unknownValidationError;
+    return null;
   }
+}
 
+extension on ConversationRepository {
   void _validateConversationPatch(ConversationPatch conversation) {
     if (!conversation.isValid) {
       throw ConversationValidationException(
         _conversationPatchValidationMessage(conversation),
       );
     }
-  }
-
-  String _conversationPatchValidationMessage(ConversationPatch conversation) {
-    final title = conversation.title;
-    if (title != null && title.isEmpty) {
-      return _conversationTitleEmpty;
-    }
-
-    final modelId = conversation.modelId;
-    if (modelId != null && modelId.isEmpty) {
-      return _modelIdEmpty;
-    }
-
-    final agentId = conversation.agentId;
-    if (agentId != null && agentId.isEmpty) {
-      return _agentIdEmpty;
-    }
-
-    return _unknownValidationError;
   }
 
   ConversationEntity _mapToConversation(ConversationsTable conversationTable) {

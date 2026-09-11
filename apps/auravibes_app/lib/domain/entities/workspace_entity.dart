@@ -9,7 +9,10 @@ part 'workspace_entity.freezed.dart';
 ///
 /// A workspace is a container for organizing and managing different
 /// projects or environments within the Aura application.
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const WorkspaceEntity._() with _$WorkspaceEntity {
   /// Creates a new Workspace instance.
   const factory({
@@ -39,6 +42,7 @@ abstract class const WorkspaceEntity._() with _$WorkspaceEntity {
   }) = _WorkspaceEntity;
 }
 
+@immutable
 @freezed
 abstract class const WorkspaceToCreate._() with _$WorkspaceToCreate {
   /// Creates a new WorkspaceToCreate instance.
@@ -62,34 +66,38 @@ abstract class const WorkspaceToCreate._() with _$WorkspaceToCreate {
   /// Returns true if the workspace name is not empty.
   bool get hasValidName => name.isNotEmpty;
 
-  /// Returns true if this is a local workspace.
-  bool get isLocal => type.isLocal;
-
-  /// Returns true if this is a remote workspace.
-  bool get isRemote => type.isRemote;
-
   /// Returns true if the workspace has a valid URL (for remote workspaces).
   bool get hasValidUrl {
-    final url = this.url;
-    final cloudWorkspaceId = this.cloudWorkspaceId;
-    final cloudAccountId = this.cloudAccountId;
-    final hasCloudMirror = cloudWorkspaceId != null && cloudAccountId != null;
-    if (isLocal && url == null && !hasCloudMirror) return true;
+    if (isLocal) return url == null && !hasCloudMirror();
 
-    return isRemote &&
-        ((url != null && url.isNotEmpty) ||
-            (cloudWorkspaceId != null &&
-                cloudWorkspaceId.isNotEmpty &&
-                cloudAccountId != null &&
-                cloudAccountId.isNotEmpty));
+    return isRemote && (_hasUrl(this) || _hasValidCloudMirror(this));
   }
 
   /// Returns true if the workspace is in a valid state.
   bool get isValid {
     return hasValidName && hasValidUrl;
   }
+
+  /// Returns true if this workspace matches [expectedType] and is valid.
+  bool isValidForType(WorkspaceType expectedType) =>
+      type == expectedType && isValid;
+
+  bool hasName(String expectedName) => name == expectedName;
 }
 
+extension WorkspaceToCreateValidation on WorkspaceToCreate {
+  /// Returns true if this is a local workspace.
+  bool get isLocal => type.isLocal;
+
+  /// Returns true if this is a remote workspace.
+  bool get isRemote => type.isRemote;
+
+  bool matchesType(WorkspaceType expectedType) => type == expectedType;
+
+  bool hasCloudMirror() => _hasCloudMirror(this);
+}
+
+@immutable
 @freezed
 abstract class const WorkspacePatch._() with _$WorkspacePatch {
   // Null fields mean the patch leaves those values unchanged.
@@ -101,69 +109,92 @@ abstract class const WorkspacePatch._() with _$WorkspacePatch {
     String? cloudWorkspaceId,
     String? cloudAccountId,
   }) = _WorkspacePatch;
-  String? validationErrorFor(WorkspaceEntity current) {
-    final name = this.name;
-    final url = this.url;
-    final cloudWorkspaceId = this.cloudWorkspaceId;
-    final cloudAccountId = this.cloudAccountId;
 
-    if (name == null &&
-        type == null &&
-        url == null &&
-        cloudWorkspaceId == null &&
-        cloudAccountId == null) {
+  String? validationErrorFor(WorkspaceEntity current) {
+    if (_hasNoChanges(this)) {
       return 'At least one field must be provided';
     }
 
-    final fieldError = _fieldValidationError(
-      name: name,
-      url: url,
-      cloudWorkspaceId: cloudWorkspaceId,
-      cloudAccountId: cloudAccountId,
-    );
+    final fieldError = _fieldValidationError(this);
     if (fieldError != null) return fieldError;
 
-    final mergedName = name ?? current.name;
-    final mergedType = type ?? current.type;
-    final mergedUrl = url ?? current.url;
-    final mergedCloudWorkspaceId = cloudWorkspaceId ?? current.cloudWorkspaceId;
-    final mergedCloudAccountId = cloudAccountId ?? current.cloudAccountId;
-    final hasCloudMirror =
-        mergedCloudWorkspaceId != null && mergedCloudAccountId != null;
+    return _mergedValidationError(_mergedWorkspace(this, current));
+  }
+}
 
-    if (mergedName.isEmpty) {
-      return 'Workspace name cannot be empty';
-    }
+bool _hasNoChanges(WorkspacePatch patch) =>
+    patch.name == null &&
+    patch.type == null &&
+    patch.url == null &&
+    patch.cloudWorkspaceId == null &&
+    patch.cloudAccountId == null;
 
-    if (mergedType == WorkspaceType.local &&
-        (mergedUrl != null || hasCloudMirror)) {
-      return 'Local workspace cannot have remote metadata';
-    }
+WorkspaceToCreate _mergedWorkspace(
+  WorkspacePatch patch,
+  WorkspaceEntity current,
+) => WorkspaceToCreate(
+  name: patch.name ?? current.name,
+  type: patch.type ?? current.type,
+  url: patch.url ?? current.url,
+  cloudWorkspaceId: patch.cloudWorkspaceId ?? current.cloudWorkspaceId,
+  cloudAccountId: patch.cloudAccountId ?? current.cloudAccountId,
+);
 
-    if (mergedType == WorkspaceType.remote &&
-        (mergedUrl == null || mergedUrl.isEmpty) &&
-        !hasCloudMirror) {
-      return 'Remote workspace must have a URL or cloud ID';
-    }
+String? _mergedValidationError(WorkspaceToCreate workspace) {
+  final hasCloudMirror = _hasCloudMirror(workspace);
 
-    return null;
+  return _firstValidationError([
+    _emptyWorkspaceNameError(workspace),
+    _localWorkspaceError(workspace, hasCloudMirror),
+    _remoteWorkspaceError(workspace, hasCloudMirror),
+  ]);
+}
+
+String? _emptyWorkspaceNameError(WorkspaceToCreate workspace) =>
+    workspace.name.isEmpty ? 'Workspace name cannot be empty' : null;
+
+String? _localWorkspaceError(
+  WorkspaceToCreate workspace,
+  bool hasCloudMirror,
+) =>
+    workspace.type == WorkspaceType.local &&
+        (workspace.url != null || hasCloudMirror)
+    ? 'Local workspace cannot have remote metadata'
+    : null;
+
+String? _remoteWorkspaceError(
+  WorkspaceToCreate workspace,
+  bool hasCloudMirror,
+) =>
+    workspace.type == WorkspaceType.remote &&
+        _hasMissingUrl(workspace.url) &&
+        !hasCloudMirror
+    ? 'Remote workspace must have a URL or cloud ID'
+    : null;
+
+bool _hasCloudMirror(WorkspaceToCreate workspace) =>
+    workspace.cloudWorkspaceId != null && workspace.cloudAccountId != null;
+
+bool _hasUrl(WorkspaceToCreate workspace) => workspace.url?.isNotEmpty == true;
+
+bool _hasValidCloudMirror(WorkspaceToCreate workspace) =>
+    workspace.cloudWorkspaceId?.isNotEmpty == true &&
+    workspace.cloudAccountId?.isNotEmpty == true;
+
+bool _hasMissingUrl(String? url) => url == null || url.isEmpty;
+
+String? _fieldValidationError(WorkspacePatch patch) => _firstValidationError([
+  if (patch.name?.isEmpty == true) 'Workspace name cannot be empty',
+  if (patch.url?.isEmpty == true) 'Workspace URL cannot be empty',
+  if (patch.cloudWorkspaceId?.isEmpty == true)
+    'Cloud workspace ID cannot be empty',
+  if (patch.cloudAccountId?.isEmpty == true) 'Cloud account ID cannot be empty',
+]);
+
+String? _firstValidationError(Iterable<String?> errors) {
+  for (final error in errors) {
+    if (error != null) return error;
   }
 
-  String? _fieldValidationError({
-    required String? name,
-    required String? url,
-    required String? cloudWorkspaceId,
-    required String? cloudAccountId,
-  }) {
-    if (name != null && name.isEmpty) return 'Workspace name cannot be empty';
-    if (url != null && url.isEmpty) return 'Workspace URL cannot be empty';
-    if (cloudWorkspaceId != null && cloudWorkspaceId.isEmpty) {
-      return 'Cloud workspace ID cannot be empty';
-    }
-    if (cloudAccountId != null && cloudAccountId.isEmpty) {
-      return 'Cloud account ID cannot be empty';
-    }
-
-    return null;
-  }
+  return null;
 }

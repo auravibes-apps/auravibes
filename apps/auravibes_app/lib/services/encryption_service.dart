@@ -25,41 +25,41 @@ class EncryptionService(final SecretKeyManager _keyManager) {
       nonce: nonce,
     );
 
-    // Combine nonce + ciphertext + mac for storage.
-    final combined = Uint8List.fromList([
-      ...secretBox.nonce,
-      ...secretBox.cipherText,
-      ...secretBox.mac.bytes,
-    ]);
-
-    return base64Encode(combined);
+    return _encodeSecretBox(secretBox);
   }
 
   /// Decrypts a base64-encoded ciphertext.
   Future<String> decrypt(String encryptedBase64) async {
+    final secretBox = _decodeSecretBox(encryptedBase64);
+    final key = await _keyManager.getOrCreateSecretKey();
+    final decrypted = await _algorithm.decrypt(secretBox, secretKey: key);
+
+    return utf8.decode(decrypted);
+  }
+
+  SecretBox _decodeSecretBox(String encryptedBase64) {
     final combined = base64Decode(encryptedBase64);
     if (combined.length < _minimumPayloadLength) {
       throw const FormatException(
         'Encrypted payload is shorter than the AES-GCM nonce and MAC.',
       );
     }
-    final key = await _keyManager.getOrCreateSecretKey();
 
-    // Extract components (nonce: 12 bytes, mac: 16 bytes).
-    final nonce = combined.sublist(0, _nonceLength);
-    final cipherText = combined.sublist(
-      _nonceLength,
-      combined.length - _macLength,
+    return SecretBox(
+      combined.sublist(_nonceLength, combined.length - _macLength),
+      nonce: combined.sublist(0, _nonceLength),
+      mac: .new(combined.sublist(combined.length - _macLength)),
     );
-    final mac = Mac(combined.sublist(combined.length - _macLength));
-
-    final secretBox = SecretBox(cipherText, nonce: nonce, mac: mac);
-
-    final decrypted = await _algorithm.decrypt(secretBox, secretKey: key);
-
-    return utf8.decode(decrypted);
   }
 }
+
+String _encodeSecretBox(SecretBox secretBox) => base64Encode(
+  Uint8List.fromList([
+    ...secretBox.nonce,
+    ...secretBox.cipherText,
+    ...secretBox.mac.bytes,
+  ]),
+);
 
 final Provider<EncryptionService> encryptionServiceProvider =
     Provider<EncryptionService>((ref) {

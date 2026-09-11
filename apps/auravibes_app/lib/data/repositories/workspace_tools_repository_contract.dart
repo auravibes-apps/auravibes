@@ -1,7 +1,12 @@
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 
 /// Contract for workspace tool persistence.
-abstract interface class WorkspaceToolsRepositoryContract {
+abstract interface class WorkspaceToolsRepositoryContract
+    implements
+        WorkspaceToolsRepositoryReadContract,
+        WorkspaceToolsRepositoryWriteContract;
+
+abstract interface class WorkspaceToolsRepositoryReadContract {
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(String workspaceId);
   Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
     String workspaceId,
@@ -10,6 +15,13 @@ abstract interface class WorkspaceToolsRepositoryContract {
     String workspaceId,
     String toolId,
   );
+  Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
+    required String toolGroupId,
+    required String toolName,
+  });
+}
+
+abstract interface class WorkspaceToolsRepositoryWriteContract {
   Future<WorkspaceToolEntity> setWorkspaceToolEnabled(
     String workspaceId,
     String toolType, {
@@ -28,9 +40,5 @@ abstract interface class WorkspaceToolsRepositoryContract {
   Future<WorkspaceToolEntity> setToolPermissionMode(
     String id, {
     required ToolPermissionMode permissionMode,
-  });
-  Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
-    required String toolGroupId,
-    required String toolName,
   });
 }

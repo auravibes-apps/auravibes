@@ -46,44 +46,65 @@ class AuraCheckboxListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = disabled || onChanged == null;
-    final subtitle = this.subtitle;
 
     return MergeSemantics(
       child: Semantics(
-        child: GestureDetector(
-          child: Row(
-            crossAxisAlignment: .start,
-            children: [
-              AuraCheckbox(
-                value: value,
-                onChanged: isDisabled ? null : onChanged,
-                tint: tint,
-                disabled: isDisabled,
-                autofocus: autofocus,
-                semanticLabel: semanticLabel,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: [
-                    AuraText(child: title),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      AuraText(child: subtitle, style: .bodySmall),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-          onTap: isDisabled ? null : () => onChanged?.call(!value),
-          behavior: .opaque,
-        ),
+        child: _AuraCheckboxTileGesture(tile: this, isDisabled: isDisabled),
         container: true,
         label: semanticLabel,
       ),
     );
   }
+}
+
+class const _AuraCheckboxTileGesture({
+  required final AuraCheckboxListTile tile,
+  required final bool isDisabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    child: _AuraCheckboxTileRow(tile: tile, isDisabled: isDisabled),
+    onTap: isDisabled ? null : () => tile.onChanged?.call(!tile.value),
+    behavior: .opaque,
+  );
+}
+
+class _AuraCheckboxTileRow extends StatelessWidget {
+  new({required AuraCheckboxListTile tile, required bool isDisabled})
+    : _child = Row(
+        crossAxisAlignment: .start,
+        children: [
+          AuraCheckbox(
+            value: tile.value,
+            onChanged: isDisabled ? null : tile.onChanged,
+            tint: tile.tint,
+            disabled: isDisabled,
+            autofocus: tile.autofocus,
+            semanticLabel: tile.semanticLabel,
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: _AuraCheckboxTileText(tile: tile)),
+        ],
+      );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AuraCheckboxTileText({required final AuraCheckboxListTile tile})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      AuraText(child: tile.title),
+      if (tile.subtitle case final subtitle?) ...[
+        const SizedBox(height: 4),
+        AuraText(child: subtitle, style: .bodySmall),
+      ],
+    ],
+  );
 }

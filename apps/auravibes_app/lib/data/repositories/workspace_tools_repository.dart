@@ -1,5 +1,4 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository_contract.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -9,6 +8,7 @@ import 'package:auravibes_app/services/tools/tool_service.dart';
 export 'workspace_tools_repository_contract.dart';
 
 class WorkspaceToolsRepository(final AppDatabase _database)
+    with _WorkspaceToolsRepositoryExtrasApi
     implements WorkspaceToolsRepositoryContract {
   final WorkspaceToolsDao _dao = _database.workspaceToolsDao;
 
@@ -74,61 +74,6 @@ class WorkspaceToolsRepository(final AppDatabase _database)
     return _tableToEntity(table);
   }
 
-  Future<bool> isWorkspaceToolEnabled(String workspaceId, String toolType) {
-    return _dao.isWorkspaceToolEnabledByToolId(workspaceId, toolType);
-  }
-
-  Future<bool> removeWorkspaceTool(String workspaceId, String toolType) async {
-    if (NativeToolService.hasTypeString(toolType)) {
-      throw WorkspaceToolsValidationException(
-        'Native tools cannot be removed: $toolType',
-      );
-    }
-
-    return await _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
-  }
-
-  @override
-  Future<bool> removeWorkspaceToolById(String id) {
-    return _dao.deleteWorkspaceToolById(id);
-  }
-
-  Future<int> getWorkspaceToolsCount(String workspaceId) {
-    return _dao.getWorkspaceToolsCount(workspaceId);
-  }
-
-  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) {
-    return _dao.getEnabledWorkspaceToolsCount(workspaceId);
-  }
-
-  Future<bool> validateWorkspaceToolSetting(
-    String workspaceId,
-    String toolType,
-  ) async {
-    // Check if workspace exists.
-    final workspace = await _database.workspaceDao.getWorkspaceById(
-      workspaceId,
-    );
-    if (workspace == null) {
-      throw WorkspaceToolsValidationException(
-        'Workspace not found: $workspaceId',
-      );
-    }
-
-    // Check if tool type is valid.
-    if (!ToolService.hasTypeString(toolType) &&
-        !NativeToolService.hasTypeString(toolType)) {
-      throw WorkspaceToolsValidationException('Invalid tool type: $toolType');
-    }
-
-    // Config string is currently optional and not parsed.
-    return true;
-  }
-
-  Future<String?> getWorkspaceToolConfig(String workspaceId, String toolType) {
-    return _dao.getWorkspaceToolConfigByToolId(workspaceId, toolType);
-  }
-
   @override
   Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String workspaceId,
@@ -181,27 +126,116 @@ class WorkspaceToolsRepository(final AppDatabase _database)
     return _tableToEntity(table);
   }
 
+  @override
+  Future<bool> removeWorkspaceToolById(String id) {
+    return _dao.deleteWorkspaceToolById(id);
+  }
+}
+
+mixin _WorkspaceToolsRepositoryExtrasApi {
+  Future<bool> isWorkspaceToolEnabled(String workspaceId, String toolType) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .isWorkspaceToolEnabled(workspaceId, toolType);
+
+  Future<bool> removeWorkspaceTool(String workspaceId, String toolType) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .removeWorkspaceTool(workspaceId, toolType);
+
+  Future<int> getWorkspaceToolsCount(String workspaceId) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .getWorkspaceToolsCount(workspaceId);
+
+  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .getEnabledWorkspaceToolsCount(workspaceId);
+
+  Future<String?> getWorkspaceToolConfig(String workspaceId, String toolType) =>
+      WorkspaceToolsRepositoryExtras(this as WorkspaceToolsRepository)
+          .getWorkspaceToolConfig(workspaceId, toolType);
+}
+
+extension WorkspaceToolsRepositoryExtras on WorkspaceToolsRepository {
+  Future<bool> isWorkspaceToolEnabled(String workspaceId, String toolType) {
+    return _dao.isWorkspaceToolEnabledByToolId(workspaceId, toolType);
+  }
+
+  Future<bool> removeWorkspaceTool(String workspaceId, String toolType) async {
+    if (NativeToolService.hasTypeString(toolType)) {
+      throw WorkspaceToolsValidationException(
+        'Native tools cannot be removed: $toolType',
+      );
+    }
+
+    return await _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
+  }
+
+  Future<int> getWorkspaceToolsCount(String workspaceId) {
+    return _dao.getWorkspaceToolsCount(workspaceId);
+  }
+
+  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) {
+    return _dao.getEnabledWorkspaceToolsCount(workspaceId);
+  }
+
+  Future<bool> validateWorkspaceToolSetting(
+    String workspaceId,
+    String toolType,
+  ) async {
+    // Check if workspace exists.
+    final workspace = await _database.workspaceDao.getWorkspaceById(
+      workspaceId,
+    );
+    if (workspace == null) {
+      throw WorkspaceToolsValidationException(
+        'Workspace not found: $workspaceId',
+      );
+    }
+
+    // Check if tool type is valid.
+    if (!ToolService.hasTypeString(toolType) &&
+        !NativeToolService.hasTypeString(toolType)) {
+      throw WorkspaceToolsValidationException('Invalid tool type: $toolType');
+    }
+
+    // Config string is currently optional and not parsed.
+    return true;
+  }
+
+  Future<String?> getWorkspaceToolConfig(String workspaceId, String toolType) {
+    return _dao.getWorkspaceToolConfigByToolId(workspaceId, toolType);
+  }
+}
+
+extension on WorkspaceToolsRepository {
   Future<void> _ensureNativeTools(String workspaceId) async {
     await _database.transaction(() async {
       final workspaceTools = await _dao.getWorkspaceTools(workspaceId);
-      final existingNativeToolIds = workspaceTools
-          .where((tool) => tool.workspaceToolsGroupId == null)
-          .where((tool) => NativeToolService.hasTypeString(tool.toolId))
-          .map((tool) => tool.toolId)
-          .toSet();
-
-      for (final nativeType in NativeToolService.getTypes()) {
-        if (existingNativeToolIds.contains(nativeType.value)) {
-          continue;
-        }
-
-        final _ = await _dao.setWorkspaceToolEnabled(
-          workspaceId,
-          nativeType.value,
-          isEnabled: true,
-        );
-      }
+      await _insertMissingNativeTools(
+        workspaceId,
+        _nativeToolIds(workspaceTools),
+      );
     });
+  }
+
+  Set<String> _nativeToolIds(List<ToolsTable> workspaceTools) => workspaceTools
+      .where((tool) => tool.workspaceToolsGroupId == null)
+      .where((tool) => NativeToolService.hasTypeString(tool.toolId))
+      .map((tool) => tool.toolId)
+      .toSet();
+
+  Future<void> _insertMissingNativeTools(
+    String workspaceId,
+    Set<String> existingNativeToolIds,
+  ) async {
+    for (final nativeType in NativeToolService.getTypes()) {
+      if (existingNativeToolIds.contains(nativeType.value)) continue;
+
+      final _ = await _dao.setWorkspaceToolEnabled(
+        workspaceId,
+        nativeType.value,
+        isEnabled: true,
+      );
+    }
   }
 
   WorkspaceToolEntity _tableToEntity(ToolsTable table) {
@@ -257,6 +291,8 @@ class WorkspaceToolsException implements Exception {
 }
 
 /// Exception thrown when workspace tool validation fails.
+// DCL sees no methods on this exception subtype.
+// ignore: weight-of-class
 class WorkspaceToolsValidationException extends WorkspaceToolsException {
   /// Creates a new WorkspaceToolsValidationException.
   const new(super.message, [super.cause]);

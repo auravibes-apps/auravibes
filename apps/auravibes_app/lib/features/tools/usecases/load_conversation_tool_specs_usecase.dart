@@ -45,34 +45,54 @@ class const LoadConversationToolSpecsUsecase({
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
-    final enabledTools = await _conversationToolsRepository
-        .getAvailableToolEntitiesForConversation(conversationId, workspaceId);
-    final toolCandidates = await _buildCombinedToolSpecsUseCase.call(
-      enabledTools,
+    final toolCandidates = await _loadToolCandidates(
+      conversationId,
+      workspaceId,
     );
     final skillCommandSpecs = await _buildDynamicSkillToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
 
-    return agent.buildToolCatalog([
-      ...toolCandidates,
-      for (final spec in skillCommandSpecs)
-        agent.ToolCatalogCandidate.reserved(
-          spec: spec,
-          target: ResolvedTool.skillCommand(commandName: spec.name),
-        ),
-      agent.ToolCatalogCandidate.reserved(
-        spec: agent.runSubAgentToolSpec,
-        target: ResolvedTool.skillNative(
-          tableId: agent.runSubAgentToolName,
-          skillSlug: agent.agentsSkillSlug,
-          toolIdentifier: agent.runSubAgentToolName,
-        ),
-      ),
-    ]);
+    return _buildCatalog(toolCandidates, skillCommandSpecs);
+  }
+
+  Future<List<agent.ToolCatalogCandidate<ResolvedTool>>> _loadToolCandidates(
+    String conversationId,
+    String workspaceId,
+  ) async {
+    final enabledTools = await _conversationToolsRepository
+        .getAvailableToolEntitiesForConversation(conversationId, workspaceId);
+
+    return await _buildCombinedToolSpecsUseCase.call(enabledTools);
   }
 }
+
+agent.ToolCatalog<ResolvedTool> _buildCatalog(
+  List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
+  List<ToolSpec> skillCommandSpecs,
+) => agent.buildToolCatalog([
+  ...toolCandidates,
+  ...skillCommandSpecs.map(_skillCommandCandidate),
+  _runSubAgentCandidate(),
+]);
+
+agent.ToolCatalogCandidate<ResolvedTool> _skillCommandCandidate(
+  ToolSpec spec,
+) => agent.ToolCatalogCandidate.reserved(
+  spec: spec,
+  target: ResolvedTool.skillCommand(commandName: spec.name),
+);
+
+agent.ToolCatalogCandidate<ResolvedTool> _runSubAgentCandidate() =>
+    agent.ToolCatalogCandidate.reserved(
+      spec: agent.runSubAgentToolSpec,
+      target: ResolvedTool.skillNative(
+        tableId: agent.runSubAgentToolName,
+        skillSlug: agent.agentsSkillSlug,
+        toolIdentifier: agent.runSubAgentToolName,
+      ),
+    );
 
 final ProviderFamily<LoadConversationToolSpecsUsecase, String>
 loadConversationToolSpecsUsecaseProvider =

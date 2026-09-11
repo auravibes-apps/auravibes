@@ -12,6 +12,25 @@ class MockMessageRepository extends Mock implements MessageRepository;
 class MockCompactionSettingsRepository extends Mock
     implements WorkspaceCompactionSettingsRepository;
 
+Future<CompactionDecision> _check(
+  ShouldCompactConversationUsecase usecase, {
+  required String conversationId,
+  required String workspaceId,
+  required String selectedModelId,
+  required String selectedProviderId,
+  required int maxOutputTokens,
+  int? contextLimit,
+  CompactionTrigger trigger = CompactionTrigger.auto,
+}) => usecase((
+  conversationId: conversationId,
+  workspaceId: workspaceId,
+  selectedModelId: selectedModelId,
+  selectedProviderId: selectedProviderId,
+  maxOutputTokens: maxOutputTokens,
+  contextLimit: contextLimit,
+  trigger: trigger,
+));
+
 void main() {
   var mockRepository = MockMessageRepository();
   var mockSettingsRepo = MockCompactionSettingsRepository();
@@ -60,7 +79,8 @@ void main() {
       when(() => mockRepository.getMessagesByConversation('conv-1'))
           .thenAnswer((_) async => []);
 
-      final decision = await usecase(
+      final decision = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
@@ -84,7 +104,8 @@ void main() {
       when(() => mockRepository.getMessagesByConversation('conv-1'))
           .thenAnswer((_) async => []);
 
-      final decision = await usecase(
+      final decision = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
@@ -124,7 +145,8 @@ void main() {
       when(() => mockRepository.getMessagesByConversation('conv-1'))
           .thenAnswer((_) async => messages);
 
-      final decision = await usecase(
+      final decision = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
@@ -159,7 +181,8 @@ void main() {
         when(() => mockRepository.getMessagesByConversation('conv-1'))
             .thenAnswer((_) async => messages);
 
-        final decision = await usecase(
+        final decision = await _check(
+          usecase,
           conversationId: 'conv-1',
           workspaceId: 'workspace-1',
           selectedModelId: 'model-1',
@@ -196,7 +219,8 @@ void main() {
       when(() => mockRepository.getMessagesByConversation('conv-1'))
           .thenAnswer((_) async => messages);
 
-      final decision = await usecase(
+      final decision = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
@@ -230,7 +254,8 @@ void main() {
       when(() => mockRepository.getMessagesByConversation('conv-1'))
           .thenAnswer((_) async => messages);
 
-      final decision = await usecase(
+      final decision = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
@@ -263,7 +288,8 @@ void main() {
       when(() => mockRepository.getMessagesByConversation('conv-1'))
           .thenAnswer((_) async => messages);
 
-      final decision = await usecase(
+      final decision = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
@@ -295,14 +321,15 @@ void main() {
         when(() => mockRepository.getMessagesByConversation('conv-1'))
             .thenAnswer((_) async => messages);
 
-        final decision = await usecase(
+        final decision = await _check(
+          usecase,
           conversationId: 'conv-1',
           workspaceId: 'workspace-1',
           selectedModelId: 'model-1',
           selectedProviderId: 'provider-1',
           maxOutputTokens: 4096,
           contextLimit: 128000,
-          trigger: CompactionTrigger.manual,
+          trigger: .manual,
         );
 
         expect(decision.shouldCompact, isTrue);
@@ -324,14 +351,15 @@ void main() {
         (_) async => [_makeMessage(), _makeMessage(id: 'msg-2', isUser: false)],
       );
 
-      final decision = await usecase(
+      final decision = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
         selectedProviderId: 'provider-1',
         maxOutputTokens: 4096,
         contextLimit: 128000,
-        trigger: CompactionTrigger.manual,
+        trigger: .manual,
       );
 
       expect(decision.shouldCompact, isTrue);
@@ -349,7 +377,8 @@ void main() {
       when(() => mockRepository.getMessagesByConversation('conv-1'))
           .thenAnswer((_) async => []);
 
-      final _ = await usecase(
+      final _ = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
@@ -422,7 +451,8 @@ void main() {
       when(() => mockRepository.getMessagesByConversation('conv-1'))
           .thenAnswer((_) async => messages);
 
-      final decision = await usecase(
+      final decision = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
@@ -448,7 +478,8 @@ void main() {
       when(() => mockRepository.getMessagesByConversation('conv-1'))
           .thenAnswer((_) async => []);
 
-      final decision = await usecase(
+      final decision = await _check(
+        usecase,
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',
@@ -487,7 +518,8 @@ void main() {
         when(() => mockRepository.getMessagesByConversation('conv-1'))
             .thenAnswer((_) async => messages);
 
-        final decision = await usecase(
+        final decision = await _check(
+          usecase,
           conversationId: 'conv-1',
           workspaceId: 'workspace-1',
           selectedModelId: 'model-1',
@@ -537,7 +569,8 @@ void main() {
         when(() => mockRepository.getMessagesByConversation('conv-1'))
             .thenAnswer((_) async => messages);
 
-        final decision = await usecase(
+        final decision = await _check(
+          usecase,
           conversationId: 'conv-1',
           workspaceId: 'workspace-1',
           selectedModelId: 'model-1',

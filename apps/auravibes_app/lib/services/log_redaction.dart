@@ -23,21 +23,29 @@ abstract final class LogRedaction {
     ),
   ];
 
-  static String redact(Object? value) {
-    var text = switch (value) {
-      null => 'null',
-      String() => value,
-      StackTrace() => '$value',
-      _ => '${value.runtimeType}',
-    };
-    for (final pattern in _secretPatterns) {
-      text = text.replaceAllMapped(pattern, (match) {
-        final prefix = match.group(1) ?? '';
+  // Null is rendered as `null` for defensive logging callers.
+  // ignore: unnecessary-nullable
+  static String redact(Object? value) => _redact(_textFor(value));
 
-        return '$prefix$_redacted';
-      });
+  static String _textFor(Object? value) => switch (value) {
+    null => 'null',
+    String() => value,
+    StackTrace() => '$value',
+    _ => '${value.runtimeType}',
+  };
+
+  static String _redact(String text) {
+    var redacted = text;
+    for (final pattern in _secretPatterns) {
+      redacted = redacted.replaceAllMapped(pattern, _replaceMatch);
     }
 
-    return text;
+    return redacted;
+  }
+
+  static String _replaceMatch(Match match) {
+    final prefix = match.group(1) ?? '';
+
+    return '$prefix$_redacted';
   }
 }

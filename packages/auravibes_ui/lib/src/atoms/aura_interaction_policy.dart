@@ -5,16 +5,28 @@ part of 'aura_interaction_scope.dart';
 class AuraInteractionPolicy {
   /// Creates a policy that allows value changes and actions.
   const new interactive({this.allowLocalNavigation = true})
-    : mode = AuraInteractionMode.interactive;
+    : mode = AuraInteractionMode.interactive,
+      allowsValueChanges = true,
+      allowsActions = true,
+      allowsNavigation = allowLocalNavigation,
+      hashCode = allowLocalNavigation ? 1 : 0;
 
   /// Creates a policy that displays values without allowing edits or actions.
   const new readOnly({this.allowLocalNavigation = true})
-    : mode = AuraInteractionMode.readOnly;
+    : mode = AuraInteractionMode.readOnly,
+      allowsValueChanges = false,
+      allowsActions = false,
+      allowsNavigation = allowLocalNavigation,
+      hashCode = 1 ^ (allowLocalNavigation ? 1 : 0);
 
   /// Creates a policy that blocks all interaction.
   const new disabled()
     : mode = AuraInteractionMode.disabled,
-      allowLocalNavigation = false;
+      allowLocalNavigation = false,
+      allowsValueChanges = false,
+      allowsActions = false,
+      allowsNavigation = false,
+      hashCode = 2;
 
   /// Current interaction mode.
   final AuraInteractionMode mode;
@@ -23,17 +35,35 @@ class AuraInteractionPolicy {
   final bool allowLocalNavigation;
 
   /// Whether value controls may change their value.
-  bool get allowsValueChanges => mode == AuraInteractionMode.interactive;
+  final bool allowsValueChanges;
 
   /// Whether command callbacks may be invoked.
-  bool get allowsActions => mode == AuraInteractionMode.interactive;
+  final bool allowsActions;
 
   /// Whether navigation callbacks may be invoked.
-  bool get allowsNavigation =>
-      mode != AuraInteractionMode.disabled && allowLocalNavigation;
+  final bool allowsNavigation;
 
   @override
-  int get hashCode => Object.hash(mode, allowLocalNavigation);
+  final int hashCode;
+
+  /// Creates a policy with selected values replaced.
+  AuraInteractionPolicy copyWith({
+    AuraInteractionMode? mode,
+    bool? allowLocalNavigation,
+  }) {
+    final nextMode = mode ?? this.mode;
+    final nextAllowLocalNavigation = _nextAllowLocalNavigation(
+      nextMode,
+      allowLocalNavigation ?? this.allowLocalNavigation,
+    );
+
+    return _policyForMode(nextMode, nextAllowLocalNavigation);
+  }
+
+  @override
+  String toString() =>
+      'AuraInteractionPolicy(mode: $mode, allowLocalNavigation: '
+      '$allowLocalNavigation)';
 
   @override
   bool operator ==(Object other) {
@@ -42,3 +72,17 @@ class AuraInteractionPolicy {
         other.allowLocalNavigation == allowLocalNavigation;
   }
 }
+
+bool _nextAllowLocalNavigation(
+  AuraInteractionMode mode,
+  bool allowLocalNavigation,
+) => mode != AuraInteractionMode.disabled && allowLocalNavigation;
+
+AuraInteractionPolicy _policyForMode(
+  AuraInteractionMode mode,
+  bool allowLocalNavigation,
+) => switch (mode) {
+  .interactive => .interactive(allowLocalNavigation: allowLocalNavigation),
+  .readOnly => .readOnly(allowLocalNavigation: allowLocalNavigation),
+  .disabled => const AuraInteractionPolicy.disabled(),
+};

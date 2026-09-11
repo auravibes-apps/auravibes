@@ -43,46 +43,73 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
     ActionType actionType,
     String name,
   ) => actionType == ActionType.model ? _createModel(name, null) : null;
+}
 
-  Model<dynamic> _createModel(String modelName, ModelInfo? info) {
-    return Model<dynamic>(
-      name: '$name/$modelName',
-      fn: (request, context) async {
-        if (request == null) throw ArgumentError.notNull('request');
-        final body = codec.buildRequestBody(
-          modelName: modelName,
-          request: request,
-          stream: context.streamingRequested,
-        );
-        final transport = _transport;
+extension on AppChatCompletionsPlugin {
+  Model<dynamic> _createModel(String modelName, ModelInfo? info) =>
+      Model<dynamic>(
+        name: '$name/$modelName',
+        fn: (request, context) => _generateModel(modelName, request, context),
+        metadata: {'model': ?info?.toJson()},
+      );
 
-        return context.streamingRequested
-            ? await codec.stream(transport, body, context.sendChunk)
-            : await codec.complete(transport, body);
-      },
-      metadata: {'model': ?info?.toJson()},
+  Future<ModelResponse> _generateModel(
+    String modelName,
+    ModelRequest? request,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) async {
+    if (request == null) throw ArgumentError.notNull('request');
+
+    final body = codec.buildRequestBody(
+      modelName: modelName,
+      request: request,
+      stream: context.streamingRequested,
+    );
+    final transport = _transport;
+
+    if (context.streamingRequested) {
+      return await codec.stream(transport, body, context.sendChunk);
+    }
+
+    return await codec.complete(transport, body);
+  }
+
+  Future<ProviderTransportResponse> _transport(Map<String, dynamic> body) {
+    _ensureApiKey();
+    final request = _request(body);
+    final client = httpClient ?? http.Client();
+
+    return _sendRequest(client, request);
+  }
+
+  void _ensureApiKey() {
+    if (apiKey.trim().isNotEmpty) return;
+
+    throw GenkitException(
+      '[$name] API key is required.',
+      status: .INVALID_ARGUMENT,
     );
   }
 
-  Future<ProviderTransportResponse> _transport(
-    Map<String, dynamic> body,
-  ) async {
-    if (apiKey.trim().isEmpty) {
-      throw GenkitException(
-        '[$name] API key is required.',
-        status: .INVALID_ARGUMENT,
-      );
-    }
+  http.Request _request(Map<String, dynamic> body) {
     final normalized = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
-    final request =
-        http.Request('POST', Uri.parse(normalized).resolve('chat/completions'))
-          ..headers.addAll({
-            'authorization': 'Bearer ${apiKey.trim()}',
-            'content-type': 'application/json',
-            ...?headers,
-          })
-          ..body = jsonEncode(body);
-    final client = httpClient ?? http.Client();
+
+    return http.Request(
+        'POST',
+        Uri.parse(normalized).resolve('chat/completions'),
+      )
+      ..headers.addAll({
+        'authorization': 'Bearer ${apiKey.trim()}',
+        'content-type': 'application/json',
+        ...?headers,
+      })
+      ..body = jsonEncode(body);
+  }
+
+  Future<ProviderTransportResponse> _sendRequest(
+    http.Client client,
+    http.Request request,
+  ) async {
     try {
       final response = await client.send(request).timeout(requestTimeout);
 

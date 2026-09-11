@@ -65,14 +65,7 @@ class SkillCredentialDefinitionsRepository(AppDatabase database) {
   ) async {
     final table = await _dao.updateDefinition(
       definitionId,
-      .new(
-        updatedAt: Value(DateTime.now()),
-        title: switch (definition.title) {
-          null => const Value.absent(),
-          final title => Value(title.trim()),
-        },
-        attributesJson: Value.absentIfNull(definition.attributesJson),
-      ),
+      _updateDefinitionCompanion(definition),
     );
 
     return _tableToEntity(table);
@@ -95,3 +88,14 @@ class SkillCredentialDefinitionsRepository(AppDatabase database) {
     );
   }
 }
+
+SkillCredentialDefinitionsCompanion _updateDefinitionCompanion(
+  SkillCredentialDefinitionToUpdate definition,
+) => SkillCredentialDefinitionsCompanion(
+  updatedAt: .new(DateTime.now()),
+  title: switch (definition.title) {
+    null => const Value.absent(),
+    final title => .new(title.trim()),
+  },
+  attributesJson: .absentIfNull(definition.attributesJson),
+);

@@ -55,24 +55,62 @@ class _PressableDemoState extends State<PressableDemo> {
   var _pressed = false;
 
   @override
-  Widget build(BuildContext context) {
-    return AuraPressable(
-      child: Text(
-        _pressed ? 'Pressed' : widget.label,
-        style: .new(color: context.auraColors.onSurface),
-      ),
-      color: context.auraColors.primary,
-      decoration: BoxDecoration(
-        color: context.auraColors.surface,
-        border: Border.all(color: context.auraColors.outline),
-        borderRadius: const BorderRadius.all(.circular(12)),
-      ),
-      onPressed: widget.enabled ? () => setState(() => _pressed = true) : null,
-      padding: const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: .lg,
-        vertical: .sm,
-      ),
-      semanticLabel: widget.label,
-    );
-  }
+  Widget build(BuildContext _) => _PressableControl(
+    demo: widget,
+    pressed: _pressed,
+    onPressed: _markPressed,
+  );
+
+  void _markPressed() => setState(() => _pressed = true);
+}
+
+class const _PressableControl({
+  required final PressableDemo demo,
+  required final bool pressed,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _PressableControlData(
+    demo: demo,
+    pressed: pressed,
+    onPressed: onPressed,
+    colors: context.auraColors,
+  ).button;
+}
+
+class _PressableControlData({
+  required final PressableDemo demo,
+  required final bool pressed,
+  required final VoidCallback onPressed,
+  required final AuraColorScheme colors,
+}) {
+  final AuraPressable button = .new(
+    child: _PressableLabel(
+      label: demo.label,
+      pressed: pressed,
+      color: colors.onSurface,
+    ),
+    color: colors.primary,
+    decoration: BoxDecoration(
+      color: colors.surface,
+      border: Border.fromBorderSide(.new(color: colors.outline)),
+      borderRadius: const BorderRadius.all(.circular(12)),
+    ),
+    onPressed: demo.enabled ? onPressed : null,
+    padding: const AuraEdgeInsetsGeometry.symmetric(
+      horizontal: .lg,
+      vertical: .sm,
+    ),
+    semanticLabel: demo.label,
+  );
+}
+
+class const _PressableLabel({
+  required final String label,
+  required final bool pressed,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      Text(pressed ? 'Pressed' : label, style: .new(color: color));
 }

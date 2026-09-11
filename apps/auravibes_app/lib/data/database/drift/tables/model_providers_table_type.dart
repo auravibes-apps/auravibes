@@ -1,4 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
+// DCL cannot score Drift's generated table behavior from schema declarations.
+// ignore_for_file: number-of-methods, weight-of-class
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 

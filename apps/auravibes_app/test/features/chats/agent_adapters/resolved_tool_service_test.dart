@@ -94,13 +94,9 @@ class _FakeSubAgentConversationStore implements SubAgentConversationStore {
   );
 
   @override
-  Future<SubAgentConversationRecord> createChildConversation({
-    required String parentConversationId,
-    required String workspaceId,
-    required String? modelId,
-    required String? agentId,
-    required String title,
-  }) async => const SubAgentConversationRecord(
+  Future<SubAgentConversationRecord> createChildConversation(
+    SubAgentChildConversationRequest request,
+  ) async => const SubAgentConversationRecord(
     id: 'child-1',
     workspaceId: 'workspace-1',
     modelId: 'model-1',
@@ -438,21 +434,21 @@ void main() {
     );
 
     expect(
-      await provider.runSkillControlTool(
+      await provider.runSkillControlTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         toolIdentifier: loadSkillToolName,
         arguments: {'slug': 'skill-1'},
-      ),
+      )),
       'Skill "skill-1" loaded.',
     );
     expect(
-      await provider.runSkillControlTool(
+      await provider.runSkillControlTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         toolIdentifier: unloadSkillToolName,
         arguments: {'slug': 'skill-1'},
-      ),
+      )),
       'Skill "skill-1" unloaded.',
     );
   });
@@ -468,12 +464,12 @@ void main() {
     );
 
     expect(
-      () => provider.runSkillControlTool(
+      () => provider.runSkillControlTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         toolIdentifier: loadSkillToolName,
         arguments: {},
-      ),
+      )),
       throwsA(isA<FormatException>()),
     );
   });
@@ -511,12 +507,12 @@ void main() {
       skillCredentialsRepository: _MockSkillCredentialsRepository(),
     );
 
-    final result = await provider.runSkillControlTool(
+    final result = await provider.runSkillControlTool((
       conversationId: 'conversation-1',
       workspaceId: 'workspace-1',
       toolIdentifier: SkillToolNames.listCredentials,
       arguments: {'skillSlug': 'openai'},
-    );
+    ));
 
     expect(result, {
       'skillSlug': 'openai',
@@ -577,12 +573,12 @@ void main() {
     );
 
     expect(
-      await provider.runSkillControlTool(
+      await provider.runSkillControlTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         toolIdentifier: SkillToolNames.listCredentials,
         arguments: const {'skillSlug': 'skill-1'},
-      ),
+      )),
       {
         'skillSlug': 'skill-1',
         'credentials': [
@@ -647,12 +643,12 @@ void main() {
       );
 
       expect(
-        await provider.runSkillControlTool(
+        await provider.runSkillControlTool((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolIdentifier: listSkillsToolName,
           arguments: const {},
-        ),
+        )),
         {
           'loadable': const <Map<String, Object?>>[],
           'loaded': <Map<String, Object?>>[
@@ -661,12 +657,12 @@ void main() {
         },
       );
       expect(
-        await provider.runSkillControlTool(
+        await provider.runSkillControlTool((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolIdentifier: listSkillCredentialsToolName,
           arguments: const {'skillSlug': 'openai'},
-        ),
+        )),
         {
           'skillSlug': 'openai',
           'credentials': [
@@ -689,33 +685,33 @@ void main() {
     );
 
     expect(
-      await provider.runSkillNativeTool(
+      await provider.runSkillNativeTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: listAgentsToolName,
         arguments: const {},
-      ),
+      )),
       contains('agent-1'),
     );
     expect(
-      await provider.runSkillNativeTool(
+      await provider.runSkillNativeTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: runSubAgentToolName,
         arguments: const {'title': 'Child', 'prompt': 'Run task'},
-      ),
+      )),
       contains('child-1'),
     );
     await expectLater(
-      provider.runSkillNativeTool(
+      () => provider.runSkillNativeTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: 'unknown',
         arguments: const {},
-      ),
+      )),
       throwsA(isA<StateError>()),
     );
   });
@@ -765,33 +761,33 @@ void main() {
     );
 
     expect(
-      await provider.runSkillTemplateTool(
+      await provider.runSkillTemplateTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: 'skill-1',
         toolSlug: 'template-tool',
         arguments: {'value': 1},
-      ),
+      )),
       'template result',
     );
     expect(
-      await provider.runSkillNativeTool(
+      await provider.runSkillNativeTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: 'skills_manager',
         toolSlug: 'native-tool',
         arguments: {'value': 2},
-      ),
+      )),
       {'ok': true},
     );
     expect(
-      await provider.runSkillNativeTool(
+      await provider.runSkillNativeTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: 'duckduckgo',
         toolSlug: 'search',
         arguments: {'query': 'dart'},
-      ),
+      )),
       'service result',
     );
     expect(nativeSuccesses, [
@@ -821,13 +817,13 @@ void main() {
       runAppSkillToolUsecase: appSkillTool,
     );
 
-    final result = provider.runSkillNativeTool(
+    final result = provider.runSkillNativeTool((
       conversationId: 'conversation-1',
       workspaceId: 'workspace-1',
       skillSlug: 'duckduckgo',
       toolSlug: 'search',
       arguments: {'query': 'dart'},
-    );
+    ));
 
     cancellationRuntime.requestStop('conversation-1');
 
@@ -846,23 +842,23 @@ void main() {
     );
 
     expect(
-      () => provider.runSkillTemplateTool(
+      () => provider.runSkillTemplateTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: 'skill-1',
         toolSlug: 'template-tool',
         arguments: const {},
-      ),
+      )),
       throwsA(isA<StateError>()),
     );
     expect(
-      () => provider.runSkillNativeTool(
+      () => provider.runSkillNativeTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: 'skill-1',
         toolSlug: 'native-tool',
         arguments: const {},
-      ),
+      )),
       throwsA(isA<StateError>()),
     );
   });
@@ -878,23 +874,23 @@ void main() {
     );
 
     await expectLater(
-      provider.runSkillNativeTool(
+      () => provider.runSkillNativeTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: listAgentsToolName,
         arguments: const {},
-      ),
+      )),
       throwsA(isA<StateError>()),
     );
     await expectLater(
-      provider.runSkillNativeTool(
+      () => provider.runSkillNativeTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         skillSlug: SkillToolSlugs.skillsManager,
         toolSlug: 'list',
         arguments: const {},
-      ),
+      )),
       throwsA(isA<StateError>()),
     );
   });
@@ -930,21 +926,21 @@ void main() {
     );
 
     await expectLater(
-      provider.runSkillControlTool(
+      provider.runSkillControlTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         toolIdentifier: SkillToolNames.listCredentials,
         arguments: const {'skillSlug': 'missing-app-skill'},
-      ),
+      )),
       throwsA(isA<StateError>()),
     );
     await expectLater(
-      provider.runSkillControlTool(
+      provider.runSkillControlTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         toolIdentifier: SkillToolNames.listCredentials,
         arguments: const {'skillSlug': 'not-loaded'},
-      ),
+      )),
       throwsA(isA<StateError>()),
     );
 
@@ -968,12 +964,12 @@ void main() {
       skillCredentialsRepository: _MockSkillCredentialsRepository(),
     );
     await expectLater(
-      providerWithMissingRegistryEntry.runSkillControlTool(
+      providerWithMissingRegistryEntry.runSkillControlTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         toolIdentifier: SkillToolNames.listCredentials,
         arguments: const {'skillSlug': 'missing-app-skill'},
-      ),
+      )),
       throwsA(isA<StateError>()),
     );
   });
@@ -991,21 +987,21 @@ void main() {
       );
 
       await expectLater(
-        provider.runSkillControlTool(
+        provider.runSkillControlTool((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolIdentifier: loadSkillToolName,
           arguments: const {'slug': 'skill-1'},
-        ),
+        )),
         throwsA(isA<StateError>()),
       );
       await expectLater(
-        provider.runSkillControlTool(
+        provider.runSkillControlTool((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolIdentifier: unloadSkillToolName,
           arguments: const {'slug': 'skill-1'},
-        ),
+        )),
         throwsA(isA<StateError>()),
       );
     },

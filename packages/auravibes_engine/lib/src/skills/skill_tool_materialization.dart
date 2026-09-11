@@ -43,16 +43,12 @@ Map<String, Object?> templateInputSchema(
     if (raw is! Map) {
       throw const FormatException('Template input must be an object.');
     }
-    final name = raw['name'];
-    final type = raw['type'];
-    final optional = raw['isOptional'];
-    if (name is! String ||
-        name.isEmpty ||
-        properties.containsKey(name) ||
-        type != null && type is! String ||
-        optional != null && optional is! bool) {
+    if (!_isValidTemplateInput(raw, properties)) {
       throw const FormatException('Invalid template input.');
     }
+    final name = raw['name'] as String;
+    final type = raw['type'] as String?;
+    final optional = raw['isOptional'] as bool?;
     properties[name] = {
       'type': type ?? 'string',
       if (raw['description'] case final String description)
@@ -70,6 +66,21 @@ Map<String, Object?> templateInputSchema(
     requiresCredential: requiresCredential,
     credentialIds: credentialIds,
   );
+}
+
+bool _isValidTemplateInput(
+  Map<Object?, Object?> raw,
+  Map<String, Object?> properties,
+) {
+  final name = raw['name'];
+  final type = raw['type'];
+  final optional = raw['isOptional'];
+
+  return name is String &&
+      name.isNotEmpty &&
+      !properties.containsKey(name) &&
+      (type == null || type is String) &&
+      (optional == null || optional is bool);
 }
 
 List<Object?> _decodeTemplateInputs(String value) {

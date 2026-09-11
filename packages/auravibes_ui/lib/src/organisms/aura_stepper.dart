@@ -21,42 +21,66 @@ class AuraStepper extends StatelessWidget {
     spacing: context.auraTheme.spacing.sm,
     children: [
       for (final (index, step) in steps.indexed)
-        Row(
-          crossAxisAlignment: .start,
+        _AuraStepperItem(
+          step: step,
+          isLast: index == steps.length - 1,
           spacing: context.auraTheme.spacing.sm,
-          children: [
-            AuraIcon(
-              _icon(step.state),
-              tint: _tint(step.state),
-              semanticLabel: step.state.name,
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: .start,
-                children: [
-                  AuraText(child: Text(step.title)),
-                  if (step.description case final value?)
-                    AuraText(child: Text(value), style: .bodySmall),
-                ],
-              ),
-            ),
-            if (index < steps.length - 1) const SizedBox.shrink(),
-          ],
         ),
     ],
   );
-
-  IconData _icon(AuraStepState state) => switch (state) {
-    .complete => Icons.check_circle,
-    .current => Icons.radio_button_checked,
-    .error => Icons.error,
-    .pending => Icons.radio_button_unchecked,
-  };
-
-  AuraTint _tint(AuraStepState state) => switch (state) {
-    .complete => .success,
-    .current => .primary,
-    .error => .error,
-    .pending => .secondary,
-  };
 }
+
+class _AuraStepperItem extends StatelessWidget {
+  new({required AuraStep step, required bool isLast, required double spacing})
+    : _child = Row(
+        crossAxisAlignment: .start,
+        spacing: spacing,
+        children: [
+          _AuraStepperIcon(state: step.state),
+          Expanded(child: _AuraStepperText(step: step)),
+          if (!isLast) const SizedBox.shrink(),
+        ],
+      );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AuraStepperIcon({required final AuraStepState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIcon(
+    _stepIcon(state),
+    tint: _stepTint(state),
+    semanticLabel: state.name,
+  );
+}
+
+class const _AuraStepperText({required final AuraStep step})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      AuraText(child: Text(step.title)),
+      if (step.description case final value?)
+        AuraText(child: Text(value), style: .bodySmall),
+    ],
+  );
+}
+
+IconData _stepIcon(AuraStepState state) => switch (state) {
+  .complete => Icons.check_circle,
+  .current => Icons.radio_button_checked,
+  .error => Icons.error,
+  .pending => Icons.radio_button_unchecked,
+};
+
+AuraTint _stepTint(AuraStepState state) => switch (state) {
+  .complete => .success,
+  .current => .primary,
+  .error => .error,
+  .pending => .secondary,
+};

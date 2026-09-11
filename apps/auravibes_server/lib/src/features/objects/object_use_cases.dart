@@ -12,7 +12,7 @@ import 'object_scanner.dart';
 import 'object_store.dart';
 
 class ObjectUseCases {
-  ObjectUseCases({
+  new({
     required this.store,
     required this.scanner,
     ObjectRepository? repository,

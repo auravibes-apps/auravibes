@@ -5,6 +5,182 @@ import 'package:auravibes_ui/src/colors/value_color.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
+typedef _SpacingCoreLerpValues = ({
+  double none,
+  double base,
+  double xs,
+  double sm,
+  double md,
+});
+
+typedef _SpacingExtendedLerpValues = ({
+  double lg,
+  double xl,
+  double xl2,
+  double xl3,
+});
+
+typedef _SpacingLerpValues = ({
+  _SpacingCoreLerpValues core,
+  _SpacingExtendedLerpValues extended,
+});
+
+typedef _TypographyFonts = ({
+  String headingFontFamily,
+  String bodyFontFamily,
+  String monoFontFamily,
+});
+
+typedef _TypographySmallSizes = ({
+  double fontSizeXs,
+  double fontSizeSm,
+  double fontSizeBase,
+  double fontSizeLg,
+  double fontSizeXl,
+});
+
+typedef _TypographyLargeSizes = ({
+  double fontSize2Xl,
+  double fontSize3Xl,
+  double fontSize4Xl,
+  double fontSize5Xl,
+});
+
+typedef _TypographySizes = ({
+  _TypographySmallSizes small,
+  _TypographyLargeSizes large,
+});
+
+typedef _TypographyWeightCore = ({
+  FontWeight light,
+  FontWeight regular,
+  FontWeight medium,
+});
+
+typedef _TypographyWeightStrong = ({FontWeight semibold, FontWeight bold});
+
+typedef _TypographyWeights = ({
+  _TypographyWeightCore core,
+  _TypographyWeightStrong strong,
+});
+
+typedef _TypographySmallLineHeights = ({
+  double lineHeightXs,
+  double lineHeightSm,
+  double lineHeightBase,
+  double lineHeightLg,
+  double lineHeightXl,
+});
+
+typedef _TypographyLargeLineHeights = ({
+  double lineHeight2Xl,
+  double lineHeight3Xl,
+  double lineHeight4Xl,
+  double lineHeight5Xl,
+});
+
+typedef _TypographyLineHeights = ({
+  _TypographySmallLineHeights small,
+  _TypographyLargeLineHeights large,
+});
+
+typedef _TypographyLetterSpacingCore = ({double tight, double normal});
+
+typedef _TypographyLetterSpacing = ({
+  _TypographyLetterSpacingCore core,
+  double wide,
+});
+
+typedef _ColorTripletLerpValues = ({
+  Color primary,
+  Color primaryVariant,
+  Color onPrimary,
+});
+
+typedef _ColorTripletLerpRequest = ({
+  Color primary,
+  Color primaryVariant,
+  Color onPrimary,
+  Color otherPrimary,
+  Color otherPrimaryVariant,
+  Color otherOnPrimary,
+  double t,
+});
+
+typedef _ColorPairLerpRequest = ({
+  Color value,
+  Color onValue,
+  Color otherValue,
+  Color otherOnValue,
+  double t,
+});
+
+typedef _BrandLerpValues = ({
+  _ColorTripletLerpValues primary,
+  _ColorTripletLerpValues secondary,
+  _ColorTripletLerpValues tertiary,
+});
+
+typedef _StatusPrimaryLerpValues = ({
+  _ColorPairLerpValues error,
+  _ColorPairLerpValues warning,
+});
+
+typedef _StatusSecondaryLerpValues = ({
+  _ColorPairLerpValues success,
+  _ColorPairLerpValues info,
+});
+
+typedef _StatusLerpRequest = ({
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+});
+
+typedef _StatusLerpValues = ({
+  _StatusPrimaryLerpValues primary,
+  _StatusSecondaryLerpValues secondary,
+});
+
+typedef _ColorSchemeLerpValues = ({
+  _BrandLerpValues brand,
+  _SurfaceLerpValues surface,
+  _StatusLerpValues status,
+  _ChromeLerpValues chrome,
+});
+
+typedef _ColorPairLerpValues = ({Color value, Color onValue});
+
+typedef _SurfaceLerpValues = ({
+  _SurfaceCoreLerpValues core,
+  _SurfaceBackgroundLerpValues background,
+});
+
+typedef _SurfaceCoreLerpValues = ({
+  Color surface,
+  Color surfaceVariant,
+  Color onSurface,
+  Color onSurfaceVariant,
+});
+
+typedef _SurfaceBackgroundLerpValues = ({Color background, Color onBackground});
+
+typedef _BorderRadiusCoreLerpValues = ({double none, double sm, double md});
+
+typedef _BorderRadiusExtendedLerpValues = ({double lg, double xl, double full});
+
+typedef _BorderRadiusLerpValues = ({
+  _BorderRadiusCoreLerpValues core,
+  _BorderRadiusExtendedLerpValues extended,
+});
+
+typedef _ChromeLerpValues = ({
+  Color outline,
+  Color outlineVariant,
+  Color shadow,
+  Color scrim,
+});
+
 /// Aura theme extension that provides theme-aware design tokens.
 ///
 /// Colors, spacing, border radius, and typography all live here so a subtree
@@ -27,8 +203,97 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     animation: _standardAnimation,
   );
 
-  static final _lightColors = AuraColorScheme._light();
-  static final _darkColors = AuraColorScheme._dark();
+  static final _lightColors = AuraColorScheme(
+    primary: DesignColors.primaryBase,
+    primaryVariant: DesignColors.primaryDark,
+    onPrimary: DesignColors.primaryContrast,
+    secondary: DesignColors.secondaryBase,
+    secondaryVariant: DesignColors.secondaryDark,
+    onSecondary: DesignColors.secondaryContrast,
+    tertiary: DesignColors.accentBase,
+    tertiaryVariant: DesignColors.accentDark,
+    onTertiary: DesignColors.accentContrast,
+    surface: DesignColors.neutral50,
+    surfaceVariant: const Color(0xFFFFFFFF),
+    onSurface: DesignColors.neutral900,
+    onSurfaceVariant: DesignColors.neutral700,
+    background: DesignColors.neutral100,
+    onBackground: DesignColors.neutral900,
+    error: OKLCHColor(
+      hue: HueColorValues.error,
+      lightness: AuraColorScheme._lightnessLight,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onError: const Color(0xFFFFFFFF),
+    warning: OKLCHColor(
+      hue: HueColorValues.warning,
+      lightness: AuraColorScheme._lightnessLight,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onWarning: const Color(0xFFFFFFFF),
+    success: OKLCHColor(
+      hue: HueColorValues.success,
+      lightness: AuraColorScheme._lightnessLight,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onSuccess: const Color(0xFFFFFFFF),
+    info: OKLCHColor(
+      hue: HueColorValues.info,
+      lightness: AuraColorScheme._lightnessLight,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onInfo: const Color(0xFFFFFFFF),
+    outline: DesignColors.neutral300,
+    outlineVariant: DesignColors.neutral200,
+    shadow: DesignColors.neutral900,
+    scrim: const Color(0x80000000),
+  );
+
+  static final _darkColors = AuraColorScheme(
+    primary: DesignColors.primaryLight,
+    primaryVariant: DesignColors.primaryBase,
+    onPrimary: Colors.black,
+    secondary: DesignColors.secondaryLight,
+    secondaryVariant: DesignColors.secondaryBase,
+    onSecondary: Colors.black,
+    tertiary: DesignColors.accentLight,
+    tertiaryVariant: DesignColors.accentBase,
+    onTertiary: Colors.black,
+    surface: DesignColors.neutral800,
+    surfaceVariant: DesignColors.neutral700,
+    onSurface: DesignColors.neutral100,
+    onSurfaceVariant: DesignColors.neutral300,
+    background: DesignColors.neutral900,
+    onBackground: DesignColors.neutral100,
+    error: OKLCHColor(
+      hue: HueColorValues.error,
+      lightness: AuraColorScheme._lightnessDark,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onError: Colors.white,
+    warning: OKLCHColor(
+      hue: HueColorValues.warning,
+      lightness: AuraColorScheme._lightnessDark,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onWarning: Colors.white,
+    success: OKLCHColor(
+      hue: HueColorValues.success,
+      lightness: AuraColorScheme._lightnessDark,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onSuccess: Colors.white,
+    info: OKLCHColor(
+      hue: HueColorValues.info,
+      lightness: AuraColorScheme._lightnessDark,
+      chroma: AuraColorScheme._standardChroma,
+    ).toColor(),
+    onInfo: Colors.white,
+    outline: DesignColors.neutral600,
+    outlineVariant: DesignColors.neutral700,
+    shadow: const Color(0xFF000000),
+    scrim: const Color(0xB3000000),
+  );
 
   /// Creates a Aura theme extension.
   const new({
@@ -122,6 +387,17 @@ class AuraSpacingScale {
     this.xl3 = _extraLarge3Value,
   });
 
+  new _fromLerpValues(_SpacingLerpValues values)
+    : none = values.core.none,
+      base = values.core.base,
+      xs = values.core.xs,
+      sm = values.core.sm,
+      md = values.core.md,
+      lg = values.extended.lg,
+      xl = values.extended.xl,
+      xl2 = values.extended.xl2,
+      xl3 = values.extended.xl3;
+
   /// Design-system standard spacing scale.
   const new _standard()
     : none = _noneValue,
@@ -181,17 +457,7 @@ class AuraSpacingScale {
     if (t <= 0) return this;
     if (t >= 1) return other;
 
-    return AuraSpacingScale(
-      base: _lerpDouble(base, other.base, t),
-      none: _lerpDouble(none, other.none, t),
-      xs: _lerpDouble(xs, other.xs, t),
-      sm: _lerpDouble(sm, other.sm, t),
-      md: _lerpDouble(md, other.md, t),
-      lg: _lerpDouble(lg, other.lg, t),
-      xl: _lerpDouble(xl, other.xl, t),
-      xl2: _lerpDouble(xl2, other.xl2, t),
-      xl3: _lerpDouble(xl3, other.xl3, t),
-    );
+    return AuraSpacingScale._fromLerpValues(_lerpSpacingValues(this, other, t));
   }
 }
 
@@ -214,6 +480,14 @@ class AuraBorderRadiusScale {
     this.xl = _extraLargeValue,
     this.full = _fullValue,
   });
+
+  new _fromLerpValues(_BorderRadiusLerpValues values)
+    : none = values.core.none,
+      sm = values.core.sm,
+      md = values.core.md,
+      lg = values.extended.lg,
+      xl = values.extended.xl,
+      full = values.extended.full;
 
   /// Design-system standard border-radius scale.
   const new _standard()
@@ -259,13 +533,8 @@ class AuraBorderRadiusScale {
     if (t <= 0) return this;
     if (t >= 1) return other;
 
-    return AuraBorderRadiusScale(
-      none: _lerpDouble(none, other.none, t),
-      sm: _lerpDouble(sm, other.sm, t),
-      md: _lerpDouble(md, other.md, t),
-      lg: _lerpDouble(lg, other.lg, t),
-      xl: _lerpDouble(xl, other.xl, t),
-      full: _lerpDouble(full, other.full, t),
+    return AuraBorderRadiusScale._fromLerpValues(
+      _lerpBorderRadiusValues(this, other, t),
     );
   }
 }
@@ -332,6 +601,42 @@ class AuraTypographyScale {
     this.letterSpacingNormal = _normalLetterSpacing,
     this.letterSpacingWide = _wideLetterSpacing,
   });
+
+  new _fromLerpGroups({
+    required _TypographyFonts fonts,
+    required _TypographySizes sizes,
+    required _TypographyWeights weights,
+    required _TypographyLineHeights lineHeights,
+    required _TypographyLetterSpacing letterSpacing,
+  }) : headingFontFamily = fonts.headingFontFamily,
+       bodyFontFamily = fonts.bodyFontFamily,
+       monoFontFamily = fonts.monoFontFamily,
+       fontSizeXs = sizes.small.fontSizeXs,
+       fontSizeSm = sizes.small.fontSizeSm,
+       fontSizeBase = sizes.small.fontSizeBase,
+       fontSizeLg = sizes.small.fontSizeLg,
+       fontSizeXl = sizes.small.fontSizeXl,
+       fontSize2Xl = sizes.large.fontSize2Xl,
+       fontSize3Xl = sizes.large.fontSize3Xl,
+       fontSize4Xl = sizes.large.fontSize4Xl,
+       fontSize5Xl = sizes.large.fontSize5Xl,
+       fontWeightLight = weights.core.light,
+       fontWeightRegular = weights.core.regular,
+       fontWeightMedium = weights.core.medium,
+       fontWeightSemibold = weights.strong.semibold,
+       fontWeightBold = weights.strong.bold,
+       lineHeightXs = lineHeights.small.lineHeightXs,
+       lineHeightSm = lineHeights.small.lineHeightSm,
+       lineHeightBase = lineHeights.small.lineHeightBase,
+       lineHeightLg = lineHeights.small.lineHeightLg,
+       lineHeightXl = lineHeights.small.lineHeightXl,
+       lineHeight2Xl = lineHeights.large.lineHeight2Xl,
+       lineHeight3Xl = lineHeights.large.lineHeight3Xl,
+       lineHeight4Xl = lineHeights.large.lineHeight4Xl,
+       lineHeight5Xl = lineHeights.large.lineHeight5Xl,
+       letterSpacingTight = letterSpacing.core.tight,
+       letterSpacingNormal = letterSpacing.core.normal,
+       letterSpacingWide = letterSpacing.wide;
 
   /// Design-system standard typography scale.
   const new _standard()
@@ -465,75 +770,403 @@ class AuraTypographyScale {
     if (t <= 0) return this;
     if (t >= 1) return other;
 
-    return AuraTypographyScale(
-      headingFontFamily: t < _halfway
-          ? headingFontFamily
-          : other.headingFontFamily,
-      bodyFontFamily: t < _halfway ? bodyFontFamily : other.bodyFontFamily,
-      monoFontFamily: t < _halfway ? monoFontFamily : other.monoFontFamily,
-      fontSizeXs: _lerpDouble(fontSizeXs, other.fontSizeXs, t),
-      fontSizeSm: _lerpDouble(fontSizeSm, other.fontSizeSm, t),
-      fontSizeBase: _lerpDouble(fontSizeBase, other.fontSizeBase, t),
-      fontSizeLg: _lerpDouble(fontSizeLg, other.fontSizeLg, t),
-      fontSizeXl: _lerpDouble(fontSizeXl, other.fontSizeXl, t),
-      fontSize2Xl: _lerpDouble(fontSize2Xl, other.fontSize2Xl, t),
-      fontSize3Xl: _lerpDouble(fontSize3Xl, other.fontSize3Xl, t),
-      fontSize4Xl: _lerpDouble(fontSize4Xl, other.fontSize4Xl, t),
-      fontSize5Xl: _lerpDouble(fontSize5Xl, other.fontSize5Xl, t),
-      fontWeightLight: _lerpFontWeight(
-        fontWeightLight,
-        other.fontWeightLight,
-        t,
-      ),
-      fontWeightRegular: _lerpFontWeight(
-        fontWeightRegular,
-        other.fontWeightRegular,
-        t,
-      ),
-      fontWeightMedium: _lerpFontWeight(
-        fontWeightMedium,
-        other.fontWeightMedium,
-        t,
-      ),
-      fontWeightSemibold: _lerpFontWeight(
-        fontWeightSemibold,
-        other.fontWeightSemibold,
-        t,
-      ),
-      fontWeightBold: _lerpFontWeight(fontWeightBold, other.fontWeightBold, t),
-      lineHeightXs: _lerpDouble(lineHeightXs, other.lineHeightXs, t),
-      lineHeightSm: _lerpDouble(lineHeightSm, other.lineHeightSm, t),
-      lineHeightBase: _lerpDouble(lineHeightBase, other.lineHeightBase, t),
-      lineHeightLg: _lerpDouble(lineHeightLg, other.lineHeightLg, t),
-      lineHeightXl: _lerpDouble(lineHeightXl, other.lineHeightXl, t),
-      lineHeight2Xl: _lerpDouble(lineHeight2Xl, other.lineHeight2Xl, t),
-      lineHeight3Xl: _lerpDouble(lineHeight3Xl, other.lineHeight3Xl, t),
-      lineHeight4Xl: _lerpDouble(lineHeight4Xl, other.lineHeight4Xl, t),
-      lineHeight5Xl: _lerpDouble(lineHeight5Xl, other.lineHeight5Xl, t),
-      letterSpacingTight: _lerpDouble(
-        letterSpacingTight,
-        other.letterSpacingTight,
-        t,
-      ),
-      letterSpacingNormal: _lerpDouble(
-        letterSpacingNormal,
-        other.letterSpacingNormal,
-        t,
-      ),
-      letterSpacingWide: _lerpDouble(
-        letterSpacingWide,
-        other.letterSpacingWide,
-        t,
-      ),
+    return AuraTypographyScale._fromLerpGroups(
+      fonts: _lerpTypographyFonts(this, other, t),
+      sizes: _lerpTypographySizes(this, other, t),
+      weights: _lerpTypographyWeights(this, other, t),
+      lineHeights: _lerpTypographyLineHeights(this, other, t),
+      letterSpacing: _lerpTypographyLetterSpacing(this, other, t),
     );
   }
 }
 
 double _lerpDouble(double a, double b, double t) => a + (b - a) * t;
 
+_SpacingLerpValues _lerpSpacingValues(
+  AuraSpacingScale begin,
+  AuraSpacingScale end,
+  double t,
+) => (
+  core: _lerpSpacingCoreValues(begin, end, t),
+  extended: _lerpSpacingExtendedValues(begin, end, t),
+);
+
+_SpacingCoreLerpValues _lerpSpacingCoreValues(
+  AuraSpacingScale begin,
+  AuraSpacingScale end,
+  double t,
+) => (
+  none: _lerpDouble(begin.none, end.none, t),
+  base: _lerpDouble(begin.base, end.base, t),
+  xs: _lerpDouble(begin.xs, end.xs, t),
+  sm: _lerpDouble(begin.sm, end.sm, t),
+  md: _lerpDouble(begin.md, end.md, t),
+);
+
+_SpacingExtendedLerpValues _lerpSpacingExtendedValues(
+  AuraSpacingScale begin,
+  AuraSpacingScale end,
+  double t,
+) => (
+  lg: _lerpDouble(begin.lg, end.lg, t),
+  xl: _lerpDouble(begin.xl, end.xl, t),
+  xl2: _lerpDouble(begin.xl2, end.xl2, t),
+  xl3: _lerpDouble(begin.xl3, end.xl3, t),
+);
+
+_BorderRadiusLerpValues _lerpBorderRadiusValues(
+  AuraBorderRadiusScale begin,
+  AuraBorderRadiusScale end,
+  double t,
+) => (
+  core: _lerpBorderRadiusCoreValues(begin, end, t),
+  extended: _lerpBorderRadiusExtendedValues(begin, end, t),
+);
+
+_BorderRadiusCoreLerpValues _lerpBorderRadiusCoreValues(
+  AuraBorderRadiusScale begin,
+  AuraBorderRadiusScale end,
+  double t,
+) => (
+  none: _lerpDouble(begin.none, end.none, t),
+  sm: _lerpDouble(begin.sm, end.sm, t),
+  md: _lerpDouble(begin.md, end.md, t),
+);
+
+_BorderRadiusExtendedLerpValues _lerpBorderRadiusExtendedValues(
+  AuraBorderRadiusScale begin,
+  AuraBorderRadiusScale end,
+  double t,
+) => (
+  lg: _lerpDouble(begin.lg, end.lg, t),
+  xl: _lerpDouble(begin.xl, end.xl, t),
+  full: _lerpDouble(begin.full, end.full, t),
+);
+
+_SurfaceCoreLerpValues _lerpSurfaceCoreValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => (
+  surface: _lerpColor(begin.surface, end.surface, t),
+  surfaceVariant: _lerpColor(begin.surfaceVariant, end.surfaceVariant, t),
+  onSurface: _lerpColor(begin.onSurface, end.onSurface, t),
+  onSurfaceVariant: _lerpColor(begin.onSurfaceVariant, end.onSurfaceVariant, t),
+);
+
+_SurfaceBackgroundLerpValues _lerpSurfaceBackgroundValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => (
+  background: _lerpColor(begin.background, end.background, t),
+  onBackground: _lerpColor(begin.onBackground, end.onBackground, t),
+);
+
+_TypographyFonts _lerpTypographyFonts(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  headingFontFamily: t < AuraTypographyScale._halfway
+      ? begin.headingFontFamily
+      : end.headingFontFamily,
+  bodyFontFamily: t < AuraTypographyScale._halfway
+      ? begin.bodyFontFamily
+      : end.bodyFontFamily,
+  monoFontFamily: t < AuraTypographyScale._halfway
+      ? begin.monoFontFamily
+      : end.monoFontFamily,
+);
+
+_TypographySizes _lerpTypographySizes(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  small: _lerpTypographySmallSizes(begin, end, t),
+  large: _lerpTypographyLargeSizes(begin, end, t),
+);
+
+_TypographySmallSizes _lerpTypographySmallSizes(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  fontSizeXs: _lerpDouble(begin.fontSizeXs, end.fontSizeXs, t),
+  fontSizeSm: _lerpDouble(begin.fontSizeSm, end.fontSizeSm, t),
+  fontSizeBase: _lerpDouble(begin.fontSizeBase, end.fontSizeBase, t),
+  fontSizeLg: _lerpDouble(begin.fontSizeLg, end.fontSizeLg, t),
+  fontSizeXl: _lerpDouble(begin.fontSizeXl, end.fontSizeXl, t),
+);
+
+_TypographyLargeSizes _lerpTypographyLargeSizes(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  fontSize2Xl: _lerpDouble(begin.fontSize2Xl, end.fontSize2Xl, t),
+  fontSize3Xl: _lerpDouble(begin.fontSize3Xl, end.fontSize3Xl, t),
+  fontSize4Xl: _lerpDouble(begin.fontSize4Xl, end.fontSize4Xl, t),
+  fontSize5Xl: _lerpDouble(begin.fontSize5Xl, end.fontSize5Xl, t),
+);
+
+_TypographyWeights _lerpTypographyWeights(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  core: _lerpTypographyWeightCore(begin, end, t),
+  strong: _lerpTypographyWeightStrong(begin, end, t),
+);
+
+_TypographyWeightCore _lerpTypographyWeightCore(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  light: _lerpFontWeight(begin.fontWeightLight, end.fontWeightLight, t),
+  regular: _lerpFontWeight(begin.fontWeightRegular, end.fontWeightRegular, t),
+  medium: _lerpFontWeight(begin.fontWeightMedium, end.fontWeightMedium, t),
+);
+
+_TypographyWeightStrong _lerpTypographyWeightStrong(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  semibold: _lerpFontWeight(
+    begin.fontWeightSemibold,
+    end.fontWeightSemibold,
+    t,
+  ),
+  bold: _lerpFontWeight(begin.fontWeightBold, end.fontWeightBold, t),
+);
+
+_TypographyLineHeights _lerpTypographyLineHeights(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  small: _lerpTypographySmallLineHeights(begin, end, t),
+  large: _lerpTypographyLargeLineHeights(begin, end, t),
+);
+
+_TypographySmallLineHeights _lerpTypographySmallLineHeights(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  lineHeightXs: _lerpDouble(begin.lineHeightXs, end.lineHeightXs, t),
+  lineHeightSm: _lerpDouble(begin.lineHeightSm, end.lineHeightSm, t),
+  lineHeightBase: _lerpDouble(begin.lineHeightBase, end.lineHeightBase, t),
+  lineHeightLg: _lerpDouble(begin.lineHeightLg, end.lineHeightLg, t),
+  lineHeightXl: _lerpDouble(begin.lineHeightXl, end.lineHeightXl, t),
+);
+
+_TypographyLargeLineHeights _lerpTypographyLargeLineHeights(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  lineHeight2Xl: _lerpDouble(begin.lineHeight2Xl, end.lineHeight2Xl, t),
+  lineHeight3Xl: _lerpDouble(begin.lineHeight3Xl, end.lineHeight3Xl, t),
+  lineHeight4Xl: _lerpDouble(begin.lineHeight4Xl, end.lineHeight4Xl, t),
+  lineHeight5Xl: _lerpDouble(begin.lineHeight5Xl, end.lineHeight5Xl, t),
+);
+
+_TypographyLetterSpacing _lerpTypographyLetterSpacing(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  core: _lerpTypographyLetterSpacingCore(begin, end, t),
+  wide: _lerpDouble(begin.letterSpacingWide, end.letterSpacingWide, t),
+);
+
+_TypographyLetterSpacingCore _lerpTypographyLetterSpacingCore(
+  AuraTypographyScale begin,
+  AuraTypographyScale end,
+  double t,
+) => (
+  tight: _lerpDouble(begin.letterSpacingTight, end.letterSpacingTight, t),
+  normal: _lerpDouble(begin.letterSpacingNormal, end.letterSpacingNormal, t),
+);
+
 FontWeight _lerpFontWeight(FontWeight a, FontWeight b, double t) {
   return FontWeight.lerp(a, b, t) ?? (t < AuraTypographyScale._halfway ? a : b);
 }
+
+_BrandLerpValues _lerpBrandValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => (
+  primary: _lerpPrimaryValues(begin, end, t),
+  secondary: _lerpSecondaryValues(begin, end, t),
+  tertiary: _lerpTertiaryValues(begin, end, t),
+);
+
+_ColorTripletLerpValues _lerpPrimaryValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => _lerpColorTriplet((
+  primary: begin.primary,
+  primaryVariant: begin.primaryVariant,
+  onPrimary: begin.onPrimary,
+  otherPrimary: end.primary,
+  otherPrimaryVariant: end.primaryVariant,
+  otherOnPrimary: end.onPrimary,
+  t: t,
+));
+
+_ColorTripletLerpValues _lerpSecondaryValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => _lerpColorTriplet((
+  primary: begin.secondary,
+  primaryVariant: begin.secondaryVariant,
+  onPrimary: begin.onSecondary,
+  otherPrimary: end.secondary,
+  otherPrimaryVariant: end.secondaryVariant,
+  otherOnPrimary: end.onSecondary,
+  t: t,
+));
+
+_ColorTripletLerpValues _lerpTertiaryValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => _lerpColorTriplet((
+  primary: begin.tertiary,
+  primaryVariant: begin.tertiaryVariant,
+  onPrimary: begin.onTertiary,
+  otherPrimary: end.tertiary,
+  otherPrimaryVariant: end.tertiaryVariant,
+  otherOnPrimary: end.onTertiary,
+  t: t,
+));
+
+_ColorTripletLerpValues _lerpColorTriplet(_ColorTripletLerpRequest request) {
+  final progress = request.t;
+
+  return (
+    primary: _lerpColor(request.primary, request.otherPrimary, progress),
+    primaryVariant: _lerpColor(
+      request.primaryVariant,
+      request.otherPrimaryVariant,
+      progress,
+    ),
+    onPrimary: _lerpColor(request.onPrimary, request.otherOnPrimary, progress),
+  );
+}
+
+_SurfaceLerpValues _lerpSurfaceValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => (
+  core: _lerpSurfaceCoreValues(begin, end, t),
+  background: _lerpSurfaceBackgroundValues(begin, end, t),
+);
+
+_ColorPairLerpValues _lerpPair(_ColorPairLerpRequest request) => (
+  value: _lerpColor(request.value, request.otherValue, request.t),
+  onValue: _lerpColor(request.onValue, request.otherOnValue, request.t),
+);
+
+_ChromeLerpValues _lerpChromeValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => (
+  outline: _lerpColor(begin.outline, end.outline, t),
+  outlineVariant: _lerpColor(begin.outlineVariant, end.outlineVariant, t),
+  shadow: _lerpColor(begin.shadow, end.shadow, t),
+  scrim: _lerpColor(begin.scrim, end.scrim, t),
+);
+
+_ColorSchemeLerpValues _lerpColorSchemeValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => (
+  brand: _lerpBrandValues(begin, end, t),
+  surface: _lerpSurfaceValues(begin, end, t),
+  status: _lerpStatusValues(begin, end, t),
+  chrome: _lerpChromeValues(begin, end, t),
+);
+
+_StatusLerpValues _lerpStatusValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) => (
+  primary: _lerpStatusPrimaryValues(begin, end, t),
+  secondary: _lerpStatusSecondaryValues(begin, end, t),
+);
+
+_StatusPrimaryLerpValues _lerpStatusPrimaryValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) {
+  final request = (begin: begin, end: end, t: t);
+
+  return (
+    error: _lerpStatusError(request),
+    warning: _lerpStatusWarning(request),
+  );
+}
+
+_StatusSecondaryLerpValues _lerpStatusSecondaryValues(
+  AuraColorScheme begin,
+  AuraColorScheme end,
+  double t,
+) {
+  final request = (begin: begin, end: end, t: t);
+
+  return (success: _lerpStatusSuccess(request), info: _lerpStatusInfo(request));
+}
+
+_ColorPairLerpValues _lerpStatusError(_StatusLerpRequest request) => _lerpPair((
+  value: request.begin.error,
+  onValue: request.begin.onError,
+  otherValue: request.end.error,
+  otherOnValue: request.end.onError,
+  t: request.t,
+));
+
+_ColorPairLerpValues _lerpStatusWarning(_StatusLerpRequest request) =>
+    _lerpPair((
+      value: request.begin.warning,
+      onValue: request.begin.onWarning,
+      otherValue: request.end.warning,
+      otherOnValue: request.end.onWarning,
+      t: request.t,
+    ));
+
+_ColorPairLerpValues _lerpStatusSuccess(_StatusLerpRequest request) =>
+    _lerpPair((
+      value: request.begin.success,
+      onValue: request.begin.onSuccess,
+      otherValue: request.end.success,
+      otherOnValue: request.end.onSuccess,
+      t: request.t,
+    ));
+
+_ColorPairLerpValues _lerpStatusInfo(_StatusLerpRequest request) => _lerpPair((
+  value: request.begin.info,
+  onValue: request.begin.onInfo,
+  otherValue: request.end.info,
+  otherOnValue: request.end.onInfo,
+  t: request.t,
+));
+
+Color _lerpColor(Color begin, Color end, double t) =>
+    Color.lerp(begin, end, t) ?? begin;
 
 /// Color scheme that adapts to light and dark themes.
 @immutable
@@ -573,97 +1206,34 @@ class AuraColorScheme {
     required this.scrim,
   });
 
-  /// Creates a light color scheme.
-  new _light()
-    : primary = DesignColors.primaryBase,
-      primaryVariant = DesignColors.primaryDark,
-      onPrimary = DesignColors.primaryContrast,
-      secondary = DesignColors.secondaryBase,
-      secondaryVariant = DesignColors.secondaryDark,
-      onSecondary = DesignColors.secondaryContrast,
-      tertiary = DesignColors.accentBase,
-      tertiaryVariant = DesignColors.accentDark,
-      onTertiary = DesignColors.accentContrast,
-      surface = DesignColors.neutral50,
-      surfaceVariant = const Color(0xFFFFFFFF),
-      onSurface = DesignColors.neutral900,
-      onSurfaceVariant = DesignColors.neutral700,
-      background = DesignColors.neutral100,
-      onBackground = DesignColors.neutral900,
-      error = OKLCHColor(
-        hue: HueColorValues.error,
-        lightness: _lightnessLight,
-        chroma: _standardChroma,
-      ).toColor(),
-      onError = const Color(0xFFFFFFFF),
-      warning = OKLCHColor(
-        hue: HueColorValues.warning,
-        lightness: _lightnessLight,
-        chroma: _standardChroma,
-      ).toColor(),
-      onWarning = const Color(0xFFFFFFFF),
-      success = OKLCHColor(
-        hue: HueColorValues.success,
-        lightness: _lightnessLight,
-        chroma: _standardChroma,
-      ).toColor(),
-      onSuccess = const Color(0xFFFFFFFF),
-      info = OKLCHColor(
-        hue: HueColorValues.info,
-        lightness: _lightnessLight,
-        chroma: _standardChroma,
-      ).toColor(),
-      onInfo = const Color(0xFFFFFFFF),
-      outline = DesignColors.neutral300,
-      outlineVariant = DesignColors.neutral200,
-      shadow = DesignColors.neutral900,
-      scrim = const Color(0x80000000);
-
-  /// Creates a dark color scheme.
-  new _dark()
-    : primary = DesignColors.primaryLight,
-      primaryVariant = DesignColors.primaryBase,
-      onPrimary = Colors.black,
-      secondary = DesignColors.secondaryLight,
-      secondaryVariant = DesignColors.secondaryBase,
-      onSecondary = Colors.black,
-      tertiary = DesignColors.accentLight,
-      tertiaryVariant = DesignColors.accentBase,
-      onTertiary = Colors.black,
-      surface = DesignColors.neutral800,
-      surfaceVariant = DesignColors.neutral700,
-      onSurface = DesignColors.neutral100,
-      onSurfaceVariant = DesignColors.neutral300,
-      background = DesignColors.neutral900,
-      onBackground = DesignColors.neutral100,
-      error = OKLCHColor(
-        hue: HueColorValues.error,
-        lightness: _lightnessDark,
-        chroma: _standardChroma,
-      ).toColor(),
-      onError = Colors.white,
-      warning = OKLCHColor(
-        hue: HueColorValues.warning,
-        lightness: _lightnessDark,
-        chroma: _standardChroma,
-      ).toColor(),
-      onWarning = Colors.white,
-      success = OKLCHColor(
-        hue: HueColorValues.success,
-        lightness: _lightnessDark,
-        chroma: _standardChroma,
-      ).toColor(),
-      onSuccess = Colors.white,
-      info = OKLCHColor(
-        hue: HueColorValues.info,
-        lightness: _lightnessDark,
-        chroma: _standardChroma,
-      ).toColor(),
-      onInfo = Colors.white,
-      outline = DesignColors.neutral600,
-      outlineVariant = DesignColors.neutral700,
-      shadow = const Color(0xFF000000),
-      scrim = const Color(0xB3000000);
+  new _fromLerpGroups(_ColorSchemeLerpValues values)
+    : primary = values.brand.primary.primary,
+      primaryVariant = values.brand.primary.primaryVariant,
+      onPrimary = values.brand.primary.onPrimary,
+      secondary = values.brand.secondary.primary,
+      secondaryVariant = values.brand.secondary.primaryVariant,
+      onSecondary = values.brand.secondary.onPrimary,
+      tertiary = values.brand.tertiary.primary,
+      tertiaryVariant = values.brand.tertiary.primaryVariant,
+      onTertiary = values.brand.tertiary.onPrimary,
+      surface = values.surface.core.surface,
+      surfaceVariant = values.surface.core.surfaceVariant,
+      onSurface = values.surface.core.onSurface,
+      onSurfaceVariant = values.surface.core.onSurfaceVariant,
+      background = values.surface.background.background,
+      onBackground = values.surface.background.onBackground,
+      error = values.status.primary.error.value,
+      onError = values.status.primary.error.onValue,
+      warning = values.status.primary.warning.value,
+      onWarning = values.status.primary.warning.onValue,
+      success = values.status.secondary.success.value,
+      onSuccess = values.status.secondary.success.onValue,
+      info = values.status.secondary.info.value,
+      onInfo = values.status.secondary.info.onValue,
+      outline = values.chrome.outline,
+      outlineVariant = values.chrome.outlineVariant,
+      shadow = values.chrome.shadow,
+      scrim = values.chrome.scrim;
 
   /// Variant of the tertiary color.
   final Color tertiaryVariant;
@@ -757,34 +1327,8 @@ class AuraColorScheme {
 
   /// Linearly interpolate between two color schemes.
   AuraColorScheme lerp(AuraColorScheme other, double t) {
-    return AuraColorScheme(
-      primary: _lerpColor(primary, other.primary, t),
-      primaryVariant: _lerpColor(primaryVariant, other.primaryVariant, t),
-      onPrimary: _lerpColor(onPrimary, other.onPrimary, t),
-      secondary: _lerpColor(secondary, other.secondary, t),
-      secondaryVariant: _lerpColor(secondaryVariant, other.secondaryVariant, t),
-      onSecondary: _lerpColor(onSecondary, other.onSecondary, t),
-      tertiary: _lerpColor(tertiary, other.tertiary, t),
-      tertiaryVariant: _lerpColor(tertiaryVariant, other.tertiaryVariant, t),
-      onTertiary: _lerpColor(onTertiary, other.onTertiary, t),
-      surface: _lerpColor(surface, other.surface, t),
-      surfaceVariant: _lerpColor(surfaceVariant, other.surfaceVariant, t),
-      onSurface: _lerpColor(onSurface, other.onSurface, t),
-      onSurfaceVariant: _lerpColor(onSurfaceVariant, other.onSurfaceVariant, t),
-      background: _lerpColor(background, other.background, t),
-      onBackground: _lerpColor(onBackground, other.onBackground, t),
-      error: _lerpColor(error, other.error, t),
-      onError: _lerpColor(onError, other.onError, t),
-      warning: _lerpColor(warning, other.warning, t),
-      onWarning: _lerpColor(onWarning, other.onWarning, t),
-      success: _lerpColor(success, other.success, t),
-      onSuccess: _lerpColor(onSuccess, other.onSuccess, t),
-      info: _lerpColor(info, other.info, t),
-      onInfo: _lerpColor(onInfo, other.onInfo, t),
-      outline: _lerpColor(outline, other.outline, t),
-      outlineVariant: _lerpColor(outlineVariant, other.outlineVariant, t),
-      shadow: _lerpColor(shadow, other.shadow, t),
-      scrim: _lerpColor(scrim, other.scrim, t),
+    return AuraColorScheme._fromLerpGroups(
+      _lerpColorSchemeValues(this, other, t),
     );
   }
 
@@ -812,10 +1356,6 @@ class AuraColorScheme {
       .success => onSuccess,
       .info => onInfo,
     };
-  }
-
-  Color _lerpColor(Color begin, Color end, double t) {
-    return Color.lerp(begin, end, t) ?? begin;
   }
 }
 
@@ -859,9 +1399,16 @@ class AuraAnimationTheme {
 
 /// Extension to get Aura theme from BuildContext.
 extension AuraThemeExtension on BuildContext {
+  /// Resolves the Aura theme attached to [context].
+  static AuraTheme resolve(BuildContext context) =>
+      Theme.of(context).extension<AuraTheme>() ?? AuraTheme.light;
+
+  /// Resolves the Aura color scheme attached to [context].
+  static AuraColorScheme resolveColors(BuildContext context) =>
+      resolve(context).colors;
+
   /// Get the current Aura theme.
-  AuraTheme get auraTheme =>
-      Theme.of(this).extension<AuraTheme>() ?? AuraTheme.light;
+  AuraTheme get auraTheme => AuraThemeExtension.resolve(this);
 
   /// Get the current Aura color scheme.
   AuraColorScheme get auraColors => auraTheme.colors;

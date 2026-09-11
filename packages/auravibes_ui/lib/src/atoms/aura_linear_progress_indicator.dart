@@ -3,6 +3,15 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show AuraBorderRadius, AuraTint;
 import 'package:flutter/widgets.dart';
 
+typedef _AuraLinearProgressConfiguration = ({
+  double height,
+  double borderRadius,
+  num? value,
+  Color backgroundColor,
+  num backgroundAlpha,
+  Color fillColor,
+});
+
 /// A linear progress indicator following the Aura design system.
 class AuraLinearProgressIndicator extends StatelessWidget {
   /// Creates an Aura linear progress indicator.
@@ -41,46 +50,128 @@ class AuraLinearProgressIndicator extends StatelessWidget {
   final String? semanticValue;
 
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final clampedValue = value?.clamp(0.0, 1.0);
-    final clampedBackgroundAlpha = backgroundAlpha.clamp(0.0, 1.0);
+  Widget build(BuildContext context) => _AuraLinearProgressSemantics(
+    configuration: _configuration(context),
+    semanticLabel: semanticLabel,
+    semanticValue: semanticValue,
+  );
 
-    return Semantics(
-      child: SizedBox(
-        height: height,
-        child: ClipRRect(
-          borderRadius: BorderRadius.all(
-            .circular(context.auraTheme.fromBorderRadius(borderRadius)),
-          ),
-          child: Stack(
-            fit: .expand,
-            children: [
-              ColoredBox(
-                color: auraColors.surfaceVariant.withValues(
-                  alpha: clampedBackgroundAlpha,
-                ),
-              ),
-              if (clampedValue case final value?)
-                FractionallySizedBox(
-                  alignment: AlignmentDirectional.centerStart,
-                  widthFactor: value,
-                  child: ColoredBox(color: auraColors.colorFor(tint)),
-                )
-              else
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.35,
-                    child: ColoredBox(color: auraColors.colorFor(tint)),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-      label: semanticLabel,
-      value: semanticValue,
+  _AuraLinearProgressConfiguration _configuration(BuildContext context) {
+    final colors = context.auraColors;
+    final theme = context.auraTheme;
+
+    return (
+      height: height,
+      borderRadius: _progressBorderRadius(theme, borderRadius),
+      value: _clampProgress(value),
+      backgroundColor: colors.surfaceVariant,
+      backgroundAlpha: _clampAlpha(backgroundAlpha),
+      fillColor: _progressFillColor(colors, tint),
     );
   }
+}
+
+double _progressBorderRadius(AuraTheme theme, AuraBorderRadius borderRadius) =>
+    theme.fromBorderRadius(borderRadius);
+
+Color _progressFillColor(AuraColorScheme colors, AuraTint tint) =>
+    colors.colorFor(tint);
+
+double? _clampProgress(double? value) {
+  if (value == null) return null;
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+
+  return value;
+}
+
+double _clampAlpha(double value) {
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+
+  return value;
+}
+
+class const _AuraLinearProgressSemantics({
+  required final _AuraLinearProgressConfiguration configuration,
+  required final String? semanticLabel,
+  required final String? semanticValue,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: _AuraLinearProgressTrack(configuration: configuration),
+    label: semanticLabel,
+    value: semanticValue,
+  );
+}
+
+class const _AuraLinearProgressTrack({
+  required final _AuraLinearProgressConfiguration configuration,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: configuration.height,
+    child: ClipRRect(
+      borderRadius: BorderRadius.all(.circular(configuration.borderRadius)),
+      child: _AuraLinearProgressStack(
+        value: configuration.value,
+        backgroundColor: configuration.backgroundColor,
+        backgroundAlpha: configuration.backgroundAlpha,
+        fillColor: configuration.fillColor,
+      ),
+    ),
+  );
+}
+
+class const _AuraLinearProgressStack({
+  required final num? value,
+  required final Color backgroundColor,
+  required final num backgroundAlpha,
+  required final Color fillColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: .expand,
+    children: [
+      ColoredBox(
+        color: backgroundColor.withValues(alpha: backgroundAlpha.toDouble()),
+      ),
+      _AuraLinearProgressFill(value: value, color: fillColor),
+    ],
+  );
+}
+
+class const _AuraLinearProgressFill({
+  required final num? value,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (value) {
+    final value? => _AuraLinearProgressDeterminate(value: value, color: color),
+    null => _AuraLinearProgressIndeterminate(color: color),
+  };
+}
+
+class const _AuraLinearProgressDeterminate({
+  required final num value,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FractionallySizedBox(
+    alignment: AlignmentDirectional.centerStart,
+    widthFactor: value.toDouble(),
+    child: ColoredBox(color: color),
+  );
+}
+
+class const _AuraLinearProgressIndeterminate({required final Color color})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: FractionallySizedBox(
+      widthFactor: 0.35,
+      child: ColoredBox(color: color),
+    ),
+  );
 }

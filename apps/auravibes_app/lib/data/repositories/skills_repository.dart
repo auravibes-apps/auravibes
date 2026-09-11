@@ -40,64 +40,108 @@ class SkillsRepository(AppDatabase database) {
     SkillToCreate skill,
   ) async {
     final table = await _dao.createSkill(
-      .new(
-        source: const Value(SkillSourceTable.user),
-        workspaceId: Value(workspaceId),
-        kind: Value(_mapKindToTable(skill.kind)),
-        title: Value(skill.title.trim()),
-        slug: Value(generateSkillSlug(skill.title)),
-        description: Value(skill.description),
-        content: Value(skill.content),
-        credentialDefinitionId: Value(skill.credentialDefinitionId),
-        isCredentialOptional: Value(skill.isCredentialOptional),
-        isEnabled: Value(skill.isEnabled),
-      ),
+      _createSkillCompanion(workspaceId, skill),
     );
 
     return _tableToEntity(table);
   }
 
   Future<SkillEntity> updateSkill(String skillId, SkillToUpdate skill) async {
-    final table = await _dao.updateSkill(
-      skillId,
-      .new(
-        updatedAt: Value(DateTime.now()),
-        title: switch (skill.title) {
-          null => const Value.absent(),
-          final title => Value(title.trim()),
-        },
-        description: Value.absentIfNull(skill.description),
-        content: Value.absentIfNull(skill.content),
-        credentialDefinitionId: skill.clearCredentialDefinition
-            ? const Value(null)
-            : Value.absentIfNull(skill.credentialDefinitionId),
-        isCredentialOptional: Value.absentIfNull(skill.isCredentialOptional),
-        isEnabled: Value.absentIfNull(skill.isEnabled),
-      ),
-    );
+    final table = await _dao.updateSkill(skillId, _updateSkillCompanion(skill));
 
     return _tableToEntity(table);
   }
 
   Future<bool> deleteSkill(String skillId) => _dao.deleteSkill(skillId);
+}
 
-  SkillEntity _tableToEntity(SkillsTable table) {
-    return SkillEntity(
-      source: _mapSource(table.source),
-      id: table.id,
-      workspaceId: table.workspaceId,
-      kind: _mapKind(table.kind),
-      title: table.title,
-      slug: table.slug,
-      description: table.description,
-      content: table.content,
-      isEnabled: table.isEnabled,
-      isCredentialOptional: table.isCredentialOptional,
-      createdAt: table.createdAt,
-      updatedAt: table.updatedAt,
-      credentialDefinitionId: table.credentialDefinitionId,
+extension SkillsRepositoryCompanionMappings on SkillsRepository {
+  SkillsCompanion _createSkillCompanion(
+    String workspaceId,
+    SkillToCreate skill,
+  ) {
+    return _addSkillCreationFields(
+      .new(
+        source: const Value(SkillSourceTable.user),
+        workspaceId: .new(workspaceId),
+        kind: .new(_mapKindToTable(skill.kind)),
+        title: .new(skill.title.trim()),
+        slug: .new(generateSkillSlug(skill.title)),
+      ),
+      skill,
     );
   }
+
+  SkillsCompanion _addSkillCreationFields(
+    SkillsCompanion companion,
+    SkillToCreate skill,
+  ) => companion.copyWith(
+    description: .new(skill.description),
+    content: .new(skill.content),
+    credentialDefinitionId: .new(skill.credentialDefinitionId),
+    isCredentialOptional: .new(skill.isCredentialOptional),
+    isEnabled: .new(skill.isEnabled),
+  );
+
+  SkillsCompanion _updateSkillCompanion(SkillToUpdate skill) {
+    return _addSkillUpdateFields(.new(updatedAt: .new(DateTime.now())), skill);
+  }
+
+  SkillsCompanion _addSkillUpdateFields(
+    SkillsCompanion companion,
+    SkillToUpdate skill,
+  ) => companion.copyWith(
+    title: _skillTitleValue(skill.title),
+    description: .absentIfNull(skill.description),
+    content: .absentIfNull(skill.content),
+    credentialDefinitionId: _credentialDefinitionValue(skill),
+    isCredentialOptional: .absentIfNull(skill.isCredentialOptional),
+    isEnabled: .absentIfNull(skill.isEnabled),
+  );
+
+  Value<String>? _skillTitleValue(String? title) {
+    return title == null ? const Value.absent() : .new(title.trim());
+  }
+
+  Value<String?> _credentialDefinitionValue(SkillToUpdate skill) {
+    return skill.clearCredentialDefinition
+        ? const Value(null)
+        : Value.absentIfNull(skill.credentialDefinitionId);
+  }
+}
+
+extension SkillsRepositoryEntityMappings on SkillsRepository {
+  SkillEntity _tableToEntity(SkillsTable table) {
+    return _withSkillState(
+      _withSkillContent(_withSkillIdentity(_emptySkillEntity, table), table),
+      table,
+    );
+  }
+
+  SkillEntity _withSkillIdentity(SkillEntity skill, SkillsTable table) =>
+      skill.copyWith(
+        source: _mapSource(table.source),
+        id: table.id,
+        workspaceId: table.workspaceId,
+        kind: _mapKind(table.kind),
+      );
+
+  SkillEntity _withSkillContent(SkillEntity skill, SkillsTable table) =>
+      skill.copyWith(
+        title: table.title,
+        slug: table.slug,
+        description: table.description,
+        content: table.content,
+      );
+
+  SkillEntity _withSkillState(SkillEntity skill, SkillsTable table) =>
+      skill.copyWith(
+        isEnabled: table.isEnabled,
+        isCredentialOptional: table.isCredentialOptional,
+        createdAt: table.createdAt,
+        updatedAt: table.updatedAt,
+        credentialDefinitionId: table.credentialDefinitionId,
+      );
 
   SkillSource _mapSource(SkillSourceTable source) {
     return switch (source) {
@@ -108,15 +152,30 @@ class SkillsRepository(AppDatabase database) {
 
   SkillKind _mapKind(SkillKindTable kind) {
     return switch (kind) {
-      .template => SkillKind.template,
-      .native => SkillKind.native,
+      .template => .template,
+      .native => .native,
     };
   }
 
   SkillKindTable _mapKindToTable(SkillKind kind) {
     return switch (kind) {
-      .template => SkillKindTable.template,
-      .native => SkillKindTable.native,
+      .template => .template,
+      .native => .native,
     };
   }
 }
+
+final _emptySkillEntity = SkillEntity(
+  source: SkillSource.user,
+  id: '',
+  workspaceId: '',
+  kind: .template,
+  title: '',
+  slug: '',
+  description: '',
+  content: '',
+  isEnabled: false,
+  isCredentialOptional: false,
+  createdAt: .new(0),
+  updatedAt: .new(0),
+);

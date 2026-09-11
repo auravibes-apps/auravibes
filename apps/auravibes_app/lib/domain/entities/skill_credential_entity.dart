@@ -2,7 +2,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_credential_entity.freezed.dart';
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialEntity._() with _$SkillCredentialEntity {
   const factory({
     required String id,
@@ -17,7 +20,10 @@ abstract class const SkillCredentialEntity._() with _$SkillCredentialEntity {
   }) = _SkillCredentialEntity;
 }
 
+@immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialToCreate._()
     with _$SkillCredentialToCreate {
   const factory({
@@ -27,14 +33,20 @@ abstract class const SkillCredentialToCreate._()
   }) = _SkillCredentialToCreate;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialSecretState._()
     with _$SkillCredentialSecretState {
   const factory({required bool hasValue, String? keySuffix}) =
       _SkillCredentialSecretState;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialForEdit._() with _$SkillCredentialForEdit {
   const factory({
     required String id,
@@ -48,7 +60,10 @@ abstract class const SkillCredentialForEdit._() with _$SkillCredentialForEdit {
   }) = _SkillCredentialForEdit;
 }
 
+@immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialToUpdate._()
     with _$SkillCredentialToUpdate {
   // Null means preserve the existing credential name.

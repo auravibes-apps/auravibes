@@ -1,9 +1,23 @@
 import 'package:auravibes_ui/src/tokens/tokens.dart';
 import 'package:flutter/widgets.dart';
 
+class _AuraEdgeInsetsGeometryData {
+  const new({
+    required this.left,
+    required this.top,
+    required this.right,
+    required this.bottom,
+  });
+
+  final AuraSpacing left;
+  final AuraSpacing top;
+  final AuraSpacing right;
+  final AuraSpacing bottom;
+}
+
 @immutable
 /// Definition of aura paddings.
-class AuraEdgeInsetsGeometry {
+class AuraEdgeInsetsGeometry extends _AuraEdgeInsetsGeometryData {
   /// No padding on any side.
   static const none = AuraEdgeInsetsGeometry.all(.none);
 
@@ -21,75 +35,74 @@ class AuraEdgeInsetsGeometry {
 
   /// Constructor for each side.
   const new only({
-    this.left = .none,
-    this.top = .none,
-    this.right = .none,
-    this.bottom = .none,
+    super.left = .none,
+    super.top = .none,
+    super.right = .none,
+    super.bottom = .none,
   });
 
   /// Constructor for horizontal padding.
   const new horizontal(AuraSpacing spacing)
-    : left = spacing,
-      right = spacing,
-      top = .none,
-      bottom = .none;
+    : super(left: spacing, right: spacing, top: .none, bottom: .none);
 
   /// Constructor for vertical padding.
   const new vertical(AuraSpacing spacing)
-    : top = spacing,
-      bottom = spacing,
-      left = .none,
-      right = .none;
+    : super(top: spacing, bottom: spacing, left: .none, right: .none);
 
   /// Constructor for all same padding.
   const new all(AuraSpacing spacing)
-    : left = spacing,
-      top = spacing,
-      right = spacing,
-      bottom = spacing;
+    : super(left: spacing, top: spacing, right: spacing, bottom: spacing);
 
   /// Constructor for symmetric padding.
   const new symmetric({
     AuraSpacing horizontal = .none,
     AuraSpacing vertical = .none,
-  }) : left = horizontal,
-       right = horizontal,
-       top = vertical,
-       bottom = vertical;
-
-  /// Left padding.
-  final AuraSpacing left;
-
-  /// Top padding.
-  final AuraSpacing top;
-
-  /// Right padding.
-  final AuraSpacing right;
-
-  /// Bottom padding.
-  final AuraSpacing bottom; // Compare properties.
-
+  }) : super(
+         left: horizontal,
+         right: horizontal,
+         top: vertical,
+         bottom: vertical,
+       );
   @override
   int get hashCode => Object.hashAll([left, top, right, bottom]);
 
+  /// Resolves spacing values against the current Aura theme.
+  EdgeInsetsGeometry toEdgeInsets(BuildContext context) =>
+      EdgeInsetsGeometry.only(
+        left: context.auraTheme.fromSpacing(left),
+        right: context.auraTheme.fromSpacing(right),
+        top: context.auraTheme.fromSpacing(top),
+        bottom: context.auraTheme.fromSpacing(bottom),
+      );
+
+  /// Creates geometry with selected sides replaced.
+  AuraEdgeInsetsGeometry copyWith({
+    AuraSpacing? left,
+    AuraSpacing? top,
+    AuraSpacing? right,
+    AuraSpacing? bottom,
+  }) => AuraEdgeInsetsGeometry.only(
+    left: left ?? this.left,
+    top: top ?? this.top,
+    right: right ?? this.right,
+    bottom: bottom ?? this.bottom,
+  );
+
+  /// Describes this padding geometry.
+  @override
+  String toString() =>
+      'AuraEdgeInsetsGeometry('
+      'left: $left, top: $top, right: $right, bottom: $bottom)';
+
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || // Quick check for same instance.
-      other is AuraEdgeInsetsGeometry && // Check if 'other' is also a Person.
-          runtimeType == other.runtimeType && // Ensure same type.
-          left == other.left && // Compare properties.
-          right == other.right && // Compare properties.
-          top == other.top && // Compare properties.
+      identical(this, other) ||
+      other is AuraEdgeInsetsGeometry &&
+          runtimeType == other.runtimeType &&
+          left == other.left &&
+          right == other.right &&
+          top == other.top &&
           bottom == other.bottom;
-
-  EdgeInsetsGeometry _padding(BuildContext context) {
-    return EdgeInsetsGeometry.only(
-      left: context.auraTheme.fromSpacing(left),
-      right: context.auraTheme.fromSpacing(right),
-      top: context.auraTheme.fromSpacing(top),
-      bottom: context.auraTheme.fromSpacing(bottom),
-    );
-  } // Combine hash codes.
 }
 
 /// Padding for const.
@@ -105,6 +118,6 @@ class AuraPadding extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: padding._padding(context), child: child);
+    return Padding(padding: padding.toEdgeInsets(context), child: child);
   }
 }

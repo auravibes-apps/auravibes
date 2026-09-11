@@ -5,6 +5,7 @@ import 'dart:math' as math show pi, sin;
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 class _DelayTween({
@@ -76,6 +77,12 @@ class AuraLoadingCircle extends StatefulWidget {
   final AnimationController? controller;
 
   @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<AuraTint>('tint', tint));
+  }
+
+  @override
   State<AuraLoadingCircle> createState() => _AuraLoadingCircleState();
 }
 
@@ -114,58 +121,148 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
 
   @override
   Widget build(BuildContext context) {
-    final itemSize = widget.itemSize ?? widget.size * 0.15;
-    final itemCount = widget.itemCount ?? 12;
-    final itemBuilder = widget.itemBuilder;
-
-    return Center(
-      child: SizedBox.fromSize(
-        child: Stack(
-          children: .generate(
-            itemCount,
-            (i) => _buildItem(context, i, itemCount, itemSize, itemBuilder),
-          ),
-        ),
-        size: .square(widget.size),
-      ),
+    return _LoadingCircleLayout(
+      circle: widget,
+      controller: _requiredController,
     );
   }
+}
 
-  Widget _buildItem(
-    BuildContext context,
-    int index,
-    int itemCount,
-    double itemSize,
-    Widget Function(BuildContext, int)? itemBuilder,
-  ) {
-    final position = widget.size * 0.5;
+class const _LoadingCircleLayout({
+  required final AuraLoadingCircle circle,
+  required final AnimationController controller,
+}) extends StatelessWidget {
+  double get _itemSize => circle.itemSize ?? circle.size * 0.15;
+
+  int get _itemCount => circle.itemCount ?? 12;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: SizedBox.fromSize(
+      child: _LoadingCircleStack(
+        circle: circle,
+        controller: controller,
+        itemSize: _itemSize,
+        itemCount: _itemCount,
+      ),
+      size: .square(circle.size),
+    ),
+  );
+}
+
+class const _LoadingCircleStack({
+  required final AuraLoadingCircle circle,
+  required final AnimationController controller,
+  required final double itemSize,
+  required final int itemCount,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: .generate(
+      itemCount,
+      (i) => _LoadingCircleItem(
+        circle: circle,
+        index: i,
+        itemCount: itemCount,
+        itemSize: itemSize,
+        controller: controller,
+      ),
+    ),
+  );
+}
+
+class const _LoadingCircleItem({
+  required final AuraLoadingCircle circle,
+  required final int index,
+  required final int itemCount,
+  required final double itemSize,
+  required final AnimationController controller,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final position = circle.size * 0.5;
 
     return Positioned.fill(
       left: position,
       top: position,
-      child: Transform(
-        transform: .rotationZ((360 / itemCount) * index * 0.0174533),
-        child: Align(
-          child: FadeTransition(
-            opacity: _DelayTween(
-              delay: index / itemCount,
-              begin: 0,
-              end: 1,
-            ).animate(_requiredController),
-            child: SizedBox.fromSize(
-              child:
-                  itemBuilder?.call(context, index) ??
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: context.auraColors.colorFor(widget.tint),
-                      shape: .circle,
-                    ),
-                  ),
-              size: .square(itemSize),
-            ),
-          ),
-        ),
-      ),
+      child: _LoadingCircleItemTransform(item: this),
     );
   }
+}
+
+class const _LoadingCircleItemTransform({
+  required final _LoadingCircleItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _LoadingCircleItemTransformData(item: item).child;
+}
+
+class _LoadingCircleItemTransformData {
+  new({required _LoadingCircleItem item})
+    : child = Transform(
+        transform: .rotationZ((360 / item.itemCount) * item.index * 0.0174533),
+        child: Align(
+          child: _LoadingCircleDot(
+            index: item.index,
+            itemCount: item.itemCount,
+            itemSize: item.itemSize,
+            itemBuilder: item.circle.itemBuilder,
+            tint: item.circle.tint,
+            controller: item.controller,
+          ),
+        ),
+      );
+
+  final Widget child;
+}
+
+class const _LoadingCircleDot({
+  required final int index,
+  required final int itemCount,
+  required final double itemSize,
+  required final IndexedWidgetBuilder? itemBuilder,
+  required final AuraTint tint,
+  required final AnimationController controller,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: _DelayTween(
+      delay: index / itemCount,
+      begin: 0,
+      end: 1,
+    ).animate(controller),
+    child: _LoadingCircleDotContent(
+      index: index,
+      itemSize: itemSize,
+      itemBuilder: itemBuilder,
+      tint: tint,
+    ),
+  );
+}
+
+class const _LoadingCircleDotContent({
+  required final int index,
+  required final double itemSize,
+  required final IndexedWidgetBuilder? itemBuilder,
+  required final AuraTint tint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox.fromSize(
+    child:
+        itemBuilder?.call(context, index) ??
+        _LoadingCircleDefaultDot(tint: tint),
+    size: .square(itemSize),
+  );
+}
+
+class const _LoadingCircleDefaultDot({required final AuraTint tint})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: context.auraColors.colorFor(tint),
+      shape: .circle,
+    ),
+  );
 }

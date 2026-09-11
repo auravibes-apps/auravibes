@@ -16,63 +16,127 @@ class const CompactedMessageDetails({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final metadata = message.metadata;
-    final kind = metadata?.compactionKind;
-    final originLabel = switch (kind) {
-      .manual => LocaleKeys.compaction_compacted_manual_origin.tr(),
-      .auto => LocaleKeys.compaction_compacted_auto_origin.tr(),
-      _ => LocaleKeys.compaction_compacted_widget_label.tr(),
-    };
-
     return SingleChildScrollView(
       child: AuraColumn(
         children: [
-          const TextLocale(
-            LocaleKeys.compaction_compacted_details_title,
-            style: .new(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const AuraSizedBox(height: .md),
-          _DetailRow(
-            label: LocaleKeys.compaction_compacted_details_origin.tr(),
-            value: originLabel,
-          ),
-          if (metadata case final metadata?
-              when metadata.compactedFromMessageId != null &&
-                  metadata.compactedThroughMessageId != null)
-            _DetailRow(
-              label: LocaleKeys.compaction_compacted_details_range.tr(),
-              value:
-                  '${metadata.compactedFromMessageId} -> '
-                  '${metadata.compactedThroughMessageId}',
-            ),
-          _DetailRow(
-            label: LocaleKeys.compaction_compacted_details_created.tr(),
-            value: switch (metadata?.compactionCreatedAt) {
-              final createdAt? => RelativeTimeFormatter.format(createdAt),
-              _ => '',
-            },
-          ),
-          _DetailRow(
-            label: LocaleKeys.compaction_compacted_details_messages.tr(),
-            value: '${metadata?.compactedMessageIds.length ?? 0}',
-          ),
-          const AuraSizedBox(height: .md),
-          TextLocale(
-            LocaleKeys.compaction_compacted_details_content_label,
-            style: .new(
-              color: auraColors.onSurfaceVariant,
-              fontSize: context.auraTheme.typography.fontSizeSm,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const AuraSizedBox(height: .xs),
-          AuraSelectableText(message.content, style: .bodySmall),
+          const _CompactedDetailsTitle(),
+          _CompactedDetailsMetadata(metadata: message.metadata),
+          _CompactedDetailsContent(content: message.content),
         ],
         crossAxisAlignment: .start,
       ),
     );
   }
+}
+
+class const _CompactedDetailsTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const TextLocale(
+    LocaleKeys.compaction_compacted_details_title,
+    style: .new(fontSize: 18, fontWeight: FontWeight.bold),
+  );
+}
+
+class const _CompactedDetailsMetadata({
+  required final MessageMetadataEntity? metadata,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        const AuraSizedBox(height: .md),
+        _CompactionOriginRow(value: _compactionOriginLabel(metadata)),
+        if (metadata case final metadata?
+            when metadata.compactedFromMessageId != null &&
+                metadata.compactedThroughMessageId != null)
+          _CompactionRangeRow(metadata: metadata),
+        _CompactionCreatedRow(metadata: metadata),
+        _CompactionMessagesRow(metadata: metadata),
+      ],
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+String _compactionOriginLabel(MessageMetadataEntity? metadata) =>
+    switch (metadata?.compactionKind) {
+      .manual => LocaleKeys.compaction_compacted_manual_origin.tr(),
+      .auto => LocaleKeys.compaction_compacted_auto_origin.tr(),
+      _ => LocaleKeys.compaction_compacted_widget_label.tr(),
+    };
+
+class const _CompactionOriginRow({required final String value})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _DetailRow(
+    label: LocaleKeys.compaction_compacted_details_origin.tr(),
+    value: value,
+  );
+}
+
+class const _CompactionRangeRow({required final MessageMetadataEntity metadata})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _DetailRow(
+    label: LocaleKeys.compaction_compacted_details_range.tr(),
+    value:
+        '${metadata.compactedFromMessageId} -> '
+        '${metadata.compactedThroughMessageId}',
+  );
+}
+
+class const _CompactionCreatedRow({
+  required final MessageMetadataEntity? metadata,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _DetailRow(
+    label: LocaleKeys.compaction_compacted_details_created.tr(),
+    value: switch (metadata?.compactionCreatedAt) {
+      final createdAt? => RelativeTimeFormatter.format(createdAt),
+      _ => '',
+    },
+  );
+}
+
+class const _CompactionMessagesRow({
+  required final MessageMetadataEntity? metadata,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _DetailRow(
+    label: LocaleKeys.compaction_compacted_details_messages.tr(),
+    value: '${metadata?.compactedMessageIds.length ?? 0}',
+  );
+}
+
+class const _CompactedDetailsContent({required final String content})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return AuraColumn(
+      children: [
+        const AuraSizedBox(height: .md),
+        _CompactedContentLabel(color: auraColors.onSurfaceVariant),
+        const AuraSizedBox(height: .xs),
+        AuraSelectableText(content, style: .bodySmall),
+      ],
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+class const _CompactedContentLabel({required final Color color})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextLocale(
+    LocaleKeys.compaction_compacted_details_content_label,
+    style: .new(
+      color: color,
+      fontSize: context.auraTheme.typography.fontSizeSm,
+      fontWeight: FontWeight.bold,
+    ),
+  );
 }
 
 class const _DetailRow({
@@ -86,25 +150,37 @@ class const _DetailRow({
       child: Row(
         crossAxisAlignment: .start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: .new(
-                color: context.auraColors.onSurfaceVariant,
-                fontSize: context.auraTheme.typography.fontSizeSm,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: .new(fontSize: context.auraTheme.typography.fontSizeSm),
-            ),
-          ),
+          _DetailLabel(label: label),
+          _DetailValue(value: value),
         ],
       ),
     );
   }
+}
+
+class const _DetailLabel({required final String label})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 120,
+    child: Text(
+      label,
+      style: .new(
+        color: context.auraColors.onSurfaceVariant,
+        fontSize: context.auraTheme.typography.fontSizeSm,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+}
+
+class const _DetailValue({required final String value})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Text(
+      value,
+      style: .new(fontSize: context.auraTheme.typography.fontSizeSm),
+    ),
+  );
 }

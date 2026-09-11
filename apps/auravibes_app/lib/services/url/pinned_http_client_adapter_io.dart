@@ -1,6 +1,3 @@
-// Preserve the callback for Dio 5.x compatibility until Dio 6 removes it.
-// ignore_for_file: deprecated_member_use
-
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -19,26 +16,30 @@ abstract final class PinnedHttpClientAdapterIo {
     final resolvedAddress = InternetAddress(firstAddress);
 
     return IOHttpClientAdapter(
-      createHttpClient: () {
-        final configuredClient = current.createHttpClient?.call();
-        if (configuredClient != null) {
-          return configuredClient
-            ..connectionFactory = (target, proxyHost, proxyPort) =>
-                Socket.startConnect(resolvedAddress, target.port);
-        }
-
-        final defaultClient = HttpClient()
-          ..idleTimeout = const Duration(seconds: 3);
-        final client =
-            current.onHttpClientCreate?.call(defaultClient) ?? defaultClient;
-
-        return client
-          ..connectionFactory = (target, proxyHost, proxyPort) =>
-              Socket.startConnect(resolvedAddress, target.port);
-      },
+      createHttpClient: () => _createHttpClient(current, resolvedAddress),
       validateCertificate: current.validateCertificate,
     );
   }
 }
+
+HttpClient _createHttpClient(
+  HttpClientAdapter current,
+  InternetAddress resolvedAddress,
+) {
+  final connectionFactory = _connectionFactory(resolvedAddress);
+  final ioCurrent = current as IOHttpClientAdapter;
+  final configuredClient = ioCurrent.createHttpClient?.call();
+  final client = configuredClient ?? _defaultHttpClient();
+
+  return client..connectionFactory = connectionFactory;
+}
+
+HttpClient _defaultHttpClient() =>
+    HttpClient()..idleTimeout = const Duration(seconds: 3);
+
+Future<ConnectionTask<Socket>> Function(Uri, String?, int?) _connectionFactory(
+  InternetAddress resolvedAddress,
+) =>
+    (target, _, _) => Socket.startConnect(resolvedAddress, target.port);
 
 typedef PinnedHttpClientAdapterImplementation = PinnedHttpClientAdapterIo;

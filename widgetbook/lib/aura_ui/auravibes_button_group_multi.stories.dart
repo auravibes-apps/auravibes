@@ -7,6 +7,24 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 part 'auravibes_button_group_multi.stories.bridge.g.dart';
 part 'auravibes_button_group_multi.stories.g.dart';
 
+const _multiItems = <AuraButtonGroupItem<String>>[
+  AuraButtonGroupItem(
+    value: 'bold',
+    child: Icon(Icons.format_bold),
+    semanticLabel: 'Bold',
+  ),
+  AuraButtonGroupItem(
+    value: 'italic',
+    child: Icon(Icons.format_italic),
+    semanticLabel: 'Italic',
+  ),
+  AuraButtonGroupItem(
+    value: 'underline',
+    child: Icon(Icons.format_underline),
+    semanticLabel: 'Underline',
+  ),
+];
+
 const _component = ComponentMeta(name: 'AuraButtonGroup');
 const _meta = Meta(MultiSelectionDemo.new);
 
@@ -68,42 +86,43 @@ class _MultiSelectionDemoState extends State<MultiSelectionDemo> {
   Set<String> _selectedValues = {'bold'};
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        AuraButtonGroup<String>.multi(
-          items: const [
-            AuraButtonGroupItem(
-              value: 'bold',
-              child: Icon(Icons.format_bold),
-              semanticLabel: 'Bold',
-            ),
-            AuraButtonGroupItem(
-              value: 'italic',
-              child: Icon(Icons.format_italic),
-              semanticLabel: 'Italic',
-            ),
-            AuraButtonGroupItem(
-              value: 'underline',
-              child: Icon(Icons.format_underline),
-              semanticLabel: 'Underline',
-            ),
-          ],
-          selectedValues: _selectedValues,
-          onMultiChanged: (values) => setState(() => _selectedValues = values),
-          size: widget.size,
-          variant: widget.variant,
-          orientation: widget.orientation,
-          disabled: widget.disabled,
-          isLoading: widget.isLoading,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Selected: ${_selectedValues.join(', ')}',
-          style: .new(color: context.auraColors.onSurface),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _MultiSelectionGroup(
+        demo: widget,
+        selectedValues: _selectedValues,
+        onMultiChanged: (values) => setState(() => _selectedValues = values),
+      ),
+      const SizedBox(height: 16),
+      _MultiSelectionStatus(selectedValues: _selectedValues),
+    ],
+  );
+}
+
+class const _MultiSelectionGroup({
+  required final MultiSelectionDemo demo,
+  required final Set<String> selectedValues,
+  required final ValueChanged<Set<String>> onMultiChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButtonGroup<String>.multi(
+    items: _multiItems,
+    selectedValues: selectedValues,
+    onMultiChanged: onMultiChanged,
+    size: demo.size,
+    variant: demo.variant,
+    orientation: demo.orientation,
+    disabled: demo.disabled,
+    isLoading: demo.isLoading,
+  );
+}
+
+class const _MultiSelectionStatus({required final Set<String> selectedValues})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    'Selected: ${selectedValues.join(', ')}',
+    style: .new(color: context.auraColors.onSurface),
+  );
 }

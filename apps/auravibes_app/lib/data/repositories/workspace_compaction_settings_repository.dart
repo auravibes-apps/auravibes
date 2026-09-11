@@ -1,6 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 
 class WorkspaceCompactionSettingsRepository(
@@ -39,16 +38,15 @@ class WorkspaceCompactionSettingsRepository(
   CompactionSettings _resolveEffective(WorkspaceCompactionSettingsTable? row) {
     if (row == null) return CompactionSettings.defaults;
 
+    const defaults = CompactionSettings.defaults;
+
     return CompactionSettings(
       autoCompactionEnabled:
-          row.autoCompactEnabled ??
-          CompactionSettings.defaults.autoCompactionEnabled,
+          row.autoCompactEnabled ?? defaults.autoCompactionEnabled,
       usagePercentageThreshold:
-          row.usagePercentageThreshold ??
-          CompactionSettings.defaults.usagePercentageThreshold,
+          row.usagePercentageThreshold ?? defaults.usagePercentageThreshold,
       remainingTokenThreshold:
-          row.remainingTokenThreshold ??
-          CompactionSettings.defaults.remainingTokenThreshold,
+          row.remainingTokenThreshold ?? defaults.remainingTokenThreshold,
       updatedAt: row.updatedAt,
     );
   }

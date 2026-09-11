@@ -8,7 +8,9 @@ part 'app_skill_workspace_settings_dao.g.dart';
 @DriftAccessor(tables: [AppSkillWorkspaceSettings])
 class AppSkillWorkspaceSettingsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$AppSkillWorkspaceSettingsDaoMixin {
+    with _$AppSkillWorkspaceSettingsDaoMixin;
+
+extension AppSkillWorkspaceSettingsDaoMethods on AppSkillWorkspaceSettingsDao {
   Future<AppSkillWorkspaceSettingsTable?> getSetting(
     String workspaceId,
     String appSkillIdentifier,
@@ -38,29 +40,53 @@ class AppSkillWorkspaceSettingsDao(super.attachedDatabase)
   }) async {
     final existing = await getSetting(workspaceId, appSkillIdentifier);
     if (existing == null) {
-      return await into(appSkillWorkspaceSettings).insertReturning(
-        AppSkillWorkspaceSettingsCompanion(
-          workspaceId: .new(workspaceId),
-          appSkillIdentifier: .new(appSkillIdentifier),
-          isEnabled: .new(isEnabled),
-        ),
-      );
+      return await _insertSetting(workspaceId, appSkillIdentifier, isEnabled);
     }
 
-    final _ =
-        await (update(
-          appSkillWorkspaceSettings,
-        )..where((tbl) => tbl.id.equals(existing.id))).write(
-          AppSkillWorkspaceSettingsCompanion(
-            updatedAt: .new(DateTime.now()),
-            isEnabled: .new(isEnabled),
-          ),
-        );
-    final updated = await getSetting(workspaceId, appSkillIdentifier);
+    final key = (
+      workspaceId: workspaceId,
+      appSkillIdentifier: appSkillIdentifier,
+    );
+
+    return await _updateAndRead(existing.id, key, isEnabled);
+  }
+
+  Future<AppSkillWorkspaceSettingsTable> _updateAndRead(
+    String id,
+    ({String workspaceId, String appSkillIdentifier}) settingKey,
+    bool isEnabled,
+  ) async {
+    final _ = await _updateSetting(id, isEnabled);
+    final updated = await getSetting(
+      settingKey.workspaceId,
+      settingKey.appSkillIdentifier,
+    );
     if (updated == null) {
       throw StateError('Updated app skill workspace setting was not found');
     }
 
     return updated;
   }
+
+  Future<AppSkillWorkspaceSettingsTable> _insertSetting(
+    String workspaceId,
+    String appSkillIdentifier,
+    bool isEnabled,
+  ) => into(appSkillWorkspaceSettings).insertReturning(
+    AppSkillWorkspaceSettingsCompanion(
+      workspaceId: .new(workspaceId),
+      appSkillIdentifier: .new(appSkillIdentifier),
+      isEnabled: .new(isEnabled),
+    ),
+  );
+
+  Future<int> _updateSetting(String id, bool isEnabled) =>
+      (update(
+        appSkillWorkspaceSettings,
+      )..where((tbl) => tbl.id.equals(id))).write(
+        AppSkillWorkspaceSettingsCompanion(
+          updatedAt: .new(DateTime.now()),
+          isEnabled: .new(isEnabled),
+        ),
+      );
 }

@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
@@ -22,6 +23,17 @@ Future<WorkspaceSession> workspaceSessionForRoute(
 ) async {
   final _ = ref.watch(allWorkspacesProvider);
   final workspaces = await ref.read(allWorkspacesProvider.future);
+
+  return _workspaceSessionForMirror(
+    localWorkspaceId,
+    _findWorkspace(workspaces, localWorkspaceId),
+  );
+}
+
+WorkspaceEntity _findWorkspace(
+  List<WorkspaceEntity> workspaces,
+  String localWorkspaceId,
+) {
   final mirror = workspaces
       .where((item) => item.id == localWorkspaceId)
       .firstOrNull;
@@ -29,28 +41,53 @@ Future<WorkspaceSession> workspaceSessionForRoute(
     throw StateError('Workspace $localWorkspaceId not found');
   }
 
-  final serverUrl = mirror.url;
-  final accountId = mirror.cloudAccountId;
-  final cloudWorkspaceId = int.tryParse(mirror.cloudWorkspaceId ?? '');
+  return mirror;
+}
+
+WorkspaceSession _workspaceSessionForMirror(
+  String localWorkspaceId,
+  WorkspaceEntity mirror,
+) {
   if (mirror.type != WorkspaceType.remote) {
     return WorkspaceSession(
       LocalWorkspaceRef(localWorkspaceId: localWorkspaceId),
     );
   }
-  if (serverUrl == null ||
-      accountId == null ||
-      accountId.isEmpty ||
-      cloudWorkspaceId == null) {
+
+  return _remoteWorkspaceSession(localWorkspaceId, mirror);
+}
+
+WorkspaceSession _remoteWorkspaceSession(
+  String localWorkspaceId,
+  WorkspaceEntity mirror,
+) {
+  final metadata = _remoteWorkspaceMetadata(mirror);
+  if (metadata == null) {
     throw StateError('Remote workspace $localWorkspaceId has invalid metadata');
   }
 
   return WorkspaceSession(
     CloudWorkspaceRef(
       localWorkspaceId: localWorkspaceId,
-      serverUrl: CloudAccountIdentity.canonicalServerOrigin(serverUrl),
-      accountId: accountId,
-      cloudWorkspaceId: cloudWorkspaceId,
+      serverUrl: CloudAccountIdentity.canonicalServerOrigin(metadata.serverUrl),
+      accountId: metadata.accountId,
+      cloudWorkspaceId: metadata.cloudWorkspaceId,
     ),
+  );
+}
+
+({String serverUrl, String accountId, int cloudWorkspaceId})?
+_remoteWorkspaceMetadata(WorkspaceEntity mirror) {
+  final serverUrl = mirror.url;
+  final accountId = mirror.cloudAccountId;
+  final cloudWorkspaceId = int.tryParse(mirror.cloudWorkspaceId ?? '');
+  if (serverUrl == null || accountId == null || accountId.isEmpty) return null;
+  if (cloudWorkspaceId == null) return null;
+
+  return (
+    serverUrl: serverUrl,
+    accountId: accountId,
+    cloudWorkspaceId: cloudWorkspaceId,
   );
 }
 
@@ -66,23 +103,49 @@ Future<WorkspaceAvailability> workspaceAvailability(
   final cloud = session.cloud;
   if (cloud == null) return WorkspaceAvailable(session);
 
-  final client = await ref.watch(
-    serverpodClientForWorkspaceProvider((
-      serverUrl: cloud.serverUrl,
-      accountId: cloud.accountId,
-    )).future,
-  );
+  return await _checkCloudWorkspaceAvailability(ref, session, cloud);
+}
+
+Future<WorkspaceAvailability> _checkCloudWorkspaceAvailability(
+  Ref ref,
+  WorkspaceSession session,
+  CloudWorkspaceRef cloud,
+) async {
+  final client = await _workspaceClient(ref, cloud);
+
+  return await _availabilityAfterAuthentication(client, session);
+}
+
+Future<Client> _workspaceClient(Ref ref, CloudWorkspaceRef cloud) => ref.watch(
+  serverpodClientForWorkspaceProvider((
+    serverUrl: cloud.serverUrl,
+    accountId: cloud.accountId,
+  )).future,
+);
+
+Future<WorkspaceAvailability> _availabilityAfterAuthentication(
+  Client client,
+  WorkspaceSession session,
+) async {
   try {
     final _ = await client.account.currentUser();
-  } on CloudWorkspaceException catch (error) {
-    if (error.code == CloudWorkspaceErrorCode.authenticationRequired) {
-      return WorkspaceAuthenticationRequired(session);
-    }
-
-    rethrow;
+  } on CloudWorkspaceException catch (error, stackTrace) {
+    return _authenticationFailure(error, stackTrace, session);
   }
 
   return WorkspaceAvailable(session);
+}
+
+WorkspaceAvailability _authenticationFailure(
+  CloudWorkspaceException error,
+  StackTrace stackTrace,
+  WorkspaceSession session,
+) {
+  if (error.code == CloudWorkspaceErrorCode.authenticationRequired) {
+    return WorkspaceAuthenticationRequired(session);
+  }
+
+  Error.throwWithStackTrace(error, stackTrace);
 }
 
 @riverpod

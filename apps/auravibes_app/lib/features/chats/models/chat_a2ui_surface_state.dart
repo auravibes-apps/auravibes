@@ -20,4 +20,8 @@ class ChatA2uiSurfaceState {
   Map<String, Object?>? initialDataModel;
   bool hasRoot = false;
   bool deleted = false;
+
+  bool containsIssue(ChatA2uiSurfaceIssue issue) {
+    return issues.contains(issue) || submissionIssues.contains(issue);
+  }
 }

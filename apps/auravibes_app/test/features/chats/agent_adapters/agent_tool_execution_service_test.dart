@@ -1,9 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
-    hide ToolToCall;
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
@@ -13,6 +11,8 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         AgentIterationDecision,
         AgentResolvedToolName,
         AgentToolPermissionResult,
+        AgentToolToCall,
+        LoadLatestMessageToolCallsResult,
         SkillCommandTarget,
         callSkillToolName;
 import 'package:flutter_test/flutter_test.dart';
@@ -37,7 +37,6 @@ void main() {
     var usecase = AgentToolExecutionService(
       loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
       messageRepository: messageRepository,
-      resolveToolApprovalDecision: resolveToolApprovalDecision,
       runResolvedToolUsecase: .new(
         agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
@@ -55,6 +54,7 @@ void main() {
       ),
       getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
       agentCancellationRuntime: agentCancellationRuntime,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
     );
 
     setUp(() {
@@ -73,7 +73,6 @@ void main() {
       usecase = AgentToolExecutionService(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
-        resolveToolApprovalDecision: resolveToolApprovalDecision,
         runResolvedToolUsecase: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
@@ -91,6 +90,7 @@ void main() {
         ),
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
       );
     });
 
@@ -99,8 +99,6 @@ void main() {
       final provider = AppAllowedToolsDataProvider(
         messageRepository: messageRepository,
         loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
-        resolveToolApprovalDecisionUsecaseForWorkspace: (_) =>
-            workspaceResolver,
         resolvedToolService: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller: ({
@@ -111,6 +109,8 @@ void main() {
         ),
         toolDecisionService: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecisionUsecaseForWorkspace: (_) =>
+            workspaceResolver,
       );
       final tool = ResolvedTool.mcp(
         tableId: 'tool-1',
@@ -132,12 +132,13 @@ void main() {
         ),
       );
 
-      final decision = await provider.resolveToolApprovalDecision(
+      final decision = await provider.resolveToolApprovalDecision((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         toolCallId: 'tool-call-1',
         resolvedTool: tool,
-      );
+        argumentsRaw: '{}',
+      ));
 
       expect(decision.permissionResult.name, 'granted');
     });
@@ -149,8 +150,6 @@ void main() {
         return AppAllowedToolsDataProvider(
           messageRepository: messageRepository,
           loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
-          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
-          resolveSkillCommandTarget: resolveSkillTarget,
           resolvedToolService: .new(
             agentCancellationRuntime: agentCancellationRuntime,
             mcpToolCaller: ({
@@ -161,6 +160,8 @@ void main() {
           ),
           toolDecisionService: getAgentIterationDecisionUsecase,
           agentCancellationRuntime: agentCancellationRuntime,
+          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+          resolveSkillCommandTarget: resolveSkillTarget,
         );
       }
 
@@ -181,7 +182,7 @@ void main() {
         );
 
         await expectLater(
-          provider.resolveToolApprovalDecision(
+          provider.resolveToolApprovalDecision((
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-call-1',
@@ -191,7 +192,8 @@ void main() {
               mcpServerId: 'server-1',
               mcpSlug: 'server-1',
             ),
-          ),
+            argumentsRaw: '{}',
+          )),
           throwsA(isA<StateError>()),
         );
       });
@@ -199,13 +201,13 @@ void main() {
       test('returns notConfigured for malformed skill arguments', () async {
         final provider = providerWith(null);
 
-        final decision = await provider.resolveToolApprovalDecision(
+        final decision = await provider.resolveToolApprovalDecision((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
           resolvedTool: .skillCommand(commandName: callSkillToolName),
           argumentsRaw: '{not-json',
-        );
+        ));
 
         expect(
           decision.permissionResult,
@@ -218,7 +220,7 @@ void main() {
         () async {
           final provider = providerWith(null);
 
-          final decision = await provider.resolveToolApprovalDecision(
+          final decision = await provider.resolveToolApprovalDecision((
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-call-1',
@@ -226,7 +228,7 @@ void main() {
             argumentsRaw:
                 '{"skill":"duckduckgo","tool":"search",'
                 '"args":{},"revision":"rev-1"}',
-          );
+          ));
 
           expect(
             decision.permissionResult,
@@ -269,7 +271,7 @@ void main() {
             ),
           );
 
-          final decision = await provider.resolveToolApprovalDecision(
+          final decision = await provider.resolveToolApprovalDecision((
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-call-1',
@@ -277,7 +279,7 @@ void main() {
             argumentsRaw:
                 '{"skill":"duckduckgo","tool":"search",'
                 '"args":{},"revision":"rev-1"}',
-          );
+          ));
 
           final approvalTool =
               verify(
@@ -312,13 +314,13 @@ void main() {
           );
         });
 
-        final decision = await provider.resolveToolApprovalDecision(
+        final decision = await provider.resolveToolApprovalDecision((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
           resolvedTool: .skillCommand(commandName: callSkillToolName),
           argumentsRaw: '{"skill":"duckduckgo"}',
-        );
+        ));
 
         expect(
           decision.permissionResult,
@@ -344,7 +346,7 @@ void main() {
           }) async => null,
         );
 
-        final decision = await provider.resolveToolApprovalDecision(
+        final decision = await provider.resolveToolApprovalDecision((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
@@ -352,7 +354,7 @@ void main() {
           argumentsRaw:
               '{"skill":"duckduckgo","tool":"search",'
               '"args":{},"revision":"rev-1"}',
-        );
+        ));
 
         expect(
           decision.permissionResult,
@@ -389,12 +391,13 @@ void main() {
           ),
         );
 
-        final decision = await provider.resolveToolApprovalDecision(
+        final decision = await provider.resolveToolApprovalDecision((
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-call-1',
           resolvedTool: directTool,
-        );
+          argumentsRaw: '{}',
+        ));
 
         verify(
           () => resolveToolApprovalDecision(
@@ -409,7 +412,7 @@ void main() {
     });
 
     test('passes raw argument maps to MCP tools', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.mcp(
           tableId: 'server-1',
           toolIdentifier: 'sum',
@@ -511,7 +514,7 @@ void main() {
     test(
       'returns waitForToolApproval when filtering leaves pending tools',
       () async {
-        final tool = ToolToCall(
+        final tool = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
@@ -562,7 +565,7 @@ void main() {
     );
 
     test('persists, executes, and returns final decision', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -635,7 +638,7 @@ void main() {
     });
 
     test('executes multiple granted tools and collects all results', () async {
-      final tool1 = ToolToCall(
+      final tool1 = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -644,7 +647,7 @@ void main() {
         id: 'tool-1',
         argumentsRaw: '{"input": "1+1"}',
       );
-      final tool2 = ToolToCall(
+      final tool2 = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -748,7 +751,7 @@ void main() {
     test(
       'one tool failure does not block other tools from completing',
       () async {
-        final goodTool = ToolToCall(
+        final goodTool = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
@@ -757,7 +760,7 @@ void main() {
           id: 'tool-good',
           argumentsRaw: '{"input": "1+1"}',
         );
-        final badTool = ToolToCall(
+        final badTool = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
@@ -865,7 +868,7 @@ void main() {
     );
 
     test('correctly partitions tools with mixed permissions', () async {
-      final grantedTool = ToolToCall(
+      final grantedTool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -874,7 +877,7 @@ void main() {
         id: 'tool-granted',
         argumentsRaw: '{"input": "1+1"}',
       );
-      final pendingTool = ToolToCall(
+      final pendingTool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'other',
           toolIdentifier: 'other_tool',
@@ -883,7 +886,7 @@ void main() {
         id: 'tool-pending',
         argumentsRaw: '{"input": "test"}',
       );
-      final disabledTool = ToolToCall(
+      final disabledTool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'disabled',
           toolIdentifier: 'disabled_tool',
@@ -1014,7 +1017,7 @@ void main() {
     test(
       'returns waitForToolApproval when all tools need confirmation',
       () async {
-        final tool1 = ToolToCall(
+        final tool1 = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'tool-a',
             toolIdentifier: 'tool_a',
@@ -1023,7 +1026,7 @@ void main() {
           id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
-        final tool2 = ToolToCall(
+        final tool2 = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'tool-b',
             toolIdentifier: 'tool_b',
@@ -1098,7 +1101,6 @@ void main() {
     var usecase = AgentToolExecutionService(
       loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
       messageRepository: messageRepository,
-      resolveToolApprovalDecision: resolveToolApprovalDecision,
       runResolvedToolUsecase: .new(
         agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
@@ -1112,6 +1114,7 @@ void main() {
       ),
       getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
       agentCancellationRuntime: agentCancellationRuntime,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
     );
 
     setUp(() {
@@ -1125,7 +1128,6 @@ void main() {
       usecase = AgentToolExecutionService(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
-        resolveToolApprovalDecision: resolveToolApprovalDecision,
         runResolvedToolUsecase: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
@@ -1139,6 +1141,7 @@ void main() {
         ),
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
       );
     });
 
@@ -1146,7 +1149,7 @@ void main() {
       'T003: native tool with alwaysAsk permission returns needsConfirmation '
       '(not notConfigured)',
       () async {
-        final nativeTool = ToolToCall(
+        final nativeTool = AgentToolToCall(
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
             nativeToolType: .url,
@@ -1204,7 +1207,7 @@ void main() {
     );
 
     test('T004: alwaysAllow native tool executes', () async {
-      final nativeTool = ToolToCall(
+      final nativeTool = AgentToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
           nativeToolType: .url,
@@ -1284,7 +1287,7 @@ void main() {
     });
 
     test('T010: persists notConfigured status', () async {
-      final nativeTool = ToolToCall(
+      final nativeTool = AgentToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
           nativeToolType: .url,
@@ -1363,7 +1366,7 @@ void main() {
     });
 
     test('T014: notConfigured response includes tool details', () async {
-      final nativeTool = ToolToCall(
+      final nativeTool = AgentToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
           nativeToolType: .url,
@@ -1445,7 +1448,7 @@ void main() {
     test(
       'T015: disabledInWorkspace error includes tool name in responseRaw',
       () async {
-        final nativeTool = ToolToCall(
+        final nativeTool = AgentToolToCall(
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
             nativeToolType: .url,
@@ -1538,7 +1541,6 @@ void main() {
     var usecase = AgentToolExecutionService(
       loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
       messageRepository: messageRepository,
-      resolveToolApprovalDecision: resolveToolApprovalDecision,
       runResolvedToolUsecase: .new(
         agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
@@ -1552,6 +1554,7 @@ void main() {
       ),
       getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
       agentCancellationRuntime: agentCancellationRuntime,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
     );
 
     setUp(() {
@@ -1565,7 +1568,6 @@ void main() {
       usecase = AgentToolExecutionService(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
-        resolveToolApprovalDecision: resolveToolApprovalDecision,
         runResolvedToolUsecase: .new(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
@@ -1579,11 +1581,12 @@ void main() {
         ),
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
       );
     });
 
     test('marks previously failed tool calls with executionError', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -1674,7 +1677,7 @@ void main() {
     test(
       'returns done when cancellation is requested before processing',
       () async {
-        final tool = ToolToCall(
+        final tool = AgentToolToCall(
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
@@ -1734,7 +1737,7 @@ void main() {
     );
 
     test('handles disabledInConversation permission result', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -1815,7 +1818,7 @@ void main() {
     });
 
     test('skips tool when message not found for update', () async {
-      final tool = ToolToCall(
+      final tool = AgentToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',

@@ -14,26 +14,80 @@ class const CloudServiceConnection({
   final String? credentialDefinitionId,
   final bool isEnabled = true,
 }) {
+  new _fromResourceFields(
+    WorkspaceResource resource,
+    _CloudServiceConnectionFields fields,
+  ) : this(
+        id: resource.resourceId,
+        revision: resource.revision,
+        name: fields.name,
+        serviceId: fields.serviceId,
+        hasSecret: fields.hasSecret,
+        scope: fields.scope,
+        kind: fields.kind,
+        secretRevision: fields.secretRevision,
+        keySuffix: fields.keySuffix,
+        credentialDefinitionId: fields.credentialDefinitionId,
+        isEnabled: fields.isEnabled,
+      );
+
+  new _fromResourceData(WorkspaceResource resource, Map<String, dynamic> data)
+    : this._fromResourceFields(resource, _cloudServiceConnectionFields(data));
+
   factory fromResource(WorkspaceResource resource) {
     final data = CloudResourceMapper.decode(resource);
 
-    return CloudServiceConnection(
-      id: resource.resourceId,
-      revision: resource.revision,
-      name: data['name'] as String,
-      serviceId: CloudResourceMapper.string(data, 'serviceId'),
-      hasSecret: data['hasSecret'] as bool? ?? data['keySuffix'] != null,
-      scope: .fromJson(
-        data['scope'] as String? ?? WorkspaceSecretScope.workspace.name,
-      ),
-      kind: data['kind'] as String? ?? 'appSkillCredential',
-      secretRevision: data['secretRevision'] as int?,
-      keySuffix: data['keySuffix'] as String?,
-      credentialDefinitionId: data['credentialDefinitionId'] as String?,
-      isEnabled: data['isEnabled'] as bool? ?? true,
-    );
+    return CloudServiceConnection._fromResourceData(resource, data);
   }
+
+  bool isConfigured() => hasSecret;
 }
+
+typedef _CloudServiceConnectionFields = ({
+  String name,
+  String serviceId,
+  bool hasSecret,
+  WorkspaceSecretScope scope,
+  String kind,
+  int? secretRevision,
+  String? keySuffix,
+  String? credentialDefinitionId,
+  bool isEnabled,
+});
+
+_CloudServiceConnectionFields _cloudServiceConnectionFields(
+  Map<String, dynamic> data,
+) => (
+  name: _requiredString(data, 'name'),
+  serviceId: CloudResourceMapper.string(data, 'serviceId'),
+  hasSecret: _hasSecret(data),
+  scope: _scope(data),
+  kind: _kind(data),
+  secretRevision: _optionalInt(data, 'secretRevision'),
+  keySuffix: _optionalString(data, 'keySuffix'),
+  credentialDefinitionId: _optionalString(data, 'credentialDefinitionId'),
+  isEnabled: _isEnabled(data),
+);
+
+String _requiredString(Map<String, dynamic> data, String key) =>
+    data[key] as String;
+
+String? _optionalString(Map<String, dynamic> data, String key) =>
+    data[key] as String?;
+
+int? _optionalInt(Map<String, dynamic> data, String key) => data[key] as int?;
+
+bool _hasSecret(Map<String, dynamic> data) =>
+    data['hasSecret'] as bool? ?? data['keySuffix'] != null;
+
+WorkspaceSecretScope _scope(Map<String, dynamic> data) =>
+    .fromJson(data['scope'] as String? ?? WorkspaceSecretScope.workspace.name);
+
+String _kind(Map<String, dynamic> data) =>
+    data['kind'] as String? ?? 'appSkillCredential';
+
+bool _isEnabled(Map<String, dynamic> data) =>
+    data['isEnabled'] as bool? ?? true;
 
 enum ServiceConnectionSecretEdit { preserve, replace, clear }
 
@@ -56,6 +110,8 @@ class const GenericServiceConnectionForEdit({
         revision: connection.revision,
         secretRevision: connection.secretRevision,
       );
+
+  bool hasConfiguredSecret() => hasSecret;
 }
 
 class const GenericServiceConnectionUpdate({

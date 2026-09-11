@@ -147,11 +147,11 @@ void main() {
           fireImmediately: true,
         )
         ..listen(
-          messageConversationByIdProvider(
-            'workspace-1',
-            'conversation-1',
-            'message-1',
-          ),
+          messageConversationByIdProvider((
+            workspaceId: 'workspace-1',
+            conversationId: 'conversation-1',
+            messageId: 'message-1',
+          )),
           (_, _) {
             final _ = Object();
           },
@@ -183,11 +183,11 @@ void main() {
       expect(
         container
             .read(
-              messageConversationByIdProvider(
-                'workspace-1',
-                'conversation-1',
-                'message-1',
-              ),
+              messageConversationByIdProvider((
+                workspaceId: 'workspace-1',
+                conversationId: 'conversation-1',
+                messageId: 'message-1',
+              )),
             )
             ?.content,
         'streaming',
@@ -639,15 +639,13 @@ class _FakeApiModelRepository({required final List<ApiModelEntity> models})
     throw UnimplementedError();
   }
 
-  @override
   Future<List<ApiModelProviderEntity>> batchUpsertProviders(
-    List<ApiModelProviderEntity> providers,
+    List<ApiModelProviderEntity> _,
   ) {
     throw UnimplementedError();
   }
 
-  @override
-  Future<List<ApiModelEntity>> batchUpsertModels(List<ApiModelEntity> models) {
+  Future<List<ApiModelEntity>> batchUpsertModels(List<ApiModelEntity> _) {
     throw UnimplementedError();
   }
 

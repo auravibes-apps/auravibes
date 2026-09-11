@@ -53,28 +53,7 @@ class SendMessageUsecase {
   Future<void> call({
     required String conversationId,
     required ChatDraft draft,
-  }) async {
-    if (draft.isEmpty) return;
-    if (cloudSend case final send?) {
-      final _ = await send(conversationId, draft);
-
-      return;
-    }
-
-    final getBusyState = getConversationBusyStateUsecase;
-    final queue = sendQueueRuntime;
-    if (getBusyState == null || queue == null) {
-      throw StateError('Local send dependencies unavailable');
-    }
-    final busyState = await getBusyState.call(conversationId: conversationId);
-    if (busyState.isBusy) {
-      final _ = queue.enqueue(conversationId: conversationId, draft: draft);
-
-      return;
-    }
-
-    await _sendNow(conversationId: conversationId, draft: draft);
-  }
+  }) => _send(conversationId, draft);
 
   Future<MessageEntity> createUserMessage({
     required String conversationId,
@@ -115,6 +94,33 @@ class SendMessageUsecase {
         ackMessageIds: [messageId],
       ),
     );
+  }
+
+  Future<void> _send(String conversationId, ChatDraft draft) async {
+    if (draft.isEmpty) return;
+    if (cloudSend case final send?) {
+      await send(conversationId, draft);
+
+      return;
+    }
+
+    await _sendLocal(conversationId, draft);
+  }
+
+  Future<void> _sendLocal(String conversationId, ChatDraft draft) async {
+    final getBusyState = getConversationBusyStateUsecase;
+    final queue = sendQueueRuntime;
+    if (getBusyState == null || queue == null) {
+      throw StateError('Local send dependencies unavailable');
+    }
+    final busyState = await getBusyState.call(conversationId: conversationId);
+    if (busyState.isBusy) {
+      final _ = queue.enqueue(conversationId: conversationId, draft: draft);
+
+      return;
+    }
+
+    await _sendNow(conversationId: conversationId, draft: draft);
   }
 
   Future<void> _sendNow({

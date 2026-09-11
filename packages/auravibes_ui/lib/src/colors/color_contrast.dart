@@ -15,6 +15,8 @@ const double _deltaYMin = 0.0005;
 const double _loConThreshold = 0.1;
 const double _loConOffset = 0.027;
 const double _loConScale = 0.75;
+const double _maxContrast = 108;
+const double _wcagOffset = 0.05;
 
 double _channelToLinear(double c) =>
     c <= 0.04045 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
@@ -40,48 +42,13 @@ double _relativeLuminance(Color c) =>
 abstract final class ColorContrast {
   /// Computes the APCA perceived contrast score.
   static double apcaLc({required Color foreground, required Color background}) {
-    var textLuminance = _relativeLuminance(foreground);
-    var backgroundLuminance = _relativeLuminance(background);
+    final textLuminance = _softClamp(_relativeLuminance(foreground));
+    final backgroundLuminance = _softClamp(_relativeLuminance(background));
 
-    // Ponytail. Soft clamp near black avoids singularity. Standard APCA
-    // 0.0.98G.
-    if (textLuminance < _blkThrs) {
-      textLuminance += math.pow(_blkThrs - textLuminance, _blkClmp).toDouble();
-    }
-    if (backgroundLuminance < _blkThrs) {
-      backgroundLuminance += math
-          .pow(_blkThrs - backgroundLuminance, _blkClmp)
-          .toDouble();
-    }
-
-    if ((backgroundLuminance - textLuminance).abs() < _deltaYMin) return 0;
-
-    double contrastValue;
-    if (backgroundLuminance > textLuminance) {
-      // Dark text on light background -> positive Lc.
-      contrastValue =
-          (math.pow(backgroundLuminance, _normBgExp) -
-              math.pow(textLuminance, _normTxtExp)) *
-          _scale;
-      contrastValue = contrastValue < _loConThreshold
-          ? contrastValue * _loConScale
-          : contrastValue - _loConOffset;
-    } else {
-      // Light text on dark background -> negative Lc.
-      contrastValue =
-          (math.pow(backgroundLuminance, _revBgExp) -
-              math.pow(textLuminance, _revTxtExp)) *
-          _scale;
-      contrastValue = contrastValue > -_loConThreshold
-          ? contrastValue * _loConScale
-          : contrastValue + _loConOffset;
-    }
-
-    contrastValue *= 100;
-
-    const maxContrast = 108.0;
-
-    return contrastValue.clamp(-maxContrast, maxContrast);
+    return _contrastValue(
+      textLuminance: textLuminance,
+      backgroundLuminance: backgroundLuminance,
+    );
   }
 
   /// Computes the WCAG 2.x contrast ratio, range [1.0, 21.0].
@@ -90,15 +57,67 @@ abstract final class ColorContrast {
   /// or non-text UI (1.4.11), 7.0 for text AAA (1.4.6), and 4.5 for large
   /// text AAA (1.4.6).
   static double wcagContrastRatio(Color a, Color b) {
-    final luminanceA = _relativeLuminance(a);
-    final luminanceB = _relativeLuminance(b);
-    final higherLuminance = luminanceA > luminanceB ? luminanceA : luminanceB;
-    final lowerLuminance = luminanceA > luminanceB ? luminanceB : luminanceA;
+    final luminances = (a: _relativeLuminance(a), b: _relativeLuminance(b));
 
-    const luminanceOffset = 0.05;
-
-    return (higherLuminance + luminanceOffset) /
-        (lowerLuminance + luminanceOffset);
+    return _wcagRatio(luminances);
   }
+}
+
+double _wcagRatio(({double a, double b}) luminances) {
+  final higher = math.max(luminances.a, luminances.b);
+  final lower = math.min(luminances.a, luminances.b);
+
+  return (higher + _wcagOffset) / (lower + _wcagOffset);
+}
+
+double _softClamp(double luminance) {
+  // Ponytail. Soft clamp near black avoids singularity. Standard APCA
+  // 0.0.98G.
+  if (luminance < _blkThrs) {
+    return luminance + math.pow(_blkThrs - luminance, _blkClmp).toDouble();
+  }
+
+  return luminance;
+}
+
+double _contrastValue({
+  required double textLuminance,
+  required double backgroundLuminance,
+}) {
+  if ((backgroundLuminance - textLuminance).abs() < _deltaYMin) return 0;
+
+  final value = _polarityContrast(
+    textLuminance: textLuminance,
+    backgroundLuminance: backgroundLuminance,
+  );
+
+  return _clampContrast(value * 100);
+}
+
+double _polarityContrast({
+  required double textLuminance,
+  required double backgroundLuminance,
+}) => backgroundLuminance > textLuminance
+    ? _positiveContrast(textLuminance, backgroundLuminance)
+    : _negativeContrast(textLuminance, backgroundLuminance);
+
+double _clampContrast(double value) => value.clamp(-_maxContrast, _maxContrast);
+
+double _positiveContrast(double textLuminance, double backgroundLuminance) {
+  final value =
+      (math.pow(backgroundLuminance, _normBgExp).toDouble() -
+          math.pow(textLuminance, _normTxtExp).toDouble()) *
+      _scale;
+
+  return value < _loConThreshold ? value * _loConScale : value - _loConOffset;
+}
+
+double _negativeContrast(double textLuminance, double backgroundLuminance) {
+  final value =
+      (math.pow(backgroundLuminance, _revBgExp).toDouble() -
+          math.pow(textLuminance, _revTxtExp).toDouble()) *
+      _scale;
+
+  return value > -_loConThreshold ? value * _loConScale : value + _loConOffset;
 }
 // Public contrast helpers intentionally remain top-level.

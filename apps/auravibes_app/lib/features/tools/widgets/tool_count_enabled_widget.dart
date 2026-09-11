@@ -14,30 +14,45 @@ class const ToolCountEnabledWidget({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final countAsync = ref.watch(
-      workspaceToolsProvider(workspaceId).select(
-        (asyncValue) => asyncValue.whenData(
-          (value) => value.where((e) => e.isAvailable).nonNulls.length,
-        ),
-      ),
-    );
+    return _ToolCountState(countAsync: _countAsync(ref));
+  }
 
+  AsyncValue<int> _countAsync(WidgetRef ref) => ref.watch(
+    workspaceToolsProvider(workspaceId).select(
+      (asyncValue) => asyncValue.whenData(
+        (value) => value.where((e) => e.isAvailable).nonNulls.length,
+      ),
+    ),
+  );
+}
+
+class const _ToolCountState({required final AsyncValue<int> countAsync})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return switch (countAsync) {
       AsyncLoading() => const AuraSpinner(),
 
-      AsyncData(value: final count) => Text(
-        LocaleKeys.tools_screen_enabled_count.plural(count),
-        style: .new(
-          color: context.auraColors.onSuccess,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+      AsyncData(value: final count) => _ToolCountText(count: count),
 
       AsyncError(:final error, :final stackTrace) => AppErrorWidget(
         error: error,
         stackTrace: stackTrace,
       ),
     };
+  }
+}
+
+class const _ToolCountText({required final int count}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      LocaleKeys.tools_screen_enabled_count.plural(count),
+      style: .new(
+        color: context.auraColors.onSuccess,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
+    );
   }
 }

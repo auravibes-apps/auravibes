@@ -11,7 +11,7 @@ import '../repositories/model_catalog_repository.dart';
 typedef ModelsDevCatalogFetcher = Future<Object?> Function(Uri uri);
 
 class ModelsDevCatalogSyncService {
-  ModelsDevCatalogSyncService({
+  new({
     ModelsDevCatalogFetcher? fetch,
     ModelCatalogRepository? repository,
   }) : _fetch = fetch ?? fetchModelsDevCatalog,

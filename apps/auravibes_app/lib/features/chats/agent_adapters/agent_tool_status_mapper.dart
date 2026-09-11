@@ -3,6 +3,24 @@ import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 
 abstract final class AgentToolStatusMapper {
+  static const Map<agent.AgentToolResultStatus, ToolCallResultStatus>
+  _resultStatuses = {
+    agent.AgentToolResultStatus.success: ToolCallResultStatus.success,
+    agent.AgentToolResultStatus.toolNotFound: ToolCallResultStatus.toolNotFound,
+    agent.AgentToolResultStatus.executionError:
+        ToolCallResultStatus.executionError,
+    agent.AgentToolResultStatus.disabledInConversation:
+        ToolCallResultStatus.disabledInConversation,
+    agent.AgentToolResultStatus.disabledByAgent:
+        ToolCallResultStatus.disabledByAgent,
+    agent.AgentToolResultStatus.disabledInWorkspace:
+        ToolCallResultStatus.disabledInWorkspace,
+    agent.AgentToolResultStatus.notConfigured:
+        ToolCallResultStatus.notConfigured,
+    agent.AgentToolResultStatus.stoppedByUser:
+        ToolCallResultStatus.stoppedByUser,
+  };
+
   static agent.AgentToolPermissionResult toPermissionResult(
     ToolPermissionResult result,
   ) {
@@ -20,25 +38,7 @@ abstract final class AgentToolStatusMapper {
 
   static ToolCallResultStatus toResultStatus(
     agent.AgentToolResultStatus status,
-  ) {
-    return switch (status) {
-      agent.AgentToolResultStatus.success => ToolCallResultStatus.success,
-      agent.AgentToolResultStatus.toolNotFound =>
-        ToolCallResultStatus.toolNotFound,
-      agent.AgentToolResultStatus.executionError =>
-        ToolCallResultStatus.executionError,
-      agent.AgentToolResultStatus.disabledInConversation =>
-        ToolCallResultStatus.disabledInConversation,
-      agent.AgentToolResultStatus.disabledByAgent =>
-        ToolCallResultStatus.disabledByAgent,
-      agent.AgentToolResultStatus.disabledInWorkspace =>
-        ToolCallResultStatus.disabledInWorkspace,
-      agent.AgentToolResultStatus.notConfigured =>
-        ToolCallResultStatus.notConfigured,
-      agent.AgentToolResultStatus.stoppedByUser =>
-        ToolCallResultStatus.stoppedByUser,
-    };
-  }
+  ) => _resultStatuses[status]!;
 
   static agent.AgentToolCallLifecycle toLifecycle(
     ToolCallResultStatus? status,

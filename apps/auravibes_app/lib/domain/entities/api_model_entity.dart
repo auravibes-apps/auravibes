@@ -63,34 +63,15 @@ abstract class const ApiModelEntity._() with _$ApiModelEntity {
     /// Whether models.dev reports tool-call support for this model.
     @Default(false) bool supportsToolCalls,
   }) = _ApiModelEntity;
+
   factory fromJson(
     String modelProvider,
     Map<String, dynamic> json, [
     Set<String> canonicalModelIds = const {},
   ]) {
-    final capabilities = ModelCapabilities.fromJson(
+    return _fromCapabilities(
       modelProvider,
-      json,
-      canonicalModelIds,
-    );
-
-    return ApiModelEntity(
-      modelProvider: modelProvider,
-      id: capabilities.id,
-      name: capabilities.name,
-      limitContext: capabilities.limitContext,
-      limitOutput: capabilities.limitOutput,
-      modalitiesInput: capabilities.inputModalities,
-      modalitiesOutput: capabilities.outputModalities,
-      family: capabilities.family,
-      costInput: capabilities.costInput,
-      costCacheRead: capabilities.costCacheRead,
-      costOutput: capabilities.costOutput,
-      openWeights: capabilities.openWeights,
-      supportsReasoning: capabilities.supportsReasoning,
-      isCanonical: capabilities.isCanonical,
-      supportsPriorityMode: capabilities.supportsPriorityMode,
-      supportsToolCalls: capabilities.supportsToolCalls,
+      .fromJson(modelProvider, json, canonicalModelIds),
     );
   }
 
@@ -100,8 +81,67 @@ abstract class const ApiModelEntity._() with _$ApiModelEntity {
   /// Returns true if the model has a large context window (> 100k).
   bool get hasLargeContext => limitContext > _largeContextLimit;
 
+  String identity() => '$modelProvider:$id';
+
+  bool hasInputModality(String modality) => modalitiesInput.contains(modality);
+
+  bool hasOutputModality(String modality) =>
+      modalitiesOutput.contains(modality);
+
+  static ApiModelEntity _fromCapabilities(
+    String modelProvider,
+    ModelCapabilities capabilities,
+  ) {
+    return _applyModelCapabilities(
+      _baseApiModel(modelProvider, capabilities),
+      capabilities,
+    );
+  }
+}
+
+ApiModelEntity _baseApiModel(
+  String modelProvider,
+  ModelCapabilities capabilities,
+) => ApiModelEntity(
+  modelProvider: modelProvider,
+  id: capabilities.id,
+  name: capabilities.name,
+  limitContext: capabilities.limitContext,
+  limitOutput: capabilities.limitOutput,
+  modalitiesInput: capabilities.inputModalities,
+  modalitiesOutput: capabilities.outputModalities,
+);
+
+ApiModelEntity _applyModelCapabilities(
+  ApiModelEntity model,
+  ModelCapabilities capabilities,
+) => _applyModelFlags(_applyModelCosts(model, capabilities), capabilities);
+
+ApiModelEntity _applyModelCosts(
+  ApiModelEntity model,
+  ModelCapabilities capabilities,
+) => model.copyWith(
+  family: capabilities.family,
+  costInput: capabilities.costInput,
+  costCacheRead: capabilities.costCacheRead,
+  costOutput: capabilities.costOutput,
+);
+
+ApiModelEntity _applyModelFlags(
+  ApiModelEntity model,
+  ModelCapabilities capabilities,
+) => model.copyWith(
+  openWeights: capabilities.openWeights,
+  supportsReasoning: capabilities.supportsReasoning,
+  isCanonical: capabilities.isCanonical,
+  supportsPriorityMode: capabilities.supportsPriorityMode,
+  supportsToolCalls: capabilities.supportsToolCalls,
+);
+
+extension ApiModelEntityCapabilities on ApiModelEntity {
   /// Returns true if the model has a very large context window (> 1M).
-  bool get hasVeryLargeContext => limitContext > _veryLargeContextLimit;
+  bool get hasVeryLargeContext =>
+      limitContext > ApiModelEntity._veryLargeContextLimit;
 
   bool get isTextGenerationModel =>
       isCanonical &&
@@ -117,11 +157,21 @@ abstract class const ApiModelEntity._() with _$ApiModelEntity {
 
   /// Returns a context size category for the model.
   String get contextCategory {
-    if (limitContext < _smallContextLimit) return 'Small';
-    if (limitContext < _mediumContextLimit) return 'Medium';
-    if (limitContext < _largeCategoryLimit) return 'Large';
-    if (limitContext < _veryLargeContextLimit) return 'Very Large';
+    if (limitContext < ApiModelEntity._smallContextLimit) return 'Small';
+    if (limitContext < ApiModelEntity._mediumContextLimit) return 'Medium';
+    if (limitContext < ApiModelEntity._largeCategoryLimit) return 'Large';
+    if (limitContext < ApiModelEntity._veryLargeContextLimit) {
+      return 'Very Large';
+    }
 
     return 'Massive';
   }
+
+  bool hasPricing() => costInput != null || costOutput != null;
+
+  bool canGenerate(int requestedOutputTokens) =>
+      isTextGenerationModel && requestedOutputTokens <= limitOutput;
+
+  bool supportsModality(String modality) =>
+      hasInputModality(modality) || hasOutputModality(modality);
 }

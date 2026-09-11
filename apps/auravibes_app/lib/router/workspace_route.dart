@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
@@ -267,23 +268,45 @@ class const _SubAgentConversationGate({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final conversation = ref.watch(
-      conversationByIdStreamProvider(workspaceId, conversationId: chatId),
+    return _SubAgentConversationView(
+      conversation: ref.watch(
+        conversationByIdStreamProvider(workspaceId, conversationId: chatId),
+      ),
+      workspaceId: workspaceId,
+      parentConversationId: parentConversationId,
+      chatId: chatId,
     );
-
-    return switch (conversation) {
-      AsyncData(:final value)
-          when value?.workspaceId == workspaceId &&
-              value?.parentConversationId == parentConversationId =>
-        ChatConversationScreen(
-          workspaceId: workspaceId,
-          chatId: chatId,
-          showInputComposer: false,
-        ),
-      AsyncData() || AsyncLoading() || AsyncError() => const SizedBox.shrink(),
-    };
   }
 }
+
+class const _SubAgentConversationView({
+  required final AsyncValue<ConversationEntity?> conversation,
+  required final String workspaceId,
+  required final String parentConversationId,
+  required final String chatId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (conversation) {
+    AsyncData(:final value) when _matchesConversation(value) =>
+      ChatConversationScreen(
+        workspaceId: workspaceId,
+        chatId: chatId,
+        showInputComposer: false,
+      ),
+    AsyncData() || AsyncLoading() || AsyncError() => const SizedBox.shrink(),
+  };
+
+  bool _matchesConversation(ConversationEntity? value) =>
+      _isMatchingConversation(value, workspaceId, parentConversationId);
+}
+
+bool _isMatchingConversation(
+  ConversationEntity? conversation,
+  String workspaceId,
+  String parentConversationId,
+) =>
+    conversation?.workspaceId == workspaceId &&
+    conversation?.parentConversationId == parentConversationId;
 
 class ToolsRoute({required final String workspaceId})
     extends GoRouteData

@@ -182,7 +182,7 @@ bool isA2uiPayloadSupported(
 }
 
 class A2uiProtocolMessage {
-  const A2uiProtocolMessage({
+  const new({
     required this.envelope,
   });
 
@@ -194,12 +194,12 @@ class A2uiProtocolMessage {
 }
 
 class A2uiProtocolParseResult {
-  const A2uiProtocolParseResult.valid(this.message)
+  const new valid(this.message)
     : issue = null,
       wireSurfaceId = null,
       diagnosticPayloadJson = null;
 
-  const A2uiProtocolParseResult.invalid(
+  const new invalid(
     this.issue, {
     this.wireSurfaceId,
     this.diagnosticPayloadJson,

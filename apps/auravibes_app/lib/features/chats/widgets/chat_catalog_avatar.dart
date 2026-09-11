@@ -39,31 +39,65 @@ class _ChatCatalogAvatarState extends State<ChatCatalogAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    final initials = widget.name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((word) => word.isNotEmpty)
-        .take(2)
-        .map((word) => word.characters.first)
-        .join()
-        .toUpperCase();
-
-    return FutureBuilder<Uint8List>(
-      key: ValueKey(widget.url),
-      future: _image,
-      builder: (_, snapshot) => AuraAvatar(
-        child: Text(initials),
-        imageProvider: snapshot.data == null
-            ? null
-            : MemoryImage(snapshot.requireData),
-        semanticLabel: widget.name,
-        size: widget.size,
-      ),
+    return _ChatCatalogAvatarImage(
+      image: _image,
+      initials: _initials(widget.name),
+      name: widget.name,
+      size: widget.size,
+      url: widget.url,
     );
   }
 
   void _load() {
     final url = widget.url;
     _image = url == null || url.isEmpty ? null : _loader.load(url);
+  }
+}
+
+String _initials(String name) => name
+    .trim()
+    .split(RegExp(r'\s+'))
+    .where((word) => word.isNotEmpty)
+    .take(2)
+    .map((word) => word.characters.first)
+    .join()
+    .toUpperCase();
+
+class const _ChatCatalogAvatarImage({
+  required final Future<Uint8List>? image,
+  required final String initials,
+  required final String name,
+  required final AuraSpacing size,
+  required final String? url,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FutureBuilder<Uint8List>(
+    key: ValueKey(url),
+    future: image,
+    builder: (_, snapshot) => _ChatCatalogAvatarContent(
+      image: snapshot.data,
+      initials: initials,
+      name: name,
+      size: size,
+    ),
+  );
+}
+
+class const _ChatCatalogAvatarContent({
+  required final Uint8List? image,
+  required final String initials,
+  required final String name,
+  required final AuraSpacing size,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final bytes = image;
+
+    return AuraAvatar(
+      child: Text(initials),
+      imageProvider: bytes == null ? null : MemoryImage(bytes),
+      semanticLabel: name,
+      size: size,
+    );
   }
 }

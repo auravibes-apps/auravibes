@@ -83,69 +83,203 @@ class _AuraTableState extends State<AuraTable> {
   Widget build(BuildContext context) {
     final columns = widget.columns;
     final rows = widget.rows;
-    if (columns.isEmpty || rows.any((row) => row.length != columns.length)) {
-      throw ArgumentError('Rows must match a non-empty list of columns.');
+    _validateRows(columns, rows);
+
+    return _AuraTableLayout(
+      table: widget,
+      sortedRows: _sortedTableRows(rows, _sortIndex, _ascending),
+      onSort: _sort,
+    );
+  }
+
+  void _sort(int columnIndex) {
+    setState(() {
+      _ascending = _sortIndex != columnIndex || !_ascending;
+      _sortIndex = columnIndex;
+    });
+  }
+}
+
+typedef _IndexedTableRow = ({int index, List<Object?> cells});
+
+typedef _CompareRowsRequest = ({
+  _IndexedTableRow left,
+  _IndexedTableRow right,
+  int sortIndex,
+  bool ascending,
+});
+
+typedef _TableRowRequest = ({
+  BuildContext context,
+  bool isHeader,
+  int rowIndex,
+  Iterable<Object?> cells,
+});
+
+typedef _TableCellFrameRequest = ({
+  AuraTable table,
+  bool isHeader,
+  int columnIndex,
+  Object? cell,
+  ValueChanged<int> onSort,
+});
+
+typedef _TableCellData = ({
+  bool isHeader,
+  String header,
+  Object? cell,
+  AuraTableValueFormat format,
+  AuraTableAlignment alignment,
+  VoidCallback? onSort,
+});
+
+void _validateRows(List<String> columns, List<List<Object?>> rows) {
+  if (_hasInvalidTableRows(columns, rows)) {
+    throw ArgumentError('Rows must match a non-empty list of columns.');
+  }
+}
+
+bool _hasInvalidTableRows(List<String> columns, List<List<Object?>> rows) =>
+    _hasInvalidTableShape(columns, rows) ||
+    rows.expand((row) => row).any(_hasInvalidTableCell);
+
+bool _hasInvalidTableShape(List<String> columns, List<List<Object?>> rows) =>
+    columns.isEmpty || rows.any((row) => row.length != columns.length);
+
+bool _hasInvalidTableCell(Object? cell) => switch (cell) {
+  null || String() || bool() => false,
+  final num value => !value.isFinite,
+  _ => true,
+};
+
+List<_IndexedTableRow> _sortedTableRows(
+  List<List<Object?>> rows,
+  int? sortIndex,
+  bool ascending,
+) {
+  final indexed = _indexedTableRows(rows);
+  if (sortIndex == null) return indexed;
+
+  _sortTableRows(indexed, sortIndex, ascending);
+
+  return indexed;
+}
+
+List<_IndexedTableRow> _indexedTableRows(List<List<Object?>> rows) => [
+  for (final (index, row) in rows.indexed) (index: index, cells: row),
+];
+
+void _sortTableRows(
+  List<_IndexedTableRow> rows,
+  int sortIndex,
+  bool ascending,
+) => rows.sort(
+  (left, right) => _compareSortedRows((
+    left: left,
+    right: right,
+    sortIndex: sortIndex,
+    ascending: ascending,
+  )),
+);
+
+int _compareSortedRows(_CompareRowsRequest request) {
+  final result = _compareTableCells(
+    request.left.cells[request.sortIndex],
+    request.right.cells[request.sortIndex],
+  );
+
+  return request.ascending ? result : -result;
+}
+
+int _compareTableCells(Object? left, Object? right) {
+  if (left == null && right == null) return 0;
+  if (left == null) return 1;
+  if (right == null) return -1;
+  if (left is num && right is num) return left.compareTo(right);
+
+  return left.toString().compareTo(right.toString());
+}
+
+class const _AuraTableLayout({
+  required final AuraTable table,
+  required final List<_IndexedTableRow> sortedRows,
+  required final ValueChanged<int> onSort,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraTableLayoutContent(
+    content: _AuraTableTable(
+      table: table,
+      sortedRows: sortedRows,
+      onSort: onSort,
+    ),
+    caption: table.caption,
+    emptyText: _emptyTableText(table),
+  );
+}
+
+class const _AuraTableLayoutContent({
+  required final Widget content,
+  required final Widget? caption,
+  required final String? emptyText,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (caption == null && emptyText?.isNotEmpty != true) {
+      return content;
     }
-    for (final cell in rows.expand((row) => row)) {
-      if (cell != null &&
-          cell is! String &&
-          cell is! bool &&
-          !(cell is num && cell.isFinite)) {
-        throw ArgumentError('Table cells must be finite scalar values.');
-      }
-    }
-    final theme = context.auraTheme;
-    final sortedRows = _sortedRows(rows);
-    final table = SingleChildScrollView(
+
+    return _AuraTableExtras(
+      caption: caption,
+      emptyText: emptyText,
+      content: content,
+    );
+  }
+}
+
+String? _emptyTableText(AuraTable table) =>
+    table.rows.isEmpty ? table.emptyText : null;
+
+class _AuraTableExtras extends StatelessWidget {
+  new({
+    required Widget? caption,
+    required String? emptyText,
+    required this.content,
+  }) : _children = [
+         if (caption case final value?) AuraText(child: value),
+         content,
+         if (emptyText case final value? when value.isNotEmpty)
+           AuraText(child: Text(value), style: .bodySmall),
+       ];
+
+  final Widget content;
+  final List<Widget> _children;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    spacing: context.auraTheme.spacing.sm,
+    children: _children,
+  );
+}
+
+class _AuraTableTable extends StatelessWidget {
+  const new({
+    required this.table,
+    required this.sortedRows,
+    required this.onSort,
+  });
+
+  final AuraTable table;
+  final List<_IndexedTableRow> sortedRows;
+  final ValueChanged<int> onSort;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
       scrollDirection: .horizontal,
       child: Table(
-        children: [
-          for (final (index, row) in [
-            columns,
-            ...sortedRows.map((row) => row.cells),
-          ].indexed)
-            TableRow(
-              decoration: index == 0
-                  ? BoxDecoration(color: context.auraColors.surfaceVariant)
-                  : _rowDecoration(context, sortedRows[index - 1].index),
-              children: [
-                for (final (columnIndex, cell) in row.indexed)
-                  Semantics(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: theme.spacing.sm,
-                        horizontal: theme.spacing.md,
-                      ),
-                      child: _AuraTableCell(
-                        isHeader: index == 0,
-                        header: columns[columnIndex],
-                        cell: cell,
-                        format: columnIndex < widget.columnFormats.length
-                            ? widget.columnFormats[columnIndex]
-                            : AuraTableValueFormat.plain,
-                        alignment: columnIndex < widget.columnAlignments.length
-                            ? widget.columnAlignments[columnIndex]
-                            : AuraTableAlignment.start,
-                        onSort:
-                            index == 0 &&
-                                columnIndex < widget.sortableColumns.length &&
-                                widget.sortableColumns[columnIndex]
-                            ? () => setState(() {
-                                _ascending =
-                                    _sortIndex != columnIndex || !_ascending;
-                                _sortIndex = columnIndex;
-                              })
-                            : null,
-                      ),
-                    ),
-                    header: index == 0,
-                    label: index == 0 || cell != null
-                        ? null
-                        : widget.noValueLabel,
-                  ),
-              ],
-            ),
-        ],
+        children: _rows(context),
         defaultColumnWidth: const IntrinsicColumnWidth(),
         border: .new(
           horizontalInside: BorderSide(color: context.auraColors.outline),
@@ -153,76 +287,173 @@ class _AuraTableState extends State<AuraTable> {
         defaultVerticalAlignment: .middle,
       ),
     );
-    final caption = widget.caption;
-    final emptyText = rows.isEmpty ? widget.emptyText : null;
-    if (caption == null && (emptyText == null || emptyText.isEmpty)) {
-      return table;
-    }
-
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .start,
-      spacing: theme.spacing.sm,
-      children: [
-        if (caption case final value?) AuraText(child: value),
-        table,
-        if (emptyText case final value? when value.isNotEmpty)
-          AuraText(child: Text(value), style: .bodySmall),
-      ],
-    );
   }
 
-  List<({int index, List<Object?> cells})> _sortedRows(
-    List<List<Object?>> rows,
-  ) {
-    final indexed = [
-      for (final (index, row) in rows.indexed) (index: index, cells: row),
-    ];
-    final sortIndex = _sortIndex;
-    if (sortIndex == null) {
-      return indexed;
-    }
+  List<TableRow> _rows(BuildContext context) => [
+    _headerRow(context),
+    for (final row in sortedRows) _dataRow(context, row),
+  ];
 
-    indexed.sort((left, right) {
-      final result = _compare(left.cells[sortIndex], right.cells[sortIndex]);
+  TableRow _headerRow(BuildContext context) => _row((
+    context: context,
+    isHeader: true,
+    rowIndex: 0,
+    cells: table.columns,
+  ));
 
-      return _ascending ? result : -result;
-    });
+  TableRow _dataRow(BuildContext context, _IndexedTableRow row) => _row((
+    context: context,
+    isHeader: false,
+    rowIndex: row.index,
+    cells: row.cells,
+  ));
 
-    return indexed;
-  }
+  TableRow _row(_TableRowRequest request) => TableRow(
+    decoration: _rowDecorationFor(request),
+    children: [
+      for (final (columnIndex, cell) in request.cells.indexed)
+        _AuraTableCellFrame(
+          table: table,
+          isHeader: request.isHeader,
+          columnIndex: columnIndex,
+          cell: cell,
+          onSort: onSort,
+        ),
+    ],
+  );
 
-  int _compare(Object? left, Object? right) {
-    if (left == null && right == null) {
-      return 0;
-    }
-    if (left == null) {
-      return 1;
-    }
-    if (right == null) {
-      return -1;
-    }
-    if (left is num && right is num) {
-      return left.compareTo(right);
-    }
-
-    return left.toString().compareTo(right.toString());
-  }
+  BoxDecoration? _rowDecorationFor(_TableRowRequest request) => request.isHeader
+      ? BoxDecoration(color: request.context.auraColors.surfaceVariant)
+      : _rowDecoration(request.context, request.rowIndex);
 
   BoxDecoration? _rowDecoration(BuildContext context, int rowIndex) {
-    if (rowIndex >= widget.rowTints.length) {
-      return null;
-    }
-    final tint = widget.rowTints[rowIndex];
-    if (tint == null) {
-      return null;
-    }
+    if (rowIndex >= table.rowTints.length) return null;
+    final tint = table.rowTints[rowIndex];
+    if (tint == null) return null;
 
     return BoxDecoration(
       color: context.auraColors.colorFor(tint).withValues(alpha: 0.08),
     );
   }
 }
+
+class const _AuraTableCellFrame({
+  required final AuraTable table,
+  required final bool isHeader,
+  required final int columnIndex,
+  required final Object? cell,
+  required final ValueChanged<int> onSort,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final data = _tableCellFrameData((
+      table: table,
+      isHeader: isHeader,
+      columnIndex: columnIndex,
+      cell: cell,
+      onSort: onSort,
+    ));
+
+    return _AuraTableCellSemantics(
+      data: data,
+      child: _AuraTableCellFrameContent(data: data),
+    );
+  }
+}
+
+typedef _TableCellFrameData = ({
+  AuraTable table,
+  bool isHeader,
+  int columnIndex,
+  Object? cell,
+  String? label,
+  VoidCallback? onSort,
+});
+
+_TableCellFrameData _tableCellFrameData(_TableCellFrameRequest request) {
+  final table = request.table;
+
+  return (
+    table: table,
+    isHeader: request.isHeader,
+    columnIndex: request.columnIndex,
+    cell: request.cell,
+    label: _tableCellLabel(request),
+    onSort: _tableCellSortCallback(request),
+  );
+}
+
+String? _tableCellLabel(_TableCellFrameRequest request) =>
+    request.isHeader || request.cell != null
+    ? null
+    : request.table.noValueLabel;
+
+VoidCallback? _tableCellSortCallback(_TableCellFrameRequest request) {
+  if (!_isTableCellSortable(
+    request.table,
+    request.isHeader,
+    request.columnIndex,
+  )) {
+    return null;
+  }
+
+  return () => request.onSort(request.columnIndex);
+}
+
+bool _isTableCellSortable(AuraTable table, bool isHeader, int columnIndex) =>
+    isHeader &&
+    columnIndex < table.sortableColumns.length &&
+    table.sortableColumns[columnIndex];
+
+class const _AuraTableCellSemantics({
+  required final _TableCellFrameData data,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Semantics(child: child, header: data.isHeader, label: data.label);
+}
+
+class const _AuraTableCellFrameContent({
+  required final _TableCellFrameData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.symmetric(
+      vertical: context.auraTheme.spacing.sm,
+      horizontal: context.auraTheme.spacing.md,
+    ),
+    child: _AuraTableCellValue(data: data),
+  );
+}
+
+class const _AuraTableCellValue({required final _TableCellFrameData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final table = data.table;
+    final columnIndex = data.columnIndex;
+
+    return _AuraTableCell(
+      isHeader: data.isHeader,
+      header: table.columns[columnIndex],
+      cell: data.cell,
+      format: _tableColumnFormat(table, columnIndex),
+      alignment: _tableColumnAlignment(table, columnIndex),
+      onSort: data.onSort,
+    );
+  }
+}
+
+AuraTableValueFormat _tableColumnFormat(AuraTable table, int columnIndex) =>
+    columnIndex < table.columnFormats.length
+    ? table.columnFormats[columnIndex]
+    : AuraTableValueFormat.plain;
+
+AuraTableAlignment _tableColumnAlignment(AuraTable table, int columnIndex) =>
+    columnIndex < table.columnAlignments.length
+    ? table.columnAlignments[columnIndex]
+    : AuraTableAlignment.start;
 
 class const _AuraTableCell({
   required final bool isHeader,
@@ -233,35 +464,79 @@ class const _AuraTableCell({
   final VoidCallback? onSort,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => _AuraTableCellBody(
+    data: (
+      isHeader: isHeader,
+      header: header,
+      cell: cell,
+      format: format,
+      alignment: alignment,
+      onSort: onSort,
+    ),
+  );
+}
+
+class const _AuraTableCellBody({required final _TableCellData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraTableCellInteraction(
+    content: _AuraTableCellContent(data: data),
+    onSort: data.onSort,
+  );
+}
+
+class const _AuraTableCellContent({required final _TableCellData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => data.isHeader
+      ? AuraText(child: Text(data.header))
+      : _AuraTableValueCell(
+          cell: data.cell,
+          format: data.format,
+          alignment: data.alignment,
+        );
+}
+
+class const _AuraTableCellInteraction({
+  required final Widget content,
+  required final VoidCallback? onSort,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
-    final Widget content;
-    if (isHeader) {
-      content = AuraText(child: Text(header));
-    } else {
-      final cellValue = cell;
-      final String rendered;
-      if (cellValue == null) {
-        rendered = String.fromCharCode(0x2014);
-      } else if (cellValue is num && format == AuraTableValueFormat.percent) {
-        rendered = '${(cellValue * 100).toStringAsFixed(0)}%';
-      } else {
-        rendered = cellValue.toString();
-      }
-      content = AuraText(
-        child: Text(rendered),
-        textAlign: switch (alignment) {
-          .center => TextAlign.center,
-          .end => TextAlign.end,
-          .start => TextAlign.start,
-        },
-      );
-    }
-    final onSort = this.onSort;
-    if (onSort == null) return content;
+    final callback = onSort;
+    if (callback == null) return content;
 
     return Semantics(
-      child: GestureDetector(child: content, onTap: onSort),
+      child: GestureDetector(child: content, onTap: callback),
       button: true,
     );
   }
 }
+
+class const _AuraTableValueCell({
+  required final Object? cell,
+  required final AuraTableValueFormat format,
+  required final AuraTableAlignment alignment,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(_renderTableValue(cell, format)),
+    textAlign: _tableTextAlignment(alignment),
+  );
+}
+
+String _renderTableValue(Object? cell, AuraTableValueFormat format) {
+  if (cell == null) return String.fromCharCode(0x2014);
+  if (cell is num && format == AuraTableValueFormat.percent) {
+    return '${(cell * 100).toStringAsFixed(0)}%';
+  }
+
+  return cell.toString();
+}
+
+TextAlign _tableTextAlignment(AuraTableAlignment alignment) =>
+    switch (alignment) {
+      .center => TextAlign.center,
+      .end => TextAlign.end,
+      .start => TextAlign.start,
+    };

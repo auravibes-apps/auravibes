@@ -1,4 +1,3 @@
-// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
@@ -6,7 +5,8 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:riverpod/src/providers/provider.dart';
+import 'package:riverpod/misc.dart';
+import 'package:riverpod/riverpod.dart';
 
 class const UpdateSkillCredentialDefinitionUsecase(
   final SkillCredentialDefinitionsRepository?
@@ -17,43 +17,89 @@ class const UpdateSkillCredentialDefinitionUsecase(
     String definitionId,
     SkillCredentialDefinitionToUpdate definition,
   ) async {
-    final existingDefinition =
-        await cloudStore?.definition(definitionId) ??
-        await _skillCredentialDefinitionsRepository?.getDefinitionById(
-          definitionId,
-        );
-    if (existingDefinition == null) {
+    final existingDefinition = await _requiredDefinition(definitionId);
+    final title = definition.title;
+    await _validateTitle(existingDefinition, definitionId, title);
+    _validateAttributes(definition.attributesJson);
+
+    return await _updateDefinition(definitionId, definition);
+  }
+
+  Future<SkillCredentialDefinitionEntity> _requiredDefinition(
+    String definitionId,
+  ) async {
+    final definition = await _existingDefinition(definitionId);
+    if (definition == null) {
       throw StateError('Skill credential definition not found: $definitionId');
     }
-    final title = definition.title;
-    if (title != null) {
-      ValidateSkillTitleUsecase.call(title);
-      final slug = generateSkillSlug(title);
-      final cloud = cloudStore;
-      final repository = _skillCredentialDefinitionsRepository;
-      final duplicate = switch ((cloud: cloud, repository: repository)) {
-        (cloud: final cloud?, repository: _) =>
-          (await cloud.definitions())
-              .where((item) => item.slug == slug)
-              .firstOrNull,
-        (cloud: _, repository: final repository?) =>
-          await repository.getDefinitionBySlug(
-            existingDefinition.workspaceId,
-            slug,
-          ),
-        _ => throw StateError('Credential definition store is unavailable'),
-      };
-      if (duplicate != null && duplicate.id != definitionId) {
-        throw const SkillTitleValidationException(
-          'A credential definition with this title already exists',
-        );
-      }
-    }
-    final attributesJson = definition.attributesJson;
-    if (attributesJson != null) {
-      final _ = SkillCredentialAttributeDefinition.parseMap(attributesJson);
+
+    return definition;
+  }
+
+  void _validateAttributes(String? attributesJson) {
+    if (attributesJson == null) return;
+
+    final _ = SkillCredentialAttributeDefinition.parseMap(attributesJson);
+  }
+
+  Future<SkillCredentialDefinitionEntity?> _existingDefinition(
+    String definitionId,
+  ) {
+    final cloud = cloudStore;
+    if (cloud != null) return cloud.definition(definitionId);
+
+    final repository = _skillCredentialDefinitionsRepository;
+    if (repository == null) {
+      throw StateError('Credential definition store is unavailable');
     }
 
+    return repository.getDefinitionById(definitionId);
+  }
+
+  Future<void> _validateTitle(
+    SkillCredentialDefinitionEntity existingDefinition,
+    String definitionId,
+    String? title,
+  ) async {
+    if (title == null) return;
+
+    ValidateSkillTitleUsecase.call(title);
+    final duplicate = await _duplicateTitle(existingDefinition, title);
+    if (duplicate != null && duplicate.id != definitionId) {
+      throw const SkillTitleValidationException(
+        'A credential definition with this title already exists',
+      );
+    }
+  }
+
+  Future<SkillCredentialDefinitionEntity?> _duplicateTitle(
+    SkillCredentialDefinitionEntity existingDefinition,
+    String title,
+  ) {
+    final slug = generateSkillSlug(title);
+    final cloud = cloudStore;
+    if (cloud != null) return _cloudDuplicateTitle(cloud, slug);
+    final repository = _skillCredentialDefinitionsRepository;
+    if (repository == null) {
+      throw StateError('Credential definition store is unavailable');
+    }
+
+    return repository.getDefinitionBySlug(existingDefinition.workspaceId, slug);
+  }
+
+  Future<SkillCredentialDefinitionEntity?> _cloudDuplicateTitle(
+    CloudSkillStore cloud,
+    String slug,
+  ) async {
+    final definitions = await cloud.definitions();
+
+    return definitions.where((item) => item.slug == slug).firstOrNull;
+  }
+
+  Future<SkillCredentialDefinitionEntity> _updateDefinition(
+    String definitionId,
+    SkillCredentialDefinitionToUpdate definition,
+  ) async {
     final cloud = cloudStore;
     if (cloud != null) {
       return await cloud.updateDefinition(definitionId, definition);

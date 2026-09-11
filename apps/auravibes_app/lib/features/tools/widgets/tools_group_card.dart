@@ -2,6 +2,7 @@
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
 
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
@@ -19,6 +20,13 @@ const _kDeleteMcpTitle = 'tools_screen.delete_mcp_title';
 const _kDeleteMcpConfirm = 'tools_screen.delete_mcp_confirm';
 const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
 
+typedef _McpDeleteInput = ({
+  ToolsGroupWithTools groupWithTools,
+  String workspaceId,
+  WidgetRef ref,
+  BuildContext context,
+});
+
 /// A collapsible card widget that displays a tools group.
 ///
 /// Shows a group header with icon, name, status, toggle, and expand chevron;
@@ -32,100 +40,174 @@ class const ToolsGroupCard({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpanded = useState(false);
+    final callbacks = _ToolsGroupCardCallbacks(
+      groupWithTools: groupWithTools,
+      workspaceId: workspaceId,
+      ref: ref,
+      context: context,
+    );
 
+    return _ToolsGroupCardLayout(
+      groupWithTools: groupWithTools,
+      workspaceId: workspaceId,
+      isExpanded: isExpanded.value,
+      onToggleExpand: () => isExpanded.value = !isExpanded.value,
+      callbacks: callbacks,
+    );
+  }
+}
+
+class _ToolsGroupCardCallbacks {
+  new({
+    required ToolsGroupWithTools groupWithTools,
+    required String workspaceId,
+    required WidgetRef ref,
+    required BuildContext context,
+  }) : onToggleEnabled = groupWithTools.isDefaultGroup
+           ? null
+           : ((enabled) =>
+                 _toggleMcpGroup(groupWithTools, workspaceId, ref, enabled)),
+       onReconnect = _shouldShowReconnect(groupWithTools)
+           ? (() => _reconnectMcp(groupWithTools, workspaceId, ref))
+           : null,
+       onDelete = groupWithTools.isMcpGroup
+           ? (() => _deleteMcpGroup((
+               groupWithTools: groupWithTools,
+               workspaceId: workspaceId,
+               ref: ref,
+               context: context,
+             )))
+           : null,
+       onViewError = groupWithTools.hasMcpError()
+           ? (() => _showMcpError(groupWithTools, context))
+           : null;
+
+  final ValueChanged<bool>? onToggleEnabled;
+  final VoidCallback? onReconnect;
+  final VoidCallback? onDelete;
+  final VoidCallback? onViewError;
+}
+
+bool _shouldShowReconnect(ToolsGroupWithTools groupWithTools) =>
+    groupWithTools.isMcpGroup &&
+    (groupWithTools.hasMcpError() || groupWithTools.isMcpDisconnected());
+
+void _toggleMcpGroup(
+  ToolsGroupWithTools groupWithTools,
+  String workspaceId,
+  WidgetRef ref,
+  bool enabled,
+) {
+  final group = groupWithTools.group;
+  if (group == null) return;
+
+  ref
+      .read(groupedToolsProvider(workspaceId).notifier)
+      .setMcpGroupEnabled(group.id, isEnabled: enabled);
+}
+
+Future<void> _reconnectMcp(
+  ToolsGroupWithTools groupWithTools,
+  String workspaceId,
+  WidgetRef ref,
+) async {
+  final mcpServerId = groupWithTools.mcpServerId;
+  if (mcpServerId == null) return;
+
+  await ref
+      .read(groupedToolsProvider(workspaceId).notifier)
+      .reconnectMcp(mcpServerId);
+}
+
+Future<void> _deleteMcpGroup(_McpDeleteInput input) async {
+  final (:groupWithTools, :workspaceId, :ref, :context) = input;
+  final group = groupWithTools.group;
+  if (group == null) return;
+
+  if (!await _confirmMcpDelete(context)) return;
+
+  await ref
+      .read(groupedToolsProvider(workspaceId).notifier)
+      .deleteMcpGroup(group.id);
+}
+
+Future<bool> _confirmMcpDelete(BuildContext context) async {
+  final confirmed = await AuraDialogs.confirm(
+    context: context,
+    title: Text(_kDeleteMcpTitle.tr()),
+    message: Text(_kDeleteMcpConfirm.tr()),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.common_delete),
+      cancelLabel: TextLocale(LocaleKeys.common_cancel),
+    ),
+    isDestructive: true,
+  );
+
+  return confirmed ?? false;
+}
+
+void _showMcpError(ToolsGroupWithTools groupWithTools, BuildContext context) {
+  AuraDialogs.alert(
+    context: context,
+    title: Text(_kDeleteMcpTitle.tr()),
+    message: AuraSelectableText(
+      groupWithTools.mcpErrorMessage ?? 'Unknown error',
+    ),
+    dismissLabel: const TextLocale(LocaleKeys.common_cancel),
+  );
+}
+
+class const _ToolsGroupCardLayout({
+  required final ToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
+  required final _ToolsGroupCardCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.md)),
       child: AuraCard(
-        child: AuraColumn(
-          children: [
-            // Header.
-            ToolsGroupHeader(
-              groupWithTools: groupWithTools,
-              isExpanded: isExpanded.value,
-              onToggleExpand: () => isExpanded.value = !isExpanded.value,
-              onToggleEnabled: groupWithTools.isDefaultGroup
-                  ? null
-                  : (enabled) => _handleToggleEnabled(ref, enabled),
-              onReconnect: _shouldShowReconnect()
-                  ? () => _handleReconnect(ref)
-                  : null,
-              onDelete: groupWithTools.isMcpGroup
-                  ? () => _handleDelete(context, ref)
-                  : null,
-              onViewError: groupWithTools.hasMcpError
-                  ? () => _showErrorDetails(context)
-                  : null,
-            ),
-
-            // Expanded content.
-            if (isExpanded.value) ...[
-              const AuraDivider(),
-              _ToolsList(
-                groupWithTools: groupWithTools,
-                workspaceId: workspaceId,
-              ),
-            ],
-          ],
-          crossAxisAlignment: .start,
+        child: _ToolsGroupCardContent(
+          groupWithTools: groupWithTools,
+          workspaceId: workspaceId,
+          isExpanded: isExpanded,
+          onToggleExpand: onToggleExpand,
+          callbacks: callbacks,
         ),
         style: .border,
       ),
     );
   }
+}
 
-  bool _shouldShowReconnect() {
-    return groupWithTools.isMcpGroup &&
-        (groupWithTools.hasMcpError || groupWithTools.isMcpDisconnected);
-  }
-
-  void _handleToggleEnabled(WidgetRef ref, bool enabled) {
-    final group = groupWithTools.group;
-    if (group == null) return;
-
-    ref
-        .read(groupedToolsProvider(workspaceId).notifier)
-        .setMcpGroupEnabled(group.id, isEnabled: enabled);
-  }
-
-  Future<void> _handleReconnect(WidgetRef ref) async {
-    final mcpServerId = groupWithTools.mcpServerId;
-    if (mcpServerId == null) return;
-
-    await ref
-        .read(groupedToolsProvider(workspaceId).notifier)
-        .reconnectMcp(mcpServerId);
-  }
-
-  Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
-    final group = groupWithTools.group;
-    if (group == null) return;
-
-    final confirmed = await AuraDialogs.confirm(
-      context: context,
-      title: Text(_kDeleteMcpTitle.tr()),
-      message: Text(_kDeleteMcpConfirm.tr()),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.common_delete),
-        cancelLabel: TextLocale(LocaleKeys.common_cancel),
-      ),
-      isDestructive: true,
-    );
-
-    if (confirmed ?? false) {
-      await ref
-          .read(groupedToolsProvider(workspaceId).notifier)
-          .deleteMcpGroup(group.id);
-    }
-  }
-
-  void _showErrorDetails(BuildContext context) {
-    AuraDialogs.alert(
-      context: context,
-      title: Text(_kDeleteMcpTitle.tr()),
-      message: AuraSelectableText(
-        groupWithTools.mcpErrorMessage ?? 'Unknown error',
-      ),
-      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
+class const _ToolsGroupCardContent({
+  required final ToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
+  required final _ToolsGroupCardCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        ToolsGroupHeader(
+          groupWithTools: groupWithTools,
+          isExpanded: isExpanded,
+          onToggleExpand: onToggleExpand,
+          onToggleEnabled: callbacks.onToggleEnabled,
+          onReconnect: callbacks.onReconnect,
+          onDelete: callbacks.onDelete,
+          onViewError: callbacks.onViewError,
+        ),
+        if (isExpanded) ...[
+          const AuraDivider(),
+          _ToolsList(groupWithTools: groupWithTools, workspaceId: workspaceId),
+        ],
+      ],
+      crossAxisAlignment: .start,
     );
   }
 }
@@ -137,37 +219,72 @@ class const _ToolsList({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (groupWithTools.tools.isEmpty) {
-      return Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: context.auraTheme.fromSpacing(.md),
-          horizontal: context.auraTheme.fromSpacing(.sm),
-        ),
-        child: Center(
-          child: AuraText(
-            child: Text(_kNoToolsInGroup.tr()),
-            style: .bodySmall,
-          ),
-        ),
-      );
-    }
+    if (groupWithTools.tools.isEmpty) return const _EmptyToolsGroup();
 
+    return _ToolsGroupRows(
+      groupWithTools: groupWithTools,
+      workspaceId: workspaceId,
+    );
+  }
+}
+
+class const _EmptyToolsGroup() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: context.auraTheme.fromSpacing(.md),
+        horizontal: context.auraTheme.fromSpacing(.sm),
+      ),
+      child: const _EmptyToolsMessage(),
+    );
+  }
+}
+
+class const _EmptyToolsMessage() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: AuraText(child: Text(_kNoToolsInGroup.tr()), style: .bodySmall),
+    );
+  }
+}
+
+class const _ToolsGroupRows({
+  required final ToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: context.auraTheme.fromSpacing(.sm),
       ),
-      child: Column(
-        children: groupWithTools.tools
-            .map(
-              (tool) => ToolItemRow(
-                tool: tool,
-                workspaceId: workspaceId,
-                // MCP tools cannot be individually deleted.
-                showDeleteButton: !groupWithTools.isMcpGroup,
-              ),
-            )
-            .toList(),
+      child: _ToolRows(
+        tools: groupWithTools.tools,
+        workspaceId: workspaceId,
+        showDeleteButton: !groupWithTools.isMcpGroup,
       ),
+    );
+  }
+}
+
+class const _ToolRows({
+  required final List<WorkspaceToolEntity> tools,
+  required final String workspaceId,
+  required final bool showDeleteButton,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (final tool in tools)
+          ToolItemRow(
+            tool: tool,
+            workspaceId: workspaceId,
+            showDeleteButton: showDeleteButton,
+          ),
+      ],
     );
   }
 }

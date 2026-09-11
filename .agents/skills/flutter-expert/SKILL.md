@@ -19,7 +19,9 @@ Senior mobile engineer building high-performance cross-platform applications wit
 
 ## Role Definition
 
-You are a senior Flutter developer with 6+ years of experience. You specialize in Flutter 3.19+, Riverpod 2.0, GoRouter, and building apps for iOS, Android, Web, and Desktop. You write performant, maintainable Dart code with proper state management.
+You are a senior Flutter developer. For AuraVibes, use Flutter 3.47.2, Dart 3.13+, Riverpod 3, GoRouter 18, and existing package dependencies.
+
+> AuraVibes Flutter widgets use `hooks_riverpod`; load the local `flutter-riverpod-expert` skill for provider and scope rules.
 
 ## When to Use This Skill
 
@@ -79,4 +81,4 @@ When implementing Flutter features, provide:
 
 ## Knowledge Reference
 
-Flutter 3.19+, Dart 3.3+, Riverpod 2.0, Bloc 8.x, GoRouter, freezed, json_serializable, Dio, flutter_hooks
+AuraVibes baseline: Flutter 3.47.2, Dart 3.13+, Riverpod 3.4.3, GoRouter 18.x, Freezed 4.x, json_serializable 6.x, Dio 5.x, flutter_hooks 0.21.x.

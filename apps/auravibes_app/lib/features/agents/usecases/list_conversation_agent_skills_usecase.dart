@@ -47,24 +47,37 @@ class const ListConversationAgentSkillsUsecase(
     required String workspaceId,
   }) async {
     final conversation = await _loadConversation(conversationId, workspaceId);
-    if (conversation?.workspaceId != workspaceId) return null;
+    if (conversation == null || conversation.workspaceId != workspaceId) {
+      return null;
+    }
 
-    final agentId = conversation?.agentId;
+    return await _loadVisibleAgent(workspaceId, conversation);
+  }
+
+  Future<AgentEntity?> _loadVisibleAgent(
+    String workspaceId,
+    ConversationEntity conversation,
+  ) async {
+    final agentId = conversation.agentId;
     if (agentId == null) return null;
 
     final agent = await _agentRepositoryForWorkspace(workspaceId)
         .getAgentById(agentId);
-    if (agent == null || agent.workspaceId != workspaceId) return null;
-    if (!agent.isEnabled) return null;
+    if (agent == null || !_isAvailableAgent(agent, workspaceId)) return null;
 
-    final isSubAgentConversation = conversation?.parentConversationId != null;
-    if (isSubAgentConversation) {
-      if (!agent.appearsInSubAgentList) return null;
-    } else if (!agent.appearsInChatSelector) {
-      return null;
-    }
+    return _isVisibleInConversation(conversation, agent) ? agent : null;
+  }
 
-    return agent;
+  bool _isAvailableAgent(AgentEntity agent, String workspaceId) =>
+      agent.workspaceId == workspaceId && agent.isEnabled;
+
+  bool _isVisibleInConversation(
+    ConversationEntity conversation,
+    AgentEntity agent,
+  ) {
+    return conversation.parentConversationId != null
+        ? agent.appearsInSubAgentList
+        : agent.appearsInChatSelector;
   }
 }
 

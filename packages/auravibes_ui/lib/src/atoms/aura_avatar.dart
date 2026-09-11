@@ -30,46 +30,90 @@ class AuraAvatar extends StatelessWidget {
   final AuraTint tint;
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.auraColors;
-    final diameter = context.auraTheme.fromSpacing(size);
-    final foreground = colors.onTint(tint);
-    final image = imageProvider;
-
-    return Semantics(
-      child: ClipOval(
-        child: SizedBox.square(
-          child: ColoredBox(
-            color: colors.colorFor(tint),
-            child: DefaultTextStyle.merge(
-              style: .new(color: foreground),
-              child: IconTheme(
-                data: .new(color: foreground),
-                child: Stack(
-                  fit: .expand,
-                  children: [
-                    Center(child: child),
-                    if (image != null)
-                      Image(
-                        image: image,
-                        errorBuilder: _imageError,
-                        excludeFromSemantics: true,
-                        fit: .cover,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          dimension: diameter,
-        ),
-      ),
-      excludeSemantics: semanticLabel != null,
-      image: true,
-      label: semanticLabel,
-    );
-  }
+  Widget build(BuildContext context) => _AuraAvatarSemantics(
+    label: semanticLabel,
+    child: _AuraAvatarSurface(
+      child: child,
+      imageProvider: imageProvider,
+      diameter: context.auraTheme.fromSpacing(size),
+      backgroundColor: context.auraColors.colorFor(tint),
+      foregroundColor: context.auraColors.onTint(tint),
+    ),
+  );
 
   static Widget _imageError(BuildContext _, Object _, StackTrace? _) =>
       const SizedBox.shrink();
+}
+
+class const _AuraAvatarSemantics({
+  required final String? label,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: child,
+    excludeSemantics: label != null,
+    image: true,
+    label: label,
+  );
+}
+
+class const _AuraAvatarSurface({
+  required final Widget child,
+  required final ImageProvider<Object>? imageProvider,
+  required final double diameter,
+  required final Color backgroundColor,
+  required final Color foregroundColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ClipOval(
+    child: SizedBox.square(
+      child: _AuraAvatarContent(
+        child: child,
+        imageProvider: imageProvider,
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
+      ),
+      dimension: diameter,
+    ),
+  );
+}
+
+class const _AuraAvatarContent({
+  required final Widget child,
+  required final ImageProvider<Object>? imageProvider,
+  required final Color backgroundColor,
+  required final Color foregroundColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: backgroundColor,
+    child: DefaultTextStyle.merge(
+      style: .new(color: foregroundColor),
+      child: IconTheme(
+        data: .new(color: foregroundColor),
+        child: _AuraAvatarStack(child: child, imageProvider: imageProvider),
+      ),
+    ),
+  );
+}
+
+class const _AuraAvatarStack({
+  required final Widget child,
+  required final ImageProvider<Object>? imageProvider,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: .expand,
+    children: [
+      Center(child: child),
+      if (imageProvider case final imageProvider?)
+        Image(
+          image: imageProvider,
+          errorBuilder: AuraAvatar._imageError,
+          excludeFromSemantics: true,
+          fit: .cover,
+        ),
+    ],
+  );
 }

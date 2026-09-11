@@ -6,17 +6,21 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
 import 'package:auravibes_app/features/models/widgets/model_logo.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/codex_oauth_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -42,235 +46,770 @@ class const AddModelProviderWidget({
   // Extract long locale key to avoid line length issues.
   static const String noModelsFoundKey =
       LocaleKeys.models_screens_add_provider_search_no_models_found;
+
+  @override
+  Widget build(BuildContext context, WidgetRef _) => _AddModelProviderContent(
+    workspaceId: workspaceId,
+    showHeader: showHeader,
+    onCreated: onCreated,
+    onCancel: onCancel,
+  );
+}
+
+class const _AddModelProviderContent({
+  required final String workspaceId,
+  required final bool showHeader,
+  final VoidCallback? onCreated,
+  final VoidCallback? onCancel,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scrollController = useScrollController();
-    final formKey = useMemoized(GlobalKey<FormState>.new, []);
-    final codexDeviceCode = useState<CodexDeviceCode?>(null);
-    final activeCodexOAuthMethod = useState<CodexOAuthMethod?>(null);
-    final codexOAuthCancellation = useRef<_CodexOAuthCancellation?>(null);
-
-    final selectedState = ref.watch(
-      addModelProviderStateProvider(workspaceId).select(
-        (value) => (
-          hasModel: value.modelId != null,
-          authMode: value.authMode,
-          modelId: value.modelId,
-        ),
-      ),
-    );
-    final isOAuth = selectedState.authMode == ModelProviderAuthMode.oauth2;
-    final isCodex = ModelProviderOAuthProfiles.isCodexProvider(
-      selectedState.modelId,
-    );
-    final isSubmitting = ref.watch(
-      addCredentialsModelMutationProvider.select((value) => value.isPending),
-    );
+    final runtime = _useAddModelProviderRuntime(ref, workspaceId);
     final session = ref.watch(workspaceSessionForRouteProvider(workspaceId));
-    final isDesktop =
-        !kIsWeb &&
-        const {
-          TargetPlatform.macOS,
-          TargetPlatform.linux,
-          TargetPlatform.windows,
-        }.contains(defaultTargetPlatform);
 
-    if (!selectedState.hasModel) {
-      return _SelectModelProvider(workspaceId: workspaceId);
-    }
+    return _AddModelProviderContentView(
+      runtime: runtime,
+      session: session,
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      showHeader: showHeader,
+      onCreated: onCreated,
+      onCancel: onCancel,
+    );
+  }
+}
 
-    if (session case AsyncLoading() || AsyncError()) {
-      return const Center(child: AuraSpinner());
-    }
-    final capabilities = session.requireValue.capabilities;
+class const _AddModelProviderContentView({
+  required final _AddModelProviderRuntime runtime,
+  required final AsyncValue<WorkspaceSession> session,
+  required final BuildContext context,
+  required final WidgetRef ref,
+  required final String workspaceId,
+  required final bool showHeader,
+  final VoidCallback? onCreated,
+  final VoidCallback? onCancel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => runtime.selection.hasModel
+      ? _AddModelProviderSessionContent(
+          session: session,
+          context: context,
+          ref: ref,
+          runtime: runtime,
+          workspaceId: workspaceId,
+          showHeader: showHeader,
+          onCreated: onCreated,
+          onCancel: onCancel,
+        )
+      : _SelectModelProvider(workspaceId: workspaceId);
+}
 
+class const _AddModelProviderSessionContent({
+  required final AsyncValue<WorkspaceSession> session,
+  required final BuildContext context,
+  required final WidgetRef ref,
+  required final _AddModelProviderRuntime runtime,
+  required final String workspaceId,
+  required final bool showHeader,
+  final VoidCallback? onCreated,
+  final VoidCallback? onCancel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => switch (session) {
+    AsyncLoading() || AsyncError() => const Center(child: AuraSpinner()),
+    AsyncData(:final value) => _AddModelProviderForm(
+      data: _addModelProviderFormData(_request(value)),
+    ),
+  };
+
+  _AddModelProviderFormRequest _request(WorkspaceSession value) => (
+    context: context,
+    ref: ref,
+    runtime: runtime,
+    capabilities: value.capabilities,
+    workspaceId: workspaceId,
+    showHeader: showHeader,
+    onCreated: onCreated,
+    onCancel: onCancel,
+  );
+}
+
+typedef _AddModelProviderFormRequest = ({
+  BuildContext context,
+  WidgetRef ref,
+  _AddModelProviderRuntime runtime,
+  WorkspaceCapabilities capabilities,
+  String workspaceId,
+  bool showHeader,
+  VoidCallback? onCreated,
+  VoidCallback? onCancel,
+});
+
+typedef _AddModelProviderSubmission = ({
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  VoidCallback? onCreated,
+  CodexOAuthMethod? codexOAuthMethod,
+  void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
+  bool Function()? isCodexOAuthCancelled,
+});
+
+typedef _ModelProviderMutationRequest = ({
+  WidgetRef ref,
+  String workspaceId,
+  CodexOAuthMethod? codexOAuthMethod,
+  void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
+  bool Function()? isCodexOAuthCancelled,
+});
+
+typedef _CodexOAuthState = ({
+  ValueNotifier<CodexDeviceCode?> deviceCode,
+  ValueNotifier<CodexOAuthMethod?> activeOAuthMethod,
+  ObjectRef<_CodexOAuthCancellation?> cancellationRef,
+});
+
+typedef _CodexOAuthSubmission = ({
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  VoidCallback? onCreated,
+  _CodexOAuthState state,
+  CodexOAuthMethod method,
+});
+
+typedef _CodexDeviceCodeUpdate = ({
+  BuildContext context,
+  _CodexOAuthState state,
+  _CodexOAuthCancellation cancellation,
+  CodexDeviceCode value,
+});
+
+_AddModelProviderFormData _addModelProviderFormData(
+  _AddModelProviderFormRequest request,
+) {
+  final runtime = request.runtime;
+  final state = _codexOAuthState(runtime);
+
+  return _AddModelProviderFormData(
+    values: _addModelProviderFormValues(request, state),
+    callbacks: _addModelProviderFormCallbacks(request, state),
+  );
+}
+
+_AddModelProviderFormValues _addModelProviderFormValues(
+  _AddModelProviderFormRequest request,
+  _CodexOAuthState state,
+) {
+  return _AddModelProviderFormValues(request: request, state: state);
+}
+
+_AddModelProviderFormCallbacks _addModelProviderFormCallbacks(
+  _AddModelProviderFormRequest request,
+  _CodexOAuthState state,
+) => _AddModelProviderFormCallbacks(
+  onClose: request.onCancel ?? _closeModelProviderForm(request.context),
+  onSubmit: _addModelProviderSubmitCallback(request),
+  onCancelCodexOAuth: () => _cancelCodexOAuth(state),
+  onCodexBrowserSubmit: _addModelProviderBrowserCallback(request, state),
+  onCodexDeviceSubmit: _addModelProviderDeviceCallback(request, state),
+);
+
+VoidCallback _closeModelProviderForm(BuildContext context) =>
+    () => Navigator.of(context).pop();
+
+VoidCallback _addModelProviderSubmitCallback(
+  _AddModelProviderFormRequest request,
+) =>
+    () => unawaited(
+      _submitAddModelProviderForm(_modelProviderSubmission(request)),
+    );
+
+_AddModelProviderSubmission _modelProviderSubmission(
+  _AddModelProviderFormRequest request,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  onCreated: request.onCreated,
+  codexOAuthMethod: null,
+  onCodexDeviceCode: null,
+  isCodexOAuthCancelled: null,
+);
+
+VoidCallback _addModelProviderBrowserCallback(
+  _AddModelProviderFormRequest request,
+  _CodexOAuthState state,
+) =>
+    () => _submitCodexBrowser((
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      onCreated: request.onCreated,
+      state: state,
+      method: .browser,
+    ));
+
+VoidCallback _addModelProviderDeviceCallback(
+  _AddModelProviderFormRequest request,
+  _CodexOAuthState state,
+) =>
+    () => _submitCodexDevice((
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      onCreated: request.onCreated,
+      state: state,
+      method: .deviceCode,
+    ));
+
+_CodexOAuthState _codexOAuthState(_AddModelProviderRuntime runtime) {
+  final controls = runtime.controls;
+
+  return (
+    deviceCode: controls.codexDeviceCode,
+    activeOAuthMethod: controls.activeCodexOAuthMethod,
+    cancellationRef: controls.codexOAuthCancellation,
+  );
+}
+
+Future<void> _submitAddModelProviderForm(
+  _AddModelProviderSubmission request,
+) async {
+  try {
+    await _submitAddModelProviderFormRequest(request);
+  } on Object {
+    // Mutation state renders the mapped failure in _ErrorBanner.
+  }
+}
+
+Future<void> _submitAddModelProviderFormRequest(
+  _AddModelProviderSubmission request,
+) async {
+  final created = await _runModelProviderMutation(
+    _modelProviderMutationRequest(request),
+  );
+  if (!request.context.mounted || created == null) return;
+
+  _completeAddModelProviderSubmission(
+    request.context,
+    request.onCreated,
+    created,
+  );
+}
+
+_ModelProviderMutationRequest _modelProviderMutationRequest(
+  _AddModelProviderSubmission request,
+) => (
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  codexOAuthMethod: request.codexOAuthMethod,
+  onCodexDeviceCode: request.onCodexDeviceCode,
+  isCodexOAuthCancelled: request.isCodexOAuthCancelled,
+);
+
+void _completeAddModelProviderSubmission(
+  BuildContext context,
+  VoidCallback? onCreated,
+  ModelConnectionEntity created,
+) {
+  if (onCreated case final callback?) {
+    callback();
+
+    return;
+  }
+
+  Navigator.of(context).pop(created);
+}
+
+void _submitCodexBrowser(_CodexOAuthSubmission request) {
+  final cancellation = _beginCodexOAuth(request.state, request.method);
+  unawaited(
+    _submitAddModelProviderForm(_codexBrowserSubmission(request, cancellation)),
+  );
+}
+
+_AddModelProviderSubmission _codexBrowserSubmission(
+  _CodexOAuthSubmission request,
+  _CodexOAuthCancellation cancellation,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  onCreated: request.onCreated,
+  codexOAuthMethod: request.method,
+  onCodexDeviceCode: null,
+  isCodexOAuthCancelled: () => cancellation.isCancelled,
+);
+
+void _submitCodexDevice(_CodexOAuthSubmission request) {
+  final cancellation = _beginCodexOAuth(request.state, request.method);
+  unawaited(
+    _submitAddModelProviderForm(_codexDeviceSubmission(request, cancellation)),
+  );
+}
+
+_AddModelProviderSubmission _codexDeviceSubmission(
+  _CodexOAuthSubmission request,
+  _CodexOAuthCancellation cancellation,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  onCreated: request.onCreated,
+  codexOAuthMethod: request.method,
+  onCodexDeviceCode: _codexDeviceCodeCallback(request, cancellation),
+  isCodexOAuthCancelled: () => cancellation.isCancelled,
+);
+
+void Function(CodexDeviceCode) _codexDeviceCodeCallback(
+  _CodexOAuthSubmission request,
+  _CodexOAuthCancellation cancellation,
+) =>
+    (value) => _updateCodexDeviceCode((
+      context: request.context,
+      state: request.state,
+      cancellation: cancellation,
+      value: value,
+    ));
+
+_CodexOAuthCancellation _beginCodexOAuth(
+  _CodexOAuthState state,
+  CodexOAuthMethod method,
+) {
+  final cancellation = _CodexOAuthCancellation();
+  state.cancellationRef.value = cancellation;
+  state.activeOAuthMethod.value = method;
+  state.deviceCode.value = null;
+
+  return cancellation;
+}
+
+void _updateCodexDeviceCode(_CodexDeviceCodeUpdate update) {
+  if (!update.context.mounted ||
+      update.cancellation.isCancelled ||
+      !identical(update.state.cancellationRef.value, update.cancellation)) {
+    return;
+  }
+
+  update.state.deviceCode.value = update.value;
+}
+
+void _cancelCodexOAuth(_CodexOAuthState state) {
+  state.cancellationRef.value?.cancel();
+  state.cancellationRef.value = null;
+  state.deviceCode.value = null;
+  state.activeOAuthMethod.value = null;
+}
+
+class const _AddModelProviderSelection({
+  required final bool hasModel,
+  required final ModelProviderAuthMode authMode,
+  required final String? modelId,
+  required final bool isCodex,
+  required final bool isOAuth,
+});
+
+typedef _SelectedModelProviderState = ({
+  bool hasModel,
+  ModelProviderAuthMode authMode,
+  String? modelId,
+});
+
+typedef _AddModelProviderControls = ({
+  ScrollController scrollController,
+  GlobalKey<FormState> formKey,
+  ValueNotifier<CodexDeviceCode?> codexDeviceCode,
+  ValueNotifier<CodexOAuthMethod?> activeCodexOAuthMethod,
+  ObjectRef<_CodexOAuthCancellation?> codexOAuthCancellation,
+  bool isSubmitting,
+  bool isDesktop,
+});
+
+typedef _AddModelProviderRuntime = ({
+  _AddModelProviderControls controls,
+  _AddModelProviderSelection selection,
+});
+
+_AddModelProviderRuntime _useAddModelProviderRuntime(
+  WidgetRef ref,
+  String workspaceId,
+) {
+  final selected = _watchSelectedModelProvider(ref, workspaceId);
+  final controls = _useAddModelProviderControls(ref);
+
+  return (controls: controls, selection: _addModelProviderSelection(selected));
+}
+
+_AddModelProviderSelection _addModelProviderSelection(
+  _SelectedModelProviderState selected,
+) => _AddModelProviderSelection(
+  hasModel: selected.hasModel,
+  authMode: selected.authMode,
+  modelId: selected.modelId,
+  isCodex: ModelProviderOAuthProfiles.isCodexProvider(selected.modelId),
+  isOAuth: selected.authMode == ModelProviderAuthMode.oauth2,
+);
+
+_SelectedModelProviderState _watchSelectedModelProvider(
+  WidgetRef ref,
+  String workspaceId,
+) => ref.watch(
+  addModelProviderStateProvider(workspaceId).select(
+    (value) => (
+      hasModel: value.modelId != null,
+      authMode: value.authMode,
+      modelId: value.modelId,
+    ),
+  ),
+);
+
+_AddModelProviderControls _useAddModelProviderControls(WidgetRef ref) {
+  final codex = _useCodexOAuthControls();
+
+  return (
+    scrollController: useScrollController(),
+    formKey: useMemoized(GlobalKey<FormState>.new, []),
+    codexDeviceCode: codex.deviceCode,
+    activeCodexOAuthMethod: codex.activeOAuthMethod,
+    codexOAuthCancellation: codex.cancellationRef,
+    isSubmitting: _watchModelProviderSubmission(ref),
+    isDesktop: _isDesktopPlatform(),
+  );
+}
+
+typedef _CodexOAuthControls = ({
+  ValueNotifier<CodexDeviceCode?> deviceCode,
+  ValueNotifier<CodexOAuthMethod?> activeOAuthMethod,
+  ObjectRef<_CodexOAuthCancellation?> cancellationRef,
+});
+
+_CodexOAuthControls _useCodexOAuthControls() => (
+  deviceCode: useState<CodexDeviceCode?>(null),
+  activeOAuthMethod: useState<CodexOAuthMethod?>(null),
+  cancellationRef: useRef<_CodexOAuthCancellation?>(null),
+);
+
+bool _watchModelProviderSubmission(WidgetRef ref) => ref.watch(
+  addCredentialsModelMutationProvider.select((value) => value.isPending),
+);
+
+bool _isDesktopPlatform() =>
+    !kIsWeb &&
+    const {
+      TargetPlatform.macOS,
+      TargetPlatform.linux,
+      TargetPlatform.windows,
+    }.contains(defaultTargetPlatform);
+
+class const _AddModelProviderFormData({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+});
+
+class const _AddModelProviderFormValues({
+  required final _AddModelProviderFormRequest request,
+  required final _CodexOAuthState state,
+});
+
+class const _AddModelProviderFormCallbacks({
+  required final VoidCallback onClose,
+  required final VoidCallback onSubmit,
+  required final VoidCallback onCancelCodexOAuth,
+  required final VoidCallback onCodexBrowserSubmit,
+  required final VoidCallback onCodexDeviceSubmit,
+});
+
+Future<ModelConnectionEntity?> _runModelProviderMutation(
+  _ModelProviderMutationRequest request,
+) async {
+  ModelConnectionEntity? created;
+  await addCredentialsModelMutationProvider.run(request.ref, (
+    transaction,
+  ) async {
+    created = await _addModelProviderFromTransaction(
+      transaction,
+      request: request,
+    );
+  });
+
+  return created;
+}
+
+Future<ModelConnectionEntity?> _addModelProviderFromTransaction(
+  MutationTransaction transaction, {
+  required _ModelProviderMutationRequest request,
+}) {
+  final notifier = transaction.get(
+    addModelProviderStateProvider(request.workspaceId).notifier,
+  );
+
+  return notifier.addModelProvider(
+    codexOAuthMethod: request.codexOAuthMethod,
+    onCodexDeviceCode: request.onCodexDeviceCode,
+    isCodexOAuthCancelled: request.isCodexOAuthCancelled,
+  );
+}
+
+class const _AddModelProviderForm({
+  required final _AddModelProviderFormData data,
+}) extends StatelessWidget {
+  _AddModelProviderFormValues get _values => data.values;
+  _AddModelProviderFormRequest get _request => _values.request;
+  _AddModelProviderFormCallbacks get _callbacks => data.callbacks;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      if (_request.showHeader) _ModalHeader(onClose: _callbacks.onClose),
+      _SelectedModelHeader(workspaceId: _request.workspaceId),
+      Flexible(child: _AddModelProviderFormScroll(data: data)),
+    ],
+  );
+}
+
+class const _AddModelProviderFormScroll({
+  required final _AddModelProviderFormData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final values = data.values;
+    final controls = values.request.runtime.controls;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
+      controller: controls.scrollController,
+      child: _AddModelProviderFormBody(data: data),
+    );
+  }
+}
+
+class const _AddModelProviderFormBody({
+  required final _AddModelProviderFormData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    final values = data.values;
+    final formKey = values.request.runtime.controls.formKey;
+
+    return Form(
+      key: formKey,
+      child: _AddModelProviderFields(values: values, callbacks: data.callbacks),
+    );
+  }
+}
+
+class const _AddModelProviderFields({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
     return Column(
       mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
-        if (showHeader)
-          _ModalHeader(onClose: onCancel ?? () => Navigator.of(context).pop()),
-        _SelectedModelHeader(workspaceId: workspaceId),
-        Flexible(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
-            controller: scrollController,
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: .min,
-                crossAxisAlignment: .start,
-                children: [
-                  EnhancedModelInput(
-                    workspaceId: workspaceId,
-                    fieldType: .name,
-                    // OnSubmitted: keyFocusNode.requestFocus,.
-                  ),
-                  if (!isOAuth) ...[
-                    EnhancedModelInput(
-                      workspaceId: workspaceId,
-                      fieldType: .key,
-                    ),
-                    const AuraSizedBox(height: .xl),
-                    _ApiConfigSection(
-                      workspaceId: workspaceId,
-                      onSubmit: () => unawaited(_submitForm(context, ref)),
-                    ),
-                  ],
-                  const AuraSizedBox(height: .xl),
-                  if (codexDeviceCode.value case final deviceCode?) ...[
-                    _CodexDeviceCodePanel(
-                      deviceCode: deviceCode,
-                      isPending: isSubmitting,
-                      onCancel: () => _cancelCodexOAuth(
-                        codexDeviceCode,
-                        activeCodexOAuthMethod,
-                        codexOAuthCancellation,
-                      ),
-                    ),
-                    const AuraSizedBox(height: .xl),
-                  ],
-                  if (!(isCodex &&
-                      isSubmitting &&
-                      codexDeviceCode.value != null))
-                    _CreateButton(
-                      workspaceId: workspaceId,
-                      onSubmit: () => unawaited(_submitForm(context, ref)),
-                      isCodex: isCodex,
-                      isDesktop: isDesktop,
-                      supportsBrowserOAuth: capabilities.modelBrowserOAuth,
-                      supportsDeviceOAuth: capabilities.modelDeviceOAuth,
-                      activeCodexOAuthMethod: activeCodexOAuthMethod.value,
-                      onCodexBrowserSubmit: () => _submitCodexBrowser(
-                        context,
-                        ref,
-                        codexDeviceCode,
-                        activeCodexOAuthMethod,
-                        codexOAuthCancellation,
-                      ),
-                      onCodexDeviceSubmit: () => _submitCodexDevice(
-                        context,
-                        ref,
-                        codexDeviceCode,
-                        activeCodexOAuthMethod,
-                        codexOAuthCancellation,
-                      ),
-                    ),
-                  if (isCodex &&
-                      isSubmitting &&
-                      codexDeviceCode.value == null) ...[
-                    const AuraSizedBox(height: .md),
-                    const _CodexOAuthPendingStatus(showSpinner: false),
-                    const AuraSizedBox(height: .md),
-                    AuraButton(
-                      onPressed: () => _cancelCodexOAuth(
-                        codexDeviceCode,
-                        activeCodexOAuthMethod,
-                        codexOAuthCancellation,
-                      ),
-                      child: const TextLocale(_cancelConnectionKey),
-                      variant: .outlined,
-                      isFullWidth: true,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+        _ModelProviderCredentialFields(
+          values: values,
+          onSubmit: callbacks.onSubmit,
         ),
+        const AuraSizedBox(height: .xl),
+        _ModelProviderOAuthFields(values: values, callbacks: callbacks),
       ],
     );
   }
+}
 
-  Future<void> _submitForm(
-    BuildContext context,
-    WidgetRef ref, {
-    CodexOAuthMethod? codexOAuthMethod,
-    void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
-    bool Function()? isCodexOAuthCancelled,
-  }) async {
-    try {
-      await addCredentialsModelMutationProvider.run(ref, (transaction) async {
-        final notifier = transaction.get(
-          addModelProviderStateProvider(workspaceId).notifier,
-        );
-        final created = await notifier.addModelProvider(
-          codexOAuthMethod: codexOAuthMethod,
-          onCodexDeviceCode: onCodexDeviceCode,
-          isCodexOAuthCancelled: isCodexOAuthCancelled,
-        );
-        if (context.mounted && created != null) {
-          final onCreated = this.onCreated;
-          if (onCreated != null) {
-            onCreated();
-          } else {
-            Navigator.of(context).pop(created);
-          }
-        }
-      });
-    } on Object {
-      // Mutation state renders the mapped failure in _ErrorBanner.
-    }
-  }
+class const _ModelProviderCredentialFields({
+  required final _AddModelProviderFormValues values,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      _ModelProviderCredentialFieldsView(values: values, onSubmit: onSubmit);
+}
 
-  void _submitCodexBrowser(
-    BuildContext context,
-    WidgetRef ref,
-    ValueNotifier<CodexDeviceCode?> deviceCode,
-    ValueNotifier<CodexOAuthMethod?> activeOAuthMethod,
-    ObjectRef<_CodexOAuthCancellation?> cancellationRef,
-  ) {
-    final cancellation = _CodexOAuthCancellation();
-    cancellationRef.value = cancellation;
-    activeOAuthMethod.value = CodexOAuthMethod.browser;
-    deviceCode.value = null;
-    unawaited(
-      _submitForm(
-        context,
-        ref,
-        codexOAuthMethod: .browser,
-        isCodexOAuthCancelled: () => cancellation.isCancelled,
-      ),
+class const _ModelProviderCredentialFieldsView({
+  required final _AddModelProviderFormValues values,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      _ModelProviderNameField(workspaceId: values.request.workspaceId),
+      _ModelProviderSecretFieldsVisibility(values: values, onSubmit: onSubmit),
+    ],
+  );
+}
+
+class const _ModelProviderSecretFieldsVisibility({
+  required final _AddModelProviderFormValues values,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => values.request.runtime.selection.isOAuth
+      ? const SizedBox.shrink()
+      : _ModelProviderSecretFields(
+          workspaceId: values.request.workspaceId,
+          onSubmit: onSubmit,
+        );
+}
+
+class const _ModelProviderNameField({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      EnhancedModelInput(workspaceId: workspaceId, fieldType: .name);
+}
+
+class const _ModelProviderSecretFields({
+  required final String workspaceId,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        EnhancedModelInput(workspaceId: workspaceId, fieldType: .key),
+        const AuraSizedBox(height: .xl),
+        _ApiConfigSection(workspaceId: workspaceId, onSubmit: onSubmit),
+      ],
     );
   }
+}
 
-  void _submitCodexDevice(
-    BuildContext context,
-    WidgetRef ref,
-    ValueNotifier<CodexDeviceCode?> deviceCode,
-    ValueNotifier<CodexOAuthMethod?> activeOAuthMethod,
-    ObjectRef<_CodexOAuthCancellation?> cancellationRef,
-  ) {
-    final cancellation = _CodexOAuthCancellation();
-    cancellationRef.value = cancellation;
-    activeOAuthMethod.value = CodexOAuthMethod.deviceCode;
-    deviceCode.value = null;
-    unawaited(
-      _submitForm(
-        context,
-        ref,
-        codexOAuthMethod: .deviceCode,
-        onCodexDeviceCode: (value) {
-          if (!context.mounted ||
-              cancellation.isCancelled ||
-              !identical(cancellationRef.value, cancellation)) {
-            return;
-          }
-          deviceCode.value = value;
-        },
-        isCodexOAuthCancelled: () => cancellation.isCancelled,
-      ),
+class const _ModelProviderOAuthFields({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      _ModelProviderOAuthFieldsView(values: values, callbacks: callbacks);
+}
+
+class const _ModelProviderOAuthFieldsView({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        _CodexDeviceCodeSection(values: values, callbacks: callbacks),
+        _CodexOAuthActions(values: values, callbacks: callbacks),
+      ],
     );
   }
+}
 
-  void _cancelCodexOAuth(
-    ValueNotifier<CodexDeviceCode?> deviceCode,
-    ValueNotifier<CodexOAuthMethod?> activeOAuthMethod,
-    ObjectRef<_CodexOAuthCancellation?> cancellationRef,
-  ) {
-    cancellationRef.value?.cancel();
-    cancellationRef.value = null;
-    deviceCode.value = null;
-    activeOAuthMethod.value = null;
+class const _CodexDeviceCodeSection({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    final deviceCode = values.state.deviceCode.value;
+    if (deviceCode == null) return const SizedBox.shrink();
+
+    return _CodexDeviceCodeContent(
+      deviceCode: deviceCode,
+      isPending: values.request.runtime.controls.isSubmitting,
+      onCancel: callbacks.onCancelCodexOAuth,
+    );
+  }
+}
+
+class const _CodexDeviceCodeContent({
+  required final CodexDeviceCode deviceCode,
+  required final bool isPending,
+  required final VoidCallback onCancel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      _CodexDeviceCodePanel(
+        deviceCode: deviceCode,
+        isPending: isPending,
+        onCancel: onCancel,
+      ),
+      const AuraSizedBox(height: .xl),
+    ],
+  );
+}
+
+class const _CodexOAuthActions({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Column(
+      children: [
+        _CodexCreateAction(values: values, callbacks: callbacks),
+        _CodexPendingAction(values: values, callbacks: callbacks),
+      ],
+    );
+  }
+}
+
+class const _CodexCreateAction({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends StatelessWidget {
+  bool get _hidden {
+    final request = values.request;
+
+    return request.runtime.selection.isCodex &&
+        request.runtime.controls.isSubmitting &&
+        values.state.deviceCode.value != null;
+  }
+
+  @override
+  Widget build(BuildContext _) => _hidden
+      ? const SizedBox.shrink()
+      : _CreateButton(values: values, callbacks: callbacks);
+}
+
+class const _CodexPendingAction({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends StatelessWidget {
+  bool get _visible {
+    final request = values.request;
+
+    return request.runtime.selection.isCodex &&
+        request.runtime.controls.isSubmitting &&
+        values.state.deviceCode.value == null;
+  }
+
+  @override
+  Widget build(BuildContext _) => _visible
+      ? _CodexOAuthPendingActions(onCancel: callbacks.onCancelCodexOAuth)
+      : const SizedBox.shrink();
+}
+
+class const _CodexOAuthPendingActions({required final VoidCallback onCancel})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Column(
+      children: [
+        const AuraSizedBox(height: .md),
+        const _CodexOAuthPendingStatus(showSpinner: false),
+        const AuraSizedBox(height: .md),
+        AuraButton(
+          onPressed: onCancel,
+          child: const TextLocale(_cancelConnectionKey),
+          variant: .outlined,
+          isFullWidth: true,
+        ),
+      ],
+    );
   }
 }
 
@@ -287,23 +826,42 @@ class const _ModalHeader({required final VoidCallback onClose})
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
-      child: Row(
-        children: [
-          const Expanded(
-            child: AuraText(
-              child: TextLocale(LocaleKeys.models_screens_add_provider_title),
-              style: .heading5,
-            ),
-          ),
-          AuraIconButton(
-            icon: Icons.close,
-            onPressed: onClose,
-            semanticLabel: LocaleKeys.common_close_dialog.tr(),
-          ),
-        ],
-      ),
+      child: _ModalHeaderContent(onClose: onClose),
     );
   }
+}
+
+class const _ModalHeaderContent({required final VoidCallback onClose})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const _ModalHeaderTitle(),
+        _ModalHeaderCloseButton(onPressed: onClose),
+      ],
+    );
+  }
+}
+
+class const _ModalHeaderTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => const Expanded(
+    child: AuraText(
+      child: TextLocale(LocaleKeys.models_screens_add_provider_title),
+      style: .heading5,
+    ),
+  );
+}
+
+class const _ModalHeaderCloseButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.close,
+    onPressed: onPressed,
+    semanticLabel: LocaleKeys.common_close_dialog.tr(),
+  );
 }
 
 /// API configuration section with key and URL.
@@ -334,76 +892,98 @@ class const _HiddenSection({
   Widget build(BuildContext context) {
     final visibilityState = useState(false);
 
+    return _HiddenSectionContent(
+      title: title,
+      child: child,
+      isVisible: visibilityState.value,
+      onToggle: () => visibilityState.value = !visibilityState.value,
+    );
+  }
+}
+
+class const _HiddenSectionContent({
+  required final String title,
+  required final Widget child,
+  required final bool isVisible,
+  required final VoidCallback onToggle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: .start,
       children: [
-        Row(
-          children: [
-            TextLocale(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: context.auraColors.primary,
-                fontWeight: .w600,
-              ),
-            ),
-            AuraIconButton(
-              icon: visibilityState.value
-                  ? Icons.expand_less
-                  : Icons.expand_more,
-              onPressed: () {
-                visibilityState.value = !visibilityState.value;
-              },
-            ),
-          ],
+        _HiddenSectionHeader(
+          title: title,
+          isVisible: isVisible,
+          onToggle: onToggle,
         ),
         const AuraSizedBox(height: .md),
-        Visibility(child: child, visible: visibilityState.value),
+        Visibility(child: child, visible: isVisible),
       ],
     );
   }
+}
+
+class const _HiddenSectionHeader({
+  required final String title,
+  required final bool isVisible,
+  required final VoidCallback onToggle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _HiddenSectionTitle(title: title),
+        _HiddenSectionToggle(isVisible: isVisible, onPressed: onToggle),
+      ],
+    );
+  }
+}
+
+class const _HiddenSectionTitle({required final String title})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextLocale(
+    title,
+    style: Theme.of(context).textTheme.titleMedium
+        ?.copyWith(color: context.auraColors.primary, fontWeight: .w600),
+  );
+}
+
+class const _HiddenSectionToggle({
+  required final bool isVisible,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraIconButton(
+    icon: isVisible ? Icons.expand_less : Icons.expand_more,
+    onPressed: onPressed,
+  );
 }
 
 /// Error banner for displaying general errors.
 class const _ErrorBanner() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final addCredentialsModelMutation = ref.watch(
-      addCredentialsModelMutationProvider,
-    );
-
-    final error = switch (addCredentialsModelMutation) {
-      MutationError<void>(:final error) => _mapErrorMessage(error),
-      MutationIdle() || MutationPending() || MutationSuccess() => null,
-    };
+    final error = _errorBannerMessage(ref);
 
     if (error == null) {
       return const SizedBox.shrink();
     }
-    final errorColor = context.auraColors.error;
 
-    return Container(
-      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-      decoration: BoxDecoration(
-        color: errorColor.withValues(alpha: 0.1),
-        border: Border.all(color: errorColor),
-        borderRadius: BorderRadius.all(
-          .circular(context.auraTheme.fromBorderRadius(.md)),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, size: 20, color: errorColor),
-          const AuraSizedBox(width: .sm),
-          Expanded(
-            child: Text(
-              error,
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: errorColor),
-            ),
-          ),
-        ],
-      ),
+    return _ErrorBannerContent(
+      error: error,
+      errorColor: context.auraColors.error,
     );
+  }
+
+  String? _errorBannerMessage(WidgetRef ref) {
+    final mutation = ref.watch(addCredentialsModelMutationProvider);
+
+    return switch (mutation) {
+      MutationError<void>(:final error) => _mapErrorMessage(error),
+      MutationIdle() || MutationPending() || MutationSuccess() => null,
+    };
   }
 
   String _mapErrorMessage(Object error) {
@@ -416,67 +996,278 @@ class const _ErrorBanner() extends ConsumerWidget {
   }
 }
 
-/// Create button with loading state.
-class const _CreateButton({
-  required final String workspaceId,
-  required final VoidCallback onSubmit,
-  required final bool isCodex,
-  required final bool isDesktop,
-  required final bool supportsBrowserOAuth,
-  required final bool supportsDeviceOAuth,
-  required final CodexOAuthMethod? activeCodexOAuthMethod,
-  required final VoidCallback onCodexBrowserSubmit,
-  required final VoidCallback onCodexDeviceSubmit,
-}) extends HookConsumerWidget {
+class const _ErrorBannerContent({
+  required final String error,
+  required final Color errorColor,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isSubmitting = ref.watch(
-      addCredentialsModelMutationProvider.select((value) => value.isPending),
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+      decoration: _errorBannerDecoration(context, errorColor),
+      child: _ErrorBannerRow(error: error, errorColor: errorColor),
+    );
+  }
+}
+
+BoxDecoration _errorBannerDecoration(BuildContext context, Color errorColor) =>
+    BoxDecoration(
+      color: errorColor.withValues(alpha: 0.1),
+      border: Border.all(color: errorColor),
+      borderRadius: BorderRadius.all(
+        .circular(context.auraTheme.fromBorderRadius(.md)),
+      ),
     );
 
-    final isValid = ref.watch(
-      addModelProviderStateProvider(workspaceId)
-          .select((value) => value.isValid()),
-    );
-    final disabled = isSubmitting || !isValid;
-
-    return Column(
+class const _ErrorBannerRow({
+  required final String error,
+  required final Color errorColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       children: [
-        const _ErrorBanner(),
-        if (isCodex && isDesktop && supportsBrowserOAuth) ...[
-          AuraButton(
-            onPressed: onCodexBrowserSubmit,
-            child: const TextLocale(
-              LocaleKeys.models_screens_add_provider_connect_browser,
-            ),
-            size: .large,
-            isLoading:
-                isSubmitting &&
-                activeCodexOAuthMethod == CodexOAuthMethod.browser,
-            isFullWidth: true,
-            disabled: disabled,
-          ),
-          const AuraSizedBox(height: .md),
-        ],
-        if (!isCodex || supportsDeviceOAuth)
-          AuraButton(
-            onPressed: isCodex ? onCodexDeviceSubmit : onSubmit,
-            child: TextLocale(
-              isCodex
-                  ? LocaleKeys.models_screens_add_provider_use_device_code
-                  : LocaleKeys.models_screens_add_provider_create_button,
-            ),
-            size: .large,
-            isLoading:
-                isSubmitting &&
-                (!isCodex ||
-                    activeCodexOAuthMethod == CodexOAuthMethod.deviceCode),
-            isFullWidth: true,
-            disabled: disabled,
-          ),
+        Icon(Icons.error_outline, size: 20, color: errorColor),
+        const AuraSizedBox(width: .sm),
+        Expanded(
+          child: _ErrorBannerText(error: error, color: errorColor),
+        ),
       ],
     );
   }
+}
+
+class const _ErrorBannerText({
+  required final String error,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    error,
+    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+  );
+}
+
+/// Create button with loading state.
+class const _CreateButton({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = _watchCreateButtonState(ref, values.request.workspaceId);
+
+    return _CreateButtonView(
+      values: values,
+      callbacks: callbacks,
+      isSubmitting: state.isSubmitting,
+      disabled: state.isSubmitting || !state.isValid,
+    );
+  }
+}
+
+typedef _CreateButtonState = ({bool isSubmitting, bool isValid});
+
+_CreateButtonState _watchCreateButtonState(WidgetRef ref, String workspaceId) =>
+    (
+      isSubmitting: _watchCreateButtonSubmitting(ref),
+      isValid: _watchCreateButtonValidity(ref, workspaceId),
+    );
+
+bool _watchCreateButtonSubmitting(WidgetRef ref) => ref.watch(
+  addCredentialsModelMutationProvider.select((value) => value.isPending),
+);
+
+bool _watchCreateButtonValidity(WidgetRef ref, String workspaceId) => ref.watch(
+  addModelProviderStateProvider(workspaceId).select((value) => value.isValid()),
+);
+
+class const _CreateButtonView({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+  required final bool isSubmitting,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Column(
+      children: [
+        const _ErrorBanner(),
+        _CreateButtonActions(
+          values: values,
+          callbacks: callbacks,
+          isSubmitting: isSubmitting,
+          disabled: disabled,
+        ),
+      ],
+    );
+  }
+}
+
+class const _CreateButtonActions({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+  required final bool isSubmitting,
+  required final bool disabled,
+}) extends StatelessWidget {
+  ({bool isSubmitting, bool disabled}) get _state =>
+      (isSubmitting: isSubmitting, disabled: disabled);
+
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      _CodexBrowserAction(values: values, state: _state, callbacks: callbacks),
+      _CodexDeviceAction(values: values, state: _state, callbacks: callbacks),
+    ],
+  );
+}
+
+class const _CodexBrowserAction({
+  required final _AddModelProviderFormValues values,
+  required final ({bool isSubmitting, bool disabled}) state,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    if (!_supportsCodexBrowser(values)) {
+      return const SizedBox.shrink();
+    }
+
+    return _CodexBrowserCreateButton(
+      isSubmitting: state.isSubmitting,
+      disabled: state.disabled,
+      activeOAuthMethod: values.state.activeOAuthMethod.value,
+      onPressed: callbacks.onCodexBrowserSubmit,
+    );
+  }
+}
+
+bool _supportsCodexBrowser(_AddModelProviderFormValues values) {
+  final request = values.request;
+  final selection = request.runtime.selection;
+  final controls = request.runtime.controls;
+
+  return selection.isCodex &&
+      controls.isDesktop &&
+      request.capabilities.modelBrowserOAuth;
+}
+
+class const _CodexDeviceAction({
+  required final _AddModelProviderFormValues values,
+  required final ({bool isSubmitting, bool disabled}) state,
+  required final _AddModelProviderFormCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => _supportsCodexDevice(values)
+      ? _CodexDeviceCreateButton.from(
+          values: values,
+          state: state,
+          callbacks: callbacks,
+        )
+      : const SizedBox.shrink();
+}
+
+bool _supportsCodexDevice(_AddModelProviderFormValues values) {
+  final request = values.request;
+
+  return !request.runtime.selection.isCodex ||
+      request.capabilities.modelDeviceOAuth;
+}
+
+class const _CodexBrowserCreateButton({
+  required final bool isSubmitting,
+  required final bool disabled,
+  required final CodexOAuthMethod? activeOAuthMethod,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Column(
+      children: [
+        _CodexBrowserButton(
+          isSubmitting: isSubmitting,
+          disabled: disabled,
+          activeOAuthMethod: activeOAuthMethod,
+          onPressed: onPressed,
+        ),
+        const AuraSizedBox(height: .md),
+      ],
+    );
+  }
+}
+
+class const _CodexBrowserButton({
+  required final bool isSubmitting,
+  required final bool disabled,
+  required final CodexOAuthMethod? activeOAuthMethod,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(
+      LocaleKeys.models_screens_add_provider_connect_browser,
+    ),
+    size: .large,
+    isLoading: isSubmitting && activeOAuthMethod == CodexOAuthMethod.browser,
+    isFullWidth: true,
+    disabled: disabled,
+  );
+}
+
+class const _CodexDeviceCreateButton({
+  required final bool isSubmitting,
+  required final bool disabled,
+  required final bool isCodex,
+  required final CodexOAuthMethod? activeOAuthMethod,
+  required final VoidCallback onSubmit,
+  required final VoidCallback onCodexDeviceSubmit,
+}) extends StatelessWidget {
+  new from({
+    required _AddModelProviderFormValues values,
+    required ({bool isSubmitting, bool disabled}) state,
+    required _AddModelProviderFormCallbacks callbacks,
+  }) : this(
+         isSubmitting: state.isSubmitting,
+         disabled: state.disabled,
+         isCodex: values.request.runtime.selection.isCodex,
+         activeOAuthMethod: values.state.activeOAuthMethod.value,
+         onSubmit: callbacks.onSubmit,
+         onCodexDeviceSubmit: callbacks.onCodexDeviceSubmit,
+       );
+
+  VoidCallback get _onPressed => isCodex ? onCodexDeviceSubmit : onSubmit;
+  String get _label => isCodex
+      ? LocaleKeys.models_screens_add_provider_use_device_code
+      : LocaleKeys.models_screens_add_provider_create_button;
+  bool get _isLoading =>
+      isSubmitting &&
+      (!isCodex || activeOAuthMethod == CodexOAuthMethod.deviceCode);
+
+  @override
+  Widget build(BuildContext _) => _CodexDeviceButton(
+    onPressed: _onPressed,
+    disabled: disabled,
+    label: _label,
+    isLoading: _isLoading,
+  );
+}
+
+class const _CodexDeviceButton({
+  required final VoidCallback onPressed,
+  required final bool disabled,
+  required final String label,
+  required final bool isLoading,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onPressed,
+    child: TextLocale(label),
+    size: .large,
+    isLoading: isLoading,
+    isFullWidth: true,
+    disabled: disabled,
+  );
 }
 
 class const _CodexOAuthPendingStatus({final bool showSpinner = true})
@@ -506,88 +1297,24 @@ class const _CodexDeviceCodePanel({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final linkStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-      color: context.auraColors.primary,
-      decoration: .underline,
-      decorationColor: context.auraColors.primary,
-    );
-
-    return AuraCard(
-      child: Column(
-        crossAxisAlignment: .start,
-        children: [
-          const AuraText(
-            child: TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_instruction,
-            ),
-            style: .bodyLarge,
-          ),
-          const AuraSizedBox(height: .sm),
-          const AuraText(
-            child: TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_step_code,
-            ),
-          ),
-          const AuraSizedBox(height: .sm),
-          Row(
-            children: [
-              Expanded(
-                child: AuraSelectableText(
-                  deviceCode.userCode,
-                  style: .heading5,
-                  tint: .primary,
-                ),
-              ),
-              AuraIconButton(
-                icon: Icons.copy_outlined,
-                onPressed: () => _copyCode(context),
-                tooltip: LocaleKeys
-                    .models_screens_add_provider_device_code_copy_tooltip
-                    .tr(context: context),
-              ),
-            ],
-          ),
-          const AuraSizedBox(height: .md),
-          const AuraText(
-            child: TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_step_link,
-            ),
-          ),
-          const AuraSizedBox(height: .sm),
-          Row(
-            children: [
-              Expanded(
-                child: SelectableText(
-                  deviceCode.verificationUrl,
-                  style: linkStyle,
-                  onTap: () => _showVerificationUrlActions(context),
-                ),
-              ),
-              AuraIconButton(
-                icon: Icons.open_in_new,
-                onPressed: () => _showVerificationUrlActions(context),
-                tint: .primary,
-                tooltip: LocaleKeys
-                    .models_screens_add_provider_device_code_open_link_tooltip
-                    .tr(context: context),
-              ),
-            ],
-          ),
-          if (isPending) ...[
-            const AuraSizedBox(height: .lg),
-            const _CodexOAuthPendingStatus(),
-            const AuraSizedBox(height: .md),
-          ],
-          AuraButton(
-            onPressed: onCancel,
-            child: const TextLocale(_cancelConnectionKey),
-            variant: .outlined,
-            isFullWidth: true,
-          ),
-        ],
-      ),
+    return _CodexDeviceCodePanelContent(
+      deviceCode: deviceCode,
+      isPending: isPending,
+      linkStyle: _codexDeviceLinkStyle(context),
+      onCopyCode: () => _copyCode(context),
+      onOpenVerificationUrl: () => _showVerificationUrlActions(context),
+      onCancel: onCancel,
     );
   }
+}
+
+extension on _CodexDeviceCodePanel {
+  TextStyle? _codexDeviceLinkStyle(BuildContext context) =>
+      Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: context.auraColors.primary,
+        decoration: .underline,
+        decorationColor: context.auraColors.primary,
+      );
 
   Future<void> _copyCode(BuildContext context) async {
     await Clipboard.setData(.new(text: deviceCode.userCode));
@@ -621,37 +1348,23 @@ class const _CodexDeviceCodePanel({
       title: const TextLocale(
         LocaleKeys.models_screens_add_provider_device_code_link_actions_title,
       ),
-      message: Column(
-        mainAxisSize: .min,
-        crossAxisAlignment: .stretch,
-        children: [
-          AuraButton(
-            onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
-              unawaited(_launchVerificationUrl(context));
-            },
-            child: const TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_open_browser,
-            ),
-            isFullWidth: true,
-          ),
-          const AuraSizedBox(height: .sm),
-          AuraButton(
-            onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
-              unawaited(_copyVerificationUrl(context));
-            },
-            child: const TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_copy_link,
-            ),
-            variant: .outlined,
-            isFullWidth: true,
-          ),
-        ],
+      message: _VerificationUrlActions(
+        onOpen: _verificationUrlOpenAction(context),
+        onCopy: _verificationUrlCopyAction(context),
       ),
       dismissLabel: const TextLocale(LocaleKeys.common_cancel),
     );
   }
+
+  VoidCallback _verificationUrlOpenAction(BuildContext context) => () {
+    Navigator.of(context, rootNavigator: true).pop();
+    unawaited(_launchVerificationUrl(context));
+  };
+
+  VoidCallback _verificationUrlCopyAction(BuildContext context) => () {
+    Navigator.of(context, rootNavigator: true).pop();
+    unawaited(_copyVerificationUrl(context));
+  };
 
   Future<void> _launchVerificationUrl(BuildContext context) async {
     final uri = Uri.parse(deviceCode.verificationUrl);
@@ -660,192 +1373,733 @@ class const _CodexDeviceCodePanel({
     } on Exception {
       if (!context.mounted) return;
 
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: Text(
-          LocaleKeys.models_screens_add_provider_device_code_open_link_failed
-              .tr(),
-        ),
-        variant: .error,
-      );
+      _showVerificationUrlError(context);
     }
   }
+
+  void _showVerificationUrlError(BuildContext context) {
+    if (!context.mounted) return;
+
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(
+        LocaleKeys.models_screens_add_provider_device_code_open_link_failed
+            .tr(),
+      ),
+      variant: .error,
+    );
+  }
+}
+
+class const _CodexDeviceCodePanelContent({
+  required final CodexDeviceCode deviceCode,
+  required final bool isPending,
+  required final TextStyle? linkStyle,
+  required final VoidCallback onCopyCode,
+  required final VoidCallback onOpenVerificationUrl,
+  required final VoidCallback onCancel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraCard(
+    child: _CodexDeviceCodePanelBody(
+      deviceCode: deviceCode,
+      isPending: isPending,
+      linkStyle: linkStyle,
+      onCopyCode: onCopyCode,
+      onOpenVerificationUrl: onOpenVerificationUrl,
+      onCancel: onCancel,
+    ),
+  );
+}
+
+class const _CodexDeviceCodePanelBody({
+  required final CodexDeviceCode deviceCode,
+  required final bool isPending,
+  required final TextStyle? linkStyle,
+  required final VoidCallback onCopyCode,
+  required final VoidCallback onOpenVerificationUrl,
+  required final VoidCallback onCancel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        _CodexDeviceCodePanelDetails(
+          userCode: deviceCode.userCode,
+          verificationUrl: deviceCode.verificationUrl,
+          linkStyle: linkStyle,
+          onCopyCode: onCopyCode,
+          onOpen: onOpenVerificationUrl,
+        ),
+        _CodexDeviceCodePanelActions(isPending: isPending, onCancel: onCancel),
+      ],
+    );
+  }
+}
+
+class const _CodexDeviceCodePanelDetails({
+  required final String userCode,
+  required final String verificationUrl,
+  required final TextStyle? linkStyle,
+  required final VoidCallback onCopyCode,
+  required final VoidCallback onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      const _CodexDeviceCodeInstructionSection(),
+      _CodexDeviceCodeRows(
+        userCode: userCode,
+        verificationUrl: verificationUrl,
+        linkStyle: linkStyle,
+        onCopyCode: onCopyCode,
+        onOpen: onOpen,
+      ),
+    ],
+  );
+}
+
+class const _CodexDeviceCodeInstructionSection() extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => const Column(
+    children: [
+      AuraText(
+        child: TextLocale(
+          LocaleKeys.models_screens_add_provider_device_code_instruction,
+        ),
+        style: .bodyLarge,
+      ),
+      AuraSizedBox(height: .sm),
+    ],
+  );
+}
+
+class const _CodexDeviceCodeRows({
+  required final String userCode,
+  required final String verificationUrl,
+  required final TextStyle? linkStyle,
+  required final VoidCallback onCopyCode,
+  required final VoidCallback onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      _CodexDeviceCodeRow(userCode: userCode, onCopy: onCopyCode),
+      const AuraSizedBox(height: .md),
+      _CodexDeviceLinkRow(
+        verificationUrl: verificationUrl,
+        linkStyle: linkStyle,
+        onOpen: onOpen,
+      ),
+    ],
+  );
+}
+
+class const _CodexDeviceCodePanelActions({
+  required final bool isPending,
+  required final VoidCallback onCancel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Column(
+      children: [
+        if (isPending) const _CodexDevicePendingSection(),
+        _CodexDeviceCancelButton(onCancel: onCancel),
+      ],
+    );
+  }
+}
+
+class const _CodexDeviceCancelButton({required final VoidCallback onCancel})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onCancel,
+    child: const TextLocale(_cancelConnectionKey),
+    variant: .outlined,
+    isFullWidth: true,
+  );
+}
+
+class const _CodexDeviceCodeRow({
+  required final String userCode,
+  required final VoidCallback onCopy,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _CodexDeviceCodeRowContent(
+    userCode: userCode,
+    onCopy: onCopy,
+    tooltip: _tooltip(context),
+  );
+
+  String _tooltip(BuildContext context) => LocaleKeys
+      .models_screens_add_provider_device_code_copy_tooltip
+      .tr(context: context);
+}
+
+class _CodexDeviceCodeRowContent extends Column {
+  new({
+    required String userCode,
+    required VoidCallback onCopy,
+    required String tooltip,
+  }) : super(
+         crossAxisAlignment: .stretch,
+         children: [
+           const _CodexDeviceStepLabel(
+             LocaleKeys.models_screens_add_provider_device_code_step_code,
+           ),
+           const AuraSizedBox(height: .sm),
+           _CodexDeviceCodeValue(
+             userCode: userCode,
+             onCopy: onCopy,
+             tooltip: tooltip,
+           ),
+         ],
+       );
+}
+
+class const _CodexDeviceCodeValue({
+  required final String userCode,
+  required final VoidCallback onCopy,
+  required final String tooltip,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Row(
+      children: [
+        Expanded(
+          child: AuraSelectableText(userCode, style: .heading5, tint: .primary),
+        ),
+        AuraIconButton(
+          icon: Icons.copy_outlined,
+          onPressed: onCopy,
+          tooltip: tooltip,
+        ),
+      ],
+    );
+  }
+}
+
+class const _CodexDeviceLinkRow({
+  required final String verificationUrl,
+  required final TextStyle? linkStyle,
+  required final VoidCallback onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _CodexDeviceLinkRowContent(
+    verificationUrl: verificationUrl,
+    linkStyle: linkStyle,
+    onOpen: onOpen,
+    tooltip: _tooltip(context),
+  );
+
+  String _tooltip(BuildContext context) => LocaleKeys
+      .models_screens_add_provider_device_code_open_link_tooltip
+      .tr(context: context);
+}
+
+class _CodexDeviceLinkRowContent extends Column {
+  new({
+    required String verificationUrl,
+    required TextStyle? linkStyle,
+    required VoidCallback onOpen,
+    required String tooltip,
+  }) : super(
+         crossAxisAlignment: .stretch,
+         children: [
+           const _CodexDeviceStepLabel(
+             LocaleKeys.models_screens_add_provider_device_code_step_link,
+           ),
+           const AuraSizedBox(height: .sm),
+           _CodexDeviceLinkValue(
+             verificationUrl: verificationUrl,
+             linkStyle: linkStyle,
+             onOpen: onOpen,
+             tooltip: tooltip,
+           ),
+         ],
+       );
+}
+
+class const _CodexDeviceStepLabel(final String localeKey)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraText(child: TextLocale(localeKey));
+}
+
+class const _CodexDeviceLinkValue({
+  required final String verificationUrl,
+  required final TextStyle? linkStyle,
+  required final VoidCallback onOpen,
+  required final String tooltip,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Row(
+    children: [
+      Expanded(
+        child: SelectableText(verificationUrl, style: linkStyle, onTap: onOpen),
+      ),
+      AuraIconButton(
+        icon: Icons.open_in_new,
+        onPressed: onOpen,
+        tint: .primary,
+        tooltip: tooltip,
+      ),
+    ],
+  );
+}
+
+class const _CodexDevicePendingSection() extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return const Column(
+      children: [
+        AuraSizedBox(height: .lg),
+        _CodexOAuthPendingStatus(),
+        AuraSizedBox(height: .md),
+      ],
+    );
+  }
+}
+
+class const _VerificationUrlActions({
+  required final VoidCallback onOpen,
+  required final VoidCallback onCopy,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
+      children: [
+        _OpenVerificationUrlButton(onPressed: onOpen),
+        const AuraSizedBox(height: .sm),
+        _CopyVerificationUrlButton(onPressed: onCopy),
+      ],
+    );
+  }
+}
+
+class const _OpenVerificationUrlButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(
+      LocaleKeys.models_screens_add_provider_device_code_open_browser,
+    ),
+    isFullWidth: true,
+  );
+}
+
+class const _CopyVerificationUrlButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(
+      LocaleKeys.models_screens_add_provider_device_code_copy_link,
+    ),
+    variant: .outlined,
+    isFullWidth: true,
+  );
 }
 
 class const _SelectModelProvider({required final String workspaceId})
     extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final models = ref
-        .watch(apiModelProvidersProvider(workspaceId: workspaceId))
-        .value;
-    final searchQuery = useState('');
-    final addModelProvider = ref.watch(
-      addModelProviderStateProvider(workspaceId).notifier,
-    );
+    final state = _useModelProviderSelection(ref, workspaceId);
 
-    // Filter models based on search query using useMemoized.
-    List<ApiModelProviderEntity> filterModels() {
-      if (models == null) return <ApiModelProviderEntity>[];
-
-      if (searchQuery.value.isEmpty) {
-        return models;
-      }
-
-      final query = searchQuery.value.toLowerCase();
-
-      return models.where((model) {
-        return model.name.toLowerCase().contains(query);
-      }).toList();
-    }
-
-    final filteredModels = useMemoized(filterModels, [
-      models,
-      searchQuery.value,
-    ]);
-
-    if (models == null) {
-      return AuraButton(
-        onPressed: () =>
-            ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId)),
-        child: const TextLocale(LocaleKeys.common_reload),
-      );
-    }
-
-    return AuraColumn(
-      children: [
-        const AuraText(
-          child: TextLocale(
-            LocaleKeys.chats_screens_chat_conversation_select_model_selctor,
-          ),
-        ),
-        const AuraSizedBox(height: .md),
-        // Search input field.
-        AuraInput(
-          initialValue: searchQuery.value,
-          placeholder: const AuraText(
-            child: TextLocale(
-              LocaleKeys.models_screens_add_provider_search_placeholder,
-            ),
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: context.auraColors.onSurfaceVariant,
-          ),
-          onChanged: (value) {
-            searchQuery.value = value;
-          },
-        ),
-        const AuraSizedBox(height: .md),
-        Expanded(
-          child: filteredModels.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: .center,
-                    children: [
-                      Icon(
-                        Icons.search_off,
-                        size: 48,
-                        color: context.auraColors.onSurfaceVariant,
-                      ),
-                      const AuraSizedBox(height: .sm),
-                      const AuraText(
-                        child: TextLocale(
-                          AddModelProviderWidget.noModelsFoundKey,
-                        ),
-                        style: .bodyLarge,
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  itemBuilder: (context, index) {
-                    final model = filteredModels[index];
-                    final isOAuthProvider =
-                        ModelProviderOAuthProfiles.isCodexProvider(model.id);
-
-                    return AuraCard(
-                      child: Row(
-                        mainAxisAlignment: .spaceBetween,
-                        children: [
-                          ModelLogo(modelId: model.id),
-                          AuraText(child: Text(model.name)),
-                          if (isOAuthProvider)
-                            const AuraText(
-                              child: TextLocale(
-                                LocaleKeys.mcp_modal_auth_oauth,
-                              ),
-                              style: .bodySmall,
-                              tint: .primary,
-                            ),
-                        ],
-                      ),
-                      onTap: () {
-                        addModelProvider.setModel(model.id);
-                      },
-                    );
-                  },
-                  itemCount: filteredModels.length,
-                ),
-        ),
-      ],
+    return _ModelProviderSelectionContent(
+      workspaceId: workspaceId,
+      ref: ref,
+      state: state,
     );
   }
+}
+
+class const _ModelProviderSelectionContent({
+  required final String workspaceId,
+  required final WidgetRef ref,
+  required final _ModelProviderSelectionState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => state.models == null
+      ? _ReloadModelProvidersButton(
+          onPressed: () => _reloadModelProviders(ref, workspaceId),
+        )
+      : _SelectModelProviderView(
+          searchQuery: state.searchQuery,
+          filteredModels: state.filteredModels,
+          onSearchChanged: state.onSearchChanged,
+          onModelSelected: state.onModelSelected,
+        );
+}
+
+class const _ModelProviderSelectionState({
+  required final List<ApiModelProviderEntity>? models,
+  required final String searchQuery,
+  required final List<ApiModelProviderEntity> filteredModels,
+  required final ValueChanged<String> onSearchChanged,
+  required final ValueChanged<String> onModelSelected,
+});
+
+_ModelProviderSelectionState _useModelProviderSelection(
+  WidgetRef ref,
+  String workspaceId,
+) {
+  final models = _watchModelProviders(ref, workspaceId);
+  final searchQuery = useState('');
+  final addModelProvider = _watchAddModelProviderNotifier(ref, workspaceId);
+
+  return _buildModelProviderSelectionState(
+    models,
+    searchQuery,
+    addModelProvider,
+  );
+}
+
+_ModelProviderSelectionState _buildModelProviderSelectionState(
+  List<ApiModelProviderEntity>? models,
+  ValueNotifier<String> searchQuery,
+  AddModelProviderState addModelProvider,
+) {
+  final filteredModels = _useFilteredModelProviders(models, searchQuery);
+
+  return _ModelProviderSelectionState(
+    models: models,
+    searchQuery: searchQuery.value,
+    filteredModels: filteredModels,
+    onSearchChanged: (value) => searchQuery.value = value,
+    onModelSelected: addModelProvider.setModel,
+  );
+}
+
+List<ApiModelProviderEntity> _useFilteredModelProviders(
+  List<ApiModelProviderEntity>? models,
+  ValueNotifier<String> searchQuery,
+) => useMemoized(() => _filterModelProviders(models, searchQuery.value), [
+  models,
+  searchQuery.value,
+]);
+
+List<ApiModelProviderEntity>? _watchModelProviders(
+  WidgetRef ref,
+  String workspaceId,
+) => ref.watch(apiModelProvidersProvider(workspaceId: workspaceId)).value;
+
+AddModelProviderState _watchAddModelProviderNotifier(
+  WidgetRef ref,
+  String workspaceId,
+) => ref.watch(addModelProviderStateProvider(workspaceId).notifier);
+
+void _reloadModelProviders(WidgetRef ref, String workspaceId) =>
+    ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
+
+class const _ReloadModelProvidersButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(LocaleKeys.common_reload),
+  );
+}
+
+List<ApiModelProviderEntity> _filterModelProviders(
+  List<ApiModelProviderEntity>? models,
+  String searchQuery,
+) {
+  if (models == null || searchQuery.isEmpty) {
+    return models ?? <ApiModelProviderEntity>[];
+  }
+
+  final query = searchQuery.toLowerCase();
+
+  return models
+      .where((model) => model.name.toLowerCase().contains(query))
+      .toList();
+}
+
+class const _SelectModelProviderView({
+  required final String searchQuery,
+  required final List<ApiModelProviderEntity> filteredModels,
+  required final ValueChanged<String> onSearchChanged,
+  required final ValueChanged<String> onModelSelected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraColumn(
+    children: [
+      _ModelProviderSearchControls(
+        searchQuery: searchQuery,
+        onSearchChanged: onSearchChanged,
+      ),
+      Expanded(
+        child: _ModelProviderResults(
+          models: filteredModels,
+          onModelSelected: onModelSelected,
+        ),
+      ),
+    ],
+  );
+}
+
+class const _ModelProviderSearchControls({
+  required final String searchQuery,
+  required final ValueChanged<String> onSearchChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      const _ModelProviderSearchLabel(),
+      const AuraSizedBox(height: .md),
+      _ModelProviderSearchInput(
+        searchQuery: searchQuery,
+        onSearchChanged: onSearchChanged,
+      ),
+      const AuraSizedBox(height: .md),
+    ],
+  );
+}
+
+class const _ModelProviderSearchLabel() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_select_model_selctor,
+    ),
+  );
+}
+
+class const _ModelProviderSearchInput({
+  required final String searchQuery,
+  required final ValueChanged<String> onSearchChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    initialValue: searchQuery,
+    placeholder: const AuraText(
+      child: TextLocale(
+        LocaleKeys.models_screens_add_provider_search_placeholder,
+      ),
+    ),
+    prefixIcon: Icon(Icons.search, color: context.auraColors.onSurfaceVariant),
+    onChanged: onSearchChanged,
+  );
+}
+
+class const _ModelProviderResults({
+  required final List<ApiModelProviderEntity> models,
+  required final ValueChanged<String> onModelSelected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (models.isEmpty) return const _NoModelProvidersFound();
+
+    return ListView.builder(
+      itemBuilder: (context, index) => _ModelProviderListItem(
+        model: models[index],
+        onSelected: onModelSelected,
+      ),
+      itemCount: models.length,
+    );
+  }
+}
+
+class const _NoModelProvidersFound() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: .center,
+        children: [
+          _NoModelProvidersIcon(color: context.auraColors.onSurfaceVariant),
+          const AuraSizedBox(height: .sm),
+          const _NoModelProvidersLabel(),
+        ],
+      ),
+    );
+  }
+}
+
+class const _NoModelProvidersIcon({required final Color color})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      Icon(Icons.search_off, size: 48, color: color);
+}
+
+class const _NoModelProvidersLabel() extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => const AuraText(
+    child: TextLocale(AddModelProviderWidget.noModelsFoundKey),
+    style: .bodyLarge,
+  );
+}
+
+class const _ModelProviderListItem({
+  required final ApiModelProviderEntity model,
+  required final ValueChanged<String> onSelected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    final isOAuthProvider = ModelProviderOAuthProfiles.isCodexProvider(
+      model.id,
+    );
+
+    return AuraCard(
+      child: _ModelProviderListItemContent(
+        model: model,
+        isOAuthProvider: isOAuthProvider,
+      ),
+      onTap: () => onSelected(model.id),
+    );
+  }
+}
+
+class const _ModelProviderListItemContent({
+  required final ApiModelProviderEntity model,
+  required final bool isOAuthProvider,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Row(
+    mainAxisAlignment: .spaceBetween,
+    children: [
+      ModelLogo(modelId: model.id),
+      AuraText(child: Text(model.name)),
+      _ModelProviderOAuthBadge(visible: isOAuthProvider),
+    ],
+  );
+}
+
+class const _ModelProviderOAuthBadge({required final bool visible})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => visible
+      ? const AuraText(
+          child: TextLocale(LocaleKeys.mcp_modal_auth_oauth),
+          style: .bodySmall,
+          tint: .primary,
+        )
+      : const SizedBox.shrink();
 }
 
 /// Header showing the selected model with a back button.
 class const _SelectedModelHeader({required final String workspaceId})
     extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selectedModelId = ref.watch(
-      addModelProviderStateProvider(workspaceId)
-          .select((value) => value.modelId),
-    );
-
-    final addModelProvider = ref.watch(
-      addModelProviderStateProvider(workspaceId).notifier,
-    );
-
-    final models = ref
-        .watch(apiModelProvidersProvider(workspaceId: workspaceId))
-        .value;
-
-    if (selectedModelId == null || models == null) {
-      return const SizedBox.shrink();
-    }
-
-    final selectedModel = models.firstWhereOrNull(
-      (model) => model.id == selectedModelId,
-    );
-    final selectedModelName =
-        selectedModel?.name ??
-        (ModelProviderOAuthProfiles.isCodexProvider(selectedModelId)
-            ? ModelProviderOAuthProfiles.displayName
-            : null);
-    if (selectedModelName == null) return const SizedBox.shrink();
-
-    return Row(
-      children: [
-        AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () {
-            addModelProvider.setModel(null);
-          },
-          semanticLabel: LocaleKeys
-              .models_screens_add_provider_back_to_selection
-              .tr(),
-        ),
-        const AuraSizedBox(width: .md),
-        ModelLogo(
-          modelId: selectedModel?.id ?? ModelProviderOAuthProfiles.providerId,
-          height: 24,
-        ),
-        const AuraSizedBox(width: .md),
-        Expanded(
-          child: AuraText(child: Text(selectedModelName), style: .bodyLarge),
-        ),
-      ],
+  Widget build(BuildContext _, WidgetRef ref) {
+    return _SelectedModelHeaderContent(
+      details: _selectedModelHeaderDetails(
+        _watchSelectedModelHeader(ref, workspaceId),
+      ),
+      notifier: ref.watch(addModelProviderStateProvider(workspaceId).notifier),
     );
   }
+}
+
+class const _SelectedModelHeaderContent({
+  required final _SelectedModelHeaderDetails? details,
+  required final AddModelProviderState notifier,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    if (details case final selected?) {
+      return _SelectedModelHeaderView(
+        modelId: selected.modelId,
+        modelName: selected.modelName,
+        onBack: () => notifier.setModel(null),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+}
+
+typedef _SelectedModelHeaderState = ({
+  String? selectedModelId,
+  List<ApiModelProviderEntity>? models,
+});
+
+_SelectedModelHeaderState _watchSelectedModelHeader(
+  WidgetRef ref,
+  String workspaceId,
+) => (
+  selectedModelId: ref.watch(
+    addModelProviderStateProvider(workspaceId).select((value) => value.modelId),
+  ),
+  models: ref.watch(apiModelProvidersProvider(workspaceId: workspaceId)).value,
+);
+
+typedef _SelectedModelHeaderDetails = ({String modelId, String modelName});
+
+_SelectedModelHeaderDetails? _selectedModelHeaderDetails(
+  _SelectedModelHeaderState state,
+) {
+  final input = _selectedModelHeaderInput(state);
+  if (input == null) return null;
+  final selectedModel = _findModelProvider(input.models, input.modelId);
+  final modelName = _selectedModelName(selectedModel, input.modelId);
+  if (modelName == null) return null;
+
+  return (
+    modelId: selectedModel?.id ?? ModelProviderOAuthProfiles.providerId,
+    modelName: modelName,
+  );
+}
+
+({String modelId, List<ApiModelProviderEntity> models})?
+_selectedModelHeaderInput(_SelectedModelHeaderState state) {
+  final modelId = state.selectedModelId;
+  final models = state.models;
+
+  return modelId == null || models == null
+      ? null
+      : (modelId: modelId, models: models);
+}
+
+ApiModelProviderEntity? _findModelProvider(
+  List<ApiModelProviderEntity> models,
+  String modelId,
+) => models.firstWhereOrNull((model) => model.id == modelId);
+
+String? _selectedModelName(
+  ApiModelProviderEntity? selectedModel,
+  String selectedModelId,
+) =>
+    selectedModel?.name ??
+    (ModelProviderOAuthProfiles.isCodexProvider(selectedModelId)
+        ? ModelProviderOAuthProfiles.displayName
+        : null);
+
+class const _SelectedModelHeaderView({
+  required final String modelId,
+  required final String modelName,
+  required final VoidCallback onBack,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Row(
+    children: [
+      _SelectedModelBackButton(onPressed: onBack),
+      const AuraSizedBox(width: .md),
+      ModelLogo(modelId: modelId, height: 24),
+      const AuraSizedBox(width: .md),
+      Expanded(
+        child: AuraText(child: Text(modelName), style: .bodyLarge),
+      ),
+    ],
+  );
+}
+
+class const _SelectedModelBackButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.arrow_back,
+    onPressed: onPressed,
+    semanticLabel: LocaleKeys.models_screens_add_provider_back_to_selection
+        .tr(),
+  );
 }

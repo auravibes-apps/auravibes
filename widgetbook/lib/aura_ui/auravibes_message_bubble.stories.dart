@@ -123,31 +123,67 @@ class _MessageBubbleDemoState extends State<MessageBubbleDemo> {
   String? _lastInteraction;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .stretch,
-      children: [
-        AuraMessageBubble(
-          content: widget.content,
-          isUser: widget.isUser,
-          status: widget.status,
-          timestamp: widget.timestamp,
-          contentType: widget.contentType,
-          onTap: widget.enableTap
-              ? () => setState(() => _lastInteraction = 'Tapped')
-              : null,
-          onLongPress: widget.enableLongPress
-              ? () => setState(() => _lastInteraction = 'Long pressed')
-              : null,
-          maxWidth: widget.maxWidth,
-          manageAlignment: false,
-          now: widget.now,
-          imageProvider: widget.imageProvider,
-        ),
-        if (_lastInteraction case final interaction?)
-          Center(child: Text('Last interaction: $interaction')),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => _MessageBubblePreview(
+    demo: widget,
+    lastInteraction: _lastInteraction,
+    onTap: widget.enableTap ? _markTapped : null,
+    onLongPress: widget.enableLongPress ? _markLongPressed : null,
+  );
+
+  void _markTapped() => setState(() => _lastInteraction = 'Tapped');
+
+  void _markLongPressed() => setState(() => _lastInteraction = 'Long pressed');
+}
+
+class const _MessageBubblePreview({
+  required final MessageBubbleDemo demo,
+  required final String? lastInteraction,
+  required final VoidCallback? onTap,
+  required final VoidCallback? onLongPress,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    children: [
+      _MessageBubbleControl(demo: demo, onTap: onTap, onLongPress: onLongPress),
+      if (lastInteraction case final interaction?)
+        Center(child: Text('Last interaction: $interaction')),
+    ],
+  );
+}
+
+class const _MessageBubbleControl({
+  required final MessageBubbleDemo demo,
+  required final VoidCallback? onTap,
+  required final VoidCallback? onLongPress,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _MessageBubbleControlData(
+    demo: demo,
+    onTap: onTap,
+    onLongPress: onLongPress,
+  ).bubble;
+}
+
+class _MessageBubbleControlData {
+  new({
+    required MessageBubbleDemo demo,
+    required VoidCallback? onTap,
+    required VoidCallback? onLongPress,
+  }) : bubble = AuraMessageBubble(
+         content: demo.content,
+         isUser: demo.isUser,
+         status: demo.status,
+         timestamp: demo.timestamp,
+         contentType: demo.contentType,
+         onTap: onTap,
+         onLongPress: onLongPress,
+         maxWidth: demo.maxWidth,
+         manageAlignment: false,
+         now: demo.now,
+         imageProvider: demo.imageProvider,
+       );
+
+  final AuraMessageBubble bubble;
 }

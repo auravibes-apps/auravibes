@@ -18,22 +18,8 @@ class AppLogging._() {
 
     Logger.root.level = .ALL;
     _subscription = Logger.root.onRecord.listen(_handleRecord);
-
-    final previousFlutterError = FlutterError.onError;
-    FlutterError.onError = (details) {
-      _logger.severe('Flutter error', details.exception, details.stack);
-      if (previousFlutterError != null) {
-        previousFlutterError(details);
-      } else {
-        FlutterError.presentError(details);
-      }
-    };
-
-    PlatformDispatcher.instance.onError = (error, stackTrace) {
-      _logger.severe('Uncaught platform error', error, stackTrace);
-
-      return false;
-    };
+    _configureFlutterErrorHandler();
+    _configurePlatformErrorHandler();
   }
 
   @visibleForTesting
@@ -43,19 +29,39 @@ class AppLogging._() {
     _subscription = null;
   }
 
+  static void _configureFlutterErrorHandler() {
+    final previousFlutterError = FlutterError.onError;
+    FlutterError.onError = (details) =>
+        _handleFlutterError(details, previousFlutterError);
+  }
+
+  static void _handleFlutterError(
+    FlutterErrorDetails details,
+    FlutterExceptionHandler? previousHandler,
+  ) {
+    _logger.severe('Flutter error', details.exception, details.stack);
+    (previousHandler ?? FlutterError.presentError)(details);
+  }
+
+  static void _configurePlatformErrorHandler() {
+    PlatformDispatcher.instance.onError = (error, stackTrace) {
+      _logger.severe('Uncaught platform error', error, stackTrace);
+
+      return false;
+    };
+  }
+
   static void _handleRecord(LogRecord record) {
-    final timestamp = record.time.toIso8601String();
-    final line =
-        '[$timestamp] [${record.level.name}] ${record.loggerName}: '
-        '${LogRedaction.redact(record.message)}';
-    debugPrint(line);
+    debugPrint(_logLine(record));
+    _printRecordValue('Error', record.error);
+    _printRecordValue('StackTrace', record.stackTrace);
+  }
 
-    if (record.error != null) {
-      debugPrint('Error: ${LogRedaction.redact(record.error)}');
-    }
+  static String _logLine(LogRecord record) =>
+      '[${record.time.toIso8601String()}] [${record.level.name}] '
+      '${record.loggerName}: ${LogRedaction.redact(record.message)}';
 
-    if (record.stackTrace != null) {
-      debugPrint('StackTrace: ${LogRedaction.redact(record.stackTrace)}');
-    }
+  static void _printRecordValue(String label, Object? value) {
+    if (value != null) debugPrint('$label: ${LogRedaction.redact(value)}');
   }
 }

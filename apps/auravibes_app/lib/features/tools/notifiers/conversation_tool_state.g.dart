@@ -75,7 +75,7 @@ final class ConversationToolsRepositoryProvider
 }
 
 String _$conversationToolsRepositoryHash() =>
-    r'254c4274ec82a555d75e79e675359b6927502361';
+    r'083342828b2459a171af6e403f86990081ab255a';
 
 final class ConversationToolsRepositoryFamily extends $Family
     with $FunctionalFamilyOverride<ConversationToolsRepository, String> {
@@ -152,7 +152,7 @@ final class ConversationToolsNotifierProvider
 }
 
 String _$conversationToolsNotifierHash() =>
-    r'fbb628e5e303895c2dc0bc0ad99863032b28b8cc';
+    r'84b5525f2f2e1102120af4f71b852bb42dd5ce95';
 
 /// Provider for managing conversation tool settings
 ///

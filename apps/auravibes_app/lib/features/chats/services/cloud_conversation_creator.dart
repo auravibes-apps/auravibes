@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 class const CloudConversationCreator({
   required final Future<CloudConversationUsecase?> Function() load,
@@ -11,10 +12,17 @@ class const CloudConversationCreator({
     }
     final created = await usecase.create(value);
 
+    return _toConversation(created, value.workspaceId);
+  }
+
+  ConversationEntity _toConversation(
+    ConversationSummary created,
+    String workspaceId,
+  ) {
     return ConversationEntity(
       id: created.id,
       title: created.title,
-      workspaceId: value.workspaceId,
+      workspaceId: workspaceId,
       isPinned: created.isPinned,
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,

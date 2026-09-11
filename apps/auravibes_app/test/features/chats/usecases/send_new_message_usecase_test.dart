@@ -12,6 +12,19 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../test_mocks.dart';
 
+Future<ConversationEntity> _send(
+  SendNewMessageUsecase usecase, {
+  required String workspaceId,
+  required ChatDraft draft,
+  required String workspaceModelSelectionId,
+  String? agentId,
+}) => usecase((
+  workspaceId: workspaceId,
+  draft: draft,
+  workspaceModelSelectionId: workspaceModelSelectionId,
+  agentId: agentId,
+));
+
 class _CloudConversationUsecase extends Mock
     implements CloudConversationUsecase;
 
@@ -159,7 +172,8 @@ void main() {
     });
 
     test('creates conversation and returns it', () async {
-      final result = await fixture.usecase.call(
+      final result = await _send(
+        fixture.usecase,
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
@@ -181,7 +195,8 @@ void main() {
       ).thenAnswer((_) async => null);
 
       expect(
-        () => fixture.usecase.call(
+        () => _send(
+          fixture.usecase,
           workspaceId: 'ws-1',
           draft: const ChatDraft(text: 'Hello'),
           workspaceModelSelectionId: 'missing',
@@ -191,7 +206,8 @@ void main() {
     });
 
     test('calls generateTitle with correct args', () async {
-      final result = await fixture.usecase.call(
+      final result = await _send(
+        fixture.usecase,
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
@@ -220,7 +236,8 @@ void main() {
         cloudCreate: (_) async => newConversation,
       );
 
-      final result = await cloudUsecase.call(
+      final result = await _send(
+        cloudUsecase,
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
@@ -268,18 +285,20 @@ void main() {
             .call,
       );
 
-      final result = await cloud.call(
+      final result = await cloud((
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
-      );
+        agentId: null,
+      ));
 
       expect(result.id, 'cloud-conversation');
       final _ = verify(() => cloudUsecase.create(value)).called(1);
     });
 
     test('creates first message with correct args', () async {
-      final result = await fixture.usecase.call(
+      final result = await _send(
+        fixture.usecase,
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
@@ -307,7 +326,8 @@ void main() {
       ).thenThrow(exception);
 
       await expectLater(
-        fixture.usecase.call(
+        _send(
+          fixture.usecase,
           workspaceId: 'ws-1',
           draft: const ChatDraft(text: 'Hello'),
           workspaceModelSelectionId: 'model-sel-1',
@@ -328,7 +348,8 @@ void main() {
     });
 
     test('creates conversation with correct workspaceId and modelId', () async {
-      final result = await fixture.usecase.call(
+      final result = await _send(
+        fixture.usecase,
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
@@ -342,7 +363,8 @@ void main() {
     });
 
     test('retrieves model selection with correct ID', () async {
-      final result = await fixture.usecase.call(
+      final result = await _send(
+        fixture.usecase,
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
@@ -365,7 +387,8 @@ void main() {
       ).thenAnswer((_) async => null);
 
       try {
-        final result = await fixture.usecase.call(
+        final result = await _send(
+          fixture.usecase,
           workspaceId: 'ws-1',
           draft: const ChatDraft(text: 'Hello'),
           workspaceModelSelectionId: 'missing',
@@ -377,7 +400,8 @@ void main() {
     });
 
     test('returns same conversation from repo', () async {
-      final result = await fixture.usecase.call(
+      final result = await _send(
+        fixture.usecase,
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',

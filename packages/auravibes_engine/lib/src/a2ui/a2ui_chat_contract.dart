@@ -196,6 +196,40 @@ CATALOG_END
     String? interactionMode,
     bool allowLegacyBindings = false,
   }) {
+    final headerIssue = _validateMessageHeader(message);
+    if (headerIssue != null) return headerIssue;
+    final operations = _messageOperations(message);
+    if (operations.length != 1) return A2uiIssueCode.malformedPayload;
+    if (!_isValidSurfaceOperation(message[operations.single])) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    final createIssue = _validateCreateSurface(
+      message['createSurface'],
+      interactionMode,
+      allowLegacyBindings: allowLegacyBindings,
+    );
+    if (createIssue != null) return createIssue;
+    final dataModelIssue = _validateUpdateDataModel(
+      message['updateDataModel'],
+      allowLegacyBindings: allowLegacyBindings,
+    );
+    if (dataModelIssue != null) return dataModelIssue;
+    final update = message['updateComponents'];
+    if (update != null && update is! Map) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    final delete = message['deleteSurface'];
+    if (delete != null && delete is! Map) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return _validateUpdatedComponents(
+      update,
+      interactionMode,
+      allowLegacyBindings: allowLegacyBindings,
+    );
+  }
+
+  static A2uiIssueCode? _validateMessageHeader(Map<String, Object?> message) {
     if (message['version'] != a2uiChatWireVersion) {
       return A2uiIssueCode.unsupportedProtocol;
     }
@@ -206,70 +240,91 @@ CATALOG_END
     if (_encodedBytes(message) > maxA2uiChatPayloadBytes) {
       return A2uiIssueCode.oversizedPayload;
     }
-    final operations = [
-      'createSurface',
-      'updateComponents',
-      'updateDataModel',
-      'deleteSurface',
-    ].where(message.containsKey).toList(growable: false);
-    if (operations.length != 1) return A2uiIssueCode.malformedPayload;
-    final operation = message[operations.single];
-    if (operation is! Map ||
-        operation['surfaceId'] is! String ||
-        (operation['surfaceId'] as String).isEmpty) {
+    return null;
+  }
+
+  static List<String> _messageOperations(Map<String, Object?> message) => [
+    'createSurface',
+    'updateComponents',
+    'updateDataModel',
+    'deleteSurface',
+  ].where(message.containsKey).toList(growable: false);
+
+  static bool _isValidSurfaceOperation(Object? operation) =>
+      operation is Map && _nonEmpty(operation['surfaceId']);
+
+  static A2uiIssueCode? _validateCreateSurface(
+    Object? create,
+    String? interactionMode, {
+    required bool allowLegacyBindings,
+  }) {
+    if (create == null) return null;
+    if (create is! Map) return A2uiIssueCode.malformedPayload;
+    if (_hasUnsupportedKeys(create, const {
+      'surfaceId',
+      'catalogId',
+      'sendDataModel',
+    })) {
       return A2uiIssueCode.malformedPayload;
     }
-    final create = message['createSurface'];
-    if (create != null && create is! Map) {
+    final catalogId = create['catalogId'];
+    final catalogIssue = _validateCreateCatalog(catalogId, interactionMode);
+    if (catalogIssue != null) return catalogIssue;
+    return _validateSendDataModel(create['sendDataModel'], allowLegacyBindings);
+  }
+
+  static A2uiIssueCode? _validateCreateCatalog(
+    Object? catalogId,
+    String? interactionMode,
+  ) {
+    if (catalogId is! String || !a2uiChatCatalogIds.contains(catalogId)) {
+      return A2uiIssueCode.unsupportedCatalog;
+    }
+    if (interactionMode != null &&
+        !isCatalogAllowedForMode(catalogId, interactionMode)) {
+      return A2uiIssueCode.invalidInteractionMode;
+    }
+    return null;
+  }
+
+  static A2uiIssueCode? _validateSendDataModel(
+    Object? sendDataModel,
+    bool allowLegacyBindings,
+  ) {
+    if (sendDataModel is! bool? ||
+        (sendDataModel == true && !allowLegacyBindings)) {
       return A2uiIssueCode.malformedPayload;
     }
-    if (create is Map) {
-      if (create.keys.any(
-        (key) =>
-            key is! String ||
-            !(const {'surfaceId', 'catalogId', 'sendDataModel'}.contains(key)),
-      )) {
-        return A2uiIssueCode.malformedPayload;
-      }
-      final catalogId = create['catalogId'];
-      if (catalogId is! String || !a2uiChatCatalogIds.contains(catalogId)) {
-        return A2uiIssueCode.unsupportedCatalog;
-      }
-      if (interactionMode != null &&
-          !isCatalogAllowedForMode(catalogId, interactionMode)) {
-        return A2uiIssueCode.invalidInteractionMode;
-      }
-      if (create['sendDataModel'] is! bool? ||
-          (create['sendDataModel'] == true && !allowLegacyBindings)) {
-        return A2uiIssueCode.malformedPayload;
-      }
-    }
-    final update = message['updateComponents'];
-    if (update != null && update is! Map) {
+    return null;
+  }
+
+  static A2uiIssueCode? _validateUpdateDataModel(
+    Object? updateDataModel, {
+    required bool allowLegacyBindings,
+  }) {
+    if (updateDataModel == null) return null;
+    if (updateDataModel is! Map) return A2uiIssueCode.malformedPayload;
+    if (_hasUnsupportedKeys(updateDataModel, const {
+      'surfaceId',
+      'path',
+      'value',
+    })) {
       return A2uiIssueCode.malformedPayload;
     }
-    final updateDataModel = message['updateDataModel'];
-    if (updateDataModel != null && updateDataModel is! Map) {
+    final path = updateDataModel['path'];
+    if (path == null) return null;
+    if (path is! String) return A2uiIssueCode.malformedPayload;
+    if (!path.startsWith('/') && !allowLegacyBindings) {
       return A2uiIssueCode.malformedPayload;
     }
-    if (updateDataModel is Map) {
-      final hasUnsupportedKey = updateDataModel.keys.any(
-        (key) =>
-            key is! String ||
-            !(const {'surfaceId', 'path', 'value'}.contains(key)),
-      );
-      final path = updateDataModel['path'];
-      if (hasUnsupportedKey ||
-          (path != null &&
-              (path is! String ||
-                  (!path.startsWith('/') && !allowLegacyBindings)))) {
-        return A2uiIssueCode.malformedPayload;
-      }
-    }
-    final delete = message['deleteSurface'];
-    if (delete != null && delete is! Map) {
-      return A2uiIssueCode.malformedPayload;
-    }
+    return null;
+  }
+
+  static A2uiIssueCode? _validateUpdatedComponents(
+    Object? update,
+    String? interactionMode, {
+    required bool allowLegacyBindings,
+  }) {
     if (update is! Map) return null;
     final components = update['components'];
     if (components is! List) return A2uiIssueCode.malformedPayload;
@@ -279,6 +334,11 @@ CATALOG_END
       allowLegacyBindings: allowLegacyBindings,
     );
   }
+
+  static bool _hasUnsupportedKeys(
+    Map<Object?, Object?> value,
+    Set<String> allowed,
+  ) => value.keys.any((key) => key is! String || !allowed.contains(key));
 
   static bool isCatalogAllowedForMode(String catalogId, String mode) {
     return switch (mode) {
@@ -348,77 +408,126 @@ CATALOG_END
     final visiting = <String>{};
     final visited = <String>{};
 
-    bool visit(String id) {
-      if (visited.contains(id)) return true;
-      if (!visiting.add(id)) return false;
-      final component = components[id];
-      if (component == null) return false;
-      final references = <String>[];
-      for (final key in const ['child', 'trigger', 'content']) {
-        final reference = component[key];
-        if (reference is String) references.add(reference);
-      }
-      final children = component['children'];
-      if (children is List) {
-        if (children.any((child) => child is! String)) return false;
-        references.addAll(children.cast<String>());
-      } else if (children is Map) {
-        final templateId = children['componentId'];
-        if (templateId is! String || templateId.isEmpty) return false;
-        references.add(templateId);
-      }
-      final tabs = component['tabs'];
-      if (tabs is List) {
-        for (final tab in tabs) {
-          if (tab is! Map || tab['content'] is! String) return false;
-          references.add(tab['content'] as String);
-        }
-      } else if (tabs is Map) {
-        final templateId = tabs['componentId'];
-        if (templateId is! String || templateId.isEmpty) return false;
-        final template = components[templateId];
-        if (template?['component'] != 'Tab') return false;
-        references.add(templateId);
-      }
-      final items = component['items'];
-      if (items is List) {
-        for (final item in items) {
-          if (item is! Map || item['content'] is! String) return false;
-          references.add(item['content'] as String);
-        }
-      }
-      for (final reference in references) {
-        if (!visit(reference)) return false;
-      }
-      visiting.remove(id);
-      visited.add(id);
-      return true;
-    }
+    return _visitComponent('root', components, visiting, visited);
+  }
 
-    return visit('root');
+  static bool _visitComponent(
+    String id,
+    Map<String, Map<String, Object?>> components,
+    Set<String> visiting,
+    Set<String> visited,
+  ) {
+    if (visited.contains(id)) return true;
+    if (!visiting.add(id)) return false;
+    final component = components[id];
+    if (component == null) return false;
+    final references = _componentReferences(component, components);
+    if (references == null) return false;
+    for (final reference in references) {
+      if (!_visitComponent(reference, components, visiting, visited)) {
+        return false;
+      }
+    }
+    visiting.remove(id);
+    visited.add(id);
+    return true;
+  }
+
+  static List<String>? _componentReferences(
+    Map<String, Object?> component,
+    Map<String, Map<String, Object?>> components,
+  ) {
+    final references = <String>[
+      for (final key in const ['child', 'trigger', 'content'])
+        if (component[key] is String) component[key]! as String,
+    ];
+    final children = _childrenReferences(component['children']);
+    if (children == null) return null;
+    references.addAll(children);
+    final tabs = _tabReferences(component['tabs'], components);
+    if (tabs == null) return null;
+    references.addAll(tabs);
+    final items = _itemReferences(component['items']);
+    if (items == null) return null;
+    references.addAll(items);
+    return references;
+  }
+
+  static List<String>? _childrenReferences(Object? children) {
+    if (children is List) {
+      if (children.any((child) => child is! String)) return null;
+      return children.cast<String>().toList(growable: false);
+    }
+    if (children is Map) {
+      final templateId = children['componentId'];
+      if (!_nonEmpty(templateId)) return null;
+      return [templateId as String];
+    }
+    return const [];
+  }
+
+  static List<String>? _tabReferences(
+    Object? tabs,
+    Map<String, Map<String, Object?>> components,
+  ) {
+    if (tabs is List) {
+      final references = <String>[];
+      for (final tab in tabs) {
+        if (tab is! Map || tab['content'] is! String) return null;
+        references.add(tab['content'] as String);
+      }
+      return references;
+    }
+    if (tabs is Map) {
+      final templateId = tabs['componentId'];
+      if (!_nonEmpty(templateId)) return null;
+      final template = components[templateId as String];
+      if (template?['component'] != 'Tab') return null;
+      return [templateId];
+    }
+    return const [];
+  }
+
+  static List<String>? _itemReferences(Object? items) {
+    if (items is! List) return const [];
+    final references = <String>[];
+    for (final item in items) {
+      if (item is! Map || item['content'] is! String) return null;
+      references.add(item['content'] as String);
+    }
+    return references;
   }
 
   // ignore: unnecessary-nullable, action metadata is an untrusted boundary.
   static bool isValidAction(Object? value, {required String conversationId}) {
-    if (value is! Map ||
-        !_isJsonObject(value) ||
-        _depth(value) > maxA2uiChatNestingDepth ||
-        _encodedBytes(value) > maxA2uiChatPayloadBytes) {
-      return false;
-    }
-    final action = Map<String, Object?>.from(value);
-    if (action['protocolVersion'] != a2uiChatProtocolVersion ||
-        action['conversationId'] != conversationId ||
-        (action['assistantMessageId'] != null &&
-            !_nonEmpty(action['assistantMessageId'])) ||
-        !_nonEmpty(action['turnId']) ||
-        !_nonEmpty(action['surfaceId']) ||
-        !_nonEmpty(action['componentId']) ||
-        !_nonEmpty(action['actionName']) ||
-        !_nonEmpty(action['messageText']) ||
-        !_isJsonObject(action['context'])) {
-      return false;
-    }
+    if (!_isValidActionPayload(value)) return false;
+    final action = Map<String, Object?>.from(value! as Map);
+    if (!_hasValidActionFields(action, conversationId)) return false;
+    return _hasValidActionDetails(action);
+  }
+
+  static bool _isValidActionPayload(Object? value) =>
+      value is Map &&
+      _isJsonObject(value) &&
+      _depth(value) <= maxA2uiChatNestingDepth &&
+      _encodedBytes(value) <= maxA2uiChatPayloadBytes;
+
+  static bool _hasValidActionFields(
+    Map<String, Object?> action,
+    String conversationId,
+  ) =>
+      action['protocolVersion'] == a2uiChatProtocolVersion &&
+      action['conversationId'] == conversationId &&
+      (action['assistantMessageId'] == null ||
+          _nonEmpty(action['assistantMessageId'])) &&
+      _nonEmpty(action['turnId']) &&
+      _nonEmpty(action['surfaceId']) &&
+      _nonEmpty(action['componentId']) &&
+      _nonEmpty(action['actionName']) &&
+      _nonEmpty(action['messageText']) &&
+      _isJsonObject(action['context']);
+
+  static bool _hasValidActionDetails(Map<String, Object?> action) {
     final messageText = action['messageText']! as String;
     final wireSurfaceId = action['wireSurfaceId'];
     final answers = action['answers'];
@@ -544,21 +653,26 @@ CATALOG_END
     final pending = <Object?>[value];
     while (pending.isNotEmpty) {
       final current = pending.removeLast();
-      if (current is Map) {
-        if (current.keys.any((key) => key is! String)) return false;
-        pending.addAll(current.values);
-      } else if (current is List) {
-        pending.addAll(current);
-      } else if (current is num && !current.isFinite) {
-        return false;
-      } else if (current != null &&
-          current is! String &&
-          current is! num &&
-          current is! bool) {
-        return false;
-      }
+      if (!_addJsonValues(current, pending)) return false;
     }
     return true;
+  }
+
+  static bool _addJsonValues(Object? current, List<Object?> pending) {
+    if (current is Map) {
+      if (current.keys.any((key) => key is! String)) return false;
+      pending.addAll(current.values);
+      return true;
+    }
+    if (current is List) {
+      pending.addAll(current);
+      return true;
+    }
+    if (current is num && !current.isFinite) return false;
+    return current == null ||
+        current is String ||
+        current is num ||
+        current is bool;
   }
 
   static A2uiIssueCode? _validateComponents(
@@ -566,88 +680,136 @@ CATALOG_END
     String? interactionMode, {
     required bool allowLegacyBindings,
   }) {
+    final byId = _indexComponents(components);
+    if (byId == null) return A2uiIssueCode.malformedPayload;
+    final templateDescendants = _templateDescendants(byId);
+    for (final value in byId.values) {
+      final issue = _validateComponent(
+        value,
+        interactionMode,
+        templateDescendants: templateDescendants,
+        allowLegacyBindings: allowLegacyBindings,
+      );
+      if (issue != null) return issue;
+    }
+    return null;
+  }
+
+  static Map<String, Map<Object?, Object?>>? _indexComponents(
+    List<Object?> components,
+  ) {
     final ids = <String>{};
     final byId = <String, Map<Object?, Object?>>{};
     for (final value in components) {
       if (value is! Map ||
           value['id'] is! String ||
-          value['component'] is! String ||
-          !ids.add(value['id'] as String)) {
-        return A2uiIssueCode.malformedPayload;
+          value['component'] is! String) {
+        return null;
       }
-      byId[value['id']! as String] = value;
+      final id = value['id']! as String;
+      if (!ids.add(id)) return null;
+      byId[id] = value;
     }
-    final templateDescendants = _templateDescendants(byId);
-    for (final value in byId.values) {
-      final component = value['component'];
-      if (component is String) {
-        final schema = a2uiChatComponentSchemas[component];
-        if (schema == null) return A2uiIssueCode.unsupportedComponent;
-        final required = schema['required'];
-        final properties = schema['properties'];
-        if (required is! List || properties is! Map) {
-          return A2uiIssueCode.malformedPayload;
-        }
-        if (required.any(
-          (field) => field is! String || !value.containsKey(field),
-        )) {
-          return A2uiIssueCode.malformedPayload;
-        }
-        final allowed = properties.keys.whereType<String>().toSet();
-        if (value.keys.any(
-          (key) =>
-              key is! String ||
-              (!allowed.contains(key) &&
-                  key != 'action' &&
-                  key != 'onSubmittedAction'),
-        )) {
-          return A2uiIssueCode.malformedPayload;
-        }
-        for (final entry in value.entries) {
-          final schemaValue = properties[entry.key];
-          // Accept historical names without advertising them in new prompts.
-          if ((component == 'Icon' &&
-                  entry.key == 'name' &&
-                  entry.value is String) ||
-              (component == 'Button' &&
-                  entry.key == 'variant' &&
-                  entry.value == 'borderless') ||
-              (component == 'Image' &&
-                  entry.key == 'variant' &&
-                  const {
-                    'icon',
-                    'smallFeature',
-                    'mediumFeature',
-                    'largeFeature',
-                    'header',
-                  }.contains(entry.value))) {
-            continue;
-          }
-          if (schemaValue is Map &&
-              !_matchesSchema(
-                entry.value,
-                Map<Object?, Object?>.from(schemaValue),
-              )) {
-            return A2uiIssueCode.malformedPayload;
-          }
-        }
-        if (!_hasValidBindingPaths(
-          value,
-          allowRelative: templateDescendants.contains(value['id']),
-          allowLegacyBindings: allowLegacyBindings,
-        )) {
-          return A2uiIssueCode.malformedPayload;
-        }
-        final componentIssue = _validateComponentRules(
-          component,
-          value,
-          interactionMode,
-        );
-        if (componentIssue != null) return componentIssue;
-      }
+    return byId;
+  }
+
+  static A2uiIssueCode? _validateComponent(
+    Map<Object?, Object?> value,
+    String? interactionMode, {
+    required Set<String> templateDescendants,
+    required bool allowLegacyBindings,
+  }) {
+    final component = value['component'];
+    if (component is! String) return A2uiIssueCode.malformedPayload;
+    final schemaIssue = _validateComponentSchema(component, value);
+    if (schemaIssue != null) return schemaIssue;
+    if (!_hasValidBindingPaths(
+      value,
+      allowRelative: templateDescendants.contains(value['id']),
+      allowLegacyBindings: allowLegacyBindings,
+    )) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return _validateComponentRules(component, value, interactionMode);
+  }
+
+  static A2uiIssueCode? _validateComponentSchema(
+    String component,
+    Map<Object?, Object?> value,
+  ) {
+    final schema = a2uiChatComponentSchemas[component];
+    if (schema == null) return A2uiIssueCode.unsupportedComponent;
+    final required = schema['required'];
+    final properties = schema['properties'];
+    if (required is! List || properties is! Map) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    if (_hasMissingRequiredFields(required, value)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    if (_hasUnsupportedComponentKeys(value, properties)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    if (!_hasValidSchemaValues(component, value, properties)) {
+      return A2uiIssueCode.malformedPayload;
     }
     return null;
   }
+
+  static bool _hasUnsupportedComponentKeys(
+    Map<Object?, Object?> value,
+    Map<Object?, Object?> properties,
+  ) {
+    final allowed = properties.keys.whereType<String>().toSet();
+    return value.keys.any((key) => !_isAllowedComponentKey(key, allowed));
+  }
+
+  static bool _isAllowedComponentKey(Object? key, Set<String> allowed) =>
+      key is String &&
+      (allowed.contains(key) || key == 'action' || key == 'onSubmittedAction');
+
+  static bool _hasValidSchemaValues(
+    String component,
+    Map<Object?, Object?> value,
+    Map<Object?, Object?> properties,
+  ) {
+    for (final entry in value.entries) {
+      if (_isLegacyComponentProperty(component, entry.key, entry.value)) {
+        continue;
+      }
+      final schemaValue = properties[entry.key];
+      if (schemaValue is Map &&
+          !_matchesSchema(
+            entry.value,
+            Map<Object?, Object?>.from(schemaValue),
+          )) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool _isLegacyComponentProperty(
+    String component,
+    Object? key,
+    Object? value,
+  ) => switch ((component, key)) {
+    ('Icon', 'name') => value is String,
+    ('Button', 'variant') => value == 'borderless',
+    ('Image', 'variant') => const {
+      'icon',
+      'smallFeature',
+      'mediumFeature',
+      'largeFeature',
+      'header',
+    }.contains(value),
+    _ => false,
+  };
+
+  static bool _hasMissingRequiredFields(
+    List<Object?> required,
+    Map<Object?, Object?> value,
+  ) => required.any((field) => field is! String || !value.containsKey(field));
 
   static Set<String> _templateDescendants(
     Map<String, Map<Object?, Object?>> components,
@@ -677,27 +839,29 @@ CATALOG_END
   static Iterable<String> _referencedComponentIds(
     Map<Object?, Object?> value,
   ) sync* {
+    yield* _directReferences(value);
+    yield* _listReferences(value['children']);
+    yield* _contentReferences(value['tabs']);
+    yield* _contentReferences(value['items']);
+  }
+
+  static Iterable<String> _directReferences(Map<Object?, Object?> value) sync* {
     for (final key in const ['child', 'trigger', 'content']) {
       final id = value[key];
       if (id is String) yield id;
     }
-    final children = value['children'];
-    if (children is List<Object?>) {
-      yield* children.whereType<String>();
-    }
-    final tabs = value['tabs'];
-    if (tabs is List<Object?>) {
-      for (final tab in tabs.whereType<Map<Object?, Object?>>()) {
-        final id = tab['content'];
-        if (id is String) yield id;
-      }
-    }
-    final items = value['items'];
-    if (items is List<Object?>) {
-      for (final item in items.whereType<Map<Object?, Object?>>()) {
-        final id = item['content'];
-        if (id is String) yield id;
-      }
+  }
+
+  static Iterable<String> _listReferences(Object? value) sync* {
+    if (value is! List<Object?>) return;
+    yield* value.whereType<String>();
+  }
+
+  static Iterable<String> _contentReferences(Object? value) sync* {
+    if (value is! List<Object?>) return;
+    for (final item in value.whereType<Map<Object?, Object?>>()) {
+      final id = item['content'];
+      if (id is String) yield id;
     }
   }
 
@@ -736,58 +900,114 @@ CATALOG_END
       path.isNotEmpty && path.split('/').every((segment) => segment.isNotEmpty);
 
   static bool _matchesSchema(Object? value, Map<Object?, Object?> schema) {
+    if (!_matchesSchemaConstraints(value, schema)) return false;
+    final oneOf = schema['oneOf'];
+    if (oneOf is List) return _matchesAnySchema(value, oneOf);
+    return _matchesSchemaType(value, schema['type'], schema);
+  }
+
+  static bool _matchesSchemaConstraints(
+    Object? value,
+    Map<Object?, Object?> schema,
+  ) {
     final allowed = schema['enum'];
     if (allowed is List && !allowed.contains(value)) return false;
-    if (value is num) {
-      if (!value.isFinite) return false;
-      final min = schema['minimum'];
-      final max = schema['maximum'];
-      if (min is num && value < min || max is num && value > max) return false;
+    if (value is num && !_matchesNumberConstraints(value, schema)) {
+      return false;
     }
-    if (value is String) {
-      final minLength = schema['minLength'];
-      if (minLength is int && value.length < minLength) return false;
-      if (schema['pattern'] == '^/' && !value.startsWith('/')) return false;
+    if (value is String && !_matchesStringConstraints(value, schema)) {
+      return false;
     }
-    final oneOf = schema['oneOf'];
-    if (oneOf is List) {
-      return oneOf.whereType<Map<Object?, Object?>>().any(
+    return true;
+  }
+
+  static bool _matchesNumberConstraints(
+    num value,
+    Map<Object?, Object?> schema,
+  ) {
+    if (!value.isFinite) return false;
+    final min = schema['minimum'];
+    final max = schema['maximum'];
+    return (min is! num || value >= min) && (max is! num || value <= max);
+  }
+
+  static bool _matchesStringConstraints(
+    String value,
+    Map<Object?, Object?> schema,
+  ) {
+    final minLength = schema['minLength'];
+    if (minLength is int && value.length < minLength) return false;
+    return schema['pattern'] != '^/' || value.startsWith('/');
+  }
+
+  static bool _matchesAnySchema(Object? value, List<Object?> oneOf) =>
+      oneOf.whereType<Map<Object?, Object?>>().any(
         (candidate) =>
             _matchesSchema(value, Map<Object?, Object?>.from(candidate)),
       );
-    }
-    final type = schema['type'];
-    if (type == 'null') return value == null;
-    if (type == 'string') return value is String;
-    if (type == 'number') return value is num;
-    if (type == 'integer') return value is int;
-    if (type == 'boolean') return value is bool;
-    if (type == 'array') {
-      final items = schema['items'];
-      return value is List &&
-          (schema['minItems'] is! int ||
-              value.length >= (schema['minItems']! as int)) &&
-          (items is! Map ||
-              value.every(
-                (item) =>
-                    _matchesSchema(item, Map<Object?, Object?>.from(items)),
-              ));
-    }
-    if (type != 'object') return true;
+
+  static bool _matchesSchemaType(
+    Object? value,
+    Object? type,
+    Map<Object?, Object?> schema,
+  ) => switch (type) {
+    'null' => value == null,
+    'string' => value is String,
+    'number' => value is num,
+    'integer' => value is int,
+    'boolean' => value is bool,
+    'array' => _matchesArraySchema(value, schema),
+    'object' => _matchesObjectSchema(value, schema),
+    _ => true,
+  };
+
+  static bool _matchesArraySchema(Object? value, Map<Object?, Object?> schema) {
+    if (value is! List) return false;
+    final minItems = schema['minItems'];
+    if (minItems is int && value.length < minItems) return false;
+    final items = schema['items'];
+    if (items is! Map) return true;
+    return value.every(
+      (item) => _matchesSchema(item, Map<Object?, Object?>.from(items)),
+    );
+  }
+
+  static bool _matchesObjectSchema(
+    Object? value,
+    Map<Object?, Object?> schema,
+  ) {
     final rawProperties = schema['properties'];
     if (value is! Map || rawProperties is! Map) return false;
     final properties = Map<Object?, Object?>.from(rawProperties);
     final required = schema['required'];
-    return (required is! List || required.every(value.containsKey)) &&
-        value.keys.every(
-          (key) => key is String && properties.containsKey(key),
-        ) &&
-        value.entries.every((entry) {
-          final property = properties[entry.key];
-          return property is! Map ||
-              _matchesSchema(entry.value, Map<Object?, Object?>.from(property));
-        }) &&
-        (!properties.containsKey('path') || _nonEmpty(value['path']));
+    if (!_hasRequiredProperties(value, required)) return false;
+    if (!_hasOnlySchemaProperties(value, properties)) return false;
+    if (!_matchesObjectProperties(value, properties)) return false;
+    return !properties.containsKey('path') || _nonEmpty(value['path']);
+  }
+
+  static bool _hasRequiredProperties(
+    Map<Object?, Object?> value,
+    Object? required,
+  ) => required is! List || required.every(value.containsKey);
+
+  static bool _hasOnlySchemaProperties(
+    Map<Object?, Object?> value,
+    Map<Object?, Object?> properties,
+  ) => value.keys.every((key) => key is String && properties.containsKey(key));
+
+  static bool _matchesObjectProperties(
+    Map<Object?, Object?> value,
+    Map<Object?, Object?> properties,
+  ) {
+    for (final entry in value.entries) {
+      final property = properties[entry.key];
+      if (property is Map &&
+          !_matchesSchema(entry.value, Map<Object?, Object?>.from(property))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   static A2uiIssueCode? _validateComponentRules(
@@ -795,196 +1015,300 @@ CATALOG_END
     Map<Object?, Object?> value,
     String? interactionMode,
   ) {
-    if (interactionMode == 'requiresUserAction' &&
-        const {
-          'CheckBox',
-          'ChoicePicker',
-          'DateTimeInput',
-          'Rating',
-          'Slider',
-          'TagInput',
-          'Tabs',
-          'TextField',
-        }.contains(component) &&
-        !_isReference(value[component == 'Tabs' ? 'activeTab' : 'value'])) {
+    final interactionIssue = _validateInteractionModeRule(
+      component,
+      value,
+      interactionMode,
+    );
+    if (interactionIssue != null) return interactionIssue;
+    final formIssue = _validateFormInteraction(component, interactionMode);
+    if (formIssue != null) return formIssue;
+    return switch (component) {
+      'Avatar' => _validateAvatar(value),
+      'AvatarGroup' => _validateAvatarGroup(value),
+      'Table' => _validateTable(value),
+      'Chart' => _validateChart(value),
+      'Progress' => _validateProgress(value),
+      'EmptyState' => _validateEmptyState(value),
+      'Row' ||
+      'Column' ||
+      'List' ||
+      'Grid' ||
+      'Wrap' => _validateChildren(value),
+      'Slider' => _validateSlider(value),
+      'DateTimeInput' => _validateDateTimeInput(value),
+      'ChoicePicker' => _validateChoicePicker(value),
+      'Tabs' => _validateTabs(value),
+      'Image' => _validateImage(value),
+      _ => null,
+    };
+  }
+
+  static A2uiIssueCode? _validateInteractionModeRule(
+    String component,
+    Map<Object?, Object?> value,
+    String? interactionMode,
+  ) {
+    if (interactionMode != 'requiresUserAction') return null;
+    final requiresReference = const {
+      'CheckBox',
+      'ChoicePicker',
+      'DateTimeInput',
+      'Rating',
+      'Slider',
+      'TagInput',
+      'Tabs',
+      'TextField',
+    }.contains(component);
+    final reference = value[component == 'Tabs' ? 'activeTab' : 'value'];
+    if (requiresReference && !_isReference(reference)) {
       return A2uiIssueCode.malformedPayload;
     }
+    return null;
+  }
+
+  static A2uiIssueCode? _validateFormInteraction(
+    String component,
+    String? interactionMode,
+  ) {
     if (component == 'Form' &&
         interactionMode != null &&
         interactionMode != 'requiresUserAction') {
       return A2uiIssueCode.invalidInteractionMode;
     }
-    switch (component) {
-      case 'Avatar':
-        final url = value['url'];
-        if (url is String && !_isPublicImageUrl(url)) {
-          return A2uiIssueCode.malformedPayload;
-        }
-      case 'AvatarGroup':
-        final avatars = value['avatars'];
-        if (avatars is List &&
-            avatars.any(
-              (avatar) =>
-                  avatar is Map &&
-                  avatar['url'] is String &&
-                  !_isPublicImageUrl(avatar['url'] as String),
-            )) {
-          return A2uiIssueCode.malformedPayload;
-        }
-      case 'Table':
-        final columns = value['columns'];
-        final rows = value['rows'];
-        if (columns is List && rows is List) {
-          for (final column in columns) {
-            if (column is! String &&
-                (column is! Map || column['label'] is! String)) {
-              return A2uiIssueCode.malformedPayload;
-            }
-          }
-          for (final row in rows) {
-            final cells = row is Map ? row['cells'] : row;
-            if (cells is! List || cells.length != columns.length) {
-              return A2uiIssueCode.malformedPayload;
-            }
-          }
-        }
-      case 'Chart':
-        final labels = value['labels'];
-        final series = value['series'];
-        final minY = value['minY'];
-        final maxY = value['maxY'];
-        if (minY is num && maxY is num && minY > maxY) {
-          return A2uiIssueCode.malformedPayload;
-        }
-        if (value['stacked'] == true && value['variant'] != 'bar') {
-          return A2uiIssueCode.malformedPayload;
-        }
-        if (labels is List && series is List) {
-          final invalidSeries = series.any(
-            (item) =>
-                item is! Map ||
-                item['values'] is! List ||
-                (item['values'] as List).length != labels.length ||
-                (item['values'] as List).any(
-                  (sample) => sample is! num || !sample.isFinite,
-                ),
-          );
-          final pie = value['variant'] == 'pie' || value['variant'] == 'donut';
-          final invalidPie =
-              pie &&
-              (series.length != 1 ||
-                  (series.single as Map)['values'] is! List ||
-                  ((series.single as Map)['values'] as List).any(
-                    (sample) => sample is! num || sample < 0,
-                  ));
-          if (invalidSeries || invalidPie) {
-            return A2uiIssueCode.malformedPayload;
-          }
-        }
-      case 'Progress':
-        if (value['indeterminate'] != true && value['value'] == null) {
-          return A2uiIssueCode.malformedPayload;
-        }
-      case 'EmptyState':
-        if (value.containsKey('icon') &&
-            !a2uiChatIconNames.contains(value['icon'])) {
-          return A2uiIssueCode.malformedPayload;
-        }
-      case 'Row' || 'Column' || 'List' || 'Grid' || 'Wrap':
-        final children = value['children'];
-        final isStatic =
-            children is List &&
-            children.every((child) => child is String && child.isNotEmpty);
-        final isTemplate =
-            children is Map &&
-            children['path'] is String &&
-            (children['path'] as String).isNotEmpty &&
-            children['componentId'] is String &&
-            (children['componentId'] as String).isNotEmpty;
-        if (!isStatic && !isTemplate) {
-          return A2uiIssueCode.malformedPayload;
-        }
-      case 'Slider':
-        final min = value['min'];
-        final max = value['max'];
-        final step = value['step'] ?? 1;
-        final precision = value['precision'] ?? 2;
-        if (min is! num ||
-            max is! num ||
-            min > max ||
-            step is! num ||
-            step <= 0 ||
-            precision is! int ||
-            precision < 0 ||
-            precision > 20) {
-          return A2uiIssueCode.malformedPayload;
-        }
-      case 'DateTimeInput':
-        final selected = value['value'];
-        final variant = value['variant'];
-        if (selected is String && !isValidDateTimeValue(variant, selected)) {
-          return A2uiIssueCode.malformedPayload;
-        }
-        for (final bound in [value['min'], value['max']]) {
-          if (bound is String && !isValidDateTimeValue(variant, bound)) {
-            return A2uiIssueCode.malformedPayload;
-          }
-        }
-        if (value['min'] is String &&
-            value['max'] is String &&
-            !_isDateTimeRangeValid(
-              value['variant'],
-              value['min']! as String,
-              value['max']! as String,
-            )) {
-          return A2uiIssueCode.malformedPayload;
-        }
-      case 'ChoicePicker':
-        final options = value['options'];
-        if (options is! List ||
-            options.any(
-              (option) =>
-                  option is! Map ||
-                  option['value'] == null ||
-                  option['label'] is! String,
-            )) {
-          return A2uiIssueCode.malformedPayload;
-        }
-        final minimum = value['minSelections'];
-        final maximum = value['maxSelections'];
-        if (minimum is int && maximum is int && minimum > maximum) {
-          return A2uiIssueCode.malformedPayload;
-        }
-      case 'Tabs':
-        final tabs = value['tabs'];
-        final isStatic =
-            tabs is List &&
-            tabs.isNotEmpty &&
-            tabs.every(
-              (tab) =>
-                  tab is Map &&
-                  tab['label'] is String &&
-                  (tab['label'] as String).isNotEmpty &&
-                  tab['content'] is String &&
-                  (tab['content'] as String).isNotEmpty,
-            );
-        final isTemplate =
-            tabs is Map &&
-            tabs['path'] is String &&
-            (tabs['path'] as String).isNotEmpty &&
-            tabs['componentId'] is String &&
-            (tabs['componentId'] as String).isNotEmpty;
-        if (!isStatic && !isTemplate) {
-          return A2uiIssueCode.malformedPayload;
-        }
-      case 'Image':
-        final url = value['url'];
-        try {
-          if (url is! String) throw const FormatException();
-          requirePublicUriSyntax(url, requireHttps: true);
-        } on FormatException catch (_) {
-          return A2uiIssueCode.malformedPayload;
-        }
+    return null;
+  }
+
+  static A2uiIssueCode? _validateAvatar(Map<Object?, Object?> value) {
+    final url = value['url'];
+    if (url is String && !_isPublicImageUrl(url)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static A2uiIssueCode? _validateAvatarGroup(Map<Object?, Object?> value) {
+    final avatars = value['avatars'];
+    if (avatars is List && avatars.any(_hasInvalidAvatar)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static bool _hasInvalidAvatar(Object? avatar) =>
+      avatar is Map &&
+      avatar['url'] is String &&
+      !_isPublicImageUrl(avatar['url'] as String);
+
+  static A2uiIssueCode? _validateTable(Map<Object?, Object?> value) {
+    final columns = value['columns'];
+    final rows = value['rows'];
+    if (columns is! List || rows is! List) return null;
+    if (!_hasValidTableColumns(columns)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    if (!_hasValidTableRows(rows, columns.length)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static bool _hasValidTableColumns(List<Object?> columns) => columns.every(
+    (column) =>
+        column is String || (column is Map && column['label'] is String),
+  );
+
+  static bool _hasValidTableRows(List<Object?> rows, int columnCount) {
+    for (final row in rows) {
+      final cells = row is Map ? row['cells'] : row;
+      if (cells is! List || cells.length != columnCount) return false;
+    }
+    return true;
+  }
+
+  static A2uiIssueCode? _validateChart(Map<Object?, Object?> value) {
+    final boundsIssue = _validateChartBounds(value);
+    if (boundsIssue != null) return boundsIssue;
+    final labels = value['labels'];
+    final series = value['series'];
+    if (labels is! List || series is! List) return null;
+    if (_hasInvalidChartSeries(series, labels.length)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    if (_hasInvalidPieSeries(series, value['variant'])) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static A2uiIssueCode? _validateChartBounds(Map<Object?, Object?> value) {
+    final minY = value['minY'];
+    final maxY = value['maxY'];
+    if (minY is num && maxY is num && minY > maxY) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    if (value['stacked'] == true && value['variant'] != 'bar') {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static bool _hasInvalidChartSeries(List<Object?> series, int labelCount) {
+    for (final item in series) {
+      if (item is! Map) return true;
+      final values = item['values'];
+      if (values is! List ||
+          values.length != labelCount ||
+          values.any(_hasInvalidChartSample)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static bool _hasInvalidChartSample(Object? sample) =>
+      sample is! num || !sample.isFinite;
+
+  static bool _hasInvalidPieSeries(List<Object?> series, Object? variant) {
+    if (variant != 'pie' && variant != 'donut') return false;
+    if (series.length != 1) return true;
+    final seriesItem = series.single;
+    if (seriesItem is! Map) return true;
+    final values = seriesItem['values'];
+    if (values is! List) return true;
+    return values.any((sample) => sample is! num || sample < 0);
+  }
+
+  static A2uiIssueCode? _validateProgress(Map<Object?, Object?> value) {
+    if (value['indeterminate'] != true && value['value'] == null) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static A2uiIssueCode? _validateEmptyState(Map<Object?, Object?> value) {
+    if (value.containsKey('icon') &&
+        !a2uiChatIconNames.contains(value['icon'])) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static A2uiIssueCode? _validateChildren(Map<Object?, Object?> value) {
+    final children = value['children'];
+    if (_isStaticChildren(children) || _isTemplateChildren(children)) {
+      return null;
+    }
+    return A2uiIssueCode.malformedPayload;
+  }
+
+  static bool _isStaticChildren(Object? children) =>
+      children is List &&
+      children.every((child) => child is String && child.isNotEmpty);
+
+  static bool _isTemplateChildren(Object? children) =>
+      children is Map &&
+      children['path'] is String &&
+      (children['path'] as String).isNotEmpty &&
+      children['componentId'] is String &&
+      (children['componentId'] as String).isNotEmpty;
+
+  static A2uiIssueCode? _validateSlider(Map<Object?, Object?> value) {
+    final min = value['min'];
+    final max = value['max'];
+    final step = value['step'] ?? 1;
+    final precision = value['precision'] ?? 2;
+    if (!_hasValidSliderValues(min, max, step, precision)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static bool _hasValidSliderValues(
+    Object? min,
+    Object? max,
+    Object step,
+    Object precision,
+  ) {
+    if (min is! num || max is! num || min > max) return false;
+    if (step is! num || step <= 0) return false;
+    if (precision is! int) return false;
+    return precision >= 0 && precision <= 20;
+  }
+
+  static A2uiIssueCode? _validateDateTimeInput(Map<Object?, Object?> value) {
+    final selected = value['value'];
+    final variant = value['variant'];
+    if (selected is String && !isValidDateTimeValue(variant, selected)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    if (!_hasValidDateTimeBounds(value, variant)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static bool _hasValidDateTimeBounds(
+    Map<Object?, Object?> value,
+    Object? variant,
+  ) {
+    for (final bound in [value['min'], value['max']]) {
+      if (bound is String && !isValidDateTimeValue(variant, bound)) {
+        return false;
+      }
+    }
+    final minimum = value['min'];
+    final maximum = value['max'];
+    return minimum is! String ||
+        maximum is! String ||
+        _isDateTimeRangeValid(variant, minimum, maximum);
+  }
+
+  static A2uiIssueCode? _validateChoicePicker(Map<Object?, Object?> value) {
+    final options = value['options'];
+    if (options is! List || !_hasValidChoiceOptions(options)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    final minimum = value['minSelections'];
+    final maximum = value['maxSelections'];
+    if (minimum is int && maximum is int && minimum > maximum) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
+  }
+
+  static bool _hasValidChoiceOptions(List<Object?> options) => options.every(
+    (option) =>
+        option is Map && option['value'] != null && option['label'] is String,
+  );
+
+  static A2uiIssueCode? _validateTabs(Map<Object?, Object?> value) {
+    final tabs = value['tabs'];
+    if (_hasValidStaticTabs(tabs) || _isTemplateChildren(tabs)) {
+      return null;
+    }
+    return A2uiIssueCode.malformedPayload;
+  }
+
+  static bool _hasValidStaticTabs(Object? tabs) =>
+      tabs is List &&
+      tabs.isNotEmpty &&
+      tabs.every(
+        (tab) =>
+            tab is Map &&
+            tab['label'] is String &&
+            (tab['label'] as String).isNotEmpty &&
+            tab['content'] is String &&
+            (tab['content'] as String).isNotEmpty,
+      );
+
+  static A2uiIssueCode? _validateImage(Map<Object?, Object?> value) {
+    final url = value['url'];
+    if (url is! String) return A2uiIssueCode.malformedPayload;
+    try {
+      requirePublicUriSyntax(url, requireHttps: true);
+    } on FormatException {
+      return A2uiIssueCode.malformedPayload;
     }
     return null;
   }

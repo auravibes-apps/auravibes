@@ -56,19 +56,35 @@ class _CheckboxListTileDemoState extends State<CheckboxListTileDemo> {
   bool _value = true;
 
   @override
-  Widget build(BuildContext context) {
-    return AuraCheckboxListTile(
-      value: _value,
-      onChanged: widget.disabled
-          ? null
-          : (value) => setState(() => _value = value),
-      title: const Text('Enable option'),
-      subtitle: widget.showSubtitle
-          ? const Text('Use this for optional settings')
-          : null,
-      tint: widget.tint,
-      disabled: widget.disabled,
-      autofocus: widget.autofocus,
-    );
-  }
+  Widget build(BuildContext context) => _CheckboxListTileData(
+    value: _value,
+    onChanged: widget.disabled
+        ? null
+        : (value) => setState(() => _value = value),
+    tint: widget.tint,
+    showSubtitle: widget.showSubtitle,
+    autofocus: widget.autofocus,
+  ).tile;
+}
+
+class _CheckboxListTileData {
+  new({
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+    required AuraTint? tint,
+    required bool showSubtitle,
+    required bool autofocus,
+  }) : tile = AuraCheckboxListTile(
+         value: value,
+         onChanged: onChanged,
+         title: const Text('Enable option'),
+         subtitle: showSubtitle
+             ? const Text('Use this for optional settings')
+             : null,
+         tint: tint,
+         disabled: onChanged == null,
+         autofocus: autofocus,
+       );
+
+  final AuraCheckboxListTile tile;
 }

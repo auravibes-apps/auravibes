@@ -12,66 +12,30 @@ class const CloudAccountUseCases({
   required final WorkspaceRepository _workspaceRepository,
   required final void Function(String serverUrl, String userId)
   invalidateAccount,
-}) {
+});
+
+extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
   Future<CloudAccountSession> login({
     required String email,
     required String password,
   }) async {
-    final client = _newClient();
+    final client = _newCloudClient();
     final auth = await client.emailIdp.login(email: email, password: password);
 
     return await _saveSignedInAccount(client, auth);
-  }
-
-  Future<UuidValue> startRegistration({required String email}) {
-    return _newClient().emailIdp.startRegistration(email: email);
-  }
-
-  Future<String> verifyRegistrationCode({
-    required UuidValue accountRequestId,
-    required String code,
-  }) {
-    return _newClient().emailIdp.verifyRegistrationCode(
-      accountRequestId: accountRequestId,
-      verificationCode: code,
-    );
   }
 
   Future<CloudAccountSession> finishRegistration({
     required String registrationToken,
     required String password,
   }) async {
-    final client = _newClient();
+    final client = _newCloudClient();
     final auth = await client.emailIdp.finishRegistration(
       registrationToken: registrationToken,
       password: password,
     );
 
     return await _saveSignedInAccount(client, auth);
-  }
-
-  Future<UuidValue> startPasswordReset({required String email}) {
-    return _newClient().emailIdp.startPasswordReset(email: email);
-  }
-
-  Future<String> verifyPasswordResetCode({
-    required UuidValue passwordResetRequestId,
-    required String code,
-  }) {
-    return _newClient().emailIdp.verifyPasswordResetCode(
-      passwordResetRequestId: passwordResetRequestId,
-      verificationCode: code,
-    );
-  }
-
-  Future<void> finishPasswordReset({
-    required String finishPasswordResetToken,
-    required String newPassword,
-  }) {
-    return _newClient().emailIdp.finishPasswordReset(
-      finishPasswordResetToken: finishPasswordResetToken,
-      newPassword: newPassword,
-    );
   }
 
   Future<void> remove({
@@ -87,42 +51,103 @@ class const CloudAccountUseCases({
     invalidateAccount(origin, userId);
   }
 
-  Client _newClient() {
-    const serverUrl = AppEnvConfig.auravibesServerUrl;
-    if (serverUrl.isEmpty) {
-      throw const CloudAccountException('Cloud server is not configured');
-    }
-
-    return Client(serverUrl);
-  }
-
   Future<CloudAccountSession> _saveSignedInAccount(
     Client client,
     AuthSuccess auth,
   ) async {
     final userId = auth.authUserId.uuid;
-    final sessionManager = ClientAuthSessionManager(
-      storage: _store.authSuccessStorage(
-        serverUrl: AppEnvConfig.auravibesServerUrl,
-        userId: userId,
-      ),
-    );
+    final sessionManager = _clientAuthSessionManager(_store, userId);
     client.authSessionManager = sessionManager;
     final _ = await sessionManager.initialize();
     await client.auth.updateSignedInUser(auth);
-    final account = await client.account.currentUser();
-    final session = CloudAccountSession(
-      serverUrl: CloudAccountIdentity.canonicalServerOrigin(
-        AppEnvConfig.auravibesServerUrl,
-      ),
-      userId: account.userId,
-      email: account.email,
-    );
-    await _store.saveAccount(session);
 
-    return session;
+    return await _saveCurrentAccount(_store, client);
   }
 }
+
+extension CloudAccountUseCasesPasswordRecovery on CloudAccountUseCases {
+  Future<UuidValue> startRegistration({required String email}) {
+    return _newCloudClient().emailIdp.startRegistration(email: email);
+  }
+
+  Future<String> verifyRegistrationCode({
+    required UuidValue accountRequestId,
+    required String code,
+  }) {
+    return _newCloudClient().emailIdp.verifyRegistrationCode(
+      accountRequestId: accountRequestId,
+      verificationCode: code,
+    );
+  }
+
+  Future<UuidValue> startPasswordReset({required String email}) {
+    return _newCloudClient().emailIdp.startPasswordReset(email: email);
+  }
+
+  Future<String> verifyPasswordResetCode({
+    required UuidValue passwordResetRequestId,
+    required String code,
+  }) {
+    return _newCloudClient().emailIdp.verifyPasswordResetCode(
+      passwordResetRequestId: passwordResetRequestId,
+      verificationCode: code,
+    );
+  }
+
+  Future<void> finishPasswordReset({
+    required String finishPasswordResetToken,
+    required String newPassword,
+  }) {
+    return _newCloudClient().emailIdp.finishPasswordReset(
+      finishPasswordResetToken: finishPasswordResetToken,
+      newPassword: newPassword,
+    );
+  }
+}
+
+Client _newCloudClient() {
+  const serverUrl = AppEnvConfig.auravibesServerUrl;
+  if (serverUrl.isEmpty) {
+    throw const CloudAccountException('Cloud server is not configured');
+  }
+
+  return Client(serverUrl);
+}
+
+ClientAuthSessionManager _clientAuthSessionManager(
+  ServerpodAuthStore store,
+  String userId,
+) => ClientAuthSessionManager(
+  storage: store.authSuccessStorage(
+    serverUrl: AppEnvConfig.auravibesServerUrl,
+    userId: userId,
+  ),
+);
+
+Future<CloudAccountSession> _saveCurrentAccount(
+  ServerpodAuthStore store,
+  Client client,
+) async {
+  final account = await client.account.currentUser();
+  final session = _cloudAccountSession(
+    userId: account.userId,
+    email: account.email,
+  );
+  await store.saveAccount(session);
+
+  return session;
+}
+
+CloudAccountSession _cloudAccountSession({
+  required String userId,
+  required String email,
+}) => CloudAccountSession(
+  serverUrl: CloudAccountIdentity.canonicalServerOrigin(
+    AppEnvConfig.auravibesServerUrl,
+  ),
+  userId: userId,
+  email: email,
+);
 
 class const CloudAccountException(final String message) implements Exception {
   @override

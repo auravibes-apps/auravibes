@@ -47,6 +47,19 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:uuid/v7.dart';
 
+export 'daos/agents_dao.dart';
+export 'daos/api_model_providers_dao.dart';
+export 'daos/api_models_dao.dart';
+export 'daos/app_skill_workspace_settings_dao.dart';
+export 'daos/conversation_skills_dao.dart';
+export 'daos/conversation_tools_dao.dart';
+export 'daos/message_dao.dart';
+export 'daos/model_connections_dao.dart';
+export 'daos/skill_credentials_dao.dart';
+export 'daos/workspace_compaction_settings_dao.dart';
+export 'daos/workspace_dao.dart';
+export 'daos/workspace_tools_dao.dart';
+
 part 'app_database.g.dart';
 
 /// Main application database using Drift.
@@ -119,97 +132,110 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => _currentSchemaVersion;
+  final int schemaVersion = _currentSchemaVersion;
 
   /// Database creation strategy.
   @override
-  MigrationStrategy get migration {
-    return MigrationStrategy(
-      onCreate: (m) async {
-        await m.createAll();
-      },
-      onUpgrade: (m, from, to) async {
-        if (from < _agentsSchemaVersion) {
-          await m.createTable(agents);
-          await m.createTable(agentSkills);
-          await m.addColumn(conversations, conversations.agentId);
-        }
-        if (from < _agentToolsSchemaVersion) {
-          await m.createTable(agentTools);
-        }
-        if (from < _splitSchemaVersion) {
-          await _upgradeToSchema4(m);
-        }
-        if (from == _splitSchemaVersion) {
-          await _upgradeSplitSchema4(m);
-        }
-        if (from >= _agentsSchemaVersion &&
-            from < _cloudWorkspaceSchemaVersion) {
-          await _upgradeAgentsToSchema5(m);
-        }
-        if (from < _cloudWorkspaceSchemaVersion) {
-          await customStatement(
-            'UPDATE agents SET description = substr(trim(content), 1, 512) '
-            'WHERE length(description) = 0',
-          );
-        }
-        if (from < _currentSchemaVersion) {
-          await m.addColumn(workspaces, workspaces.cloudWorkspaceId);
-          await m.addColumn(workspaces, workspaces.cloudAccountId);
-        }
-      },
-    );
-  }
+  MigrationStrategy get migration => _migrationStrategy();
 
   /// Builds the Drift database name for a hash source.
   static String databaseNameForHashSource(String? dbHashSource) =>
       AppStorageNamespace.forHashSource(dbHashSource);
+}
 
+extension on AppDatabase {
+  MigrationStrategy _migrationStrategy() {
+    return MigrationStrategy(
+      onCreate: (m) async {
+        await m.createAll();
+      },
+      onUpgrade: _runUpgrades,
+    );
+  }
+
+  Future<void> _runUpgrades(Migrator m, int from, int _) async {
+    await _upgradeAgentsSchema(m, from);
+    await _upgradeAgentToolsSchema(m, from);
+    await _upgradeAttachmentSchema(m, from);
+    await _upgradeCloudAgentSchema(m, from);
+    await _backfillAgentDescriptions(from);
+    await _upgradeCloudWorkspaceSchema(m, from);
+  }
+
+  Future<void> _upgradeAgentsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._agentsSchemaVersion) return;
+    await m.createTable(agents);
+    await m.createTable(agentSkills);
+    await m.addColumn(conversations, conversations.agentId);
+  }
+
+  Future<void> _upgradeAgentToolsSchema(Migrator m, int from) async {
+    if (from < AppDatabase._agentToolsSchemaVersion) {
+      await m.createTable(agentTools);
+    }
+  }
+
+  Future<void> _upgradeAttachmentSchema(Migrator m, int from) async {
+    if (from < AppDatabase._splitSchemaVersion) {
+      await _upgradeToSchema4(m);
+
+      return;
+    }
+    if (from == AppDatabase._splitSchemaVersion) {
+      await _upgradeSplitSchema4(m);
+    }
+  }
+
+  Future<void> _upgradeCloudAgentSchema(Migrator m, int from) async {
+    if (from < AppDatabase._agentsSchemaVersion ||
+        from >= AppDatabase._cloudWorkspaceSchemaVersion) {
+      return;
+    }
+    await _upgradeAgentsToSchema5(m);
+  }
+
+  Future<void> _upgradeCloudWorkspaceSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._currentSchemaVersion) return;
+    await m.addColumn(workspaces, workspaces.cloudWorkspaceId);
+    await m.addColumn(workspaces, workspaces.cloudAccountId);
+  }
+
+  Future<void> _backfillAgentDescriptions(int from) async {
+    if (from >= AppDatabase._cloudWorkspaceSchemaVersion) return;
+    await customStatement(
+      'UPDATE agents SET description = substr(trim(content), 1, 512) '
+      'WHERE length(description) = 0',
+    );
+  }
+}
+
+extension on AppDatabase {
   Future<void> _upgradeToSchema4(Migrator m) async {
     await m.addColumn(conversations, conversations.parentConversationId);
     await m.createTable(messageAttachments);
   }
 
   Future<void> _upgradeSplitSchema4(Migrator m) async {
-    final hasMessageAttachments = await _tableExists('message_attachments');
-    if (!hasMessageAttachments) {
+    if (!await _tableExists('message_attachments')) {
       await m.createTable(messageAttachments);
 
       return;
     }
-
-    final hasDisplayName = await _columnExists(
-      'message_attachments',
-      'display_name',
-    );
-    if (!hasDisplayName) {
+    if (!await _columnExists('message_attachments', 'display_name')) {
       await m.addColumn(messageAttachments, messageAttachments.displayName);
     }
-    await customStatement(
-      'UPDATE message_attachments SET display_name = file_name '
-      'WHERE display_name IS NULL OR length(display_name) = 0;',
-    );
+    await _backfillAttachmentDisplayNames();
   }
+
+  Future<void> _backfillAttachmentDisplayNames() => customStatement(
+    'UPDATE message_attachments SET display_name = file_name '
+    'WHERE display_name IS NULL OR length(display_name) = 0;',
+  );
 
   Future<void> _upgradeAgentsToSchema5(Migrator m) async {
     await m.addColumn(agents, agents.description);
     await m.addColumn(agents, agents.isEnabled);
     await m.addColumn(agents, agents.visibility);
-  }
-
-  /// Creates a database connection using drift_flutter.
-  ///
-  /// This method sets up a cross-platform SQLite database connection
-  /// with proper configuration for mobile and desktop platforms.
-  static QueryExecutor _openConnection({String? dbHashSource}) {
-    return driftDatabase(
-      native: const DriftNativeOptions(shareAcrossIsolates: true),
-      name: databaseNameForHashSource(dbHashSource),
-      web: .new(
-        sqlite3Wasm: Uri.parse('sqlite3.wasm'),
-        driftWorker: Uri.parse('drift_worker.dart.js'),
-      ),
-    );
   }
 
   Future<bool> _tableExists(String tableName) async {
@@ -226,4 +252,19 @@ class AppDatabase extends _$AppDatabase {
 
     return columns.any((column) => column.read<String>('name') == columnName);
   }
+}
+
+/// Creates a database connection using drift_flutter.
+///
+/// This function sets up a cross-platform SQLite database connection
+/// with proper configuration for mobile and desktop platforms.
+QueryExecutor _openConnection({String? dbHashSource}) {
+  return driftDatabase(
+    native: const DriftNativeOptions(shareAcrossIsolates: true),
+    name: AppDatabase.databaseNameForHashSource(dbHashSource),
+    web: .new(
+      sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+      driftWorker: Uri.parse('drift_worker.dart.js'),
+    ),
+  );
 }

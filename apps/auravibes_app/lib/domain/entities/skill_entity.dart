@@ -2,7 +2,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_entity.freezed.dart';
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillEntity._() with _$SkillEntity {
   const factory({
     required String id,
@@ -21,7 +24,10 @@ abstract class const SkillEntity._() with _$SkillEntity {
   }) = _SkillEntity;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillToCreate._() with _$SkillToCreate {
   const factory({
     required SkillKind kind,
@@ -34,7 +40,10 @@ abstract class const SkillToCreate._() with _$SkillToCreate {
   }) = _SkillToCreate;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillToUpdate._() with _$SkillToUpdate {
   const factory({
     String? title,

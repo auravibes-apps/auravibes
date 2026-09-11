@@ -5,7 +5,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'model_connection_entity.freezed.dart';
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class ModelConnectionEntity with _$ModelConnectionEntity {
   const factory({
     required String id,
@@ -22,7 +25,10 @@ abstract class ModelConnectionEntity with _$ModelConnectionEntity {
   }) = _ModelConnectionEntity;
 }
 
+@immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
   @Assert(
     'authMode == ModelProviderAuthMode.oauth2 || key != ""',
@@ -41,7 +47,10 @@ abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
   }) = _ModelConnectionToCreate;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
   const factory({
     required String id,
@@ -55,7 +64,10 @@ abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
   }) = _ModelConnectionForEdit;
 }
 
+@immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class ModelConnectionToUpdate with _$ModelConnectionToUpdate {
   // Null means preserve the existing persisted value for that field.
   // ignore: unnecessary-nullable
@@ -63,7 +75,10 @@ abstract class ModelConnectionToUpdate with _$ModelConnectionToUpdate {
       _ModelConnectionToUpdate;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class ModelConnectionFilter with _$ModelConnectionFilter {
   const factory({@Default([]) List<String> workspaces}) =
       _ModelConnectionFilter;

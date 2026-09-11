@@ -264,8 +264,10 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   }
 
   @override
-  Future<void> deleteMcpServer(String serverId) async {
+  Future<void> deleteMcpServer(String serverId) {
     deletedServerIds.add(serverId);
+
+    return Future.value();
   }
 }
 

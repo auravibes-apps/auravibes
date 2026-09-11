@@ -7,10 +7,27 @@ import 'package:auravibes_app/features/chats/services/chatbot/openai_codex_plugi
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/genkit.dart';
+import 'package:genkit/plugin.dart' show GenkitPlugin;
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
 
 typedef UntypedModelRef = ModelRef<Object?>;
+typedef _ProviderRequest = ({
+  WorkspaceModelSelectionWithConnectionEntity config,
+  String apiKey,
+  String? baseUrl,
+  ProviderRuntimeSelection runtime,
+  String modelId,
+  String? sessionId,
+});
+typedef _RuntimeRequest = ({
+  String providerId,
+  bool hasCustomUrl,
+  bool supportsReasoning,
+  bool usesOAuth,
+  bool isCodexOAuth,
+  String modelId,
+});
 
 class const ProviderFactory({
   required final ServiceConnectionRepository serviceConnectionRepository,
@@ -22,68 +39,148 @@ class const ProviderFactory({
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
   }) async {
-    final apiKey = await _resolveCredential(config);
-    final type = config.modelsProvider.type;
-    final connectionUrl = _blankToNull(config.modelConnection.url);
-    final baseUrl = connectionUrl ?? _blankToNull(config.modelsProvider.url);
-    final runtime = _runtimeSelection(config, connectionUrl);
+    final request = await _providerRequest(config, sessionId);
 
-    final modelId = config.workspaceModelSelection.modelId;
-
-    return Genkit(
-      plugins: [
-        if (runtime.runtime == ProviderRuntime.anthropic)
-          anthropic(apiKey: apiKey, baseUrl: baseUrl)
-        else if (type == ModelProvidersType.openrouter)
-          AppChatCompletionsPlugin(
-            name: 'openrouter',
-            baseUrl: baseUrl ?? 'https://openrouter.ai/api/v1',
-            apiKey: apiKey,
-            codec: _openRouterCodec(),
-            models: [ChatCompletionsModelDefinition(name: modelId)],
-          )
-        else if (runtime.runtime == ProviderRuntime.codexOAuth)
-          AppOpenAICodexPlugin(
-            accessToken: apiKey,
-            accountId: config.modelConnection.oauthMetadata?.accountId,
-            sessionId: sessionId,
-            models: [modelId],
-          )
-        else if (runtime.runtime == ProviderRuntime.openAiReasoning &&
-            baseUrl != null)
-          AppChatCompletionsPlugin(
-            name: _openAIReasoningNamespace,
-            baseUrl: baseUrl,
-            apiKey: apiKey,
-            codec: _openAICompatReasoningCodec(),
-            models: [ChatCompletionsModelDefinition(name: modelId)],
-          )
-        else
-          openAI(apiKey: apiKey, baseUrl: baseUrl),
-      ],
-    );
+    return _createGenkit(request);
   }
 
   UntypedModelRef getModelReference(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
-    final type = config.modelsProvider.type;
-    final modelId = config.workspaceModelSelection.modelId;
-    final connectionUrl = config.modelConnection.url;
+    final runtime = _runtimeSelection(config, config.modelConnection.url);
 
-    final runtime = _runtimeSelection(config, connectionUrl);
+    return _modelReference(config, runtime);
+  }
+
+  T? getGenerationConfig<T>(
+    WorkspaceModelSelectionWithConnectionEntity config,
+  ) {
+    final runtime = _runtimeSelection(config, config.modelConnection.url);
+    if (runtime.runtime == ProviderRuntime.openAiReasoning) {
+      return OpenAICompatReasoningOptions(reasoningType: 'enabled') as T;
+    }
+    if (runtime.runtime != ProviderRuntime.anthropic ||
+        !config.workspaceModelSelection.supportsReasoning) {
+      return null;
+    }
+
+    return _anthropicGenerationConfig(runtime);
+  }
+}
+
+extension _ProviderFactoryCreation on ProviderFactory {
+  Future<_ProviderRequest> _providerRequest(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    String? sessionId,
+  ) async {
+    final connectionUrl = _blankToNull(config.modelConnection.url);
+
+    return (
+      config: config,
+      apiKey: await _resolveCredential(config),
+      baseUrl: connectionUrl ?? _blankToNull(config.modelsProvider.url),
+      runtime: _runtimeSelection(config, connectionUrl),
+      modelId: config.workspaceModelSelection.modelId,
+      sessionId: sessionId,
+    );
+  }
+
+  Genkit _createGenkit(_ProviderRequest request) {
+    return Genkit(plugins: _plugins(request));
+  }
+
+  List<GenkitPlugin> _plugins(_ProviderRequest request) => [_plugin(request)];
+
+  GenkitPlugin _plugin(_ProviderRequest request) {
+    final runtime = request.runtime;
+    if (runtime.runtime == ProviderRuntime.anthropic) {
+      return _anthropicPlugin(request);
+    }
+    if (request.config.modelsProvider.type == ModelProvidersType.openrouter) {
+      return _openRouterPlugin(request);
+    }
+
+    return _nonRouterPlugin(request, runtime.runtime);
+  }
+
+  GenkitPlugin _nonRouterPlugin(
+    _ProviderRequest request,
+    ProviderRuntime runtime,
+  ) {
+    if (runtime == ProviderRuntime.codexOAuth) return _codexPlugin(request);
+    if (runtime == ProviderRuntime.openAiReasoning && request.baseUrl != null) {
+      return _openAIReasoningPlugin(request);
+    }
+
+    return _openAIPlugin(request);
+  }
+}
+
+extension _ProviderFactoryPlugins on ProviderFactory {
+  GenkitPlugin _anthropicPlugin(_ProviderRequest request) {
+    return anthropic(apiKey: request.apiKey, baseUrl: request.baseUrl);
+  }
+
+  GenkitPlugin _openRouterPlugin(_ProviderRequest request) {
+    return AppChatCompletionsPlugin(
+      name: 'openrouter',
+      baseUrl: request.baseUrl ?? 'https://openrouter.ai/api/v1',
+      apiKey: request.apiKey,
+      codec: _openRouterCodec(),
+      models: [ChatCompletionsModelDefinition(name: request.modelId)],
+    );
+  }
+
+  GenkitPlugin _codexPlugin(_ProviderRequest request) {
+    return AppOpenAICodexPlugin(
+      accessToken: request.apiKey,
+      accountId: request.config.modelConnection.oauthMetadata?.accountId,
+      sessionId: request.sessionId,
+      models: [request.modelId],
+    );
+  }
+
+  GenkitPlugin _openAIReasoningPlugin(_ProviderRequest request) {
+    final baseUrl = request.baseUrl;
+    if (baseUrl == null) return _openAIPlugin(request);
+
+    return AppChatCompletionsPlugin(
+      name: ProviderFactory._openAIReasoningNamespace,
+      baseUrl: baseUrl,
+      apiKey: request.apiKey,
+      codec: _openAICompatReasoningCodec(),
+      models: [ChatCompletionsModelDefinition(name: request.modelId)],
+    );
+  }
+
+  GenkitPlugin _openAIPlugin(_ProviderRequest request) {
+    return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
+  }
+}
+
+extension _ProviderFactoryResolution on ProviderFactory {
+  UntypedModelRef _modelReference(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    ProviderRuntimeSelection runtime,
+  ) {
+    final modelId = config.workspaceModelSelection.modelId;
     if (runtime.runtime == ProviderRuntime.anthropic) {
       return anthropic.model(modelId);
     }
-
-    if (type == ModelProvidersType.openrouter) {
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
       return modelRef('openrouter/$modelId');
     }
 
+    return _nonProviderModelReference(modelId, runtime);
+  }
+
+  UntypedModelRef _nonProviderModelReference(
+    String modelId,
+    ProviderRuntimeSelection runtime,
+  ) {
     if (runtime.runtime == ProviderRuntime.codexOAuth) {
       return openAICodexModel(modelId);
     }
-
     if (runtime.runtime == ProviderRuntime.openAiReasoning) {
       return modelRef('${runtime.modelNamespace}/$modelId');
     }
@@ -91,44 +188,45 @@ class const ProviderFactory({
     return openAI.model(modelId);
   }
 
-  T? getGenerationConfig<T>(
-    WorkspaceModelSelectionWithConnectionEntity config,
-  ) {
-    final runtime = _runtimeSelection(config, config.modelConnection.url);
-    if (runtime.runtime != ProviderRuntime.anthropic) {
-      if (runtime.runtime == ProviderRuntime.openAiReasoning) {
-        return OpenAICompatReasoningOptions(reasoningType: 'enabled') as T;
-      }
-
-      return null;
-    }
-
-    if (!config.workspaceModelSelection.supportsReasoning) {
-      return null;
-    }
-
+  T _anthropicGenerationConfig<T>(ProviderRuntimeSelection runtime) {
     final usesAdaptiveThinking = runtime.usesAdaptiveThinking;
 
     return AnthropicOptions(
       thinking: .new(
         type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
-        budgetTokens: usesAdaptiveThinking ? null : _thinkingBudgetTokens,
+        budgetTokens: usesAdaptiveThinking
+            ? null
+            : ProviderFactory._thinkingBudgetTokens,
       ),
     ) as T;
   }
+}
 
+extension _ProviderFactoryCredentials on ProviderFactory {
   Future<String> _resolveCredential(
     WorkspaceModelSelectionWithConnectionEntity config,
-  ) async {
+  ) {
     if (config.modelConnection.authMode == ModelProviderAuthMode.oauth2) {
-      final resolver = resolveOAuthAccessToken;
-      if (resolver == null) {
-        throw const FormatException('OAuth token resolver is not configured.');
-      }
-
-      return await resolver(config.modelConnection.id);
+      return _resolveOAuthCredential(config);
     }
 
+    return _resolveApiKeyCredential(config);
+  }
+
+  Future<String> _resolveOAuthCredential(
+    WorkspaceModelSelectionWithConnectionEntity config,
+  ) {
+    final resolver = resolveOAuthAccessToken;
+    if (resolver == null) {
+      throw const FormatException('OAuth token resolver is not configured.');
+    }
+
+    return resolver(config.modelConnection.id);
+  }
+
+  Future<String> _resolveApiKeyCredential(
+    WorkspaceModelSelectionWithConnectionEntity config,
+  ) async {
     if (!config.modelConnection.hasKey) {
       throw const FormatException('Model connection has no API key.');
     }
@@ -145,19 +243,34 @@ class const ProviderFactory({
   ProviderRuntimeSelection _runtimeSelection(
     WorkspaceModelSelectionWithConnectionEntity config,
     String? connectionUrl,
-  ) => selectProviderRuntime(
+  ) => _selectRuntime((
     providerId: config.modelsProvider.type?.name ?? 'openai',
-    hasCustomUrl:
-        connectionUrl != null ||
-        (config.modelsProvider.type == ModelProvidersType.openai &&
-            _blankToNull(config.modelsProvider.url) != null),
+    hasCustomUrl: _hasCustomUrl(config, connectionUrl),
     supportsReasoning: config.workspaceModelSelection.supportsReasoning,
     usesOAuth: config.modelConnection.authMode == ModelProviderAuthMode.oauth2,
     isCodexOAuth: ModelProviderOAuthProfiles.isCodexProvider(
       config.modelConnection.modelId,
     ),
     modelId: config.workspaceModelSelection.modelId,
-  );
+  ));
+
+  ProviderRuntimeSelection _selectRuntime(_RuntimeRequest request) =>
+      selectProviderRuntime(
+        providerId: request.providerId,
+        hasCustomUrl: request.hasCustomUrl,
+        supportsReasoning: request.supportsReasoning,
+        usesOAuth: request.usesOAuth,
+        isCodexOAuth: request.isCodexOAuth,
+        modelId: request.modelId,
+      );
+
+  bool _hasCustomUrl(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    String? connectionUrl,
+  ) =>
+      connectionUrl != null ||
+      (config.modelsProvider.type == ModelProvidersType.openai &&
+          _blankToNull(config.modelsProvider.url) != null);
 
   String? _blankToNull(String? value) {
     final trimmed = value?.trim();
@@ -185,20 +298,25 @@ ChatCompletionsCodec _openRouterCodec() {
   );
 }
 
-ChatCompletionsCodec _openAICompatReasoningCodec() {
-  return ChatCompletionsCodec(
-    errorLabel: 'OpenAI-compatible',
-    customize: (modelName, config) {
-      final options = OpenAICompatReasoningOptions.fromJson(config);
+ChatCompletionsCodec _openAICompatReasoningCodec() =>
+    const ChatCompletionsCodec(
+      errorLabel: 'OpenAI-compatible',
+      customize: _customizeOpenAICompatReasoning,
+    );
 
-      return (
-        model: options.version ?? modelName,
-        extraBody: {
-          ...options.toSamplingBody(),
-          if (options.reasoningType != null)
-            'thinking': {'type': options.reasoningType},
-        },
-      );
+({String model, Map<String, dynamic> extraBody})
+_customizeOpenAICompatReasoning(
+  String modelName,
+  Map<String, dynamic>? config,
+) {
+  final options = OpenAICompatReasoningOptions.fromJson(config);
+
+  return (
+    model: options.version ?? modelName,
+    extraBody: {
+      ...options.toSamplingBody(),
+      if (options.reasoningType != null)
+        'thinking': {'type': options.reasoningType},
     },
   );
 }

@@ -14,34 +14,57 @@ class const ChatsListScreen({required final String workspaceId, super.key})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraScreen(
-      child: AuraColumn(
-        children: [
-          AuraPadding(
-            child: AppContent(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: AuraButton(
-                      onPressed: () {
-                        NewChatRoute(workspaceId: workspaceId).go(context);
-                      },
-                      child: const TextLocale(
-                        LocaleKeys.chats_screens_chats_list_add_chat,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            padding: const .horizontal(.md),
-          ),
-
-          Expanded(child: ChatListWidget(workspaceId: workspaceId)),
-        ],
-      ),
+      child: _ChatsListBody(workspaceId: workspaceId),
       appBar: const AuraAppBarWithDrawer(
         title: TextLocale(LocaleKeys.chats_screens_chats_list_title),
       ),
+    );
+  }
+}
+
+class const _ChatsListBody({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        _ChatsListAddChatButton(workspaceId: workspaceId),
+        Expanded(child: ChatListWidget(workspaceId: workspaceId)),
+      ],
+    );
+  }
+}
+
+class const _ChatsListAddChatButton({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraPadding(
+      child: AppContent(
+        child: _ChatsListNewChatButton(workspaceId: workspaceId),
+      ),
+      padding: const .horizontal(.md),
+    );
+  }
+}
+
+class const _ChatsListNewChatButton({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: AuraButton(
+            onPressed: () {
+              NewChatRoute(workspaceId: workspaceId).go(context);
+            },
+            child: const TextLocale(
+              LocaleKeys.chats_screens_chats_list_add_chat,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

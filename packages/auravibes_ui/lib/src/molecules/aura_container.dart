@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart'
     show AuraEdgeInsetsGeometry, AuraPadding;
 import 'package:auravibes_ui/src/tokens/aura_theme.dart'
-    show AuraThemeExtension;
+    show AuraTheme, AuraThemeExtension;
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show DesignColors, DesignShadows;
 import 'package:flutter/material.dart';
@@ -61,54 +61,81 @@ class AuraContainer extends StatelessWidget {
   final String? semanticLabel;
 
   @override
+  Widget build(BuildContext context) => _AuraContainerBody(container: this);
+}
+
+class const _AuraContainerBody({required final AuraContainer container})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraContainerMargins(
+    container: container,
+    child: _AuraContainerDecorated(
+      container: container,
+      theme: context.auraTheme,
+    ),
+  );
+}
+
+class const _AuraContainerMargins({
+  required final AuraContainer container,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
-    final auraTheme = context.auraTheme;
-    final padding = this.padding;
-    final margin = this.margin;
-    final borderRadius = this.borderRadius;
+    final margin = container.margin;
+    final content = margin == null
+        ? child
+        : AuraPadding(child: child, padding: margin);
+    final label = container.semanticLabel;
 
-    var container = child;
+    return label == null
+        ? content
+        : Semantics(child: content, container: true, label: label);
+  }
+}
 
-    if (padding != null) {
-      container = AuraPadding(child: child, padding: padding);
-    }
-
-    container = Container(
-      alignment: alignment,
-      decoration: BoxDecoration(
-        color: switch (variant) {
-          .surface => auraTheme.colors.surface,
-          .surfaceVariant => auraTheme.colors.surfaceVariant,
-          .transparent => DesignColors.transparent,
+class _AuraContainerDecorated extends StatelessWidget {
+  new({required AuraContainer container, required AuraTheme theme})
+    : _child = Container(
+        alignment: container.alignment,
+        decoration: _containerDecoration(container, theme),
+        width: container.width,
+        height: container.height,
+        child: switch (container.padding) {
+          final padding? => AuraPadding(
+            child: container.child,
+            padding: padding,
+          ),
+          null => container.child,
         },
-        border: border,
-        borderRadius: borderRadius != null
-            ? BorderRadius.circular(borderRadius)
-            : null,
-        boxShadow: _getBoxShadow(),
-      ),
-      width: width,
-      height: height,
-      child: container,
+      );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+BoxDecoration _containerDecoration(AuraContainer container, AuraTheme theme) =>
+    BoxDecoration(
+      color: _containerColor(container.variant, theme),
+      border: container.border,
+      borderRadius: _containerBorderRadius(container.borderRadius),
+      boxShadow: _containerBoxShadow(container.shadow),
     );
 
-    if (margin != null) {
-      container = AuraPadding(child: container, padding: margin);
-    }
+Color _containerColor(AuraContainerVariant variant, AuraTheme theme) =>
+    switch (variant) {
+      .surface => theme.colors.surface,
+      .surfaceVariant => theme.colors.surfaceVariant,
+      .transparent => DesignColors.transparent,
+    };
 
-    if (semanticLabel != null) {
-      container = Semantics(
-        child: container,
-        container: true,
-        label: semanticLabel,
-      );
-    }
+BorderRadius? _containerBorderRadius(double? radius) =>
+    radius == null ? null : BorderRadius.circular(radius);
 
-    return container;
-  }
-
-  List<BoxShadow> _getBoxShadow() {
-    return switch (shadow) {
+List<BoxShadow> _containerBoxShadow(AuraContainerShadow shadow) =>
+    switch (shadow) {
       .none => [],
       .sm => [DesignShadows.sm],
       .md => [DesignShadows.md],
@@ -117,8 +144,6 @@ class AuraContainer extends StatelessWidget {
       .inner => [DesignShadows.inner],
       .glass => [DesignShadows.glass],
     };
-  }
-}
 
 /// The shadow variant of a [AuraContainer].
 enum AuraContainerShadow {

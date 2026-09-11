@@ -36,23 +36,30 @@ Future<DeleteServiceConnectionUsecase> deleteServiceConnectionUsecase(
 ) async {
   final link = ref.keepAlive();
   try {
-    final session = await ref.watch(
-      workspaceSessionForRouteProvider(workspaceId).future,
-    );
-    final gateway = await ref.watch(
-      cloudWorkspaceStateGatewayProvider(session).future,
-    );
-
     return DeleteServiceConnectionUsecase(
       modelConnectionRepository: await ref.watch(
         modelConnectionStoreProvider(workspaceId).future,
       ),
-      deleteSkillCredential: gateway == null
-          ? ref.watch(skillCredentialsRepositoryProvider).deleteCredential
-          : CloudServiceConnectionUsecases(.new(gateway)).deleteById,
+      deleteSkillCredential: await _deleteSkillCredential(ref, workspaceId),
     );
   } finally {
     link.close();
   }
+}
+
+Future<Future<void> Function(String id)> _deleteSkillCredential(
+  Ref ref,
+  String workspaceId,
+) async {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
+
+  return gateway == null
+      ? ref.watch(skillCredentialsRepositoryProvider).deleteCredential
+      : CloudServiceConnectionUsecases(.new(gateway)).deleteById;
 }
 // Top-level API/provider declarations are required by their consumers.

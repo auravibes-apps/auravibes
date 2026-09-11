@@ -15,13 +15,7 @@ class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
     final subAgent = await _agentsRepository.getAgentById(agentId);
     if (subAgent == null || !subAgent.appearsInSubAgentList) return null;
 
-    return agent.SubAgentCatalogEntry(
-      id: subAgent.id,
-      workspaceId: subAgent.workspaceId,
-      name: subAgent.name,
-      description: subAgent.description,
-      types: _agentTypes(subAgent.visibility),
-    );
+    return _toCatalogEntry(subAgent);
   }
 
   @override
@@ -32,15 +26,18 @@ class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
 
     return [
       for (final subAgent in agents)
-        if (subAgent.isEnabled)
-          agent.SubAgentCatalogEntry(
-            id: subAgent.id,
-            workspaceId: subAgent.workspaceId,
-            name: subAgent.name,
-            description: subAgent.description,
-            types: _agentTypes(subAgent.visibility),
-          ),
+        if (subAgent.isEnabled) _toCatalogEntry(subAgent),
     ];
+  }
+
+  agent.SubAgentCatalogEntry _toCatalogEntry(AgentEntity subAgent) {
+    return agent.SubAgentCatalogEntry(
+      id: subAgent.id,
+      workspaceId: subAgent.workspaceId,
+      name: subAgent.name,
+      description: subAgent.description,
+      types: _agentTypes(subAgent.visibility),
+    );
   }
 
   List<String> _agentTypes(AgentVisibility visibility) {
@@ -52,30 +49,9 @@ class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
   }
 }
 
-class const AppSubAgentConversationStore(
+class AppSubAgentConversationStore(
   final ConversationRepository _conversationRepository,
 ) implements agent.SubAgentConversationStore {
-  @override
-  Future<agent.SubAgentConversationRecord> createChildConversation({
-    required String parentConversationId,
-    required String workspaceId,
-    required String? modelId,
-    required String? agentId,
-    required String title,
-  }) async {
-    final conversation = await _conversationRepository.createConversation(
-      .new(
-        title: title,
-        workspaceId: workspaceId,
-        modelId: modelId,
-        agentId: agentId,
-        parentConversationId: parentConversationId,
-      ),
-    );
-
-    return _toRecord(conversation);
-  }
-
   @override
   Future<agent.SubAgentConversationRecord?> getConversation(
     String conversationId,
@@ -84,6 +60,28 @@ class const AppSubAgentConversationStore(
       conversationId,
     );
     if (conversation == null) return null;
+
+    return _toRecord(conversation);
+  }
+
+  @override
+  Future<agent.SubAgentConversationRecord> createChildConversation(
+    agent.SubAgentChildConversationRequest request,
+  ) => _createChildConversation(_conversationRepository, request);
+
+  Future<agent.SubAgentConversationRecord> _createChildConversation(
+    ConversationRepository repository,
+    agent.SubAgentChildConversationRequest request,
+  ) async {
+    final conversation = await repository.createConversation(
+      .new(
+        title: request.title,
+        workspaceId: request.workspaceId,
+        modelId: request.modelId,
+        agentId: request.agentId,
+        parentConversationId: request.parentConversationId,
+      ),
+    );
 
     return _toRecord(conversation);
   }

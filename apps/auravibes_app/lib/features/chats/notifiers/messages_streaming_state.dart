@@ -7,6 +7,8 @@ part 'messages_streaming_state.freezed.dart';
 part 'messages_streaming_state.g.dart';
 
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class MessagesStreamingState with _$MessagesStreamingState {
   const factory({
     required CompositeSubscription streamSubscription,

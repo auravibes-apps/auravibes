@@ -22,33 +22,10 @@ class const ConversationSkillSelectorModal({
       conversationSkillSelectorProvider(workspaceId, conversationId),
     );
 
-    return AuraAlertDialog(
-      title: const TextLocale(LocaleKeys.skills_selector_title),
-      message: SizedBox(
-        width: 520,
-        child: switch (selectorAsync) {
-          AsyncData(:final value) => _SelectorContent(
-            state: value,
-            onLoad: (skill) => _load(ref, skill),
-            onUnload: (skill) => _unload(ref, skill),
-          ),
-          AsyncLoading(
-            value: final ConversationSkillSelectorState value,
-            hasValue: true,
-          ) =>
-            _SelectorContent(
-              state: value,
-              onLoad: (skill) => _load(ref, skill),
-              onUnload: (skill) => _unload(ref, skill),
-            ),
-          AsyncLoading() => const SizedBox(
-            height: 120,
-            child: Center(child: AuraSpinner()),
-          ),
-          AsyncError() => const TextLocale(LocaleKeys.skills_selector_error),
-        },
-      ),
-      dismissLabel: const TextLocale(LocaleKeys.common_close),
+    return _ConversationSkillSelectorDialog(
+      selectorAsync: selectorAsync,
+      onLoad: (skill) => _load(ref, skill),
+      onUnload: (skill) => _unload(ref, skill),
     );
   }
 
@@ -79,6 +56,67 @@ class const ConversationSkillSelectorModal({
   }
 }
 
+class const _ConversationSkillSelectorDialog({
+  required final AsyncValue<ConversationSkillSelectorState> selectorAsync,
+  required final ValueChanged<AvailableSkill> onLoad,
+  required final ValueChanged<AvailableSkill> onUnload,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraAlertDialog(
+      title: const TextLocale(LocaleKeys.skills_selector_title),
+      message: SizedBox(
+        width: 520,
+        child: _SelectorMessage(
+          selectorAsync: selectorAsync,
+          onLoad: onLoad,
+          onUnload: onUnload,
+        ),
+      ),
+      dismissLabel: const TextLocale(LocaleKeys.common_close),
+    );
+  }
+}
+
+class const _SelectorMessage({
+  required final AsyncValue<ConversationSkillSelectorState> selectorAsync,
+  required final ValueChanged<AvailableSkill> onLoad,
+  required final ValueChanged<AvailableSkill> onUnload,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SelectorMessageData(
+    selectorAsync: selectorAsync,
+    onLoad: onLoad,
+    onUnload: onUnload,
+  ).child;
+}
+
+class _SelectorMessageData {
+  new({
+    required AsyncValue<ConversationSkillSelectorState> selectorAsync,
+    required ValueChanged<AvailableSkill> onLoad,
+    required ValueChanged<AvailableSkill> onUnload,
+  }) : child = switch (selectorAsync) {
+         AsyncData(:final value) => _SelectorContent(
+           state: value,
+           onLoad: onLoad,
+           onUnload: onUnload,
+         ),
+         AsyncLoading(
+           value: final ConversationSkillSelectorState value,
+           hasValue: true,
+         ) =>
+           _SelectorContent(state: value, onLoad: onLoad, onUnload: onUnload),
+         AsyncLoading() => const SizedBox(
+           height: 120,
+           child: Center(child: AuraSpinner()),
+         ),
+         AsyncError() => const TextLocale(LocaleKeys.skills_selector_error),
+       };
+
+  final Widget child;
+}
+
 class const _SelectorContent({
   required final ConversationSkillSelectorState state,
   required final ValueChanged<AvailableSkill> onLoad,
@@ -87,26 +125,61 @@ class const _SelectorContent({
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: AuraColumn(
-        children: [
-          _SkillSection(
-            titleKey: LocaleKeys.skills_selector_loaded_title,
-            emptyKey: LocaleKeys.skills_selector_loaded_empty,
-            skills: state.loaded,
-            actionIcon: Icons.remove_circle_outline,
-            onPressed: onUnload,
-          ),
-          _SkillSection(
-            titleKey: LocaleKeys.skills_selector_available_title,
-            emptyKey: LocaleKeys.skills_selector_available_empty,
-            skills: state.loadable,
-            actionIcon: Icons.add_circle_outline,
-            onPressed: onLoad,
-          ),
-        ],
-        spacing: .md,
-        crossAxisAlignment: .start,
+      child: _SelectorSections(
+        state: state,
+        onLoad: onLoad,
+        onUnload: onUnload,
       ),
+    );
+  }
+}
+
+class const _SelectorSections({
+  required final ConversationSkillSelectorState state,
+  required final ValueChanged<AvailableSkill> onLoad,
+  required final ValueChanged<AvailableSkill> onUnload,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        _LoadedSkillSection(state: state, onUnload: onUnload),
+        _AvailableSkillSection(state: state, onLoad: onLoad),
+      ],
+      spacing: .md,
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+class const _LoadedSkillSection({
+  required final ConversationSkillSelectorState state,
+  required final ValueChanged<AvailableSkill> onUnload,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return _SkillSection(
+      titleKey: LocaleKeys.skills_selector_loaded_title,
+      emptyKey: LocaleKeys.skills_selector_loaded_empty,
+      skills: state.loaded,
+      actionIcon: Icons.remove_circle_outline,
+      onPressed: onUnload,
+    );
+  }
+}
+
+class const _AvailableSkillSection({
+  required final ConversationSkillSelectorState state,
+  required final ValueChanged<AvailableSkill> onLoad,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return _SkillSection(
+      titleKey: LocaleKeys.skills_selector_available_title,
+      emptyKey: LocaleKeys.skills_selector_available_empty,
+      skills: state.loadable,
+      actionIcon: Icons.add_circle_outline,
+      onPressed: onLoad,
     );
   }
 }
@@ -122,29 +195,101 @@ class const _SkillSection({
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        AuraText(child: TextLocale(titleKey), style: .heading4),
-        if (skills.isEmpty)
-          AuraText(child: TextLocale(emptyKey))
-        else
-          for (final skill in skills)
-            AuraTile(
-              child: AuraColumn(
-                children: [
-                  AuraText(child: Text(skill.title)),
-                  AuraText(child: Text(skill.description)),
-                ],
-                spacing: .xs,
-                crossAxisAlignment: .start,
-              ),
-              variant: .ghost,
-              trailing: AuraIconButton(
-                icon: actionIcon,
-                onPressed: () => onPressed(skill),
-              ),
-            ),
+        _SkillSectionTitle(titleKey: titleKey),
+        _SkillSectionContent(
+          emptyKey: emptyKey,
+          skills: skills,
+          actionIcon: actionIcon,
+          onPressed: onPressed,
+        ),
       ],
       spacing: .sm,
       crossAxisAlignment: .start,
     );
   }
+}
+
+class const _SkillSectionTitle({required final String titleKey})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraText(child: TextLocale(titleKey), style: .heading4);
+  }
+}
+
+class const _SkillSectionContent({
+  required final String emptyKey,
+  required final List<AvailableSkill> skills,
+  required final IconData actionIcon,
+  required final ValueChanged<AvailableSkill> onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (skills.isEmpty) return AuraText(child: TextLocale(emptyKey));
+
+    return _SkillSectionList(
+      skills: skills,
+      actionIcon: actionIcon,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class const _SkillSectionList({
+  required final List<AvailableSkill> skills,
+  required final IconData actionIcon,
+  required final ValueChanged<AvailableSkill> onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        for (final skill in skills)
+          _SkillSelectorTile(
+            skill: skill,
+            actionIcon: actionIcon,
+            onPressed: onPressed,
+          ),
+      ],
+      spacing: .xs,
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+class const _SkillSelectorTile({
+  required final AvailableSkill skill,
+  required final IconData actionIcon,
+  required final ValueChanged<AvailableSkill> onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SkillSelectorTileData(
+    skill: skill,
+    actionIcon: actionIcon,
+    onPressed: onPressed,
+  ).child;
+}
+
+class _SkillSelectorTileData {
+  new({
+    required AvailableSkill skill,
+    required IconData actionIcon,
+    required ValueChanged<AvailableSkill> onPressed,
+  }) : child = AuraTile(
+         child: AuraColumn(
+           children: [
+             AuraText(child: Text(skill.title)),
+             AuraText(child: Text(skill.description)),
+           ],
+           spacing: .xs,
+           crossAxisAlignment: .start,
+         ),
+         variant: .ghost,
+         trailing: AuraIconButton(
+           icon: actionIcon,
+           onPressed: () => onPressed(skill),
+         ),
+       );
+
+  final Widget child;
 }

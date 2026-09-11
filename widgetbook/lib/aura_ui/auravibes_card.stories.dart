@@ -89,30 +89,66 @@ class _CardDemoState extends State<CardDemo> {
   bool _wasTapped = false;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .start,
-      children: [
-        AuraCard(
-          child: Column(
-            mainAxisSize: .min,
-            crossAxisAlignment: .start,
-            children: [
-              AuraText(child: Text(widget.title), style: .heading6),
-              const SizedBox(height: 8),
-              AuraText(child: Text(widget.description), style: .body),
-            ],
-          ),
-          padding: widget.padding,
-          onTap: widget.enableTap
-              ? () => setState(() => _wasTapped = true)
-              : null,
-          semanticLabel: widget.semanticLabel,
-          style: widget.style,
-        ),
-        if (_wasTapped) const Text('Card tapped'),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => _CardPreview(
+    data: (
+      title: widget.title,
+      description: widget.description,
+      padding: widget.padding,
+      onTap: widget.enableTap ? _markTapped : null,
+      semanticLabel: widget.semanticLabel,
+      style: widget.style,
+      wasTapped: _wasTapped,
+    ),
+  );
+
+  void _markTapped() => setState(() => _wasTapped = true);
+}
+
+typedef _CardPreviewData = ({
+  String title,
+  String description,
+  AuraEdgeInsetsGeometry padding,
+  VoidCallback? onTap,
+  String? semanticLabel,
+  AuraCardStyle style,
+  bool wasTapped,
+});
+
+class const _CardPreview({required final _CardPreviewData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      _CardSurface(data: data),
+      if (data.wasTapped) const Text('Card tapped'),
+    ],
+  );
+}
+
+class const _CardSurface({required final _CardPreviewData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCard(
+    child: _CardContent(data: data),
+    padding: data.padding,
+    onTap: data.onTap,
+    semanticLabel: data.semanticLabel,
+    style: data.style,
+  );
+}
+
+class const _CardContent({required final _CardPreviewData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      AuraText(child: Text(data.title), style: .heading6),
+      const SizedBox(height: 8),
+      AuraText(child: Text(data.description), style: .body),
+    ],
+  );
 }

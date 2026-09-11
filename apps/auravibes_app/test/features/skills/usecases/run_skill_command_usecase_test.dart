@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecas
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -33,7 +34,7 @@ void main() {
     );
 
     await expectLater(
-      usecase.call(
+      usecase.call((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         commandName: callSkillToolName,
@@ -43,7 +44,7 @@ void main() {
           'args': {'limit': 'wrong'},
           'revision': 'r1',
         },
-      ),
+      )),
       throwsFormatException,
     );
     expect(templateRunner.calls, 0);
@@ -97,7 +98,7 @@ void main() {
         }) async => const {},
       );
 
-      final result = await usecase.call(
+      final result = await usecase.call((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
         commandName: callSkillToolName,
@@ -107,7 +108,7 @@ void main() {
           'args': {'title': 'Collision regression'},
           'revision': loadedManifest.revision,
         },
-      );
+      ));
 
       expect(result, {
         'result': {'issueNumber': 42},
@@ -256,6 +257,10 @@ class const _SkillSpecs(final List<ToolSpec> specs)
         BuildSkillTemplateToolSpecsUsecase,
         BuildAppSkillNativeToolSpecsUsecase {
   @override
+  Future<WorkspaceSession> Function(String workspaceId)? get workspaceSession =>
+      null;
+
+  @override
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
@@ -264,6 +269,10 @@ class const _SkillSpecs(final List<ToolSpec> specs)
 }
 
 class _UnusedTemplateSpecs implements BuildSkillTemplateToolSpecsUsecase {
+  @override
+  Future<WorkspaceSession> Function(String workspaceId)? get workspaceSession =>
+      null;
+
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

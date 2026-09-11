@@ -121,11 +121,7 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
     return enabledCount;
   }
 
-  @override
-  Future<bool> validateWorkspaceToolSetting(
-    String workspaceId,
-    String toolType,
-  ) async {
+  Future<bool> validateWorkspaceToolSetting(String _, String _) async {
     return validateResult;
   }
 

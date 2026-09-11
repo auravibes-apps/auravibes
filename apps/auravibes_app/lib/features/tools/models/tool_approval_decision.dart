@@ -7,4 +7,6 @@ class const ToolApprovalDecision({
 }) {
   bool get needsConfirmation =>
       permissionResult == ToolPermissionResult.needsConfirmation;
+
+  bool isGranted() => permissionResult == ToolPermissionResult.granted;
 }

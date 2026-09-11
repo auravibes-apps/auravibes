@@ -10,39 +10,23 @@ final _logger = Logger('dao:skill_credentials');
 @DriftAccessor(tables: [ServiceConnections])
 class SkillCredentialsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$SkillCredentialsDaoMixin {
+    with _$SkillCredentialsDaoMixin;
+
+extension SkillCredentialsDaoMethods on SkillCredentialsDao {
   Future<List<ServiceConnectionTable>> getCredentialsForDefinition({
     required String workspaceId,
     required String credentialDefinitionId,
   }) {
-    return (select(serviceConnections)
-          ..where(
-            (tbl) =>
-                tbl.workspaceId.equals(workspaceId) &
-                tbl.serviceId.equals(credentialDefinitionId) &
-                tbl.kind.equals(
-                  ServiceConnectionKindTable.skillCredential.name,
-                ) &
-                tbl.isEnabled.equals(true),
-          )
-          ..orderBy([(tbl) => OrderingTerm(expression: tbl.name)]))
-        .get();
+    return _credentialsForDefinitionQuery(
+      workspaceId,
+      credentialDefinitionId,
+    ).get();
   }
 
   Stream<List<ServiceConnectionTable>> watchCredentialsForWorkspace(
     String workspaceId,
   ) {
-    return (select(serviceConnections)
-          ..where(
-            (tbl) =>
-                tbl.workspaceId.equals(workspaceId) &
-                tbl.kind.equals(
-                  ServiceConnectionKindTable.skillCredential.name,
-                ) &
-                tbl.isEnabled.equals(true),
-          )
-          ..orderBy([(tbl) => OrderingTerm(expression: tbl.name)]))
-        .watch();
+    return _credentialsForWorkspaceQuery(workspaceId).watch();
   }
 
   Future<ServiceConnectionTable?> getCredentialById(String credentialId) {
@@ -65,28 +49,15 @@ class SkillCredentialsDao(super.attachedDatabase)
     ServiceConnectionsCompanion credential,
   ) async {
     final rows =
-        await (update(serviceConnections)..where(
-              (tbl) =>
-                  tbl.id.equals(credentialId) &
-                  tbl.kind.equals(
-                    ServiceConnectionKindTable.skillCredential.name,
-                  ),
-            ))
+        await (update(serviceConnections)
+              ..where((tbl) => _credentialIdFilter(tbl, credentialId)))
             .writeReturning(credential);
 
     return rows.firstOrNull;
   }
 
   Future<int> deleteCredential(String credentialId) async {
-    final count =
-        await (delete(serviceConnections)..where(
-              (tbl) =>
-                  tbl.id.equals(credentialId) &
-                  tbl.kind.equals(
-                    ServiceConnectionKindTable.skillCredential.name,
-                  ),
-            ))
-            .go();
+    final count = await _deleteCredentialRows(credentialId);
 
     _logger.info(
       'debug:skill credential dao delete complete '
@@ -95,4 +66,61 @@ class SkillCredentialsDao(super.attachedDatabase)
 
     return count;
   }
+}
+
+extension SkillCredentialsDaoQueries on SkillCredentialsDao {
+  SimpleSelectStatement<$ServiceConnectionsTable, ServiceConnectionTable>
+  _credentialsForDefinitionQuery(
+    String workspaceId,
+    String credentialDefinitionId,
+  ) {
+    final statement = select(serviceConnections)
+      ..where(
+        (tbl) => _credentialDefinitionFilter(
+          tbl,
+          workspaceId,
+          credentialDefinitionId,
+        ),
+      );
+
+    return statement..orderBy(_credentialNameOrdering());
+  }
+
+  SimpleSelectStatement<$ServiceConnectionsTable, ServiceConnectionTable>
+  _credentialsForWorkspaceQuery(String workspaceId) {
+    final statement = select(serviceConnections)
+      ..where((tbl) => _workspaceCredentialFilter(tbl, workspaceId));
+
+    return statement..orderBy(_credentialNameOrdering());
+  }
+
+  Future<int> _deleteCredentialRows(String credentialId) => (delete(
+    serviceConnections,
+  )..where((tbl) => _credentialIdFilter(tbl, credentialId))).go();
+
+  Expression<bool> _credentialDefinitionFilter(
+    $ServiceConnectionsTable tbl,
+    String workspaceId,
+    String credentialDefinitionId,
+  ) =>
+      _workspaceCredentialFilter(tbl, workspaceId) &
+      tbl.serviceId.equals(credentialDefinitionId);
+
+  Expression<bool> _workspaceCredentialFilter(
+    $ServiceConnectionsTable tbl,
+    String workspaceId,
+  ) =>
+      tbl.workspaceId.equals(workspaceId) &
+      tbl.kind.equals(ServiceConnectionKindTable.skillCredential.name) &
+      tbl.isEnabled.equals(true);
+
+  Expression<bool> _credentialIdFilter(
+    $ServiceConnectionsTable tbl,
+    String credentialId,
+  ) =>
+      tbl.id.equals(credentialId) &
+      tbl.kind.equals(ServiceConnectionKindTable.skillCredential.name);
+
+  List<OrderingTerm Function($ServiceConnectionsTable)>
+  _credentialNameOrdering() => [(tbl) => OrderingTerm(expression: tbl.name)];
 }

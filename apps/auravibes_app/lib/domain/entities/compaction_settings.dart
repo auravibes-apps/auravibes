@@ -30,6 +30,8 @@ abstract class const CompactionSettings._() with _$CompactionSettings {
     maxOutputTokens: maxOutputTokens,
     contextLimit: contextLimit,
   );
+
+  bool hasConfiguredThreshold() => remainingTokenThreshold > 0;
 }
 
 @freezed
@@ -49,6 +51,10 @@ abstract class const ConversationPromptEstimate._()
   }) = _ConversationPromptEstimate;
   factory fromJson(Map<String, dynamic> json) =>
       _$ConversationPromptEstimateFromJson(json);
+
+  bool hasContextLimit() => contextLimit != null;
+
+  bool hasUsagePercentage() => usagePercentage != null;
 }
 
 enum CompactionDecisionReason {
@@ -75,6 +81,10 @@ abstract class const CompactionDecision._() with _$CompactionDecision {
   }) = _CompactionDecision;
   factory fromJson(Map<String, dynamic> json) =>
       _$CompactionDecisionFromJson(json);
+
+  bool isEligible() => shouldCompact;
+
+  bool isManual() => trigger == CompactionTrigger.manual;
 }
 
 @freezed
@@ -87,6 +97,10 @@ abstract class const CompactionRange._() with _$CompactionRange {
   }) = _CompactionRange;
   factory fromJson(Map<String, dynamic> json) =>
       _$CompactionRangeFromJson(json);
+
+  bool hasMessages() => messageIds.isNotEmpty;
+
+  bool keepsTail() => keptTailMessageIds.isNotEmpty;
 }
 
 enum CompactionExecutionStatus { running, success, failure }
@@ -102,6 +116,10 @@ abstract class const CompactionExecutionState._()
   }) = _CompactionExecutionState;
   factory fromJson(Map<String, dynamic> json) =>
       _$CompactionExecutionStateFromJson(json);
+
+  bool isComplete() => status != CompactionExecutionStatus.running;
+
+  bool isSuccessful() => status == CompactionExecutionStatus.success;
 }
 
 @freezed
@@ -114,4 +132,8 @@ abstract class const ContextOverflowRetryState._()
   }) = _ContextOverflowRetryState;
   factory fromJson(Map<String, dynamic> json) =>
       _$ContextOverflowRetryStateFromJson(json);
+
+  bool canRetry() => !hasRetriedAfterCompaction;
+
+  bool isForConversation(String id) => conversationId == id;
 }

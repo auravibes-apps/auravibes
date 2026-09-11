@@ -11,26 +11,7 @@ extension StringExtensions on String {
   String toHumanReadable() {
     if (isEmpty) return this;
 
-    // First, insert spaces before uppercase letters (for camelCase/PascalCase).
-    final withSpaces = replaceAllMapped(
-      RegExp('([a-z])([A-Z])'),
-      (match) => '${match.group(1)} ${match.group(2)}',
-    );
-
-    // Replace underscores and hyphens with spaces.
-    final normalized = withSpaces.replaceAll(RegExp('[_-]+'), ' ');
-
-    // Split into words, capitalize each, and join.
-    final words = normalized.split(RegExp(r'\s+'));
-    final capitalizedWords = words.where((word) => word.isNotEmpty).map((word) {
-      final wordCharacters = word.characters;
-      final firstCharacter = wordCharacters.take(1).toString().toUpperCase();
-      final remainingCharacters = wordCharacters.skip(1).toString();
-
-      return '$firstCharacter${remainingCharacters.toLowerCase()}';
-    });
-
-    return capitalizedWords.join(' ');
+    return _capitalizeWords(_normalizeIdentifier(this));
   }
 
   /// Returns the first [count] user-perceived characters.
@@ -71,4 +52,30 @@ extension StringExtensions on String {
         .take(stringCharacters.length - edgeCharacterCount)
         .toString();
   }
+}
+
+String _normalizeIdentifier(String value) {
+  const firstGroup = 1;
+  const secondGroup = 2;
+
+  return value
+      .replaceAllMapped(
+        RegExp('([a-z])([A-Z])'),
+        (match) => '${match.group(firstGroup)} ${match.group(secondGroup)}',
+      )
+      .replaceAll(RegExp('[_-]+'), ' ');
+}
+
+String _capitalizeWords(String value) => value
+    .split(RegExp(r'\s+'))
+    .where((word) => word.isNotEmpty)
+    .map(_capitalizeWord)
+    .join(' ');
+
+String _capitalizeWord(String word) {
+  final wordCharacters = word.characters;
+  final firstCharacter = wordCharacters.take(1).toString().toUpperCase();
+  final remainingCharacters = wordCharacters.skip(1).toString();
+
+  return '$firstCharacter${remainingCharacters.toLowerCase()}';
 }

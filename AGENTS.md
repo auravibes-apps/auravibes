@@ -1,4 +1,5 @@
 # AuraVibes Agent Instructions
+<!-- Managed by agent: AuraVibes | Last updated: 2026-09-11 -->
 
 ## Entrypoint
 
@@ -6,6 +7,22 @@
 - Nested `AGENTS.md` files are package-local hints, not architecture canon.
 - Check `git status --short` before and after edits.
 - Do not revert unrelated changes.
+- Precedence: closest `AGENTS.md` to changed file wins; root rules apply otherwise.
+
+## Index of scoped AGENTS.md
+
+- App: [apps/auravibes_app/AGENTS.md](./apps/auravibes_app/AGENTS.md)
+- Engine: [packages/auravibes_engine/AGENTS.md](./packages/auravibes_engine/AGENTS.md)
+- UI: [packages/auravibes_ui/AGENTS.md](./packages/auravibes_ui/AGENTS.md)
+- Widgetbook: [widgetbook/AGENTS.md](./widgetbook/AGENTS.md)
+
+## Workspace source of truth
+
+- Dart SDK: `^3.13.0`; Flutter: `.fvmrc` (`3.47.2`); Melos: `^8.6.0`.
+- Commands and package membership live in root `pubspec.yaml`.
+- Diagnostics and scoped exceptions live in `analysis_options.yaml`.
+- Required CI gates live in `.github/workflows/ci.yml`.
+- Canonical architecture docs live under `doc/architecture/`.
 
 ## Commands
 
@@ -22,6 +39,21 @@
 | Import sort check       | `fvm dart run import_sorter:main --exit-if-changed`                          |
 | Code generation         | `fvm dart run melos run generate`                                            |
 | Localization generation | `fvm dart run melos run generate:localization`                               |
+| Serverpod generation   | `fvm dart run melos run generate:serverpod`                           |
+
+## DCL and lint compliance
+
+- `analysis_options.yaml` is source of truth for Dart analyzer, DCL diagnostics and metrics, Riverpod lints, and scoped exceptions. Read it before changing Dart; do not infer permitted patterns from nearby code.
+- During iteration, run the smallest focused analyzer or test. Before a PR or after broad Dart refactors, run `fvm dart run melos analyze` and `fvm dart run melos run dcl:analyze`; `fvm dart run melos run validate:quick` is the workspace analyzer + format gate. Do not run full-repository checks after every edit.
+- CI also runs DCL unused-code, unused-file, and unnecessary-nullable checks. Remove orphaned declarations after refactors; do not hide findings with broad excludes or ignores.
+
+## CI failure triage
+
+- `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
+- `integrity` generated drift: run `generate` and `generate:serverpod`; review and commit generated diff. Never hand-edit output.
+- `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; commit `.vscode/settings.json` sync.
+- Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
+- DCL unused-code scans production `lib`, not tests. Remove true dead code; test-only contracts or generated/route reachability need narrow, reasoned excludes only after reference review.
 
 ### Scoped database queries
 
@@ -92,12 +124,20 @@
 - Drift schema changes require `schemaVersion` bump and migration logic.
 - User-facing strings must be localized; user-facing errors use typed exceptions carrying localization keys.
 - If `.fvmrc` changes, run `fvm use` and commit the resulting `.vscode/settings.json` sync.
+- Freezed 4 classes must not declare abstract `hashCode`, `toString`, or `==`; those declarations suppress generated implementations. Run build runner after model changes and review generated output.
+- DCL metric/rule ignores are allowed only for generated-backed Freezed declarations, Drift schema DSL, or symbols required by generated Drift output, with a reason; keep checks enabled for handwritten behavior.
 
 ## Architecture
 
 - Load `.agents/skills/app-architecture/SKILL.md` before adding, moving, or reviewing code in `apps/auravibes_app`.
 - Load `.agents/skills/package-architecture/SKILL.md` before adding, moving, or reviewing code in `packages/auravibes_engine`, `packages/auravibes_ui`, or `widgetbook`.
 - Keep durable architecture docs under `doc/architecture/`; update them only when package boundaries, layer rules, or file placement rules change.
+
+## Skill routing
+
+- Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.
+- Melos work: read `.agents/skills/melos-7/SKILL.md`; its AuraVibes override covers Melos 8.6.0.
+- Version conflicts: trust `.fvmrc` and package `pubspec.yaml` over skill examples.
 
 ## PR Gates
 

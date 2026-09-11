@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -72,27 +73,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return ResponsiveSlidingDrawer(
-      drawer: Material(
-        child: AuraSidebar(
-          navigationItems: widget.navigationItems,
-          onNavigationTap: widget.onNavigationTap,
-          selectedIndex: widget.selectedIndex,
-          header: _WorkspaceHeader(workspaceId: widget.workspaceId),
-          middleSection: SidebarConversationsWidget(
-            workspaceId: widget.workspaceId,
-          ),
-        ),
-      ),
-      body: ResponsiveSlidingDrawerProvider(
-        controller: _controller,
-        child: widget.child,
-      ),
-      isDarkMode: Theme.of(context).brightness == Brightness.dark,
-      controller: _controller,
-    );
-  }
+  Widget build(BuildContext context) => _ResponsiveDrawerView(state: this);
 
   void _onRouteChanged() {
     final currentRoute = _requiredRouter.routeInformationProvider.value.uri;
@@ -103,40 +84,115 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   }
 }
 
+class const _ResponsiveDrawerView({
+  required final _AppWithResponsiveDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ResponsiveSlidingDrawer(
+    drawer: _AppDrawerNavigation(state: state),
+    body: ResponsiveSlidingDrawerProvider(
+      controller: state._controller,
+      child: state.widget.child,
+    ),
+    isDarkMode: Theme.of(context).brightness == Brightness.dark,
+    controller: state._controller,
+  );
+}
+
+class const _AppDrawerNavigation({
+  required final _AppWithResponsiveDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Material(
+    child: AuraSidebar(
+      navigationItems: state.widget.navigationItems,
+      onNavigationTap: state.widget.onNavigationTap,
+      selectedIndex: state.widget.selectedIndex,
+      header: _WorkspaceHeader(workspaceId: state.widget.workspaceId),
+      middleSection: SidebarConversationsWidget(
+        workspaceId: state.widget.workspaceId,
+      ),
+    ),
+  );
+}
+
 class const _WorkspaceHeader({required final String workspaceId})
     extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final workspacesAsync = ref.watch(allWorkspacesProvider);
-    final Widget header;
-    switch (workspacesAsync) {
-      case AsyncData(:final value):
-        final workspace = value
-            .where((item) => item.id == workspaceId)
-            .firstOrNull;
-        header = AuraText(
-          child: Text(
-            workspace?.name ?? LocaleKeys.workspace_management_loading.tr(),
-          ),
-          style: .heading6,
-        );
-      case AsyncLoading():
-        header = const AuraContainer(
-          child: Center(
-            child: TextLocale(LocaleKeys.workspace_management_loading),
-          ),
-          height: 48,
-        );
-      case AsyncError(:final error, :final stackTrace):
-        _logger.warning('Workspace dropdown stream error', error, stackTrace);
-        header = const AuraText(
-          child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
-        );
-    }
+  Widget build(BuildContext context, WidgetRef ref) => SafeArea(
+    bottom: false,
+    child: AuraPadding(
+      child: _WorkspaceHeaderContent(workspaceId: workspaceId),
+      padding: .small,
+    ),
+  );
+}
 
-    return SafeArea(
-      bottom: false,
-      child: AuraPadding(child: header, padding: .small),
+class const _WorkspaceHeaderContent({required final String workspaceId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext _, WidgetRef ref) => _WorkspaceHeaderResult(
+    workspaceId: workspaceId,
+    workspaces: ref.watch(allWorkspacesProvider),
+  );
+}
+
+class _WorkspaceHeaderResult extends StatelessWidget {
+  new({
+    required String workspaceId,
+    required AsyncValue<List<WorkspaceEntity>> workspaces,
+  }) : _child = switch (workspaces) {
+         AsyncData(:final value) => _WorkspaceHeaderValue(
+           workspaceId: workspaceId,
+           workspaces: value,
+         ),
+         AsyncLoading() => const AuraContainer(
+           child: Center(
+             child: TextLocale(LocaleKeys.workspace_management_loading),
+           ),
+           height: 48,
+         ),
+         AsyncError(:final error, :final stackTrace) => _WorkspaceHeaderError(
+           error: error,
+           stackTrace: stackTrace,
+         ),
+       };
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext _) => _child;
+}
+
+class const _WorkspaceHeaderValue({
+  required final String workspaceId,
+  required final List<WorkspaceEntity> workspaces,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final workspace = workspaces
+        .where((item) => item.id == workspaceId)
+        .firstOrNull;
+
+    return AuraText(
+      child: Text(
+        workspace?.name ?? LocaleKeys.workspace_management_loading.tr(),
+      ),
+      style: .heading6,
+    );
+  }
+}
+
+class const _WorkspaceHeaderError({
+  required final Object error,
+  required final StackTrace stackTrace,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    _logger.warning('Workspace dropdown stream error', error, stackTrace);
+
+    return const AuraText(
+      child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
     );
   }
 }

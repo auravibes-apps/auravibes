@@ -27,11 +27,12 @@ ProviderRuntimeSelection selectProviderRuntime({
   required bool isCodexOAuth,
   required String modelId,
 }) {
-  final adaptive =
-      modelId.startsWith('claude-mythos-preview') ||
-      modelId.startsWith('claude-opus-4-7') ||
-      modelId.startsWith('claude-opus-4-6') ||
-      modelId.startsWith('claude-sonnet-4-6');
+  final adaptive = const [
+    'claude-mythos-preview',
+    'claude-opus-4-7',
+    'claude-opus-4-6',
+    'claude-sonnet-4-6',
+  ].any(modelId.startsWith);
   if (usesOAuth && isCodexOAuth) {
     return const ProviderRuntimeSelection(
       runtime: .codexOAuth,

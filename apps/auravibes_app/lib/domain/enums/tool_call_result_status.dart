@@ -46,22 +46,7 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
   ///
   /// For [success], this returns an empty string since responseRaw should
   /// contain the actual output.
-  String toResponseString() {
-    return switch (this) {
-      ToolCallResultStatus.running ||
-      ToolCallResultStatus.skippedByUser ||
-      ToolCallResultStatus.stoppedByUser => agentLifecycle.modelFallback,
-      .success => AgentToolResultStatus.success.modelFallback,
-      .toolNotFound => AgentToolResultStatus.toolNotFound.modelFallback,
-      .disabledInWorkspace =>
-        AgentToolResultStatus.disabledInWorkspace.modelFallback,
-      .disabledInConversation =>
-        AgentToolResultStatus.disabledInConversation.modelFallback,
-      .disabledByAgent => AgentToolResultStatus.disabledByAgent.modelFallback,
-      .notConfigured => AgentToolResultStatus.notConfigured.modelFallback,
-      .executionError => AgentToolResultStatus.executionError.modelFallback,
-    };
-  }
+  String toResponseString() => _responseStrings[this]!;
 
   /// Whether this result should halt the AI agent loop entirely.
   ///
@@ -69,33 +54,92 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
   /// in this message.
   bool get stopsAgentLoop => agentLifecycle.stopsAgentLoop;
 
-  AgentToolCallLifecycle get agentLifecycle => switch (this) {
-    .running => AgentToolCallLifecycle.pending,
-    .success => AgentToolCallLifecycle.success,
-    .skippedByUser => AgentToolCallLifecycle.skippedByUser,
-    .stoppedByUser => AgentToolCallLifecycle.stoppedByUser,
-    _ => AgentToolCallLifecycle.failed,
-  };
+  AgentToolCallLifecycle get agentLifecycle => _agentLifecycles[this]!;
+
+  /// Whether this result represents a failed tool call.
+  bool isFailure() => agentLifecycle == AgentToolCallLifecycle.failed;
+
+  /// Whether this result represents successful tool execution.
+  bool isSuccess() => this == .success;
 
   /// Returns the locale key for displaying this status in the UI.
   ///
   /// Use with `.tr()` to get the translated string.
-  String get localeKey {
-    return switch (this) {
-      .running => LocaleKeys.tool_call_status_running,
-      .success => LocaleKeys.tool_call_status_success,
-      .skippedByUser => LocaleKeys.tool_call_status_skipped_by_user,
-      .stoppedByUser => LocaleKeys.tool_call_status_stopped_by_user,
-      .toolNotFound => LocaleKeys.tool_call_status_tool_not_found,
-      .disabledInWorkspace => LocaleKeys.tool_call_status_disabled_in_workspace,
-      .disabledInConversation =>
-        LocaleKeys.tool_call_status_disabled_in_conversation,
-      .disabledByAgent => LocaleKeys.tool_call_status_disabled_by_agent,
-      .notConfigured => LocaleKeys.tool_call_status_not_configured,
-      .executionError => LocaleKeys.tool_call_status_execution_error,
-    };
-  }
+  String get localeKey => _localeKeys[this]!;
 }
+
+final _responseStrings = <ToolCallResultStatus, String>{
+  ToolCallResultStatus.running: AgentToolCallLifecycle.pending.modelFallback,
+  ToolCallResultStatus.success: AgentToolResultStatus.success.modelFallback,
+  ToolCallResultStatus.skippedByUser:
+      AgentToolCallLifecycle.skippedByUser.modelFallback,
+  ToolCallResultStatus.stoppedByUser:
+      AgentToolCallLifecycle.stoppedByUser.modelFallback,
+  ToolCallResultStatus.toolNotFound:
+      AgentToolResultStatus.toolNotFound.modelFallback,
+  ToolCallResultStatus.disabledInWorkspace:
+      AgentToolResultStatus.disabledInWorkspace.modelFallback,
+  ToolCallResultStatus.disabledInConversation:
+      AgentToolResultStatus.disabledInConversation.modelFallback,
+  ToolCallResultStatus.disabledByAgent:
+      AgentToolResultStatus.disabledByAgent.modelFallback,
+  ToolCallResultStatus.notConfigured:
+      AgentToolResultStatus.notConfigured.modelFallback,
+  ToolCallResultStatus.executionError:
+      AgentToolResultStatus.executionError.modelFallback,
+};
+
+const _agentLifecycles = <ToolCallResultStatus, AgentToolCallLifecycle>{
+  .running: .pending,
+  .success: .success,
+  .skippedByUser: .skippedByUser,
+  .stoppedByUser: .stoppedByUser,
+  .toolNotFound: .failed,
+  .disabledInWorkspace: .failed,
+  .disabledInConversation: .failed,
+  .disabledByAgent: .failed,
+  .notConfigured: .failed,
+  .executionError: .failed,
+};
+
+const _localeKeys = <ToolCallResultStatus, String>{
+  .running: LocaleKeys.tool_call_status_running,
+  .success: LocaleKeys.tool_call_status_success,
+  .skippedByUser: LocaleKeys.tool_call_status_skipped_by_user,
+  .stoppedByUser: LocaleKeys.tool_call_status_stopped_by_user,
+  .toolNotFound: LocaleKeys.tool_call_status_tool_not_found,
+  .disabledInWorkspace: LocaleKeys.tool_call_status_disabled_in_workspace,
+  .disabledInConversation: LocaleKeys.tool_call_status_disabled_in_conversation,
+  .disabledByAgent: LocaleKeys.tool_call_status_disabled_by_agent,
+  .notConfigured: LocaleKeys.tool_call_status_not_configured,
+  .executionError: LocaleKeys.tool_call_status_execution_error,
+};
+
+const _statusFromJson = <String, ToolCallResultStatus>{
+  'running': .running,
+  'success': .success,
+  'skipped_by_user': .skippedByUser,
+  'stopped_by_user': .stoppedByUser,
+  'tool_not_found': .toolNotFound,
+  'disabled_in_workspace': .disabledInWorkspace,
+  'disabled_in_conversation': .disabledInConversation,
+  'disabled_by_agent': .disabledByAgent,
+  'not_configured': .notConfigured,
+  'execution_error': .executionError,
+};
+
+const _statusToJson = <ToolCallResultStatus, String>{
+  .running: 'running',
+  .success: 'success',
+  .skippedByUser: 'skipped_by_user',
+  .stoppedByUser: 'stopped_by_user',
+  .toolNotFound: 'tool_not_found',
+  .disabledInWorkspace: 'disabled_in_workspace',
+  .disabledInConversation: 'disabled_in_conversation',
+  .disabledByAgent: 'disabled_by_agent',
+  .notConfigured: 'not_configured',
+  .executionError: 'execution_error',
+};
 
 /// JSON converter for [ToolCallResultStatus].
 ///
@@ -106,36 +150,13 @@ class const ToolCallResultStatusConverter()
   ToolCallResultStatus? fromJson(String? json) {
     if (json == null) return null;
 
-    return switch (json) {
-      'running' => ToolCallResultStatus.running,
-      'success' => ToolCallResultStatus.success,
-      'skipped_by_user' => ToolCallResultStatus.skippedByUser,
-      'stopped_by_user' => ToolCallResultStatus.stoppedByUser,
-      'tool_not_found' => ToolCallResultStatus.toolNotFound,
-      'disabled_in_workspace' => ToolCallResultStatus.disabledInWorkspace,
-      'disabled_in_conversation' => ToolCallResultStatus.disabledInConversation,
-      'disabled_by_agent' => ToolCallResultStatus.disabledByAgent,
-      'not_configured' => ToolCallResultStatus.notConfigured,
-      'execution_error' => ToolCallResultStatus.executionError,
-      _ => null,
-    };
+    return _statusFromJson[json];
   }
 
   @override
   String? toJson(ToolCallResultStatus? object) {
     if (object == null) return null;
 
-    return switch (object) {
-      .running => 'running',
-      .success => 'success',
-      .skippedByUser => 'skipped_by_user',
-      .stoppedByUser => 'stopped_by_user',
-      .toolNotFound => 'tool_not_found',
-      .disabledInWorkspace => 'disabled_in_workspace',
-      .disabledInConversation => 'disabled_in_conversation',
-      .disabledByAgent => 'disabled_by_agent',
-      .notConfigured => 'not_configured',
-      .executionError => 'execution_error',
-    };
+    return _statusToJson[object];
   }
 }

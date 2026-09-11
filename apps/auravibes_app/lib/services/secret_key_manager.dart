@@ -41,19 +41,27 @@ class SecretKeyManager {
     final newPendingKey = _loadOrCreateSecretKey();
     _pendingKey = newPendingKey;
 
-    try {
-      return await newPendingKey;
-    } finally {
-      if (identical(_pendingKey, newPendingKey)) {
-        _pendingKey = null;
-      }
-    }
+    return await _completePendingKey(newPendingKey);
   }
 
   /// Clears the cached key (useful for logout).
   void clearCache() {
     _cachedKey = null;
     _pendingKey = null;
+  }
+}
+
+extension on SecretKeyManager {
+  Future<SecretKey> _completePendingKey(Future<SecretKey> pendingKey) async {
+    try {
+      return await pendingKey;
+    } finally {
+      _clearPendingKey(pendingKey);
+    }
+  }
+
+  void _clearPendingKey(Future<SecretKey> pendingKey) {
+    if (identical(_pendingKey, pendingKey)) _pendingKey = null;
   }
 
   Future<SecretKey> _loadOrCreateSecretKey() async {

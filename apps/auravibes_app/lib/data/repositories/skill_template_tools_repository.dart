@@ -35,19 +35,7 @@ class SkillTemplateToolsRepository(AppDatabase database) {
     String skillId,
     SkillTemplateToolToCreate tool,
   ) async {
-    final table = await _dao.createTool(
-      .new(
-        skillId: Value(skillId),
-        templateType: Value(_mapTypeToTable(tool.templateType)),
-        title: Value(tool.title.trim()),
-        description: Value(tool.description.trim()),
-        slug: Value(generateSkillSlug(tool.title)),
-        templateJson: Value(tool.templateJson),
-        inputsJson: Value(tool.inputsJson),
-        requiresCredential: Value(tool.requiresCredential),
-        isEnabled: Value(tool.isEnabled),
-      ),
-    );
+    final table = await _dao.createTool(_createToolCompanion(skillId, tool));
 
     return _tableToEntity(table);
   }
@@ -56,46 +44,104 @@ class SkillTemplateToolsRepository(AppDatabase database) {
     String toolId,
     SkillTemplateToolToUpdate tool,
   ) async {
-    final table = await _dao.updateTool(
-      toolId,
-      .new(
-        updatedAt: Value(DateTime.now()),
-        title: switch (tool.title) {
-          null => const Value.absent(),
-          final title => Value(title.trim()),
-        },
-        description: switch (tool.description) {
-          null => const Value.absent(),
-          final description => Value(description.trim()),
-        },
-        templateJson: Value.absentIfNull(tool.templateJson),
-        inputsJson: Value.absentIfNull(tool.inputsJson),
-        requiresCredential: Value.absentIfNull(tool.requiresCredential),
-        isEnabled: Value.absentIfNull(tool.isEnabled),
-      ),
-    );
+    final table = await _dao.updateTool(toolId, _updateToolCompanion(tool));
 
     return _tableToEntity(table);
   }
 
   Future<bool> deleteTool(String toolId) => _dao.deleteTool(toolId);
+}
 
-  SkillTemplateToolEntity _tableToEntity(SkillTemplateToolsTable table) {
-    return SkillTemplateToolEntity(
-      id: table.id,
-      skillId: table.skillId,
-      templateType: _mapType(table.templateType),
-      title: table.title,
-      description: table.description,
-      slug: table.slug,
-      templateJson: table.templateJson,
-      inputsJson: table.inputsJson,
-      isEnabled: table.isEnabled,
-      requiresCredential: table.requiresCredential,
-      createdAt: table.createdAt,
-      updatedAt: table.updatedAt,
+extension SkillTemplateToolsCompanionMappings on SkillTemplateToolsRepository {
+  SkillTemplateToolsCompanion _createToolCompanion(
+    String skillId,
+    SkillTemplateToolToCreate tool,
+  ) {
+    return _addToolCreationFields(
+      .new(
+        skillId: .new(skillId),
+        templateType: .new(_mapTypeToTable(tool.templateType)),
+        title: .new(tool.title.trim()),
+        description: .new(tool.description.trim()),
+        slug: .new(generateSkillSlug(tool.title)),
+      ),
+      tool,
     );
   }
+
+  SkillTemplateToolsCompanion _addToolCreationFields(
+    SkillTemplateToolsCompanion companion,
+    SkillTemplateToolToCreate tool,
+  ) => companion.copyWith(
+    templateJson: .new(tool.templateJson),
+    inputsJson: .new(tool.inputsJson),
+    requiresCredential: .new(tool.requiresCredential),
+    isEnabled: .new(tool.isEnabled),
+  );
+
+  SkillTemplateToolsCompanion _updateToolCompanion(
+    SkillTemplateToolToUpdate tool,
+  ) {
+    return _addToolUpdateFields(.new(updatedAt: .new(DateTime.now())), tool);
+  }
+
+  SkillTemplateToolsCompanion _addToolUpdateFields(
+    SkillTemplateToolsCompanion companion,
+    SkillTemplateToolToUpdate tool,
+  ) => companion.copyWith(
+    title: _trimmedValue(tool.title),
+    description: _trimmedValue(tool.description),
+    templateJson: .absentIfNull(tool.templateJson),
+    inputsJson: .absentIfNull(tool.inputsJson),
+    requiresCredential: .absentIfNull(tool.requiresCredential),
+    isEnabled: .absentIfNull(tool.isEnabled),
+  );
+
+  Value<String>? _trimmedValue(String? value) {
+    return value == null ? const Value.absent() : .new(value.trim());
+  }
+}
+
+extension on SkillTemplateToolsRepository {
+  SkillTemplateToolEntity _tableToEntity(SkillTemplateToolsTable table) {
+    return _withToolState(
+      _withToolContent(
+        _withToolIdentity(_emptySkillTemplateToolEntity, table),
+        table,
+      ),
+      table,
+    );
+  }
+
+  SkillTemplateToolEntity _withToolIdentity(
+    SkillTemplateToolEntity tool,
+    SkillTemplateToolsTable table,
+  ) => tool.copyWith(
+    id: table.id,
+    skillId: table.skillId,
+    templateType: _mapType(table.templateType),
+  );
+
+  SkillTemplateToolEntity _withToolContent(
+    SkillTemplateToolEntity tool,
+    SkillTemplateToolsTable table,
+  ) => tool.copyWith(
+    title: table.title,
+    description: table.description,
+    slug: table.slug,
+    templateJson: table.templateJson,
+    inputsJson: table.inputsJson,
+  );
+
+  SkillTemplateToolEntity _withToolState(
+    SkillTemplateToolEntity tool,
+    SkillTemplateToolsTable table,
+  ) => tool.copyWith(
+    isEnabled: table.isEnabled,
+    requiresCredential: table.requiresCredential,
+    createdAt: table.createdAt,
+    updatedAt: table.updatedAt,
+  );
 
   SkillTemplateToolType _mapType(SkillTemplateToolTypeTable type) {
     return switch (type) {
@@ -109,3 +155,18 @@ class SkillTemplateToolsRepository(AppDatabase database) {
     };
   }
 }
+
+final _emptySkillTemplateToolEntity = SkillTemplateToolEntity(
+  id: '',
+  skillId: '',
+  templateType: .url,
+  title: '',
+  description: '',
+  slug: '',
+  templateJson: '',
+  inputsJson: '',
+  isEnabled: false,
+  requiresCredential: false,
+  createdAt: .new(0),
+  updatedAt: .new(0),
+);

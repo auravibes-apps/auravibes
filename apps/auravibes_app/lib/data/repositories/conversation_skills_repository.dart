@@ -1,5 +1,4 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/daos/conversation_skills_dao.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 
 class ConversationSkillsRepository(AppDatabase database) {

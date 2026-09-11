@@ -10,6 +10,15 @@ import 'package:http/http.dart' as http;
 
 /// A reusable widget for displaying model provider logos.
 class const ModelLogo({
+  required super.modelId,
+  super.height,
+  super.width,
+  super.svgBuilder,
+  super.httpClient,
+  super.key,
+}) extends _ModelLogo;
+
+class const _ModelLogo({
   required final String modelId,
   final double height = 20,
   final double? width,
@@ -25,22 +34,44 @@ class const ModelLogo({
       return svgBuilder(context, url);
     }
 
-    return SvgPicture.network(
-      url,
-      width: width,
+    return _ModelLogoNetwork(
+      url: url,
+      color: context.auraColors.onBackground,
       height: height,
-      placeholderBuilder: (context) {
-        return const AuraSpinner();
-      },
-      colorFilter: .mode(context.auraColors.onBackground, .srcIn),
-      errorBuilder: (context, error, stackTrace) {
-        return const AuraText(
-          child: TextLocale(
-            LocaleKeys.models_screens_add_provider_search_no_icon,
-          ),
-        );
-      },
+      width: width,
       httpClient: httpClient,
     );
   }
+}
+
+class _ModelLogoNetwork extends StatelessWidget {
+  new({
+    required this.url,
+    required this.color,
+    required this.height,
+    this.width,
+    this.httpClient,
+  }) : picture = SvgPicture.network(
+         url,
+         width: width,
+         height: height,
+         placeholderBuilder: (_) => const AuraSpinner(),
+         colorFilter: .mode(color, .srcIn),
+         errorBuilder: (_, _, _) => const AuraText(
+           child: TextLocale(
+             LocaleKeys.models_screens_add_provider_search_no_icon,
+           ),
+         ),
+         httpClient: httpClient,
+       );
+
+  final String url;
+  final Color color;
+  final double height;
+  final double? width;
+  final http.Client? httpClient;
+  final SvgPicture picture;
+
+  @override
+  Widget build(BuildContext context) => picture;
 }

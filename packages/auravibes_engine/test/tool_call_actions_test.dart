@@ -180,13 +180,7 @@ class _FakeApproveToolCallProvider({
   bool isCancellationRequested(String conversationId) => isCancelled;
 
   @override
-  void logToolExecutionError({
-    required String conversationId,
-    required String toolCallId,
-    required String tool,
-    required Object error,
-    required StackTrace stackTrace,
-  }) {}
+  void logToolExecutionError(AgentToolExecutionErrorRequest<String> request) {}
 }
 
 class _FakeSkipToolCallProvider({required final bool shouldSkip})

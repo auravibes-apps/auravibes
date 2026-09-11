@@ -9,7 +9,6 @@ import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -70,9 +69,10 @@ class const ChatMessagesWidget({
         .value;
     final a2uiRuntime = ref.watch(chatA2uiRuntimeProvider(conversationId));
     final _ = useListenable(a2uiRuntime);
-    final isTopLevelConversation = conversation == null
-        ? a2uiRuntime.enabled
-        : conversation.parentConversationId == null;
+    final isTopLevelConversation = _isTopLevelConversation(
+      conversation,
+      a2uiRuntime,
+    );
     final submittedA2uiReplayPayloads = _submittedA2uiReplayPayloads(
       messageEntitiesById?.values ?? const <MessageEntity>[],
       conversationId,
@@ -82,49 +82,13 @@ class const ChatMessagesWidget({
       messageEntitiesById,
     );
     useEffect(
-      () {
-        if (!isTopLevelConversation) return null;
-        var active = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!active) return;
-          a2uiRuntime.enable();
-          final messagesById = messageEntitiesById;
-          if (messagesById == null) return;
-          for (final message in messagesById.values) {
-            final payloads = [
-              ...?message.metadata?.a2uiMessages,
-              ...?submittedA2uiReplayPayloads[message.id],
-            ];
-            final surfaceIssues =
-                message.metadata?.a2uiIssuesBySurface ??
-                const <String, List<String>>{};
-            final messageIssues =
-                message.metadata?.a2uiMessageIssues ?? const <String>[];
-            final diagnosticPayloads =
-                message.metadata?.modelMetadata['a2uiDiagnosticPayloads'];
-            if (payloads.isNotEmpty ||
-                surfaceIssues.isNotEmpty ||
-                messageIssues.isNotEmpty ||
-                diagnosticPayloads is List) {
-              a2uiRuntime.restoreMessage(
-                message.id,
-                payloads,
-                current:
-                    message.id == latestA2uiMessageId &&
-                    message.status == MessageStatus.unfinished,
-                a2uiIssuesBySurface: surfaceIssues,
-                a2uiMessageIssues: messageIssues,
-                diagnosticPayloads: diagnosticPayloads is List
-                    ? diagnosticPayloads.whereType<String>()
-                    : const [],
-              );
-            }
-          }
-        });
-        return () {
-          active = false;
-        };
-      },
+      () => _restoreA2uiEffect(
+        isTopLevelConversation: isTopLevelConversation,
+        runtime: a2uiRuntime,
+        messageEntitiesById: messageEntitiesById,
+        replayPayloadsByMessageId: submittedA2uiReplayPayloads,
+        latestA2uiMessageId: latestA2uiMessageId,
+      ),
       [
         a2uiRuntime,
         conversationId,
@@ -135,22 +99,16 @@ class const ChatMessagesWidget({
         workspaceId,
       ],
     );
-    useEffect(() {
-      if (!isTopLevelConversation) return null;
-      final subscription = a2uiRuntime.actions.listen(
-        (action) => unawaited(
-          _submitA2uiAction(
-            ref,
-            runtime: a2uiRuntime,
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-            action: action,
-          ),
-        ),
-      );
-
-      return () => unawaited(subscription.cancel());
-    }, [a2uiRuntime, conversationId, isTopLevelConversation, workspaceId]);
+    useEffect(
+      () => _listenToA2uiActionsEffect(
+        isTopLevelConversation: isTopLevelConversation,
+        runtime: a2uiRuntime,
+        ref: ref,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+      [a2uiRuntime, conversationId, isTopLevelConversation, workspaceId],
+    );
     final childConversations =
         ref
             .watch(
@@ -175,32 +133,21 @@ class const ChatMessagesWidget({
       reverse: true,
       controller: controller,
       padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) {
-        if (showThinking && index == 0) {
-          return const ChatThinkingIndicator(
-            key: ValueKey('chat_thinking_indicator'),
-          );
-        }
-        if (isCompacting && index == thinkingCount) {
-          return const _CompactingIndicator();
-        }
-
-        final messageIndex = index - thinkingCount - compactionCount;
-        final messageId = data[messageIndex];
-
-        return _ChatMessageRow(
-          key: ValueKey(messageId),
-          messageId: messageId,
-          baseMessage: messageEntitiesById?[messageId],
-          pendingToolCalls: pendingToolCalls,
-          parentConversationId: parentConversationId,
-          childConversations: childConversations,
-          workspaceId: workspaceId,
-          a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
-          a2uiReplayPayloads:
-              submittedA2uiReplayPayloads[messageId] ?? const [],
-        );
-      },
+      itemBuilder: (context, index) => _buildChatMessageItem(
+        index: index,
+        data: data,
+        showThinking: showThinking,
+        isCompacting: isCompacting,
+        thinkingCount: thinkingCount,
+        compactionCount: compactionCount,
+        messageEntitiesById: messageEntitiesById,
+        pendingToolCalls: pendingToolCalls,
+        parentConversationId: parentConversationId,
+        childConversations: childConversations,
+        workspaceId: workspaceId,
+        a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
+        replayPayloadsByMessageId: submittedA2uiReplayPayloads,
+      ),
       separatorBuilder: (context, index) => const AuraSizedBox(height: .md),
       itemCount: itemCount,
       addAutomaticKeepAlives: false,
@@ -208,6 +155,159 @@ class const ChatMessagesWidget({
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
     );
   }
+}
+
+bool _isTopLevelConversation(
+  ConversationEntity? conversation,
+  ChatA2uiRuntime runtime,
+) => conversation == null
+    ? runtime.enabled
+    : conversation.parentConversationId == null;
+
+void Function()? _restoreA2uiEffect({
+  required bool isTopLevelConversation,
+  required ChatA2uiRuntime runtime,
+  required Map<String, MessageEntity>? messageEntitiesById,
+  required Map<String, List<String>> replayPayloadsByMessageId,
+  required String? latestA2uiMessageId,
+}) {
+  if (!isTopLevelConversation) return null;
+  var active = true;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!active) return;
+    _restoreA2uiMessages(
+      runtime: runtime,
+      messageEntitiesById: messageEntitiesById,
+      replayPayloadsByMessageId: replayPayloadsByMessageId,
+      latestA2uiMessageId: latestA2uiMessageId,
+    );
+  });
+  return () {
+    active = false;
+  };
+}
+
+void _restoreA2uiMessages({
+  required ChatA2uiRuntime runtime,
+  required Map<String, MessageEntity>? messageEntitiesById,
+  required Map<String, List<String>> replayPayloadsByMessageId,
+  required String? latestA2uiMessageId,
+}) {
+  runtime.enable();
+  if (messageEntitiesById == null) return;
+  for (final message in messageEntitiesById.values) {
+    _restoreA2uiMessage(
+      runtime: runtime,
+      message: message,
+      replayPayloads: replayPayloadsByMessageId[message.id] ?? const [],
+      isLatestUnfinished:
+          message.id == latestA2uiMessageId &&
+          message.status == MessageStatus.unfinished,
+    );
+  }
+}
+
+void _restoreA2uiMessage({
+  required ChatA2uiRuntime runtime,
+  required MessageEntity message,
+  required List<String> replayPayloads,
+  required bool isLatestUnfinished,
+}) {
+  final metadata = message.metadata;
+  final payloads = [...?metadata?.a2uiMessages, ...replayPayloads];
+  final surfaceIssues =
+      metadata?.a2uiIssuesBySurface ?? const <String, List<String>>{};
+  final messageIssues = metadata?.a2uiMessageIssues ?? const <String>[];
+  final diagnosticPayloads = metadata?.modelMetadata['a2uiDiagnosticPayloads'];
+  if (!_hasA2uiState(
+    payloads,
+    surfaceIssues,
+    messageIssues,
+    diagnosticPayloads,
+  )) {
+    return;
+  }
+  runtime.restoreMessage(
+    message.id,
+    payloads,
+    current: isLatestUnfinished,
+    a2uiIssuesBySurface: surfaceIssues,
+    a2uiMessageIssues: messageIssues,
+    diagnosticPayloads: diagnosticPayloads is List
+        ? diagnosticPayloads.whereType<String>()
+        : const [],
+  );
+}
+
+bool _hasA2uiState(
+  List<String> payloads,
+  Map<String, List<String>> surfaceIssues,
+  List<String> messageIssues,
+  Object? diagnosticPayloads,
+) =>
+    payloads.isNotEmpty ||
+    surfaceIssues.isNotEmpty ||
+    messageIssues.isNotEmpty ||
+    diagnosticPayloads is List;
+
+void Function()? _listenToA2uiActionsEffect({
+  required bool isTopLevelConversation,
+  required ChatA2uiRuntime runtime,
+  required WidgetRef ref,
+  required String workspaceId,
+  required String conversationId,
+}) {
+  if (!isTopLevelConversation) return null;
+  final subscription = runtime.actions.listen(
+    (action) => unawaited(
+      _submitA2uiAction(
+        ref,
+        runtime: runtime,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        action: action,
+      ),
+    ),
+  );
+  return () => unawaited(subscription.cancel());
+}
+
+Widget _buildChatMessageItem({
+  required int index,
+  required List<String> data,
+  required bool showThinking,
+  required bool isCompacting,
+  required int thinkingCount,
+  required int compactionCount,
+  required Map<String, MessageEntity>? messageEntitiesById,
+  required List<PendingToolCall> pendingToolCalls,
+  required String parentConversationId,
+  required List<ConversationEntity> childConversations,
+  required String workspaceId,
+  required ChatA2uiRuntime? a2uiRuntime,
+  required Map<String, List<String>> replayPayloadsByMessageId,
+}) {
+  if (showThinking && index == 0) {
+    return const ChatThinkingIndicator(
+      key: ValueKey('chat_thinking_indicator'),
+    );
+  }
+  if (isCompacting && index == thinkingCount) {
+    return const _CompactingIndicator();
+  }
+
+  final messageId = data[index - thinkingCount - compactionCount];
+  return _ChatMessageRow(
+    key: ValueKey(messageId),
+    messageId: messageId,
+    baseMessage: messageEntitiesById?[messageId],
+    pendingToolCalls: pendingToolCalls,
+    parentConversationId: parentConversationId,
+    childConversations: childConversations,
+    workspaceId: workspaceId,
+    a2uiRuntime: a2uiRuntime,
+    a2uiReplayPayloads: replayPayloadsByMessageId[messageId] ?? const [],
+  );
 }
 
 class const _ChatMessageRow({
@@ -227,111 +327,57 @@ class const _ChatMessageRow({
       messagesStreamingProvider.select((state) => state[messageId]?.lastResult),
     );
     final persistedMessage = ref.watch(
-      messageConversationByIdProvider(
-        workspaceId,
-        parentConversationId,
-        messageId,
-      ),
+      messageConversationByIdProvider((
+        workspaceId: workspaceId,
+        conversationId: parentConversationId,
+        messageId: messageId,
+      )),
     );
     final sourceMessage = persistedMessage ?? baseMessage;
-    final message = sourceMessage == null
-        ? null
-        : _mergeStreamingResult(sourceMessage, streamingResult);
+    final message = _mergeMessage(sourceMessage, streamingResult);
     if (message == null) {
       return const SizedBox.shrink();
     }
 
     final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
 
-    final isCompactionSummary = message.metadata?.isCompactionSummary == true;
-    final isErrorSystemMessage =
-        !message.isUser &&
-        message.messageType == MessageType.system &&
-        message.status == MessageStatus.error;
-
-    if (isCompactionSummary) {
+    if (message.metadata?.isCompactionSummary == true) {
       return _CompactedMessageWidget(
         message: message,
         key: ValueKey(message.id),
       );
     }
 
-    if (isErrorSystemMessage) {
+    if (_isErrorSystemMessage(message)) {
       return _ErrorMessageWidget(
         content: message.content,
         key: ValueKey(message.id),
       );
     }
 
-    final visibleToolCalls =
-        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
-    final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
-    final hasContent = message.content.trim().isNotEmpty;
-    final hasAttachments = message.attachments.isNotEmpty;
-    final thinking = message.metadata?.thinking?.trim();
-    final hasThinking = thinking != null && thinking.isNotEmpty;
-    final visibleThinking = hasThinking && !isStreaming;
-    final currentA2uiRuntime = a2uiRuntime;
-    final showTextBubble =
-        hasContent ||
-        visibleThinking ||
-        (!hasVisibleToolCalls && !hasAttachments && !isStreaming);
-    final isAwaitingA2uiAction =
-        !isStreaming &&
-        message.status == MessageStatus.unfinished &&
-        (message.metadata?.modelMetadata['a2uiRequiresUserAction'] == true ||
-            message.metadata?.a2uiMessages.isNotEmpty == true);
-    final status = isAwaitingA2uiAction
-        ? AuraMessageDeliveryStatus.sent
-        : _mapMessageStatus(message.status, isStreaming);
-
-    return AnimatedSize(
-      child: AuraColumn(
-        children: [
-          if (showTextBubble)
-            _MessageTextContent(
-              message: message,
-              thinking: thinking,
-              hasContent: hasContent,
-              hasThinking: visibleThinking,
-              isStreaming: isStreaming,
-              status: status,
-            ),
-          if (hasAttachments) _MessageAttachments(message: message),
-          if (!message.isUser && currentA2uiRuntime != null)
-            ChatA2uiSurfaceHost.message(
-              key: ValueKey('a2ui_${message.id}'),
-              runtime: currentA2uiRuntime,
-              messageId: message.id,
-              payloads: [
-                ...?message.metadata?.a2uiMessages,
-                ...a2uiReplayPayloads,
-              ],
-              issuesBySurface:
-                  message.metadata?.a2uiIssuesBySurface ?? const {},
-              messageIssues: message.metadata?.a2uiMessageIssues ?? const [],
-            ),
-          for (final toolCall in visibleToolCalls)
-            _ToolCallWidget(
-              toolCall: toolCall,
-              messageId: message.id,
-              parentConversationId: parentConversationId,
-              childConversations: childConversations,
-              workspaceId: workspaceId,
-              isAwaitingApproval: pendingToolCalls.any(
-                (pending) =>
-                    pending.messageId == message.id &&
-                    pending.toolCall.id == toolCall.id,
-              ),
-              key: ValueKey('tool_${toolCall.id}'),
-            ),
-        ],
-        crossAxisAlignment: CrossAxisAlignment.start,
-      ),
-      alignment: Alignment.topLeft,
-      duration: const Duration(microseconds: 200),
+    return _ChatMessageContent(
+      message: message,
+      isStreaming: isStreaming,
+      pendingToolCalls: pendingToolCalls,
+      parentConversationId: parentConversationId,
+      childConversations: childConversations,
+      workspaceId: workspaceId,
+      a2uiRuntime: a2uiRuntime,
+      a2uiReplayPayloads: a2uiReplayPayloads,
     );
   }
+
+  MessageEntity? _mergeMessage(
+    MessageEntity? sourceMessage,
+    ChatResult<ChatMessage>? streamingResult,
+  ) => sourceMessage == null
+      ? null
+      : _mergeStreamingResult(sourceMessage, streamingResult);
+
+  bool _isErrorSystemMessage(MessageEntity message) =>
+      !message.isUser &&
+      message.messageType == MessageType.system &&
+      message.status == MessageStatus.error;
 
   MessageEntity _mergeStreamingResult(
     MessageEntity message,
@@ -347,22 +393,159 @@ class const _ChatMessageRow({
       ),
     );
   }
+}
 
-  AuraMessageDeliveryStatus _mapMessageStatus(
-    MessageStatus status,
-    bool isStreaming,
-  ) {
-    return switch (status) {
-      MessageStatus.sending => AuraMessageDeliveryStatus.sending,
-      MessageStatus.unfinished =>
-        isStreaming
-            ? AuraMessageDeliveryStatus.sending
-            : AuraMessageDeliveryStatus.unfinished,
-      MessageStatus.sent => AuraMessageDeliveryStatus.sent,
-      MessageStatus.error => AuraMessageDeliveryStatus.error,
-    };
+class const _ChatMessageContent({
+  required final MessageEntity message,
+  required final bool isStreaming,
+  required final List<PendingToolCall> pendingToolCalls,
+  required final String parentConversationId,
+  required final List<ConversationEntity> childConversations,
+  required final String workspaceId,
+  required final ChatA2uiRuntime? a2uiRuntime,
+  required final List<String> a2uiReplayPayloads,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final visibleToolCalls =
+        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
+    final thinking = message.metadata?.thinking?.trim();
+    final hasContent = message.content.trim().isNotEmpty;
+    final hasThinking = thinking != null && thinking.isNotEmpty;
+    final showTextBubble = _showTextBubble(
+      message: message,
+      isStreaming: isStreaming,
+      hasContent: hasContent,
+      hasThinking: hasThinking,
+      visibleToolCalls: visibleToolCalls,
+    );
+    final visibleThinking = hasThinking && !isStreaming;
+    final status = _messageDeliveryStatus(message, isStreaming);
+
+    return AnimatedSize(
+      child: AuraColumn(
+        children: _messageContentChildren(
+          message: message,
+          thinking: thinking,
+          hasContent: hasContent,
+          hasThinking: visibleThinking,
+          isStreaming: isStreaming,
+          showTextBubble: showTextBubble,
+          visibleToolCalls: visibleToolCalls,
+          status: status,
+          pendingToolCalls: pendingToolCalls,
+          parentConversationId: parentConversationId,
+          childConversations: childConversations,
+          workspaceId: workspaceId,
+          a2uiRuntime: a2uiRuntime,
+          a2uiReplayPayloads: a2uiReplayPayloads,
+        ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+      alignment: Alignment.topLeft,
+      duration: const Duration(microseconds: 200),
+    );
   }
 }
+
+bool _showTextBubble({
+  required MessageEntity message,
+  required bool isStreaming,
+  required bool hasContent,
+  required bool hasThinking,
+  required List<MessageToolCallEntity> visibleToolCalls,
+}) =>
+    hasContent ||
+    hasThinking && !isStreaming ||
+    (visibleToolCalls.isEmpty && message.attachments.isEmpty && !isStreaming);
+
+AuraMessageDeliveryStatus _messageDeliveryStatus(
+  MessageEntity message,
+  bool isStreaming,
+) {
+  final metadata = message.metadata;
+  final isAwaitingA2uiAction =
+      !isStreaming &&
+      message.status == MessageStatus.unfinished &&
+      (metadata?.modelMetadata['a2uiRequiresUserAction'] == true ||
+          metadata?.a2uiMessages.isNotEmpty == true);
+  return isAwaitingA2uiAction
+      ? AuraMessageDeliveryStatus.sent
+      : _mapMessageStatus(message.status, isStreaming);
+}
+
+List<Widget> _messageContentChildren({
+  required MessageEntity message,
+  required String? thinking,
+  required bool hasContent,
+  required bool hasThinking,
+  required bool isStreaming,
+  required bool showTextBubble,
+  required List<MessageToolCallEntity> visibleToolCalls,
+  required AuraMessageDeliveryStatus status,
+  required List<PendingToolCall> pendingToolCalls,
+  required String parentConversationId,
+  required List<ConversationEntity> childConversations,
+  required String workspaceId,
+  required ChatA2uiRuntime? a2uiRuntime,
+  required List<String> a2uiReplayPayloads,
+}) => [
+  if (showTextBubble)
+    _MessageTextContent(
+      message: message,
+      thinking: thinking,
+      hasContent: hasContent,
+      hasThinking: hasThinking,
+      isStreaming: isStreaming,
+      status: status,
+    ),
+  if (message.attachments.isNotEmpty) _MessageAttachments(message: message),
+  if (!message.isUser && a2uiRuntime != null)
+    ChatA2uiSurfaceHost.message(
+      key: ValueKey('a2ui_${message.id}'),
+      runtime: a2uiRuntime,
+      messageId: message.id,
+      payloads: [...?message.metadata?.a2uiMessages, ...a2uiReplayPayloads],
+      issuesBySurface: message.metadata?.a2uiIssuesBySurface ?? const {},
+      messageIssues: message.metadata?.a2uiMessageIssues ?? const [],
+    ),
+  for (final toolCall in visibleToolCalls)
+    _ToolCallWidget(
+      toolCall: toolCall,
+      messageId: message.id,
+      parentConversationId: parentConversationId,
+      childConversations: childConversations,
+      workspaceId: workspaceId,
+      isAwaitingApproval: _isAwaitingApproval(
+        pendingToolCalls,
+        message,
+        toolCall,
+      ),
+      key: ValueKey('tool_${toolCall.id}'),
+    ),
+];
+
+bool _isAwaitingApproval(
+  List<PendingToolCall> pendingToolCalls,
+  MessageEntity message,
+  MessageToolCallEntity toolCall,
+) => pendingToolCalls.any(
+  (pending) =>
+      pending.messageId == message.id && pending.toolCall.id == toolCall.id,
+);
+
+AuraMessageDeliveryStatus _mapMessageStatus(
+  MessageStatus status,
+  bool isStreaming,
+) => switch (status) {
+  MessageStatus.sending => AuraMessageDeliveryStatus.sending,
+  MessageStatus.unfinished =>
+    isStreaming
+        ? AuraMessageDeliveryStatus.sending
+        : AuraMessageDeliveryStatus.unfinished,
+  MessageStatus.sent => AuraMessageDeliveryStatus.sent,
+  MessageStatus.error => AuraMessageDeliveryStatus.error,
+};
 
 Map<String, List<String>> _submittedA2uiReplayPayloads(
   Iterable<MessageEntity> messages,
@@ -392,22 +575,34 @@ String? _latestA2uiMessageId(
   Map<String, MessageEntity>? messages,
 ) {
   if (messages == null) return null;
+  final latestUserIndex = _latestUserMessageIndex(messageIds, messages);
+  for (var index = messageIds.length - 1; index > latestUserIndex; index--) {
+    final id = messageIds[index];
+    final message = messages[id];
+    if (_hasA2uiMessageState(message)) return id;
+  }
+
+  return null;
+}
+
+int _latestUserMessageIndex(
+  List<String> messageIds,
+  Map<String, MessageEntity> messages,
+) {
   var latestUserIndex = -1;
   for (var index = 0; index < messageIds.length; index++) {
     if (messages[messageIds[index]]?.isUser == true) latestUserIndex = index;
   }
-  for (var index = messageIds.length - 1; index > latestUserIndex; index--) {
-    final id = messageIds[index];
-    final message = messages[id];
-    if (message == null || message.isUser) continue;
-    if (message.metadata?.a2uiMessages.isNotEmpty == true ||
-        message.metadata?.a2uiIssuesBySurface.isNotEmpty == true ||
-        message.metadata?.a2uiMessageIssues.isNotEmpty == true) {
-      return id;
-    }
-  }
+  return latestUserIndex;
+}
 
-  return null;
+bool _hasA2uiMessageState(MessageEntity? message) {
+  if (message == null || message.isUser) return false;
+  final metadata = message.metadata;
+  if (metadata == null) return false;
+  return metadata.a2uiMessages.isNotEmpty ||
+      metadata.a2uiIssuesBySurface.isNotEmpty ||
+      metadata.a2uiMessageIssues.isNotEmpty;
 }
 
 class const _MessageAttachments({required final MessageEntity message})

@@ -7,16 +7,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'add_model_provider_model.freezed.dart';
 
-bool _isLoopbackHost(String host) {
-  final normalizedHost = host.toLowerCase();
-
-  return switch (normalizedHost) {
-    'localhost' || '127.0.0.1' || '::1' => true,
-    _ when normalizedHost.endsWith('.localhost') => true,
-    _ => false,
-  };
-}
-
 @Freezed(toStringOverride: false)
 abstract class const AddModelProviderModel._() with _$AddModelProviderModel {
   const factory({
@@ -26,6 +16,18 @@ abstract class const AddModelProviderModel._() with _$AddModelProviderModel {
     String? url,
     @Default(ModelProviderAuthMode.apiKey) ModelProviderAuthMode authMode,
   }) = _AddModelProviderModel;
+
+  bool isValid() {
+    final keyError = authMode == ModelProviderAuthMode.apiKey
+        ? validateKey()
+        : null;
+
+    return (keyError ?? validateName() ?? validateModelId() ?? validateUrl()) ==
+        null;
+  }
+}
+
+extension AddModelProviderModelValidation on AddModelProviderModel {
   String? validateName() {
     final name = this.name;
     if (name == null || name.trim().isEmpty) {
@@ -54,6 +56,15 @@ abstract class const AddModelProviderModel._() with _$AddModelProviderModel {
     return null;
   }
 
+  bool isValid() {
+    final keyError = authMode == ModelProviderAuthMode.apiKey
+        ? validateKey()
+        : null;
+
+    return (keyError ?? validateName() ?? validateModelId() ?? validateUrl()) ==
+        null;
+  }
+
   String? validateModelId() {
     final modelId = this.modelId;
     if (modelId == null) {
@@ -65,34 +76,48 @@ abstract class const AddModelProviderModel._() with _$AddModelProviderModel {
 
   String? validateUrl() {
     final url = this.url;
-    if (url == null || url.trim().isEmpty) {
-      return null; // URL is optional.
+    if (url == null || url.trim().isEmpty) return null;
+
+    final uri = url.trim()._parseUrl();
+    if (uri == null) return 'Please enter a valid URL';
+
+    return _validateParsedUrl(uri);
+  }
+
+  String? _validateParsedUrl(Uri uri) {
+    if (!uri._hasHttpScheme) {
+      return 'URL must start with http:// or https://';
     }
-    final trimmedUrl = url.trim();
-    try {
-      final uri = Uri.parse(trimmedUrl);
-      if (!uri.hasScheme || (uri.scheme != 'http' && uri.scheme != 'https')) {
-        return 'URL must start with http:// or https://';
-      }
-
-      if (uri.host.isEmpty) return 'Please enter a valid URL';
-
-      if (uri.scheme == 'http' && !_isLoopbackHost(uri.host)) {
-        return 'Remote URLs must use https://';
-      }
-    } on FormatException {
-      return 'Please enter a valid URL';
+    if (uri.host.isEmpty) return 'Please enter a valid URL';
+    if (uri.scheme == 'http' && !uri.host._isLoopbackHost) {
+      return 'Remote URLs must use https://';
     }
 
     return null;
   }
+}
 
-  bool isValid() {
-    final keyError = authMode == ModelProviderAuthMode.apiKey
-        ? validateKey()
-        : null;
-
-    return (keyError ?? validateName() ?? validateModelId() ?? validateUrl()) ==
-        null;
+extension on String {
+  Uri? _parseUrl() {
+    try {
+      return Uri.parse(this);
+    } on FormatException {
+      return null;
+    }
   }
+
+  bool get _isLoopbackHost {
+    final normalizedHost = toLowerCase();
+
+    return switch (normalizedHost) {
+      'localhost' || '127.0.0.1' || '::1' => true,
+      _ when normalizedHost.endsWith('.localhost') => true,
+      _ => false,
+    };
+  }
+}
+
+extension on Uri {
+  bool get _hasHttpScheme =>
+      hasScheme && (scheme == 'http' || scheme == 'https');
 }

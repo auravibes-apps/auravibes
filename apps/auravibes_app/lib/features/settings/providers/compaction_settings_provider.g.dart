@@ -67,7 +67,7 @@ final class CompactionSettingsProvider
 }
 
 String _$compactionSettingsHash() =>
-    r'8b1527d5adc7f789152ff6338b6ed9b80395b141';
+    r'86d42d4026f9b1409008ec1831ba492bc053baf9';
 
 final class CompactionSettingsFamily extends $Family
     with $FunctionalFamilyOverride<Stream<CompactionSettings>, String> {

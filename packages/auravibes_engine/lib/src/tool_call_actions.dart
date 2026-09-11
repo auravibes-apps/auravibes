@@ -46,13 +46,7 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
 
   bool isCancellationRequested(String conversationId);
 
-  void logToolExecutionError({
-    required String conversationId,
-    required String toolCallId,
-    required TTool tool,
-    required Object error,
-    required StackTrace stackTrace,
-  });
+  void logToolExecutionError(AgentToolExecutionErrorRequest<TTool> request);
 }
 
 abstract interface class SkipToolCallProvider {

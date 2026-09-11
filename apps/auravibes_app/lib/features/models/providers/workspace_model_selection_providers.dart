@@ -1,5 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/models/models/model_connection_store.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/services/codex_input_modalities.dart';
@@ -15,40 +17,78 @@ workspaceModelSelectionById(
   String workspaceId,
   String workspaceModelSelectionId,
 ) async {
-  final workspaceModelSelectionRepository = await ref.watch(
-    modelSelectionStoreProvider(workspaceId).future,
-  );
-  final modelCatalogStore = await ref.watch(
-    modelCatalogStoreProvider(workspaceId).future,
-  );
-
-  final selectedModel = await workspaceModelSelectionRepository.getById(
+  final stores = await _modelSelectionStores(ref, workspaceId);
+  final selectedModel = await stores.selections.getById(
     workspaceModelSelectionId,
   );
-  if (selectedModel == null ||
-      !ModelProviderOAuthProfiles.isCodexProvider(
-        selectedModel.modelConnection.modelId,
-      )) {
-    return selectedModel;
+
+  return await _resolveSelectedModel(selectedModel, stores.catalog);
+}
+
+Future<({ModelSelectionStore selections, ModelCatalogStore catalog})>
+_modelSelectionStores(Ref ref, String workspaceId) async => (
+  selections: await ref.watch(modelSelectionStoreProvider(workspaceId).future),
+  catalog: await ref.watch(modelCatalogStoreProvider(workspaceId).future),
+);
+
+bool _isCodexSelection(WorkspaceModelSelectionWithConnectionEntity selection) =>
+    ModelProviderOAuthProfiles.isCodexProvider(
+      selection.modelConnection.modelId,
+    );
+
+Future<WorkspaceModelSelectionWithConnectionEntity?> _resolveSelectedModel(
+  WorkspaceModelSelectionWithConnectionEntity? selectedModel,
+  ModelCatalogStore catalog,
+) {
+  if (selectedModel == null || !_isCodexSelection(selectedModel)) {
+    return Future.value(selectedModel);
   }
 
-  final openAIModel = await modelCatalogStore.getModelByProviderAndModelId(
-    'openai',
-    selectedModel.workspaceModelSelection.modelId,
-  );
-  if (openAIModel == null || !openAIModel.isCodexRuntimeModel) {
-    return selectedModel;
+  return WorkspaceModelSelectionProviders.resolve(selectedModel, catalog);
+}
+
+class WorkspaceModelSelectionProviders {
+  static Future<WorkspaceModelSelectionWithConnectionEntity> resolve(
+    WorkspaceModelSelectionWithConnectionEntity selectedModel,
+    ModelCatalogStore modelCatalogStore,
+  ) async {
+    final modelId = selectedModel.workspaceModelSelection.modelId;
+    final openAIModel = await _codexRuntimeModel(modelCatalogStore, modelId);
+
+    return _resolveRuntimeModel(selectedModel, openAIModel);
   }
 
-  return selectedModel.copyWith(
-    workspaceModelSelection: selectedModel.workspaceModelSelection.copyWith(
-      modelName: openAIModel.name,
-      modalitiesInput: CodexInputModalities.forModel(openAIModel),
-      modalitiesOutput: openAIModel.modalitiesOutput,
-      supportsReasoning: openAIModel.supportsReasoning,
-      supportsToolCalls: openAIModel.supportsToolCalls,
-    ),
+  static WorkspaceModelSelectionWithConnectionEntity _resolveRuntimeModel(
+    WorkspaceModelSelectionWithConnectionEntity selectedModel,
+    ApiModelEntity? openAIModel,
+  ) {
+    if (openAIModel == null || !openAIModel.isCodexRuntimeModel) {
+      return selectedModel;
+    }
+
+    return selectedModel.copyWith(
+      workspaceModelSelection: _withRuntimeModel(
+        selectedModel.workspaceModelSelection,
+        openAIModel,
+      ),
+    );
+  }
+
+  static WorkspaceModelSelectionEntity _withRuntimeModel(
+    WorkspaceModelSelectionEntity selection,
+    ApiModelEntity model,
+  ) => selection.copyWith(
+    modelName: model.name,
+    modalitiesInput: CodexInputModalities.forModel(model),
+    modalitiesOutput: model.modalitiesOutput,
+    supportsReasoning: model.supportsReasoning,
+    supportsToolCalls: model.supportsToolCalls,
   );
+
+  static Future<ApiModelEntity?> _codexRuntimeModel(
+    ModelCatalogStore modelCatalogStore,
+    String modelId,
+  ) => modelCatalogStore.getModelByProviderAndModelId('openai', modelId);
 }
 
 @riverpod
@@ -64,14 +104,22 @@ Future<int?> modelContextLimit(
       workspaceModelSelectionId,
     ).future,
   );
-  final modelId = selectedModel?.workspaceModelSelection.modelId;
-  final providerId = selectedModel?.modelsProvider.id;
-  if (modelId == null || providerId == null) return null;
+  final selection = selectedModel;
+  if (selection == null) return null;
+
+  return await _modelContextLimit(ref, workspaceId, selection);
+}
+
+Future<int?> _modelContextLimit(
+  Ref ref,
+  String workspaceId,
+  WorkspaceModelSelectionWithConnectionEntity selection,
+) async {
   final value = await ref.watch(
     getModelByProviderAndModelIdProvider(
       workspaceId: workspaceId,
-      providerId: providerId,
-      modelId: modelId,
+      providerId: selection.modelsProvider.id,
+      modelId: selection.workspaceModelSelection.modelId,
     ).future,
   );
 

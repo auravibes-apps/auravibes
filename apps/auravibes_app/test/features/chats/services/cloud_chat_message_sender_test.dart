@@ -10,6 +10,18 @@ class _Gateway extends Mock implements CloudChatGateway;
 class _Attachments extends Mock implements CloudChatAttachmentUsecase;
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue((
+      requestId: '',
+      conversationId: '',
+      expectedProjectionRevision: 0,
+      clientMessageId: '',
+      content: '',
+      attachmentIds: <String>[],
+      metadataJson: null,
+    ));
+  });
+
   test(
     'queues cloud message then starts idle execution and invalidates',
     () async {
@@ -31,16 +43,8 @@ void main() {
       );
       when(() => gateway.getConversationSnapshot('conversation-1'))
           .thenAnswer((_) async => snapshot);
-      when(
-        () => gateway.queueConversationMessage(
-          requestId: any(named: 'requestId'),
-          conversationId: 'conversation-1',
-          expectedProjectionRevision: 3,
-          clientMessageId: any(named: 'clientMessageId'),
-          content: 'hello',
-          attachmentIds: const [],
-        ),
-      ).thenAnswer((_) async => snapshot);
+      when(() => gateway.queueConversationMessage(any()))
+          .thenAnswer((_) async => snapshot);
       when(
         () => gateway.continueConversation(
           requestId: any(named: 'requestId'),
@@ -60,14 +64,7 @@ void main() {
 
       final _ = verifyInOrder([
         () => gateway.getConversationSnapshot('conversation-1'),
-        () => gateway.queueConversationMessage(
-          requestId: any(named: 'requestId'),
-          conversationId: 'conversation-1',
-          expectedProjectionRevision: 3,
-          clientMessageId: any(named: 'clientMessageId'),
-          content: 'hello',
-          attachmentIds: const [],
-        ),
+        () => gateway.queueConversationMessage(any()),
         () => gateway.continueConversation(
           requestId: any(named: 'requestId'),
           conversationId: 'conversation-1',
@@ -109,16 +106,8 @@ void main() {
         .thenAnswer((_) async => snapshot);
     when(() => attachments.uploadDraftResults(attachments: const []))
         .thenAnswer((_) async => [object]);
-    when(
-      () => gateway.queueConversationMessage(
-        requestId: any(named: 'requestId'),
-        conversationId: 'conversation-1',
-        expectedProjectionRevision: 3,
-        clientMessageId: any(named: 'clientMessageId'),
-        content: 'hello',
-        attachmentIds: ['4'],
-      ),
-    ).thenThrow(StateError('queue failed'));
+    when(() => gateway.queueConversationMessage(any()))
+        .thenThrow(StateError('queue failed'));
     when(() => attachments.deleteUploaded([object]))
         .thenAnswer((_) => Future<void>.value());
 

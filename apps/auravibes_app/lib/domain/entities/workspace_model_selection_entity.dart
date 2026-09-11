@@ -4,7 +4,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'workspace_model_selection_entity.freezed.dart';
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class WorkspaceModelSelectionEntity
     with _$WorkspaceModelSelectionEntity {
   const factory({
@@ -21,7 +24,10 @@ abstract class WorkspaceModelSelectionEntity
   }) = _WorkspaceModelSelectionEntity;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class WorkspaceModelSelectionWithConnectionEntity
     with _$WorkspaceModelSelectionWithConnectionEntity {
   const factory({
@@ -31,14 +37,20 @@ abstract class WorkspaceModelSelectionWithConnectionEntity
   }) = _WorkspaceModelSelectionWithConnectionEntity;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class WorkspaceModelSelectionFilter
     with _$WorkspaceModelSelectionFilter {
   const factory({@Default([]) List<String> workspaces}) =
       _WorkspaceModelSelectionFilter;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class WorkspaceModelSelectionToCreate
     with _$WorkspaceModelSelectionToCreate {
   const factory({required String modelId, required String modelConnectionId}) =

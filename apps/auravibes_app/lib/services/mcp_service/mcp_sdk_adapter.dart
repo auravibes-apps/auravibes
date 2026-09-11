@@ -9,63 +9,51 @@ abstract final class McpSdkAdapter {
   );
 
   static McpContent _contentFromSdk(mcp.Content content) => switch (content) {
-    mcp.TextContent(:final text, :final annotations) => McpTextContent(
-      text,
-      annotations: annotations,
-    ),
-    mcp.ImageContent(
-      :final mimeType,
-      :final data,
-      :final url,
-      :final annotations,
-    ) =>
-      McpBinaryContent(
-        type: 'image',
-        mimeType: mimeType,
-        data: data,
-        url: url,
-        annotations: annotations,
-      ),
-    mcp.AudioContent(:final mimeType, :final data, :final annotations) =>
-      McpBinaryContent(
-        type: 'audio',
-        mimeType: mimeType,
-        data: data,
-        annotations: annotations,
-      ),
-    mcp.ResourceContent(
-      :final uri,
-      :final text,
-      :final blob,
-      :final mimeType,
-      :final annotations,
-    ) =>
-      McpResourceContent(
-        uri: uri,
-        text: text,
-        blob: blob,
-        mimeType: mimeType,
-        annotations: annotations,
-      ),
-    mcp.ResourceLinkContent(
-      :final uri,
-      :final name,
-      :final description,
-      :final mimeType,
-      :final annotations,
-      :final meta,
-    ) =>
-      McpResourceContent(
-        uri: uri,
-        mimeType: mimeType,
-        name: name,
-        description: description,
-        isLink: true,
-        annotations: annotations,
-        meta: meta,
-      ),
+    final mcp.TextContent value => _textContent(value),
+    final mcp.ImageContent value => _imageContent(value),
+    final mcp.AudioContent value => _audioContent(value),
+    final mcp.ResourceContent value => _resourceContent(value),
+    final mcp.ResourceLinkContent value => _resourceLinkContent(value),
     _ => throw UnsupportedError(
       'Unsupported MCP content: ${content.runtimeType}',
     ),
   };
 }
+
+McpTextContent _textContent(mcp.TextContent content) =>
+    McpTextContent(content.text, annotations: content.annotations);
+
+McpBinaryContent _imageContent(mcp.ImageContent content) => McpBinaryContent(
+  type: 'image',
+  mimeType: content.mimeType,
+  data: content.data,
+  url: content.url,
+  annotations: content.annotations,
+);
+
+McpBinaryContent _audioContent(mcp.AudioContent content) => McpBinaryContent(
+  type: 'audio',
+  mimeType: content.mimeType,
+  data: content.data,
+  annotations: content.annotations,
+);
+
+McpResourceContent _resourceContent(mcp.ResourceContent content) =>
+    McpResourceContent(
+      uri: content.uri,
+      text: content.text,
+      blob: content.blob,
+      mimeType: content.mimeType,
+      annotations: content.annotations,
+    );
+
+McpResourceContent _resourceLinkContent(mcp.ResourceLinkContent content) =>
+    McpResourceContent(
+      uri: content.uri,
+      mimeType: content.mimeType,
+      name: content.name,
+      description: content.description,
+      isLink: true,
+      annotations: content.annotations,
+      meta: content.meta,
+    );

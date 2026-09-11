@@ -8,17 +8,11 @@ class const SyncApiModelsUseCase({
 }) {
   Future<void> call() async {
     final apiResponse = await apiService.fetchAllModels();
-
-    final apiProviderEntities = apiResponse.providers
-        .map((e) => e.modelProvider)
-        .toList();
-    final apiModelEntities = apiResponse.providers
-        .map((e) => e.models)
-        .flattenedToList;
-
     await repository.replaceAllData(
-      providers: apiProviderEntities,
-      models: apiModelEntities,
+      providers: apiResponse.providers
+          .map((item) => item.modelProvider)
+          .toList(),
+      models: apiResponse.providers.map((item) => item.models).flattenedToList,
     );
   }
 }

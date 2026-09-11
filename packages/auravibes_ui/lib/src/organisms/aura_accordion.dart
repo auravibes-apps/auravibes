@@ -35,70 +35,148 @@ class _AuraAccordionState extends State<AuraAccordion> {
 
   @override
   Widget build(BuildContext context) {
-    final navigable = AuraInteractionScope.of(context).allowsNavigation;
-
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: widget.items.indexed
-          .map((entry) {
-            final (index, item) = entry;
-            final isExpanded = _expanded.contains(index);
-
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(bottom: .new(color: context.auraColors.outline)),
-              ),
-              child: Column(
-                crossAxisAlignment: .stretch,
-                children: [
-                  Semantics(
-                    child: InkWell(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: context.auraTheme.spacing.sm,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: AuraText(
-                                child: Text(item.title),
-                                style: .bodyLarge,
-                              ),
-                            ),
-                            Icon(
-                              isExpanded
-                                  ? Icons.expand_less
-                                  : Icons.expand_more,
-                            ),
-                          ],
-                        ),
-                      ),
-                      onTap: navigable
-                          ? () => setState(() {
-                              if (isExpanded) {
-                                if (!_expanded.remove(index)) return;
-                              } else if (!_expanded.add(index)) {
-                                return;
-                              }
-                            })
-                          : null,
-                    ),
-                    enabled: navigable,
-                    button: true,
-                    expanded: isExpanded,
-                  ),
-                  if (isExpanded)
-                    Padding(
-                      padding: EdgeInsets.only(
-                        bottom: context.auraTheme.spacing.md,
-                      ),
-                      child: item.child,
-                    ),
-                ],
-              ),
-            );
-          })
-          .toList(growable: false),
+    return _AuraAccordionList(
+      items: widget.items,
+      expanded: _expanded,
+      navigable: AuraInteractionScope.of(context).allowsNavigation,
+      onToggle: _toggle,
     );
   }
+
+  void _toggle(int index) => setState(() => _toggleExpanded(index));
+
+  void _toggleExpanded(int index) {
+    if (_expanded.remove(index)) return;
+
+    if (!_expanded.add(index)) return;
+  }
+}
+
+class const _AuraAccordionList({
+  required final List<AuraAccordionItem> items,
+  required final Set<int> expanded,
+  required final bool navigable,
+  required final ValueChanged<int> onToggle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      for (final (index, item) in items.indexed)
+        _AccordionItemRow(
+          item: item,
+          isExpanded: expanded.contains(index),
+          navigable: navigable,
+          onTap: () => onToggle(index),
+        ),
+    ],
+  );
+}
+
+class const _AccordionItemRow({
+  required final AuraAccordionItem item,
+  required final bool isExpanded,
+  required final bool navigable,
+  required final VoidCallback onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      border: Border(bottom: .new(color: context.auraColors.outline)),
+    ),
+    child: _AccordionItemBody(
+      item: item,
+      isExpanded: isExpanded,
+      navigable: navigable,
+      onTap: onTap,
+    ),
+  );
+}
+
+class const _AccordionItemBody({
+  required final AuraAccordionItem item,
+  required final bool isExpanded,
+  required final bool navigable,
+  required final VoidCallback onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _AccordionItemHeader(
+        title: item.title,
+        isExpanded: isExpanded,
+        navigable: navigable,
+        onTap: onTap,
+      ),
+      if (isExpanded) _AccordionItemContent(child: item.child),
+    ],
+  );
+}
+
+class const _AccordionItemHeader({
+  required final String title,
+  required final bool isExpanded,
+  required final bool navigable,
+  required final VoidCallback onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: _AccordionHeaderButton(
+      title: title,
+      isExpanded: isExpanded,
+      navigable: navigable,
+      onTap: onTap,
+    ),
+    enabled: navigable,
+    button: true,
+    expanded: isExpanded,
+  );
+}
+
+class const _AccordionHeaderButton({
+  required final String title,
+  required final bool isExpanded,
+  required final bool navigable,
+  required final VoidCallback onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => InkWell(
+    child: _AccordionHeaderContent(title: title, isExpanded: isExpanded),
+    onTap: navigable ? onTap : null,
+  );
+}
+
+class const _AccordionHeaderContent({
+  required final String title,
+  required final bool isExpanded,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.symmetric(vertical: context.auraTheme.spacing.sm),
+    child: Row(
+      children: [
+        Expanded(
+          child: AuraText(child: Text(title), style: .bodyLarge),
+        ),
+        _AccordionExpandIcon(isExpanded: isExpanded),
+      ],
+    ),
+  );
+}
+
+class const _AccordionExpandIcon({required final bool isExpanded})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Icon(isExpanded ? Icons.expand_less : Icons.expand_more);
+}
+
+class const _AccordionItemContent({required final Widget child})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(bottom: context.auraTheme.spacing.md),
+    child: child,
+  );
 }

@@ -56,63 +56,48 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
     return Column(
       crossAxisAlignment: .start,
       children: [
-        // Preview text with max 3 lines.
-        Text(
-          widget.content,
-          key: _textKey,
-          style: .new(
-            color: context.auraColors.onSurface.withValues(alpha: 0.8),
-            fontSize: 13,
-            height: 1.4,
-          ),
-          overflow: .ellipsis,
-          maxLines: ToolCallResponsePreview.maxPreviewLines,
+        _ToolCallResponsePreviewText(
+          content: widget.content,
+          textKey: _textKey,
         ),
-
-        // Show more button (only if content exceeds max lines).
         if (_exceedsMaxLines && widget.showExpandButton)
-          Padding(
-            padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
-            child: AuraButton(
-              onPressed: _showFullContent,
-              child: const AuraRow(
-                children: [
-                  TextLocale(LocaleKeys.common_show_more),
-                  AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
-                ],
-                spacing: .xs,
-                mainAxisSize: .min,
-              ),
-              variant: .ghost,
-              size: .small,
-            ),
-          ),
+          _ToolCallResponseExpandButton(onPressed: _showFullContent),
       ],
     );
   }
 
   void _measureTextOverflow() {
+    final exceedsMaxLines = _textOverflow();
+    if (exceedsMaxLines == null || exceedsMaxLines == _exceedsMaxLines) {
+      return;
+    }
+
+    setState(() {
+      _exceedsMaxLines = exceedsMaxLines;
+    });
+  }
+
+  bool? _textOverflow() {
     final context = _textKey.currentContext;
-    if (context == null) return;
+    if (context == null) return null;
 
     final renderObject = context.findRenderObject();
-    if (renderObject is! RenderBox) return;
+    if (renderObject is! RenderBox) return null;
 
-    // Get the text painter to measure if text would overflow.
-    final textStyle = DefaultTextStyle.of(context).style;
-    final textSpan = TextSpan(text: widget.content, style: textStyle);
+    return _doesTextOverflow(context, renderObject);
+  }
+
+  bool _doesTextOverflow(BuildContext context, RenderBox renderObject) {
     final textPainter = TextPainter(
-      text: textSpan,
+      text: TextSpan(
+        text: widget.content,
+        style: DefaultTextStyle.of(context).style,
+      ),
       textDirection: .ltr,
       maxLines: ToolCallResponsePreview.maxPreviewLines,
     )..layout(maxWidth: renderObject.constraints.maxWidth);
 
-    final exceedsMaxLines = textPainter.didExceedMaxLines;
-    if (exceedsMaxLines != _exceedsMaxLines) {
-      setState(() {
-        _exceedsMaxLines = exceedsMaxLines;
-      });
-    }
+    return textPainter.didExceedMaxLines;
   }
 
   void _showFullContent() {
@@ -122,4 +107,53 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
       content: widget.content,
     );
   }
+}
+
+class const _ToolCallResponsePreviewText({
+  required final String content,
+  required final GlobalKey textKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      content,
+      key: textKey,
+      style: .new(
+        color: context.auraColors.onSurface.withValues(alpha: 0.8),
+        fontSize: 13,
+        height: 1.4,
+      ),
+      overflow: .ellipsis,
+      maxLines: ToolCallResponsePreview.maxPreviewLines,
+    );
+  }
+}
+
+class const _ToolCallResponseExpandButton({
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+    child: _ToolCallResponseExpandAction(onPressed: onPressed),
+  );
+}
+
+class const _ToolCallResponseExpandAction({
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: const AuraRow(
+      children: [
+        TextLocale(LocaleKeys.common_show_more),
+        AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
+      ],
+      spacing: .xs,
+      mainAxisSize: .min,
+    ),
+    variant: .ghost,
+    size: .small,
+  );
 }

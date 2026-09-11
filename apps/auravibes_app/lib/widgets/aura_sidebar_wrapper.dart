@@ -51,19 +51,15 @@ final List<AuraNavigationData> _navigationItems = [
 /// navigation item should be highlighted - the conversation itself is selected
 /// in the sidebar's middle section.
 int _calculateSelectedIndex(BuildContext context, int shellIndex) {
-  final router = GoRouter.of(context);
-  final pathSegments = router.routeInformationProvider.value.uri.pathSegments;
+  if (_isConversationPath(_routeSegments(context))) return -1;
 
-  for (var i = 0; i < pathSegments.length; i++) {
-    if (pathSegments[i] == 'chats' && i + 1 < pathSegments.length) {
-      final nextSegment = pathSegments[i + 1];
+  return _selectedIndexForShell(shellIndex);
+}
 
-      if (nextSegment.isNotEmpty && !nextSegment.startsWith('new')) {
-        return -1;
-      }
-    }
-  }
+List<String> _routeSegments(BuildContext context) =>
+    GoRouter.of(context).routeInformationProvider.value.uri.pathSegments;
 
+int _selectedIndexForShell(int shellIndex) {
   const newChatIndex = 0;
   const appSettingsIndex = 1;
   const footerSettingsIndex = 2;
@@ -74,6 +70,17 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
     footerSettingsIndex => footerSettingsIndex, // Settings (footer).
     _ => -1,
   };
+}
+
+bool _isConversationPath(List<String> pathSegments) {
+  for (var i = 0; i < pathSegments.length; i++) {
+    if (pathSegments[i] != 'chats' || i + 1 >= pathSegments.length) continue;
+
+    final nextSegment = pathSegments[i + 1];
+    if (nextSegment.isNotEmpty && !nextSegment.startsWith('new')) return true;
+  }
+
+  return false;
 }
 
 class AuraSidebarWrapper extends HookConsumerWidget {

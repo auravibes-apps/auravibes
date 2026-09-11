@@ -1,4 +1,3 @@
-// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
@@ -6,40 +5,119 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:riverpod/src/providers/provider.dart';
+import 'package:riverpod/misc.dart';
+import 'package:riverpod/riverpod.dart';
 
 class const CreateSkillUsecase(
   final SkillsRepository? _skillsRepository, {
   final CloudSkillStore? cloudStore,
 }) {
   Future<SkillEntity> call(String workspaceId, SkillToCreate skill) async {
+    await _validateNewSkill(workspaceId, skill);
+
+    return await _createSkill(workspaceId, skill);
+  }
+}
+
+extension _CreateSkillValidationOperations on CreateSkillUsecase {
+  Future<void> _validateNewSkill(
+    String workspaceId,
+    SkillToCreate skill,
+  ) async {
     ValidateSkillTitleUsecase.call(skill.title);
+    final cloudSkills = await _cloudSkills();
+    await _validateTitle(workspaceId, skill, cloudSkills);
+    await _validateSlug(workspaceId, skill, cloudSkills);
+  }
+
+  Future<void> _validateTitle(
+    String workspaceId,
+    SkillToCreate skill,
+    List<SkillEntity>? cloudSkills,
+  ) async {
+    final title = skill.title.trim();
+    final existingTitle = await _existingTitle(workspaceId, title, cloudSkills);
+    _throwIfDuplicateTitle(existingTitle);
+  }
+
+  Future<void> _validateSlug(
+    String workspaceId,
+    SkillToCreate skill,
+    List<SkillEntity>? cloudSkills,
+  ) async {
+    final slug = generateSkillSlug(skill.title);
+    final existingSlug = await _existingSlug(workspaceId, slug, cloudSkills);
+    _throwIfDuplicateSlug(existingSlug);
+  }
+}
+
+extension _CreateSkillLookupOperations on CreateSkillUsecase {
+  Future<List<SkillEntity>?> _cloudSkills() async {
     final cloud = cloudStore;
-    final cloudSkills = cloud == null ? null : await cloud.skills();
-    final existingTitle =
-        cloudSkills
-            ?.where((item) => item.title == skill.title.trim())
-            .firstOrNull ??
-        await _skillsRepository?.getSkillByTitle(
-          workspaceId,
-          skill.title.trim(),
-        );
+    if (cloud == null) return null;
+
+    return await cloud.skills();
+  }
+
+  Future<SkillEntity?> _existingTitle(
+    String workspaceId,
+    String title,
+    List<SkillEntity>? cloudSkills,
+  ) {
+    if (cloudSkills != null) {
+      return Future.value(
+        cloudSkills.where((item) => item.title == title).firstOrNull,
+      );
+    }
+
+    final repository = _skillsRepository;
+    if (repository == null) throw StateError('Skill store is unavailable');
+
+    return repository.getSkillByTitle(workspaceId, title);
+  }
+
+  Future<SkillEntity?> _existingSlug(
+    String workspaceId,
+    String slug,
+    List<SkillEntity>? cloudSkills,
+  ) {
+    if (cloudSkills != null) {
+      return Future.value(
+        cloudSkills.where((item) => item.slug == slug).firstOrNull,
+      );
+    }
+
+    final repository = _skillsRepository;
+    if (repository == null) throw StateError('Skill store is unavailable');
+
+    return repository.getSkillBySlug(workspaceId, slug);
+  }
+}
+
+extension _CreateSkillValidationErrors on CreateSkillUsecase {
+  void _throwIfDuplicateTitle(SkillEntity? existingTitle) {
     if (existingTitle != null) {
       throw const SkillTitleValidationException(
         'A skill with this title already exists',
       );
     }
+  }
 
-    final slug = generateSkillSlug(skill.title);
-    final existingSlug =
-        cloudSkills?.where((item) => item.slug == slug).firstOrNull ??
-        await _skillsRepository?.getSkillBySlug(workspaceId, slug);
+  void _throwIfDuplicateSlug(SkillEntity? existingSlug) {
     if (existingSlug != null) {
       throw const SkillTitleValidationException(
         'A skill with this slug already exists',
       );
     }
+  }
+}
 
+extension _CreateSkillPersistenceOperations on CreateSkillUsecase {
+  Future<SkillEntity> _createSkill(
+    String workspaceId,
+    SkillToCreate skill,
+  ) async {
+    final cloud = cloudStore;
     if (cloud != null) return await cloud.createSkill(skill);
     final repository = _skillsRepository;
     if (repository == null) throw StateError('Skill store is unavailable');

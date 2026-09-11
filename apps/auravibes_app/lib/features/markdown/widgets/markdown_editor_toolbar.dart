@@ -9,6 +9,16 @@ class const MarkdownEditorToolbar({
   required final FocusNode focusNode,
   super.key,
 }) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: .horizontal,
+      child: _ToolbarActions(toolbar: this),
+    );
+  }
+}
+
+extension on MarkdownEditorToolbar {
   TextSelection get _safeSelection {
     final selection = controller.selection;
     if (selection.isValid) return selection;
@@ -18,95 +28,74 @@ class const MarkdownEditorToolbar({
     return TextSelection.collapsed(offset: length);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: .horizontal,
-      child: AuraRow(
-        children: [
-          _ToolbarButton(
-            icon: Icons.format_bold,
-            label: LocaleKeys.markdown_editor_toolbar_bold.tr(context: context),
-            onPressed: () => _wrapSelection('**', '**'),
-          ),
-          _ToolbarButton(
-            icon: Icons.format_italic,
-            label: LocaleKeys.markdown_editor_toolbar_italic.tr(
-              context: context,
-            ),
-            onPressed: () => _wrapSelection('*', '*'),
-          ),
-          _ToolbarButton(
-            icon: Icons.title,
-            label: LocaleKeys.markdown_editor_toolbar_heading.tr(
-              context: context,
-            ),
-            onPressed: () => _prefixLines('# '),
-          ),
-          _ToolbarButton(
-            icon: Icons.format_list_bulleted,
-            label: LocaleKeys.markdown_editor_toolbar_bullets.tr(
-              context: context,
-            ),
-            onPressed: () => _prefixLines('- '),
-          ),
-          _ToolbarButton(
-            icon: Icons.code,
-            label: LocaleKeys.markdown_editor_toolbar_code.tr(context: context),
-            onPressed: _formatCode,
-          ),
-          _ToolbarButton(
-            icon: Icons.format_quote,
-            label: LocaleKeys.markdown_editor_toolbar_quote.tr(
-              context: context,
-            ),
-            onPressed: () => _prefixLines('> '),
-          ),
-        ],
-        spacing: .xs,
-      ),
-    );
-  }
+  void _applyAction(_ToolbarActionKind action) => switch (action) {
+    .bold => _wrapSelection('**', '**'),
+    .italic => _wrapSelection('*', '*'),
+    .heading => _prefixLines('# '),
+    .bullets => _prefixLines('- '),
+    .code => _formatCode(),
+    .quote => _prefixLines('> '),
+  };
 
   void _wrapSelection(String before, String after) {
     final selection = _safeSelection;
-    final text = controller.text;
-    final selected = selection.textInside(text);
-    final replacement = '$before$selected$after';
-    final cursorOffset = selected.isEmpty
-        ? selection.start + before.length
-        : selection.start + replacement.length;
+    final selected = selection.textInside(controller.text);
+    final result = _wrapSelectionResult((
+      selection: selection,
+      selected: selected,
+      before: before,
+      after: after,
+    ));
 
-    _replace(selection, replacement, cursorOffset);
+    _replace(selection, result.replacement, result.cursorOffset);
   }
 
   void _prefixLines(String prefix) {
     final selection = _safeSelection;
     final text = controller.text;
-    final selectionStart = selection.start.clamp(0, text.length);
-    final selectionEnd = selection.end.clamp(selectionStart, text.length);
-    final lineStart = selectionStart == 0
-        ? 0
-        : text.lastIndexOf('\n', selectionStart - 1) + 1;
-    final lineEnd = selectionEnd >= text.length
-        ? text.length
-        : text.indexOf('\n', selectionEnd);
-    final end = lineEnd == -1 ? text.length : lineEnd;
-    final selected = TextSelection(
-      baseOffset: lineStart,
-      extentOffset: end,
-    ).textInside(text);
-    final replacement = selected
-        .split('\n')
-        .map((line) => line.startsWith(prefix) ? line : '$prefix$line')
-        .join('\n');
+    final range = _lineRange(selection, text);
+    final replacement = _prefixReplacement(range.textInside(text), prefix);
 
-    _replace(
-      .new(baseOffset: lineStart, extentOffset: end),
-      replacement,
-      lineStart + replacement.length,
+    _replace(range, replacement, range.start + replacement.length);
+  }
+
+  TextSelection _lineRange(TextSelection selection, String text) {
+    final bounds = _selectionBounds(selection, text);
+    final lineEnd = _toolbarLineEnd(text, bounds.end);
+
+    return TextSelection(
+      baseOffset: _toolbarLineStart(text, bounds.start),
+      extentOffset: lineEnd == -1 ? text.length : lineEnd,
     );
   }
+
+  ({String replacement, int cursorOffset}) _wrapSelectionResult(
+    ({TextSelection selection, String selected, String before, String after})
+    input,
+  ) {
+    final replacement = '${input.before}${input.selected}${input.after}';
+    final cursorOffset = input.selected.isEmpty
+        ? input.selection.start + input.before.length
+        : input.selection.start + replacement.length;
+
+    return (replacement: replacement, cursorOffset: cursorOffset);
+  }
+
+  ({int start, int end}) _selectionBounds(
+    TextSelection selection,
+    String text,
+  ) {
+    final start = selection.start.clamp(0, text.length);
+
+    return (start: start, end: selection.end.clamp(start, text.length));
+  }
+}
+
+extension on MarkdownEditorToolbar {
+  String _prefixReplacement(String selected, String prefix) => selected
+      .split('\n')
+      .map((line) => line.startsWith(prefix) ? line : '$prefix$line')
+      .join('\n');
 
   void _formatCode() {
     final selection = _safeSelection;
@@ -131,6 +120,61 @@ class const MarkdownEditorToolbar({
       focusNode.requestFocus();
     }
   }
+}
+
+int _toolbarLineStart(String text, int selectionStart) =>
+    selectionStart == 0 ? 0 : text.lastIndexOf('\n', selectionStart - 1) + 1;
+
+int _toolbarLineEnd(String text, int selectionEnd) =>
+    selectionEnd >= text.length
+    ? text.length
+    : text.indexOf('\n', selectionEnd);
+
+class const _ToolbarActions({required final MarkdownEditorToolbar toolbar})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ToolbarActionList(toolbar: toolbar);
+}
+
+class const _ToolbarActionList({required final MarkdownEditorToolbar toolbar})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      for (final action in _ToolbarActionKind.values)
+        _ToolbarAction(toolbar: toolbar, action: action),
+    ],
+    spacing: .xs,
+  );
+}
+
+class const _ToolbarAction({
+  required final MarkdownEditorToolbar toolbar,
+  required final _ToolbarActionKind action,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ToolbarButton(
+    icon: action.icon,
+    label: action.labelKey.tr(context: context),
+    onPressed: () => toolbar._applyAction(action),
+  );
+}
+
+enum _ToolbarActionKind {
+  bold(Icons.format_bold, LocaleKeys.markdown_editor_toolbar_bold),
+  italic(Icons.format_italic, LocaleKeys.markdown_editor_toolbar_italic),
+  heading(Icons.title, LocaleKeys.markdown_editor_toolbar_heading),
+  bullets(
+    Icons.format_list_bulleted,
+    LocaleKeys.markdown_editor_toolbar_bullets,
+  ),
+  code(Icons.code, LocaleKeys.markdown_editor_toolbar_code),
+  quote(Icons.format_quote, LocaleKeys.markdown_editor_toolbar_quote);
+
+  new(this.icon, this.labelKey);
+
+  final IconData icon;
+  final String labelKey;
 }
 
 class const _ToolbarButton({

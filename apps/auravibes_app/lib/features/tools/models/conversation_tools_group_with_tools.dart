@@ -5,6 +5,8 @@ import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.d
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+export 'tools_group_mixin.dart';
+
 part 'conversation_tools_group_with_tools.freezed.dart';
 
 @freezed
@@ -26,5 +28,10 @@ abstract class const ConversationToolsGroupWithTools._()
   bool get areAllToolsEnabled =>
       tools.isNotEmpty && tools.every((t) => t.isEnabled);
 
-  bool get areAnyToolsEnabled => tools.any((t) => t.isEnabled);
+  bool areAnyToolsEnabled() => tools.any((t) => t.isEnabled);
+
+  bool containsTool(String toolId) =>
+      tools.any((tool) => tool.tool.id == toolId);
+
+  bool hasEnabledTools() => tools.any((tool) => tool.isEnabled);
 }

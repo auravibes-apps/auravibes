@@ -56,11 +56,38 @@ Future<Client> _createServerpodClient(
   final store = ref.watch(serverpodAuthStoreProvider);
   final client = Client(serverUrl);
   final _ = ref.onDispose(client.close);
-  final sessionManager = ClientAuthSessionManager(
-    storage: store.authSuccessStorage(serverUrl: serverUrl, userId: accountId),
-  );
-  client.authSessionManager = sessionManager;
-  final _ = await sessionManager.initialize();
+  await _initializeServerpodClient((
+    client: client,
+    store: store,
+    serverUrl: serverUrl,
+    accountId: accountId,
+  ));
 
   return client;
 }
+
+Future<void> _initializeServerpodClient(
+  ({
+    Client client,
+    ServerpodAuthStore store,
+    String serverUrl,
+    String accountId,
+  })
+  input,
+) async {
+  final sessionManager = _createSessionManager(
+    input.store,
+    input.serverUrl,
+    input.accountId,
+  );
+  input.client.authSessionManager = sessionManager;
+  final _ = await sessionManager.initialize();
+}
+
+ClientAuthSessionManager _createSessionManager(
+  ServerpodAuthStore store,
+  String serverUrl,
+  String accountId,
+) => ClientAuthSessionManager(
+  storage: store.authSuccessStorage(serverUrl: serverUrl, userId: accountId),
+);

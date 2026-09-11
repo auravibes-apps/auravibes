@@ -3,7 +3,14 @@
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+typedef _BadgeDecorationRequest = ({
+  double radius,
+  Color background,
+  Border? border,
+});
 
 /// A customizable badge component following the Aura design system.
 ///
@@ -86,118 +93,161 @@ class AuraBadge extends StatelessWidget {
   final String? semanticLabel;
 
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final foreground = _getForegroundColor(auraColors);
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) =>
+      'AuraBadge(variant: $variant, size: $size)';
 
-    Widget badge = Container(
-      padding: _getPadding(spacing: context.auraTheme.spacing),
-      decoration: BoxDecoration(
-        color: _getBackgroundColor(auraColors),
-        border: variant == AuraBadgeVariant.outlined
-            ? Border.all(color: _getBorderColor(auraColors))
-            : null,
-        borderRadius: BorderRadius.circular(
-          context.auraTheme.fromBorderRadius(_getBorderRadius()),
-        ),
-      ),
-      child: DefaultTextStyle(
-        style: .new(
-          color: foreground,
-          fontWeight: context.auraTheme.typography.fontWeightMedium,
-        ),
-        child: IconTheme(
-          data: .new(color: foreground),
-          child: child,
-        ),
-      ),
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<AuraBadgeVariant>('variant', variant));
+  }
+
+  @override
+  Widget build(BuildContext context) => _AuraBadgeBuilt(
+    badge: this,
+    colors: context.auraColors,
+    theme: context.auraTheme,
+  ).child;
+}
+
+class _AuraBadgeBuilt {
+  new({
+    required AuraBadge badge,
+    required AuraColorScheme colors,
+    required AuraTheme theme,
+  }) : child = _AuraBadgeSemantics(
+         label: badge.semanticLabel,
+         child: _AuraBadgeSurface(
+           child: badge.child,
+           size: badge.size,
+           foreground: _badgeForegroundColor(badge.variant, colors),
+           background: _badgeBackgroundColor(badge.variant, colors),
+           border: _badgeBorder(badge.variant, colors),
+           theme: theme,
+         ),
+       );
+
+  final Widget child;
+}
+
+class const _AuraBadgeSemantics({
+  required final String? label,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      label == null ? child : Semantics(child: child, label: label);
+}
+
+class _AuraBadgeSurface extends StatelessWidget {
+  new({
+    required Widget child,
+    required AuraBadgeSize size,
+    required Color foreground,
+    required Color background,
+    required Border? border,
+    required AuraTheme theme,
+  }) : _child = Container(
+         padding: _badgePadding(size, theme.spacing),
+         decoration: _badgeDecoration((
+           radius: theme.fromBorderRadius(_badgeBorderRadius(size)),
+           background: background,
+           border: border,
+         )),
+         child: _AuraBadgeContent(
+           child: child,
+           foreground: foreground,
+           theme: theme,
+         ),
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+BoxDecoration _badgeDecoration(_BadgeDecorationRequest request) =>
+    BoxDecoration(
+      color: request.background,
+      border: request.border,
+      borderRadius: BorderRadius.circular(request.radius),
     );
 
-    if (semanticLabel != null) {
-      badge = Semantics(child: badge, label: semanticLabel);
-    }
-
-    return badge;
-  }
-
-  EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
-    return switch (size) {
-      .small => EdgeInsets.symmetric(vertical: 2, horizontal: spacing.xs),
-      .medium => EdgeInsets.symmetric(
-        vertical: spacing.xs,
-        horizontal: spacing.sm,
-      ),
-      .large => EdgeInsets.symmetric(
-        vertical: spacing.xs,
-        horizontal: spacing.sm,
-      ),
-    };
-  }
-
-  AuraBorderRadius _getBorderRadius() {
-    return switch (size) {
-      .small => .sm,
-      .medium => .sm,
-      .large => .md,
-    };
-  }
-
-  Color _getBackgroundColor(AuraColorScheme colors) {
-    return switch (variant) {
-      .primary => colors.primary,
-      .secondary => colors.secondary,
-      .success => colors.success,
-      .warning => colors.warning,
-      .error => colors.error,
-      .info => colors.info,
-      .neutral => colors.onSurfaceVariant,
-      .outlined => DesignColors.transparent,
-      .soft => _getSoftBackgroundColor(colors),
-    };
-  }
-
-  Color _getForegroundColor(AuraColorScheme colors) {
-    return switch (variant) {
-      .primary => colors.onTint(.primary),
-      .secondary => colors.onTint(.secondary),
-      .success => colors.onTint(.success),
-      .warning => colors.onTint(.warning),
-      .error => colors.onTint(.error),
-      .info => colors.onTint(.info),
-      .neutral => colors.foregroundOnSurface,
-      .outlined => _getOutlinedForegroundColor(colors),
-      .soft => _getSoftForegroundColor(colors),
-    };
-  }
-
-  Color _getBorderColor(AuraColorScheme colors) {
-    return switch (variant) {
-      .primary => colors.primary,
-      .secondary => colors.secondary,
-      .success => colors.success,
-      .warning => colors.warning,
-      .error => colors.error,
-      .info => colors.info,
-      .neutral => colors.onSurfaceVariant,
-      .outlined => colors.outline,
-      .soft => DesignColors.transparent,
-    };
-  }
-
-  // Each helper is reached only from its own variant branch (soft/outlined),
-  // so it ignores `variant` and returns the single value that arm produced.
-  Color _getSoftBackgroundColor(AuraColorScheme colors) {
-    return colors.primary.withValues(alpha: 0.1);
-  }
-
-  Color _getSoftForegroundColor(AuraColorScheme colors) {
-    return colors.mutedForeground;
-  }
-
-  Color _getOutlinedForegroundColor(AuraColorScheme colors) {
-    return colors.mutedForeground;
-  }
+class const _AuraBadgeContent({
+  required final Widget child,
+  required final Color foreground,
+  required final AuraTheme theme,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DefaultTextStyle(
+    style: _badgeTextStyle(foreground, theme),
+    child: _AuraBadgeIconTheme(foreground: foreground, child: child),
+  );
 }
+
+class const _AuraBadgeIconTheme({
+  required final Color foreground,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => IconTheme(
+    data: .new(color: foreground),
+    child: child,
+  );
+}
+
+TextStyle _badgeTextStyle(Color foreground, AuraTheme theme) =>
+    TextStyle(color: foreground, fontWeight: theme.typography.fontWeightMedium);
+
+EdgeInsets _badgePadding(AuraBadgeSize size, AuraSpacingScale spacing) =>
+    switch (size) {
+      .small => EdgeInsets.symmetric(vertical: 2, horizontal: spacing.xs),
+      .medium || .large => EdgeInsets.symmetric(
+        vertical: spacing.xs,
+        horizontal: spacing.sm,
+      ),
+    };
+
+AuraBorderRadius _badgeBorderRadius(AuraBadgeSize size) => switch (size) {
+  .small || .medium => .sm,
+  .large => .md,
+};
+
+Color _badgeBackgroundColor(AuraBadgeVariant variant, AuraColorScheme colors) {
+  if (variant == .outlined) return DesignColors.transparent;
+  if (variant == .soft) return colors.primary.withValues(alpha: 0.1);
+  if (variant == .neutral) return colors.onSurfaceVariant;
+
+  return colors.colorFor(_badgeTint(variant));
+}
+
+Color _badgeForegroundColor(AuraBadgeVariant variant, AuraColorScheme colors) =>
+    switch (variant) {
+      .primary ||
+      .secondary ||
+      .success ||
+      .warning ||
+      .error ||
+      .info => colors.onTint(_badgeTint(variant)),
+      .neutral => colors.foregroundOnSurface,
+      .outlined || .soft => colors.mutedForeground,
+    };
+
+AuraTint _badgeTint(AuraBadgeVariant variant) => switch (variant) {
+  .primary => .primary,
+  .secondary => .secondary,
+  .success => .success,
+  .warning => .warning,
+  .error => .error,
+  .info => .info,
+  .neutral || .outlined || .soft => .primary,
+};
+
+Border? _badgeBorder(AuraBadgeVariant variant, AuraColorScheme colors) =>
+    variant == .outlined
+    ? Border.fromBorderSide(.new(color: colors.outline))
+    : null;
 
 class const _AuraBadgeText({
   required final Widget child,

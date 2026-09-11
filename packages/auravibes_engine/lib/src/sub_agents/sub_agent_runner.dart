@@ -66,13 +66,13 @@ class const SubAgentRunner({
     final agentError = await _agentError(request.agentId, workspaceId);
     if (agentError != null) return agentError;
 
-    final child = await conversationStore.createChildConversation(
+    final child = await conversationStore.createChildConversation((
       parentConversationId: parentConversationId,
       workspaceId: workspaceId,
       modelId: parent!.modelId,
       agentId: request.agentId,
       title: request.title,
-    );
+    ));
     final requestHandle = startRequest(
       parentId: parentConversationId,
       childId: child.id,
@@ -247,14 +247,18 @@ abstract interface class SubAgentCatalog {
 abstract interface class SubAgentConversationStore {
   Future<SubAgentConversationRecord?> getConversation(String conversationId);
 
-  Future<SubAgentConversationRecord> createChildConversation({
-    required String parentConversationId,
-    required String workspaceId,
-    required String? modelId,
-    required String? agentId,
-    required String title,
-  });
+  Future<SubAgentConversationRecord> createChildConversation(
+    SubAgentChildConversationRequest request,
+  );
 }
+
+typedef SubAgentChildConversationRequest = ({
+  String parentConversationId,
+  String workspaceId,
+  String? modelId,
+  String? agentId,
+  String title,
+});
 
 abstract interface class SubAgentMessageStore {
   Future<SubAgentMessageRecord> createUserPrompt({

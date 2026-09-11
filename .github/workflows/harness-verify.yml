@@ -1,0 +1,70 @@
+name: Harness Verification
+
+on:
+  push:
+    branches: [main, dev, stage]
+  pull_request:
+    branches: [main, dev, stage]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-harness:
+    name: Verify agent instructions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Verify root instructions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f AGENTS.md
+          lines=$(wc -l < AGENTS.md)
+          if [ "$lines" -gt 150 ]; then
+            echo "::error file=AGENTS.md::Root instructions exceed 150 lines ($lines)."
+            exit 1
+          fi
+          test -f docs/ARCHITECTURE.md
+
+      - name: Verify scoped instructions and Claude links
+        shell: bash
+        run: |
+          set -euo pipefail
+          for scope in apps/auravibes_app packages/auravibes_engine packages/auravibes_ui widgetbook; do
+            test -f "$scope/AGENTS.md"
+            test -L "$scope/CLAUDE.md"
+            [ "$(readlink "$scope/CLAUDE.md")" = AGENTS.md ]
+          done
+          test -L CLAUDE.md
+          [ "$(readlink CLAUDE.md)" = AGENTS.md ]
+
+      - name: Verify documented links
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r link; do
+            case "$link" in
+              http://*|https://*|\#*) continue ;;
+            esac
+            link="${link%%#*}"
+            [ -e "$link" ] || {
+              echo "::error file=AGENTS.md::Dead reference: $link"
+              exit 1
+            }
+          done < <(sed -nE 's/.*\]\(([^)]*)\).*/\1/p' AGENTS.md)
+
+      - name: Warn on instruction drift
+        if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed=$(git diff --name-only HEAD^ HEAD)
+          if grep -qE '(^|/)pubspec\.yaml$|^\.fvmrc$|^\.github/(workflows|actions)/' <<< "$changed" \
+             && ! grep -qE '(^|/)AGENTS\.md$|^\.agents/skills/' <<< "$changed"; then
+            echo "::warning::Workspace or CI files changed without an AGENTS.md or skill update."
+          fi

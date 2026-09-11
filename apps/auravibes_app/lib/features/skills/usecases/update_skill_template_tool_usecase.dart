@@ -1,4 +1,3 @@
-// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
@@ -7,7 +6,14 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:riverpod/src/providers/provider.dart';
+import 'package:riverpod/misc.dart';
+import 'package:riverpod/riverpod.dart';
+
+typedef _ToolValidationRequest = ({
+  SkillTemplateToolToUpdate tool,
+  SkillTemplateToolEntity existing,
+  Map<String, SkillCredentialAttributeDefinition> credentialDefinitions,
+});
 
 class const UpdateSkillTemplateToolUsecase(
   final SkillTemplateToolsRepository? _skillTemplateToolsRepository, {
@@ -19,68 +25,136 @@ class const UpdateSkillTemplateToolUsecase(
   Future<SkillTemplateToolEntity> call(
     String toolId,
     SkillTemplateToolToUpdate tool,
+  ) async => await _updateTool(toolId, await _validatedTool(toolId, tool));
+
+  Future<SkillTemplateToolToUpdate> _validatedTool(
+    String toolId,
+    SkillTemplateToolToUpdate tool,
   ) async {
     final templateJson = tool.templateJson;
     final inputsJson = tool.inputsJson;
-    var toolToUpdate = tool;
-    if (templateJson != null || inputsJson != null) {
-      final existing =
-          await cloudStore?.tool(toolId) ??
-          await _skillTemplateToolsRepository?.getToolById(toolId);
-      if (existing == null) {
-        throw StateError('Skill template tool not found: $toolId');
-      }
-      final credentialDefinitions = await _credentialDefinitions(
-        existing.skillId,
-      );
-      validateSkillTemplateTool(
-        templateJson: templateJson ?? existing.templateJson,
-        inputsJson: inputsJson ?? existing.inputsJson,
-        credentialDefinitions: credentialDefinitions,
-      );
-      if (templateJson != null) {
-        toolToUpdate = tool.copyWith(
+    if (!_requiresValidation(templateJson, inputsJson)) return tool;
+
+    await _validateExistingTool(toolId, tool);
+
+    return _canonicalToolUpdate(tool, templateJson);
+  }
+
+  Future<void> _validateExistingTool(
+    String toolId,
+    SkillTemplateToolToUpdate tool,
+  ) async {
+    final existing = await _existingTool(toolId);
+    if (existing == null) {
+      throw StateError('Skill template tool not found: $toolId');
+    }
+    final credentialDefinitions = await _credentialDefinitions(
+      existing.skillId,
+    );
+    _validateToolFields((
+      tool: tool,
+      existing: existing,
+      credentialDefinitions: credentialDefinitions,
+    ));
+  }
+}
+
+extension _UpdateSkillTemplateValidationOperations
+    on UpdateSkillTemplateToolUsecase {
+  bool _requiresValidation(String? templateJson, String? inputsJson) =>
+      templateJson != null || inputsJson != null;
+
+  SkillTemplateToolToUpdate _canonicalToolUpdate(
+    SkillTemplateToolToUpdate tool,
+    String? templateJson,
+  ) => templateJson == null
+      ? tool
+      : tool.copyWith(
           templateJson: canonicalSkillUrlTemplateJson(templateJson),
         );
-      }
-    }
 
+  void _validateToolFields(_ToolValidationRequest request) {
+    validateSkillTemplateTool(
+      templateJson: request.tool.templateJson ?? request.existing.templateJson,
+      inputsJson: request.tool.inputsJson ?? request.existing.inputsJson,
+      credentialDefinitions: request.credentialDefinitions,
+    );
+  }
+
+  Future<SkillTemplateToolEntity?> _existingTool(String toolId) {
+    final cloud = cloudStore;
+    if (cloud != null) return cloud.tool(toolId);
+
+    final repository = _skillTemplateToolsRepository;
+    if (repository == null) return Future.value();
+
+    return repository.getToolById(toolId);
+  }
+
+  Future<SkillTemplateToolEntity> _updateTool(
+    String toolId,
+    SkillTemplateToolToUpdate tool,
+  ) async {
     final cloud = cloudStore;
     if (cloud != null) {
-      return await cloud.updateTool(toolId, toolToUpdate);
+      return await cloud.updateTool(toolId, tool);
     }
     final repository = _skillTemplateToolsRepository;
     if (repository == null) {
       throw StateError('Skill template tool store is unavailable');
     }
 
-    return await repository.updateTool(toolId, toolToUpdate);
+    return await repository.updateTool(toolId, tool);
   }
+}
 
+extension _UpdateSkillTemplateCredentialOperations
+    on UpdateSkillTemplateToolUsecase {
   Future<Map<String, SkillCredentialAttributeDefinition>>
   _credentialDefinitions(String skillId) async {
     final cloud = cloudStore;
     if (cloud != null) {
-      final skill = await cloud.skill(skillId);
-      final credentialDefinitionId = skill?.credentialDefinitionId;
-      if (credentialDefinitionId == null) return const {};
-      final definition = await cloud.definition(credentialDefinitionId);
-      if (definition == null) return const {};
-
-      return SkillCredentialAttributeDefinition.parseMap(
-        definition.attributesJson,
-      );
+      return await _cloudCredentialDefinitions(cloud, skillId);
     }
+
+    return await _localCredentialDefinitions(skillId);
+  }
+
+  Future<Map<String, SkillCredentialAttributeDefinition>>
+  _cloudCredentialDefinitions(CloudSkillStore cloud, String skillId) async {
+    final skill = await cloud.skill(skillId);
+    final credentialDefinitionId = skill?.credentialDefinitionId;
+    if (credentialDefinitionId == null) return const {};
+    final definition = await cloud.definition(credentialDefinitionId);
+    if (definition == null) return const {};
+
+    return SkillCredentialAttributeDefinition.parseMap(
+      definition.attributesJson,
+    );
+  }
+
+  Future<Map<String, SkillCredentialAttributeDefinition>>
+  _localCredentialDefinitions(String skillId) async {
     final skillsRepository = this.skillsRepository;
-    final credentialDefinitionsRepository =
-        skillCredentialDefinitionsRepository;
-    if (skillsRepository == null || credentialDefinitionsRepository == null) {
+    final definitionsRepository = this.skillCredentialDefinitionsRepository;
+    if (skillsRepository == null || definitionsRepository == null) {
       return const {};
     }
     final skill = await skillsRepository.getSkillById(skillId);
-    final credentialDefinitionId = skill?.credentialDefinitionId;
+
+    return await _credentialDefinitionValues(
+      definitionsRepository,
+      skill?.credentialDefinitionId,
+    );
+  }
+
+  Future<Map<String, SkillCredentialAttributeDefinition>>
+  _credentialDefinitionValues(
+    SkillCredentialDefinitionsRepository repository,
+    String? credentialDefinitionId,
+  ) async {
     if (credentialDefinitionId == null) return const {};
-    final definition = await credentialDefinitionsRepository.getDefinitionById(
+    final definition = await repository.getDefinitionById(
       credentialDefinitionId,
     );
     if (definition == null) return const {};

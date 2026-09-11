@@ -80,98 +80,198 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
   static const _focusBlurRadius = 4.0;
   static const _focusSpreadRadius = 2.0;
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final label = widget.label;
+  Widget build(BuildContext context) => _AuraFieldWrapperView.fromField(
+    context: context,
+    field: widget,
+    colors: context.auraColors,
+  );
+}
 
-    return Semantics(
-      child: Column(
-        mainAxisSize: .min,
-        crossAxisAlignment: .start,
-        children: [
-          if (label != null)
-            AuraFieldLabel(child: label, isRequired: widget.isRequired),
-          if (label != null) const AuraSizedBox(height: .xs),
-          AuraPressable(
-            child: AnimatedContainer(
-              decoration: BoxDecoration(
-                // Color: _getBackgroundColor(auraColors),.
-                border: Border.all(color: _getBorderColor(auraColors)),
-                borderRadius: BorderRadius.all(
-                  .circular(context.auraTheme.fromBorderRadius(.xl)),
-                ),
-                boxShadow: _getBoxShadow(auraColors),
-              ),
-              child: widget.child,
-              duration: DesignDuration.normal,
-            ),
-            color: auraColors.primary,
-            decoration: BoxDecoration(
-              color: _getBackgroundColor(auraColors),
-              borderRadius: BorderRadius.all(
-                .circular(context.auraTheme.fromBorderRadius(.xl)),
-              ),
-              // Color: auraColors.primary,.
-            ),
-            onPressed: widget.isEnabled ? widget.onTap : null,
-            onFocusChange: widget.onFocusChange,
-          ),
-          if (widget.hint != null || widget.error != null)
-            const AuraSizedBox(height: .xs),
-          if (widget.hint != null || widget.error != null)
-            AuraFieldHint(text: widget.hint, error: widget.error),
-        ],
-      ),
-      label: widget.semanticLabel,
+class _AuraFieldWrapperView extends StatelessWidget {
+  const new({required this.label, required this.child});
+
+  new fromField({
+    required BuildContext context,
+    required AuraFieldWrapper field,
+    required AuraColorScheme colors,
+  }) : this(
+         label: field.semanticLabel,
+         child: _AuraFieldWrapperBody(
+           children: [
+             _AuraFieldWrapperLabel(field: field),
+             _AuraFieldWrapperInputData.fromContext(
+               context: context,
+               field: field,
+               colors: colors,
+             ),
+             _AuraFieldWrapperSupportingContent(field: field),
+           ],
+         ),
+       );
+
+  final String? label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Semantics(child: child, label: label);
+}
+
+class const _AuraFieldWrapperBody({required final List<Widget> children})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: children,
+  );
+}
+
+class const _AuraFieldWrapperLabel({required final AuraFieldWrapper field})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label = field.label;
+    if (label == null) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      children: [
+        AuraFieldLabel(child: label, isRequired: field.isRequired),
+        const AuraSizedBox(height: .xs),
+      ],
     );
   }
+}
 
-  Color _getBackgroundColor(AuraColorScheme colors) {
-    if (!widget.isEnabled) {
-      return colors.surfaceVariant.withValues(alpha: _disabledAlpha);
-    }
-    if (widget.isReadOnly) return colors.surfaceVariant;
-
-    return colors.surface;
-  }
-
-  Color _getBorderColor(AuraColorScheme colors) {
-    if (!widget.isEnabled) return colors.outlineVariant;
-
-    return switch (widget.state) {
-      .normal => widget.isFocused ? colors.primary : colors.outline,
-      .success => colors.success,
-      .warning => colors.warning,
-      .error => colors.error,
-    };
-  }
-
-  List<BoxShadow>? _getBoxShadow(AuraColorScheme colors) {
-    if (!widget.isEnabled || widget.isReadOnly) return null;
-
-    if (widget.isFocused && widget.state != AuraFieldState.error) {
-      return [
-        BoxShadow(
-          color: colors.primary.withValues(alpha: _focusAlpha),
-          blurRadius: _focusBlurRadius,
-          spreadRadius: _focusSpreadRadius,
-        ),
-      ];
+class const _AuraFieldWrapperSupportingContent({
+  required final AuraFieldWrapper field,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (field.hint == null && field.error == null) {
+      return const SizedBox.shrink();
     }
 
-    if (widget.state == AuraFieldState.error) {
-      return [
-        BoxShadow(
-          color: colors.error.withValues(alpha: _focusAlpha),
-          blurRadius: _focusBlurRadius,
-          spreadRadius: _focusSpreadRadius,
-        ),
-      ];
-    }
-
-    return null;
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      children: [
+        const AuraSizedBox(height: .xs),
+        AuraFieldHint(text: field.hint, error: field.error),
+      ],
+    );
   }
 }
+
+class _AuraFieldWrapperInputData extends StatelessWidget {
+  const new({
+    required this.child,
+    required this.color,
+    required this.decoration,
+    required this.onPressed,
+    required this.onFocusChange,
+  });
+
+  new fromContext({
+    required BuildContext context,
+    required AuraFieldWrapper field,
+    required AuraColorScheme colors,
+  }) : this(
+         child: AnimatedContainer(
+           decoration: _fieldInputDecoration(
+             _fieldBorderColor(field, colors),
+             _fieldBorderRadius(context),
+             _fieldBoxShadow(field, colors),
+           ),
+           child: field.child,
+           duration: DesignDuration.normal,
+         ),
+         color: colors.primary,
+         decoration: _fieldSurfaceDecoration(
+           _fieldBackgroundColor(field, colors),
+           _fieldBorderRadius(context),
+         ),
+         onPressed: field.isEnabled ? field.onTap : null,
+         onFocusChange: field.onFocusChange,
+       );
+
+  final Widget child;
+  final Color color;
+  final BoxDecoration decoration;
+  final VoidCallback? onPressed;
+  final ValueChanged<bool>? onFocusChange;
+
+  @override
+  Widget build(BuildContext context) => AuraPressable(
+    child: child,
+    color: color,
+    decoration: decoration,
+    onPressed: onPressed,
+    onFocusChange: onFocusChange,
+  );
+}
+
+Color _fieldBackgroundColor(AuraFieldWrapper field, AuraColorScheme colors) {
+  if (!field.isEnabled) {
+    return colors.surfaceVariant.withValues(
+      alpha: _AuraFieldWrapperState._disabledAlpha,
+    );
+  }
+  if (field.isReadOnly) return colors.surfaceVariant;
+
+  return colors.surface;
+}
+
+Color _fieldBorderColor(AuraFieldWrapper field, AuraColorScheme colors) {
+  if (!field.isEnabled) return colors.outlineVariant;
+
+  return switch (field.state) {
+    .normal => field.isFocused ? colors.primary : colors.outline,
+    .success => colors.success,
+    .warning => colors.warning,
+    .error => colors.error,
+  };
+}
+
+List<BoxShadow>? _fieldBoxShadow(
+  AuraFieldWrapper field,
+  AuraColorScheme colors,
+) {
+  if (!field.isEnabled || field.isReadOnly) return null;
+  if (field.state == AuraFieldState.error) {
+    return _fieldBuildBoxShadow(colors.error);
+  }
+  if (field.isFocused) return _fieldBuildBoxShadow(colors.primary);
+
+  return null;
+}
+
+List<BoxShadow> _fieldBuildBoxShadow(Color color) => [
+  BoxShadow(
+    color: color.withValues(alpha: _AuraFieldWrapperState._focusAlpha),
+    blurRadius: _AuraFieldWrapperState._focusBlurRadius,
+    spreadRadius: _AuraFieldWrapperState._focusSpreadRadius,
+  ),
+];
+
+BorderRadius _fieldBorderRadius(BuildContext context) =>
+    BorderRadius.all(.circular(context.auraTheme.fromBorderRadius(.xl)));
+
+BoxDecoration _fieldSurfaceDecoration(
+  Color backgroundColor,
+  BorderRadius borderRadius,
+) => BoxDecoration(color: backgroundColor, borderRadius: borderRadius);
+
+BoxDecoration _fieldInputDecoration(
+  Color borderColor,
+  BorderRadius borderRadius,
+  List<BoxShadow>? boxShadow,
+) => BoxDecoration(
+  border: Border.all(color: borderColor),
+  borderRadius: borderRadius,
+  boxShadow: boxShadow,
+);
 
 /// The visual state of a [AuraFieldWrapper].
 enum AuraFieldState {

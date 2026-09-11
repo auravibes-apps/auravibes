@@ -213,7 +213,7 @@ void main() {
     });
 
     test('setTransport resets http2 when switching to sse', () {
-      readNotifier().setUseHttp2(true);
+      readNotifier().setUseHttp2(value: true);
       expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isTrue);
 
       readNotifier().setTransport(.sse);
@@ -263,7 +263,7 @@ void main() {
     });
 
     test('setUseHttp2 updates flag', () {
-      readNotifier().setUseHttp2(true);
+      readNotifier().setUseHttp2(value: true);
       expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isTrue);
     });
 

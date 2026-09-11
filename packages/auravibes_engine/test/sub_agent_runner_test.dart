@@ -436,20 +436,16 @@ class _ConversationStore({
   final createdChildren = <String>[];
 
   @override
-  Future<SubAgentConversationRecord> createChildConversation({
-    required String parentConversationId,
-    required String workspaceId,
-    required String? modelId,
-    required String? agentId,
-    required String title,
-  }) async {
-    createdChildren.add(title);
+  Future<SubAgentConversationRecord> createChildConversation(
+    SubAgentChildConversationRequest request,
+  ) async {
+    createdChildren.add(request.title);
 
     return SubAgentConversationRecord(
       id: 'child',
-      workspaceId: workspaceId,
-      modelId: modelId,
-      parentConversationId: parentConversationId,
+      workspaceId: request.workspaceId,
+      modelId: request.modelId,
+      parentConversationId: request.parentConversationId,
     );
   }
 

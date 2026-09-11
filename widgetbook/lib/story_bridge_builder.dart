@@ -22,15 +22,20 @@ class StoryBridgeBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final source = await buildStep.readAsString(buildStep.inputId);
-    final storyFile = buildStep.inputId.path.split('/').last;
-    final storyNames = _storyDeclaration
-        .allMatches(source)
-        .map((match) => match.group(1))
-        .whereType<String>();
-    final metaNames = _metaDeclaration
-        .allMatches(source)
-        .map((match) => match.group(1))
-        .whereType<String>();
+    await _StoryBridgeOutput(buildStep.inputId, source).write(buildStep);
+  }
+
+  static Iterable<String> _findNames(RegExp expression, String source) =>
+      expression
+          .allMatches(source)
+          .map((match) => match.group(1))
+          .whereType<String>();
+
+  static String _buildBridgeContent(
+    String storyFile,
+    Iterable<String> storyNames,
+    Iterable<String> metaNames,
+  ) {
     final lines = <String>[
       '// GENERATED CODE - DO NOT MODIFY BY HAND',
       '// dart format width=80',
@@ -43,9 +48,29 @@ class StoryBridgeBuilder implements Builder {
         'final $storyName = _StorybookDefinitions.$storyName;',
     ];
 
-    await buildStep.writeAsString(
-      buildStep.inputId.changeExtension('.bridge.g.dart'),
-      '${lines.join('\n')}\n',
-    );
+    return '${lines.join('\n')}\n';
   }
+}
+
+class _StoryBridgeOutput {
+  new(this.inputId, String source)
+    : _content = StoryBridgeBuilder._buildBridgeContent(
+        inputId.path.split('/').last,
+        StoryBridgeBuilder._findNames(
+          StoryBridgeBuilder._storyDeclaration,
+          source,
+        ),
+        StoryBridgeBuilder._findNames(
+          StoryBridgeBuilder._metaDeclaration,
+          source,
+        ),
+      );
+
+  final AssetId inputId;
+  final String _content;
+
+  Future<void> write(BuildStep buildStep) => buildStep.writeAsString(
+    inputId.changeExtension('.bridge.g.dart'),
+    _content,
+  );
 }

@@ -7,7 +7,10 @@ export 'agent_visibility.dart';
 
 part 'agent_entity.freezed.dart';
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const AgentEntity._() with _$AgentEntity {
   const factory({
     required String id,
@@ -21,13 +24,23 @@ abstract class const AgentEntity._() with _$AgentEntity {
     @Default(true) bool isEnabled,
     @Default(AgentVisibility.both) AgentVisibility visibility,
   }) = _AgentEntity;
+}
+
+extension AgentEntityHelpers on AgentEntity {
   bool get appearsInChatSelector =>
       isEnabled && visibility.appearsInChatSelector;
 
   bool get appearsInSubAgentList =>
       isEnabled && visibility.appearsInSubAgentList;
+
+  String identity() => id;
+
+  bool hasSkills() => skills.isNotEmpty;
+
+  bool hasDescription() => description.trim().isNotEmpty;
 }
 
+@immutable
 @freezed
 abstract class const AgentToCreate._() with _$AgentToCreate {
   const factory({
@@ -46,8 +59,13 @@ abstract class const AgentToCreate._() with _$AgentToCreate {
         normalizedDescription.length <= AgentLimits.descriptionMaxLength &&
         content.trim().isNotEmpty;
   }
+
+  bool hasRequiredName() => name.trim().isNotEmpty;
+
+  bool hasRequiredContent() => content.trim().isNotEmpty;
 }
 
+@immutable
 @freezed
 abstract class const AgentToUpdate._() with _$AgentToUpdate {
   const factory({
@@ -66,9 +84,16 @@ abstract class const AgentToUpdate._() with _$AgentToUpdate {
         normalizedDescription.length <= AgentLimits.descriptionMaxLength &&
         content.trim().isNotEmpty;
   }
+
+  bool hasRequiredName() => name.trim().isNotEmpty;
+
+  bool hasRequiredContent() => content.trim().isNotEmpty;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 sealed class AgentSkillRef with _$AgentSkillRef {
   const factory user(String skillId) = UserAgentSkillRef;
 

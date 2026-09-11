@@ -50,6 +50,12 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
   bool get isValid {
     return hasValidTitle && workspaceId.isNotEmpty;
   }
+
+  String identity() => id;
+
+  bool hasWorkspace() => workspaceId.isNotEmpty;
+
+  bool isPinnedConversation() => isPinned;
 }
 
 @freezed
@@ -89,6 +95,12 @@ abstract class const ConversationToCreate._() with _$ConversationToCreate {
         (agentId == null || agentId.isNotEmpty) &&
         (parentConversationId == null || parentConversationId.isNotEmpty);
   }
+
+  bool hasModel() => modelId != null;
+
+  bool hasAgent() => agentId != null;
+
+  bool hasParent() => parentConversationId != null;
 }
 
 @freezed
@@ -109,22 +121,24 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
     /// Whether this conversation is pinned.
     bool? isPinned,
   }) = _ConversationPatch;
-  bool get isValid {
-    final title = this.title;
-    if (title != null && title.isEmpty) return false;
+  bool get isValid => _hasValidValues && _hasChanges;
 
-    final modelId = this.modelId;
-    if (modelId != null && modelId.isEmpty) return false;
+  bool get _hasValidValues =>
+      _isNullOrNonEmpty(title) &&
+      _isNullOrNonEmpty(modelId) &&
+      _isNullOrNonEmpty(agentId) &&
+      (!clearAgent || agentId == null);
 
-    final agentId = this.agentId;
-    if (agentId != null && agentId.isEmpty) return false;
+  bool get _hasChanges =>
+      title != null ||
+      modelId != null ||
+      agentId != null ||
+      clearAgent ||
+      isPinned != null;
 
-    if (clearAgent && agentId != null) return false;
+  bool hasChanges() => _hasChanges;
 
-    return title != null ||
-        modelId != null ||
-        agentId != null ||
-        clearAgent ||
-        isPinned != null;
-  }
+  bool hasValidValues() => _hasValidValues;
 }
+
+bool _isNullOrNonEmpty(String? value) => value == null || value.isNotEmpty;

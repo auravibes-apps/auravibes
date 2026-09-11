@@ -18,6 +18,8 @@ extension AgentToolPermissionModeX on AgentToolPermissionMode {
       .alwaysDeny => ToolPermissionMode.alwaysDeny,
     };
   }
+
+  bool hasOverridePermission() => overridePermission != null;
 }
 
 extension ToolPermissionModeAgentX on ToolPermissionMode {
@@ -28,4 +30,6 @@ extension ToolPermissionModeAgentX on ToolPermissionMode {
       .alwaysDeny => AgentToolPermissionMode.alwaysDeny,
     };
   }
+
+  bool isAlwaysDeny() => this == ToolPermissionMode.alwaysDeny;
 }

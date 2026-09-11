@@ -2,7 +2,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_credential_definition_entity.freezed.dart';
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialDefinitionEntity._()
     with _$SkillCredentialDefinitionEntity {
   const factory({
@@ -16,14 +19,20 @@ abstract class const SkillCredentialDefinitionEntity._()
   }) = _SkillCredentialDefinitionEntity;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialDefinitionToCreate._()
     with _$SkillCredentialDefinitionToCreate {
   const factory({required String title, required String attributesJson}) =
       _SkillCredentialDefinitionToCreate;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialDefinitionToUpdate._()
     with _$SkillCredentialDefinitionToUpdate {
   const factory({String? title, String? attributesJson}) =

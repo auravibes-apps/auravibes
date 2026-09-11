@@ -9,9 +9,19 @@ part 'workspace_dao.g.dart';
 @DriftAccessor(tables: [Workspaces])
 class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     with _$WorkspaceDaoMixin {
-  /// Creates a new [WorkspaceDao] instance.
   new(super.attachedDatabase);
 
+  /// Retrieves a workspace by its ID.
+  ///
+  /// Returns the workspace with the given [id], or null if not found.
+  Future<WorkspacesTable?> getWorkspaceById(String id) {
+    return (select(
+      workspaces,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+}
+
+extension WorkspaceDaoReadOperations on WorkspaceDao {
   /// Retrieves all workspaces from the database.
   ///
   /// Returns a list of all workspaces ordered by their creation date.
@@ -30,15 +40,6 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     )..orderBy([(t) => OrderingTerm(expression: t.createdAt)])).watch();
   }
 
-  /// Retrieves a workspace by its ID.
-  ///
-  /// Returns the workspace with the given [id], or null if not found.
-  Future<WorkspacesTable?> getWorkspaceById(String id) {
-    return (select(
-      workspaces,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
-  }
-
   /// Retrieves workspaces by their type.
   ///
   /// Returns a list of workspaces with the specified [type].
@@ -48,7 +49,9 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
           ..orderBy([(t) => OrderingTerm(expression: t.name)]))
         .get();
   }
+}
 
+extension WorkspaceDaoWriteOperations on WorkspaceDao {
   /// Inserts a new workspace into the database.
   ///
   /// Returns the ID of the inserted workspace.

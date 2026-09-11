@@ -7,7 +7,57 @@ part 'conversation_dao.g.dart';
 @DriftAccessor(tables: [Conversations])
 class ConversationDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$ConversationDaoMixin {
+    with
+        _$ConversationDaoMixin,
+        _ConversationDaoWriteApi,
+        _ConversationDaoReadApi;
+
+mixin _ConversationDaoWriteApi {
+  Future<ConversationsTable> insertConversation(
+    ConversationsCompanion conversation,
+  ) =>
+      ConversationDaoWriteOperations(this as ConversationDao)
+          .insertConversation(conversation);
+
+  Future<ConversationsTable?> getConversationById(String id) =>
+      ConversationDaoWriteOperations(this as ConversationDao)
+          .getConversationById(id);
+
+  Future<bool> patchConversation(String id, ConversationsCompanion companion) =>
+      ConversationDaoWriteOperations(this as ConversationDao)
+          .patchConversation(id, companion);
+
+  Future<bool> deleteConversation(String id) =>
+      ConversationDaoWriteOperations(this as ConversationDao)
+          .deleteConversation(id);
+}
+
+mixin _ConversationDaoReadApi {
+  Stream<ConversationsTable?> watchConversationById(String id) =>
+      ConversationDaoReadOperations(this as ConversationDao)
+          .watchConversationById(id);
+
+  Stream<List<ConversationsTable>> watchConversationsByWorkspace(
+    String workspaceId, {
+    int? limit,
+  }) =>
+      ConversationDaoReadOperations(this as ConversationDao)
+          .watchConversationsByWorkspace(workspaceId, limit: limit);
+
+  Stream<List<ConversationsTable>> watchChildConversations(
+    String parentConversationId,
+  ) =>
+      ConversationDaoReadOperations(this as ConversationDao)
+          .watchChildConversations(parentConversationId);
+
+  Future<List<ConversationsTable>> getChildConversations(
+    String parentConversationId,
+  ) =>
+      ConversationDaoReadOperations(this as ConversationDao)
+          .getChildConversations(parentConversationId);
+}
+
+extension ConversationDaoWriteOperations on ConversationDao {
   Future<ConversationsTable> insertConversation(
     ConversationsCompanion conversation,
   ) => into(conversations).insertReturning(conversation);
@@ -34,7 +84,9 @@ class ConversationDao(super.attachedDatabase)
 
     return count > 0;
   }
+}
 
+extension ConversationDaoReadOperations on ConversationDao {
   Stream<ConversationsTable?> watchConversationById(String id) => (select(
     conversations,
   )..where((tbl) => tbl.id.equals(id))).watchSingleOrNull();
@@ -63,23 +115,24 @@ class ConversationDao(super.attachedDatabase)
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
   _buildWorkspaceQuery(String workspaceId) {
-    return (select(conversations)
-      ..where(
-        (tbl) =>
-            tbl.workspaceId.equals(workspaceId) &
-            tbl.parentConversationId.isNull(),
-      )
-      ..orderBy([
-        (tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc),
-      ]));
+    return _orderedConversations(
+      (tbl) =>
+          tbl.workspaceId.equals(workspaceId) &
+          tbl.parentConversationId.isNull(),
+    );
   }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
   _buildChildrenQuery(String parentConversationId) {
-    return (select(conversations)
-      ..where((tbl) => tbl.parentConversationId.equals(parentConversationId))
-      ..orderBy([
-        (tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc),
-      ]));
+    return _orderedConversations(
+      (tbl) => tbl.parentConversationId.equals(parentConversationId),
+    );
   }
+
+  SimpleSelectStatement<$ConversationsTable, ConversationsTable>
+  _orderedConversations(
+    Expression<bool> Function($ConversationsTable) filter,
+  ) => select(conversations)
+    ..where(filter)
+    ..orderBy([(tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc)]);
 }

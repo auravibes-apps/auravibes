@@ -18,32 +18,51 @@ class CreateWorkspaceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final createLocation = WorkspaceCreateRoute(workspaceId: workspaceId)
-        .location;
-
     return AuraScreen(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          CreateWorkspaceForm(
-            onCreated: (workspace) =>
-                context.go(NewChatRoute(workspaceId: workspace.id).location),
-            onAddCloudAccount: () => context.go(
-              CloudAccountAddRoute(
-                workspaceId: workspaceId,
-                returnPath: createLocation,
-              ).location,
-            ),
-          ),
-        ],
-      ),
-      appBar: AuraAppBar(
-        title: const TextLocale(LocaleKeys.workspace_management_create_title),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
+      child: _CreateWorkspaceContent(workspaceId: workspaceId),
+      appBar: const _CreateWorkspaceAppBar(),
     );
   }
+}
+
+class const _CreateWorkspaceContent({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        CreateWorkspaceForm(
+          onCreated: (workspace) =>
+              context.go(NewChatRoute(workspaceId: workspace.id).location),
+          onAddCloudAccount: () => _addCloudAccount(context),
+        ),
+      ],
+    );
+  }
+
+  void _addCloudAccount(BuildContext context) {
+    context.go(
+      CloudAccountAddRoute(
+        workspaceId: workspaceId,
+        returnPath: WorkspaceCreateRoute(workspaceId: workspaceId).location,
+      ).location,
+    );
+  }
+}
+
+class const _CreateWorkspaceAppBar()
+    extends StatelessWidget
+    implements PreferredSizeWidget {
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) => AuraAppBar(
+    title: const TextLocale(LocaleKeys.workspace_management_create_title),
+    leading: AuraIconButton(
+      icon: Icons.arrow_back,
+      onPressed: () => Navigator.of(context).pop(),
+    ),
+  );
 }

@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:widgetbook_workspace/aura_ui/auravibes_choice_picker.stories.dart';
 
 void main() {
+  final goldenDirectory = Platform.isLinux ? 'goldens/linux' : 'goldens';
   for (final brightness in Brightness.values) {
     testWidgets('dashboard examples ${brightness.name}', (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 900));
@@ -106,7 +109,7 @@ void main() {
       expect(find.text('Comparison'), findsNWidgets(2));
       await expectLater(
         find.byKey(const ValueKey('dashboard')),
-        matchesGoldenFile('goldens/dashboard_${brightness.name}.png'),
+        matchesGoldenFile('$goldenDirectory/dashboard_${brightness.name}.png'),
       );
     });
   }

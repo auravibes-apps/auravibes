@@ -151,34 +151,79 @@ class _SelectableTextDemoState extends State<SelectableTextDemo> {
   String? _lastInteraction;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .start,
-      children: [
-        AuraSelectableText(
-          widget.data,
-          style: widget.style,
-          tint: widget.tint,
-          textAlign: widget.textAlign,
-          maxLines: widget.maxLines,
-          onTap: widget.enableTap
-              ? () => setState(() => _lastInteraction = 'Tapped')
-              : null,
-          cursorWidth: widget.cursorWidth,
-          cursorHeight: widget.cursorHeight,
-          cursorRadius: widget.cursorRadius,
-          cursorTint: widget.cursorTint,
-          onSelectionChanged: widget.enableSelectionChanged
-              ? (_, _) => setState(() => _lastInteraction = 'Selection changed')
-              : null,
-          showCursor: widget.showCursor,
-          autofocus: widget.autofocus,
-          minLines: widget.minLines,
-        ),
-        if (_lastInteraction case final interaction?)
-          Text('Last interaction: $interaction'),
-      ],
-    );
-  }
+  Widget build(BuildContext _) => _SelectableTextPreview(
+    data: .new(
+      demo: widget,
+      lastInteraction: _lastInteraction,
+      onTap: widget.enableTap ? _markTapped : null,
+      onSelectionChanged: widget.enableSelectionChanged
+          ? _markSelectionChanged
+          : null,
+    ),
+  );
+
+  void _markTapped() => setState(() => _lastInteraction = 'Tapped');
+
+  void _markSelectionChanged(TextSelection _, SelectionChangedCause? _) =>
+      setState(() => _lastInteraction = 'Selection changed');
+}
+
+class _SelectableTextPreviewData({
+  required final SelectableTextDemo demo,
+  required final String? lastInteraction,
+  required final VoidCallback? onTap,
+  required final SelectionChangedCallback? onSelectionChanged,
+}) {
+  final List<Widget> children = [
+    _SelectableTextControl(
+      data: .new(
+        demo: demo,
+        tapCallback: onTap,
+        selectionChangedCallback: onSelectionChanged,
+      ),
+    ),
+    if (lastInteraction case final interaction?)
+      Text('Last interaction: $interaction'),
+  ];
+}
+
+class const _SelectableTextPreview({
+  required final _SelectableTextPreviewData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: data.children,
+  );
+}
+
+class const _SelectableTextControl({
+  required final _SelectableTextControlData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => data.text;
+}
+
+class _SelectableTextControlData({
+  required final SelectableTextDemo demo,
+  required final VoidCallback? tapCallback,
+  required final SelectionChangedCallback? selectionChangedCallback,
+}) {
+  final AuraSelectableText text = .new(
+    demo.data,
+    style: demo.style,
+    tint: demo.tint,
+    textAlign: demo.textAlign,
+    maxLines: demo.maxLines,
+    onTap: tapCallback,
+    cursorWidth: demo.cursorWidth,
+    cursorHeight: demo.cursorHeight,
+    cursorRadius: demo.cursorRadius,
+    cursorTint: demo.cursorTint,
+    onSelectionChanged: selectionChangedCallback,
+    showCursor: demo.showCursor,
+    autofocus: demo.autofocus,
+    minLines: demo.minLines,
+  );
 }

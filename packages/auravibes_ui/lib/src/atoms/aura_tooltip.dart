@@ -58,44 +58,42 @@ class AuraTooltip extends StatelessWidget {
   /// Defaults to true.
   final bool preferBelow;
 
+  EdgeInsets get _padding => const EdgeInsets.symmetric(
+    vertical: _verticalPadding,
+    horizontal: _horizontalPadding,
+  );
+
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final backgroundColor = _getBackgroundColor(auraColors);
-    final textColor = _getForegroundColor(auraColors);
 
     return Tooltip(
       message: message,
-      padding: const EdgeInsets.symmetric(
-        vertical: _verticalPadding,
-        horizontal: _horizontalPadding,
-      ),
+      padding: _padding,
       preferBelow: preferBelow,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: const BorderRadius.all(.circular(_cornerRadius)),
-        boxShadow: [
-          BoxShadow(
-            color: auraColors.shadow.withValues(alpha: _shadowAlpha),
-            offset: const Offset(0, _shadowOffset),
-            blurRadius: _cornerRadius,
-          ),
-        ],
-      ),
-      textStyle: .new(
-        color: textColor,
-        fontSize: _fontSize,
-        fontWeight: FontWeight.w500,
-      ),
+      decoration: _decoration(auraColors),
+      textStyle: _textStyle(auraColors),
       waitDuration: waitDuration,
       showDuration: showDuration,
       child: child,
     );
   }
 
-  Color _getBackgroundColor(AuraColorScheme colors) {
-    return colors.colorFor(tint);
-  }
+  BoxDecoration _decoration(AuraColorScheme colors) => BoxDecoration(
+    color: colors.colorFor(tint),
+    borderRadius: const BorderRadius.all(.circular(_cornerRadius)),
+    boxShadow: [_shadow(colors)],
+  );
 
-  Color _getForegroundColor(AuraColorScheme colors) => colors.onTint(tint);
+  BoxShadow _shadow(AuraColorScheme colors) => BoxShadow(
+    color: colors.shadow.withValues(alpha: _shadowAlpha),
+    offset: const Offset(0, _shadowOffset),
+    blurRadius: _cornerRadius,
+  );
+
+  TextStyle _textStyle(AuraColorScheme colors) => .new(
+    color: colors.onTint(tint),
+    fontSize: _fontSize,
+    fontWeight: FontWeight.w500,
+  );
 }

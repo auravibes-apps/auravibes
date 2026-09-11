@@ -22,12 +22,29 @@ abstract class ValueColor {
   ({Vector min, Vector max}) get validLimits;
 
   /// Whether this color has valid component values.
-  bool get isValid {
+  bool get isValid => isVectorWithinLimits(vector);
+
+  /// Converts this color to a Flutter color.
+  Color toColor();
+
+  /// Whether [candidate] has components inside this color space's limits.
+  bool isVectorWithinLimits(Vector candidate) {
     final (:min, :max) = validLimits;
 
-    return vector.x.isBetween(min.x, max.x) &&
-        vector.y.isBetween(min.y, max.y) &&
-        vector.z.isBetween(min.z, max.z);
+    return candidate.x.isBetween(min.x, max.x) &&
+        candidate.y.isBetween(min.y, max.y) &&
+        candidate.z.isBetween(min.z, max.z);
+  }
+
+  /// Clamps [candidate] to this color space's valid component limits.
+  Vector clampVector(Vector candidate) {
+    final (:min, :max) = validLimits;
+
+    return Vector(
+      candidate.x.fit(min.x, max.x),
+      candidate.y.fit(min.y, max.y),
+      candidate.z.fit(min.z, max.z),
+    );
   }
 }
 
@@ -86,6 +103,10 @@ class LinearSrgbColor extends ValueColor {
 
     return OklabColor.fromVector(oklab, alpha: alpha);
   }
+
+  /// Converts to a Flutter Color.
+  @override
+  Color toColor() => toRgb().toColor();
 
   double _fn(double val) {
     final sign = val < 0 ? -1 : 1;
@@ -214,18 +235,12 @@ class OklabColor extends ValueColor {
       (min: const Vector(0, -0.4, -0.4), max: const Vector(1, 0.4, 0.4));
 
   /// Converts to OKLCH color space.
-  OKLCHColor toLch() {
-    final hue = (math.atan2(b, a) * 180) / math.pi;
-
-    return OKLCHColor(
-      hue: hue >= 0 ? hue : hue + 360,
-      lightness: lightness,
-      chroma: math.sqrt(
-        math.pow(a, _squaredExponent) + math.pow(b, _squaredExponent),
-      ),
-      alpha: alpha,
-    );
-  }
+  OKLCHColor toLch() => OKLCHColor(
+    hue: _oklchHue(a, b),
+    lightness: lightness,
+    chroma: _oklchChroma(a, b),
+    alpha: alpha,
+  );
 
   /// Converts to linear RGB color space.
   LinearSrgbColor toLrgb() {
@@ -237,7 +252,22 @@ class OklabColor extends ValueColor {
 
   /// Converts to sRGB color space.
   RgbColor toRgb() => toLrgb().toRgb();
+
+  /// Converts to a Flutter Color.
+  @override
+  Color toColor() => toRgb().toColor();
 }
+
+double _oklchHue(double a, double b) {
+  final hue = (math.atan2(b, a) * 180) / math.pi;
+
+  return hue >= 0 ? hue : hue + 360;
+}
+
+double _oklchChroma(double a, double b) => math.sqrt(
+  math.pow(a, OklabColor._squaredExponent) +
+      math.pow(b, OklabColor._squaredExponent),
+);
 
 /// Predefined shades for OKLCH colors with varying lightness and chroma.
 ///

@@ -57,27 +57,25 @@ dependencies:
   flutter:
     sdk: flutter
   # State Management
-  flutter_riverpod: ^2.5.0
-  riverpod_annotation: ^2.3.0
+  hooks_riverpod: 3.4.3
+  riverpod_annotation: 4.0.7
   # Navigation
-  go_router: ^14.0.0
+  go_router: ^18.0.0
   # Networking
-  dio: ^5.4.0
+  dio: ^5.10.0
   # Code Generation
-  freezed_annotation: ^2.4.0
-  json_annotation: ^4.8.0
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
   # Storage
-  shared_preferences: ^2.2.0
-  hive_flutter: ^1.1.0
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  build_runner: ^2.4.0
-  riverpod_generator: ^2.4.0
-  freezed: ^2.5.0
-  json_serializable: ^6.8.0
-  flutter_lints: ^4.0.0
+  build_runner: ^2.16.0
+  riverpod_generator: 4.0.9
+  freezed: 4.0.1
+  json_serializable: ^6.14.0
 ```
 
 ## Feature Layer Responsibilities

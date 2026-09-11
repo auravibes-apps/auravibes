@@ -2,7 +2,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_template_tool_entity.freezed.dart';
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillTemplateToolEntity._()
     with _$SkillTemplateToolEntity {
   const factory({
@@ -21,7 +24,10 @@ abstract class const SkillTemplateToolEntity._()
   }) = _SkillTemplateToolEntity;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillTemplateToolToCreate._()
     with _$SkillTemplateToolToCreate {
   const factory({
@@ -35,7 +41,10 @@ abstract class const SkillTemplateToolToCreate._()
   }) = _SkillTemplateToolToCreate;
 }
 
+@immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillTemplateToolToUpdate._()
     with _$SkillTemplateToolToUpdate {
   const factory({

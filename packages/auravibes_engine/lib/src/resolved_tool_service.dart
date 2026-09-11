@@ -1,5 +1,28 @@
 import 'package:auravibes_engine/src/tool_name_resolver.dart';
 
+typedef SkillControlToolRequest = ({
+  String conversationId,
+  String workspaceId,
+  String toolIdentifier,
+  Map<String, dynamic> arguments,
+});
+
+typedef SkillTemplateToolRequest = ({
+  String conversationId,
+  String workspaceId,
+  String skillSlug,
+  String toolSlug,
+  Map<String, dynamic> arguments,
+});
+
+typedef SkillNativeToolRequest = ({
+  String conversationId,
+  String workspaceId,
+  String skillSlug,
+  String toolSlug,
+  Map<String, dynamic> arguments,
+});
+
 abstract interface class ResolvedToolProvider<TTool> {
   AgentResolvedToolExecution<TTool> toExecution(TTool tool);
 
@@ -23,28 +46,11 @@ abstract interface class ResolvedToolProvider<TTool> {
 
   Future<String> getConversationWorkspaceId(String conversationId);
 
-  Future<Object?> runSkillControlTool({
-    required String conversationId,
-    required String workspaceId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  });
+  Future<Object?> runSkillControlTool(SkillControlToolRequest request);
 
-  Future<Object?> runSkillTemplateTool({
-    required String conversationId,
-    required String workspaceId,
-    required String skillSlug,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  });
+  Future<Object?> runSkillTemplateTool(SkillTemplateToolRequest request);
 
-  Future<Object?> runSkillNativeTool({
-    required String conversationId,
-    required String workspaceId,
-    required String skillSlug,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  });
+  Future<Object?> runSkillNativeTool(SkillNativeToolRequest request);
 }
 
 class const AgentResolvedToolExecution<TTool>({
@@ -144,12 +150,12 @@ class const ResolvedToolService<TTool>({
       conversationId,
     );
 
-    return await provider.runSkillControlTool(
+    return await provider.runSkillControlTool((
       conversationId: conversationId,
       workspaceId: workspaceId,
       toolIdentifier: descriptor.toolIdentifier,
       arguments: arguments,
-    );
+    ));
   }
 
   Future<Object?> _runSkillTemplateTool(
@@ -165,13 +171,13 @@ class const ResolvedToolService<TTool>({
       conversationId,
     );
 
-    return await provider.runSkillTemplateTool(
+    return await provider.runSkillTemplateTool((
       conversationId: conversationId,
       workspaceId: workspaceId,
       skillSlug: skillSlug,
       toolSlug: descriptor.toolIdentifier,
       arguments: arguments,
-    );
+    ));
   }
 
   Future<Object?> _runSkillNativeTool(
@@ -191,12 +197,12 @@ class const ResolvedToolService<TTool>({
       conversationId,
     );
 
-    return await provider.runSkillNativeTool(
+    return await provider.runSkillNativeTool((
       conversationId: conversationId,
       workspaceId: workspaceId,
       skillSlug: skillSlug,
       toolSlug: toolSlug,
       arguments: arguments,
-    );
+    ));
   }
 }

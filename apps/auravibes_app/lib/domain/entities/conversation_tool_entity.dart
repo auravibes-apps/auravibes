@@ -35,6 +35,10 @@ abstract class const ConversationToolEntity._() with _$ConversationToolEntity {
 
   /// Returns true if the tool is currently enabled.
   bool get isAvailable => isEnabled;
+
+  bool canExecute() => isEnabled;
+
+  bool usesPermissionMode(ToolPermissionMode mode) => permissionMode == mode;
 }
 
 /// Entity for creating/updating conversation tool settings.
@@ -65,4 +69,10 @@ abstract class const ConversationToolToCreate._()
   /// Returns the default permission mode (alwaysAsk if not specified).
   ToolPermissionMode get defaultPermissionMode =>
       permissionMode ?? ToolPermissionMode.alwaysAsk;
+
+  bool isReady() => toolId.isNotEmpty;
+
+  bool hasEnabledOverride() => isEnabled != null;
+
+  bool hasPermissionOverride() => permissionMode != null;
 }

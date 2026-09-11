@@ -15,7 +15,7 @@ import 'package:riverpod/src/providers/provider.dart';
 
 export '../models/tool_approval_decision.dart';
 
-class const ResolveToolApprovalDecisionUsecase({
+class ResolveToolApprovalDecisionUsecase({
   required final ConversationToolsRepository conversationToolsRepository,
   required final ToolsGroupsRepositoryContract toolsGroupsRepository,
   required final WorkspaceToolsRepositoryContract workspaceToolsRepository,
@@ -27,8 +27,7 @@ class const ResolveToolApprovalDecisionUsecase({
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
-    if ((resolvedTool.isSkillControl || resolvedTool.isSkillCommand) &&
-        resolvedTool.toolIdentifier == agent.listSkillsToolName) {
+    if (_isListSkillsTool(resolvedTool)) {
       return ToolApprovalDecision(
         toolCallId: toolCallId,
         permissionResult: .granted,
@@ -41,24 +40,15 @@ class const ResolveToolApprovalDecisionUsecase({
       resolvedTool: resolvedTool,
     );
     if (permissionTableId == null) {
-      return ToolApprovalDecision(
-        toolCallId: toolCallId,
-        permissionResult: .notConfigured,
-      );
+      return _notConfiguredDecision(toolCallId);
     }
 
-    final permissionResult = await conversationToolsRepository
-        .checkToolPermission(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          toolId: permissionTableId,
-        );
-
-    return ToolApprovalDecision(
+    return await _configuredDecision(conversationToolsRepository, (
+      conversationId: conversationId,
+      workspaceId: workspaceId,
       toolCallId: toolCallId,
-      permissionResult: permissionResult,
       permissionTableId: permissionTableId,
-    );
+    ));
   }
 
   Future<String?> resolvePermissionTableId({
@@ -66,19 +56,11 @@ class const ResolveToolApprovalDecisionUsecase({
     required String workspaceId,
     required ResolvedTool resolvedTool,
   }) async {
-    if (resolvedTool.isSkillCommand ||
-        resolvedTool.isSkillControl ||
-        resolvedTool.isSkillTemplate ||
-        resolvedTool.isSkillNative) {
-      if (resolvedTool.toolIdentifier == agent.callSkillToolName &&
-          resolvedTool.target == null) {
-        return null;
-      }
-
-      return await syncSkillToolPermissionsUsecase?.permissionTableIdFor(
+    if (_isSkillTool(resolvedTool)) {
+      return await _resolveSkillPermission(
         conversationId: conversationId,
         workspaceId: workspaceId,
-        toolName: resolvedTool.fullName,
+        resolvedTool: resolvedTool,
       );
     }
 
@@ -87,19 +69,85 @@ class const ResolveToolApprovalDecisionUsecase({
       return resolvedTool.tableId;
     }
 
-    final toolGroup = await toolsGroupsRepository.getToolsGroupByMcpServerId(
+    return await _resolveMcpPermission(
       mcpServerId,
+      resolvedTool.toolIdentifier,
+    );
+  }
+
+  Future<String?> _resolveSkillPermission({
+    required String conversationId,
+    required String workspaceId,
+    required ResolvedTool resolvedTool,
+  }) {
+    if (resolvedTool.toolIdentifier == agent.callSkillToolName &&
+        resolvedTool.target == null) {
+      return Future.value();
+    }
+
+    return syncSkillToolPermissionsUsecase?.permissionTableIdFor(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          toolName: resolvedTool.fullName,
+        ) ??
+        Future.value();
+  }
+
+  Future<String?> _resolveMcpPermission(
+    String serverId,
+    String toolName,
+  ) async {
+    final toolGroup = await toolsGroupsRepository.getToolsGroupByMcpServerId(
+      serverId,
     );
     if (toolGroup == null) return null;
-
     final workspaceTool = await workspaceToolsRepository
         .getWorkspaceToolByToolName(
           toolGroupId: toolGroup.id,
-          toolName: resolvedTool.toolIdentifier,
+          toolName: toolName,
         );
 
     return workspaceTool?.id;
   }
+
+  bool _isSkillTool(ResolvedTool resolvedTool) =>
+      resolvedTool.isSkillCommand ||
+      resolvedTool.isSkillControl ||
+      resolvedTool.isSkillTemplate ||
+      resolvedTool.isSkillNative;
+}
+
+bool _isListSkillsTool(ResolvedTool tool) =>
+    (tool.isSkillControl || tool.isSkillCommand) &&
+    tool.toolIdentifier == agent.listSkillsToolName;
+
+ToolApprovalDecision _notConfiguredDecision(String toolCallId) =>
+    ToolApprovalDecision(
+      toolCallId: toolCallId,
+      permissionResult: .notConfigured,
+    );
+
+Future<ToolApprovalDecision> _configuredDecision(
+  ConversationToolsRepository repository,
+  ({
+    String conversationId,
+    String workspaceId,
+    String toolCallId,
+    String permissionTableId,
+  })
+  request,
+) async {
+  final permissionResult = await repository.checkToolPermission(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    toolId: request.permissionTableId,
+  );
+
+  return ToolApprovalDecision(
+    toolCallId: request.toolCallId,
+    permissionResult: permissionResult,
+    permissionTableId: request.permissionTableId,
+  );
 }
 
 final ProviderFamily<ResolveToolApprovalDecisionUsecase, String>

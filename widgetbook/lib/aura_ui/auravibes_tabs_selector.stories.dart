@@ -43,33 +43,34 @@ class const SelectorTabsDemo({super.key}) extends StatefulWidget {
 }
 
 class _SelectorTabsDemoState extends State<SelectorTabsDemo> {
+  static const List<AuraTabOption<_SelectorTab>> _options = [
+    AuraTabOption(
+      value: _SelectorTab.overview,
+      title: Text('Overview'),
+      semanticLabel: 'Overview',
+    ),
+    AuraTabOption(
+      value: _SelectorTab.details,
+      title: Text('Details'),
+      semanticLabel: 'Details',
+    ),
+    AuraTabOption(
+      value: _SelectorTab.activity,
+      title: Text('Activity'),
+      semanticLabel: 'Activity',
+    ),
+  ];
   _SelectorTab _selected = .overview;
 
   @override
-  Widget build(BuildContext context) {
-    return StoryHelpers.constrainStoryWidth(
-      AuraTabs<_SelectorTab>.selector(
-        options: const [
-          AuraTabOption(
-            value: _SelectorTab.overview,
-            title: Text('Overview'),
-            semanticLabel: 'Overview',
-          ),
-          AuraTabOption(
-            value: _SelectorTab.details,
-            title: Text('Details'),
-            semanticLabel: 'Details',
-          ),
-          AuraTabOption(
-            value: _SelectorTab.activity,
-            title: Text('Activity'),
-            semanticLabel: 'Activity',
-          ),
-        ],
-        value: _selected,
-        onChanged: (value) => setState(() => _selected = value),
-      ),
-      maxWidth: 320,
-    );
-  }
+  Widget build(BuildContext context) => StoryHelpers.constrainStoryWidth(
+    AuraTabs<_SelectorTab>.selector(
+      options: _options,
+      value: _selected,
+      onChanged: _select,
+    ),
+    maxWidth: 320,
+  );
+
+  void _select(_SelectorTab value) => setState(() => _selected = value);
 }

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
@@ -33,6 +34,49 @@ part 'mcp_connection_status.g.dart';
 final _logger = Logger('McpConnectionNotifier');
 
 const Duration _mcpConnectionTimeout = .new(seconds: 10);
+
+typedef _AddedMcpServer = ({
+  McpServerEntity server,
+  List<McpToolInfo> tools,
+  McpManagerClient client,
+  String? serviceConnectionId,
+});
+
+typedef _LocalMcpAddRequest = ({
+  McpManagerService manager,
+  McpServerToCreate serverInfo,
+  McpServerToCreate serverForPersistence,
+  String workspaceId,
+  String? serviceConnectionId,
+  ServiceConnectionRepository serviceConnectionRepository,
+});
+
+typedef _LocalMcpAddInput = ({
+  McpManagerService manager,
+  McpServerToCreate serverInfo,
+  ServiceConnectionRepository serviceConnectionRepository,
+  String workspaceId,
+  String? serviceConnectionId,
+});
+
+typedef _McpServiceConnectionAdd = ({
+  ServiceConnectionRepository repository,
+  String? id,
+});
+
+typedef _McpAddCleanup = ({
+  McpManagerService manager,
+  ServiceConnectionRepository serviceConnectionRepository,
+  McpManagerClient? client,
+  String? serviceConnectionId,
+});
+
+typedef _CloudDiscoveryError = ({
+  String serverId,
+  McpServerEntity server,
+  Exception error,
+  StackTrace stackTrace,
+});
 
 // ============================================================.
 // MCP Connection Status.
@@ -77,11 +121,17 @@ abstract class const McpConnectionState._() with _$McpConnectionState {
     String? errorMessage,
   }) = _McpConnectionState;
 
+  bool get hasTools => tools.isNotEmpty;
+
   /// Whether this connection is ready to use.
   bool get isReady => status == McpConnectionStatus.connected && client != null;
 
-  /// Whether this connection has tools available.
-  bool get hasTools => tools.isNotEmpty;
+  /// Whether this connection belongs to [serverId].
+  bool hasServerId(String serverId) => server.id == serverId;
+
+  /// Whether this connection exposes [toolName].
+  bool hasTool(String toolName) =>
+      tools.any((tool) => tool.toolName == toolName);
 }
 
 extension _McpToolInfoSpec on McpToolInfo {
@@ -113,24 +163,31 @@ class const McpToolIdComponents({
   /// The original tool name from the MCP server.
   required final String toolIdentifier,
 }) {
-  static McpToolIdComponents? fromComposite(String compositeId) {
-    final parsed = ToolNameFormatter.parse(compositeId);
-    if (parsed case AgentResolvedToolName(
-      kind: AgentResolvedToolKind.mcp,
-      mcpServerId: final mcpServerId?,
-      mcpSlug: final mcpSlug?,
-      :final toolIdentifier,
-    )) {
-      return McpToolIdComponents(
-        mcpServerId: mcpServerId,
-        slugName: mcpSlug,
-        toolIdentifier: toolIdentifier,
-      );
-    }
+  static McpToolIdComponents? fromComposite(String compositeId) =>
+      _fromParsed(ToolNameFormatter.parse(compositeId));
 
-    return null;
-  }
+  static McpToolIdComponents? _fromParsed(AgentResolvedToolName? parsed) =>
+      switch (parsed) {
+        AgentResolvedToolName(
+          kind: AgentResolvedToolKind.mcp,
+          mcpServerId: final mcpServerId?,
+          mcpSlug: final mcpSlug?,
+          :final toolIdentifier,
+        ) =>
+          _mcpToolIdComponents(mcpServerId, mcpSlug, toolIdentifier),
+        _ => null,
+      };
 }
+
+McpToolIdComponents _mcpToolIdComponents(
+  String mcpServerId,
+  String slugName,
+  String toolIdentifier,
+) => McpToolIdComponents(
+  mcpServerId: mcpServerId,
+  slugName: slugName,
+  toolIdentifier: toolIdentifier,
+);
 
 // ============================================================.
 // MCP Manager Notifier.
@@ -159,11 +216,101 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   var _isCloud = false;
   var _isDisposed = false;
   var _lastKnownState = const <McpConnectionState>[];
+  var _currentState = const <McpConnectionState>[];
   final _tokenSubscriptions = <String, StreamSubscription<OAuthTokenEntity>>{};
   StreamController<List<McpConnectionState>> _stateController =
       StreamController<List<McpConnectionState>>.broadcast(sync: true);
   McpManagerService? _mcpManagerService;
 
+  Ref get _notifierRef => ref;
+
+  @override
+  set state(List<McpConnectionState> value) {
+    super.state = value;
+    _currentState = value;
+    if (!_stateController.isClosed) _stateController.add(value);
+  }
+
+  /// Call an MCP tool on a connected MCP server.
+  Future<String> callTool({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) async {
+    if (_isCloud) {
+      throw const UnsupportedWorkspaceCapabilityException();
+    }
+    final client = _requiredToolClient(mcpServerId, toolIdentifier);
+
+    return await _requiredMcpManager.callToolString(
+      client,
+      toolIdentifier: toolIdentifier,
+      arguments: arguments,
+    );
+  }
+
+  /// Add a new MCP server from the form data.
+  Future<void> addMcpServer(
+    McpServerFormToCreate serverToCreate, {
+    required String workspaceId,
+  }) async {
+    if (_isCloud) {
+      await _addCloudMcpServer(serverToCreate, workspaceId);
+
+      return;
+    }
+    await _addLocalMcpServer(serverToCreate, workspaceId);
+  }
+
+  /// Reconnect to a specific MCP server.
+  Future<void> reconnectMcpServer(String serverId) async {
+    if (_isCloud) {
+      await _discoverCloudMcp(serverId);
+
+      return;
+    }
+    if (await _reconnectExistingMcp(serverId)) return;
+
+    await _reconnectStoredMcp(serverId);
+  }
+
+  /// Disconnect from a specific MCP server without deleting.
+  void disconnectMcpServer(String serverId) {
+    if (_isCloud) return;
+    final index = _connectionIndex(serverId);
+    if (index == -1) return;
+
+    final connection = _currentState[index];
+    _disconnectLocalConnection(serverId, connection);
+    _setState(_disconnectedState(index, connection));
+  }
+
+  /// Delete an MCP server by identifier.
+  Future<void> deleteMcpServer(String serverId) async {
+    final connection = _currentState.firstWhereOrNull(
+      (c) => c.server.id == serverId,
+    );
+    if (connection != null) _disconnectDeletedConnection(serverId, connection);
+    _removeConnection(serverId);
+    await _deleteMcpServerRecord(serverId);
+  }
+
+  @override
+  List<McpConnectionState> build() {
+    _resetBuildState();
+    _listenForWorkspaceChanges();
+    _loadInitialWorkspace();
+
+    return [];
+  }
+
+  void _setNotifierState(List<McpConnectionState> nextState) {
+    _lastKnownState = nextState;
+    state = nextState;
+  }
+}
+
+extension _McpConnectionNotifierContext on McpConnectionNotifier {
   McpServersRepositoryContract get _activeRepository {
     final workspaceId = _activeWorkspaceId;
     if (workspaceId == null) {
@@ -185,37 +332,13 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
     throw const UnsupportedWorkspaceCapabilityException();
   }
+}
 
-  @override
-  set state(List<McpConnectionState> value) {
-    super.state = value;
-    if (!_stateController.isClosed) _stateController.add(value);
-  }
-
-  /// Disconnect from a specific MCP server without deleting.
-  void disconnectMcpServer(String serverId) {
-    if (_isCloud) return;
-    final index = state.indexWhere((c) => c.server.id == serverId);
-    if (index == -1) return;
-
-    final connection = state[index];
-    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-    _requiredMcpManager.disconnect(connection.client);
-
-    _setState([
-      ...state.sublist(0, index),
-      connection.copyWith(
-        status: McpConnectionStatus.disconnected,
-        client: null,
-      ),
-      ...state.sublist(index + 1),
-    ]);
-  }
-
+extension McpConnectionNotifierOperations on McpConnectionNotifier {
   /// Get a connection state by server ID.
-  McpConnectionState? getConnection(String serverId) {
-    return state.where((c) => c.server.id == serverId).firstOrNull;
-  }
+  McpConnectionState? getConnection(String serverId) => _currentState
+      .where((connection) => connection.hasServerId(serverId))
+      .firstOrNull;
 
   /// Get a ToolSpec for a specific MCP tool by server ID and tool name.
   ///
@@ -223,254 +346,352 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   ToolSpec? getToolSpec({
     required String mcpServerId,
     required String toolName,
-  }) {
-    final connection = getConnection(mcpServerId);
-    if (connection == null ||
-        connection.status != McpConnectionStatus.connected ||
-        (!_isCloud && connection.client == null)) {
-      return null;
-    }
+  }) => _toolSpec(getConnection(mcpServerId), toolName);
 
-    final toolInfo = connection.tools.firstWhereOrNull(
-      (t) => t.toolName == toolName,
-    );
-    if (toolInfo == null) {
-      return null;
-    }
+  /// Get the connections that are currently connecting.
+  List<McpConnectionState> getConnectingServers(List<String> mcpServerIds) =>
+      _currentState
+          .where((c) => mcpServerIds.contains(c.server.id))
+          .where((c) => c.status == McpConnectionStatus.connecting)
+          .toList();
 
-    return toolInfo._spec(connection.server);
-  }
-
-  /// Returns a Future that completes when the specified MCP servers have
-  /// finished their connection attempts (status is connected, error,
-  /// or disconnected - not connecting).
-  ///
-  /// [mcpServerIds] - List of MCP server IDs to wait for.
-  ///   If empty, returns immediately.
-  /// [timeout] - Maximum time to wait. If null, uses [_mcpConnectionTimeout].
-  ///
-  /// Returns normally after all connections resolve OR timeout is reached.
-  ///
-  /// Also completes if this notifier is disposed (the state stream closes),
-  /// so callers do not hang waiting on a torn-down notifier.
+  /// Returns when the specified MCP servers have finished connecting.
   Future<void> waitForConnectionsReady({
     required List<String> mcpServerIds,
     Duration? timeout,
   }) async {
     final effectiveTimeout = timeout ?? _mcpConnectionTimeout;
-    if (mcpServerIds.isEmpty || effectiveTimeout <= .zero) {
-      return;
-    }
+    if (mcpServerIds.isEmpty || effectiveTimeout <= .zero) return;
 
     final ids = mcpServerIds.toSet();
-    bool ready(List<McpConnectionState> connections) => !connections
-        .where((c) => ids.contains(c.server.id))
-        .any((c) => c.status == McpConnectionStatus.connecting);
+    if (_connectionsReady(ids, _currentState)) return;
 
-    if (ready(state)) return;
-
-    final _ = await _stateController.stream
-        .firstWhere(ready, orElse: () => const [])
-        .timeout(effectiveTimeout, onTimeout: () => const []);
+    await _waitForConnections(ids, effectiveTimeout);
   }
+}
 
-  /// Get the list of MCP connection states that are currently connecting
-  /// from the specified server IDs.
-  List<McpConnectionState> getConnectingServers(List<String> mcpServerIds) {
-    return state
-        .where((c) => mcpServerIds.contains(c.server.id))
-        .where((c) => c.status == McpConnectionStatus.connecting)
-        .toList();
-  }
-
-  /// Call an MCP tool on a connected MCP server.
-  ///
-  /// The caller provides the resolved MCP server ID and tool identifier.
-  /// This method validates the current connection, ensures the tool exists,
-  /// and then executes it with the given arguments.
-  ///
-  /// Returns the tool result as a string.
-  /// Throws an exception if the MCP server is not connected or tool not found.
-  Future<String> callTool({
-    required String mcpServerId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  }) async {
-    if (_isCloud) {
-      throw const UnsupportedWorkspaceCapabilityException();
-    }
-    final connection = getConnection(mcpServerId);
-    if (connection == null) {
-      throw Exception('MCP server not found: $mcpServerId');
+extension _McpConnectionLookupOperations on McpConnectionNotifier {
+  ToolSpec? _toolSpec(McpConnectionState? connection, String toolName) {
+    if (connection case final current?
+        when current.status == McpConnectionStatus.connected &&
+            current.tools.isNotEmpty &&
+            (_isCloud || current.client != null)) {
+      return _toolInfoSpec(current, toolName);
     }
 
+    return null;
+  }
+
+  ToolSpec? _toolInfoSpec(McpConnectionState connection, String toolName) =>
+      connection.tools
+          .firstWhereOrNull((tool) => tool.toolName == toolName)
+          ?._spec(connection.server);
+
+  McpManagerClient _requiredToolClient(
+    String mcpServerId,
+    String toolIdentifier,
+  ) {
+    final connection = _requiredConnection(mcpServerId);
     if (!connection.isReady) {
       throw Exception('MCP server not connected: $mcpServerId');
     }
+    _ensureToolExists(connection, mcpServerId, toolIdentifier);
 
-    final toolExists = connection.tools.any(
-      (t) => t.toolName == toolIdentifier,
-    );
-    if (!toolExists) {
-      throw Exception(
-        'Tool "$toolIdentifier" not found on MCP server: $mcpServerId',
-      );
+    return _requiredClient(connection, mcpServerId);
+  }
+
+  McpConnectionState _requiredConnection(String serverId) {
+    final connection = getConnection(serverId);
+    if (connection == null) throw Exception('MCP server not found: $serverId');
+
+    return connection;
+  }
+
+  void _ensureToolExists(
+    McpConnectionState connection,
+    String serverId,
+    String toolIdentifier,
+  ) {
+    if (connection.hasTool(toolIdentifier)) {
+      return;
     }
 
-    final client = connection.client;
-    if (client == null) {
-      throw Exception('MCP server not connected: $mcpServerId');
-    }
-
-    return await _requiredMcpManager.callToolString(
-      client,
-      toolIdentifier: toolIdentifier,
-      arguments: arguments,
+    throw Exception(
+      'Tool "$toolIdentifier" not found on MCP server: $serverId',
     );
   }
 
-  // ============================================================.
-  // Public API.
-  // ============================================================.
-
-  /// Add a new MCP server from the form data.
-  ///
-  /// This saves the server to the database, connects to it, and persists its
-  /// tools when the connection succeeds.
-  Future<void> addMcpServer(
-    McpServerFormToCreate serverToCreate, {
-    required String workspaceId,
-  }) async {
-    if (_isCloud) {
-      await _addCloudMcpServer(serverToCreate, workspaceId);
-
-      return;
+  McpManagerClient _requiredClient(
+    McpConnectionState connection,
+    String serverId,
+  ) {
+    final client = connection.client;
+    if (client == null) {
+      throw Exception('MCP server not connected: $serverId');
     }
-    final manager = _requiredMcpManager;
-    final serverInfo = await BuildMcpServerToCreateUseCase(
-      authenticator: .new(
-        callbackUrlScheme: 'me-auravibes',
-        clientName: 'Aura Vibes MCP Client',
-      ),
-    ).call(serverToCreate);
 
-    final serviceConnectionRepository = ref.read(
-      serviceConnectionRepositoryProvider,
-    );
-    final serviceConnectionId = await serviceConnectionRepository
-        .createMcpServiceConnection(
-          workspaceId: workspaceId,
-          profile: .new(
-            name: serverInfo.name,
-            authenticationType: serverInfo.authenticationType,
-          ),
-        );
-    final serverForPersistence = serverInfo.copyWith(
-      serviceConnectionId: serviceConnectionId,
+    return client;
+  }
+}
+
+extension _McpConnectionStateOperations on McpConnectionNotifier {
+  int _connectionIndex(String serverId) => _currentState.indexWhere(
+    (connection) => connection.server.id == serverId,
+  );
+
+  void _disconnectLocalConnection(
+    String serverId,
+    McpConnectionState connection,
+  ) {
+    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
+    _requiredMcpManager.disconnect(connection.client);
+  }
+
+  List<McpConnectionState> _disconnectedState(
+    int index,
+    McpConnectionState connection,
+  ) => [
+    ..._currentState.sublist(0, index),
+    connection.copyWith(status: .disconnected, client: null),
+    ..._currentState.sublist(index + 1),
+  ];
+
+  bool _connectionsReady(
+    Set<String> ids,
+    List<McpConnectionState> connections,
+  ) => !connections
+      .where((connection) => ids.contains(connection.server.id))
+      .any((connection) => connection.status == .connecting);
+
+  Future<void> _waitForConnections(Set<String> ids, Duration timeout) async {
+    final _ = await _stateController.stream
+        .firstWhere(
+          (connections) => _connectionsReady(ids, connections),
+          orElse: () => const [],
+        )
+        .timeout(timeout, onTimeout: () => const []);
+  }
+
+  Future<void> _addLocalMcpServer(
+    McpServerFormToCreate serverToCreate,
+    String workspaceId,
+  ) async {
+    final request = await _prepareLocalMcpAdd(serverToCreate, workspaceId);
+    final added = await _connectAndPersistMcp(request);
+
+    await _finishLocalMcpAdd(added, request.manager, workspaceId);
+  }
+
+  Future<_LocalMcpAddRequest> _prepareLocalMcpAdd(
+    McpServerFormToCreate serverToCreate,
+    String workspaceId,
+  ) async => _localMcpAddRequest(
+    await _prepareLocalMcpInput(serverToCreate, workspaceId),
+  );
+
+  Future<_LocalMcpAddInput> _prepareLocalMcpInput(
+    McpServerFormToCreate serverToCreate,
+    String workspaceId,
+  ) async {
+    final serverInfo = await _buildMcpServerInfo(serverToCreate);
+    final serviceConnection = await _prepareMcpServiceConnection(
+      workspaceId,
+      serverInfo,
     );
 
+    return (
+      manager: _requiredMcpManager,
+      serverInfo: serverInfo,
+      serviceConnectionRepository: serviceConnection.repository,
+      workspaceId: workspaceId,
+      serviceConnectionId: serviceConnection.id,
+    );
+  }
+}
+
+extension _McpServiceConnectionAddOperations on McpConnectionNotifier {
+  Future<_McpServiceConnectionAdd> _prepareMcpServiceConnection(
+    String workspaceId,
+    McpServerToCreate serverInfo,
+  ) async {
+    final repository = _notifierRef.read(serviceConnectionRepositoryProvider);
+    final id = await _createMcpServiceConnection(
+      repository,
+      workspaceId,
+      serverInfo,
+    );
+
+    return (repository: repository, id: id);
+  }
+}
+
+extension _McpConnectionAddOperations on McpConnectionNotifier {
+  _LocalMcpAddRequest _localMcpAddRequest(_LocalMcpAddInput input) => (
+    manager: input.manager,
+    serverInfo: input.serverInfo,
+    serverForPersistence: input.serverInfo.copyWith(
+      serviceConnectionId: input.serviceConnectionId,
+    ),
+    workspaceId: input.workspaceId,
+    serviceConnectionId: input.serviceConnectionId,
+    serviceConnectionRepository: input.serviceConnectionRepository,
+  );
+
+  Future<McpServerToCreate> _buildMcpServerInfo(McpServerFormToCreate server) =>
+      BuildMcpServerToCreateUseCase(
+        authenticator: .new(
+          callbackUrlScheme: 'me-auravibes',
+          clientName: 'Aura Vibes MCP Client',
+        ),
+      ).call(server);
+
+  Future<String?> _createMcpServiceConnection(
+    ServiceConnectionRepository serviceConnectionRepository,
+    String workspaceId,
+    McpServerToCreate serverInfo,
+  ) => serviceConnectionRepository.createMcpServiceConnection(
+    workspaceId: workspaceId,
+    profile: .new(
+      name: serverInfo.name,
+      authenticationType: serverInfo.authenticationType,
+    ),
+  );
+
+  Future<_AddedMcpServer> _connectAndPersistMcp(
+    _LocalMcpAddRequest request,
+  ) async {
     McpManagerClient? client;
-    var mcpTools = const <McpToolInfo>[];
-    McpServerEntity savedServer;
     try {
-      client = await manager.connectMcp(serverInfo);
+      client = await _connectMcpClientForAdd(request);
 
-      mcpTools = await manager.getTools(client);
-
-      final repository = _repositoryFor(workspaceId);
-      savedServer = await repository.addMcpServerWithTools(
-        workspaceId: workspaceId,
-        serverToCreate: serverForPersistence,
-        tools: mcpTools,
-      );
+      return await _persistMcpAdd(request, client);
     } on Object {
-      if (client != null) {
-        manager.disconnect(client);
-      }
-      if (serviceConnectionId != null) {
-        await serviceConnectionRepository.deleteOwnedMcpCredential(
-          serviceConnectionId,
-        );
-      }
+      await _cleanupFailedMcpAdd(_mcpAddCleanup(request, client));
       rethrow;
     }
+  }
 
+  Future<McpManagerClient> _connectMcpClientForAdd(
+    _LocalMcpAddRequest request,
+  ) => request.manager.connectMcp(request.serverInfo);
+
+  Future<_AddedMcpServer> _persistMcpAdd(
+    _LocalMcpAddRequest request,
+    McpManagerClient client,
+  ) async {
+    final tools = await request.manager.getTools(client);
+    final server = await _persistMcpServer(request, tools);
+
+    return (
+      server: server,
+      tools: tools,
+      client: client,
+      serviceConnectionId: request.serviceConnectionId,
+    );
+  }
+
+  Future<McpServerEntity> _persistMcpServer(
+    _LocalMcpAddRequest request,
+    List<McpToolInfo> tools,
+  ) => _repositoryFor(request.workspaceId).addMcpServerWithTools(
+    workspaceId: request.workspaceId,
+    serverToCreate: request.serverForPersistence,
+    tools: tools,
+  );
+
+  Future<void> _finishLocalMcpAdd(
+    _AddedMcpServer added,
+    McpManagerService manager,
+    String workspaceId,
+  ) async {
     if (_isDisposed) {
-      manager.disconnect(client);
+      manager.disconnect(added.client);
 
       return;
     }
     _listenTokenUpdates(
-      serverId: savedServer.id,
-      serviceConnectionId: serviceConnectionId,
-      client: client,
+      serverId: added.server.id,
+      serviceConnectionId: added.serviceConnectionId,
+      client: added.client,
     );
+    _appendConnectedMcp(added);
+    _notifierRef.invalidate(workspaceToolsProvider(workspaceId));
+  }
+}
 
+extension _McpAddCleanupInputOperations on McpConnectionNotifier {
+  _McpAddCleanup _mcpAddCleanup(
+    _LocalMcpAddRequest request,
+    McpManagerClient? client,
+  ) => (
+    manager: request.manager,
+    serviceConnectionRepository: request.serviceConnectionRepository,
+    client: client,
+    serviceConnectionId: request.serviceConnectionId,
+  );
+}
+
+extension _McpConnectionCleanupOperations on McpConnectionNotifier {
+  void _appendConnectedMcp(_AddedMcpServer added) {
     _setState([
-      ...state,
+      ..._currentState,
       McpConnectionState(
-        server: savedServer,
+        server: added.server,
         status: .connected,
-        client: client,
-        tools: mcpTools,
+        client: added.client,
+        tools: added.tools,
       ),
     ]);
+  }
 
-    if (!_isDisposed) {
-      ref.invalidate(workspaceToolsProvider(workspaceId));
+  Future<void> _cleanupFailedMcpAdd(_McpAddCleanup cleanup) async {
+    if (cleanup.client case final client?) {
+      cleanup.manager.disconnect(client);
+    }
+    if (cleanup.serviceConnectionId case final serviceConnectionId?) {
+      await cleanup.serviceConnectionRepository.deleteOwnedMcpCredential(
+        serviceConnectionId,
+      );
     }
   }
 
-  /// Delete an MCP server by identifier.
-  ///
-  /// This disconnects the client if connected, removes it from state, and
-  /// deletes it from the database, cascading to its tools group and tools.
-  Future<void> deleteMcpServer(String serverId) async {
-    // Find and disconnect the client.
-    final connection = state.firstWhereOrNull((c) => c.server.id == serverId);
-
-    if (connection != null) {
-      unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-      _mcpManagerService?.disconnect(connection.client);
-    }
-
-    // Remove from state.
-    _setState(state.where((c) => c.server.id != serverId).toList());
-
-    // Delete from database (cascades to tools group and tools).
-    final repository = _activeRepository;
-    final _ = await repository.deleteMcpServer(serverId);
+  void _disconnectDeletedConnection(
+    String serverId,
+    McpConnectionState connection,
+  ) {
+    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
+    _mcpManagerService?.disconnect(connection.client);
   }
 
-  /// Reconnect to a specific MCP server.
-  ///
-  /// If the server is present in state, this disconnects and reconnects it. If
-  /// absent, such as after a cold start, this loads it from the repository and
-  /// creates a fresh connection.
-  Future<void> reconnectMcpServer(String serverId) async {
-    if (_isCloud) {
-      await _discoverCloudMcp(serverId);
-
-      return;
-    }
-    final connection = state.where((c) => c.server.id == serverId).firstOrNull;
-    if (connection != null) {
-      unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-      _requiredMcpManager.disconnect(connection.client);
-      await _connectToMcp(connection.server);
-
-      return;
-    }
-
-    final repository = _activeRepository;
-    final server = await repository.getMcpServerById(serverId);
-    if (server != null) {
-      await _connectToMcp(server);
-    }
+  void _removeConnection(String serverId) {
+    _setState(
+      _currentState
+          .where((connection) => connection.server.id != serverId)
+          .toList(),
+    );
   }
 
-  @override
-  List<McpConnectionState> build() {
+  Future<void> _deleteMcpServerRecord(String serverId) async {
+    final _ = await _activeRepository.deleteMcpServer(serverId);
+  }
+
+  Future<bool> _reconnectExistingMcp(String serverId) async {
+    final connection = getConnection(serverId);
+    if (connection == null) return false;
+
+    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
+    _requiredMcpManager.disconnect(connection.client);
+    await _connectToMcp(connection.server);
+
+    return true;
+  }
+
+  Future<void> _reconnectStoredMcp(String serverId) async {
+    final server = await _activeRepository.getMcpServerById(serverId);
+    if (server != null) await _connectToMcp(server);
+  }
+
+  void _resetBuildState() {
     _isDisposed = false;
     _lastKnownState = const [];
     if (_stateController.isClosed) {
@@ -478,22 +699,32 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         sync: true,
       );
     }
-    ref
+  }
+}
+
+extension _McpConnectionLoadOperations on McpConnectionNotifier {
+  void _listenForWorkspaceChanges() {
+    _notifierRef
       ..onDispose(_onDispose)
-      ..listen<String?>(currentRouteWorkspaceIdProvider, (previous, next) {
-        if (next == null || next == previous) {
-          return;
-        }
+      ..listen<String?>(
+        currentRouteWorkspaceIdProvider,
+        _handleWorkspaceChange,
+      );
+  }
 
-        unawaited(_loadMcpsForWorkspace(next));
-      });
+  void _handleWorkspaceChange(String? previous, String? next) {
+    if (next == null || next == previous) return;
 
-    final initialWorkspaceId = ref.read(currentRouteWorkspaceIdProvider);
+    unawaited(_loadMcpsForWorkspace(next));
+  }
+
+  void _loadInitialWorkspace() {
+    final initialWorkspaceId = _notifierRef.read(
+      currentRouteWorkspaceIdProvider,
+    );
     if (initialWorkspaceId != null) {
       unawaited(_loadMcpsForWorkspace(initialWorkspaceId));
     }
-
-    return [];
   }
 
   // ============================================================.
@@ -503,40 +734,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   /// Load enabled MCPs only for the active workspace.
   Future<void> _loadMcpsForWorkspace(String workspaceId) async {
     try {
-      _activeWorkspaceId = workspaceId;
-      final repository = _repositoryFor(workspaceId);
-      _isCloud = repository is CloudToolsRepository;
-      _mcpManagerService = _isCloud
-          ? null
-          : ref.read(mcpManagerServiceProvider);
-      if (_isDisposed) {
-        return;
-      }
-
-      final servers = await repository.getEnabledMcpServersForWorkspace(
-        workspaceId,
-      );
-      if (_isDisposed) {
-        return;
-      }
-
-      for (final server in servers) {
-        if (_isDisposed) {
-          return;
-        }
-
-        if (getConnection(server.id) case final existingConnection?
-            when existingConnection.isReady ||
-                existingConnection.status == McpConnectionStatus.connecting) {
-          continue;
-        }
-
-        if (_isCloud) {
-          await _discoverCloudMcp(server.id, server: server);
-        } else {
-          await _connectToMcp(server);
-        }
-      }
+      await _loadWorkspaceMcpServers(workspaceId);
     } on Exception catch (e, stackTrace) {
       _logger.warning(
         'Failed to load MCP servers from database',
@@ -545,91 +743,186 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       );
     }
   }
+
+  Future<void> _loadWorkspaceMcpServers(String workspaceId) async {
+    _prepareWorkspace(workspaceId);
+    if (_isDisposed) return;
+
+    final servers = await _enabledServers(workspaceId);
+    if (_isDisposed) return;
+
+    await _loadMcpServers(servers);
+  }
+
+  void _prepareWorkspace(String workspaceId) {
+    _activeWorkspaceId = workspaceId;
+    final repository = _repositoryFor(workspaceId);
+    _isCloud = repository is CloudToolsRepository;
+    _mcpManagerService = _isCloud
+        ? null
+        : _notifierRef.read(mcpManagerServiceProvider);
+  }
+
+  Future<List<McpServerEntity>> _enabledServers(String workspaceId) =>
+      _repositoryFor(workspaceId).getEnabledMcpServersForWorkspace(workspaceId);
+
+  Future<void> _loadMcpServers(List<McpServerEntity> servers) async {
+    for (final server in servers) {
+      if (_isDisposed) return;
+
+      await _loadMcpServer(server);
+    }
+  }
+}
+
+extension _McpConnectionServerLoadOperations on McpConnectionNotifier {
+  Future<void> _loadMcpServer(McpServerEntity server) async {
+    if (getConnection(server.id) case final existingConnection?
+        when existingConnection.isReady ||
+            existingConnection.status == McpConnectionStatus.connecting) {
+      return;
+    }
+
+    if (_isCloud) {
+      await _discoverCloudMcp(server.id, server: server);
+    } else {
+      await _connectToMcp(server);
+    }
+  }
+}
+
+extension _McpConnectionManagementOperations on McpConnectionNotifier {
   // ============================================================.
   // Private: Connection Management.
   // ============================================================.
 
   /// Connect to an MCP server.
   Future<void> _connectToMcp(McpServerEntity server) async {
-    if (_isDisposed) {
-      return;
-    }
+    if (_isDisposed) return;
+    _setConnectingState(server);
 
-    // Check if already in state.
-    final existingIndex = state.indexWhere((c) => c.server.id == server.id);
+    await _connectMcpAndHandleErrors(server);
+  }
 
-    // Add or update state to "connecting.".
-    if (existingIndex >= 0) {
-      _setState([
-        ...state.sublist(0, existingIndex),
-        state[existingIndex].copyWith(
-          status: McpConnectionStatus.connecting,
-          errorMessage: null,
-        ),
-        ...state.sublist(existingIndex + 1),
-      ]);
-    } else {
-      _setState([
-        ...state,
-        McpConnectionState(server: server, status: .connecting),
-      ]);
-    }
-
+  Future<void> _connectMcpAndHandleErrors(McpServerEntity server) async {
     McpManagerClient? connectedClient;
     try {
-      final authenticationType = await ref
-          .read(oauthCredentialServiceProvider)
-          .resolveMcpAuthentication(server.serviceConnectionId);
-      final serverToConnect = server.copyWith(
-        authenticationType: authenticationType,
-      );
-      connectedClient = await _requiredMcpManager.connectMcp(serverToConnect);
-
-      final mcpTools = await _requiredMcpManager.getTools(connectedClient);
-      if (_isDisposed) {
-        return;
-      }
-      _listenTokenUpdates(
-        serverId: server.id,
-        serviceConnectionId: server.serviceConnectionId,
-        client: connectedClient,
-      );
-
-      // Update state with connected client and tools.
-      _updateConnectionState(
-        server.id,
-        (connection) => connection.copyWith(
-          status: McpConnectionStatus.connected,
-          client: connectedClient,
-          tools: mcpTools,
-          errorMessage: null,
-        ),
-      );
+      connectedClient = await _connectMcpClient(server);
+      await _completeMcpConnection(server, connectedClient);
       connectedClient = null;
-
-      // Sync tools to database.
-      await _syncMcpToolsToDatabase(server, mcpTools);
     } on Exception catch (error, stackTrace) {
-      _logger.warning(
-        'MCP server connection failed: server=${server.id}',
-        error,
-        stackTrace,
-      );
-      // Update state with error.
-      _updateConnectionState(
-        server.id,
-        (connection) => connection.copyWith(
-          status: McpConnectionStatus.error,
-          client: null,
-          tools: [],
-          errorMessage: LocaleKeys.tools_screen_mcp_error,
-        ),
-      );
+      _setConnectionError(server, error, stackTrace);
     } finally {
-      if (connectedClient != null) {
-        _requiredMcpManager.disconnect(connectedClient);
-      }
+      _disconnectClient(connectedClient);
     }
+  }
+
+  Future<void> _completeMcpConnection(
+    McpServerEntity server,
+    McpManagerClient client,
+  ) async {
+    final tools = await _requiredMcpManager.getTools(client);
+    if (_isDisposed) return;
+
+    _setConnectedState(server, client, tools);
+    await _syncMcpToolsToDatabase(server, tools);
+  }
+
+  void _setConnectingState(McpServerEntity server) {
+    final index = _connectionIndex(server.id);
+    if (index < 0) {
+      _appendConnectingState(server);
+
+      return;
+    }
+    _replaceConnectingState(index);
+  }
+
+  void _appendConnectingState(McpServerEntity server) {
+    _setState([
+      ..._currentState,
+      McpConnectionState(server: server, status: .connecting),
+    ]);
+  }
+
+  void _replaceConnectingState(int index) {
+    _setState([
+      ..._currentState.sublist(0, index),
+      _currentState[index].copyWith(status: .connecting, errorMessage: null),
+      ..._currentState.sublist(index + 1),
+    ]);
+  }
+
+  Future<McpManagerClient> _connectMcpClient(McpServerEntity server) async {
+    final authenticationType = await _notifierRef
+        .read(oauthCredentialServiceProvider)
+        .resolveMcpAuthentication(server.serviceConnectionId);
+
+    return await _requiredMcpManager.connectMcp(
+      server.copyWith(authenticationType: authenticationType),
+    );
+  }
+}
+
+extension _McpConnectionResultOperations on McpConnectionNotifier {
+  void _setConnectedState(
+    McpServerEntity server,
+    McpManagerClient client,
+    List<McpToolInfo> tools,
+  ) {
+    _listenTokenUpdates(
+      serverId: server.id,
+      serviceConnectionId: server.serviceConnectionId,
+      client: client,
+    );
+    _updateConnectionState(
+      server.id,
+      (connection) => _connectedState(connection, client, tools),
+    );
+  }
+
+  McpConnectionState _connectedState(
+    McpConnectionState connection,
+    McpManagerClient client,
+    List<McpToolInfo> tools,
+  ) => connection.copyWith(
+    status: .connected,
+    client: client,
+    tools: tools,
+    errorMessage: null,
+  );
+
+  void _setConnectionError(
+    McpServerEntity server,
+    Exception error,
+    StackTrace stackTrace,
+  ) {
+    _logConnectionError(server, error, stackTrace);
+    _updateConnectionState(server.id, _connectionErrorState);
+  }
+
+  void _logConnectionError(
+    McpServerEntity server,
+    Exception error,
+    StackTrace stackTrace,
+  ) {
+    _logger.warning(
+      'MCP server connection failed: server=${server.id}',
+      error,
+      stackTrace,
+    );
+  }
+
+  McpConnectionState _connectionErrorState(McpConnectionState connection) =>
+      connection.copyWith(
+        status: .error,
+        client: null,
+        tools: [],
+        errorMessage: LocaleKeys.tools_screen_mcp_error,
+      );
+
+  void _disconnectClient(McpManagerClient? client) {
+    if (client != null) _requiredMcpManager.disconnect(client);
   }
 
   /// Update a connection state by server ID.
@@ -641,16 +934,18 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       return;
     }
 
-    final index = state.indexWhere((c) => c.server.id == serverId);
+    final index = _currentState.indexWhere((c) => c.server.id == serverId);
     if (index == -1) return;
 
     _setState([
-      ...state.sublist(0, index),
-      updater(state[index]),
-      ...state.sublist(index + 1),
+      ..._currentState.sublist(0, index),
+      updater(_currentState[index]),
+      ..._currentState.sublist(index + 1),
     ]);
   }
+}
 
+extension _McpConnectionLifecycleOperations on McpConnectionNotifier {
   void _onDispose() {
     _isDisposed = true;
     _disposeAllConnections();
@@ -665,21 +960,32 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     final tokenUpdates = client.onTokenUpdate;
     if (serviceConnectionId == null || tokenUpdates == null) return;
     unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-    _tokenSubscriptions[serverId] = tokenUpdates.listen((token) {
-      unawaited(
-        ref
-            .read(oauthCredentialServiceProvider)
-            .persistOAuthTokenUpdate(
-              serviceConnectionId: serviceConnectionId,
-              token: token,
-            ),
-      );
-    });
+    _tokenSubscriptions[serverId] = _subscribeTokenUpdates(
+      tokenUpdates,
+      serviceConnectionId,
+    );
+  }
+
+  StreamSubscription<OAuthTokenEntity> _subscribeTokenUpdates(
+    Stream<OAuthTokenEntity> tokenUpdates,
+    String serviceConnectionId,
+  ) => tokenUpdates.listen(
+    (token) => _persistTokenUpdate(serviceConnectionId, token),
+  );
+
+  void _persistTokenUpdate(String serviceConnectionId, OAuthTokenEntity token) {
+    unawaited(
+      _notifierRef
+          .read(oauthCredentialServiceProvider)
+          .persistOAuthTokenUpdate(
+            serviceConnectionId: serviceConnectionId,
+            token: token,
+          ),
+    );
   }
 
   void _setState(List<McpConnectionState> nextState) {
-    _lastKnownState = nextState;
-    state = nextState;
+    _setNotifierState(nextState);
   }
 
   // ============================================================.
@@ -708,13 +1014,15 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   }
 
   McpServersRepositoryContract _repositoryFor(String workspaceId) {
-    final session = ref
+    final session = _notifierRef
         .read(workspaceSessionForRouteProvider(workspaceId))
         .requireValue;
 
-    return ref.read(mcpServersRepositoryProvider(session));
+    return _notifierRef.read(mcpServersRepositoryProvider(session));
   }
+}
 
+extension _McpConnectionCloudOperations on McpConnectionNotifier {
   Future<void> _addCloudMcpServer(
     McpServerFormToCreate server,
     String workspaceId,
@@ -725,39 +1033,58 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     );
     if (_isDisposed) return;
     _setCloudDiscovery(result.server, result.discovery);
-    ref.invalidate(workspaceToolsProvider(workspaceId));
+    _notifierRef.invalidate(workspaceToolsProvider(workspaceId));
   }
 
   Future<void> _discoverCloudMcp(
     String serverId, {
     McpServerEntity? server,
   }) async {
-    final repository = _cloudRepository;
-    final resolvedServer =
-        server ?? await repository.getMcpServerById(serverId);
+    final resolvedServer = await _resolveCloudMcpServer(serverId, server);
     if (resolvedServer == null || _isDisposed) return;
     _upsertConnection(
       .new(server: resolvedServer, status: McpConnectionStatus.connecting),
     );
+    await _performCloudDiscovery(serverId, resolvedServer);
+  }
+
+  Future<void> _performCloudDiscovery(
+    String serverId,
+    McpServerEntity server,
+  ) async {
     try {
-      final discovery = await repository.discoverMcpServer(serverId);
+      final discovery = await _cloudRepository.discoverMcpServer(serverId);
       if (_isDisposed) return;
-      _setCloudDiscovery(resolvedServer, discovery);
+      _setCloudDiscovery(server, discovery);
     } on Exception catch (error, stackTrace) {
-      if (_isDisposed) return;
-      _logger.warning(
-        'MCP server cloud discovery failed: server=$serverId',
-        error,
-        stackTrace,
-      );
-      _upsertConnection(
-        .new(
-          server: resolvedServer,
-          status: McpConnectionStatus.error,
-          errorMessage: LocaleKeys.tools_screen_mcp_error,
-        ),
-      );
+      _handleCloudDiscoveryError((
+        serverId: serverId,
+        server: server,
+        error: error,
+        stackTrace: stackTrace,
+      ));
     }
+  }
+
+  Future<McpServerEntity?> _resolveCloudMcpServer(
+    String serverId,
+    McpServerEntity? server,
+  ) async => server ?? await _cloudRepository.getMcpServerById(serverId);
+
+  void _handleCloudDiscoveryError(_CloudDiscoveryError details) {
+    if (_isDisposed) return;
+    _logger.warning(
+      'MCP server cloud discovery failed: server=${details.serverId}',
+      details.error,
+      details.stackTrace,
+    );
+    _upsertConnection(
+      .new(
+        server: details.server,
+        status: .error,
+        errorMessage: LocaleKeys.tools_screen_mcp_error,
+      ),
+    );
   }
 
   void _setCloudDiscovery(
@@ -768,36 +1095,48 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     _upsertConnection(
       .new(
         server: server,
-        status: connected
-            ? McpConnectionStatus.connected
-            : McpConnectionStatus.error,
-        tools: [
-          for (final tool in discovery.tools)
-            McpToolInfo(
-              toolName: tool.name,
-              description: tool.description ?? '',
-              inputSchema:
-                  jsonDecode(tool.inputSchemaJson) as Map<String, dynamic>,
-            ),
-        ],
+        status: _cloudConnectionStatus(connected),
+        tools: _cloudTools(discovery),
         errorMessage: connected ? null : discovery.errorCode,
       ),
     );
   }
 
+  McpConnectionStatus _cloudConnectionStatus(bool connected) =>
+      connected ? .connected : .error;
+
+  List<McpToolInfo> _cloudTools(DiscoverMcpServerResult discovery) => [
+    for (final tool in discovery.tools)
+      McpToolInfo(
+        toolName: tool.name,
+        description: tool.description ?? '',
+        inputSchema: jsonDecode(tool.inputSchemaJson) as Map<String, dynamic>,
+      ),
+  ];
+}
+
+extension _McpConnectionCloudStateOperations on McpConnectionNotifier {
   void _upsertConnection(McpConnectionState connection) {
-    final index = state.indexWhere(
+    final index = _currentState.indexWhere(
       (item) => item.server.id == connection.server.id,
     );
     if (index < 0) {
-      _setState([...state, connection]);
+      _appendConnection(connection);
 
       return;
     }
+    _replaceConnection(index, connection);
+  }
+
+  void _appendConnection(McpConnectionState connection) {
+    _setState([..._currentState, connection]);
+  }
+
+  void _replaceConnection(int index, McpConnectionState connection) {
     _setState([
-      ...state.sublist(0, index),
+      ..._currentState.sublist(0, index),
       connection,
-      ...state.sublist(index + 1),
+      ..._currentState.sublist(index + 1),
     ]);
   }
 

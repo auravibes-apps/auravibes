@@ -50,6 +50,14 @@ class _ChatA2uiHistoricalSurfaceState extends State<ChatA2uiHistoricalSurface> {
   void _load(Iterable<String> payloads) {
     final saved = payloads.toList(growable: false);
     _payloadHash = Object.hashAll(saved);
+    final controller = _resetController();
+    final messages = _parsePayloads(saved);
+    _renderMessages(controller, messages);
+    _markMissingRoots(controller);
+    _refresh();
+  }
+
+  SurfaceController _resetController() {
     unawaited(_updates?.cancel());
     _controller?.dispose();
     final controller = SurfaceController(catalogs: auraChatCatalogs());
@@ -59,13 +67,15 @@ class _ChatA2uiHistoricalSurfaceState extends State<ChatA2uiHistoricalSurface> {
     _issues.clear();
     _validatedPayloads.clear();
     _updates = controller.surfaceUpdates.listen((_) {
-      if (mounted)
-        setState(() {
-          final _ = 0;
-        });
+      _refresh();
     });
+
+    return controller;
+  }
+
+  List<ChatA2uiProtocolMessage> _parsePayloads(List<String> payloads) {
     final messages = <ChatA2uiProtocolMessage>[];
-    for (final payload in saved) {
+    for (final payload in payloads) {
       try {
         for (final result in parseChatA2uiProtocolMessageResults(
           jsonDecode(payload),
@@ -82,6 +92,14 @@ class _ChatA2uiHistoricalSurfaceState extends State<ChatA2uiHistoricalSurface> {
         final _ = _issues.add('malformedPayload');
       }
     }
+
+    return messages;
+  }
+
+  void _renderMessages(
+    SurfaceController controller,
+    List<ChatA2uiProtocolMessage> messages,
+  ) {
     for (final pending in scopeChatA2uiMessages(messages, widget.messageId)) {
       try {
         final message = pending.message;
@@ -101,13 +119,20 @@ class _ChatA2uiHistoricalSurfaceState extends State<ChatA2uiHistoricalSurface> {
         final _ = _issues.add('renderFailure');
       }
     }
+  }
+
+  void _markMissingRoots(SurfaceController controller) {
     if (controller.activeSurfaceIds.any((id) => !_roots.contains(id))) {
       final _ = _issues.add('missingRoot');
     }
-    if (mounted)
+  }
+
+  void _refresh() {
+    if (mounted) {
       setState(() {
         final _ = 0;
       });
+    }
   }
 
   @override

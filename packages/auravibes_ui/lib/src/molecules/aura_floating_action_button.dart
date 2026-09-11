@@ -1,6 +1,7 @@
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// A customizable floating action button component following the Aura design
@@ -67,90 +68,36 @@ class AuraFloatingActionButton extends StatelessWidget {
   final String? tooltip;
 
   @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final labelText = text;
-    final tooltip = this.tooltip;
-    final resolvedTint = tint ?? AuraTint.primary;
-    final resolvedBackground = auraColors.colorFor(resolvedTint);
-    final resolvedForeground = auraColors.onTint(resolvedTint);
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(
-        context.auraTheme.fromBorderRadius(_getBorderRadius()),
-      ),
-    );
-
-    Widget fab;
-    if (size == AuraFABSize.extended && labelText != null) {
-      fab = FloatingActionButton.extended(
-        tooltip: tooltip,
-        foregroundColor: resolvedForeground,
-        backgroundColor: resolvedBackground,
-        heroTag: heroTag,
-        elevation: _getElevation(),
-        focusElevation: _getFocusElevation(),
-        hoverElevation: _getHoverElevation(),
-        highlightElevation: _getHighlightElevation(),
-        onPressed: onPressed,
-        shape: shape,
-        icon: Icon(icon, color: resolvedForeground),
-        label: AuraText(
-          child: Text(
-            labelText,
-            style: .new(
-              color: resolvedForeground,
-              fontWeight: context.auraTheme.typography.fontWeightMedium,
-            ),
-          ),
-        ),
-      );
-    } else {
-      fab = FloatingActionButton(
-        child: Icon(icon, size: _getIconPixels(), color: resolvedForeground),
-        tooltip: tooltip,
-        foregroundColor: resolvedForeground,
-        backgroundColor: resolvedBackground,
-        heroTag: heroTag,
-        elevation: _getElevation(),
-        focusElevation: _getFocusElevation(),
-        hoverElevation: _getHoverElevation(),
-        highlightElevation: _getHighlightElevation(),
-        onPressed: onPressed,
-        shape: shape,
-      );
-
-      if (size == AuraFABSize.mini || size == AuraFABSize.large) {
-        fab = SizedBox(width: _getFABSize(), height: _getFABSize(), child: fab);
-      }
-    }
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-      child: Semantics(
-        child: fab,
-        enabled: onPressed != null,
-        button: true,
-        label: semanticLabel ?? tooltip ?? 'Floating action button',
-        onTap: onPressed,
-      ),
-    );
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<AuraFABSize>('size', size));
   }
 
+  @override
+  Widget build(BuildContext context) => _AuraFabThemeData(
+    button: this,
+    colors: context.auraColors,
+    theme: context.auraTheme,
+  ).toWidget();
+}
+
+extension on AuraFloatingActionButton {
   double _getFABSize() {
     return switch (size) {
-      .mini => _miniSize,
-      .regular => _regularSize,
-      .large => _largeSize,
-      .extended => _regularSize, // Height for extended.
+      .mini => AuraFloatingActionButton._miniSize,
+      .regular => AuraFloatingActionButton._regularSize,
+      .large => AuraFloatingActionButton._largeSize,
+      .extended =>
+        AuraFloatingActionButton._regularSize, // Height for extended.
     };
   }
 
   double _getIconPixels() {
     return switch (size) {
-      .mini => _miniIconSize,
-      .regular => _regularIconSize,
-      .large => _largeIconSize,
-      .extended => _regularIconSize,
+      .mini => AuraFloatingActionButton._miniIconSize,
+      .regular => AuraFloatingActionButton._regularIconSize,
+      .large => AuraFloatingActionButton._largeIconSize,
+      .extended => AuraFloatingActionButton._regularIconSize,
     };
   }
 
@@ -178,6 +125,164 @@ class AuraFloatingActionButton extends StatelessWidget {
   double _getHighlightElevation() {
     return DesignElevation.xl;
   }
+}
+
+class _AuraFabThemeData {
+  new({
+    required AuraFloatingActionButton button,
+    required AuraColorScheme colors,
+    required AuraTheme theme,
+  }) : _widget = _AuraFabLayout(
+         child: ConstrainedBox(
+           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+           child: Semantics(
+             child: button.size == AuraFABSize.extended && button.text != null
+                 ? _AuraFabExtended(
+                     button: button,
+                     background: colors.colorFor(button.tint ?? .primary),
+                     foreground: colors.onTint(button.tint ?? .primary),
+                     shape: _shape(button, theme),
+                   )
+                 : _AuraFabRegular(
+                     button: button,
+                     background: colors.colorFor(button.tint ?? .primary),
+                     foreground: colors.onTint(button.tint ?? .primary),
+                     shape: _shape(button, theme),
+                   ),
+             enabled: button.onPressed != null,
+             button: true,
+             label:
+                 button.semanticLabel ??
+                 button.tooltip ??
+                 'Floating action button',
+             onTap: button.onPressed,
+           ),
+         ),
+       );
+
+  final Widget _widget;
+
+  Widget toWidget() => _widget;
+
+  static ShapeBorder _shape(AuraFloatingActionButton button, AuraTheme theme) =>
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          theme.fromBorderRadius(button._getBorderRadius()),
+        ),
+      );
+}
+
+class _AuraFabLayout extends StatelessWidget {
+  const new({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => child;
+}
+
+class const _AuraFabExtended({
+  required final AuraFloatingActionButton button,
+  required final Color background,
+  required final Color foreground,
+  required final ShapeBorder shape,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraFabExtendedData(
+    button: button,
+    background: background,
+    foreground: foreground,
+    shape: shape,
+    fontWeight: context.auraTheme.typography.fontWeightMedium,
+  ).child;
+}
+
+class _AuraFabExtendedData({
+  required final AuraFloatingActionButton button,
+  required final Color background,
+  required final Color foreground,
+  required final ShapeBorder shape,
+  required final FontWeight fontWeight,
+}) {
+  final Widget child = FloatingActionButton.extended(
+    tooltip: button.tooltip,
+    foregroundColor: foreground,
+    backgroundColor: background,
+    heroTag: button.heroTag,
+    elevation: button._getElevation(),
+    focusElevation: button._getFocusElevation(),
+    hoverElevation: button._getHoverElevation(),
+    highlightElevation: button._getHighlightElevation(),
+    onPressed: button.onPressed,
+    shape: shape,
+    icon: Icon(button.icon, color: foreground),
+    label: AuraText(
+      child: Text(
+        button.text ?? '',
+        style: .new(color: foreground, fontWeight: fontWeight),
+      ),
+    ),
+  );
+}
+
+class const _AuraFabRegular({
+  required final AuraFloatingActionButton button,
+  required final Color background,
+  required final Color foreground,
+  required final ShapeBorder shape,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => _AuraFabRegularData(
+    button: button,
+    background: background,
+    foreground: foreground,
+    shape: shape,
+  ).child;
+}
+
+class _AuraFabRegularData extends StatelessWidget {
+  new({
+    required AuraFloatingActionButton button,
+    required Color background,
+    required Color foreground,
+    required ShapeBorder shape,
+  }) : this.fromFab(
+         button: button,
+         fab: FloatingActionButton(
+           child: Icon(
+             button.icon,
+             size: button._getIconPixels(),
+             color: foreground,
+           ),
+           tooltip: button.tooltip,
+           foregroundColor: foreground,
+           backgroundColor: background,
+           heroTag: button.heroTag,
+           elevation: button._getElevation(),
+           focusElevation: button._getFocusElevation(),
+           hoverElevation: button._getHoverElevation(),
+           highlightElevation: button._getHighlightElevation(),
+           onPressed: button.onPressed,
+           shape: shape,
+         ),
+       );
+
+  new fromFab({required this.button, required this.fab})
+    : child =
+          button.size == AuraFABSize.mini || button.size == AuraFABSize.large
+          ? SizedBox(
+              width: button._getFABSize(),
+              height: button._getFABSize(),
+              child: fab,
+            )
+          : fab;
+
+  final AuraFloatingActionButton button;
+  final FloatingActionButton fab;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => child;
 }
 
 /// The size of a [AuraFloatingActionButton].

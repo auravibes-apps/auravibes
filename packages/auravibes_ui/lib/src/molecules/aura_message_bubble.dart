@@ -5,6 +5,8 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 
+const _messageIconSize = 20.0;
+
 /// A message bubble component for chat interfaces.
 ///
 /// This component displays chat messages with proper styling for user and AI
@@ -72,217 +74,453 @@ class AuraMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final timestamp = this.timestamp;
-    final startSpacing = isUser ? AuraSpacing.xl : AuraSpacing.md;
-    final endSpacing = isUser ? AuraSpacing.md : AuraSpacing.xl;
-
-    final bubble = GestureDetector(
-      child: Container(
-        constraints: .new(
-          maxWidth: maxWidth ?? MediaQuery.sizeOf(context).width * 0.75,
-        ),
-        margin: manageAlignment
-            ? EdgeInsetsDirectional.only(
-                start: context.auraTheme.fromSpacing(startSpacing),
-                end: context.auraTheme.fromSpacing(endSpacing),
-                bottom: context.auraTheme.fromSpacing(.sm),
-              )
-            : EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.sm)),
-        child: Column(
-          crossAxisAlignment: isUser
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: _getPadding(spacing: context.auraTheme.spacing),
-              decoration: _getDecoration(
-                auraColors,
-                borderRadius: context.auraTheme.fromBorderRadius(.xl),
-              ),
-              child: Column(
-                crossAxisAlignment: .start,
-                children: [
-                  _AuraMessageBubbleContent(
-                    content: content,
-                    contentType: contentType,
-                    textColor: isUser
-                        ? auraColors.onPrimary
-                        : auraColors.onSurface,
-                    imageProvider: imageProvider,
-                    imageSemanticLabel: imageSemanticLabel,
-                    imageErrorLabel: imageErrorLabel,
-                  ),
-                  if (timestamp != null) ...[
-                    const AuraSizedBox(height: .xs),
-                    _AuraMessageBubbleTimestamp(
-                      timestamp: timestamp,
-                      textColor: isUser
-                          ? auraColors.onPrimary.withValues(alpha: 0.7)
-                          : auraColors.onSurfaceVariant,
-                      now: now,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (status != AuraMessageDeliveryStatus.sent) ...[
-              SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-              AuraMessageStatus(status: status),
-            ],
-          ],
-        ),
-      ),
-      onTap: onTap,
-      onLongPress: onLongPress,
-    );
-
-    if (!manageAlignment) return bubble;
-
-    return Align(
-      alignment: isUser
-          ? AlignmentDirectional.centerEnd
-          : AlignmentDirectional.centerStart,
-      child: bubble,
-    );
-  }
-
-  EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
-    return switch (contentType) {
-      .text => EdgeInsets.symmetric(
-        vertical: spacing.sm,
-        horizontal: spacing.md,
-      ),
-      .image => EdgeInsets.all(spacing.xs),
-      .file => EdgeInsets.all(spacing.sm),
-    };
-  }
-
-  BoxDecoration _getDecoration(
-    AuraColorScheme auraColors, {
-    required double borderRadius,
-  }) {
-    final baseColor = isUser ? auraColors.primary : auraColors.surfaceVariant;
-
-    final errorColor = status == AuraMessageDeliveryStatus.error
-        ? auraColors.error.withValues(alpha: 0.1)
-        : null;
-
-    return BoxDecoration(
-      color: errorColor ?? baseColor,
-      border: status == AuraMessageDeliveryStatus.error
-          ? Border.fromBorderSide(.new(color: auraColors.error))
-          : null,
-      borderRadius: BorderRadius.all(.circular(borderRadius)),
-      boxShadow: [
-        if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
-      ],
-    );
-  }
-
-  static String _formatTimestamp(DateTime timestamp, {DateTime? now}) {
-    final difference = (now ?? DateTime.now()).difference(timestamp);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    } else {
-      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
-    }
+    return _AuraMessageBubbleLayout(message: this);
   }
 }
 
-class const _AuraMessageBubbleContent({
-  required final String content,
-  required final AuraMessageContentType contentType,
-  required final Color textColor,
-  required final ImageProvider<Object>? imageProvider,
-  required final String? imageSemanticLabel,
-  required final String imageErrorLabel,
+class const _AuraMessageBubbleLayout({required final AuraMessageBubble message})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => message.manageAlignment
+      ? Align(
+          alignment: _messageAlignment(message.isUser),
+          child: _AuraMessageBubbleGesture(message: message),
+        )
+      : _AuraMessageBubbleGesture(message: message);
+}
+
+class const _AuraMessageBubbleGesture({
+  required final AuraMessageBubble message,
 }) extends StatelessWidget {
-  static const _attachmentIconSize = 20.0;
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    child: _AuraMessageBubbleFrame(message: message),
+    onTap: message.onTap,
+    onLongPress: message.onLongPress,
+  );
+}
+
+class const _AuraMessageBubbleFrame({required final AuraMessageBubble message})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final typography = context.auraTheme.typography;
-
-    return switch (contentType) {
-      .text => GptMarkdown(
-        content,
-        key: ValueKey(content),
-        style: .new(
-          color: textColor,
-          fontSize: typography.fontSizeBase,
-          height: typography.lineHeightBase,
-          fontFamily: typography.bodyFontFamily,
-        ),
-      ),
-      .image => ClipRRect(
-        borderRadius: BorderRadius.all(
-          .circular(context.auraTheme.fromBorderRadius(.md)),
-        ),
-        child: Image(
-          image: imageProvider ?? NetworkImage(content),
-          errorBuilder: (context, error, stackTrace) => Container(
-            padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-            child: Row(
-              mainAxisSize: .min,
-              children: [
-                Icon(
-                  Icons.broken_image,
-                  size: _attachmentIconSize,
-                  color: textColor,
-                ),
-                const AuraSizedBox(width: .sm),
-                Text(imageErrorLabel, style: .new(color: textColor)),
-              ],
-            ),
-          ),
-          semanticLabel: imageSemanticLabel,
-          fit: .cover,
-        ),
-      ),
-      .file => Row(
-        mainAxisSize: .min,
-        children: [
-          Icon(Icons.attach_file, size: _attachmentIconSize, color: textColor),
-          const AuraSizedBox(width: .sm),
-          Flexible(
-            child: Text(
-              content,
-              style: .new(
-                color: textColor,
-                fontSize: typography.fontSizeBase,
-                fontFamily: typography.bodyFontFamily,
-              ),
-              overflow: .ellipsis,
-            ),
-          ),
-        ],
-      ),
-    };
+    return Container(
+      constraints: .new(maxWidth: _messageMaxWidth(context, message)),
+      margin: _messageMargin(context, message),
+      child: _AuraMessageBubbleColumn(message: message),
+    );
   }
+}
+
+class const _AuraMessageBubbleColumn({required final AuraMessageBubble message})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: message.isUser
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start,
+    children: [
+      _AuraMessageBubbleCard(message: message),
+      if (message.status != AuraMessageDeliveryStatus.sent)
+        _AuraMessageStatus(status: message.status),
+    ],
+  );
+}
+
+class const _AuraMessageStatus({
+  required final AuraMessageDeliveryStatus status,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs) / 2),
+    child: AuraMessageStatus(status: status),
+  );
+}
+
+class const _AuraMessageBubbleCard({required final AuraMessageBubble message})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return _AuraMessageBubbleCardSurface(
+      message: message,
+      auraColors: auraColors,
+      child: _AuraMessageBubbleCardContent(message: message),
+    );
+  }
+}
+
+class const _AuraMessageBubbleCardSurface({
+  required final AuraMessageBubble message,
+  required final AuraColorScheme auraColors,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: _messageDecorationFor(context, message, auraColors),
+      child: _AuraMessageBubbleCardPadding(message: message, child: child),
+    );
+  }
+}
+
+class const _AuraMessageBubbleCardPadding({
+  required final AuraMessageBubble message,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(padding: _messagePaddingFor(context, message), child: child);
+  }
+}
+
+class const _AuraMessageBubbleCardContent({
+  required final AuraMessageBubble message,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      _AuraMessageBubbleContent(message: message),
+      _AuraOptionalMessageTimestamp(message: message),
+    ],
+  );
+}
+
+class const _AuraOptionalMessageTimestamp({
+  required final AuraMessageBubble message,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (message.timestamp) {
+    null => const SizedBox.shrink(),
+    final timestamp => _AuraMessageBubbleTimestamp(
+      timestamp: timestamp,
+      isUser: message.isUser,
+      now: message.now,
+    ),
+  };
+}
+
+class const _AuraMessageBubbleContent({
+  required final AuraMessageBubble message,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AuraMessageTypeContent(
+    message: message,
+    textColor: _messageContentTextColor(context, message),
+  );
+}
+
+class const _AuraMessageTypeContent({
+  required final AuraMessageBubble message,
+  required final Color textColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (message.contentType) {
+    .text => _AuraTextMessage(content: message.content, textColor: textColor),
+    .image => _AuraImageMessage(message: message, textColor: textColor),
+    .file => _AuraFileMessage(message: message, textColor: textColor),
+  };
+}
+
+class const _AuraTextMessage({
+  required final String content,
+  required final Color textColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GptMarkdown(
+    content,
+    key: ValueKey(content),
+    style: _messageBodyStyle(context, textColor),
+  );
+}
+
+class const _AuraImageMessage({
+  required final AuraMessageBubble message,
+  required final Color textColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.all(
+      .circular(context.auraTheme.fromBorderRadius(.md)),
+    ),
+    child: _AuraImageView(message: message, textColor: textColor),
+  );
+}
+
+class const _AuraImageView({
+  required final AuraMessageBubble message,
+  required final Color textColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Image(
+    image: message.imageProvider ?? NetworkImage(message.content),
+    errorBuilder: _errorBuilder,
+    semanticLabel: message.imageSemanticLabel,
+    fit: .cover,
+  );
+
+  Widget _errorBuilder(BuildContext _, Object _, StackTrace? _) =>
+      _AuraImageError(label: message.imageErrorLabel, color: textColor);
+}
+
+class const _AuraImageError({
+  required final String label,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+    child: _AuraImageErrorRow(label: label, color: color),
+  );
+}
+
+class const _AuraImageErrorRow({
+  required final String label,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      Icon(Icons.broken_image, size: _messageIconSize, color: color),
+      const AuraSizedBox(width: .sm),
+      Text(label, style: .new(color: color)),
+    ],
+  );
+}
+
+class const _AuraFileMessage({
+  required final AuraMessageBubble message,
+  required final Color textColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _AuraFileRow(message: message, textColor: textColor);
+}
+
+class const _AuraFileRow({
+  required final AuraMessageBubble message,
+  required final Color textColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      Icon(Icons.attach_file, size: _messageIconSize, color: textColor),
+      const AuraSizedBox(width: .sm),
+      Flexible(
+        child: _AuraFileName(message: message, textColor: textColor),
+      ),
+    ],
+  );
+}
+
+class const _AuraFileName({
+  required final AuraMessageBubble message,
+  required final Color textColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    message.content,
+    style: _messageFileStyle(context, textColor),
+    overflow: .ellipsis,
+  );
 }
 
 class const _AuraMessageBubbleTimestamp({
   required final DateTime timestamp,
-  required final Color textColor,
+  required final bool isUser,
   required final DateTime Function()? now,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final typography = context.auraTheme.typography;
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+    child: _AuraMessageBubbleTimestampText(
+      timestamp: timestamp,
+      isUser: isUser,
+      now: now,
+    ),
+  );
+}
 
-    return Text(
-      AuraMessageBubble._formatTimestamp(timestamp, now: now?.call()),
-      style: .new(
-        color: textColor,
-        fontSize: typography.fontSizeXs,
-        fontFamily: typography.bodyFontFamily,
-      ),
-    );
+class const _AuraMessageBubbleTimestampText({
+  required final DateTime timestamp,
+  required final bool isUser,
+  required final DateTime Function()? now,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    _formatMessageTimestamp(timestamp, now: now?.call()),
+    style: _messageTimestampStyle(
+      context,
+      _messageTimestampColor(context, isUser),
+    ),
+  );
+}
+
+AlignmentGeometry _messageAlignment(bool isUser) =>
+    isUser ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart;
+
+double _messageMaxWidth(BuildContext context, AuraMessageBubble message) =>
+    message.maxWidth ?? MediaQuery.sizeOf(context).width * 0.75;
+
+TextStyle _messageBodyStyle(BuildContext context, Color color) {
+  final typography = context.auraTheme.typography;
+
+  return TextStyle(
+    color: color,
+    fontSize: typography.fontSizeBase,
+    height: typography.lineHeightBase,
+    fontFamily: typography.bodyFontFamily,
+  );
+}
+
+TextStyle _messageFileStyle(BuildContext context, Color color) {
+  final typography = context.auraTheme.typography;
+
+  return TextStyle(
+    color: color,
+    fontSize: typography.fontSizeBase,
+    fontFamily: typography.bodyFontFamily,
+  );
+}
+
+Color _messageTimestampColor(BuildContext context, bool isUser) {
+  final colors = context.auraColors;
+
+  return isUser
+      ? colors.onPrimary.withValues(alpha: 0.7)
+      : colors.onSurfaceVariant;
+}
+
+Color _messageContentTextColor(
+  BuildContext context,
+  AuraMessageBubble message,
+) {
+  final colors = context.auraColors;
+
+  return message.isUser ? colors.onPrimary : colors.onSurface;
+}
+
+TextStyle _messageTimestampStyle(BuildContext context, Color color) {
+  final typography = context.auraTheme.typography;
+
+  return TextStyle(
+    color: color,
+    fontSize: typography.fontSizeXs,
+    fontFamily: typography.bodyFontFamily,
+  );
+}
+
+EdgeInsetsGeometry _messageMargin(
+  BuildContext context,
+  AuraMessageBubble message,
+) => message.manageAlignment
+    ? _managedMessageMargin(context, message.isUser)
+    : _unmanagedMessageMargin(context);
+
+EdgeInsets _unmanagedMessageMargin(BuildContext context) =>
+    EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.sm));
+
+EdgeInsetsDirectional _managedMessageMargin(BuildContext context, bool isUser) {
+  final spacing = context.auraTheme;
+
+  return EdgeInsetsDirectional.only(
+    start: spacing.fromSpacing(_messageStartSpacing(isUser)),
+    end: spacing.fromSpacing(_messageEndSpacing(isUser)),
+    bottom: spacing.fromSpacing(.sm),
+  );
+}
+
+AuraSpacing _messageStartSpacing(bool isUser) => isUser ? .xl : .md;
+
+AuraSpacing _messageEndSpacing(bool isUser) => isUser ? .md : .xl;
+
+EdgeInsets _messagePadding({
+  required AuraMessageContentType contentType,
+  required AuraSpacingScale spacing,
+}) => switch (contentType) {
+  .text => EdgeInsets.symmetric(vertical: spacing.sm, horizontal: spacing.md),
+  .image => EdgeInsets.all(spacing.xs),
+  .file => EdgeInsets.all(spacing.sm),
+};
+
+EdgeInsets _messagePaddingFor(
+  BuildContext context,
+  AuraMessageBubble message,
+) => _messagePadding(
+  contentType: message.contentType,
+  spacing: context.auraTheme.spacing,
+);
+
+typedef _MessageDecorationValues = ({
+  Color color,
+  Border? border,
+  List<BoxShadow> boxShadow,
+});
+
+_MessageDecorationValues _messageDecorationValues(
+  AuraMessageBubble message,
+  AuraColorScheme auraColors,
+) => (
+  color: _messageBackground(message, auraColors),
+  border: _messageBorder(message, auraColors),
+  boxShadow: _messageBoxShadow(message),
+);
+
+BoxDecoration _messageDecorationFor(
+  BuildContext context,
+  AuraMessageBubble message,
+  AuraColorScheme auraColors,
+) => _messageDecoration(
+  _messageDecorationValues(message, auraColors),
+  context.auraTheme.fromBorderRadius(.xl),
+);
+
+BoxDecoration _messageDecoration(
+  _MessageDecorationValues decoration,
+  double borderRadius,
+) => BoxDecoration(
+  color: decoration.color,
+  border: decoration.border,
+  borderRadius: BorderRadius.all(.circular(borderRadius)),
+  boxShadow: decoration.boxShadow,
+);
+
+Color _messageBackground(
+  AuraMessageBubble message,
+  AuraColorScheme auraColors,
+) => message.status == AuraMessageDeliveryStatus.error
+    ? auraColors.error.withValues(alpha: 0.1)
+    : _messageBaseColor(message, auraColors);
+
+Color _messageBaseColor(
+  AuraMessageBubble message,
+  AuraColorScheme auraColors,
+) => message.isUser ? auraColors.primary : auraColors.surfaceVariant;
+
+Border? _messageBorder(AuraMessageBubble message, AuraColorScheme auraColors) =>
+    message.status == AuraMessageDeliveryStatus.error
+    ? Border.fromBorderSide(.new(color: auraColors.error))
+    : null;
+
+List<BoxShadow> _messageBoxShadow(AuraMessageBubble message) => [
+  if (message.status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
+];
+
+String _formatMessageTimestamp(DateTime timestamp, {DateTime? now}) {
+  final difference = (now ?? DateTime.now()).difference(timestamp);
+
+  if (difference.inMinutes < 1) {
+    return 'Just now';
+  } else if (difference.inHours < 1) {
+    return '${difference.inMinutes}m ago';
+  } else if (difference.inDays < 1) {
+    return '${difference.inHours}h ago';
+  } else {
+    return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
   }
 }
 

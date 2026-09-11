@@ -80,48 +80,88 @@ class ModelApiService {
 }
 
 ModelApiResponse _fromCatalog(ModelsDevCatalogValue catalog) {
-  final modelsByProvider = <String, List<ApiModelEntity>>{};
-  for (final model in catalog.models) {
-    modelsByProvider
-        .putIfAbsent(model.providerId, () => [])
-        .add(
-          ApiModelEntity(
-            modelProvider: model.providerId,
-            id: model.capabilities.id,
-            name: model.capabilities.name,
-            limitContext: model.capabilities.limitContext,
-            limitOutput: model.capabilities.limitOutput,
-            modalitiesInput: model.capabilities.inputModalities,
-            modalitiesOutput: model.capabilities.outputModalities,
-            family: model.capabilities.family,
-            costInput: model.capabilities.costInput,
-            costCacheRead: model.capabilities.costCacheRead,
-            costOutput: model.capabilities.costOutput,
-            openWeights: model.capabilities.openWeights,
-            supportsReasoning: model.capabilities.supportsReasoning,
-            isCanonical: model.capabilities.isCanonical,
-            supportsPriorityMode: model.capabilities.supportsPriorityMode,
-            supportsToolCalls: model.capabilities.supportsToolCalls,
-          ),
-        );
-  }
+  final modelsByProvider = _modelsByProvider(catalog.models);
 
   return ModelApiResponse(
-    providers: [
-      for (final provider in catalog.providers)
-        ApiProviderDto(
-          modelProvider: .fromJson({
-            'id': provider.id,
-            'name': provider.name,
-            'npm': provider.type,
-            'api': provider.url,
-            'doc': provider.documentationUrl,
-          }),
-          models: modelsByProvider[provider.id] ?? const [],
-        ),
-    ],
+    providers: catalog.providers
+        .map((provider) => _providerDto(provider, modelsByProvider))
+        .toList(),
   );
 }
+
+Map<String, List<ApiModelEntity>> _modelsByProvider(
+  List<ModelsDevModelValue> models,
+) {
+  final modelsByProvider = <String, List<ApiModelEntity>>{};
+  for (final model in models) {
+    modelsByProvider
+        .putIfAbsent(model.providerId, () => [])
+        .add(_modelEntity(model));
+  }
+
+  return modelsByProvider;
+}
+
+ApiModelEntity _modelEntity(ModelsDevModelValue model) {
+  final base = _baseModelEntity(model);
+  final withCosts = _modelCosts(base, model.capabilities);
+
+  return _modelFlags(withCosts, model.capabilities);
+}
+
+ApiModelEntity _baseModelEntity(ModelsDevModelValue model) {
+  final capabilities = model.capabilities;
+
+  return .new(
+    modelProvider: model.providerId,
+    id: capabilities.id,
+    name: capabilities.name,
+    limitContext: capabilities.limitContext,
+    limitOutput: capabilities.limitOutput,
+    modalitiesInput: capabilities.inputModalities,
+    modalitiesOutput: capabilities.outputModalities,
+  );
+}
+
+ApiModelEntity _modelCosts(
+  ApiModelEntity model,
+  ModelCapabilities capabilities,
+) => model.copyWith(
+  family: capabilities.family,
+  costInput: capabilities.costInput,
+  costCacheRead: capabilities.costCacheRead,
+  costOutput: capabilities.costOutput,
+  openWeights: capabilities.openWeights,
+);
+
+ApiModelEntity _modelFlags(
+  ApiModelEntity model,
+  ModelCapabilities capabilities,
+) => model.copyWith(
+  supportsReasoning: capabilities.supportsReasoning,
+  isCanonical: capabilities.isCanonical,
+  supportsPriorityMode: capabilities.supportsPriorityMode,
+  supportsToolCalls: capabilities.supportsToolCalls,
+);
+
+ApiProviderDto _providerDto(
+  ModelsDevProviderValue provider,
+  Map<String, List<ApiModelEntity>> modelsByProvider,
+) => .new(
+  modelProvider: _providerEntity(provider),
+  models: modelsByProvider[provider.id] ?? const [],
+);
+
+ApiModelProviderEntity _providerEntity(ModelsDevProviderValue provider) =>
+    .fromJson(_providerJson(provider));
+
+Map<String, dynamic> _providerJson(ModelsDevProviderValue provider) => {
+  'id': provider.id,
+  'name': provider.name,
+  'npm': provider.type,
+  'api': provider.url,
+  'doc': provider.documentationUrl,
+};
 
 Set<String> _canonicalModelIds(Response<Map<String, dynamic>> response) {
   final jsonData = response.data;
@@ -134,7 +174,10 @@ Set<String> _canonicalModelIds(Response<Map<String, dynamic>> response) {
 class ModelApiResponse({
   /// List of providers with their models.
   required final List<ApiProviderDto> providers,
-});
+}) {
+  bool hasProvider(String id) =>
+      providers.any((provider) => provider.modelProvider.id == id);
+}
 
 /// Data class representing an API provider.
 class ApiProviderDto({
@@ -153,22 +196,26 @@ class ApiProviderDto({
         ? rawModelsData
         : <String, dynamic>{};
 
-    final models = modelsData.entries
-        .map((e) {
-          final modelJson = e.value;
-          if (modelJson is! Map<String, dynamic>) {
-            return null;
-          }
-
-          return modelJson;
-        })
-        .nonNulls
-        .map(
-          (e) =>
-              ApiModelEntity.fromJson(modelProvider.id, e, canonicalModelIds),
-        )
-        .toList();
+    final models = _parseModels(modelsData, modelProvider, canonicalModelIds);
 
     return ApiProviderDto(modelProvider: modelProvider, models: models);
   }
+
+  bool containsModel(String id) => models.any((model) => model.id == id);
+}
+
+List<ApiModelEntity> _parseModels(
+  Map<String, dynamic> modelsData,
+  ApiModelProviderEntity modelProvider,
+  Set<String> canonicalModelIds,
+) {
+  final models = <ApiModelEntity>[];
+  for (final modelJson in modelsData.values) {
+    if (modelJson is! Map<String, dynamic>) continue;
+    models.add(
+      ApiModelEntity.fromJson(modelProvider.id, modelJson, canonicalModelIds),
+    );
+  }
+
+  return models;
 }

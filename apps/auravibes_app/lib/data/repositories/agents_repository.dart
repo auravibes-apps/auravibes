@@ -1,7 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
-import 'package:drift/drift.dart';
 
 const _agentContentEmpty = 'Agent content cannot be empty';
 const _agentDescriptionEmpty = 'Agent description cannot be empty';
@@ -41,15 +40,8 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
     _validateAgentToCreate(agent);
 
     final created = await _database.agentsDao.createAgent(
-      .new(
-        workspaceId: Value(workspaceId),
-        name: Value(agent.name.trim()),
-        description: Value(agent.description.trim()),
-        content: Value(agent.content.trim()),
-        isEnabled: Value(agent.isEnabled),
-        visibility: Value(agent.visibility.name),
-      ),
-      agent.skills.map(_mapSkillRefToCompanion).toList(),
+      _agentToCreateCompanion(workspaceId, agent),
+      _mapSkillRefsToCompanions(agent.skills),
     );
 
     return await _mapToAgent(created);
@@ -61,15 +53,8 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
 
     final updated = await _database.agentsDao.updateAgent(
       agentId,
-      .new(
-        updatedAt: Value(DateTime.now()),
-        name: Value(agent.name.trim()),
-        description: Value(agent.description.trim()),
-        content: Value(agent.content.trim()),
-        isEnabled: Value(agent.isEnabled),
-        visibility: Value(agent.visibility.name),
-      ),
-      agent.skills.map(_mapSkillRefToCompanion).toList(),
+      _agentToUpdateCompanion(agent),
+      _mapSkillRefsToCompanions(agent.skills),
     );
 
     return await _mapToAgent(updated);
@@ -78,7 +63,9 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   @override
   Future<bool> deleteAgent(String agentId) =>
       _database.agentsDao.deleteAgent(agentId);
+}
 
+extension AgentsRepositoryValidation on AgentsRepository {
   void _validateAgentToCreate(AgentToCreate agent) {
     if (!agent.isValid) {
       throw AgentValidationException(_agentCreateValidationMessage(agent));
@@ -113,7 +100,9 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
 
     return _unknownAgentValidationError;
   }
+}
 
+extension AgentsRepositoryPersistence on AgentsRepository {
   Future<AgentEntity> _mapToAgent(AgentsTable table) async {
     final skills = await _database.agentsDao.getAgentSkills(table.id);
 
@@ -124,6 +113,14 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
     final skills = await _database.agentsDao.getSkillsForAgents(
       rows.map((row) => row.id),
     );
+
+    return _mapAgentRowsWithSkills(rows, skills);
+  }
+
+  List<AgentEntity> _mapAgentRowsWithSkills(
+    List<AgentsTable> rows,
+    List<AgentSkillsTable> skills,
+  ) {
     final skillsByAgentId = <String, List<AgentSkillsTable>>{};
     for (final skill in skills) {
       skillsByAgentId.putIfAbsent(skill.agentId, () => []).add(skill);
@@ -135,19 +132,40 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   }
 
   AgentEntity _mapAgentRow(AgentsTable table, List<AgentSkillsTable> skills) {
-    return AgentEntity(
-      id: table.id,
-      workspaceId: table.workspaceId,
-      name: table.name,
-      content: table.content,
-      skills: skills.map(_mapSkillRef).toList(),
-      createdAt: table.createdAt,
-      updatedAt: table.updatedAt,
+    return _withAgentState((
+      agent: _baseAgentEntity(table, skills),
       description: table.description,
       isEnabled: table.isEnabled,
       visibility: _agentVisibilityFromStorage(table.visibility),
-    );
+    ));
   }
+
+  AgentEntity _baseAgentEntity(
+    AgentsTable table,
+    List<AgentSkillsTable> skills,
+  ) => _emptyAgentEntity.copyWith(
+    id: table.id,
+    workspaceId: table.workspaceId,
+    name: table.name,
+    content: table.content,
+    skills: skills.map(_mapSkillRef).toList(),
+    createdAt: table.createdAt,
+    updatedAt: table.updatedAt,
+  );
+
+  AgentEntity _withAgentState(
+    ({
+      AgentEntity agent,
+      String description,
+      bool isEnabled,
+      AgentVisibility visibility,
+    })
+    state,
+  ) => state.agent.copyWith(
+    description: state.description,
+    isEnabled: state.isEnabled,
+    visibility: state.visibility,
+  );
 
   AgentSkillRef _mapSkillRef(AgentSkillsTable table) {
     final workspaceSkillId = table.workspaceSkillId;
@@ -162,18 +180,53 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   AgentVisibility _agentVisibilityFromStorage(String value) {
     return AgentVisibility.values.asNameMap()[value] ?? AgentVisibility.both;
   }
-
-  AgentSkillsCompanion _mapSkillRefToCompanion(AgentSkillRef ref) {
-    return switch (ref) {
-      UserAgentSkillRef(:final skillId) => AgentSkillsCompanion(
-        workspaceSkillId: .new(skillId),
-      ),
-      AppAgentSkillRef(:final identifier) => AgentSkillsCompanion(
-        appSkillIdentifier: .new(identifier),
-      ),
-    };
-  }
 }
+
+AgentsCompanion _agentToCreateCompanion(
+  String workspaceId,
+  AgentToCreate agent,
+) => AgentsCompanion(
+  workspaceId: .new(workspaceId),
+  name: .new(agent.name.trim()),
+  description: .new(agent.description.trim()),
+  content: .new(agent.content.trim()),
+  isEnabled: .new(agent.isEnabled),
+  visibility: .new(agent.visibility.name),
+);
+
+AgentsCompanion _agentToUpdateCompanion(AgentToUpdate agent) => AgentsCompanion(
+  updatedAt: .new(DateTime.now()),
+  name: .new(agent.name.trim()),
+  description: .new(agent.description.trim()),
+  content: .new(agent.content.trim()),
+  isEnabled: .new(agent.isEnabled),
+  visibility: .new(agent.visibility.name),
+);
+
+List<AgentSkillsCompanion> _mapSkillRefsToCompanions(
+  Iterable<AgentSkillRef> refs,
+) => refs.map(_mapSkillRefToCompanion).toList();
+
+AgentSkillsCompanion _mapSkillRefToCompanion(AgentSkillRef ref) {
+  return switch (ref) {
+    UserAgentSkillRef(:final skillId) => AgentSkillsCompanion(
+      workspaceSkillId: .new(skillId),
+    ),
+    AppAgentSkillRef(:final identifier) => AgentSkillsCompanion(
+      appSkillIdentifier: .new(identifier),
+    ),
+  };
+}
+
+final _emptyAgentEntity = AgentEntity(
+  id: '',
+  workspaceId: '',
+  name: '',
+  content: '',
+  skills: const [],
+  createdAt: .new(0),
+  updatedAt: .new(0),
+);
 
 class const AgentException(final String message, [final Exception? cause])
     implements Exception {

@@ -21,24 +21,19 @@ class const GetConversationBusyStateUsecase({
       conversationId,
     );
 
-    final isStreaming = conversationStreamingRuntime.isStreaming(
-      conversationId,
-    );
-
-    final latestAssistantMessage =
-        ConversationBusyStateQueries.latestAssistantMessage(messages);
-    final hasPendingTools =
-        latestAssistantMessage?.metadata?.toolCalls.any(
-          (toolCall) => toolCall.isPending,
-        ) ??
-        false;
-
     return ConversationBusyState(
-      isStreaming: isStreaming,
-      hasPendingTools: hasPendingTools,
+      isStreaming: conversationStreamingRuntime.isStreaming(conversationId),
+      hasPendingTools: _hasPendingTools(messages),
       isCompacting: isCompacting,
     );
   }
+}
+
+bool _hasPendingTools(List<MessageEntity> messages) {
+  final message = ConversationBusyStateQueries.latestAssistantMessage(messages);
+
+  return message?.metadata?.toolCalls.any((toolCall) => toolCall.isPending) ??
+      false;
 }
 
 abstract final class ConversationBusyStateQueries {

@@ -49,14 +49,14 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
   'Alert': (_, data) => AuraCallout(
     title: _string(data['title']),
     description: _nullableString(data['description']),
-    icon: data['icon'] is String ? icon(data['icon'] as String) : null,
+    icon: _resolveIcon(icon, data['icon']),
     tint: _tone(data['tone']),
   ),
   'Stat': (_, data) => AuraStat(
     value: _string(data['value']),
     label: _string(data['label']),
     delta: _nullableString(data['delta']),
-    icon: data['icon'] is String ? icon(data['icon'] as String) : null,
+    icon: _resolveIcon(icon, data['icon']),
     tint: _tone(data['tone']),
   ),
   'Link': (_, data) => AuraLink(
@@ -75,11 +75,11 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
   ),
   'Accordion': (context, data) => AuraAccordion(
     initiallyExpanded: {
-      for (final index in (data['expanded'] as List? ?? const <Object?>[]))
+      for (final index in _asList(data['expanded']))
         if (index is int) index,
     },
     items: [
-      for (final item in (data['items'] as List? ?? const <Object?>[]))
+      for (final item in _asList(data['items']))
         if (item is Map)
           AuraAccordionItem(
             title: _string(item['title']),
@@ -89,20 +89,18 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
   ),
   'Stepper': (_, data) => AuraStepper(
     steps: [
-      for (final value in (data['steps'] as List? ?? const <Object?>[]))
+      for (final value in _asList(data['steps']))
         if (value is Map)
           AuraStep(
             title: _string(value['title']),
             description: _nullableString(value['description']),
-            state: AuraStepState.values.byName(
-              value['state'] as String? ?? 'pending',
-            ),
+            state: AuraStepState.values.byName(_asStringOr(value['state'])),
           ),
     ],
   ),
   'Timeline': (_, data) => AuraTimeline(
     entries: [
-      for (final value in (data['entries'] as List? ?? const <Object?>[]))
+      for (final value in _asList(data['entries']))
         if (value is Map)
           AuraTimelineEntry(
             title: _string(value['title']),
@@ -113,8 +111,8 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
     ],
   ),
   'Skeleton': (_, data) => AuraSkeleton(
-    width: (data['width'] as num?)?.toDouble(),
-    height: (data['height'] as num?)?.toDouble() ?? 16,
+    width: _asDouble(data['width']),
+    height: _asDoubleOr(data['height'], 16),
     circular: data['shape'] == 'circle',
     semanticLabel: _nullableString(data['label']),
   ),
@@ -122,7 +120,7 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
     context,
     data['children'],
     (children) => AuraGrid(
-      minimumItemWidth: (data['minimumItemWidth'] as num?)?.toDouble() ?? 220,
+      minimumItemWidth: _asDoubleOr(data['minimumItemWidth'], 220),
       spacing: _gap(context, data['gap']),
       children: children,
     ),
@@ -133,13 +131,11 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
     (children) =>
         AuraWrap(spacing: _gap(context, data['gap']), children: children),
   ),
-  'Spacer': (_, data) => AuraSpacer(
-    size: (data['size'] as num?)?.toDouble(),
-    flex: data['flex'] as int? ?? 1,
-  ),
+  'Spacer': (_, data) =>
+      AuraSpacer(size: _asDouble(data['size']), flex: _asIntOr(data['flex'])),
   'FlexItem': (context, data) => AuraFlexItem(
-    flex: data['flex'] as int? ?? 1,
-    fit: data['fit'] == 'tight' ? .tight : .loose,
+    flex: _asIntOr(data['flex']),
+    fit: _flexFit(data['fit']),
     child: context.buildChild(_string(data['child'])),
   ),
   'Rating': (context, data) => _fieldScope(
@@ -150,8 +146,8 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
       builder: (_, value) {
         final path = _path(data['value'], '/${context.id}');
         return AuraRating(
-          value: (value ?? 0).toInt(),
-          max: data['max'] as int? ?? 5,
+          value: _asNumIntOr(value),
+          max: _asIntOr(data['max'], 5),
           label: _nullableString(data['label']),
           onChanged: (next) => _updateData(context, path, next),
         );
@@ -166,7 +162,7 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
       builder: (_, value) {
         final path = _path(data['value'], '/${context.id}');
         return AuraTagInput(
-          value: value is List ? value.whereType<String>().toList() : const [],
+          value: _stringList(value),
           removeLabel: (tag) => LocaleKeys
               .chats_screens_chat_conversation_remove_tag
               .tr(context: context.buildContext, namedArgs: {'tag': tag}),
@@ -185,7 +181,7 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
   ),
   'KeyValue': (_, data) => AuraKeyValue(
     entries: [
-      for (final value in (data['entries'] as List? ?? const <Object?>[]))
+      for (final value in _asList(data['entries']))
         if (value is Map)
           AuraKeyValueEntry(
             label: _string(value['label']),
@@ -204,6 +200,30 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
 
 Map<String, Object?> _data(CatalogItemContext context) =>
     Map<String, Object?>.from(context.data as Map<Object?, Object?>);
+
+IconData? _resolveIcon(IconData Function(String?) icon, Object? value) =>
+    value is String ? icon(value) : null;
+
+List _asList(Object? value) => value as List? ?? const <Object?>[];
+
+String _asStringOr(Object? value, [String fallback = 'pending']) =>
+    value as String? ?? fallback;
+
+double? _asDouble(Object? value) => (value as num?)?.toDouble();
+
+double _asDoubleOr(Object? value, [double fallback = 0]) =>
+    _asDouble(value) ?? fallback;
+
+int _asIntOr(Object? value, [int fallback = 1]) => value as int? ?? fallback;
+
+int _asNumIntOr(Object? value, [int fallback = 0]) =>
+    (value as num?)?.toInt() ?? fallback;
+
+List<String> _stringList(Object? value) =>
+    value is List ? value.whereType<String>().toList() : const [];
+
+FlexFit _flexFit(Object? value) =>
+    value == 'tight' ? FlexFit.tight : FlexFit.loose;
 
 String _string(Object? value) => value is String ? value : '';
 

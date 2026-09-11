@@ -25,92 +25,190 @@ class const ToolsManagementModal({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref
+    final capabilities = ref
         .watch(workspaceSessionForRouteProvider(workspaceId))
         .requireValue
-        .capabilities
-        .conversationToolOverrides) {
-      return const Dialog(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: TextLocale(
-            LocaleKeys.workspace_capabilities_unsupported_error,
-          ),
+        .capabilities;
+
+    return _ToolsManagementCapabilityView(
+      workspaceId: workspaceId,
+      supported: capabilities.conversationToolOverrides,
+      conversationId: conversationId,
+    );
+  }
+}
+
+class const _ToolsManagementCapabilityView({
+  required final String workspaceId,
+  required final bool supported,
+  final String? conversationId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!supported) return const _UnsupportedConversationTools();
+
+    return _ToolsManagementDialog(
+      workspaceId: workspaceId,
+      groupedToolsAsync: ref.watch(
+        groupedConversationToolsProvider(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
         ),
-      );
-    }
-    final groupedToolsAsync = ref.watch(
-      groupedConversationToolsProvider(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
+      ),
+      conversationId: conversationId,
+    );
+  }
+}
+
+class const _UnsupportedConversationTools() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Dialog(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: TextLocale(LocaleKeys.workspace_capabilities_unsupported_error),
       ),
     );
+  }
+}
 
+class const _ToolsManagementDialog({
+  required final String workspaceId,
+  required final AsyncValue<List<ConversationToolsGroupWithTools>>
+  groupedToolsAsync,
+  final String? conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
           .circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
-      child: Container(
-        width: MediaQuery.sizeOf(context).width * 0.9,
-        constraints: .new(
-          maxWidth: 500,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-        ),
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            // Header with close button.
-            Container(
-              padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: .new(
-                    color: context.auraColors.outline.withValues(alpha: 0.2),
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const AuraText(
-                    child: TextLocale(LocaleKeys.tools_screen_manage_title),
-                    style: .heading6,
-                  ),
-                  const Spacer(),
-                  AuraIconButton(
-                    icon: Icons.close,
-                    onPressed: () => Navigator.of(context).pop(),
-                    semanticLabel: LocaleKeys.common_close_dialog.tr(),
-                  ),
-                ],
-              ),
-            ),
-
-            // Tools groups list.
-            Flexible(
-              child: switch (groupedToolsAsync) {
-                AsyncLoading() => const Center(child: AuraSpinner()),
-                AsyncData(:final value) => _GroupedToolsList(
-                  groups: value,
-                  workspaceId: workspaceId,
-                  conversationId: conversationId,
-                ),
-                AsyncError(:final error) => Center(
-                  child: AuraText(
-                    child: TextLocale(CloudAppErrors.localizationKey(error)),
-                    tint: .error,
-                  ),
-                ),
-              },
-            ),
-
-            // Bottom padding.
-            const AuraSizedBox(height: .md),
-          ],
-        ),
+      child: _ToolsManagementDialogBody(
+        groupedToolsAsync: groupedToolsAsync,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
       ),
     );
+  }
+}
+
+class const _ToolsManagementDialogBody({
+  required final AsyncValue<List<ConversationToolsGroupWithTools>>
+  groupedToolsAsync,
+  required final String workspaceId,
+  final String? conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: MediaQuery.sizeOf(context).width * 0.9,
+      constraints: .new(
+        maxWidth: 500,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+      ),
+      child: _ToolsManagementDialogColumn(
+        groupedToolsAsync: groupedToolsAsync,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+    );
+  }
+}
+
+class const _ToolsManagementDialogColumn({
+  required final AsyncValue<List<ConversationToolsGroupWithTools>>
+  groupedToolsAsync,
+  required final String workspaceId,
+  final String? conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        const _ToolsManagementHeader(),
+        Flexible(
+          child: _ToolsManagementContent(
+            groupedToolsAsync: groupedToolsAsync,
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+          ),
+        ),
+        const AuraSizedBox(height: .md),
+      ],
+    );
+  }
+}
+
+class const _ToolsManagementHeader() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: .new(
+            color: context.auraColors.outline.withValues(alpha: 0.2),
+          ),
+        ),
+      ),
+      child: const _ToolsManagementHeaderRow(),
+    );
+  }
+}
+
+class const _ToolsManagementHeaderRow() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        AuraText(
+          child: TextLocale(LocaleKeys.tools_screen_manage_title),
+          style: .heading6,
+        ),
+        Spacer(),
+        _CloseToolsManagementButton(),
+      ],
+    );
+  }
+}
+
+class const _CloseToolsManagementButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraIconButton(
+      icon: Icons.close,
+      onPressed: () => Navigator.of(context).pop(),
+      semanticLabel: LocaleKeys.common_close_dialog.tr(),
+    );
+  }
+}
+
+class const _ToolsManagementContent({
+  required final AsyncValue<List<ConversationToolsGroupWithTools>>
+  groupedToolsAsync,
+  required final String workspaceId,
+  final String? conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return switch (groupedToolsAsync) {
+      AsyncLoading() => const Center(child: AuraSpinner()),
+      AsyncData(:final value) => _GroupedToolsList(
+        groups: value,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+      AsyncError(:final error) => Center(
+        child: AuraText(
+          child: TextLocale(CloudAppErrors.localizationKey(error)),
+          tint: .error,
+        ),
+      ),
+    };
   }
 }
 
@@ -126,18 +224,46 @@ class const _GroupedToolsList({
       return const ToolsEmptyState();
     }
 
+    return _GroupedToolsListView(
+      groups: groups,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    );
+  }
+}
+
+class const _GroupedToolsListView({
+  required final List<ConversationToolsGroupWithTools> groups,
+  required final String workspaceId,
+  final String? conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return ListView.builder(
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-      itemBuilder: (context, index) {
-        final group = groups[index];
-
-        return ConversationToolsGroupCard(
-          groupWithTools: group,
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        );
-      },
+      itemBuilder: _itemBuilder,
       itemCount: groups.length,
+    );
+  }
+
+  Widget _itemBuilder(BuildContext _, int index) => _ConversationToolsGroupItem(
+    group: groups[index],
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+  );
+}
+
+class const _ConversationToolsGroupItem({
+  required final ConversationToolsGroupWithTools group,
+  required final String workspaceId,
+  final String? conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ConversationToolsGroupCard(
+      groupWithTools: group,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     );
   }
 }

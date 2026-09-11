@@ -47,39 +47,46 @@ bool isPrivateIpAddress(List<int> bytes, {required bool isIpv6}) {
   if (!isIpv6) return _isPrivateIpv4(bytes);
   if (bytes.length != 16) return false;
 
-  final isMapped =
-      bytes.take(10).every((byte) => byte == 0) &&
-      bytes[10] == 0xff &&
-      bytes[11] == 0xff;
-  if (isMapped) return _isPrivateIpv4(bytes.sublist(12));
+  if (_isMappedIpv4(bytes)) return _isPrivateIpv4(bytes.sublist(12));
+  return _isPrivateIpv6(bytes);
+}
 
-  final isUnspecified = bytes.every((byte) => byte == 0);
+bool _isMappedIpv4(List<int> bytes) =>
+    bytes.take(10).every((byte) => byte == 0) &&
+    bytes[10] == 0xff &&
+    bytes[11] == 0xff;
 
-  return isUnspecified ||
-      bytes.first == 0xfc ||
-      bytes.first == 0xfd ||
-      bytes.first == 0xff ||
-      (bytes.first == 0xfe && (bytes[1] & 0xc0) == 0x80) ||
-      bytes.sublist(0, 15).every((byte) => byte == 0) && bytes.last == 1;
+bool _isPrivateIpv6(List<int> bytes) {
+  if (bytes.every((byte) => byte == 0)) return true;
+  if (const {0xfc, 0xfd, 0xff}.contains(bytes.first)) return true;
+  if (bytes.first == 0xfe && (bytes[1] & 0xc0) == 0x80) return true;
+  return bytes.sublist(0, 15).every((byte) => byte == 0) && bytes.last == 1;
 }
 
 bool _isPrivateIpv4(List<int> bytes) {
   if (bytes.length != 4) return false;
   final first = bytes.first;
 
-  return first == 10 ||
-      (first == 172 && bytes[1] >= 16 && bytes[1] <= 31) ||
-      (first == 192 && bytes[1] == 168) ||
-      (first == 169 && bytes[1] == 254) ||
-      first == 127 ||
-      first == 0 ||
-      (first == 100 && bytes[1] >= 64 && bytes[1] <= 127) ||
-      (first == 192 && bytes[1] == 0 && bytes[2] == 2) ||
-      (first == 198 && (bytes[1] == 18 || bytes[1] == 19)) ||
-      (first == 198 && bytes[1] == 51 && bytes[2] == 100) ||
-      (first == 203 && bytes[1] == 0 && bytes[2] == 113) ||
-      (first >= 224 && first <= 239) ||
-      first >= 240;
+  return _isLocalIpv4(first, bytes[1]) ||
+      _isDocumentationIpv4(first, bytes[1], bytes[2]) ||
+      first >= 224;
+}
+
+bool _isLocalIpv4(int first, int second) {
+  if (const {0, 10, 127}.contains(first)) return true;
+  if (first == 172) return second >= 16 && second <= 31;
+  if (first == 192 && second == 168) return true;
+  if (first == 169 && second == 254) return true;
+  return first == 100 && second >= 64 && second <= 127;
+}
+
+bool _isDocumentationIpv4(int first, int second, int third) {
+  if (first == 192) return second == 0 && third == 2;
+  if (first != 198) {
+    return first == 203 && second == 0 && third == 113;
+  }
+  if (const {18, 19}.contains(second)) return true;
+  return second == 51 && third == 100;
 }
 
 bool _isHttpScheme(String scheme) => scheme == 'http' || scheme == 'https';

@@ -9,6 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+typedef _ModelInputFieldData = ({
+  String? value,
+  String? error,
+  String? hint,
+  String label,
+  String placeholder,
+  TextInputType keyboardType,
+});
+
 /// Enhanced input widget for the add model provider form with validation.
 class const EnhancedModelInput({
   required final String workspaceId,
@@ -19,80 +28,27 @@ class const EnhancedModelInput({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(addModelProviderStateProvider(workspaceId));
-    final notifier = ref.read(
-      addModelProviderStateProvider(workspaceId).notifier,
-    );
+    final provider = addModelProviderStateProvider(workspaceId);
+    final state = ref.watch(provider);
+    final notifier = ref.read(provider.notifier);
 
-    // Get field-specific values.
-    final fieldData = _getFieldData(fieldType, state);
-    final hint = fieldData.hint;
-    final error = fieldData.error;
-
-    final controller = useTextEditingController(text: fieldData.value ?? '');
-
-    return AuraInput(
-      controller: controller,
-      placeholder: TextLocale(fieldData.placeholder),
-      label: TextLocale(fieldData.label),
-      hint: hint != null ? TextLocale(hint) : null,
-      error: error != null ? Text(error) : null,
-      isRequired: _isRequired(fieldType),
-      state: error != null ? AuraInputState.error : AuraInputState.normal,
-      keyboardType: fieldData.keyboardType,
-      textInputAction: _getTextInputAction(fieldType),
-      obscureText: fieldType == ModelInputFieldType.key,
-      autofocus: fieldType == ModelInputFieldType.name && focusNode == null,
-      onChanged: (newValue) => _onFieldChanged(fieldType, newValue, notifier),
-      onSubmitted: (_) => onSubmitted?.call(),
+    return _EnhancedModelInputField(
+      fieldType,
+      _getFieldData(fieldType, state),
+      _fieldChangeCallback(fieldType, notifier),
       focusNode: focusNode,
+      onSubmitted: onSubmitted,
     );
   }
 
-  ({
-    String? value,
-    String? error,
-    String? hint,
-    String label,
-    String placeholder,
-    TextInputType keyboardType,
-  })
-  _getFieldData(ModelInputFieldType type, AddModelProviderModel state) {
-    switch (type) {
-      case .name:
-        return (
-          value: state.name,
-          error: state.validateName(),
-          hint: LocaleKeys.models_screens_add_provider_fields_name_hint,
-          label: LocaleKeys.models_screens_add_provider_fields_name_label,
-          placeholder:
-              LocaleKeys.models_screens_add_provider_fields_name_placeholder,
-          keyboardType: TextInputType.text,
-        );
-
-      case .key:
-        return (
-          value: state.key,
-          error: state.validateKey(),
-          hint: LocaleKeys.models_screens_add_provider_fields_key_hint,
-          label: LocaleKeys.models_screens_add_provider_fields_key_label,
-          placeholder:
-              LocaleKeys.models_screens_add_provider_fields_key_placeholder,
-          keyboardType: TextInputType.visiblePassword,
-        );
-
-      case .url:
-        return (
-          value: state.url,
-          error: state.validateUrl(),
-          hint: LocaleKeys.models_screens_add_provider_fields_url_hint,
-          label: LocaleKeys.models_screens_add_provider_fields_url_label,
-          placeholder:
-              LocaleKeys.models_screens_add_provider_fields_url_placeholder,
-          keyboardType: TextInputType.url,
-        );
-    }
-  }
+  _ModelInputFieldData _getFieldData(
+    ModelInputFieldType type,
+    AddModelProviderModel state,
+  ) => switch (type) {
+    .name => _nameFieldData(state),
+    .key => _keyFieldData(state),
+    .url => _urlFieldData(state),
+  };
 
   void _onFieldChanged(
     ModelInputFieldType type,
@@ -109,20 +65,108 @@ class const EnhancedModelInput({
     }
   }
 
-  TextInputAction _getTextInputAction(ModelInputFieldType type) {
-    switch (type) {
-      case .name:
-        return TextInputAction.next;
-      case .key:
-        return TextInputAction.next;
-      case .url:
-        return TextInputAction.done;
-    }
-  }
+  ValueChanged<String> _fieldChangeCallback(
+    ModelInputFieldType type,
+    AddModelProviderState notifier,
+  ) =>
+      (value) => _onFieldChanged(type, value, notifier);
+}
 
-  bool _isRequired(ModelInputFieldType type) {
-    return type != ModelInputFieldType.url;
+_ModelInputFieldData _nameFieldData(AddModelProviderModel state) => (
+  value: state.name,
+  error: state.validateName(),
+  hint: LocaleKeys.models_screens_add_provider_fields_name_hint,
+  label: LocaleKeys.models_screens_add_provider_fields_name_label,
+  placeholder: LocaleKeys.models_screens_add_provider_fields_name_placeholder,
+  keyboardType: TextInputType.text,
+);
+
+_ModelInputFieldData _keyFieldData(AddModelProviderModel state) => (
+  value: state.key,
+  error: state.validateKey(),
+  hint: LocaleKeys.models_screens_add_provider_fields_key_hint,
+  label: LocaleKeys.models_screens_add_provider_fields_key_label,
+  placeholder: LocaleKeys.models_screens_add_provider_fields_key_placeholder,
+  keyboardType: TextInputType.visiblePassword,
+);
+
+_ModelInputFieldData _urlFieldData(AddModelProviderModel state) => (
+  value: state.url,
+  error: state.validateUrl(),
+  hint: LocaleKeys.models_screens_add_provider_fields_url_hint,
+  label: LocaleKeys.models_screens_add_provider_fields_url_label,
+  placeholder: LocaleKeys.models_screens_add_provider_fields_url_placeholder,
+  keyboardType: TextInputType.url,
+);
+
+class _EnhancedModelInputField extends HookWidget {
+  const new(
+    this.fieldType,
+    this.fieldData,
+    this.onChanged, {
+    this.focusNode,
+    this.onSubmitted,
+  });
+
+  final ModelInputFieldType fieldType;
+  final _ModelInputFieldData fieldData;
+  final ValueChanged<String> onChanged;
+  final FocusNode? focusNode;
+  final VoidCallback? onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = useTextEditingController(text: fieldData.value ?? '');
+
+    return _ModelInput(
+      controller: controller,
+      fieldType: fieldType,
+      fieldData: fieldData,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      focusNode: focusNode,
+    );
   }
+}
+
+class _ModelInput extends AuraInput {
+  new({
+    required TextEditingController super.controller,
+    required ModelInputFieldType fieldType,
+    required _ModelInputFieldData fieldData,
+    required ValueChanged<String> super.onChanged,
+    required VoidCallback? onSubmitted,
+    required super.focusNode,
+  }) : super(
+         placeholder: TextLocale(fieldData.placeholder),
+         label: TextLocale(fieldData.label),
+         hint: switch (fieldData.hint) {
+           final hint? => TextLocale(hint),
+           _ => null,
+         },
+         error: switch (fieldData.error) {
+           final error? => Text(error),
+           _ => null,
+         },
+         isRequired: fieldType._isRequired,
+         state: fieldData.error == null
+             ? AuraInputState.normal
+             : AuraInputState.error,
+         keyboardType: fieldData.keyboardType,
+         textInputAction: fieldType._textInputAction,
+         obscureText: fieldType == ModelInputFieldType.key,
+         autofocus: fieldType == ModelInputFieldType.name && focusNode == null,
+         onSubmitted: (_) => onSubmitted?.call(),
+       );
+}
+
+extension on ModelInputFieldType {
+  TextInputAction get _textInputAction => switch (this) {
+    .name || .key => TextInputAction.next,
+    .url => TextInputAction.done,
+  };
+
+  bool get _isRequired => this != .url;
 }
 
 /// Enum representing the different input field types in the form.

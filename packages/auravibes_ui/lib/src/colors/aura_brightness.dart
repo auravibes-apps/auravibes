@@ -11,6 +11,80 @@ typedef _OnColorCandidates = ({
   Color? passingLight,
 });
 
+class _OnColorCandidateScanner({
+  required final AuraComputedColor source,
+  required final Color background,
+  required final double targetLc,
+  required final double targetWcagRatio,
+}) {
+  Color bestDark = const Color(0xFF000000);
+  Color bestLight = const Color(0xFFFFFFFF);
+  Color? passingDark;
+  Color? passingLight;
+  double maxPos = -double.infinity;
+  double minNeg = .infinity;
+
+  _OnColorCandidates scan() {
+    _checkBaseCandidates();
+    _checkLightnessCandidates();
+
+    return _result();
+  }
+
+  void _checkBaseCandidates() {
+    _check(const Color(0xFF000000));
+    _check(const Color(0xFFFFFFFF));
+  }
+
+  void _checkLightnessCandidates() {
+    for (
+      var lightnessValue = 0.0;
+      lightnessValue <= 1.0001;
+      lightnessValue += 0.01
+    ) {
+      _check(_colorAt(lightnessValue));
+    }
+  }
+
+  Color _colorAt(double lightnessValue) =>
+      source.copyWith(lightness: lightnessValue).toColor();
+
+  _OnColorCandidates _result() => (
+    bestDark: bestDark,
+    bestLight: bestLight,
+    maxPos: maxPos,
+    minNeg: minNeg,
+    passingDark: passingDark,
+    passingLight: passingLight,
+  );
+
+  void _check(Color candidate) {
+    final contrastValue = ColorContrast.apcaLc(
+      foreground: candidate,
+      background: background,
+    );
+    _updateExtremes(candidate, contrastValue);
+    if (!_meetsWcag(candidate)) return;
+
+    if (contrastValue >= targetLc) passingDark = candidate;
+    if (contrastValue <= -targetLc) passingLight = candidate;
+  }
+
+  void _updateExtremes(Color candidate, double contrastValue) {
+    if (contrastValue > maxPos) {
+      maxPos = contrastValue;
+      bestDark = candidate;
+    }
+    if (contrastValue < minNeg) {
+      minNeg = contrastValue;
+      bestLight = candidate;
+    }
+  }
+
+  bool _meetsWcag(Color candidate) =>
+      ColorContrast.wcagContrastRatio(candidate, background) >= targetWcagRatio;
+}
+
 /// Surface-lightness presets that drive the OKLCH `L` axis for computed colors.
 ///
 /// `light` is a near-white surface; `dark` is a near-black surface. The presets
@@ -81,65 +155,20 @@ class AuraComputedColor extends OKLCHColor {
     required Color background,
     required double targetLc,
     required double targetWcagRatio,
-  }) {
-    var bestDark = const Color(0xFF000000);
-    var bestLight = const Color(0xFFFFFFFF);
-    Color? passingDark;
-    Color? passingLight;
-    var maxPos = -double.infinity;
-    var minNeg = double.infinity;
+  }) => _OnColorCandidateScanner(
+    source: this,
+    background: background,
+    targetLc: targetLc,
+    targetWcagRatio: targetWcagRatio,
+  ).scan();
 
-    void check(Color candidate) {
-      final contrastValue = ColorContrast.apcaLc(
-        foreground: candidate,
-        background: background,
-      );
-      if (contrastValue > maxPos) {
-        maxPos = contrastValue;
-        bestDark = candidate;
-      }
-      if (contrastValue < minNeg) {
-        minNeg = contrastValue;
-        bestLight = candidate;
-      }
-      if (ColorContrast.wcagContrastRatio(candidate, background) <
-          targetWcagRatio) {
-        return;
-      }
-      if (contrastValue >= targetLc) passingDark = candidate;
-      if (contrastValue <= -targetLc) passingLight = candidate;
-    }
+  Color _selectOnColor(_OnColorCandidates candidates) =>
+      _preferredCandidate(candidates) ?? _fallbackCandidate(candidates);
 
-    check(const Color(0xFF000000));
-    check(const Color(0xFFFFFFFF));
-    for (
-      var lightnessValue = 0.0;
-      lightnessValue <= 1.0001;
-      lightnessValue += 0.01
-    ) {
-      check(copyWith(lightness: lightnessValue).toColor());
-    }
+  Color? _preferredCandidate(_OnColorCandidates candidates) =>
+      lightness >= 0.5 ? candidates.passingDark : candidates.passingLight;
 
-    return (
-      bestDark: bestDark,
-      bestLight: bestLight,
-      maxPos: maxPos,
-      minNeg: minNeg,
-      passingDark: passingDark,
-      passingLight: passingLight,
-    );
-  }
-
-  Color _selectOnColor(_OnColorCandidates candidates) {
-    final surfaceLight = lightness >= 0.5;
-    if (surfaceLight) {
-      final color = candidates.passingDark;
-      if (color != null) return color;
-    }
-    if (!surfaceLight) {
-      final color = candidates.passingLight;
-      if (color != null) return color;
-    }
+  Color _fallbackCandidate(_OnColorCandidates candidates) {
     final dark = candidates.passingDark;
     if (dark != null) return dark;
     final light = candidates.passingLight;

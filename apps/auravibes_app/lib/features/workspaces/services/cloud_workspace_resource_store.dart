@@ -10,6 +10,129 @@ typedef WorkspaceResourceRead = Future<ReadWorkspaceStateResponse> Function({
   required int eventLimit,
   int? afterSequence,
 });
+typedef _WorkspaceSecretWrite = Future<PutWorkspaceSecretResponse> Function({
+  required WorkspaceSecretKind kind,
+  required WorkspaceSecretScope scope,
+  required String resourceId,
+  required String? secret,
+  int? revision,
+});
+typedef _WorkspaceCredentialWrite =
+    Future<MutateWorkspaceCredentialResponse> Function({
+      required WorkspacePatchOperationKind operation,
+      required WorkspaceResourceKind kind,
+      required String id,
+      required WorkspaceSecretKind secretKind,
+      required WorkspaceSecretScope scope,
+      required String? secret,
+      bool clearSecret,
+      Map<String, Object?>? data,
+      int? resourceRevision,
+      int? secretRevision,
+    });
+typedef _DeferredReadInput = ({
+  Future<CloudWorkspaceStateGateway?> gateway,
+  List<WorkspaceResourcePageRequest> pages,
+  int eventLimit,
+  int? afterSequence,
+});
+typedef _WorkspaceSecretInput = ({
+  WorkspaceSecretKind kind,
+  WorkspaceSecretScope scope,
+  String resourceId,
+  String? secret,
+  int? revision,
+});
+typedef _WorkspaceResourceOperationInput = ({
+  WorkspacePatchOperationKind operation,
+  WorkspaceResourceKind kind,
+  String id,
+  Map<String, Object?>? data,
+  int? revision,
+});
+typedef _WorkspaceCredentialInput = ({
+  WorkspacePatchOperationKind operation,
+  WorkspaceResourceKind kind,
+  String id,
+  WorkspaceSecretKind secretKind,
+  WorkspaceSecretScope scope,
+  String? secret,
+  bool clearSecret,
+  Map<String, Object?>? data,
+  int? resourceRevision,
+  int? secretRevision,
+});
+typedef _WorkspaceCredentialSend =
+    Future<MutateWorkspaceCredentialResponse> Function(
+      _WorkspaceCredentialInput input,
+    );
+typedef _WorkspaceSecretCall = WorkspaceSecretCall;
+typedef _WorkspaceCredentialCall = WorkspaceCredentialCall;
+
+class _SecretWriter {
+  new(_WorkspaceSecretCall putSecret)
+    : call =
+          (({
+            required kind,
+            required scope,
+            required resourceId,
+            required secret,
+            revision,
+          }) => _sendSecret(putSecret, (
+            kind: kind,
+            scope: scope,
+            resourceId: resourceId,
+            secret: secret,
+            revision: revision,
+          )));
+
+  final _WorkspaceSecretWrite call;
+}
+
+class _CredentialWriter {
+  new(_WorkspaceCredentialSend send)
+    : call =
+          (({
+            required operation,
+            required kind,
+            required id,
+            required secretKind,
+            required scope,
+            required secret,
+            clearSecret = false,
+            data,
+            resourceRevision,
+            secretRevision,
+          }) => send((
+            operation: operation,
+            kind: kind,
+            id: id,
+            secretKind: secretKind,
+            scope: scope,
+            secret: secret,
+            clearSecret: clearSecret,
+            data: data,
+            resourceRevision: resourceRevision,
+            secretRevision: secretRevision,
+          )));
+
+  final _WorkspaceCredentialWrite call;
+}
+
+class _CredentialSender {
+  new(_WorkspaceCredentialCall mutateCredential)
+    : call = ((input) => mutateCredential((
+        requestId: const Uuid().v4(),
+        resourceOperation: _credentialResourceOperation(input),
+        secretKind: input.secretKind,
+        scope: input.scope,
+        secret: input.secret,
+        clearSecret: input.clearSecret,
+        expectedSecretRevision: input.secretRevision,
+      )));
+
+  final _WorkspaceCredentialSend call;
+}
 
 class CloudWorkspaceResourceStore {
   new(CloudWorkspaceStateGateway gateway)
@@ -20,53 +143,11 @@ class CloudWorkspaceResourceStore {
       _mutateCredential = gateway.mutateCredential;
 
   new deferred(Future<CloudWorkspaceStateGateway?> gateway)
-    : _read = (({required pages, required eventLimit, afterSequence}) async {
-        return await (await _requireGateway(gateway)).read(
-          pages: pages,
-          afterSequence: afterSequence,
-          eventLimit: eventLimit,
-        );
-      }),
-      _watch = ((kinds) async* {
-        yield* (await _requireGateway(gateway)).watchResources(kinds);
-      }),
-      _patch = (({required requestId, required operations}) async =>
-          await (await _requireGateway(gateway))
-              .patch(requestId: requestId, operations: operations)),
-      _putSecret =
-          (({
-            required requestId,
-            required secretKind,
-            required scope,
-            required resourceId,
-            secret,
-            expectedRevision,
-          }) async => await (await _requireGateway(gateway)).putSecret(
-            requestId: requestId,
-            secretKind: secretKind,
-            scope: scope,
-            resourceId: resourceId,
-            secret: secret,
-            expectedRevision: expectedRevision,
-          )),
-      _mutateCredential =
-          (({
-            required requestId,
-            required resourceOperation,
-            required secretKind,
-            required scope,
-            required secret,
-            required clearSecret,
-            expectedSecretRevision,
-          }) async => await (await _requireGateway(gateway)).mutateCredential(
-            requestId: requestId,
-            resourceOperation: resourceOperation,
-            secretKind: secretKind,
-            scope: scope,
-            secret: secret,
-            clearSecret: clearSecret,
-            expectedSecretRevision: expectedSecretRevision,
-          ));
+    : _read = _deferredReadHandler(gateway),
+      _watch = _deferredWatchHandler(gateway),
+      _patch = _deferredPatchHandler(gateway),
+      _putSecret = _deferredPutSecretHandler(gateway),
+      _mutateCredential = _deferredMutateCredentialHandler(gateway);
 
   const new forTesting({
     required this._watch,
@@ -86,25 +167,8 @@ class CloudWorkspaceResourceStore {
     required List<WorkspacePatchOperation> operations,
   })
   _patch;
-  final Future<PutWorkspaceSecretResponse> Function({
-    required String requestId,
-    required WorkspaceSecretKind secretKind,
-    required WorkspaceSecretScope scope,
-    required String resourceId,
-    String? secret,
-    int? expectedRevision,
-  })
-  _putSecret;
-  final Future<MutateWorkspaceCredentialResponse> Function({
-    required String requestId,
-    required WorkspacePatchOperation resourceOperation,
-    required WorkspaceSecretKind secretKind,
-    required WorkspaceSecretScope scope,
-    required String? secret,
-    required bool clearSecret,
-    int? expectedSecretRevision,
-  })
-  _mutateCredential;
+  final _WorkspaceSecretCall _putSecret;
+  final _WorkspaceCredentialCall _mutateCredential;
 
   Future<ReadWorkspaceStateResponse> read({
     required List<WorkspaceResourcePageRequest> pages,
@@ -117,6 +181,52 @@ class CloudWorkspaceResourceStore {
     required String requestId,
     required List<WorkspacePatchOperation> operations,
   }) => _patch(requestId: requestId, operations: operations);
+}
+
+_WorkspaceSecretWrite _secretWriter(_WorkspaceSecretCall putSecret) =>
+    _SecretWriter(putSecret).call;
+
+Future<PutWorkspaceSecretResponse> _sendSecret(
+  _WorkspaceSecretCall putSecret,
+  _WorkspaceSecretInput input,
+) => putSecret((
+  requestId: const Uuid().v4(),
+  secretKind: input.kind,
+  scope: input.scope,
+  resourceId: input.resourceId,
+  secret: input.secret,
+  expectedRevision: input.revision,
+));
+
+WorkspacePatchOperation _resourceOperation(
+  _WorkspaceResourceOperationInput input,
+) => WorkspacePatchOperation(
+  operation: input.operation,
+  resourceKind: input.kind,
+  resourceId: input.id,
+  data: input.data == null ? null : jsonEncode(input.data),
+  fieldMask: const [],
+  expectedRevision: input.revision,
+);
+
+WorkspacePatchOperation _credentialResourceOperation(
+  _WorkspaceCredentialInput input,
+) => _resourceOperation((
+  operation: input.operation,
+  kind: input.kind,
+  id: input.id,
+  data: input.data,
+  revision: input.resourceRevision,
+));
+
+_WorkspaceCredentialWrite _credentialWriter(_WorkspaceCredentialSend send) =>
+    _CredentialWriter(send).call;
+
+extension CloudWorkspaceResourceStoreAccess on CloudWorkspaceResourceStore {
+  _WorkspaceSecretWrite get putSecret => _secretWriter(_putSecret);
+
+  _WorkspaceCredentialWrite get mutateCredential =>
+      _credentialWriter(_CredentialSender(_mutateCredential).call);
 
   Stream<List<WorkspaceResource>> watchResources(
     List<WorkspaceResourceKind> kinds,
@@ -124,12 +234,20 @@ class CloudWorkspaceResourceStore {
 
   Stream<List<WorkspaceResource>> watch(WorkspaceResourceKind kind) =>
       watchResources([kind]);
+}
 
+extension CloudWorkspaceResourceStoreWrites on CloudWorkspaceResourceStore {
   Future<void> create({
     required WorkspaceResourceKind kind,
     required String id,
     required Map<String, Object?> data,
-  }) => _write(operation: .create, kind: kind, id: id, data: data);
+  }) => _write((
+    operation: .create,
+    kind: kind,
+    id: id,
+    data: data,
+    revision: null,
+  ));
 
   Future<void> createAll(
     Iterable<
@@ -139,105 +257,146 @@ class CloudWorkspaceResourceStore {
   ) async {
     final _ = await _patch(
       requestId: const Uuid().v4(),
-      operations: [
-        for (final resource in resources)
-          WorkspacePatchOperation(
-            operation: .create,
-            resourceKind: resource.kind,
-            resourceId: resource.id,
-            data: jsonEncode(resource.data),
-            fieldMask: const [],
-          ),
-      ],
+      operations: _createOperations(resources),
     );
   }
 
-  Future<void> update({
-    required WorkspaceResourceKind kind,
-    required String id,
-    required int revision,
-    required Map<String, Object?> data,
-  }) => _write(
-    operation: .update,
-    kind: kind,
-    id: id,
-    data: data,
-    revision: revision,
-  );
+  _WorkspaceUpdate get update =>
+      ({required kind, required id, required revision, required data}) =>
+          _write((
+            operation: .update,
+            kind: kind,
+            id: id,
+            data: data,
+            revision: revision,
+          ));
 
   Future<void> delete({
     required WorkspaceResourceKind kind,
     required String id,
     required int revision,
-  }) => _write(operation: .delete, kind: kind, id: id, revision: revision);
+  }) => _write((
+    operation: .delete,
+    kind: kind,
+    id: id,
+    data: null,
+    revision: revision,
+  ));
 
-  Future<PutWorkspaceSecretResponse> putSecret({
-    required WorkspaceSecretKind kind,
-    required WorkspaceSecretScope scope,
-    required String resourceId,
-    required String? secret,
-    int? revision,
-  }) {
-    return _putSecret(
-      requestId: const Uuid().v4(),
-      secretKind: kind,
-      scope: scope,
-      resourceId: resourceId,
-      secret: secret,
-      expectedRevision: revision,
-    );
-  }
-
-  Future<MutateWorkspaceCredentialResponse> mutateCredential({
-    required WorkspacePatchOperationKind operation,
-    required WorkspaceResourceKind kind,
-    required String id,
-    required WorkspaceSecretKind secretKind,
-    required WorkspaceSecretScope scope,
-    required String? secret,
-    bool clearSecret = false,
-    Map<String, Object?>? data,
-    int? resourceRevision,
-    int? secretRevision,
-  }) => _mutateCredential(
-    requestId: const Uuid().v4(),
-    resourceOperation: WorkspacePatchOperation(
-      operation: operation,
-      resourceKind: kind,
-      resourceId: id,
-      data: data == null ? null : jsonEncode(data),
-      fieldMask: const [],
-      expectedRevision: resourceRevision,
-    ),
-    secretKind: secretKind,
-    scope: scope,
-    secret: secret,
-    clearSecret: clearSecret,
-    expectedSecretRevision: secretRevision,
-  );
-
-  Future<void> _write({
-    required WorkspacePatchOperationKind operation,
-    required WorkspaceResourceKind kind,
-    required String id,
-    Map<String, Object?>? data,
-    int? revision,
-  }) async {
+  Future<void> _write(_WorkspaceResourceOperationInput input) async {
     final _ = await _patch(
       requestId: const Uuid().v4(),
-      operations: [
-        WorkspacePatchOperation(
-          operation: operation,
-          resourceKind: kind,
-          resourceId: id,
-          data: data == null ? null : jsonEncode(data),
-          fieldMask: const [],
-          expectedRevision: revision,
-        ),
-      ],
+      operations: [_resourceOperation(input)],
     );
   }
+
+  List<WorkspacePatchOperation> _createOperations(
+    Iterable<
+      ({WorkspaceResourceKind kind, String id, Map<String, Object?> data})
+    >
+    resources,
+  ) => [
+    for (final resource in resources)
+      WorkspacePatchOperation(
+        operation: .create,
+        resourceKind: resource.kind,
+        resourceId: resource.id,
+        data: jsonEncode(resource.data),
+        fieldMask: const [],
+      ),
+  ];
 }
+
+typedef _WorkspaceUpdate = Future<void> Function({
+  required WorkspaceResourceKind kind,
+  required String id,
+  required int revision,
+  required Map<String, Object?> data,
+});
+
+class _DeferredPutSecretCall {
+  new(Future<CloudWorkspaceStateGateway?> gateway)
+    : call = ((input) => _deferredPutSecret(gateway, input));
+
+  final _WorkspaceSecretCall call;
+}
+
+class _DeferredMutateCredentialCall {
+  new(Future<CloudWorkspaceStateGateway?> gateway)
+    : call = ((input) => _deferredMutateCredential(gateway, input));
+
+  final _WorkspaceCredentialCall call;
+}
+
+Future<ReadWorkspaceStateResponse> _deferredRead(
+  _DeferredReadInput input,
+) async => await (await _requireGateway(input.gateway)).read(
+  pages: input.pages,
+  eventLimit: input.eventLimit,
+  afterSequence: input.afterSequence,
+);
+
+WorkspaceResourceRead _deferredReadHandler(
+  Future<CloudWorkspaceStateGateway?> gateway,
+) {
+  return ({
+    required List<WorkspaceResourcePageRequest> pages,
+    required int eventLimit,
+    int? afterSequence,
+  }) => _deferredRead((
+    gateway: gateway,
+    pages: pages,
+    eventLimit: eventLimit,
+    afterSequence: afterSequence,
+  ));
+}
+
+Stream<List<WorkspaceResource>> Function(List<WorkspaceResourceKind>)
+_deferredWatchHandler(Future<CloudWorkspaceStateGateway?> gateway) {
+  return (kinds) => _deferredWatch(gateway, kinds);
+}
+
+Future<PatchWorkspaceStateResponse> Function({
+  required String requestId,
+  required List<WorkspacePatchOperation> operations,
+})
+_deferredPatchHandler(Future<CloudWorkspaceStateGateway?> gateway) {
+  return ({required requestId, required operations}) =>
+      _deferredPatch(gateway, requestId: requestId, operations: operations);
+}
+
+_WorkspaceSecretCall _deferredPutSecretHandler(
+  Future<CloudWorkspaceStateGateway?> gateway,
+) => _DeferredPutSecretCall(gateway).call;
+
+_WorkspaceCredentialCall _deferredMutateCredentialHandler(
+  Future<CloudWorkspaceStateGateway?> gateway,
+) => _DeferredMutateCredentialCall(gateway).call;
+
+Stream<List<WorkspaceResource>> _deferredWatch(
+  Future<CloudWorkspaceStateGateway?> gateway,
+  List<WorkspaceResourceKind> kinds,
+) async* {
+  yield* (await _requireGateway(gateway)).watchResources(kinds);
+}
+
+Future<PatchWorkspaceStateResponse> _deferredPatch(
+  Future<CloudWorkspaceStateGateway?> gateway, {
+  required String requestId,
+  required List<WorkspacePatchOperation> operations,
+}) async =>
+    await (await _requireGateway(gateway))
+        .patch(requestId: requestId, operations: operations);
+
+Future<PutWorkspaceSecretResponse> _deferredPutSecret(
+  Future<CloudWorkspaceStateGateway?> gateway,
+  WorkspaceSecretInput input,
+) async => await (await _requireGateway(gateway)).putSecret(input);
+
+Future<MutateWorkspaceCredentialResponse> _deferredMutateCredential(
+  Future<CloudWorkspaceStateGateway?> gateway,
+  WorkspaceCredentialInput input,
+) async => await (await _requireGateway(gateway)).mutateCredential(input);
 
 Future<ReadWorkspaceStateResponse> _unsupportedRead({
   required List<WorkspaceResourcePageRequest> pages,

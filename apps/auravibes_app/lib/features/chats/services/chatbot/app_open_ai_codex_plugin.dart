@@ -28,60 +28,97 @@ class AppOpenAICodexPlugin({
     ActionType actionType,
     String name,
   ) => actionType == ActionType.model ? _createModel(name) : null;
+}
 
-  Model<dynamic> _createModel(String modelName) {
-    return Model<dynamic>(
-      name: '$name/$modelName',
-      fn: (request, context) async {
-        if (request == null) throw ArgumentError.notNull('request');
-        final body = codec.buildRequestBody(
-          modelName: modelName,
-          request: request,
-          stream: context.streamingRequested,
-        );
-        if (!context.streamingRequested) {
-          return await codec.complete(_transport, body);
-        }
+extension on AppOpenAICodexPlugin {
+  Model<dynamic> _createModel(String modelName) => Model<dynamic>(
+    name: '$name/$modelName',
+    fn: (request, context) => _generateModel(modelName, request, context),
+  );
 
-        var sentChunks = false;
-        for (var attempt = 0; ; attempt++) {
-          try {
-            return await codec.stream(_transport, body, (chunk) {
-              sentChunks = true;
-              context.sendChunk(chunk);
-            });
-          } on GenkitException catch (error) {
-            if (!isRetryableCodexError(error) || attempt > 0 || sentChunks) {
-              rethrow;
-            }
-          }
-        }
-      },
+  Future<ModelResponse> _generateModel(
+    String modelName,
+    ModelRequest? request,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) async {
+    if (request == null) throw ArgumentError.notNull('request');
+
+    final body = _requestBody(modelName, request, context.streamingRequested);
+    if (!context.streamingRequested) {
+      return await codec.complete(_transport, body);
+    }
+
+    return await _streamWithRetry(body, context);
+  }
+
+  Map<String, dynamic> _requestBody(
+    String modelName,
+    ModelRequest request,
+    bool streamingRequested,
+  ) => codec.buildRequestBody(
+    modelName: modelName,
+    request: request,
+    stream: streamingRequested,
+  );
+
+  Future<ModelResponse> _streamWithRetry(
+    Map<String, dynamic> body,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) => _streamAttempt(body, context, 0);
+
+  Future<ModelResponse> _streamAttempt(
+    Map<String, dynamic> body,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+    int attempt,
+  ) async {
+    var sentChunks = false;
+    try {
+      return await codec.stream(_transport, body, (chunk) {
+        sentChunks = true;
+        context.sendChunk(chunk);
+      });
+    } on GenkitException catch (error) {
+      if (!_shouldRetryStream(error, attempt, sentChunks)) rethrow;
+
+      return await _streamAttempt(body, context, attempt + 1);
+    }
+  }
+
+  Future<ProviderTransportResponse> _transport(Map<String, dynamic> body) {
+    _ensureAccessToken();
+    final request = _request(body);
+    final client = httpClient ?? http.Client();
+
+    return _sendRequest(client, request);
+  }
+
+  void _ensureAccessToken() {
+    if (accessToken.trim().isNotEmpty) return;
+
+    throw GenkitException(
+      '[openai_codex] OAuth access token is required.',
+      status: .INVALID_ARGUMENT,
     );
   }
 
-  Future<ProviderTransportResponse> _transport(
-    Map<String, dynamic> body,
+  http.Request _request(Map<String, dynamic> body) =>
+      http.Request('POST', .parse(baseUrl))
+        ..headers.addAll({
+          'authorization': 'Bearer ${accessToken.trim()}',
+          'content-type': 'application/json',
+          'originator': 'auravibes',
+          'user-agent': 'AuraVibes',
+          if (accountId case final value? when value.isNotEmpty)
+            'ChatGPT-Account-Id': value,
+          if (sessionId case final value? when value.isNotEmpty)
+            'session-id': value,
+        })
+        ..body = jsonEncode(body);
+
+  Future<ProviderTransportResponse> _sendRequest(
+    http.Client client,
+    http.Request request,
   ) async {
-    if (accessToken.trim().isEmpty) {
-      throw GenkitException(
-        '[openai_codex] OAuth access token is required.',
-        status: .INVALID_ARGUMENT,
-      );
-    }
-    final request = http.Request('POST', .parse(baseUrl))
-      ..headers.addAll({
-        'authorization': 'Bearer ${accessToken.trim()}',
-        'content-type': 'application/json',
-        'originator': 'auravibes',
-        'user-agent': 'AuraVibes',
-        if (accountId case final value? when value.isNotEmpty)
-          'ChatGPT-Account-Id': value,
-        if (sessionId case final value? when value.isNotEmpty)
-          'session-id': value,
-      })
-      ..body = jsonEncode(body);
-    final client = httpClient ?? http.Client();
     try {
       final response = await client.send(request).timeout(requestTimeout);
 
@@ -97,6 +134,9 @@ class AppOpenAICodexPlugin({
     }
   }
 }
+
+bool _shouldRetryStream(GenkitException error, int attempt, bool sentChunks) =>
+    attempt == 0 && !sentChunks && isRetryableCodexError(error);
 
 Stream<List<int>> _closeAfter(
   Stream<List<int>> stream,

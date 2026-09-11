@@ -9,6 +9,8 @@ part 'new_chat_state.freezed.dart';
 part 'new_chat_state.g.dart';
 
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class NewChatState with _$NewChatState {
   const factory({
     String? modelId,
@@ -54,12 +56,12 @@ class NewChatNotifier extends _$NewChatNotifier {
 
     state = state.copyWith(isLoading: true);
     try {
-      return await sendNewMessageUsecase.call(
+      return await sendNewMessageUsecase.call((
         draft: draft,
         workspaceModelSelectionId: modelId,
         workspaceId: workspaceId,
         agentId: state.agentId,
-      );
+      ));
     } finally {
       state = state.copyWith(isLoading: false);
     }

@@ -21,4 +21,7 @@ class AuraChoiceOption<T> {
 
   /// An optional accessibility label for the option.
   final String? semanticLabel;
+
+  /// Whether this option can be selected.
+  bool isSelectable() => !disabled;
 }

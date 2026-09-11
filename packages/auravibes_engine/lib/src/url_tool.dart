@@ -36,18 +36,7 @@ UrlRequest parseUrlToolInput(String input) {
   if (rawUrl is! String || rawUrl.trim().isEmpty) {
     throw const FormatException('A non-empty URL is required.');
   }
-  final uri = Uri.tryParse(rawUrl.trim());
-  if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-    throw const FormatException('URL must be an absolute URI.');
-  }
-  if (uri.scheme != 'http' && uri.scheme != 'https') {
-    throw const FormatException('Only HTTP and HTTPS URLs are allowed.');
-  }
-  if (uri.userInfo.isNotEmpty) {
-    throw const FormatException(
-      'URLs with embedded credentials are not allowed.',
-    );
-  }
+  final uri = _parseUrl(rawUrl);
   final method = _method(json['method']);
   if (method != UrlRequestMethod.get && method != UrlRequestMethod.head) {
     throw const FormatException('Only GET and HEAD are allowed.');
@@ -62,6 +51,23 @@ UrlRequest parseUrlToolInput(String input) {
       _ => throw const FormatException('Format must be a string.'),
     },
   );
+}
+
+Uri _parseUrl(String rawUrl) {
+  final uri = Uri.tryParse(rawUrl.trim());
+  if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+    throw const FormatException('URL must be an absolute URI.');
+  }
+  if (uri.scheme != 'http' && uri.scheme != 'https') {
+    throw const FormatException('Only HTTP and HTTPS URLs are allowed.');
+  }
+  if (uri.userInfo.isNotEmpty) {
+    throw const FormatException(
+      'URLs with embedded credentials are not allowed.',
+    );
+  }
+
+  return uri;
 }
 
 String formatUrlToolResponse(

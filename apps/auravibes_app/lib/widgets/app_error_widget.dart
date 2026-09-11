@@ -26,33 +26,51 @@ class _AppErrorWidgetState<T extends Object> extends State<AppErrorWidget<T>> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: AuraColumn(
-        children: [
+  Widget build(BuildContext context) =>
+      _AppErrorContent(error: widget.error, action: widget.action);
+}
+
+class const _AppErrorContent<T extends Object>({
+  required final T error,
+  required final Widget? action,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: _AppErrorColumn(error: error, action: action),
+  );
+}
+
+class _AppErrorColumn extends AuraColumn {
+  new({required Object error, required Widget? action})
+    : super(
+        children: <Widget>[
           const AuraIcon(Icons.error_outline, size: .large, tint: .error),
           const AuraText(
             child: _AppErrorText(LocaleKeys.common_error_title),
             style: .heading6,
             textAlign: .center,
           ),
-          AuraText(
-            child: _AppErrorText(switch (widget.error) {
-              UnsupportedWorkspaceCapabilityException(:final localizationKey) =>
-                localizationKey,
-              CloudAppException(:final localizationKey) => localizationKey,
-              _ => LocaleKeys.common_error_message,
-            }),
-            textAlign: .center,
-          ),
-          ?widget.action,
+          _AppErrorMessage(error: error),
+          ?action,
         ],
         spacing: .sm,
         mainAxisSize: .min,
         padding: .base,
-      ),
-    );
-  }
+      );
+}
+
+class const _AppErrorMessage({required final Object error})
+    extends StatelessWidget {
+  String get _localizationKey => switch (error) {
+    UnsupportedWorkspaceCapabilityException(:final localizationKey) =>
+      localizationKey,
+    CloudAppException(:final localizationKey) => localizationKey,
+    _ => LocaleKeys.common_error_message,
+  };
+
+  @override
+  Widget build(BuildContext context) =>
+      AuraText(child: _AppErrorText(_localizationKey), textAlign: .center);
 }
 
 class const _AppErrorText(final String localeKey) extends StatelessWidget {

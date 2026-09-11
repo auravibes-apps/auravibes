@@ -6,6 +6,8 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 part 'auravibes_choice_picker.stories.bridge.g.dart';
 part 'auravibes_choice_picker.stories.g.dart';
 
+const _maxAllowedChoicePickerSelections = 2;
+
 const _component = ComponentMeta(name: 'AuraChoicePicker');
 const _meta = Meta(ChoicePickerDemo.new);
 
@@ -86,24 +88,64 @@ class _ChoicePickerDemoState extends State<ChoicePickerDemo> {
   List<String> _value = ['email'];
 
   @override
-  Widget build(BuildContext context) {
-    final maxAllowedSelections =
-        widget.variant == AuraChoicePickerVariant.multipleSelection ? 2 : null;
+  Widget build(BuildContext context) => _ChoicePickerControl(
+    variant: widget.variant,
+    tint: widget.tint,
+    presentation: widget.presentation,
+    value: _value,
+    onChanged: _select,
+  );
 
-    return ColoredBox(
-      color: context.auraColors.surface,
-      child: AuraChoicePicker<String>(
-        options: _options,
-        value: widget.variant == AuraChoicePickerVariant.mutuallyExclusive
-            ? _value.take(1).toList()
-            : _value,
-        onChanged: (value) => setState(() => _value = value),
-        variant: widget.variant,
-        presentation: widget.presentation,
-        maxAllowedSelections: maxAllowedSelections,
-        label: const Text('Preferred contact method'),
-        tint: widget.tint,
+  void _select(List<String> value) => setState(() => _value = value);
+}
+
+class const _ChoicePickerControl({
+  required final AuraChoicePickerVariant variant,
+  required final AuraTint? tint,
+  required final AuraChoicePickerPresentation presentation,
+  required final List<String> value,
+  required final ValueChanged<List<String>> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: context.auraColors.surface,
+    child: _ChoicePickerField(
+      data: .new(
+        variant: variant,
+        tint: tint,
+        presentation: presentation,
+        value: value,
+        onChanged: onChanged,
       ),
-    );
-  }
+    ),
+  );
+}
+
+class _ChoicePickerFieldData({
+  required final AuraChoicePickerVariant variant,
+  required final AuraTint? tint,
+  required final AuraChoicePickerPresentation presentation,
+  required final List<String> value,
+  required final ValueChanged<List<String>> onChanged,
+}) {
+  final AuraChoicePicker<String> picker = .new(
+    options: _ChoicePickerDemoState._options,
+    value: variant == AuraChoicePickerVariant.mutuallyExclusive
+        ? value.take(1).toList()
+        : value,
+    onChanged: onChanged,
+    variant: variant,
+    presentation: presentation,
+    maxAllowedSelections: variant == AuraChoicePickerVariant.multipleSelection
+        ? _maxAllowedChoicePickerSelections
+        : null,
+    label: const Text('Preferred contact method'),
+    tint: tint,
+  );
+}
+
+class const _ChoicePickerField({required final _ChoicePickerFieldData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => data.picker;
 }
