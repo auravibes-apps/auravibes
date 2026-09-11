@@ -1227,8 +1227,8 @@ CATALOG_END
   static bool _hasValidSliderValues(
     Object? min,
     Object? max,
-    Object? step,
-    Object? precision,
+    Object step,
+    Object precision,
   ) {
     if (min is! num || max is! num || min > max) return false;
     if (step is! num || step <= 0) return false;

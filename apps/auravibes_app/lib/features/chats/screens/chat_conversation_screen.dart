@@ -1794,8 +1794,7 @@ CloudConversationState? _readCloudConversationState(
     )
     .value;
 
-bool _canContinueCloudState(CloudConversationState? state) {
-  if (state == null) return false;
+bool _canContinueCloudState(CloudConversationState state) {
   final executionState = state.conversation.executionState;
 
   return executionState == 'idle' || executionState == 'failed';
@@ -1988,8 +1987,7 @@ Future<void> _stopCloudConversation(_CloudStopRequest request) async {
   );
 }
 
-bool _canStopCloudState(CloudConversationState? state) {
-  if (state == null) return false;
+bool _canStopCloudState(CloudConversationState state) {
   final executionState = state.conversation.executionState;
 
   return executionState == 'running' || executionState == 'awaitingApproval';

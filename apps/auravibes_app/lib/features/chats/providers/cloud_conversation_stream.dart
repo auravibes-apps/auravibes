@@ -58,12 +58,11 @@ abstract final class CloudConversationStream {
   }
 
   static bool _needsSnapshot(
-    CloudConversationState? next,
+    CloudConversationState next,
     ConversationStreamEvent event,
   ) =>
-      next == null ||
-      (event.transientTextDelta == null &&
-          event.kind != ConversationEventType.a2uiMessage);
+      event.transientTextDelta == null &&
+      event.kind != ConversationEventType.a2uiMessage;
 
   static void _logEvent(
     CloudConversationKey key,

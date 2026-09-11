@@ -144,8 +144,7 @@ _fieldValues(ChatCatalogTextField widget) => (
   maxLines: widget.variant == 'multiline' ? 4 : 1,
 );
 
-Widget? _optionalFieldText(String? value) =>
-    value == null || value.isEmpty ? null : Text(value);
+Widget? _optionalFieldText(String value) => value.isEmpty ? null : Text(value);
 
 Widget? _fieldLabel(String? value) =>
     value == null ? null : AuraText(child: Text(value));

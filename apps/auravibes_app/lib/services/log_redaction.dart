@@ -23,6 +23,8 @@ abstract final class LogRedaction {
     ),
   ];
 
+  // Null is rendered as `null` for defensive logging callers.
+  // ignore: unnecessary-nullable
   static String redact(Object? value) => _redact(_textFor(value));
 
   static String _textFor(Object? value) => switch (value) {

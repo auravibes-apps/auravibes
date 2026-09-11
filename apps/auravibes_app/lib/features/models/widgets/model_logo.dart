@@ -49,7 +49,7 @@ class _ModelLogoNetwork extends StatelessWidget {
     required this.url,
     required this.color,
     this.width,
-    this.height,
+    required this.height,
     this.httpClient,
   }) : picture = SvgPicture.network(
          url,
@@ -67,7 +67,7 @@ class _ModelLogoNetwork extends StatelessWidget {
 
   final String url;
   final Color color;
-  final double? height;
+  final double height;
   final double? width;
   final http.Client? httpClient;
   final SvgPicture picture;
