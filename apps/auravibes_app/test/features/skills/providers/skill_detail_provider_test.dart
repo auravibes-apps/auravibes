@@ -160,23 +160,8 @@ CloudSkillStore _cloudStore(List<WorkspaceResource> resources) {
       patch: ({required requestId, required operations}) =>
           throw UnimplementedError(),
       watch: (_) => Stream.value(resources),
-      putSecret: ({
-        required requestId,
-        required secretKind,
-        required scope,
-        required resourceId,
-        secret,
-        expectedRevision,
-      }) => throw UnimplementedError(),
-      mutateCredential: ({
-        required requestId,
-        required resourceOperation,
-        required secretKind,
-        required scope,
-        required secret,
-        required clearSecret,
-        expectedSecretRevision,
-      }) => throw UnimplementedError(),
+      putSecret: (_) => throw UnimplementedError(),
+      mutateCredential: (_) => throw UnimplementedError(),
     ),
     'workspace-1',
   );

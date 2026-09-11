@@ -15,55 +15,38 @@ void main() {
           return PatchWorkspaceStateResponse(resources: [], sequence: 1);
         },
         watch: (_) => const Stream.empty(),
-        putSecret:
-            ({
-              required requestId,
-              required secretKind,
-              required scope,
-              required resourceId,
-              secret,
-              expectedRevision,
-            }) async {
-              submittedSecret = secret;
+        putSecret: (input) async {
+          submittedSecret = input.secret;
 
-              return PutWorkspaceSecretResponse(
-                configured: true,
-                displaySuffix: 'secret',
-                revision: 1,
-                sequence: 1,
-              );
-            },
-        mutateCredential:
-            ({
-              required requestId,
-              required resourceOperation,
-              required secretKind,
-              required scope,
-              required secret,
-              required clearSecret,
-              expectedSecretRevision,
-            }) async {
-              resourceWrite = jsonDecode(
-                resourceOperation.data ?? '{}',
-              ) as Map<String, dynamic>;
-              submittedSecret = secret;
+          return PutWorkspaceSecretResponse(
+            configured: true,
+            displaySuffix: 'secret',
+            revision: 1,
+            sequence: 1,
+          );
+        },
+        mutateCredential: (input) async {
+          final operation = input.resourceOperation;
+          resourceWrite =
+              jsonDecode(operation.data ?? '{}') as Map<String, dynamic>;
+          submittedSecret = input.secret;
 
-              return MutateWorkspaceCredentialResponse(
-                resource: .new(
-                  workspaceId: 1,
-                  resourceKind: resourceOperation.resourceKind,
-                  resourceId: resourceOperation.resourceId,
-                  data: resourceOperation.data ?? '{}',
-                  revision: 1,
-                  createdAt: DateTime.utc(2026),
-                  updatedAt: DateTime.utc(2026),
-                ),
-                configured: true,
-                displaySuffix: 'secret',
-                secretRevision: 1,
-                sequence: 1,
-              );
-            },
+          return MutateWorkspaceCredentialResponse(
+            resource: .new(
+              workspaceId: 1,
+              resourceKind: operation.resourceKind,
+              resourceId: operation.resourceId,
+              data: operation.data ?? '{}',
+              revision: 1,
+              createdAt: DateTime.utc(2026),
+              updatedAt: DateTime.utc(2026),
+            ),
+            configured: true,
+            displaySuffix: 'secret',
+            secretRevision: 1,
+            sequence: 1,
+          );
+        },
       ),
     );
 
@@ -95,56 +78,38 @@ void main() {
           return PatchWorkspaceStateResponse(resources: [], sequence: 1);
         },
         watch: (_) => const Stream.empty(),
-        putSecret:
-            ({
-              required requestId,
-              required secretKind,
-              required scope,
-              required resourceId,
-              secret,
-              expectedRevision,
-            }) async {
-              secretRevision = expectedRevision;
+        putSecret: (input) async {
+          secretRevision = input.expectedRevision;
 
-              return PutWorkspaceSecretResponse(
-                configured: true,
-                displaySuffix: 'secret',
-                revision: 8,
-                sequence: 2,
-              );
-            },
-        mutateCredential:
-            ({
-              required requestId,
-              required resourceOperation,
-              required secretKind,
-              required scope,
-              required secret,
-              required clearSecret,
-              expectedSecretRevision,
-            }) async {
-              resourceRevision = resourceOperation.expectedRevision;
-              secretRevision = expectedSecretRevision;
-              metadata = jsonDecode(
-                resourceOperation.data ?? '{}',
-              ) as Map<String, dynamic>;
+          return PutWorkspaceSecretResponse(
+            configured: true,
+            displaySuffix: 'secret',
+            revision: 8,
+            sequence: 2,
+          );
+        },
+        mutateCredential: (input) async {
+          final operation = input.resourceOperation;
+          resourceRevision = operation.expectedRevision;
+          secretRevision = input.expectedSecretRevision;
+          metadata = jsonDecode(operation.data ?? '{}') as Map<String, dynamic>;
 
-              return MutateWorkspaceCredentialResponse(
-                resource: .new(
-                  workspaceId: 1,
-                  resourceKind: resourceOperation.resourceKind,
-                  resourceId: resourceOperation.resourceId,
-                  data: resourceOperation.data ?? '{}',
-                  revision: 5,
-                  createdAt: DateTime.utc(2026),
-                  updatedAt: DateTime.utc(2026),
-                ),
-                configured: true,
-                displaySuffix: 'secret',
-                secretRevision: 8,
-                sequence: 2,
-              );
-            },
+          return MutateWorkspaceCredentialResponse(
+            resource: .new(
+              workspaceId: 1,
+              resourceKind: operation.resourceKind,
+              resourceId: operation.resourceId,
+              data: operation.data ?? '{}',
+              revision: 5,
+              createdAt: DateTime.utc(2026),
+              updatedAt: DateTime.utc(2026),
+            ),
+            configured: true,
+            displaySuffix: 'secret',
+            secretRevision: 8,
+            sequence: 2,
+          );
+        },
       ),
     );
 
@@ -181,30 +146,13 @@ void main() {
           throw StateError('stale revision');
         },
         watch: (_) => const Stream.empty(),
-        putSecret:
-            ({
-              required requestId,
-              required secretKind,
-              required scope,
-              required resourceId,
-              secret,
-              expectedRevision,
-            }) async {
-              throw StateError('secret must not be touched');
-            },
-        mutateCredential:
-            ({
-              required requestId,
-              required resourceOperation,
-              required secretKind,
-              required scope,
-              required secret,
-              required clearSecret,
-              expectedSecretRevision,
-            }) async {
-              mutationTouched = true;
-              throw StateError('stale revision');
-            },
+        putSecret: (_) async {
+          throw StateError('secret must not be touched');
+        },
+        mutateCredential: (_) async {
+          mutationTouched = true;
+          throw StateError('stale revision');
+        },
       ),
     );
 
@@ -252,51 +200,35 @@ void main() {
             updatedAt: now,
           ),
         ]),
-        putSecret:
-            ({
-              required requestId,
-              required secretKind,
-              required scope,
-              required resourceId,
-              secret,
-              expectedRevision,
-            }) async {
-              return PutWorkspaceSecretResponse(
-                configured: false,
-                revision: 4,
-                sequence: 3,
-              );
-            },
-        mutateCredential:
-            ({
-              required requestId,
-              required resourceOperation,
-              required secretKind,
-              required scope,
-              required secret,
-              required clearSecret,
-              expectedSecretRevision,
-            }) async {
-              mutation = resourceOperation;
-              expect(expectedSecretRevision, 3);
-              expect(secret, isNull);
-              expect(clearSecret, isTrue);
+        putSecret: (_) async {
+          return PutWorkspaceSecretResponse(
+            configured: false,
+            revision: 4,
+            sequence: 3,
+          );
+        },
+        mutateCredential: (input) async {
+          final operation = input.resourceOperation;
+          mutation = operation;
+          expect(input.expectedSecretRevision, 3);
+          expect(input.secret, isNull);
+          expect(input.clearSecret, isTrue);
 
-              return MutateWorkspaceCredentialResponse(
-                resource: .new(
-                  workspaceId: 1,
-                  resourceKind: resourceOperation.resourceKind,
-                  resourceId: resourceOperation.resourceId,
-                  data: '{}',
-                  revision: 3,
-                  createdAt: now,
-                  updatedAt: now,
-                ),
-                configured: false,
-                secretRevision: 4,
-                sequence: 3,
-              );
-            },
+          return MutateWorkspaceCredentialResponse(
+            resource: .new(
+              workspaceId: 1,
+              resourceKind: operation.resourceKind,
+              resourceId: operation.resourceId,
+              data: '{}',
+              revision: 3,
+              createdAt: now,
+              updatedAt: now,
+            ),
+            configured: false,
+            secretRevision: 4,
+            sequence: 3,
+          );
+        },
       ),
     );
 
