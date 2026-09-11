@@ -11,9 +11,15 @@ metadata:
   scope: implementation
 ---
 
-# Melos 7 Specialist
+# Melos 7+ Specialist
 
-Authoritative guide for Melos 7+ (pub workspace-based). Prevents common AI mistakes from Melos 6 era assumptions.
+Authoritative guide for Melos 7+ (pub workspace-based). Prevents common AI mistakes from Melos 6-era assumptions.
+
+## AuraVibes override
+
+- Root workspace uses Dart `^3.13.0` and Melos `^8.6.0`; read root `pubspec.yaml` before changing scripts.
+- Use `fvm dart run melos analyze` for workspace analysis here. Keep `dart analyze` for explicit root scripts such as `validate:quick`.
+- Do not create `melos.yaml`; this repo has no file and keeps configuration in root `pubspec.yaml`.
 
 ## Critical Breaking Changes (Melos 6 -> 7)
 
@@ -23,7 +29,7 @@ These are the most common mistakes AI agents make. MEMORIZE THESE:
 |---|---|
 | Creating/editing `melos.yaml` | Config goes in root `pubspec.yaml` under `melos:` key |
 | Expecting `pubspec_overrides.yaml` | Uses Dart pub workspaces (`workspace:` key) instead |
-| Running `melos analyze` | **Command removed.** Use `dart analyze` directly or via a script |
+| Assuming `melos analyze` is unavailable | Check installed version; AuraVibes uses `fvm dart run melos` 8.6.0, where `melos analyze` is valid. |
 | Using `packages:` key for package discovery | Use `workspace:` key (Dart pub workspace standard) |
 | Using `name:` in `melos:` section | Removed. Workspace name comes from root `name:` in pubspec.yaml |
 | Omitting `resolution: workspace` in packages | **Required** in every workspace package's pubspec.yaml |
@@ -700,7 +706,7 @@ melos:
 6. [ ] Ensure Dart SDK >= 3.9.0
 7. [ ] Remove `pubspec_overrides.yaml` from `.gitignore` (no longer generated)
 8. [ ] Rename `select-package:` to `packageFilters:` with camelCase names
-9. [ ] Replace `melos analyze` with `dart analyze` (custom script)
+9. [ ] Replace `melos analyze` with `dart analyze` only when target Melos version lacks the command; verify version first.
 10. [ ] Move lifecycle hooks from scripts to `command/<name>/hooks/`
 11. [ ] Replace `--since` with `--diff` in any scripts/commands
 12. [ ] Delete old `melos.yaml` file

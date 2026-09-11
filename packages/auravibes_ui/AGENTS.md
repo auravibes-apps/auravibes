@@ -1,4 +1,5 @@
 # AuraVibes UI Agent Instructions
+<!-- Managed by agent: AuraVibes | Last updated: 2026-09-11 -->
 
 ## Scope
 

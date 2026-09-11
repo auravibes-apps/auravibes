@@ -3,7 +3,7 @@
 ## Provider Types
 
 ```dart
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/legacy.dart';
 
 // Simple state
 final counterProvider = StateProvider<int>((ref) => 0);
@@ -20,7 +20,7 @@ final messagesProvider = StreamProvider<List<Message>>((ref) {
 });
 ```
 
-## Notifier Pattern (Riverpod 2.0)
+## Notifier Pattern (Riverpod 3)
 
 ```dart
 @riverpod

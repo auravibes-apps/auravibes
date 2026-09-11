@@ -6,10 +6,10 @@ Use this reference before editing Riverpod code in AuraVibes.
 
 `apps/auravibes_app/pubspec.yaml` currently uses:
 
-- `hooks_riverpod: ^3.0.3`
-- `riverpod: ^3.0.3`
-- `riverpod_annotation: ^4.0.0`
-- `riverpod_generator: ^4.0.0+1`
+- `hooks_riverpod: 3.4.3`
+- `riverpod: 3.4.3`
+- `riverpod_annotation: 4.0.7`
+- `riverpod_generator: 4.0.9`
 - `flutter_hooks: ^0.21.3+1`
 
 Implication: use `hooks_riverpod`, not `flutter_riverpod`, in Flutter widgets. `hooks_riverpod` depends on and exposes the Flutter Riverpod APIs while also supporting `HookConsumerWidget`.
