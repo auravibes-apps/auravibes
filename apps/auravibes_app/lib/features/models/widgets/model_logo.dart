@@ -48,8 +48,8 @@ class _ModelLogoNetwork extends StatelessWidget {
   new({
     required this.url,
     required this.color,
-    this.width,
     required this.height,
+    this.width,
     this.httpClient,
   }) : picture = SvgPicture.network(
          url,
