@@ -44,6 +44,11 @@ int get hashCode {
   return Object.hash(runtimeType,_this.id,_this.name,_this.type,_this.url,_this.doc);
 }
 
+@override
+String toString() {
+  final _this = this as ApiModelProviderEntity;
+  return 'ApiModelProviderEntity(id: ${_this.id}, name: ${_this.name}, type: ${_this.type}, url: ${_this.url}, doc: ${_this.doc})';
+}
 
 
 }
@@ -253,6 +258,10 @@ int get hashCode {
     return Object.hash(runtimeType,id,name,type,url,doc);
 }
 
+@override
+String toString() {
+    return 'ApiModelProviderEntity(id: $id, name: $name, type: $type, url: $url, doc: $doc)';
+}
 
 
 }

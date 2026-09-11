@@ -38,24 +38,17 @@ abstract class const ToolsGroupEntity._() with _$ToolsGroupEntity {
     String? mcpServerId,
   }) = _ToolsGroupEntity;
 
-  @override
-  int get hashCode;
-
   /// Returns true if this group is linked to an MCP server.
   bool get isMcpGroup => mcpServerId?.isNotEmpty ?? false;
 
   bool isForWorkspace(String workspaceId) => this.workspaceId == workspaceId;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 /// Entity for creating/updating tools group settings.
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const ToolsGroupToCreate._() with _$ToolsGroupToCreate {
   /// Creates a new ToolsGroupToCreate instance.
   const factory({
@@ -72,9 +65,6 @@ abstract class const ToolsGroupToCreate._() with _$ToolsGroupToCreate {
     String? mcpServerId,
   }) = _ToolsGroupToCreate;
 
-  @override
-  int get hashCode;
-
   /// Returns true if the name is valid.
   bool get hasValidName => name.isNotEmpty;
 
@@ -82,10 +72,4 @@ abstract class const ToolsGroupToCreate._() with _$ToolsGroupToCreate {
   bool get isValid => hasValidName;
 
   bool hasServerLink() => mcpServerId?.isNotEmpty == true;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }

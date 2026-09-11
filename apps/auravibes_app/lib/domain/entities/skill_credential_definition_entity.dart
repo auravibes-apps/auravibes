@@ -4,6 +4,8 @@ part 'skill_credential_definition_entity.freezed.dart';
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialDefinitionEntity._()
     with _$SkillCredentialDefinitionEntity {
   const factory({
@@ -15,47 +17,24 @@ abstract class const SkillCredentialDefinitionEntity._()
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _SkillCredentialDefinitionEntity;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialDefinitionToCreate._()
     with _$SkillCredentialDefinitionToCreate {
   const factory({required String title, required String attributesJson}) =
       _SkillCredentialDefinitionToCreate;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialDefinitionToUpdate._()
     with _$SkillCredentialDefinitionToUpdate {
   const factory({String? title, String? attributesJson}) =
       _SkillCredentialDefinitionToUpdate;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }

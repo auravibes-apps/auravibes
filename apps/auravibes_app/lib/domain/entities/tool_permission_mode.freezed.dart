@@ -48,6 +48,11 @@ int get hashCode {
   return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.toolId,_this.isEnabled,_this.permissionMode,_this.createdAt,_this.updatedAt,_this.config,_this.description,_this.inputSchema,_this.workspaceToolsGroupId);
 }
 
+@override
+String toString() {
+  final _this = this as WorkspaceToolEntity;
+  return 'WorkspaceToolEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, toolId: ${_this.toolId}, isEnabled: ${_this.isEnabled}, permissionMode: ${_this.permissionMode}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, config: ${_this.config}, description: ${_this.description}, inputSchema: ${_this.inputSchema}, workspaceToolsGroupId: ${_this.workspaceToolsGroupId})';
+}
 
 
 }
@@ -273,6 +278,10 @@ int get hashCode {
     return Object.hash(runtimeType,id,workspaceId,toolId,isEnabled,permissionMode,createdAt,updatedAt,config,description,inputSchema,workspaceToolsGroupId);
 }
 
+@override
+String toString() {
+    return 'WorkspaceToolEntity(id: $id, workspaceId: $workspaceId, toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode, createdAt: $createdAt, updatedAt: $updatedAt, config: $config, description: $description, inputSchema: $inputSchema, workspaceToolsGroupId: $workspaceToolsGroupId)';
+}
 
 
 }
@@ -350,6 +359,11 @@ int get hashCode {
   return Object.hash(runtimeType,_this.toolId,_this.config,_this.isEnabled,_this.description,_this.inputSchema,_this.workspaceToolsGroupId);
 }
 
+@override
+String toString() {
+  final _this = this as WorkspaceToolToCreate;
+  return 'WorkspaceToolToCreate(toolId: ${_this.toolId}, config: ${_this.config}, isEnabled: ${_this.isEnabled}, description: ${_this.description}, inputSchema: ${_this.inputSchema}, workspaceToolsGroupId: ${_this.workspaceToolsGroupId})';
+}
 
 
 }
@@ -560,6 +574,10 @@ int get hashCode {
     return Object.hash(runtimeType,toolId,config,isEnabled,description,inputSchema,workspaceToolsGroupId);
 }
 
+@override
+String toString() {
+    return 'WorkspaceToolToCreate(toolId: $toolId, config: $config, isEnabled: $isEnabled, description: $description, inputSchema: $inputSchema, workspaceToolsGroupId: $workspaceToolsGroupId)';
+}
 
 
 }

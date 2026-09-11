@@ -4,6 +4,8 @@ part 'skill_template_tool_entity.freezed.dart';
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillTemplateToolEntity._()
     with _$SkillTemplateToolEntity {
   const factory({
@@ -20,19 +22,12 @@ abstract class const SkillTemplateToolEntity._()
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _SkillTemplateToolEntity;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillTemplateToolToCreate._()
     with _$SkillTemplateToolToCreate {
   const factory({
@@ -44,19 +39,12 @@ abstract class const SkillTemplateToolToCreate._()
     @Default(false) bool requiresCredential,
     @Default(true) bool isEnabled,
   }) = _SkillTemplateToolToCreate;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillTemplateToolToUpdate._()
     with _$SkillTemplateToolToUpdate {
   const factory({
@@ -67,15 +55,6 @@ abstract class const SkillTemplateToolToUpdate._()
     bool? requiresCredential,
     bool? isEnabled,
   }) = _SkillTemplateToolToUpdate;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 enum SkillTemplateToolType { url }

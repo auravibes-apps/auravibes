@@ -32,8 +32,24 @@ $WorkspaceEntityCopyWith<WorkspaceEntity> get copyWith => _$WorkspaceEntityCopyW
 
 
 
+@override
+bool operator ==(Object other) {
+  final _this = this as WorkspaceEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.cloudWorkspaceId, _this.cloudWorkspaceId) || other.cloudWorkspaceId == _this.cloudWorkspaceId)&&(identical(other.cloudAccountId, _this.cloudAccountId) || other.cloudAccountId == _this.cloudAccountId));
+}
 
 
+@override
+int get hashCode {
+  final _this = this as WorkspaceEntity;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.type,_this.createdAt,_this.updatedAt,_this.url,_this.cloudWorkspaceId,_this.cloudAccountId);
+}
+
+@override
+String toString() {
+  final _this = this as WorkspaceEntity;
+  return 'WorkspaceEntity(id: ${_this.id}, name: ${_this.name}, type: ${_this.type}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, url: ${_this.url}, cloudWorkspaceId: ${_this.cloudWorkspaceId}, cloudAccountId: ${_this.cloudAccountId})';
+}
 
 
 }
@@ -239,8 +255,21 @@ _$WorkspaceEntityCopyWith<_WorkspaceEntity> get copyWith => __$WorkspaceEntityCo
 
 
 
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
+}
 
 
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,name,type,createdAt,updatedAt,url,cloudWorkspaceId,cloudAccountId);
+}
+
+@override
+String toString() {
+    return 'WorkspaceEntity(id: $id, name: $name, type: $type, createdAt: $createdAt, updatedAt: $updatedAt, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
+}
 
 
 }
@@ -314,6 +343,11 @@ int get hashCode {
   return Object.hash(runtimeType,_this.name,_this.type,_this.url,_this.cloudWorkspaceId,_this.cloudAccountId);
 }
 
+@override
+String toString() {
+  final _this = this as WorkspaceToCreate;
+  return 'WorkspaceToCreate(name: ${_this.name}, type: ${_this.type}, url: ${_this.url}, cloudWorkspaceId: ${_this.cloudWorkspaceId}, cloudAccountId: ${_this.cloudAccountId})';
+}
 
 
 }
@@ -521,6 +555,10 @@ int get hashCode {
     return Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
 }
 
+@override
+String toString() {
+    return 'WorkspaceToCreate(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
+}
 
 
 }
@@ -573,8 +611,24 @@ $WorkspacePatchCopyWith<WorkspacePatch> get copyWith => _$WorkspacePatchCopyWith
 
 
 
+@override
+bool operator ==(Object other) {
+  final _this = this as WorkspacePatch;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspacePatch&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.cloudWorkspaceId, _this.cloudWorkspaceId) || other.cloudWorkspaceId == _this.cloudWorkspaceId)&&(identical(other.cloudAccountId, _this.cloudAccountId) || other.cloudAccountId == _this.cloudAccountId));
+}
 
 
+@override
+int get hashCode {
+  final _this = this as WorkspacePatch;
+  return Object.hash(runtimeType,_this.name,_this.type,_this.url,_this.cloudWorkspaceId,_this.cloudAccountId);
+}
+
+@override
+String toString() {
+  final _this = this as WorkspacePatch;
+  return 'WorkspacePatch(name: ${_this.name}, type: ${_this.type}, url: ${_this.url}, cloudWorkspaceId: ${_this.cloudWorkspaceId}, cloudAccountId: ${_this.cloudAccountId})';
+}
 
 
 }
@@ -766,8 +820,21 @@ _$WorkspacePatchCopyWith<_WorkspacePatch> get copyWith => __$WorkspacePatchCopyW
 
 
 
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspacePatch&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
+}
 
 
+@override
+int get hashCode {
+    return Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
+}
+
+@override
+String toString() {
+    return 'WorkspacePatch(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
+}
 
 
 }

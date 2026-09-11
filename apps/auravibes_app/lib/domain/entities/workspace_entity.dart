@@ -11,6 +11,8 @@ part 'workspace_entity.freezed.dart';
 /// projects or environments within the Aura application.
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const WorkspaceEntity._() with _$WorkspaceEntity {
   /// Creates a new Workspace instance.
   const factory({
@@ -38,15 +40,6 @@ abstract class const WorkspaceEntity._() with _$WorkspaceEntity {
     /// Cloud account identifier used to access this local mirror.
     String? cloudAccountId,
   }) = _WorkspaceEntity;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
@@ -85,9 +78,6 @@ abstract class const WorkspaceToCreate._() with _$WorkspaceToCreate {
     return hasValidName && hasValidUrl;
   }
 
-  @override
-  String toString();
-
   /// Returns true if this workspace matches [expectedType] and is valid.
   bool isValidForType(WorkspaceType expectedType) =>
       type == expectedType && isValid;
@@ -119,14 +109,6 @@ abstract class const WorkspacePatch._() with _$WorkspacePatch {
     String? cloudWorkspaceId,
     String? cloudAccountId,
   }) = _WorkspacePatch;
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 
   String? validationErrorFor(WorkspaceEntity current) {
     if (_hasNoChanges(this)) {

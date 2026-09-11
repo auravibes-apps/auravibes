@@ -4,6 +4,8 @@ part 'skill_credential_entity.freezed.dart';
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialEntity._() with _$SkillCredentialEntity {
   const factory({
     required String id,
@@ -16,19 +18,12 @@ abstract class const SkillCredentialEntity._() with _$SkillCredentialEntity {
     required DateTime updatedAt,
     String? keySuffix,
   }) = _SkillCredentialEntity;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialToCreate._()
     with _$SkillCredentialToCreate {
   const factory({
@@ -36,36 +31,22 @@ abstract class const SkillCredentialToCreate._()
     required String name,
     required Map<String, String> attributes,
   }) = _SkillCredentialToCreate;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialSecretState._()
     with _$SkillCredentialSecretState {
   const factory({required bool hasValue, String? keySuffix}) =
       _SkillCredentialSecretState;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialForEdit._() with _$SkillCredentialForEdit {
   const factory({
     required String id,
@@ -77,19 +58,12 @@ abstract class const SkillCredentialForEdit._() with _$SkillCredentialForEdit {
     required bool isEnabled,
     String? keySuffix,
   }) = _SkillCredentialForEdit;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillCredentialToUpdate._()
     with _$SkillCredentialToUpdate {
   // Null means preserve the existing credential name.
@@ -100,13 +74,4 @@ abstract class const SkillCredentialToUpdate._()
     @Default({}) Map<String, String> secretAttributes,
     @Default({}) Set<String> clearSecretAttributeNames,
   }) = _SkillCredentialToUpdate;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }

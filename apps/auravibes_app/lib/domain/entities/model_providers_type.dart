@@ -55,9 +55,6 @@ abstract class const ApiModelProviderEntity._() with _$ApiModelProviderEntity {
   @override
   Map<String, dynamic> toJson();
 
-  @override
-  String toString();
-
   static ModelProvidersType? _getType(Map<String, dynamic> json) {
     final npm = json.get<String?>('npm');
 

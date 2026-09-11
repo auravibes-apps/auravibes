@@ -4,6 +4,8 @@ part 'skill_entity.freezed.dart';
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillEntity._() with _$SkillEntity {
   const factory({
     required String id,
@@ -20,19 +22,12 @@ abstract class const SkillEntity._() with _$SkillEntity {
     required DateTime updatedAt,
     String? credentialDefinitionId,
   }) = _SkillEntity;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillToCreate._() with _$SkillToCreate {
   const factory({
     required SkillKind kind,
@@ -43,19 +38,12 @@ abstract class const SkillToCreate._() with _$SkillToCreate {
     @Default(false) bool isCredentialOptional,
     @Default(true) bool isEnabled,
   }) = _SkillToCreate;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 @immutable
 @freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
 abstract class const SkillToUpdate._() with _$SkillToUpdate {
   const factory({
     String? title,
@@ -66,15 +54,6 @@ abstract class const SkillToUpdate._() with _$SkillToUpdate {
     bool? isCredentialOptional,
     bool? isEnabled,
   }) = _SkillToUpdate;
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
-
-  @override
-  bool operator ==(Object other);
 }
 
 enum SkillSource { user, app }

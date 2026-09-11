@@ -67,9 +67,6 @@ abstract class const WorkspaceToolEntity._() with _$WorkspaceToolEntity {
 
   bool get isNative => nativeType != null;
 
-  @override
-  String toString();
-
   /// Returns a stable identifier for this workspace tool setting.
   String identity() => '$workspaceId:$toolId';
 
@@ -141,7 +138,4 @@ abstract class const WorkspaceToolToCreate._() with _$WorkspaceToolToCreate {
   bool isForTool(String value) => toolId == value;
 
   bool hasWorkspaceGroup() => workspaceToolsGroupId?.isNotEmpty == true;
-
-  @override
-  String toString();
 }

@@ -24,8 +24,24 @@ $WorkspaceModelSelectionEntityCopyWith<WorkspaceModelSelectionEntity> get copyWi
 
 
 
+@override
+bool operator ==(Object other) {
+  final _this = this as WorkspaceModelSelectionEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceModelSelectionEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.modelConnectionId, _this.modelConnectionId) || other.modelConnectionId == _this.modelConnectionId)&&(identical(other.modelName, _this.modelName) || other.modelName == _this.modelName)&&const DeepCollectionEquality().equals(other.modalitiesInput, _this.modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _this.modalitiesOutput)&&(identical(other.supportsReasoning, _this.supportsReasoning) || other.supportsReasoning == _this.supportsReasoning)&&(identical(other.supportsToolCalls, _this.supportsToolCalls) || other.supportsToolCalls == _this.supportsToolCalls));
+}
 
 
+@override
+int get hashCode {
+  final _this = this as WorkspaceModelSelectionEntity;
+  return Object.hash(runtimeType,_this.id,_this.modelId,_this.createdAt,_this.updatedAt,_this.modelConnectionId,_this.modelName,const DeepCollectionEquality().hash(_this.modalitiesInput),const DeepCollectionEquality().hash(_this.modalitiesOutput),_this.supportsReasoning,_this.supportsToolCalls);
+}
+
+@override
+String toString() {
+  final _this = this as WorkspaceModelSelectionEntity;
+  return 'WorkspaceModelSelectionEntity(id: ${_this.id}, modelId: ${_this.modelId}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, modelConnectionId: ${_this.modelConnectionId}, modelName: ${_this.modelName}, modalitiesInput: ${_this.modalitiesInput}, modalitiesOutput: ${_this.modalitiesOutput}, supportsReasoning: ${_this.supportsReasoning}, supportsToolCalls: ${_this.supportsToolCalls})';
+}
 
 
 }
@@ -239,8 +255,21 @@ _$WorkspaceModelSelectionEntityCopyWith<_WorkspaceModelSelectionEntity> get copy
 
 
 
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceModelSelectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelConnectionId, modelConnectionId) || other.modelConnectionId == modelConnectionId)&&(identical(other.modelName, modelName) || other.modelName == modelName)&&const DeepCollectionEquality().equals(other.modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _modalitiesOutput)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
+}
 
 
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,modelId,createdAt,updatedAt,modelConnectionId,modelName,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),supportsReasoning,supportsToolCalls);
+}
+
+@override
+String toString() {
+    return 'WorkspaceModelSelectionEntity(id: $id, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, modelConnectionId: $modelConnectionId, modelName: $modelName, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, supportsReasoning: $supportsReasoning, supportsToolCalls: $supportsToolCalls)';
+}
 
 
 }
@@ -298,8 +327,24 @@ $WorkspaceModelSelectionWithConnectionEntityCopyWith<WorkspaceModelSelectionWith
 
 
 
+@override
+bool operator ==(Object other) {
+  final _this = this as WorkspaceModelSelectionWithConnectionEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceModelSelectionWithConnectionEntity&&(identical(other.workspaceModelSelection, _this.workspaceModelSelection) || other.workspaceModelSelection == _this.workspaceModelSelection)&&(identical(other.modelConnection, _this.modelConnection) || other.modelConnection == _this.modelConnection)&&(identical(other.modelsProvider, _this.modelsProvider) || other.modelsProvider == _this.modelsProvider));
+}
 
 
+@override
+int get hashCode {
+  final _this = this as WorkspaceModelSelectionWithConnectionEntity;
+  return Object.hash(runtimeType,_this.workspaceModelSelection,_this.modelConnection,_this.modelsProvider);
+}
+
+@override
+String toString() {
+  final _this = this as WorkspaceModelSelectionWithConnectionEntity;
+  return 'WorkspaceModelSelectionWithConnectionEntity(workspaceModelSelection: ${_this.workspaceModelSelection}, modelConnection: ${_this.modelConnection}, modelsProvider: ${_this.modelsProvider})';
+}
 
 
 }
@@ -514,8 +559,21 @@ _$WorkspaceModelSelectionWithConnectionEntityCopyWith<_WorkspaceModelSelectionWi
 
 
 
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceModelSelectionWithConnectionEntity&&(identical(other.workspaceModelSelection, workspaceModelSelection) || other.workspaceModelSelection == workspaceModelSelection)&&(identical(other.modelConnection, modelConnection) || other.modelConnection == modelConnection)&&(identical(other.modelsProvider, modelsProvider) || other.modelsProvider == modelsProvider));
+}
 
 
+@override
+int get hashCode {
+    return Object.hash(runtimeType,workspaceModelSelection,modelConnection,modelsProvider);
+}
+
+@override
+String toString() {
+    return 'WorkspaceModelSelectionWithConnectionEntity(workspaceModelSelection: $workspaceModelSelection, modelConnection: $modelConnection, modelsProvider: $modelsProvider)';
+}
 
 
 }
@@ -593,8 +651,24 @@ $WorkspaceModelSelectionFilterCopyWith<WorkspaceModelSelectionFilter> get copyWi
 
 
 
+@override
+bool operator ==(Object other) {
+  final _this = this as WorkspaceModelSelectionFilter;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceModelSelectionFilter&&const DeepCollectionEquality().equals(other.workspaces, _this.workspaces));
+}
 
 
+@override
+int get hashCode {
+  final _this = this as WorkspaceModelSelectionFilter;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.workspaces));
+}
+
+@override
+String toString() {
+  final _this = this as WorkspaceModelSelectionFilter;
+  return 'WorkspaceModelSelectionFilter(workspaces: ${_this.workspaces})';
+}
 
 
 }
@@ -784,8 +858,21 @@ _$WorkspaceModelSelectionFilterCopyWith<_WorkspaceModelSelectionFilter> get copy
 
 
 
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceModelSelectionFilter&&const DeepCollectionEquality().equals(other.workspaces, _workspaces));
+}
 
 
+@override
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_workspaces));
+}
+
+@override
+String toString() {
+    return 'WorkspaceModelSelectionFilter(workspaces: $workspaces)';
+}
 
 
 }
@@ -834,8 +921,24 @@ $WorkspaceModelSelectionToCreateCopyWith<WorkspaceModelSelectionToCreate> get co
 
 
 
+@override
+bool operator ==(Object other) {
+  final _this = this as WorkspaceModelSelectionToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceModelSelectionToCreate&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.modelConnectionId, _this.modelConnectionId) || other.modelConnectionId == _this.modelConnectionId));
+}
 
 
+@override
+int get hashCode {
+  final _this = this as WorkspaceModelSelectionToCreate;
+  return Object.hash(runtimeType,_this.modelId,_this.modelConnectionId);
+}
+
+@override
+String toString() {
+  final _this = this as WorkspaceModelSelectionToCreate;
+  return 'WorkspaceModelSelectionToCreate(modelId: ${_this.modelId}, modelConnectionId: ${_this.modelConnectionId})';
+}
 
 
 }
@@ -1021,8 +1124,21 @@ _$WorkspaceModelSelectionToCreateCopyWith<_WorkspaceModelSelectionToCreate> get 
 
 
 
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceModelSelectionToCreate&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.modelConnectionId, modelConnectionId) || other.modelConnectionId == modelConnectionId));
+}
 
 
+@override
+int get hashCode {
+    return Object.hash(runtimeType,modelId,modelConnectionId);
+}
+
+@override
+String toString() {
+    return 'WorkspaceModelSelectionToCreate(modelId: $modelId, modelConnectionId: $modelConnectionId)';
+}
 
 
 }
