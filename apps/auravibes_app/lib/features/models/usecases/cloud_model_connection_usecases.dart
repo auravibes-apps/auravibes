@@ -23,7 +23,7 @@ typedef _SecretUpdate = ({
   String? secret,
 });
 
-class const CloudModelConnectionUsecases(final CloudModelGateway _gateway) {}
+class const CloudModelConnectionUsecases(final CloudModelGateway _gateway);
 
 extension CloudModelConnectionUsecasesActions on CloudModelConnectionUsecases {
   Stream<List<CloudModelConnection>> watchConnections() => _gateway
@@ -43,7 +43,7 @@ extension CloudModelConnectionUsecasesActions on CloudModelConnectionUsecases {
       url: request.url,
     );
 
-    return await this._applySecret(_gateway, (
+    return await _applySecret(_gateway, (
       connection: connection,
       resourceId: request.id,
       secret: request.secret,
@@ -59,7 +59,7 @@ extension CloudModelConnectionUsecasesActions on CloudModelConnectionUsecases {
     final connection = request.connection;
     final updated = await _updateConnection(connection, request);
 
-    return await this._applySecret(
+    return await _applySecret(
       _gateway,
       _secretUpdate(updated, connection.id, request.secret),
     );
@@ -96,7 +96,7 @@ extension on CloudModelConnectionUsecases {
     final secret = request.secret;
     if (secret == null) return request.connection;
 
-    final secretState = await this._putSecret(
+    final secretState = await _putSecret(
       gateway,
       request.resourceId,
       secret,

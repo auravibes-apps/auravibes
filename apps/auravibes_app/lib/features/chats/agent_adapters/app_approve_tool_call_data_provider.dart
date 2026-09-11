@@ -276,7 +276,7 @@ Future<void> _grantToolForConversationInWorkspace(
   }
   final permissionTableId = await _permissionTableId(
     approvalUsecase,
-    conversationId,
+    request.conversationId,
     conversation.workspaceId,
     request.tool,
   );
@@ -289,7 +289,11 @@ Future<void> _grantToolForConversationInWorkspace(
   if (toolsRepository == null) {
     throw StateError('Conversation tools repository is unavailable.');
   }
-  await _setAlwaysAllow(toolsRepository, conversationId, permissionTableId);
+  await _setAlwaysAllow(
+    toolsRepository,
+    request.conversationId,
+    permissionTableId,
+  );
 }
 
 Future<String?> _permissionTableId(

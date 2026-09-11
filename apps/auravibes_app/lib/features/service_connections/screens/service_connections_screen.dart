@@ -295,8 +295,8 @@ class const _EmptyConnectionsIntro() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const AuraColumn(
     children: [
-      const AuraIcon(Icons.hub_outlined, size: .extraLarge),
-      const _EmptyConnectionsCopy(),
+      AuraIcon(Icons.hub_outlined, size: .extraLarge),
+      _EmptyConnectionsCopy(),
     ],
     mainAxisSize: .min,
   );
@@ -306,11 +306,11 @@ class const _EmptyConnectionsCopy() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const AuraColumn(
     children: [
-      const AuraText(
+      AuraText(
         child: TextLocale(LocaleKeys.service_connections_empty_title),
         style: .heading3,
       ),
-      const AuraText(
+      AuraText(
         child: TextLocale(LocaleKeys.service_connections_empty_subtitle),
         textAlign: .center,
       ),

@@ -22,23 +22,31 @@ class const CloudConversationState({
   final Map<String, int> transientA2uiSequenceByAssistantMessageId = const {},
   final Set<String> appliedTransientEventKeys = const {},
 }) {
-  const CloudConversationState._copy(
+  // ignore: unnecessary_type_name_in_constructor, named factory alongside primary constructor.
+  factory CloudConversationState._copy(
     CloudConversationState source, {
-    required this.sequence,
-    required this.activeAssistantContent,
-    required this.activeAssistantTransientContent,
-    required this.transientA2uiSequenceByAssistantMessageId,
-    required this.appliedTransientEventKeys,
-  }) : conversation = source.conversation,
-       messages = source.messages,
-       pendingMessages = source.pendingMessages,
-       activeExecution = source.activeExecution,
-       toolCalls = source.toolCalls,
-       a2uiMessagesByAssistantMessageId =
-           source.a2uiMessagesByAssistantMessageId,
-       a2uiIssuesByAssistantMessageId = source.a2uiIssuesByAssistantMessageId,
-       a2uiMessageIssuesByAssistantMessageId =
-           source.a2uiMessageIssuesByAssistantMessageId;
+    required int sequence,
+    required String activeAssistantContent,
+    required String activeAssistantTransientContent,
+    required Map<String, int> transientA2uiSequenceByAssistantMessageId,
+    required Set<String> appliedTransientEventKeys,
+  }) => CloudConversationState(
+    conversation: source.conversation,
+    messages: source.messages,
+    pendingMessages: source.pendingMessages,
+    activeExecution: source.activeExecution,
+    toolCalls: source.toolCalls,
+    sequence: sequence,
+    activeAssistantContent: activeAssistantContent,
+    activeAssistantTransientContent: activeAssistantTransientContent,
+    a2uiMessagesByAssistantMessageId: source.a2uiMessagesByAssistantMessageId,
+    a2uiIssuesByAssistantMessageId: source.a2uiIssuesByAssistantMessageId,
+    a2uiMessageIssuesByAssistantMessageId:
+        source.a2uiMessageIssuesByAssistantMessageId,
+    transientA2uiSequenceByAssistantMessageId:
+        transientA2uiSequenceByAssistantMessageId,
+    appliedTransientEventKeys: appliedTransientEventKeys,
+  );
 
   factory fromSnapshot(ConversationSnapshot snapshot) => CloudConversationState(
     conversation: snapshot.conversation,

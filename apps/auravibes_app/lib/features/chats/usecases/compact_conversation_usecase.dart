@@ -27,8 +27,8 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
-        ChatResult,
         ChatMessage,
+        ChatResult,
         conversationCompactionRequestPrompt,
         conversationCompactionSystemPrompt,
         requireCompactionSummary;
@@ -263,9 +263,9 @@ extension on CompactConversationUsecase {
     SelectCompactionRangeUsecase selectRange,
   })
   _requiredLocalDependencies() {
-    final conversations = conversationRepository;
-    final getModelStore = modelSelectionStore;
-    final messagesRepository = messageRepository;
+    final conversations = this.conversationRepository;
+    final getModelStore = this.modelSelectionStore;
+    final messagesRepository = this.messageRepository;
     final selectRange = selectCompactionRangeUsecase;
     if (conversations == null ||
         getModelStore == null ||

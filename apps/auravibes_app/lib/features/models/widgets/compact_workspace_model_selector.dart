@@ -190,7 +190,7 @@ class const _ModelSheetSelector({
   required final ValueChanged<String?> onChanged,
   required final ValueChanged<String> onSearchChanged,
 }) extends StatelessWidget {
-  _ModelSheetSelector.fromSearch({
+  new fromSearch({
     required Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
     groupedModels,
     required _SelectorConfig config,
@@ -223,7 +223,7 @@ class const _ModelSheetSelector({
 }
 
 class _ModelSheetContent extends Column {
-  _ModelSheetContent({
+  new({
     required TextEditingController controller,
     required List<WorkspaceModelSelectionWithConnectionEntity> filteredModels,
     required String? workspaceModelSelectionId,
@@ -261,7 +261,7 @@ class const _ModelSearchInput({
 }
 
 class _ModelSheetOptions extends ListView {
-  _ModelSheetOptions({
+  new({
     required List<WorkspaceModelSelectionWithConnectionEntity> filteredModels,
     required String? workspaceModelSelectionId,
     required ValueChanged<String?> onChanged,
@@ -323,7 +323,7 @@ class const _CompactModelDropdown({
   required final TextEditingController controller,
   required final ValueChanged<String> onSearchChanged,
 }) extends StatelessWidget {
-  _CompactModelDropdown.fromSearch({
+  new fromSearch({
     required Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
     groupedModels,
     required _SelectorConfig config,
@@ -371,7 +371,7 @@ class const _EmptyModelDropdown() extends StatelessWidget {
 }
 
 class _ModelDropdown extends SizedBox {
-  _ModelDropdown({
+  new({
     required List<WorkspaceModelSelectionWithConnectionEntity> filteredModels,
     required String? workspaceModelSelectionId,
     required ValueChanged<String?> onChanged,
@@ -403,7 +403,7 @@ BorderRadius _inputRadius(BuildContext context) =>
     BorderRadius.all(.circular(context.auraTheme.fromBorderRadius(.xl)));
 
 class _ModelDropdownOption extends AuraDropdownOption<String> {
-  _ModelDropdownOption(WorkspaceModelSelectionWithConnectionEntity model)
+  new(WorkspaceModelSelectionWithConnectionEntity model)
     : super(
         value: model.workspaceModelSelection.id,
         child: Text(
@@ -481,7 +481,7 @@ class const _ModelCompactChip({
 }
 
 class _SelectedModelChip extends _ModelChip {
-  _SelectedModelChip({
+  new({
     required WorkspaceModelSelectionWithConnectionEntity? selectedModel,
   }) : super(
          label: switch (selectedModel?.workspaceModelSelection.modelName ??
@@ -519,7 +519,7 @@ class const _ModelChip({required final Widget label}) extends StatelessWidget {
 }
 
 class _DecoratedModelChip extends Container {
-  _DecoratedModelChip({
+  new({
     required Widget label,
     required Color borderColor,
     required double radius,
@@ -641,9 +641,7 @@ class const _ModelOptionSubtitleContent({
   );
 }
 
-class const _SubtitleText(this.value) extends StatelessWidget {
-  final String value;
-
+class const _SubtitleText(final String value) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraText(
     child: Text(value, overflow: .ellipsis),

@@ -31,7 +31,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
 }
 
 void main() {
-  final transportTypeConverter = McpServers().transportTypeConverter;
+  final transportTypeConverter = McpServers.transportTypeConverter;
 
   group('McpServers table converters', () {
     group('transportTypeConverter', () {

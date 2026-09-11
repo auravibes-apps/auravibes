@@ -2,6 +2,7 @@
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
 class const SkillCredentialOperations({

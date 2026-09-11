@@ -1220,7 +1220,7 @@ class const _CodexDeviceCreateButton({
   required final VoidCallback onSubmit,
   required final VoidCallback onCodexDeviceSubmit,
 }) extends StatelessWidget {
-  _CodexDeviceCreateButton.from({
+  new from({
     required _AddModelProviderFormValues values,
     required ({bool isSubmitting, bool disabled}) state,
     required _AddModelProviderFormCallbacks callbacks,
@@ -1537,7 +1537,7 @@ class const _CodexDeviceCodeRow({
 }
 
 class _CodexDeviceCodeRowContent extends Column {
-  _CodexDeviceCodeRowContent({
+  new({
     required String userCode,
     required VoidCallback onCopy,
     required String tooltip,
@@ -1598,7 +1598,7 @@ class const _CodexDeviceLinkRow({
 }
 
 class _CodexDeviceLinkRowContent extends Column {
-  _CodexDeviceLinkRowContent({
+  new({
     required String verificationUrl,
     required TextStyle? linkStyle,
     required VoidCallback onOpen,
@@ -1620,9 +1620,7 @@ class _CodexDeviceLinkRowContent extends Column {
        );
 }
 
-class const _CodexDeviceStepLabel(this.localeKey) extends StatelessWidget {
-  final String localeKey;
-
+class const _CodexDeviceStepLabel(final String localeKey) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraText(child: TextLocale(localeKey));
 }

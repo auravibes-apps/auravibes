@@ -117,7 +117,7 @@ final _blankCredential = SkillCredentialEntity(
   workspaceId: '',
   credentialDefinitionId: '',
   name: '',
-  attributes: {},
+  attributes: const {},
   isEnabled: false,
   createdAt: .new(1970),
   updatedAt: .new(1970),
@@ -139,74 +139,74 @@ class CloudSkillStore(
 );
 
 extension CloudSkillStoreSkillApi on CloudSkillStore {
-  Future<List<SkillEntity>> skills() => this._apiSkills();
+  Future<List<SkillEntity>> skills() => _apiSkills();
 
-  Future<SkillEntity?> skill(String id) => this._apiSkill(id);
+  Future<SkillEntity?> skill(String id) => _apiSkill(id);
 
   Future<SkillEntity> createSkill(SkillToCreate value) =>
-      this._apiCreateSkill(value);
+      _apiCreateSkill(value);
 
   Future<SkillEntity> updateSkill(String id, SkillToUpdate value) =>
-      this._apiUpdateSkill(id, value);
+      _apiUpdateSkill(id, value);
 
-  Future<void> deleteSkill(String id) => this._apiDeleteSkill(id);
+  Future<void> deleteSkill(String id) => _apiDeleteSkill(id);
 }
 
 extension CloudSkillStoreDefinitionApi on CloudSkillStore {
   Future<List<SkillCredentialDefinitionEntity>> definitions() =>
-      this._apiDefinitions();
+      _apiDefinitions();
 
   Future<SkillCredentialDefinitionEntity?> definition(String id) =>
-      this._apiDefinition(id);
+      _apiDefinition(id);
 
   Future<SkillCredentialDefinitionEntity> createDefinition(
     SkillCredentialDefinitionToCreate value,
-  ) => this._apiCreateDefinition(value);
+  ) => _apiCreateDefinition(value);
 
   Future<SkillCredentialDefinitionEntity> updateDefinition(
     String id,
     SkillCredentialDefinitionToUpdate value,
-  ) => this._apiUpdateDefinition(id, value);
+  ) => _apiUpdateDefinition(id, value);
 
-  Future<void> deleteDefinition(String id) => this._apiDeleteDefinition(id);
+  Future<void> deleteDefinition(String id) => _apiDeleteDefinition(id);
 }
 
 extension CloudSkillStoreToolApi on CloudSkillStore {
-  Future<SkillTemplateToolEntity?> tool(String id) => this._apiTool(id);
+  Future<SkillTemplateToolEntity?> tool(String id) => _apiTool(id);
 
   Future<SkillTemplateToolEntity> createTool(
     String skillId,
     SkillTemplateToolToCreate value,
-  ) => this._apiCreateTool(skillId, value);
+  ) => _apiCreateTool(skillId, value);
 
   Future<SkillTemplateToolEntity> updateTool(
     String id,
     SkillTemplateToolToUpdate value,
-  ) => this._apiUpdateTool(id, value);
+  ) => _apiUpdateTool(id, value);
 
   Future<List<SkillTemplateToolEntity>> tools(String skillId) =>
-      this._apiTools(skillId);
+      _apiTools(skillId);
 
-  Future<void> deleteTool(String id) => this._apiDeleteTool(id);
+  Future<void> deleteTool(String id) => _apiDeleteTool(id);
 }
 
 extension CloudSkillStoreCredentialApi on CloudSkillStore {
   Future<List<SkillCredentialEntity>> credentials(String definitionId) =>
-      this._apiCredentials(definitionId);
+      _apiCredentials(definitionId);
 
   Future<SkillCredentialEntity> createCredential(
     SkillCredentialToCreate value,
-  ) => this._apiCreateCredential(value);
+  ) => _apiCreateCredential(value);
 
   Future<SkillCredentialForEdit?> credentialForEdit(String id) =>
-      this._apiCredentialForEdit(id);
+      _apiCredentialForEdit(id);
 
   Future<SkillCredentialEntity> updateCredential(
     String id,
     SkillCredentialToUpdate value,
-  ) => this._apiUpdateCredential(id, value);
+  ) => _apiUpdateCredential(id, value);
 
-  Future<void> deleteCredential(String id) => this._apiDeleteCredential(id);
+  Future<void> deleteCredential(String id) => _apiDeleteCredential(id);
 }
 
 extension CloudSkillStoreSkillOperations on CloudSkillStore {

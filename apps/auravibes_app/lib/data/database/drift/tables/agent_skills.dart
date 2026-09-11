@@ -29,7 +29,10 @@ class AgentSkills extends Table with TableMixin {
   late final appSkillIdentifier = text().nullable()();
 
   @override
-  late final List<String> customConstraints = [
+  List<String> get customConstraints => [
     'CHECK ((workspace_skill_id IS NULL) != (app_skill_identifier IS NULL))',
   ];
+
+  bool hasCustomConstraint(String constraint) =>
+      customConstraints.contains(constraint);
 }

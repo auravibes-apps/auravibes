@@ -2,8 +2,8 @@
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

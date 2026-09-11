@@ -24,8 +24,8 @@ McpTransportType _transportTypeFromJson(Object? json) {
 /// and transport configurations.
 @DataClassName('McpServersTable')
 class McpServers extends Table with TableMixin {
-  final JsonTypeConverter2<McpTransportType, String, Object?>
-  transportTypeConverter = TypeConverter.json2(
+  static final JsonTypeConverter2<McpTransportType, String, Object?>
+      transportTypeConverter = TypeConverter.json2(
     fromJson: _transportTypeFromJson,
     toJson: (column) => column.toJson(),
   );
@@ -44,7 +44,7 @@ class McpServers extends Table with TableMixin {
   late final url = text()();
 
   /// Transport type: 'sse' or 'streamable_http.'.
-  late final transport = text().map(transportTypeConverter)();
+  late final transport = text().map(McpServers.transportTypeConverter)();
 
   /// Optional credential record used to authenticate this MCP server.
   late final serviceConnectionId = text().nullable().references(
@@ -58,7 +58,4 @@ class McpServers extends Table with TableMixin {
 
   /// Whether the MCP server is enabled for connections.
   late final isEnabled = boolean().withDefault(const Constant(true))();
-
-  @override
-  late final Set<Column> primaryKey = {id};
 }

@@ -361,7 +361,7 @@ void main() {
           compactionKind: .auto,
           compactedFromMessageId: 'a',
           compactedThroughMessageId: 'b',
-          compactedMessageIds: ['a', 'b'],
+          compactedMessageIds: const ['a', 'b'],
           compactionCreatedAt: now,
         );
         final json = metadata.toJson();

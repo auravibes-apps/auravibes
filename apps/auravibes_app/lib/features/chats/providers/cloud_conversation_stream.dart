@@ -5,12 +5,13 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/stream_provider.dart';
 
 export 'cloud_conversation_key.dart';
 
 final Logger _logger = .new('cloud_conversation');
 
-final cloudConversationStateProvider = StreamProvider.autoDispose
+final StreamProviderFamily<CloudConversationState, CloudConversationKey> cloudConversationStateProvider = StreamProvider.autoDispose
     .family<CloudConversationState, CloudConversationKey>(
       _watchCloudConversation,
     );
@@ -89,7 +90,7 @@ abstract final class CloudConversationStream {
 }
 
 class _CloudConversationStreamRunner {
-  _CloudConversationStreamRunner(this._chat, this._key, this._delay);
+  new(this._chat, this._key, this._delay);
 
   final CloudChatGateway _chat;
   final CloudConversationKey _key;

@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:riverpod/src/providers/provider.dart';
-import 'package:riverpod/riverpod.dart';
 
 typedef DisableSkillRequest = ({
   String workspaceId,

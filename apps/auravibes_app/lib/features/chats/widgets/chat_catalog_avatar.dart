@@ -90,10 +90,14 @@ class const _ChatCatalogAvatarContent({
   required final AuraSpacing size,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraAvatar(
-    child: Text(initials),
-    imageProvider: image == null ? null : MemoryImage(image),
-    semanticLabel: name,
-    size: size,
-  );
+  Widget build(BuildContext context) {
+    final bytes = image;
+
+    return AuraAvatar(
+      child: Text(initials),
+      imageProvider: bytes == null ? null : MemoryImage(bytes),
+      semanticLabel: name,
+      size: size,
+    );
+  }
 }

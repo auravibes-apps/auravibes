@@ -51,7 +51,4 @@ class Tools extends Table with TableMixin {
   late final permissions = textEnum<PermissionAccess>().withDefault(
     Constant(PermissionAccess.ask.name),
   )();
-
-  @override
-  late final Set<Column> primaryKey = {id};
 }

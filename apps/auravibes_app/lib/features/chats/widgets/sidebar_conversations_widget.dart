@@ -426,14 +426,14 @@ class const _CompactingRow() extends StatelessWidget {
 
 class const _CompactingTile() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraTile(
-    child: const AuraText(
+  Widget build(BuildContext context) => const AuraTile(
+    child: AuraText(
       child: TextLocale(LocaleKeys.compaction_compacting_row_label),
       style: .bodySmall,
     ),
     variant: .ghost,
     size: .small,
-    leading: const _CompactingIndicator(),
+    leading: _CompactingIndicator(),
     enabled: false,
   );
 }

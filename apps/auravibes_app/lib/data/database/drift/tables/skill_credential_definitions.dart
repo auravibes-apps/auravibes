@@ -20,8 +20,11 @@ class SkillCredentialDefinitions extends Table with TableMixin {
   late final attributesJson = text()();
 
   @override
-  late final List<Set<Column<Object>>> uniqueKeys = [
+  List<Set<Column<Object>>> get uniqueKeys => [
     {workspaceId, title},
     {workspaceId, slug},
   ];
+
+  bool isUniqueColumn(Column column) =>
+      uniqueKeys.any((key) => key.contains(column));
 }

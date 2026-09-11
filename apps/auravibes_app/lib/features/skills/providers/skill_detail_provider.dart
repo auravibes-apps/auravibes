@@ -38,17 +38,6 @@ typedef _NativeSkillKeys = ({
   String? contentKey,
 });
 
-typedef _NativeSkillValues = ({
-  String title,
-  String slug,
-  String description,
-  String content,
-  bool isCredentialOptional,
-  String? titleKey,
-  String? descriptionKey,
-  String? contentKey,
-});
-
 typedef _SkillDetailRequest = ({
   Ref ref,
   CloudSkillStore? cloud,
@@ -56,13 +45,6 @@ typedef _SkillDetailRequest = ({
   AppSkillDefinition? appSkill,
   String skillId,
   String workspaceId,
-});
-
-typedef _NativeSkillDetailRequest = ({
-  AppSkillDefinition appSkill,
-  SkillEntity? sourceSkill,
-  String workspaceId,
-  bool isEnabled,
 });
 
 @riverpod
@@ -160,7 +142,7 @@ _EnabledStateRequest _enabledStateRequest(
   workspaceId: request.workspaceId,
 );
 
-_NativeSkillDetailRequest _nativeSkillDetailRequest(
+SkillDetailNativeRequest _nativeSkillDetailRequest(
   _SkillDetailRequest request,
   AppSkillDefinition appSkill,
   bool isEnabled,
@@ -200,33 +182,17 @@ Future<bool> _loadEnabledState(_EnabledStateRequest request) async {
       .isAppSkillEnabled(request.workspaceId, request.skillId);
 }
 
-SkillDetail _buildNativeSkillDetail(_NativeSkillDetailRequest request) {
+SkillDetail _buildNativeSkillDetail(SkillDetailNativeRequest request) {
   return _nativeSkillDetailBuilder(request);
 }
 
-final SkillDetail Function(_NativeSkillDetailRequest request)
-_nativeSkillDetailBuilder = (request) {
+SkillDetail _nativeSkillDetailBuilder(SkillDetailNativeRequest request) {
   final values = _nativeSkillValues(request.appSkill, request.sourceSkill);
 
-  return SkillDetail(
-    source: SkillSource.app,
-    id: request.appSkill.identifier,
-    workspaceId: request.workspaceId,
-    kind: .native,
-    title: values.title,
-    slug: values.slug,
-    description: values.description,
-    content: values.content,
-    isEnabled: request.isEnabled,
-    isCredentialOptional: values.isCredentialOptional,
-    appTools: request.appSkill.nativeTools,
-    titleKey: values.titleKey,
-    descriptionKey: values.descriptionKey,
-    contentKey: values.contentKey,
-  );
-};
+  return SkillDetail.fromNative(request, values);
+}
 
-_NativeSkillValues _nativeSkillValues(
+SkillDetailNativeValues _nativeSkillValues(
   AppSkillDefinition appSkill,
   SkillEntity? sourceSkill,
 ) {
@@ -240,7 +206,7 @@ _NativeSkillValues _nativeSkillValues(
   );
 }
 
-_NativeSkillValues _nativeSkillValuesFrom(
+SkillDetailNativeValues _nativeSkillValuesFrom(
   _NativeSkillText text,
   _NativeSkillKeys keys,
   bool isCredentialOptional,

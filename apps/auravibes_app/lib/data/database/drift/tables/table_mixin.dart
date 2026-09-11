@@ -15,5 +15,7 @@ mixin TableMixin on Table {
   late final updatedAt = dateTime().withDefault(currentDateAndTime)();
 
   @override
-  late final Set<Column> primaryKey = {id};
+  Set<Column> get primaryKey => {id};
+
+  bool isPrimaryKeyColumn(Column column) => primaryKey.contains(column);
 }

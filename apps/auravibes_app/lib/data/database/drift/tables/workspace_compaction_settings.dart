@@ -20,5 +20,8 @@ class WorkspaceCompactionSettings extends Table with TableMixin {
   late final remainingTokenThreshold = integer().nullable()();
 
   @override
-  late final Set<Column> primaryKey = {workspaceId};
+  Set<Column> get primaryKey => {workspaceId};
+
+  @override
+  bool isPrimaryKeyColumn(Column column) => primaryKey.contains(column);
 }

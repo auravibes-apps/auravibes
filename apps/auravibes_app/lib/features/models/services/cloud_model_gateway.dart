@@ -86,8 +86,6 @@ class CloudModelGateway {
   int get _workspaceId => _stateGateway.workspace.cloudWorkspaceId;
   Client get _client => _stateGateway.client;
 
-  @override
-  String toString() => super.toString();
 
   Future<List<ModelConnectionView>> listModelConnections() {
     final request = ListModelConnectionsRequest(workspaceId: _workspaceId);

@@ -2,8 +2,8 @@
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
 
-import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_header.dart';
@@ -51,7 +51,7 @@ class const ToolsGroupCard({
 }
 
 class _ToolsGroupCardCallbacks {
-  _ToolsGroupCardCallbacks({
+  new({
     required this.groupWithTools,
     required this.workspaceId,
     required this.ref,

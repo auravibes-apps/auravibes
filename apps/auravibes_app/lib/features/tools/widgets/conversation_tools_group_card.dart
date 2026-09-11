@@ -66,7 +66,7 @@ class const ConversationToolsGroupCard({
 }
 
 class _ConversationToolsGroupCardCallbacks {
-  _ConversationToolsGroupCardCallbacks({
+  new({
     required this.groupWithTools,
     required this.workspaceId,
     required this.conversationId,

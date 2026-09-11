@@ -54,8 +54,8 @@ class const CloudChatMessageSender({
     _capabilities.require(
       supported: draft.attachments.isEmpty || _capabilities.attachments,
     );
-    final chat = await this._loadGateway();
-    await this._sendDraft(chat, conversationId, draft);
+    final chat = await _loadGateway();
+    await _sendDraft(chat, conversationId, draft);
     _invalidateMessages(conversationId);
   }
 }
@@ -68,7 +68,7 @@ extension on CloudChatMessageSender {
   ) async {
     final input = await _prepareQueueInput(chat, conversationId, draft);
     final snapshot = await _queueMessage(input);
-    await this._continueIfReady(chat, conversationId, snapshot);
+    await _continueIfReady(chat, conversationId, snapshot);
   }
 
   Future<_QueueMessageInput> _prepareQueueInput(
@@ -137,8 +137,8 @@ extension on CloudChatMessageSender {
 
   Future<ConversationSnapshot> _queueMessage(_QueueMessageInput input) async {
     try {
-      final queued = await this._queueMessageWithoutCleanup(input);
-      this._logQueuedMessage(
+      final queued = await _queueMessageWithoutCleanup(input);
+      _logQueuedMessage(
         input._conversationId,
         queued,
         input._attachmentIds.length,
@@ -146,7 +146,7 @@ extension on CloudChatMessageSender {
 
       return queued;
     } on Object catch (error, stackTrace) {
-      await this._deleteUploaded(input);
+      await _deleteUploaded(input);
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
@@ -200,7 +200,7 @@ extension on CloudChatMessageSender {
       conversationId,
       snapshot,
     );
-    this._logExecutionAcknowledged(conversationId, execution);
+    _logExecutionAcknowledged(conversationId, execution);
   }
 
   bool _shouldContinue(ConversationSnapshot snapshot) {

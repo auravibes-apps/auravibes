@@ -27,5 +27,8 @@ class ConversationTools extends Table with TableMixin {
   )();
 
   @override
-  late final Set<Column> primaryKey = {conversationId, toolId};
+  Set<Column> get primaryKey => {conversationId, toolId};
+
+  @override
+  bool isPrimaryKeyColumn(Column column) => primaryKey.contains(column);
 }

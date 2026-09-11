@@ -111,7 +111,7 @@ class const WatchServiceConnectionListItemsUsecase(
 }
 
 class _McpCredentialItem {
-  _McpCredentialItem(
+  new(
     _McpCredentialItemRequest request,
     bool canRefresh,
     DateTime now,

@@ -38,14 +38,12 @@ class ChatA2uiProtocolMessage {
 }
 
 class ChatA2uiParseResult {
-  const new valid(ChatA2uiProtocolMessage message)
-    : message = message,
-      issue = null,
+  const new valid(ChatA2uiProtocolMessage this.message)
+    : issue = null,
       wireSurfaceId = null;
 
-  const new invalid(ChatA2uiSurfaceIssue issue, {this.wireSurfaceId})
-    : message = null,
-      issue = issue;
+  const new invalid(ChatA2uiSurfaceIssue this.issue, {this.wireSurfaceId})
+    : message = null;
 
   final ChatA2uiProtocolMessage? message;
   final ChatA2uiSurfaceIssue? issue;

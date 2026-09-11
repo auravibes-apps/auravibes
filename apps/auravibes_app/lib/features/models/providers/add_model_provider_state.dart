@@ -12,8 +12,8 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/codex_oauth_service.dart';
@@ -170,7 +170,7 @@ extension AddModelProviderStateActions on AddModelProviderState {
     _LoadAndAddRequest request,
   ) async {
     final input = request.input;
-    final session = await this._workspaceSession();
+    final session = await _workspaceSession();
     _requireCapabilities((
       session: session,
       modelId: input.modelId,
@@ -178,7 +178,7 @@ extension AddModelProviderStateActions on AddModelProviderState {
       codexOAuthMethod: request.codexOAuthMethod,
     ));
 
-    return _addModelConnection(await this._connectionRequest(request, session));
+    return _addModelConnection(await _connectionRequest(request, session));
   }
 
   ({String name, String modelId})? _validatedInput() {
@@ -214,7 +214,7 @@ extension _AddModelProviderStateDependencies on AddModelProviderState {
   ) async {
     final input = request.input;
     return (
-      repo: await this._modelConnectionStore(),
+      repo: await _modelConnectionStore(),
       session: session,
       name: input.name,
       modelId: input.modelId,
@@ -262,7 +262,7 @@ extension on AddModelProviderState {
       );
     }
 
-    return this._addApiKeyModelProvider(
+    return _addApiKeyModelProvider(
       request.repo,
       request.name,
       request.modelId,
@@ -284,10 +284,10 @@ extension on AddModelProviderState {
     _OAuthModelProviderRequest request,
   ) {
     if (session.cloud != null) {
-      return this._addCloudOAuthModelProvider(request);
+      return _addCloudOAuthModelProvider(request);
     }
 
-    return this._addOAuthModelProvider(request);
+    return _addOAuthModelProvider(request);
   }
 }
 

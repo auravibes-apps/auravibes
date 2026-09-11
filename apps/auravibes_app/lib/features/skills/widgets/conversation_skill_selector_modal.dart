@@ -92,7 +92,7 @@ class const _SelectorMessage({
 }
 
 class _SelectorMessageData {
-  _SelectorMessageData({
+  new({
     required AsyncValue<ConversationSkillSelectorState> selectorAsync,
     required ValueChanged<AvailableSkill> onLoad,
     required ValueChanged<AvailableSkill> onUnload,
@@ -271,7 +271,7 @@ class const _SkillSelectorTile({
 }
 
 class _SkillSelectorTileData {
-  _SkillSelectorTileData({
+  new({
     required AvailableSkill skill,
     required IconData actionIcon,
     required ValueChanged<AvailableSkill> onPressed,

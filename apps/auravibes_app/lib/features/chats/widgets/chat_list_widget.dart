@@ -42,9 +42,9 @@ class const ChatListWidget({required final String workspaceId, super.key})
 class const _ChatListEmptyState({required final String workspaceId})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => const Center(
+  Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: EdgeInsets.all(32),
+      padding: const EdgeInsets.all(32),
       child: _ChatListEmptyStateColumn(workspaceId: workspaceId),
     ),
   );

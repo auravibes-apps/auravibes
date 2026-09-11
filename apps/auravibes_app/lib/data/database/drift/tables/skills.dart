@@ -39,10 +39,13 @@ class Skills extends Table with TableMixin {
   late final isEnabled = boolean().withDefault(const Constant(true))();
 
   @override
-  late final List<Set<Column<Object>>> uniqueKeys = [
+  List<Set<Column<Object>>> get uniqueKeys => [
     {workspaceId, title},
     {workspaceId, slug},
   ];
+
+  bool isUniqueColumn(Column column) =>
+      uniqueKeys.any((key) => key.contains(column));
 }
 
 enum SkillSourceTable(final String value) {

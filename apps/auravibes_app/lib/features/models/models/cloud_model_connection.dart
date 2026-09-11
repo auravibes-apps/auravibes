@@ -11,7 +11,7 @@ class const CloudModelConnection({
   final String? url,
   final String? keySuffix,
 }) {
-  factory CloudModelConnection.fromView(ModelConnectionView view) => .new(
+  factory fromView(ModelConnectionView view) => .new(
     id: view.id,
     revision: view.revision,
     name: view.name,

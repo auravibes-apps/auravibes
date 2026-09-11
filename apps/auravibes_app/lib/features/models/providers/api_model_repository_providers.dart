@@ -107,23 +107,32 @@ Future<List<ApiModelEntity>> getAllModels(
   return await catalog.getAllModels();
 }
 
-typedef _GetModelByProviderAndModelId = Future<ApiModelEntity?> Function(
+@riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
+Future<ApiModelEntity?> getModelByProviderAndModelId(
   Ref ref, {
   required String workspaceId,
   required String providerId,
   required String modelId,
-});
+}) => _getModelByProviderAndModelId(
+  ref,
+  workspaceId: workspaceId,
+  providerId: providerId,
+  modelId: modelId,
+);
 
-@riverpod
-_GetModelByProviderAndModelId get getModelByProviderAndModelId =>
-    (
-      ref, {
-      required workspaceId,
-      required providerId,
-      required modelId,
-    }) async =>
-        await (await ref.watch(modelCatalogStoreProvider(workspaceId).future))
-            .getModelByProviderAndModelId(providerId, modelId);
+Future<ApiModelEntity?> _getModelByProviderAndModelId(
+  Ref ref, {
+  required String workspaceId,
+  required String providerId,
+  required String modelId,
+}) async {
+  final catalog = await ref.watch(
+    modelCatalogStoreProvider(workspaceId).future,
+  );
+
+  return await catalog.getModelByProviderAndModelId(providerId, modelId);
+}
 
 @riverpod
 Future<List<ApiModelEntity>> getModelsByProvider(

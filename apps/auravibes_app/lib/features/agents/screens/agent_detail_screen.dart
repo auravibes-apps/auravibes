@@ -837,6 +837,7 @@ class const _PromptCardSettings({
   );
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _PromptCardMarkdownFields({required final _AgentDetailScreenState state})
     extends StatelessWidget {
   final Widget _child = AuraColumn(
@@ -859,6 +860,7 @@ class _PromptCardMarkdownFields({required final _AgentDetailScreenState state})
 }
 
 class const _PromptCardHeader() extends StatelessWidget {
+  // ignore: avoid_field_initializers_in_const_classes, child is a cached constant.
   final Widget _child = const AuraColumn(
     children: [
       AuraText(
@@ -989,6 +991,7 @@ class const _SkillsSummaryCard({
   );
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _SkillsSummaryContent({
   required final int selectedCount,
   required final int availableCount,
@@ -1025,6 +1028,7 @@ class const _SkillsSummaryHeader({required final VoidCallback onManage})
   );
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _SkillsSummaryDetails({
   required final int selectedCount,
   required final int availableCount,
@@ -1109,6 +1113,7 @@ class const _ToolPermissionsSummaryCard({
   );
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _ToolPermissionsSummaryContent({
   required final int overrideCount,
   required final int missingOverrideCount,
@@ -1252,6 +1257,7 @@ class const _SaveBarButtonFromConstraints({
   );
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _SaveBarButton({
   required final double width,
   required final bool isCompact,
@@ -1264,7 +1270,7 @@ class _SaveBarButton({
           child: AuraButton(
             onPressed: onSave,
             child: TextLocale(
-              isCreate ? LocaleKeys.agents_create : LocaleKeys.common_save,
+              _label(isCreate: isCreate),
             ),
           ),
         )
@@ -1275,7 +1281,7 @@ class _SaveBarButton({
             child: AuraButton(
               onPressed: onSave,
               child: TextLocale(
-                isCreate ? LocaleKeys.agents_create : LocaleKeys.common_save,
+                _label(isCreate: isCreate),
               ),
             ),
           ),
@@ -1283,6 +1289,9 @@ class _SaveBarButton({
 
   @override
   Widget build(BuildContext _) => _child;
+
+  static String _label({required bool isCreate}) =>
+      isCreate ? LocaleKeys.agents_create : LocaleKeys.common_save;
 }
 
 class const _WarningTile({
@@ -1326,6 +1335,8 @@ class _AgentSkillsDialogState extends State<_AgentSkillsDialog> {
   @override
   Widget build(BuildContext context) =>
       _AgentSkillsDialogView(state: this, data: _dialogData);
+
+  void _setState(VoidCallback callback) => setState(callback);
 }
 
 extension on _AgentSkillsDialogState {
@@ -1349,21 +1360,21 @@ extension on _AgentSkillsDialogState {
   List<WorkspaceSkill> _disabledSkillsFor(String query) =>
       widget.disabledSkills.where((skill) => skill.matches(query)).toList();
 
-  void _setQuery(String value) => setState(() => _query = value);
+  void _setQuery(String value) => _setState(() => _query = value);
 
   void _enableFromDialog(WorkspaceSkill skill) => unawaited(_enable(skill));
 
   void _removeUnavailable(AgentSkillRef ref) {
-    setState(() => widget.owner._removeUnavailableSkill(ref));
+    _setState(() => widget.owner._removeUnavailableSkill(ref));
   }
 
   void _toggle(WorkspaceSkill skill) {
-    setState(() => widget.owner._toggleSkillValue(skill));
+    _setState(() => widget.owner._toggleSkillValue(skill));
   }
 
   Future<void> _enable(WorkspaceSkill skill) async {
     await widget.owner._confirmEnableSkill(skill);
-    if (mounted) setState(() => _query = _searchController.text);
+    if (mounted) _setState(() => _query = _searchController.text);
   }
 }
 
@@ -1554,6 +1565,8 @@ class _AgentToolPermissionsDialogState
   @override
   Widget build(BuildContext context) =>
       _AgentToolPermissionsDialogView(state: this, data: _dialogData);
+
+  void _setState(VoidCallback callback) => setState(callback);
 }
 
 extension on _AgentToolPermissionsDialogState {
@@ -1588,7 +1601,7 @@ extension on _AgentToolPermissionsDialogState {
           )
           .toList();
 
-  void _setQuery(String value) => setState(() => _query = value);
+  void _setQuery(String value) => _setState(() => _query = value);
 
   _GroupedTools _groupDefaultTools(
     List<WorkspaceToolEntity> tools,
@@ -1609,12 +1622,14 @@ extension on _AgentToolPermissionsDialogState {
   ) {
     if (_isSkillControlTool(tool.toolId)) {
       buckets.skillControls.add(tool);
+
       return;
     }
 
     final parsed = ToolNameFormatter.parseSkillToolName(tool.toolId);
     if (parsed == null) {
       buckets.otherWorkspaceTools.add(tool);
+
       return;
     }
 
@@ -1627,6 +1642,7 @@ extension on _AgentToolPermissionsDialogState {
     _ToolGroupBuckets buckets,
   ) {
     final key = '${parsed.source}:${parsed.skillSlug}';
+
     return buckets.groupByKey.putIfAbsent(
       key,
       () => _createToolGroup((
@@ -1647,6 +1663,7 @@ extension on _AgentToolPermissionsDialogState {
       visibleTools: request.visibleTools,
     ));
     _addToolGroup(group, skill, request.buckets);
+
     return group;
   }
 
@@ -1684,6 +1701,7 @@ extension on _AgentToolPermissionsDialogState {
       };
       if (expectedSource == source && skill.slug == slug) return skill;
     }
+
     return null;
   }
 
@@ -1712,6 +1730,7 @@ extension on _AgentToolPermissionsDialogState {
     String skillSlug,
   ) {
     final parsed = ToolNameFormatter.parseSkillToolName(tool.toolId);
+
     return parsed?.source == source &&
         parsed?.skillSlug == skillSlug &&
         _value(tool.id) != AgentToolPermissionMode.workspaceDefault;
@@ -1721,19 +1740,21 @@ extension on _AgentToolPermissionsDialogState {
     if (query.isNotEmpty) return true;
     if (_collapsedToolGroups.contains(group.key)) return false;
     if (_expandedToolGroups.contains(group.key)) return true;
+
     return group.hasOverrides();
   }
 
   void _toggleGroup(_ToolGroup group, String query) {
     if (query.isNotEmpty) return;
     final isExpanded = _isGroupExpanded(group, query);
-    setState(() => _setGroupExpansion(group.key, isExpanded));
+    _setState(() => _setGroupExpansion(group.key, isExpanded));
   }
 
   void _setGroupExpansion(String key, bool isExpanded) {
     if (isExpanded) {
       final _ = _expandedToolGroups.remove(key);
       final _ = _collapsedToolGroups.add(key);
+
       return;
     }
     final _ = _collapsedToolGroups.remove(key);
@@ -1741,7 +1762,7 @@ extension on _AgentToolPermissionsDialogState {
   }
 
   void _change(String toolId, AgentToolPermissionMode value) {
-    setState(() => widget.onChanged(toolId, value));
+    _setState(() => widget.onChanged(toolId, value));
   }
 }
 
@@ -1829,6 +1850,7 @@ class const _OverrideToolsSection({
   }
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _ToolGroupSections({
   required final _AgentToolPermissionsDialogState state,
   required final _ToolPermissionDialogData data,
@@ -2063,6 +2085,7 @@ class const _AgentManageDialogCloseButton() extends StatelessWidget {
   );
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _SkillSection({
   required final Widget title,
   required final Widget empty,
@@ -2151,6 +2174,7 @@ class const _UnavailableSkillTileContent({required final AgentSkillRef ref})
   );
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _ToolSection({
   required final Widget title,
   required final Widget empty,
@@ -2202,6 +2226,7 @@ class const _CollapsibleToolSection({
   );
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _CollapsibleToolColumn({
   required final String title,
   required final Widget empty,
@@ -2273,6 +2298,7 @@ class const _CollapsibleToolContent({
   }
 }
 
+// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _DialogSection({
   required final Widget title,
   required final Widget empty,

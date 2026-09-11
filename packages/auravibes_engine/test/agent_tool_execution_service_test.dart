@@ -260,7 +260,7 @@ class _FakeExecutionProvider({
   Future<AgentToolApprovalDecision> resolveToolApprovalDecision(
     AgentToolApprovalRequest<String> request,
   ) async {
-    approvalArgumentsRaw[request.toolCallId] = request.argumentsRaw;
+    approvalArgumentsRaw[request.toolCallId] = request.argumentsRaw ?? '{}';
     return AgentToolApprovalDecision(
       permissionResult:
           decisions[request.toolCallId] ??

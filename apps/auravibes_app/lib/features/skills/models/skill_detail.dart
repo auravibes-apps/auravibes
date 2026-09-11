@@ -1,6 +1,24 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AppSkillToolDefinition;
+    show AppSkillDefinition, AppSkillToolDefinition;
+
+typedef SkillDetailNativeValues = ({
+  String title,
+  String slug,
+  String description,
+  String content,
+  bool isCredentialOptional,
+  String? titleKey,
+  String? descriptionKey,
+  String? contentKey,
+});
+
+typedef SkillDetailNativeRequest = ({
+  AppSkillDefinition appSkill,
+  SkillEntity? sourceSkill,
+  String workspaceId,
+  bool isEnabled,
+});
 
 class const SkillDetail({
   required final String id,
@@ -19,6 +37,11 @@ class const SkillDetail({
   final String? descriptionKey,
   final String? contentKey,
 }) {
+  factory fromNative(
+    SkillDetailNativeRequest request,
+    SkillDetailNativeValues values,
+  ) = _NativeSkillDetail;
+
   bool get isUserSkill => source == SkillSource.user;
 
   // App skills may not have a persisted workspace row.
@@ -26,6 +49,26 @@ class const SkillDetail({
       _UserSkillSkillDetail(skill);
 
   bool hasSource(SkillSource value) => source == value;
+}
+
+class _NativeSkillDetail extends SkillDetail {
+  new(SkillDetailNativeRequest request, SkillDetailNativeValues values)
+    : super(
+        source: SkillSource.app,
+        id: request.appSkill.identifier,
+        workspaceId: request.workspaceId,
+        kind: .native,
+        title: values.title,
+        slug: values.slug,
+        description: values.description,
+        content: values.content,
+        isEnabled: request.isEnabled,
+        isCredentialOptional: values.isCredentialOptional,
+        appTools: request.appSkill.nativeTools,
+        titleKey: values.titleKey,
+        descriptionKey: values.descriptionKey,
+        contentKey: values.contentKey,
+      );
 }
 
 class _UserSkillSkillDetail extends SkillDetail {

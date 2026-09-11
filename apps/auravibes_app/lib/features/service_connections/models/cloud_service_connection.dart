@@ -14,7 +14,7 @@ class const CloudServiceConnection({
   final String? credentialDefinitionId,
   final bool isEnabled = true,
 }) {
-  CloudServiceConnection._fromResourceFields(
+  new _fromResourceFields(
     WorkspaceResource resource,
     _CloudServiceConnectionFields fields,
   ) : this(

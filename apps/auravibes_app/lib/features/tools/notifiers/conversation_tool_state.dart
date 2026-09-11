@@ -4,7 +4,6 @@
 
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
-import 'package:auravibes_app/data/repositories/workspace_tools_repository_contract.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
@@ -172,7 +171,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier
     String toolId, {
     required ToolPermissionMode permissionMode,
   }) {
-    return this._updateConversationTool(
+    return _updateConversationTool(
       toolId: toolId,
       persist: (convId) => _repository.setConversationToolPermission(
         convId,

@@ -37,7 +37,4 @@ class ToolsGroups extends Table with TableMixin {
   late final isEnabled = boolean().withDefault(const Constant(true))();
 
   late final permissions = textEnum<PermissionAccess>()();
-
-  @override
-  late final Set<Column> primaryKey = {id};
 }

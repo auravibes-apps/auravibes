@@ -43,5 +43,7 @@ class ApiModelProviders extends Table {
   late final doc = text().nullable()();
 
   @override
-  late final Set<Column> primaryKey = {id};
+  Set<Column> get primaryKey => {id};
+
+  bool isPrimaryKeyColumn(Column column) => primaryKey.contains(column);
 }

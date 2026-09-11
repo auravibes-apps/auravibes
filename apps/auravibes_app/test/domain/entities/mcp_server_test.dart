@@ -343,7 +343,7 @@ void main() {
         refreshToken: 'plain-refresh',
         expiresIn: 3600,
         tokenType: 'Bearer',
-        scopes: ['read'],
+        scopes: const ['read'],
       );
 
       final encrypted = await token.copyCryptor((v) async => 'enc-$v');

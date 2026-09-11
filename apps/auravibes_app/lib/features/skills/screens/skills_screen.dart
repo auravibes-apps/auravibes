@@ -174,7 +174,7 @@ class const _SkillsScreenAppBar({required final VoidCallback onCreateSkill})
 }
 
 class _SkillsScreenAppBarData {
-  _SkillsScreenAppBarData({required VoidCallback onCreateSkill})
+  new({required VoidCallback onCreateSkill})
     : child = AuraAppBar(
         title: const TextLocale(LocaleKeys.skills_screen_title),
         actions: [_SkillsScreenCreateButton(onPressed: onCreateSkill)],
@@ -260,7 +260,7 @@ class const _SkillsScreenAsyncContent({
 }
 
 class _SkillsScreenAsyncContentData {
-  _SkillsScreenAsyncContentData({
+  new({
     required AsyncValue<List<WorkspaceSkill>> skillsAsync,
     required VoidCallback onCreateSkill,
     required ValueChanged<WorkspaceSkill> onOpenSkill,
@@ -289,10 +289,8 @@ List<WorkspaceSkill>? _loadedSkills(
   _ => null,
 };
 
-class const _SkillsScreenPendingState({required this.skillsAsync})
+class const _SkillsScreenPendingState({required final AsyncValue<List<WorkspaceSkill>> skillsAsync})
     extends StatelessWidget {
-  final AsyncValue<List<WorkspaceSkill>> skillsAsync;
-
   @override
   Widget build(BuildContext context) => switch (skillsAsync) {
     AsyncLoading() => const Center(child: AuraSpinner()),
@@ -330,9 +328,7 @@ class const _SkillsScreenLoadedAsyncState({
       );
 }
 
-class const _SkillsScreenError({required this.error}) extends StatelessWidget {
-  final Object error;
-
+class const _SkillsScreenError({required final Object error}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: AuraText(child: TextLocale(CloudAppErrors.localizationKey(error))),
@@ -412,11 +408,8 @@ class const _SkillsList({
   );
 }
 
-class const _SkillsListView({required this.skills, required this.itemBuilder})
+class const _SkillsListView({required final List<WorkspaceSkill> skills, required final IndexedWidgetBuilder itemBuilder})
     extends StatelessWidget {
-  final List<WorkspaceSkill> skills;
-  final IndexedWidgetBuilder itemBuilder;
-
   @override
   Widget build(BuildContext context) => ListView.separated(
     padding: const EdgeInsets.all(_skillScreenListPadding),

@@ -28,10 +28,13 @@ class SkillTemplateTools extends Table with TableMixin {
   late final isEnabled = boolean().withDefault(const Constant(true))();
 
   @override
-  late final List<Set<Column<Object>>> uniqueKeys = [
+  List<Set<Column<Object>>> get uniqueKeys => [
     {skillId, title},
     {skillId, slug},
   ];
+
+  bool isUniqueColumn(Column column) =>
+      uniqueKeys.any((key) => key.contains(column));
 }
 
 enum SkillTemplateToolTypeTable(final String value) {

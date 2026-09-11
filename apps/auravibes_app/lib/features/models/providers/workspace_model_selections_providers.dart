@@ -32,7 +32,7 @@ _modelStores(Ref ref, String workspaceId) async => (
 );
 
 class WorkspaceModelSelectionsProviders {
-  WorkspaceModelSelectionsProviders({
+  new({
     required this._selections,
     required this._providers,
     required this._openAIModels,

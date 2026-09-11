@@ -16,7 +16,7 @@ const _cloudModelPollInterval = Duration(minutes: 15);
 class CloudModelStore
     with _CloudModelStoreConnectionMethods, _CloudModelStoreSelectionMethods
     implements ModelConnectionStore, ModelSelectionStore {
-  CloudModelStore(this._workspaceId, this._usecases);
+  new(this._workspaceId, this._usecases);
 
   @override
   final String _workspaceId;
@@ -221,7 +221,7 @@ ModelProvidersType? _selectionProviderType(String providerId) =>
 class CloudModelCatalogStore
     with _CloudModelCatalogMethods
     implements ModelCatalogStore {
-  const CloudModelCatalogStore(this._gateway);
+  const new(this._gateway);
 
   @override
   final CloudModelGateway _gateway;

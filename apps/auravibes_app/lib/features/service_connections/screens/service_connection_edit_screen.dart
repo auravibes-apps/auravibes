@@ -701,9 +701,8 @@ class const _SkillCredentialEditAttributes({
 }
 
 abstract class _SkillCredentialAttributeInput extends StatelessWidget {
-  const _SkillCredentialAttributeInput._();
 
-  factory _SkillCredentialAttributeInput(
+  factory(
     MapEntry<String, SkillCredentialAttributeDefinition> entry, {
     required _SkillCredentialEditState editState,
     required _ServiceConnectionEditScreenState owner,
@@ -714,17 +713,18 @@ abstract class _SkillCredentialAttributeInput extends StatelessWidget {
 
     return _NonSecretAttributeInput.fromEntry(entry, owner);
   }
+  const new _();
 }
 
 class _NonSecretAttributeInput extends _SkillCredentialAttributeInput {
-  const _NonSecretAttributeInput({
+  const new({
     required this.name,
     required this.definition,
     required this.controller,
     required this.onChanged,
   }) : super._();
 
-  _NonSecretAttributeInput.fromEntry(
+  new fromEntry(
     MapEntry<String, SkillCredentialAttributeDefinition> entry,
     _ServiceConnectionEditScreenState owner,
   ) : this(
@@ -754,7 +754,7 @@ class _NonSecretAttributeInput extends _SkillCredentialAttributeInput {
 }
 
 class _SecretAttributeInput extends _SkillCredentialAttributeInput {
-  const _SecretAttributeInput({
+  const new({
     required this.name,
     required this.definition,
     required this.state,
@@ -763,7 +763,7 @@ class _SecretAttributeInput extends _SkillCredentialAttributeInput {
     required this.onChanged,
   }) : super._();
 
-  _SecretAttributeInput.fromEntry(
+  new fromEntry(
     MapEntry<String, SkillCredentialAttributeDefinition> entry,
     _SkillCredentialEditState editState,
     _ServiceConnectionEditScreenState owner,
@@ -800,7 +800,7 @@ class _SecretAttributeInput extends _SkillCredentialAttributeInput {
 }
 
 class _SecretAttributeAuraInput extends AuraInput {
-  _SecretAttributeAuraInput(_SecretAttributeInput input, BuildContext context)
+  new(_SecretAttributeInput input, BuildContext context)
     : super(
         controller: input.controller,
         placeholder: switch (_secretPlaceholder(context, input.state)) {
@@ -920,7 +920,7 @@ class const _ModelProviderKeyInput({
 }
 
 class _ModelProviderKeyAuraInput extends AuraInput {
-  _ModelProviderKeyAuraInput(_ModelProviderKeyInput input, BuildContext context)
+  new(_ModelProviderKeyInput input, BuildContext context)
     : super(
         controller: input.owner._modelKeyController,
         placeholder: Text(_modelProviderKeyPlaceholder(context, input.suffix)),
@@ -1029,7 +1029,7 @@ class const _GenericServiceConnectionSecretInput({
 }
 
 class _GenericServiceConnectionSecretAuraInput extends AuraInput {
-  _GenericServiceConnectionSecretAuraInput(
+  new(
     _GenericServiceConnectionSecretInput input,
     BuildContext context,
   ) : super(

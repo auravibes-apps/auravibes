@@ -97,7 +97,7 @@ class const _AgentSheetMode({
 }
 
 class _AgentCompactMode extends StatelessWidget {
-  _AgentCompactMode({required this.agentsAsync, required this.agentId})
+  new({required this.agentsAsync, required this.agentId})
     : _child = switch (agentsAsync) {
         AsyncLoading() => const _AgentChip(label: AuraSpinner(size: .small)),
         AsyncError() => const _AgentChip(
@@ -141,7 +141,7 @@ class const _AgentDropdownMode({
 }
 
 class _AgentDropdownStateView extends StatelessWidget {
-  _AgentDropdownStateView({
+  new({
     required this.agentsAsync,
     required this.agentId,
     required this.onChanged,
@@ -180,7 +180,7 @@ class const _DisabledAgentDropdown({required final Widget placeholder})
 }
 
 class _AgentDropdownOptions extends StatelessWidget {
-  _AgentDropdownOptions({
+  new({
     required this.agents,
     required this.agentId,
     required this.onValueChanged,
@@ -263,7 +263,7 @@ List<AgentEntity> _filterAgents(List<AgentEntity> agents, String searchValue) {
 }
 
 class _AgentSheetBody extends StatelessWidget {
-  _AgentSheetBody({
+  new({
     required this.controller,
     required this.agents,
     required this.agentId,
@@ -300,7 +300,7 @@ class _AgentSheetBody extends StatelessWidget {
 }
 
 class _AgentSheetList extends StatelessWidget {
-  _AgentSheetList({
+  new({
     required this.agents,
     required this.agentId,
     required this.onSelect,

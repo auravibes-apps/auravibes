@@ -285,11 +285,12 @@ void main() {
             .call,
       );
 
-      final result = await cloud.call(
+      final result = await cloud((
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
-      );
+        agentId: null,
+      ));
 
       expect(result.id, 'cloud-conversation');
       final _ = verify(() => cloudUsecase.create(value)).called(1);

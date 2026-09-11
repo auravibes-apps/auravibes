@@ -135,28 +135,21 @@ List<String> _scopesFromJson(Object? value) => switch (value) {
 };
 
 class const ServiceConnectionAuthCodec._() {
-  static final OAuthTokenEntity Function({
+  static OAuthTokenEntity tokenFromSecret({
     required ServiceConnectionSecretOAuth2 secret,
     required DateTime issuedAt,
     required int expiresIn,
     required List<String> scopes,
-  })
-  tokenFromSecret =
-      ({
-        required ServiceConnectionSecretOAuth2 secret,
-        required DateTime issuedAt,
-        required int expiresIn,
-        required List<String> scopes,
-      }) {
-        return OAuthTokenEntity(
-          accessToken: secret.accessToken,
-          issuedAt: issuedAt,
-          refreshToken: secret.refreshToken,
-          idToken: secret.idToken,
-          expiresIn: expiresIn,
-          scopes: scopes,
-        );
-      };
+  }) {
+    return OAuthTokenEntity(
+      accessToken: secret.accessToken,
+      issuedAt: issuedAt,
+      refreshToken: secret.refreshToken,
+      idToken: secret.idToken,
+      expiresIn: expiresIn,
+      scopes: scopes,
+    );
+  }
 
   static String encodeSecret(ServiceConnectionSecret secret) {
     return jsonEncode(secret.toJson());

@@ -305,8 +305,8 @@ WorkspacePatchOperation _agentOperation(_AgentOperationData data) =>
     );
 
 Map<String, Object> _agentDataFor(Object agent) => switch (agent) {
-  AgentToCreate value => _agentData(value._data),
-  AgentToUpdate value => _agentData(value._data),
+  final AgentToCreate value => _agentData(value._data),
+  final AgentToUpdate value => _agentData(value._data),
   _ => throw ArgumentError.value(agent),
 };
 

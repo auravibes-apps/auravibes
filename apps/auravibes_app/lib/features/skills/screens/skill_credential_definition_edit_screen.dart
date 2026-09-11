@@ -387,7 +387,7 @@ class const _SkillCredentialDefinitionAppBar({
 }
 
 class _CredentialDefinitionAppBarData {
-  _CredentialDefinitionAppBarData({
+  new({
     required _SkillCredentialDefinitionEditScreenState state,
   }) : child = AuraAppBar(
          title: TextLocale(
@@ -691,7 +691,7 @@ BoxDecoration _attributeRowDecoration(BuildContext context) => BoxDecoration(
 );
 
 class _AttributeRowContent extends StatelessWidget {
-  _AttributeRowContent({
+  new({
     required _AttributeFormRow row,
     required bool canDelete,
     required VoidCallback onChanged,
@@ -764,7 +764,7 @@ class const _AttributeSecretToggle({
 }
 
 class _AttributeRowFields extends StatelessWidget {
-  _AttributeRowFields({
+  new({
     required _AttributeFormRow row,
     required bool canDelete,
     required VoidCallback onChanged,

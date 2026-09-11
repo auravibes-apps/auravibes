@@ -293,7 +293,7 @@ CancelableOperation<Object?> _startCancelable(
 ) => _CancelableToolOperation(usecase, request).start();
 
 class _CancelableToolOperation {
-  _CancelableToolOperation(this._usecase, this._request);
+  new(this._usecase, this._request);
 
   final RunAppSkillToolUsecase _usecase;
   final _RunRequest _request;

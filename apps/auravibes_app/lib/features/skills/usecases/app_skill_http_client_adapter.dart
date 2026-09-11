@@ -92,7 +92,7 @@ class AppSkillHttpClientAdapter {
 }
 
 class _PendingAppSkillRequest {
-  _PendingAppSkillRequest(this.completer);
+  new(this.completer);
 
   final CancelableCompleter<UrlResponse> completer;
   CancelableOperation<UrlResponse>? operation;

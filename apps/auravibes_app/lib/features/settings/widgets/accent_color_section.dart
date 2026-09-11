@@ -105,7 +105,7 @@ class const _AccentColorTile({
     ),
     onTap: onTap,
     variant: .ghost,
-    leading: _AccentColorTileLeading(),
+    leading: const _AccentColorTileLeading(),
     trailing: _AccentColorTileTrailing(hue: hue),
   );
 }
@@ -185,7 +185,7 @@ class const _HueSlider({
   Widget build(BuildContext context) => Stack(
     alignment: Alignment.center,
     children: [
-      _HueGradient(),
+      const _HueGradient(),
       _HueSliderControl(hue: hue, onChanged: onChanged),
     ],
   );

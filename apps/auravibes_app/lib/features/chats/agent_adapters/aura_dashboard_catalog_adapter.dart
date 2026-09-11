@@ -290,8 +290,8 @@ class const _ProgressLabelRow({
   @override
   Widget build(BuildContext context) => Wrap(
     alignment: .spaceBetween,
-    spacing: context.buildContext.auraTheme.spacing.base,
-    runSpacing: context.buildContext.auraTheme.spacing.xs,
+    spacing: context.auraTheme.spacing.base,
+    runSpacing: context.auraTheme.spacing.xs,
     children: [
       if (label != null) _ProgressLabelText(label!),
       if (showValue && value != null) _ProgressLabelValue(value!),
@@ -425,7 +425,7 @@ List<AuraTableValueFormat> _tableColumnFormats(
 ];
 
 class _DashboardTable extends StatelessWidget {
-  _DashboardTable(Map<String, Object?> data)
+  new(Map<String, Object?> data)
     : _table = _DashboardTableConfig(data).build();
 
   final AuraTable _table;
@@ -435,7 +435,7 @@ class _DashboardTable extends StatelessWidget {
 }
 
 class _DashboardTableConfig {
-  const _DashboardTableConfig(this.data);
+  const new(this.data);
 
   final Map<String, Object?> data;
 
@@ -576,7 +576,7 @@ List<double> _chartValues(Object? values) => [
 ];
 
 class _DashboardChart extends StatelessWidget {
-  const _DashboardChart(this.config);
+  const new(this.config);
 
   final _DashboardChartConfig config;
 
@@ -585,7 +585,7 @@ class _DashboardChart extends StatelessWidget {
 }
 
 class _DashboardChartConfig {
-  const _DashboardChartConfig(this.data);
+  const new(this.data);
 
   final Map<String, Object?> data;
 
@@ -594,7 +594,7 @@ class _DashboardChartConfig {
 }
 
 class _DashboardAuraChart extends AuraChart {
-  _DashboardAuraChart(_DashboardChartData values)
+  new(_DashboardChartData values)
     : super(
         labels: values.content.labels,
         series: values.content.series,

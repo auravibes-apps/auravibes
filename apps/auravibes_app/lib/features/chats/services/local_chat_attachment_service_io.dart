@@ -409,7 +409,7 @@ typedef _WavHeaderRequest = ({
 });
 
 class _WavHeaderData {
-  _WavHeaderData(Uint8List bytes, int dataLength, _WavFormat format)
+  new(Uint8List bytes, int dataLength, _WavFormat format)
     : value = (
         data: ByteData.sublistView(bytes),
         dataLength: dataLength,

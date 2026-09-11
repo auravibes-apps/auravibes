@@ -100,13 +100,12 @@ _ModelInputFieldData _urlFieldData(AddModelProviderModel state) => (
 );
 
 class _EnhancedModelInputField extends HookWidget {
-  const _EnhancedModelInputField(
+  const new(
     this.fieldType,
     this.fieldData,
     this.onChanged, {
     this.focusNode,
     this.onSubmitted,
-    super.key,
   });
 
   final ModelInputFieldType fieldType;
@@ -131,15 +130,14 @@ class _EnhancedModelInputField extends HookWidget {
 }
 
 class _ModelInput extends AuraInput {
-  _ModelInput({
-    required TextEditingController controller,
+  new({
+    required TextEditingController super.controller,
     required ModelInputFieldType fieldType,
     required _ModelInputFieldData fieldData,
-    required ValueChanged<String> onChanged,
+    required ValueChanged<String> super.onChanged,
     required VoidCallback? onSubmitted,
-    required FocusNode? focusNode,
+    required super.focusNode,
   }) : super(
-         controller: controller,
          placeholder: TextLocale(fieldData.placeholder),
          label: TextLocale(fieldData.label),
          hint: fieldData.hint == null ? null : TextLocale(fieldData.hint!),
@@ -152,9 +150,7 @@ class _ModelInput extends AuraInput {
          textInputAction: fieldType._textInputAction,
          obscureText: fieldType == ModelInputFieldType.key,
          autofocus: fieldType == ModelInputFieldType.name && focusNode == null,
-         onChanged: onChanged,
          onSubmitted: (_) => onSubmitted?.call(),
-         focusNode: focusNode,
        );
 }
 

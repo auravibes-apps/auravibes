@@ -12,7 +12,7 @@ class const CloudAccountUseCases({
   required final WorkspaceRepository _workspaceRepository,
   required final void Function(String serverUrl, String userId)
   invalidateAccount,
-}) {}
+});
 
 extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
   Future<CloudAccountSession> login({

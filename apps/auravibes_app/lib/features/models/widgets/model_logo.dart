@@ -16,7 +16,7 @@ class const ModelLogo({
   super.svgBuilder,
   super.httpClient,
   super.key,
-}) extends _ModelLogo {}
+}) extends _ModelLogo;
 
 class const _ModelLogo({
   required final String modelId,
@@ -45,7 +45,7 @@ class const _ModelLogo({
 }
 
 class _NetworkModelLogo extends SvgPicture {
-  _NetworkModelLogo({
+  new({
     required String url,
     required double height,
     required double? width,

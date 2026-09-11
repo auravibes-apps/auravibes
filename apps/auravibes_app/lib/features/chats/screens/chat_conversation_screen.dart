@@ -636,7 +636,7 @@ VoidCallback _loadedConversationSkillsPress(_LoadedRuntimeRequest request) =>
 VoidCallback? Function({required bool isInputBusy}) _loadedConversationContinue(
   _LoadedRuntimeRequest request,
 ) =>
-    ({required bool isInputBusy}) => _continueAgentCallback(
+    ({required isInputBusy}) => _continueAgentCallback(
       _loadedConversationContinueRequest(request, isInputBusy),
     );
 
@@ -1211,7 +1211,7 @@ class const _ChatComposerInput({
 }
 
 class _ChatComposerChatInput extends ChatInputWidget {
-  _ChatComposerChatInput({required this.data, required super.onContinueAgent})
+  new({required this.data, required super.onContinueAgent})
     : super(
         workspaceId: data.workspaceId,
         onSendMessage: data.callbacks.hooks.onSendMessage,

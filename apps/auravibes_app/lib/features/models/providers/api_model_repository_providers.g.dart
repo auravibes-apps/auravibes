@@ -157,7 +157,7 @@ final class ModelSyncServiceProvider
   }
 }
 
-String _$modelSyncServiceHash() => r'7e48545bede38cf94285e03aed7c08ae354d0db9';
+String _$modelSyncServiceHash() => r'e3c300b97ac402c0564519b7e6c7aeb3b22c2bde';
 
 @ProviderFor(apiModelProviders)
 final apiModelProvidersProvider = ApiModelProvidersFamily._();
@@ -216,7 +216,7 @@ final class ApiModelProvidersProvider
   }
 }
 
-String _$apiModelProvidersHash() => r'6f598edeb685ef40bca70dae3922f1b995164a6a';
+String _$apiModelProvidersHash() => r'db12e54f2a060a91c90aa0d0a5fb0b7cb0c8bd80';
 
 final class ApiModelProvidersFamily extends $Family
     with
@@ -383,7 +383,7 @@ final class GetModelByProviderAndModelIdProvider
 }
 
 String _$getModelByProviderAndModelIdHash() =>
-    r'316cc1b624a10b405048fdaeabc6b9581e6f0d62';
+    r'92d4b4c57ab2115c06f95f9db5ef29f136ca0cc6';
 
 final class GetModelByProviderAndModelIdFamily extends $Family
     with

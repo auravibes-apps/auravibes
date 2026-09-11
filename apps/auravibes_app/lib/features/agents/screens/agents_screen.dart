@@ -37,7 +37,7 @@ class const AgentsScreen({required final String workspaceId, super.key})
 }
 
 class _AgentsContent extends StatelessWidget {
-  _AgentsContent({required this.agentsAsync, required this.workspaceId})
+  new({required this.agentsAsync, required this.workspaceId})
     : _child = switch (agentsAsync) {
         AsyncData(:final value) => _AgentsList(
           agents: value,
@@ -206,7 +206,7 @@ class _AgentsEmptyState extends StatelessWidget {
 }
 
 class _AgentsEmptyContent extends StatelessWidget {
-  _AgentsEmptyContent({required this.onCreate})
+  new({required this.onCreate})
     : _child = AuraColumn(
         children: [
           const Icon(Icons.smart_toy_outlined, size: 48),

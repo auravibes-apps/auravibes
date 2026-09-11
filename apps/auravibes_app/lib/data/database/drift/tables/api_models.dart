@@ -54,5 +54,7 @@ class ApiModels extends Table {
   late final limitOutput = integer()();
 
   @override
-  late final Set<Column> primaryKey = {id, modelProvider};
+  Set<Column> get primaryKey => {id, modelProvider};
+
+  bool isPrimaryKeyColumn(Column column) => primaryKey.contains(column);
 }
