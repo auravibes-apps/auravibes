@@ -165,6 +165,7 @@ class _LoadedSkills implements ListAvailableSkillsUsecase {
   String? lastWorkspaceId;
   final filters = <SkillLoadFilter>[];
 
+  @override
   Future<List<AvailableSkill>> call({
     required String conversationId,
     required String workspaceId,

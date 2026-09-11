@@ -121,32 +121,38 @@ class _AuraDividerContent extends StatelessWidget {
 
 abstract final class _AuraDividerBuilder {
   static Widget build(_AuraDividerInput input) {
-    if (input.label case final label?) {
-      return _AuraLabeledDivider(
+    final label = input.label;
+    if (label != null) return _labeledDivider(input, label);
+
+    return AuraDivider.isVertical(input.orientation)
+        ? _verticalDivider(input)
+        : _horizontalDivider(input);
+  }
+
+  static Widget _labeledDivider(_AuraDividerInput input, Widget label) =>
+      _AuraLabeledDivider(
         label: label,
         thickness: input.thickness,
         indent: input.indent,
         endIndent: input.endIndent,
         color: input.color,
       );
-    }
 
-    if (AuraDivider.isVertical(input.orientation)) {
-      return _AuraVerticalDivider(
+  static Widget _verticalDivider(_AuraDividerInput input) =>
+      _AuraVerticalDivider(
         thickness: input.thickness,
         indent: input.indent,
         endIndent: input.endIndent,
         color: input.color,
       );
-    }
 
-    return _AuraHorizontalDivider(
-      thickness: input.thickness,
-      indent: input.indent,
-      endIndent: input.endIndent,
-      color: input.color,
-    );
-  }
+  static Widget _horizontalDivider(_AuraDividerInput input) =>
+      _AuraHorizontalDivider(
+        thickness: input.thickness,
+        indent: input.indent,
+        endIndent: input.endIndent,
+        color: input.color,
+      );
 }
 
 class _AuraLabeledDivider extends StatelessWidget {

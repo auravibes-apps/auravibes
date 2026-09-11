@@ -52,6 +52,7 @@ void registerTestFallbackValues() {
   _fallbackValuesRegistered = true;
 
   registerFallbackValue(_FakeAgentIterationContext());
+  registerFallbackValue(const ChatbotMessageOptions());
   registerFallbackValue(_FakeConversationPatch());
   registerFallbackValue(_FakeConversationsCompanion());
   registerFallbackValue(_FakeConversationToCreate());

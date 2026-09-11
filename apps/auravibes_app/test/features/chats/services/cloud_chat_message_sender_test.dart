@@ -10,6 +10,18 @@ class _Gateway extends Mock implements CloudChatGateway;
 class _Attachments extends Mock implements CloudChatAttachmentUsecase;
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue((
+      requestId: '',
+      conversationId: '',
+      expectedProjectionRevision: 0,
+      clientMessageId: '',
+      content: '',
+      attachmentIds: <String>[],
+      metadataJson: null,
+    ));
+  });
+
   test(
     'queues cloud message then starts idle execution and invalidates',
     () async {

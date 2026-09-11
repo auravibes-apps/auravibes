@@ -200,20 +200,32 @@ abstract final class _AuraTileContentBuilder {
     required Color loadingColor,
     required TextStyle textStyle,
   }) {
-    if (appearance.tile.isLoading) {
+    final tile = appearance.tile;
+    final leading = tile.leading;
+    final trailing = tile.trailing;
+    final child = tile.child;
+
+    if (tile.isLoading) {
       return _AuraTileLoading(color: loadingColor);
     }
 
-    if (_isEmptyTileChild(appearance.tile.child) &&
-        appearance.tile.leading != null &&
-        appearance.tile.trailing == null) {
-      return Center(child: appearance.tile.leading);
+    return _buildTileContent(child, leading, trailing, textStyle);
+  }
+
+  static Widget _buildTileContent(
+    Widget child,
+    Widget? leading,
+    Widget? trailing,
+    TextStyle textStyle,
+  ) {
+    if (_isEmptyTileChild(child) && leading != null && trailing == null) {
+      return Center(child: leading);
     }
 
     return _AuraTileRow(
-      child: appearance.tile.child,
-      leading: appearance.tile.leading,
-      trailing: appearance.tile.trailing,
+      child: child,
+      leading: leading,
+      trailing: trailing,
       textStyle: textStyle,
     );
   }

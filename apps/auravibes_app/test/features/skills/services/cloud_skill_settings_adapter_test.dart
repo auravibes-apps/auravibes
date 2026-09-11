@@ -21,6 +21,14 @@ void main() {
   setUpAll(() {
     registerFallbackValue(WorkspaceSecretKind.skillCredential);
     registerFallbackValue(WorkspaceSecretScope.workspace);
+    registerFallbackValue((
+      requestId: '',
+      secretKind: WorkspaceSecretKind.skillCredential,
+      scope: WorkspaceSecretScope.workspace,
+      resourceId: '',
+      secret: null,
+      expectedRevision: null,
+    ));
     registerFallbackValue(
       CompactConversationRequest(
         workspaceId: 0,
@@ -201,16 +209,7 @@ void main() {
   });
 
   test('writes credential only through secret endpoint', () async {
-    when(
-      () => gateway.putSecret(
-        requestId: any(named: 'requestId'),
-        secretKind: any(named: 'secretKind'),
-        scope: any(named: 'scope'),
-        resourceId: any(named: 'resourceId'),
-        secret: any(named: 'secret'),
-        expectedRevision: any(named: 'expectedRevision'),
-      ),
-    ).thenAnswer(
+    when(() => gateway.putSecret(any())).thenAnswer(
       (_) async => PutWorkspaceSecretResponse(
         configured: true,
         revision: 2,
@@ -224,17 +223,14 @@ void main() {
       expectedRevision: 1,
     );
 
-    final submittedSecrets = verify(
-      () => gateway.putSecret(
-        requestId: any(named: 'requestId'),
-        secretKind: .skillCredential,
-        scope: .workspace,
-        resourceId: 'credential-1',
-        secret: captureAny(named: 'secret'),
-        expectedRevision: 1,
-      ),
-    ).captured;
-    expect(submittedSecrets, ['{"token":"secret"}']);
+    final submittedSecret =
+        verify(() => gateway.putSecret(captureAny())).captured.single
+            as WorkspaceSecretInput;
+    expect(submittedSecret.secret, '{"token":"secret"}');
+    expect(submittedSecret.secretKind, WorkspaceSecretKind.skillCredential);
+    expect(submittedSecret.scope, WorkspaceSecretScope.workspace);
+    expect(submittedSecret.resourceId, 'credential-1');
+    expect(submittedSecret.expectedRevision, 1);
     final _ = verifyNever(
       () => gateway.patch(
         requestId: any(named: 'requestId'),

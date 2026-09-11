@@ -253,6 +253,7 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   @override
   List<McpConnectionState> build() => const [];
 
+  @override
   void disconnectMcpServer(String serverId) {
     disconnectedServerIds.add(serverId);
   }
@@ -262,6 +263,7 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
     reconnectedServerIds.add(serverId);
   }
 
+  @override
   Future<void> deleteMcpServer(String serverId) {
     deletedServerIds.add(serverId);
 

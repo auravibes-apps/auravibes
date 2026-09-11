@@ -94,13 +94,9 @@ class _FakeSubAgentConversationStore implements SubAgentConversationStore {
   );
 
   @override
-  Future<SubAgentConversationRecord> createChildConversation({
-    required String parentConversationId,
-    required String workspaceId,
-    required String? modelId,
-    required String? agentId,
-    required String title,
-  }) async => const SubAgentConversationRecord(
+  Future<SubAgentConversationRecord> createChildConversation(
+    SubAgentChildConversationRequest request,
+  ) async => const SubAgentConversationRecord(
     id: 'child-1',
     workspaceId: 'workspace-1',
     modelId: 'model-1',

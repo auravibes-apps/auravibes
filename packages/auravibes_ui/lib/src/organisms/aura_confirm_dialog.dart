@@ -150,6 +150,8 @@ abstract final class AuraDialogs {
   const new _();
 
   /// Shows a confirmation dialog and returns the user's selection.
+  // Public named arguments preserve the existing confirmation API.
+  // ignore: number-of-parameters
   static Future<bool?> confirm({
     required BuildContext context,
     required Widget title,
@@ -171,6 +173,8 @@ abstract final class AuraDialogs {
   );
 
   /// Shows an alert dialog and dismisses on button tap.
+  // Public named arguments preserve the existing alert API.
+  // ignore: number-of-parameters
   static Future<void> alert({
     required BuildContext context,
     required Widget title,

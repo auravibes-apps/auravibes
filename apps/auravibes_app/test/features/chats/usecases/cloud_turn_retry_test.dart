@@ -25,6 +25,19 @@ typedef _SubmitToolDecisionRequest = ({
 });
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue((
+      requestId: '',
+      turnId: '',
+      toolCallId: '',
+      argumentsDigest: '',
+      expectedTurnRevision: 0,
+      decision: '',
+      stopAll: false,
+      editedArgumentsJson: null,
+    ));
+  });
+
   test('get delegates to cloud gateway', () async {
     final gateway = _Gateway();
     final snapshot = _Snapshot();
@@ -151,7 +164,7 @@ void main() {
       );
 
       verify(() => gateway.getTurn(turnId: 'turn-1')).called(1);
-      verify(() => gateway.submitToolDecision(any())).called(1);
+      verify(() => gateway.submitToolDecision(any())).called(3);
     },
   );
 

@@ -45,18 +45,19 @@ class AuraImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Image(
     image: imageProvider ?? NetworkImage(url),
-    loadingBuilder: _loadingBuilder,
+    frameBuilder: _frameBuilder,
     errorBuilder: _errorBuilder,
     semanticLabel: semanticLabel,
     fit: fit,
   );
 
-  Widget _loadingBuilder(
+  Widget _frameBuilder(
     BuildContext _,
     Widget child,
-    ImageChunkEvent? loadingProgress,
+    int? frame,
+    bool wasSynchronouslyLoaded,
   ) {
-    if (loadingProgress == null) return child;
+    if (wasSynchronouslyLoaded || frame != null) return child;
 
     return loadingChild ?? _AuraImageLoading(label: semanticLabel);
   }

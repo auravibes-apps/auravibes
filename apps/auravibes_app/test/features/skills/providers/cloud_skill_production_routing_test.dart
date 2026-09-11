@@ -42,6 +42,14 @@ void main() {
   setUpAll(() {
     registerFallbackValue(WorkspaceSecretKind.skillCredential);
     registerFallbackValue(WorkspaceSecretScope.workspace);
+    registerFallbackValue((
+      requestId: '',
+      secretKind: WorkspaceSecretKind.skillCredential,
+      scope: WorkspaceSecretScope.workspace,
+      resourceId: '',
+      secret: null,
+      expectedRevision: null,
+    ));
     registerFallbackValue(
       WorkspacePatchOperation(
         operation: .create,
@@ -50,6 +58,20 @@ void main() {
         fieldMask: const [],
       ),
     );
+    registerFallbackValue((
+      requestId: '',
+      resourceOperation: WorkspacePatchOperation(
+        operation: .create,
+        resourceKind: .skill,
+        resourceId: 'fallback',
+        fieldMask: const [],
+      ),
+      secretKind: WorkspaceSecretKind.skillCredential,
+      scope: WorkspaceSecretScope.workspace,
+      secret: null,
+      clearSecret: false,
+      expectedSecretRevision: null,
+    ));
   });
 
   const workspaceId = 'local-cloud';
@@ -112,36 +134,19 @@ void main() {
 
         return PatchWorkspaceStateResponse(resources: const [], sequence: 1);
       });
-      when(
-        () => gateway.putSecret(
-          requestId: any(named: 'requestId'),
-          secretKind: any(named: 'secretKind'),
-          scope: any(named: 'scope'),
-          resourceId: any(named: 'resourceId'),
-          secret: any(named: 'secret'),
-          expectedRevision: any(named: 'expectedRevision'),
-        ),
-      ).thenAnswer(
+      when(() => gateway.putSecret(any())).thenAnswer(
         (_) async => PutWorkspaceSecretResponse(
           configured: true,
           revision: 1,
           sequence: 1,
         ),
       );
-      when(
-        () => gateway.mutateCredential(
-          requestId: any(named: 'requestId'),
-          resourceOperation: any(named: 'resourceOperation'),
-          secretKind: any(named: 'secretKind'),
-          scope: any(named: 'scope'),
-          secret: any(named: 'secret'),
-          clearSecret: any(named: 'clearSecret'),
-          expectedSecretRevision: any(named: 'expectedSecretRevision'),
-        ),
-      ).thenAnswer((invocation) async {
+      when(() => gateway.mutateCredential(any())).thenAnswer((
+        invocation,
+      ) async {
         final operation =
-            invocation.namedArguments[#resourceOperation]
-                as WorkspacePatchOperation;
+            (invocation.positionalArguments.single as WorkspaceCredentialInput)
+                .resourceOperation;
         final data = jsonDecode(operation.data ?? '{}') as Map<String, dynamic>;
         final resource = _resource(
           kind: operation.resourceKind,
@@ -365,17 +370,7 @@ void main() {
       expect((managed as Map)['skills'], isNotEmpty);
 
       expect(credential.attributes, isEmpty);
-      verify(
-        () => gateway.mutateCredential(
-          requestId: any(named: 'requestId'),
-          resourceOperation: any(named: 'resourceOperation'),
-          secretKind: .skillCredential,
-          scope: .workspace,
-          secret: any(named: 'secret'),
-          clearSecret: false,
-          expectedSecretRevision: any(named: 'expectedSecretRevision'),
-        ),
-      ).called(2);
+      verify(() => gateway.mutateCredential(any())).called(2);
 
       await container
           .read(skillCredentialOperationsProvider(workspaceId))

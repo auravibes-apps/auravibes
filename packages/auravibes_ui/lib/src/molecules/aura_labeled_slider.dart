@@ -148,6 +148,7 @@ class const _AuraLabeledSliderHeaderAndControl({
     final spacing = context.auraTheme.spacing;
 
     return Column(
+      crossAxisAlignment: .stretch,
       children: [
         _AuraLabeledSliderHeader(
           label: slider.label,

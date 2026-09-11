@@ -158,7 +158,7 @@ class const _AuraMessageBubbleCardSurface({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    return Container(
       decoration: _messageDecorationFor(context, message, auraColors),
       child: _AuraMessageBubbleCardPadding(message: message, child: child),
     );

@@ -81,13 +81,13 @@ void main() {
 
       final store = AppSubAgentConversationStore(repository);
 
-      final child = await store.createChildConversation(
+      final child = await store.createChildConversation((
         parentConversationId: 'parent',
         workspaceId: 'workspace-1',
         modelId: 'model-1',
         agentId: 'agent-1',
         title: 'Task',
-      );
+      ));
 
       expect(child.id, 'child');
       expect(child.workspaceId, 'workspace-1');

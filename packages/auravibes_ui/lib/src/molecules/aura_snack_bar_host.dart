@@ -147,6 +147,8 @@ abstract final class AuraSnackBars {
   ///
   /// Displays a themed overlay, auto-dismissed after its duration, with an
   /// optional action.
+  // Public named arguments preserve the existing snackbar API.
+  // ignore: number-of-parameters
   static AuraSnackBarController show({
     required BuildContext context,
     required Widget content,
