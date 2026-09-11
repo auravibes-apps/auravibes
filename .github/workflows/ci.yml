@@ -239,6 +239,7 @@ jobs:
           done <<< "$changed_files"
 
           if [[ "$full_build" == true ]]; then
+            run_code_checks=true
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
           elif ((${#platforms[@]} == 0)); then
             printf 'platforms=[]\n' >> "$GITHUB_OUTPUT"

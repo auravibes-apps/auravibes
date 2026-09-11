@@ -628,14 +628,17 @@ void main() {
         .toString();
     final timings = mergeTimingReports(
       [
-        _timingReport(path, id: 1, start: 10, end: 45),
-        _timingReport(path, id: 1, start: 100, end: 160),
+        [
+          _timingReport(path, id: 1, start: 10, end: 45),
+          _timingReport(path, id: 2, start: 50, end: 110),
+        ].join('\n'),
+        _timingReport(path, id: 3, start: 100, end: 160),
       ],
       packageRoots: {'packages/core': '${root.path}/packages/core'},
     );
 
     final timing = timings['packages/core']?['test/behavior_test.dart'];
-    expect(timing?.durationMs, 48);
+    expect(timing?.durationMs, 78);
     expect(timing?.sampleCount, 2);
   });
 

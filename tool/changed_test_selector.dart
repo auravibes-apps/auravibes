@@ -1165,6 +1165,7 @@ Map<String, Map<String, TestTiming>> mergeTimingReports(
   final aggregates = <String, Map<String, _TimingAggregate>>{};
   for (final report in reports) {
     final starts = <int, _StartedTiming>{};
+    final reportDurations = <String, Map<String, int>>{};
     for (final line in report.split('\n')) {
       if (line.trim().isEmpty) continue;
       Object? decoded;
@@ -1197,18 +1198,27 @@ Map<String, Map<String, TestTiming>> mergeTimingReports(
           final id = idValue is num ? idValue.toInt() : null;
           final start = id == null ? null : starts.remove(id);
           if (start == null || eventTime <= start.time) continue;
-          final package = aggregates.putIfAbsent(
+          final package = reportDurations.putIfAbsent(
             start.package,
-            () => <String, _TimingAggregate>{},
-          );
-          final aggregate = package.putIfAbsent(
-            start.path,
-            _TimingAggregate.new,
+            () => <String, int>{},
           );
           final duration = eventTime - start.time;
-          aggregate
-            ..durationMs += duration
-            ..sampleCount = aggregate.sampleCount + 1;
+          package[start.path] = (package[start.path] ?? 0) + duration;
+      }
+    }
+    for (final packageEntry in reportDurations.entries) {
+      final package = aggregates.putIfAbsent(
+        packageEntry.key,
+        () => <String, _TimingAggregate>{},
+      );
+      for (final timingEntry in packageEntry.value.entries) {
+        final aggregate = package.putIfAbsent(
+          timingEntry.key,
+          _TimingAggregate.new,
+        );
+        aggregate
+          ..durationMs += timingEntry.value
+          ..sampleCount = aggregate.sampleCount + 1;
       }
     }
   }
