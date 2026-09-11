@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -130,6 +131,105 @@ class SelectionResult {
 
     return Map.unmodifiable(frozen);
   }
+}
+
+/// One historical duration sample for a test entrypoint.
+class TestTiming {
+  const new({required this.durationMs, required this.sampleCount});
+
+  factory fromJson(Object? value) {
+    if (value is! Map ||
+        value['durationMs'] is! num ||
+        value['sampleCount'] is! num) {
+      throw const FormatException('Invalid test timing');
+    }
+    final durationMs = (value['durationMs'] as num).toInt();
+    final sampleCount = (value['sampleCount'] as num).toInt();
+    if (durationMs < 1 || sampleCount < 1) {
+      throw const FormatException('Invalid test timing values');
+    }
+
+    return .new(durationMs: durationMs, sampleCount: sampleCount);
+  }
+
+  final int durationMs;
+  final int sampleCount;
+
+  Map<String, Object> toJson() => {
+    'durationMs': durationMs,
+    'sampleCount': sampleCount,
+  };
+}
+
+/// Versioned historical test timing data used to balance CI shards.
+class TestTimingDatabase {
+  const new({
+    required this.generatedAt,
+    required this.sourceSha,
+    required this.packages,
+  });
+
+  factory fromJson(Object? value) {
+    if (value is! Map || value['schemaVersion'] != 1) {
+      throw const FormatException('Unsupported timing database');
+    }
+    final generatedAtValue = value['generatedAt'];
+    final sourceSha = value['sourceSha'];
+    final rawPackages = value['packages'];
+    if (generatedAtValue is! String ||
+        sourceSha is! String ||
+        rawPackages is! Map) {
+      throw const FormatException('Invalid timing database');
+    }
+    final generatedAt = DateTime.tryParse(generatedAtValue)?.toUtc();
+    if (generatedAt == null || sourceSha.isEmpty) {
+      throw const FormatException('Invalid timing database metadata');
+    }
+
+    final packages = <String, Map<String, TestTiming>>{};
+    for (final packageEntry in rawPackages.entries) {
+      if (packageEntry.key is! String || packageEntry.value is! Map) {
+        throw const FormatException('Invalid timing package');
+      }
+      final timings = <String, TestTiming>{};
+      for (final timingEntry in (packageEntry.value as Map).entries) {
+        if (timingEntry.key is! String || timingEntry.key == '') {
+          throw const FormatException('Invalid timing path');
+        }
+        timings[timingEntry.key as String] = .fromJson(timingEntry.value);
+      }
+      packages[packageEntry.key as String] = Map.unmodifiable(timings);
+    }
+
+    return .new(
+      generatedAt: generatedAt,
+      sourceSha: sourceSha,
+      packages: Map.unmodifiable(packages),
+    );
+  }
+
+  final DateTime generatedAt;
+  final String sourceSha;
+  final Map<String, Map<String, TestTiming>> packages;
+
+  bool get isFresh {
+    final age = DateTime.now().toUtc().difference(generatedAt);
+
+    return age >= .zero && age <= const Duration(days: 30);
+  }
+
+  Map<String, Object> toJson() => {
+    'schemaVersion': 1,
+    'generatedAt': generatedAt.toUtc().toIso8601String(),
+    'sourceSha': sourceSha,
+    'packages': {
+      for (final packageEntry in packages.entries)
+        packageEntry.key: {
+          for (final timingEntry in packageEntry.value.entries)
+            timingEntry.key: timingEntry.value.toJson(),
+        },
+    },
+  };
 }
 
 /// Parses NUL-delimited `git diff --name-status --find-renames -z` output.
@@ -321,18 +421,24 @@ class TestMatrixEntry {
     required this.shardIndex,
     required this.totalShards,
     required this.artifact,
+    required this.shardMode,
+    required this.paths,
   });
 
   final String package;
   final int shardIndex;
   final int totalShards;
   final String artifact;
+  final String shardMode;
+  final List<String> paths;
 
   Map<String, Object> toJson() => {
     'package': package,
     'shardIndex': shardIndex,
     'totalShards': totalShards,
     'artifact': artifact,
+    'shardMode': shardMode,
+    'paths': paths,
   };
 }
 
@@ -342,6 +448,7 @@ Future<Map<String, Object>> buildTestMatrix(
   required String rootPath,
   required String shardPackage,
   required int shardCount,
+  TestTimingDatabase? timings,
 }) async {
   if (shardCount < 1) {
     throw const FormatException('Shard count must be positive');
@@ -354,9 +461,22 @@ Future<Map<String, Object>> buildTestMatrix(
   final groups = await _testGroups(selection, rootPath: rootPath);
   final entries = <TestMatrixEntry>[];
   for (final group in groups) {
-    final totalShards = group.package.relativeRoot == normalizedShardPackage
-        ? shardCount.clamp(1, group.paths.length)
-        : 1;
+    final packageTimings = timings?.packages[group.package.relativeRoot];
+    final shouldTime =
+        packageTimings != null &&
+        packageTimings.isNotEmpty &&
+        group.package.relativeRoot == normalizedShardPackage;
+    final shards = shouldTime
+        ? _weightedShards(group.paths, packageTimings, shardCount)
+        : null;
+    if (shards != null) {
+      _validateTimedShards(group.paths, shards);
+    }
+    final totalShards =
+        shards?.length ??
+        (group.package.relativeRoot == normalizedShardPackage
+            ? math.min(shardCount, group.paths.length)
+            : 1);
     final artifactBase = _artifactBase(group.package.relativeRoot);
     for (var shardIndex = 0; shardIndex < totalShards; shardIndex++) {
       entries.add(
@@ -365,12 +485,75 @@ Future<Map<String, Object>> buildTestMatrix(
           shardIndex: shardIndex,
           totalShards: totalShards,
           artifact: '$artifactBase-$shardIndex',
+          shardMode: shards == null ? 'fixed' : 'timed',
+          paths: shards?[shardIndex] ?? const [],
         ),
       );
     }
   }
 
   return {'include': entries.map((entry) => entry.toJson()).toList()};
+}
+
+void _validateTimedShards(List<String> expected, List<List<String>> shards) {
+  final expectedPaths = expected.toSet();
+  final actualPaths = shards.expand((shard) => shard).toList();
+  final actualSet = actualPaths.toSet();
+  if (actualPaths.length != expected.length ||
+      actualSet.length != actualPaths.length ||
+      !actualSet.containsAll(expectedPaths) ||
+      !expectedPaths.containsAll(actualSet)) {
+    throw const FormatException('Timed shards omit selected tests');
+  }
+}
+
+List<List<String>> _weightedShards(
+  List<String> paths,
+  Map<String, TestTiming> timings,
+  int shardCount,
+) {
+  final totalShards = math.min(shardCount, paths.length);
+  if (totalShards < 1) return const [];
+  final knownDurations =
+      timings.values.map((timing) => timing.durationMs).toList()..sort();
+  final fallbackDuration = _medianDuration(knownDurations);
+  final weighted =
+      [
+        for (final path in paths)
+          (
+            path: path,
+            durationMs: timings[path]?.durationMs ?? fallbackDuration,
+          ),
+      ]..sort((left, right) {
+        final durationOrder = right.durationMs.compareTo(left.durationMs);
+
+        return durationOrder == 0
+            ? left.path.compareTo(right.path)
+            : durationOrder;
+      });
+  final buckets = List.generate(totalShards, (_) => <String>[]);
+  final loads = List.filled(totalShards, 0);
+  for (final item in weighted) {
+    var bucketIndex = 0;
+    for (var index = 1; index < loads.length; index++) {
+      if (loads[index] < loads[bucketIndex]) bucketIndex = index;
+    }
+    buckets[bucketIndex].add(item.path);
+    loads[bucketIndex] += item.durationMs;
+  }
+  for (final bucket in buckets) {
+    bucket.sort();
+  }
+
+  return buckets.map(List<String>.unmodifiable).toList(growable: false);
+}
+
+int _medianDuration(List<int> durations) {
+  if (durations.isEmpty) return 1;
+  final middle = durations.length ~/ 2;
+  if (durations.length.isOdd) return durations[middle];
+
+  return ((durations[middle - 1] + durations[middle]) / 2).round();
 }
 
 /// Contract entry point for running a selected result.
@@ -383,19 +566,41 @@ Future<int> runSelectedTests(
   int? totalShards,
   int? shardIndex,
   bool coverage = false,
+  List<String>? testPaths,
+  String? timingsDir,
 }) async {
   if (selection.mode == SelectionMode.none) return 0;
   try {
     final groups = await _testGroups(selection, rootPath: rootPath);
-    final selectedGroups = packageRoot == null
+    var selectedGroups = packageRoot == null
         ? groups
         : _singlePackageGroup(groups, packageRoot);
+    if (testPaths != null) {
+      if (totalShards != null || shardIndex != null) {
+        throw const FormatException(
+          'Explicit test paths cannot use shard options',
+        );
+      }
+      if (selectedGroups.length != 1) {
+        throw const FormatException('Explicit test paths require one package');
+      }
+      final group = selectedGroups.single;
+      selectedGroups = [
+        _TestGroup(
+          group.package,
+          await _validateSelectedPaths(group, testPaths),
+        ),
+      ];
+    }
     final shard = _Shard.fromOptions(
-      totalShards: totalShards,
-      shardIndex: shardIndex,
+      totalShards: testPaths == null ? totalShards : null,
+      shardIndex: testPaths == null ? shardIndex : null,
     );
     if (shard.total > 1 && selectedGroups.length != 1) {
       throw const FormatException('Sharding requires one selected package');
+    }
+    if (timingsDir != null) {
+      final _ = await Directory(timingsDir).create(recursive: true);
     }
     final launch = launcher ?? _launchProcess;
     var firstFailure = 0;
@@ -408,6 +613,13 @@ Future<int> runSelectedTests(
             rootPath: rootPath,
             shard: shard,
             coverage: coverage,
+            timingFile: timingsDir == null
+                ? null
+                : _timingFilePath(
+                    timingsDir,
+                    group,
+                    selectedGroups.indexOf(group),
+                  ),
           );
           if (dryRun) {
             stdout.writeln(
@@ -448,6 +660,28 @@ Future<int> runSelectedTests(
 
     return 2;
   }
+}
+
+Future<List<String>> _validateSelectedPaths(
+  _TestGroup group,
+  List<String> paths,
+) async {
+  if (paths.isEmpty || paths.toSet().length != paths.length) {
+    throw const FormatException(
+      'Explicit test paths must be unique and non-empty',
+    );
+  }
+  final selected = group.paths.toSet();
+  final validated = <String>[];
+  for (final path in paths) {
+    final normalized = await _validateTestPath(group.package, path);
+    if (!selected.contains(normalized)) {
+      throw FormatException('Test path is not selected: $path');
+    }
+    validated.add(normalized);
+  }
+
+  return validated;
 }
 
 Future<List<_TestGroup>> _testGroups(
@@ -579,6 +813,8 @@ Future<void> main(List<String> args) async {
           'total-shards',
           'shard-index',
           'coverage',
+          'paths-file',
+          'timings-dir',
         });
         final result = SelectionResult.fromJson(
           jsonDecode(
@@ -593,12 +829,17 @@ Future<void> main(List<String> args) async {
           totalShards: _optionalInt(options, 'total-shards'),
           shardIndex: _optionalInt(options, 'shard-index'),
           coverage: options.containsKey('coverage'),
+          testPaths: options['paths-file'] == null
+              ? null
+              : await _readPathsFile(options['paths-file']!),
+          timingsDir: options['timings-dir'],
         );
       case 'matrix':
         _checkOptions(options, const {
           'manifest',
           'shard-package',
           'shard-count',
+          'timings',
         });
         final result = SelectionResult.fromJson(
           jsonDecode(
@@ -612,15 +853,60 @@ Future<void> main(List<String> args) async {
               rootPath: Directory.current.path,
               shardPackage: _requiredOption(options, 'shard-package'),
               shardCount: _requiredInt(options, 'shard-count'),
+              timings: _loadFreshTimingDatabase(options['timings']),
             ),
           ),
         );
+      case 'merge-timings':
+        _checkOptions(options, const {'input-root', 'output', 'source-sha'});
+        final database = await mergeTimingFiles(
+          inputRoot: _requiredOption(options, 'input-root'),
+          workspaceRoot: Directory.current.path,
+          sourceSha: _requiredOption(options, 'source-sha'),
+        );
+        final output = File(_requiredOption(options, 'output'));
+        final _ = await output.parent.create(recursive: true);
+        final _ = await output.writeAsString(jsonEncode(database.toJson()));
       default:
         throw FormatException('Unknown command: ${args.firstOrNull}');
     }
   } on Object catch (error) {
     stderr.writeln('changed-test-selector: $error');
     exitCode = 2;
+  }
+}
+
+Future<List<String>> _readPathsFile(String path) async {
+  final value = jsonDecode(await File(path).readAsString());
+  if (value is! List || value.any((path) => path is! String)) {
+    throw const FormatException('Paths file must contain a string array');
+  }
+
+  return value.cast<String>();
+}
+
+TestTimingDatabase? _loadFreshTimingDatabase(String? path) {
+  if (path == null || path.isEmpty) return null;
+  try {
+    final database = TestTimingDatabase.fromJson(
+      jsonDecode(File(path).readAsStringSync()),
+    );
+    if (!database.isFresh) {
+      stderr.writeln('changed-test-selector: ignoring stale timing database');
+
+      return null;
+    }
+    if (database.packages.isEmpty) {
+      stderr.writeln('changed-test-selector: ignoring empty timing database');
+
+      return null;
+    }
+
+    return database;
+  } on Object catch (error) {
+    stderr.writeln('changed-test-selector: ignoring timing database: $error');
+
+    return null;
   }
 }
 
@@ -805,6 +1091,7 @@ _Command _command(
   required String rootPath,
   required _Shard shard,
   required bool coverage,
+  String? timingFile,
 }) => _Command(
   _workspaceExecutable(rootPath, group.package.flutter ? 'flutter' : 'dart'),
   [
@@ -815,11 +1102,18 @@ _Command _command(
     '--concurrency=${group.package.flutter ? 1 : 2}',
     '--timeout=30s',
     '--reporter=expanded',
+    if (timingFile != null) '--file-reporter=json:$timingFile',
     if (shard.total > 1) '--total-shards=${shard.total}',
     if (shard.total > 1) '--shard-index=${shard.index}',
     ...group.paths,
   ],
 );
+
+String _timingFilePath(String directory, _TestGroup group, int index) {
+  final base = _artifactBase(group.package.relativeRoot);
+
+  return '${Directory(directory).absolute.path}/$base-$index.json';
+}
 
 _Command? _coverageCommand(_TestGroup group, {required String rootPath}) {
   if (group.package.flutter) return null;
@@ -861,6 +1155,167 @@ Future<int> _launchProcess({
   if (result.stderr.toString().isNotEmpty) stderr.write(result.stderr);
 
   return result.exitCode;
+}
+
+/// Merges JSON reporter streams into package-relative test timings.
+Map<String, Map<String, TestTiming>> mergeTimingReports(
+  Iterable<String> reports, {
+  required Map<String, String> packageRoots,
+}) {
+  final aggregates = <String, Map<String, _TimingAggregate>>{};
+  for (final report in reports) {
+    final starts = <int, _StartedTiming>{};
+    for (final line in report.split('\n')) {
+      if (line.trim().isEmpty) continue;
+      Object? decoded;
+      try {
+        decoded = jsonDecode(line);
+      } on FormatException {
+        continue;
+      }
+      if (decoded is! Map || decoded['type'] is! String) continue;
+      final eventTimeValue = decoded['time'];
+      if (eventTimeValue is! num) continue;
+      final eventTime = eventTimeValue.toInt();
+      switch (decoded['type']) {
+        case 'testStart':
+          final test = decoded['test'];
+          final idValue = test is Map ? test['id'] : null;
+          final id = idValue is num ? idValue.toInt() : null;
+          final path = test is Map
+              ? _timingPath(test.cast<String, Object?>(), packageRoots)
+              : null;
+          if (id != null && path != null) {
+            starts[id] = _StartedTiming(
+              package: path.package,
+              path: path.path,
+              time: eventTime,
+            );
+          }
+        case 'testDone':
+          final idValue = decoded['testID'];
+          final id = idValue is num ? idValue.toInt() : null;
+          final start = id == null ? null : starts.remove(id);
+          if (start == null || eventTime <= start.time) continue;
+          final package = aggregates.putIfAbsent(
+            start.package,
+            () => <String, _TimingAggregate>{},
+          );
+          final aggregate = package.putIfAbsent(
+            start.path,
+            _TimingAggregate.new,
+          );
+          final duration = eventTime - start.time;
+          aggregate
+            ..durationMs += duration
+            ..sampleCount = aggregate.sampleCount + 1;
+      }
+    }
+  }
+
+  return {
+    for (final packageEntry in aggregates.entries)
+      packageEntry.key: {
+        for (final timingEntry in packageEntry.value.entries)
+          timingEntry.key: TestTiming(
+            durationMs:
+                (timingEntry.value.durationMs / timingEntry.value.sampleCount)
+                    .round(),
+            sampleCount: timingEntry.value.sampleCount,
+          ),
+      },
+  };
+}
+
+Future<TestTimingDatabase> mergeTimingFiles({
+  required String inputRoot,
+  required String workspaceRoot,
+  required String sourceSha,
+}) async {
+  final packages = await _loadPackages(workspaceRoot);
+  final reports = <String>[];
+  final directory = Directory(inputRoot);
+  if (directory.existsSync()) {
+    await for (final entity in directory.list(recursive: true)) {
+      if (entity is File && entity.path.endsWith('.json')) {
+        reports.add(await entity.readAsString());
+      }
+    }
+  }
+  final timings = mergeTimingReports(
+    reports,
+    packageRoots: {
+      for (final package in packages)
+        package.relativeRoot: package.absoluteRoot,
+    },
+  );
+
+  return TestTimingDatabase(
+    generatedAt: DateTime.now().toUtc(),
+    sourceSha: sourceSha,
+    packages: timings,
+  );
+}
+
+class _StartedTiming {
+  const new({required this.package, required this.path, required this.time});
+
+  final String package;
+  final String path;
+  final int time;
+}
+
+class _TimingAggregate {
+  int durationMs = 0;
+  int sampleCount = 0;
+}
+
+({String package, String path})? _timingPath(
+  Map<String, Object?> test,
+  Map<String, String> packageRoots,
+) {
+  for (final key in ['root_url', 'url']) {
+    final raw = test[key];
+    if (raw is! String) continue;
+    final path = _filePathFromUri(raw);
+    if (path == null) continue;
+    final normalizedPath = path.replaceAll(r'\', '/');
+    for (final entry in packageRoots.entries) {
+      final normalizedRoot = entry.value.replaceAll(r'\', '/');
+      final prefix = normalizedRoot.endsWith('/')
+          ? normalizedRoot
+          : '$normalizedRoot/';
+      final relative = normalizedPath.startsWith(prefix)
+          ? normalizedPath._slice(prefix.length)
+          : _timingRelativePath(normalizedPath, entry.key);
+      if (relative == null) continue;
+      if (_isTestEntrypoint(relative) && relative.startsWith('test/')) {
+        return (package: entry.key, path: relative);
+      }
+    }
+  }
+
+  return null;
+}
+
+String? _timingRelativePath(String path, String packageRoot) {
+  final marker = '/$packageRoot/';
+  final markerIndex = path.lastIndexOf(marker);
+  if (markerIndex < 0) return null;
+
+  return path._slice(markerIndex + marker.length);
+}
+
+String? _filePathFromUri(String value) {
+  try {
+    final uri = Uri.parse(value);
+    if (uri.scheme == 'file') return uri.toFilePath();
+    if (uri.scheme.isEmpty) return value;
+  } on FormatException {
+    return null;
+  }
+
+  return null;
 }
 
 Future<String> _git(String rootPath, List<String> arguments) async {
