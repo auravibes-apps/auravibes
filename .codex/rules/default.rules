@@ -1,0 +1,21 @@
+# AuraVibes project rules.
+
+# FVM toolchain commands. File paths and command options remain open-ended.
+prefix_rule(pattern=["fvm", "use"], decision="allow")
+prefix_rule(pattern=["fvm", "flutter", "--version"], decision="allow")
+prefix_rule(pattern=["fvm", "dart", "pub", "get"], decision="allow")
+prefix_rule(pattern=["fvm", "dart", "run", "melos", "bootstrap"], decision="allow")
+prefix_rule(pattern=["fvm", "dart", "run", "melos", "clean"], decision="allow")
+prefix_rule(pattern=["fvm", "dart", "run", "melos", "run"], decision="allow")
+prefix_rule(pattern=["fvm", "dart", "run", "melos", "analyze"], decision="allow")
+prefix_rule(pattern=["fvm", "dart", "run", "build_runner", "build"], decision="allow")
+prefix_rule(pattern=["fvm", "dart", "test"], decision="allow")
+prefix_rule(pattern=["fvm", "dart", "format"], decision="allow")
+prefix_rule(pattern=["fvm", "dart", "analyze"], decision="allow")
+prefix_rule(pattern=["fvm", "flutter", "test"], decision="allow")
+prefix_rule(pattern=["fvm", "flutter", "run", "-d", "web-server"], decision="allow")
+
+# AuraVibes local tooling.
+prefix_rule(pattern=["rm", "-rf", ".dart_tool/hooks_runner"], decision="allow")
+prefix_rule(pattern=["mkdir", "-p", ".agents/skills/speckit-driver", ".agents/skills/speckit-constitution", ".agents/skills/speckit-specify", ".agents/skills/speckit-clarify", ".agents/skills/speckit-plan", ".agents/skills/speckit-tasks", ".agents/skills/speckit-checklist", ".agents/skills/speckit-analyze", ".agents/skills/speckit-implement", ".agents/skills/speckit-taskstoissues"], decision="allow")
+prefix_rule(pattern=["sonar", "analyze", "secrets"], decision="allow")
