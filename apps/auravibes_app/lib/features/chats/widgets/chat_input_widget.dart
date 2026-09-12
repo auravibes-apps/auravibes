@@ -602,7 +602,7 @@ extension _ChatInputFilePickerActions on _ChatInputActions {
     await _addPickedFiles(await _pickFilesFromDevice(extensions));
   }
 
-  Future<fp.FilePickerResult?> _pickFilesFromDevice(
+  Future<List<fp.PlatformFile>> _pickFilesFromDevice(
     List<String>? allowedExtensions,
   ) {
     return fp.FilePicker.pickFiles(
@@ -611,8 +611,8 @@ extension _ChatInputFilePickerActions on _ChatInputActions {
     );
   }
 
-  Future<void> _addPickedFiles(fp.FilePickerResult? result) async {
-    for (final file in result?.files ?? const <fp.PlatformFile>[]) {
+  Future<void> _addPickedFiles(List<fp.PlatformFile> files) async {
+    for (final file in files) {
       final path = file.path;
       if (path == null) continue;
 
