@@ -899,10 +899,10 @@ packages:
     dependency: transitive
     description:
       name: genui
-      sha256: b6030eae45860224043a91a548e5458ef93a879604a9cfcb8aeec32cc6b39277
+      sha256: e5a744aa9dfb28326fa397a1e445767e69bf7a5b99bda1e640daf6482f46c37e
       url: "https://pub.dev"
     source: hosted
-    version: "0.10.2"
+    version: "0.10.3"
   glob:
     dependency: transitive
     description:
