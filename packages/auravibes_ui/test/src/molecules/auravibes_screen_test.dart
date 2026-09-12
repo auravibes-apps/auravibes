@@ -77,6 +77,25 @@ void main() {
       expect(title.style, AuraTextStyle.heading5);
     });
 
+    testWidgets('places body directly below the app bar', (tester) async {
+      final bodyKey = UniqueKey();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AuraScreen(
+            child: SizedBox(key: bodyKey, height: 20),
+            appBar: const AuraAppBar(title: Text('My Screen')),
+          ),
+          theme: .new(extensions: [AuraTheme.light]),
+        ),
+      );
+
+      final appBarBottom = tester.getBottomRight(find.byType(AppBar)).dy;
+      final bodyTop = tester.getTopLeft(find.byKey(bodyKey)).dy;
+
+      expect(bodyTop, closeTo(appBarBottom, 0.01));
+    });
+
     testWidgets('applies padding when provided', (tester) async {
       const padding = AuraEdgeInsetsGeometry.medium;
 

@@ -66,6 +66,11 @@ typedef _AgentSkillTileData = ({
   bool disabled,
 });
 
+enum _AgentRequiredField { name, description, content }
+
+const _agentDescriptionMinLines = 3;
+const _agentDescriptionMaxLines = 5;
+
 typedef _ToolGroupRequest = ({
   String key,
   ({String source, String skillSlug, String toolSlug}) parsed,
@@ -94,6 +99,12 @@ abstract class _AgentDetailScreenStateBase
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _contentController = TextEditingController();
+  final _nameFocusNode = FocusNode();
+  final _descriptionFocusNode = FocusNode();
+  final GlobalKey _nameFieldKey = .new();
+  final GlobalKey _descriptionFieldKey = .new();
+  final GlobalKey _promptFieldKey = .new();
+  final _touchedFields = <_AgentRequiredField>{};
   final _selectedSkills = <AgentSkillRef>{};
   final _toolPermissionModes = <String, AgentToolPermissionMode>{};
   bool _isEnabled = true;
@@ -102,12 +113,42 @@ abstract class _AgentDetailScreenStateBase
   bool _toolOverridesLoaded = false;
   bool _saving = false;
 
+  Listenable get _formListenable =>
+      .merge([_nameController, _descriptionController, _contentController]);
+
+  @override
+  void initState() {
+    super.initState();
+    _nameFocusNode.addListener(_onNameFocusChanged);
+    _descriptionFocusNode.addListener(_onDescriptionFocusChanged);
+  }
+
   @override
   void dispose() {
+    _nameFocusNode
+      ..removeListener(_onNameFocusChanged)
+      ..dispose();
+    _descriptionFocusNode
+      ..removeListener(_onDescriptionFocusChanged)
+      ..dispose();
     _nameController.dispose();
     _descriptionController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  void _onNameFocusChanged() {
+    if (!_nameFocusNode.hasFocus) _markFieldTouched(.name);
+  }
+
+  void _onDescriptionFocusChanged() {
+    if (!_descriptionFocusNode.hasFocus) _markFieldTouched(.description);
+  }
+
+  void _markFieldTouched(_AgentRequiredField field) {
+    if (!mounted) return;
+
+    setState(() => _touchedFields.add(field));
   }
 }
 
@@ -261,17 +302,7 @@ mixin _AgentDetailEditing on _AgentDetailScreenStateBase {
     if (markdown == null) return;
 
     _contentController.text = markdown;
-  }
-
-  Future<void> _editDescription() async {
-    final markdown = await MarkdownEditorLauncher.show(
-      context,
-      initialMarkdown: _descriptionController.text,
-      maxCharacters: AgentLimits.descriptionMaxLength,
-    );
-    if (markdown == null) return;
-
-    _descriptionController.text = markdown;
+    _markFieldTouched(.content);
   }
 
   Future<void> _confirmEnableSkill(WorkspaceSkill skill) async {
@@ -361,13 +392,44 @@ mixin _AgentDetailSummaryActions on _AgentDetailScreenStateBase {
   bool _validateDraft(AgentToCreate draft) {
     if (draft.isValid) return true;
 
-    final _ = AuraSnackBars.show(
-      context: context,
-      content: const TextLocale(LocaleKeys.cloud_errors_validation),
-      variant: .error,
-    );
+    final invalidFields = _invalidAgentFields(draft);
+    if (mounted) {
+      setState(() => _touchedFields.addAll(invalidFields));
+    } else {
+      _touchedFields.addAll(invalidFields);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _revealFirstInvalidField(draft);
+    });
 
     return false;
+  }
+
+  void _revealFirstInvalidField(AgentToCreate draft) {
+    if (!draft.hasRequiredName()) {
+      _nameFocusNode.requestFocus();
+      _ensureFieldVisible(_nameFieldKey);
+
+      return;
+    }
+    if (!_hasValidAgentDescription(draft.description)) {
+      _descriptionFocusNode.requestFocus();
+      _ensureFieldVisible(_descriptionFieldKey);
+
+      return;
+    }
+
+    _ensureFieldVisible(_promptFieldKey);
+  }
+
+  void _ensureFieldVisible(GlobalKey fieldKey) {
+    final fieldContext = fieldKey.currentContext;
+    if (fieldContext == null) return;
+    Scrollable.ensureVisible(
+      fieldContext,
+      alignment: 0.2,
+      duration: const Duration(milliseconds: 200),
+    );
   }
 
   Future<AgentEntity> _saveAgent(AgentToCreate draft) {
@@ -389,6 +451,20 @@ mixin _AgentDetailSummaryActions on _AgentDetailScreenStateBase {
     );
   }
 }
+
+bool _hasValidAgentDescription(String value) {
+  final normalized = value.trim();
+
+  return normalized.isNotEmpty &&
+      normalized.length <= AgentLimits.descriptionMaxLength;
+}
+
+Set<_AgentRequiredField> _invalidAgentFields(AgentToCreate draft) => {
+  if (!draft.hasRequiredName()) _AgentRequiredField.name,
+  if (!_hasValidAgentDescription(draft.description))
+    _AgentRequiredField.description,
+  if (!draft.hasRequiredContent()) _AgentRequiredField.content,
+};
 
 class const _AgentDetailScreenView({
   required final _AgentDetailScreenState state,
@@ -529,26 +605,32 @@ class const _AgentDetailLoading() extends StatelessWidget {
   Widget build(BuildContext context) => const Center(child: AuraSpinner());
 }
 
-class const _AgentReadyBody({
-  required final _AgentDetailScreenState state,
-  required final List<WorkspaceSkill> skills,
-  required final List<WorkspaceToolEntity> tools,
-}) extends StatelessWidget {
+class _AgentReadyBody extends StatelessWidget {
+  new({
+    required _AgentDetailScreenState state,
+    required List<WorkspaceSkill> skills,
+    required List<WorkspaceToolEntity> tools,
+  }) : _child = ListenableBuilder(
+         listenable: state._formListenable,
+         builder: (context, _) => Column(
+           children: [
+             Expanded(
+               child: _AgentForm(state: state, skills: skills, tools: tools),
+             ),
+             _SaveBar(
+               isCreate: state.widget.agentId == null,
+               isValid: state._agentDraft().isValid,
+               isSaving: state._saving,
+               onSave: state._requestSave,
+             ),
+           ],
+         ),
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: _AgentForm(state: state, skills: skills, tools: tools),
-        ),
-        _SaveBar(
-          isCreate: state.widget.agentId == null,
-          isSaving: state._saving,
-          onSave: state._requestSave,
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AgentLoader({
@@ -648,11 +730,33 @@ class const _AgentFormLayout({
     children: [
       _PromptCard(state: state),
       const SizedBox(height: 16),
-      _AgentFormSummaryCards(
+      _AgentAdvancedSettings(
         state: state,
         skills: skills,
         tools: tools,
         summary: summary,
+      ),
+    ],
+  );
+}
+
+class const _AgentAdvancedSettings({
+  required final _AgentDetailScreenState state,
+  required final List<WorkspaceSkill> skills,
+  required final List<WorkspaceToolEntity> tools,
+  required final _AgentFormSummary summary,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraAccordion(
+    items: [
+      AuraAccordionItem(
+        title: LocaleKeys.agents_advanced_settings.tr(context: context),
+        child: _AgentFormSummaryCards(
+          state: state,
+          skills: skills,
+          tools: tools,
+          summary: summary,
+        ),
       ),
     ],
   );
@@ -783,14 +887,10 @@ bool _isMissingAgentToolOverride(
 class const _PromptCard({required final _AgentDetailScreenState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraCard(
-      child: _PromptCardContent(
-        state: state,
-        onVisibilityChanged: _handleVisibilityChanged,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _PromptCardContent(
+    state: state,
+    onVisibilityChanged: _handleVisibilityChanged,
+  );
 
   void _handleVisibilityChanged(List<AgentVisibility> values) {
     final selected = values.firstOrNull;
@@ -799,24 +899,52 @@ class const _PromptCard({required final _AgentDetailScreenState state})
   }
 }
 
-class const _PromptCardContent({
-  required final _AgentDetailScreenState state,
-  required final ValueChanged<List<AgentVisibility>> onVisibilityChanged,
-}) extends StatelessWidget {
+class _PromptCardContent extends StatelessWidget {
+  new({
+    required _AgentDetailScreenState state,
+    required ValueChanged<List<AgentVisibility>> onVisibilityChanged,
+  }) : _child = AuraColumn(
+         children: [
+           _PromptCardHeader(
+             completedRequiredFields: _completedRequiredFields(state),
+           ),
+           KeyedSubtree(
+             key: state._nameFieldKey,
+             child: _AgentNameField(
+               controller: state._nameController,
+               focusNode: state._nameFocusNode,
+               errorKey: _agentNameErrorKey(state),
+             ),
+           ),
+           KeyedSubtree(
+             key: state._descriptionFieldKey,
+             child: _AgentDescriptionField(
+               controller: state._descriptionController,
+               focusNode: state._descriptionFocusNode,
+               errorKey: _agentDescriptionErrorKey(state),
+             ),
+           ),
+           KeyedSubtree(
+             key: state._promptFieldKey,
+             child: _AgentPromptField(
+               controller: state._contentController,
+               errorKey: _agentPromptErrorKey(state),
+               onEdit: () => unawaited(state._editPrompt()),
+             ),
+           ),
+           _PromptCardSettings(
+             state: state,
+             onVisibilityChanged: onVisibilityChanged,
+           ),
+         ],
+         spacing: .md,
+         crossAxisAlignment: .start,
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      const _PromptCardHeader(),
-      _AgentNameField(controller: state._nameController),
-      _PromptCardSettings(
-        state: state,
-        onVisibilityChanged: onVisibilityChanged,
-      ),
-      _PromptCardMarkdownFields(state: state),
-    ],
-    spacing: .md,
-    crossAxisAlignment: .start,
-  );
+  Widget build(BuildContext context) => _child;
 }
 
 class const _PromptCardSettings({
@@ -826,6 +954,10 @@ class const _PromptCardSettings({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.agents_availability_title),
+        style: .heading6,
+      ),
       _AgentEnabledRow(value: state._isEnabled, onChanged: state._setEnabled),
       _AgentVisibilityField(
         value: state._visibility,
@@ -837,56 +969,55 @@ class const _PromptCardSettings({
   );
 }
 
-// ignore: prefer_const_constructors_in_immutables, child captures runtime state.
-class _PromptCardMarkdownFields({required final _AgentDetailScreenState state})
-    extends StatelessWidget {
-  final Widget _child = AuraColumn(
-    children: [
-      _AgentDescriptionField(
-        controller: state._descriptionController,
-        onEdit: () => unawaited(state._editDescription()),
-      ),
-      _AgentPromptField(
-        controller: state._contentController,
-        onEdit: () => unawaited(state._editPrompt()),
-      ),
-    ],
-    spacing: .md,
-    crossAxisAlignment: .start,
-  );
+class _PromptCardHeader extends StatelessWidget {
+  new({required int completedRequiredFields})
+    : _child = AuraColumn(
+        children: [
+          const AuraText(
+            child: TextLocale(LocaleKeys.agents_details_title),
+            style: .heading5,
+          ),
+          const AuraText(
+            child: TextLocale(LocaleKeys.agents_details_description),
+            style: .bodySmall,
+          ),
+          AuraText(
+            child: TextLocale(
+              LocaleKeys.agents_required_fields_status,
+              args: [completedRequiredFields.toString()],
+            ),
+            style: .bodySmall,
+            tint: completedRequiredFields == _AgentRequiredField.values.length
+                ? AuraTint.success
+                : null,
+          ),
+        ],
+        spacing: .xs,
+        crossAxisAlignment: .start,
+      );
+
+  final Widget _child;
 
   @override
-  Widget build(BuildContext _) => _child;
+  Widget build(BuildContext context) => _child;
 }
 
-class const _PromptCardHeader() extends StatelessWidget {
-  // ignore: avoid_field_initializers_in_const_classes, child is a cached constant.
-  final Widget _child = const AuraColumn(
-    children: [
-      AuraText(
-        child: TextLocale(LocaleKeys.agents_profile_prompt_title),
-        style: .heading5,
-      ),
-      AuraText(
-        child: TextLocale(LocaleKeys.agents_profile_prompt_description),
-        style: .bodySmall,
-      ),
-    ],
-    spacing: .xs,
-    crossAxisAlignment: .start,
-  );
-
-  @override
-  Widget build(BuildContext _) => _child;
-}
-
-class const _AgentNameField({required final TextEditingController controller})
-    extends StatelessWidget {
+class const _AgentNameField({
+  required final TextEditingController controller,
+  required final FocusNode focusNode,
+  required final String? errorKey,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final errorKey = this.errorKey;
+
     return AuraInput(
       controller: controller,
-      label: Text(LocaleKeys.agents_name_label.tr(context: context)),
+      label: const TextLocale(LocaleKeys.agents_name_label),
+      error: errorKey == null ? null : TextLocale(errorKey),
+      isRequired: true,
+      state: errorKey == null ? .normal : .error,
+      focusNode: focusNode,
     );
   }
 }
@@ -940,24 +1071,35 @@ class const _AgentVisibilityField({
   }
 }
 
-class const _AgentDescriptionField({
-  required final TextEditingController controller,
-  required final VoidCallback onEdit,
-}) extends StatelessWidget {
+class _AgentDescriptionField extends StatelessWidget {
+  new({
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String? errorKey,
+  }) : _child = AuraInput(
+         controller: controller,
+         label: const TextLocale(LocaleKeys.agents_description_label),
+         hint: const TextLocale(LocaleKeys.agents_description_hint),
+         error: errorKey == null ? null : TextLocale(errorKey),
+         isRequired: true,
+         state: errorKey == null ? .normal : .error,
+         keyboardType: .multiline,
+         textInputAction: .newline,
+         minLines: _agentDescriptionMinLines,
+         maxLines: _agentDescriptionMaxLines,
+         maxLength: AgentLimits.descriptionMaxLength,
+         focusNode: focusNode,
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) {
-    return MarkdownPreviewField(
-      controller: controller,
-      titleKey: LocaleKeys.agents_description_label,
-      editKey: LocaleKeys.agents_edit_description,
-      emptyKey: LocaleKeys.agents_description_empty,
-      onEdit: onEdit,
-    );
-  }
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AgentPromptField({
   required final TextEditingController controller,
+  required final String? errorKey,
   required final VoidCallback onEdit,
 }) extends StatelessWidget {
   @override
@@ -965,11 +1107,57 @@ class const _AgentPromptField({
     return MarkdownPreviewField(
       controller: controller,
       titleKey: LocaleKeys.agents_prompt_label,
-      editKey: LocaleKeys.agents_edit_prompt,
+      editKey: controller.text.trim().isEmpty
+          ? LocaleKeys.agents_add_prompt
+          : LocaleKeys.agents_edit_prompt,
       emptyKey: LocaleKeys.agents_prompt_empty,
       onEdit: onEdit,
+      isRequired: true,
+      errorText: errorKey?.tr(context: context),
     );
   }
+}
+
+int _completedRequiredFields(_AgentDetailScreenState state) {
+  final draft = state._agentDraft();
+
+  return [
+    draft.hasRequiredName(),
+    _hasValidAgentDescription(draft.description),
+    draft.hasRequiredContent(),
+  ].where((value) => value).length;
+}
+
+String? _agentNameErrorKey(_AgentDetailScreenState state) {
+  if (!state._touchedFields.contains(_AgentRequiredField.name) ||
+      state._nameController.text.trim().isNotEmpty) {
+    return null;
+  }
+
+  return LocaleKeys.agents_name_required;
+}
+
+String? _agentDescriptionErrorKey(_AgentDetailScreenState state) {
+  if (!state._touchedFields.contains(_AgentRequiredField.description)) {
+    return null;
+  }
+
+  final description = state._descriptionController.text.trim();
+  if (description.isEmpty) return LocaleKeys.agents_description_required;
+  if (description.length > AgentLimits.descriptionMaxLength) {
+    return LocaleKeys.agents_description_too_long;
+  }
+
+  return null;
+}
+
+String? _agentPromptErrorKey(_AgentDetailScreenState state) {
+  if (!state._touchedFields.contains(_AgentRequiredField.content) ||
+      state._contentController.text.trim().isNotEmpty) {
+    return null;
+  }
+
+  return LocaleKeys.agents_prompt_required;
 }
 
 class const _SkillsSummaryCard({
@@ -1197,18 +1385,26 @@ class const _CardHeader({
 
 class const _SaveBar({
   required final bool isCreate,
+  required final bool isValid,
   required final bool isSaving,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
     top: false,
-    child: _SaveBarContainer(isCreate: isCreate, onSave: onSave),
+    child: _SaveBarContainer(
+      isCreate: isCreate,
+      isValid: isValid,
+      isSaving: isSaving,
+      onSave: onSave,
+    ),
   );
 }
 
 class const _SaveBarContainer({
   required final bool isCreate,
+  required final bool isValid,
+  required final bool isSaving,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
@@ -1219,13 +1415,20 @@ class const _SaveBarContainer({
         color: context.auraColors.surface,
         border: Border(top: .new(color: context.auraColors.outlineVariant)),
       ),
-      child: _SaveBarButtonLayout(isCreate: isCreate, onSave: onSave),
+      child: _SaveBarButtonLayout(
+        isCreate: isCreate,
+        isValid: isValid,
+        isSaving: isSaving,
+        onSave: onSave,
+      ),
     );
   }
 }
 
 class const _SaveBarButtonLayout({
   required final bool isCreate,
+  required final bool isValid,
+  required final bool isSaving,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
@@ -1234,6 +1437,8 @@ class const _SaveBarButtonLayout({
       builder: (context, constraints) => _SaveBarButtonFromConstraints(
         constraints: constraints,
         isCreate: isCreate,
+        isValid: isValid,
+        isSaving: isSaving,
         onSave: onSave,
       ),
     );
@@ -1243,6 +1448,8 @@ class const _SaveBarButtonLayout({
 class const _SaveBarButtonFromConstraints({
   required final BoxConstraints constraints,
   required final bool isCreate,
+  required final bool isValid,
+  required final bool isSaving,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
@@ -1253,6 +1460,8 @@ class const _SaveBarButtonFromConstraints({
     isCompact:
         constraints.maxWidth < _AgentDetailScreenState._compactLayoutWidth,
     isCreate: isCreate,
+    isValid: isValid,
+    isSaving: isSaving,
     onSave: onSave,
   );
 }
@@ -1262,6 +1471,8 @@ class _SaveBarButton({
   required final double width,
   required final bool isCompact,
   required final bool isCreate,
+  required final bool isValid,
+  required final bool isSaving,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
   final Widget _child = isCompact
@@ -1270,6 +1481,8 @@ class _SaveBarButton({
           child: AuraButton(
             onPressed: onSave,
             child: TextLocale(_label(isCreate: isCreate)),
+            isLoading: isSaving,
+            disabled: !isValid || isSaving,
           ),
         )
       : Align(
@@ -1279,6 +1492,8 @@ class _SaveBarButton({
             child: AuraButton(
               onPressed: onSave,
               child: TextLocale(_label(isCreate: isCreate)),
+              isLoading: isSaving,
+              disabled: !isValid || isSaving,
             ),
           ),
         );

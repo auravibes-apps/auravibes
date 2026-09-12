@@ -88,9 +88,7 @@ class const _AuraScreenAppBarContent({
     if (appBar == null) return child;
 
     return Padding(
-      padding: .only(
-        top: appBar.preferredSize.height + MediaQuery.paddingOf(context).top,
-      ),
+      padding: .only(top: MediaQuery.paddingOf(context).top),
       child: child,
     );
   }

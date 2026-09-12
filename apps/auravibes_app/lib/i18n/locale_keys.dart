@@ -238,8 +238,15 @@ abstract class LocaleKeys {
   static const agents_load_error = 'agents.load_error';
   static const agents_empty_title = 'agents.empty_title';
   static const agents_empty_subtitle = 'agents.empty_subtitle';
+  static const agents_details_title = 'agents.details_title';
+  static const agents_details_description = 'agents.details_description';
+  static const agents_required_fields_status = 'agents.required_fields_status';
   static const agents_name_label = 'agents.name_label';
+  static const agents_name_required = 'agents.name_required';
   static const agents_description_label = 'agents.description_label';
+  static const agents_description_hint = 'agents.description_hint';
+  static const agents_description_required = 'agents.description_required';
+  static const agents_description_too_long = 'agents.description_too_long';
   static const agents_edit_description = 'agents.edit_description';
   static const agents_description_empty = 'agents.description_empty';
   static const agents_enabled_label = 'agents.enabled_label';
@@ -251,9 +258,13 @@ abstract class LocaleKeys {
   static const agents_visibility_sub_agent_list =
       'agents.visibility_sub_agent_list';
   static const agents_visibility_both = 'agents.visibility_both';
+  static const agents_availability_title = 'agents.availability_title';
   static const agents_prompt_label = 'agents.prompt_label';
+  static const agents_prompt_required = 'agents.prompt_required';
+  static const agents_add_prompt = 'agents.add_prompt';
   static const agents_edit_prompt = 'agents.edit_prompt';
   static const agents_prompt_empty = 'agents.prompt_empty';
+  static const agents_advanced_settings = 'agents.advanced_settings';
   static const agents_profile_prompt_title = 'agents.profile_prompt_title';
   static const agents_profile_prompt_description =
       'agents.profile_prompt_description';
