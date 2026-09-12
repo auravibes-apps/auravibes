@@ -30,37 +30,37 @@ class const MarkdownPreviewField({
   );
 }
 
-class const _MarkdownPreviewBody({
-  required final TextEditingController controller,
-  required final String titleKey,
-  required final String editKey,
-  required final String emptyKey,
-  required final bool isReadOnly,
-  required final bool isRequired,
-  required final String? errorText,
-  required final VoidCallback onEdit,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final error = errorText;
+class _MarkdownPreviewBody extends StatelessWidget {
+  new({
+    required TextEditingController controller,
+    required String titleKey,
+    required String editKey,
+    required String emptyKey,
+    required bool isReadOnly,
+    required bool isRequired,
+    required String? errorText,
+    required VoidCallback onEdit,
+  }) : _child = AuraColumn(
+         children: [
+           _MarkdownPreviewHeader(
+             titleKey: titleKey,
+             editKey: editKey,
+             isReadOnly: isReadOnly,
+             isRequired: isRequired,
+             onEdit: onEdit,
+           ),
+           _MarkdownPreviewContent(controller: controller, emptyKey: emptyKey),
+           if (errorText case final error?)
+             AuraText(child: Text(error), style: .caption, tint: .error),
+         ],
+         spacing: .sm,
+         crossAxisAlignment: .start,
+       );
 
-    return AuraColumn(
-      children: [
-        _MarkdownPreviewHeader(
-          titleKey: titleKey,
-          editKey: editKey,
-          isReadOnly: isReadOnly,
-          isRequired: isRequired,
-          onEdit: onEdit,
-        ),
-        _MarkdownPreviewContent(controller: controller, emptyKey: emptyKey),
-        if (error != null)
-          AuraText(child: Text(error), style: .caption, tint: .error),
-      ],
-      spacing: .sm,
-      crossAxisAlignment: .start,
-    );
-  }
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class const _MarkdownPreviewHeader({
