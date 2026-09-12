@@ -12,6 +12,25 @@ class const CompactionExecutionRuntime({
   required final void Function(String conversationId) markFailure,
 });
 
+extension CompactionExecutionLifecycle on CompactionExecutionRuntime {
+  Future<CompactionExecutionState> run({
+    required CompactionExecutionState runningState,
+    required Future<CompactionExecutionState> Function() operation,
+  }) async {
+    if (!tryMarkRunning(runningState)) return runningState;
+
+    try {
+      final result = await operation();
+      markSuccess(runningState.conversationId);
+
+      return result;
+    } on Exception {
+      markFailure(runningState.conversationId);
+      rethrow;
+    }
+  }
+}
+
 final compactionExecutionRuntimeProvider = Provider<CompactionExecutionRuntime>(
   (ref) {
     final notifier = ref.watch(compactionExecutionProvider.notifier);

@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -1192,60 +1193,102 @@ class const _ChatComposer({required final _LoadedChatConversationData data})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final modelStatus = _modelStatus(ref);
+
+    return _ChatComposerView(
+      data: data,
+      modelStatus: modelStatus,
+      canCompact: _canCompact(ref, modelStatus.available),
+    );
+  }
+
+  _ChatComposerModelStatus _modelStatus(WidgetRef ref) {
     final modelId = data.conversation.modelId;
     final modelState = modelId == null
         ? null
         : ref.watch(
             workspaceModelSelectionByIdProvider(data.workspaceId, modelId),
           );
-    final modelAvailable = modelState?.value != null;
-    final modelMissing =
-        modelId != null && modelState?.hasValue == true && !modelAvailable;
-    final modelLoading =
-        modelId != null &&
-        modelState?.isLoading == true &&
-        modelState?.hasValue != true;
-    final modelLoadError =
-        modelId != null &&
-        modelState?.hasError == true &&
-        modelState?.hasValue != true;
-    final modelHint = switch (modelId) {
-      null => LocaleKeys.chats_screens_chat_conversation_model_required,
-      _ when modelMissing =>
-        LocaleKeys.chats_screens_chat_conversation_model_missing,
-      _ when modelLoading =>
-        LocaleKeys.chats_screens_chat_conversation_model_loading,
-      _ when modelLoadError =>
-        LocaleKeys.chats_screens_chat_conversation_model_unavailable,
-      _ => null,
-    };
-    final canCompact =
-        ref.watch(
-          conversationCanCompactProvider(
-            data.workspaceId,
-            data.conversation.id,
-          ),
-        ) &&
-        modelAvailable;
 
-    return Offstage(
-      offstage: data.state.hasPendingApprovals,
-      child: _ChatComposerInput(
-        data: data,
-        canCompact: canCompact,
-        modelUnavailable: modelMissing,
-        compactDisabledHint: modelHint,
-        continueDisabledHint: modelHint,
-        disabledHint: modelHint == null ? null : TextLocale(modelHint),
-        disabled: !modelAvailable,
-        onContinueAgent: modelAvailable
-            ? data.callbacks.selectors.continueAgent(
-                isInputBusy: data.state.isInputBusy,
-              )
-            : null,
-      ),
+    return _chatComposerModelStatus(modelId, modelState);
+  }
+
+  bool _canCompact(WidgetRef ref, bool modelAvailable) =>
+      ref.watch(
+        conversationCanCompactProvider(data.workspaceId, data.conversation.id),
+      ) &&
+      modelAvailable;
+}
+
+class _ChatComposerView extends StatelessWidget {
+  new({
+    required _LoadedChatConversationData data,
+    required _ChatComposerModelStatus modelStatus,
+    required bool canCompact,
+  }) : offstage = data.state.hasPendingApprovals,
+       input = _ChatComposerInput(
+         data: data,
+         canCompact: canCompact,
+         modelUnavailable: modelStatus.missing,
+         compactDisabledHint: modelStatus.hint,
+         continueDisabledHint: modelStatus.hint,
+         disabledHint: switch (modelStatus.hint) {
+           final hint? => TextLocale(hint),
+           null => null,
+         },
+         disabled: !modelStatus.available,
+         onContinueAgent: modelStatus.available
+             ? data.callbacks.selectors.continueAgent(
+                 isInputBusy: data.state.isInputBusy,
+               )
+             : null,
+       );
+
+  final bool offstage;
+  final Widget input;
+
+  @override
+  Widget build(BuildContext context) =>
+      Offstage(offstage: offstage, child: input);
+}
+
+typedef _ChatComposerModelStatus = ({
+  bool available,
+  bool missing,
+  String? hint,
+});
+
+_ChatComposerModelStatus _chatComposerModelStatus(
+  String? modelId,
+  AsyncValue<WorkspaceModelSelectionWithConnectionEntity?>? state,
+) {
+  if (modelId == null) {
+    return (
+      available: false,
+      missing: false,
+      hint: LocaleKeys.chats_screens_chat_conversation_model_required,
     );
   }
+
+  if (state?.value != null) {
+    return (available: true, missing: false, hint: null);
+  }
+
+  if (state?.hasValue == true) {
+    return (
+      available: false,
+      missing: true,
+      hint: LocaleKeys.chats_screens_chat_conversation_model_missing,
+    );
+  }
+
+  return (
+    available: false,
+    missing: false,
+    hint: state?.isLoading == true
+        ? LocaleKeys.chats_screens_chat_conversation_model_loading
+        : LocaleKeys.chats_screens_chat_conversation_model_unavailable,
+  );
 }
 
 class _ChatComposerInput extends StatelessWidget {

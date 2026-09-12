@@ -1014,7 +1014,7 @@ List<AuraPopupMenuItem> _conversationMenuItems(_ChatInputState state) => [
   _toolsMenuItem(state),
   if (state.input.onSkillsPress case final onSkillsPress?)
     _skillsMenuItem(onSkillsPress),
-  ...?_continueMenuItem(state),
+  ?_continueMenuItem(state),
   if (state.input.onCompact case final onCompact?)
     _compactMenuItem(state, onCompact),
 ];
@@ -1031,23 +1031,19 @@ AuraPopupMenuItem _skillsMenuItem(VoidCallback onTap) => AuraPopupMenuItem(
   leading: const AuraIcon(Icons.psychology_alt_outlined),
 );
 
-List<AuraPopupMenuItem>? _continueMenuItem(_ChatInputState state) {
+AuraPopupMenuItem? _continueMenuItem(_ChatInputState state) {
   final onTap = state.input.onContinueAgent;
   final disabledHint = state.input.continueDisabledHint;
   if (onTap == null && disabledHint == null) return null;
 
-  return [
-    AuraPopupMenuItem(
-      title: const TextLocale(
-        LocaleKeys.chats_screens_chat_conversation_continue_agent,
-      ),
-      onTap: onTap,
-      leading: const AuraIcon(Icons.play_circle_outline),
-      trailing: onTap != null || disabledHint == null
-          ? null
-          : _DisabledMenuItemHint(localeKey: disabledHint),
+  return AuraPopupMenuItem(
+    title: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_continue_agent,
     ),
-  ];
+    onTap: onTap,
+    leading: const AuraIcon(Icons.play_circle_outline),
+    trailing: _disabledMenuItemHint(onTap != null, disabledHint),
+  );
 }
 
 AuraPopupMenuItem _compactMenuItem(_ChatInputState state, VoidCallback onTap) {
@@ -1058,11 +1054,14 @@ AuraPopupMenuItem _compactMenuItem(_ChatInputState state, VoidCallback onTap) {
     title: const TextLocale(LocaleKeys.compaction_manual_button_tooltip),
     onTap: enabled ? onTap : null,
     leading: const AuraIcon(Icons.compress_outlined),
-    trailing: enabled || disabledHint == null
-        ? null
-        : _DisabledMenuItemHint(localeKey: disabledHint),
+    trailing: _disabledMenuItemHint(enabled, disabledHint),
   );
 }
+
+Widget? _disabledMenuItemHint(bool enabled, String? localeKey) =>
+    enabled || localeKey == null
+    ? null
+    : _DisabledMenuItemHint(localeKey: localeKey);
 
 class const _DisabledMenuItemHint({required final String localeKey})
     extends StatelessWidget {

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart' show AuraTileVariant;
@@ -293,37 +291,60 @@ class _AuraPopupMenuSurface extends StatelessWidget {
   final VoidCallback close;
 
   @override
-  Widget build(BuildContext context) {
-    final spacing = context.auraTheme.spacing;
-    final availableWidth = math
-        .max(0, MediaQuery.sizeOf(context).width - spacing.md * 2)
-        .toDouble();
-    final maxWidth = math.min(_maxWidth, availableWidth).toDouble();
-    final minWidth = math.min(_minWidth, maxWidth).toDouble();
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: _constraints(context),
+    child: IntrinsicWidth(
+      child: _AuraPopupMenuCard(items: items, close: close),
+    ),
+  );
 
-    return ConstrainedBox(
-      constraints: .new(minWidth: minWidth, maxWidth: maxWidth),
-      child: IntrinsicWidth(
-        child: AuraCard(
-          child: ClipRRect(
-            borderRadius: BorderRadius.all(
-              .circular(context.auraTheme.fromBorderRadius(.xl)),
-            ),
-            child: _AuraPopupMenuCloseScope(
-              close: close,
-              child: Column(
-                mainAxisSize: .min,
-                crossAxisAlignment: .stretch,
-                children: items.map((e) => Builder(builder: e.build)).toList(),
-              ),
-            ),
-          ),
-          padding: .none,
-          style: .border,
-        ),
-      ),
+  BoxConstraints _constraints(BuildContext context) {
+    final spacing = context.auraTheme.spacing;
+    final maxWidth = (MediaQuery.sizeOf(context).width - spacing.md * 2)
+        .clamp(0, _maxWidth)
+        .toDouble();
+
+    return .new(
+      minWidth: maxWidth.clamp(0, _minWidth).toDouble(),
+      maxWidth: maxWidth,
     );
   }
+}
+
+class _AuraPopupMenuCard extends StatelessWidget {
+  const new({required this.items, required this.close});
+
+  final List<AuraPopupMenuEntry> items;
+  final VoidCallback close;
+
+  @override
+  Widget build(BuildContext context) => AuraCard(
+    child: ClipRRect(
+      borderRadius: BorderRadius.all(
+        .circular(context.auraTheme.fromBorderRadius(.xl)),
+      ),
+      child: _AuraPopupMenuCardContent(items: items, close: close),
+    ),
+    padding: .none,
+    style: .border,
+  );
+}
+
+class _AuraPopupMenuCardContent extends StatelessWidget {
+  const new({required this.items, required this.close});
+
+  final List<AuraPopupMenuEntry> items;
+  final VoidCallback close;
+
+  @override
+  Widget build(BuildContext context) => _AuraPopupMenuCloseScope(
+    close: close,
+    child: Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
+      children: items.map((entry) => Builder(builder: entry.build)).toList(),
+    ),
+  );
 }
 
 class const _AuraPopupMenuCloseScope({
@@ -402,36 +423,68 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
   final AuraTileVariant variant;
 
   @override
+  Widget build(BuildContext context) => _AuraPopupMenuItemButton(item: this);
+}
+
+class _AuraPopupMenuItemButton extends StatelessWidget {
+  const new({required this.item});
+
+  final AuraPopupMenuItem item;
+
+  @override
   Widget build(BuildContext context) {
-    final onTap = this.onTap;
-    final enabled = onTap != null;
     final colors = context.auraColors;
-    final color = enabled
-        ? _popupMenuItemColor(variant, colors)
+    final interactionColor = _popupMenuItemColor(item.variant, colors);
+    final contentColor = item.onTap != null
+        ? interactionColor
         : colors.onSurfaceVariant.withValues(alpha: 0.6);
 
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 48),
-      child: AuraPressable(
-        child: AuraPadding(
-          child: _AuraPopupMenuItemContent(
-            title: title,
-            leading: leading,
-            trailing: trailing,
-            color: color,
-          ),
-          padding: const .symmetric(horizontal: .md, vertical: .sm),
-        ),
-        color: _popupMenuItemColor(variant, colors),
-        onPressed: onTap == null
-            ? null
-            : () {
-                onTap();
-                _AuraPopupMenuCloseScope.maybeOf(context)?.call();
-              },
-        isButtonSemantics: true,
+      child: _AuraPopupMenuPressable(
+        item: item,
+        interactionColor: interactionColor,
+        contentColor: contentColor,
       ),
     );
+  }
+}
+
+class _AuraPopupMenuPressable extends StatelessWidget {
+  const new({
+    required this.item,
+    required this.interactionColor,
+    required this.contentColor,
+  });
+
+  final AuraPopupMenuItem item;
+  final Color interactionColor;
+  final Color contentColor;
+
+  @override
+  Widget build(BuildContext context) => AuraPressable(
+    child: AuraPadding(
+      child: _AuraPopupMenuItemContent(
+        title: item.title,
+        leading: item.leading,
+        trailing: item.trailing,
+        color: contentColor,
+      ),
+      padding: const .symmetric(horizontal: .md, vertical: .sm),
+    ),
+    color: interactionColor,
+    onPressed: _onPressed(context),
+    isButtonSemantics: true,
+  );
+
+  VoidCallback? _onPressed(BuildContext context) {
+    final onTap = item.onTap;
+    if (onTap == null) return null;
+
+    return () {
+      onTap();
+      _AuraPopupMenuCloseScope.maybeOf(context)?.call();
+    };
   }
 }
 
@@ -450,35 +503,51 @@ class _AuraPopupMenuItemContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spacing = context.auraTheme.spacing;
-    final typography = context.auraTheme.typography;
-    final textStyle = TextStyle(
-      color: color,
-      fontSize: typography.fontSizeBase,
-      fontWeight: typography.fontWeightMedium,
-      height: typography.lineHeightBase,
-    );
+    final theme = context.auraTheme;
 
     return DefaultTextStyle(
-      style: textStyle,
+      style: _textStyle(theme.typography),
       child: IconTheme(
         data: .new(color: color),
-        child: Row(
-          children: [
-            if (leading case final value?) ...[
-              value,
-              SizedBox(width: spacing.sm),
-            ],
-            Expanded(child: title),
-            if (trailing case final value?) ...[
-              SizedBox(width: spacing.sm),
-              value,
-            ],
-          ],
+        child: _AuraPopupMenuItemRow(
+          title: title,
+          leading: leading,
+          trailing: trailing,
+          spacing: theme.spacing.sm,
         ),
       ),
     );
   }
+
+  TextStyle _textStyle(AuraTypographyScale typography) => TextStyle(
+    color: color,
+    fontSize: typography.fontSizeBase,
+    fontWeight: typography.fontWeightMedium,
+    height: typography.lineHeightBase,
+  );
+}
+
+class _AuraPopupMenuItemRow extends StatelessWidget {
+  const new({
+    required this.title,
+    required this.leading,
+    required this.trailing,
+    required this.spacing,
+  });
+
+  final Widget title;
+  final Widget? leading;
+  final Widget? trailing;
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      if (leading case final value?) ...[value, SizedBox(width: spacing)],
+      Expanded(child: title),
+      if (trailing case final value?) ...[SizedBox(width: spacing), value],
+    ],
+  );
 }
 
 Color _popupMenuItemColor(AuraTileVariant variant, AuraColorScheme colors) =>

@@ -269,14 +269,13 @@ void main() {
 
     final compactIcon = find.byIcon(Icons.compress_outlined);
     expect(compactIcon, findsOneWidget);
-    final compactTile = find.ancestor(
-      of: compactIcon,
-      matching: find.byType(AuraTile),
-    );
-    expect(tester.widget<AuraTile>(compactTile).enabled, isFalse);
+    final compactPressable = find
+        .ancestor(of: compactIcon, matching: find.byType(AuraPressable))
+        .first;
+    expect(tester.widget<AuraPressable>(compactPressable).onPressed, isNull);
     expect(
       find.descendant(
-        of: compactTile,
+        of: compactPressable,
         matching: find.byIcon(Icons.info_outline),
       ),
       findsOneWidget,
@@ -324,14 +323,13 @@ void main() {
 
     final continueIcon = find.byIcon(Icons.play_circle_outline);
     expect(continueIcon, findsOneWidget);
-    final continueTile = find.ancestor(
-      of: continueIcon,
-      matching: find.byType(AuraTile),
-    );
-    expect(tester.widget<AuraTile>(continueTile).enabled, isFalse);
+    final continuePressable = find
+        .ancestor(of: continueIcon, matching: find.byType(AuraPressable))
+        .first;
+    expect(tester.widget<AuraPressable>(continuePressable).onPressed, isNull);
     expect(
       find.descendant(
-        of: continueTile,
+        of: continuePressable,
         matching: find.byIcon(Icons.info_outline),
       ),
       findsOneWidget,
@@ -359,11 +357,13 @@ void main() {
     expect(compactIcon, findsOneWidget);
     expect(
       tester
-          .widget<AuraTile>(
-            find.ancestor(of: compactIcon, matching: find.byType(AuraTile)),
+          .widget<AuraPressable>(
+            find
+                .ancestor(of: compactIcon, matching: find.byType(AuraPressable))
+                .first,
           )
-          .enabled,
-      isFalse,
+          .onPressed,
+      isNull,
     );
   });
 

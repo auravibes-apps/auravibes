@@ -228,25 +228,20 @@ extension on CompactConversationUsecase {
   Future<CompactionExecutionState> _compactLocal({
     required String conversationId,
     required CompactionTrigger trigger,
-  }) async {
+  }) {
     final dependencies = _requiredLocalDependencies();
     final startedAt = DateTime.now();
     final executionState = _runningState(conversationId, trigger, startedAt);
-    if (!compactionExecution.tryMarkRunning(executionState)) {
-      return executionState;
-    }
+    final request = _localCompactionRequest(
+      dependencies,
+      conversationId,
+      trigger,
+    );
 
-    try {
-      await _executeLocalCompaction(
-        _localCompactionRequest(dependencies, conversationId, trigger),
-      );
-      compactionExecution.markSuccess(conversationId);
-
-      return _successState(conversationId, trigger, startedAt);
-    } on Exception {
-      compactionExecution.markFailure(conversationId);
-      rethrow;
-    }
+    return compactionExecution.run(
+      runningState: executionState,
+      operation: () => _completeLocalCompaction(this, request, startedAt),
+    );
   }
 
   CompactionExecutionState _runningState(
@@ -378,6 +373,16 @@ extension on CompactConversationUsecase {
       );
     }
   }
+}
+
+Future<CompactionExecutionState> _completeLocalCompaction(
+  CompactConversationUsecase usecase,
+  _LocalCompactionRequest request,
+  DateTime startedAt,
+) async {
+  await usecase._executeLocalCompaction(request);
+
+  return _successState(request.conversationId, request.trigger, startedAt);
 }
 
 _LocalCompactionRequest _localCompactionRequest(
