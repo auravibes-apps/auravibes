@@ -24,13 +24,31 @@ final _Defaults _popupMenuDefaults = _Defaults(
       ),
       items: const [
         AuraPopupMenuItem(
-          title: Text('Item 1'),
+          title: Text('Attach file'),
           onTap: StoryHelpers.noopCallback,
+          leading: AuraIcon(Icons.attach_file),
+        ),
+        AuraPopupMenuItem(
+          title: Text('Tools'),
+          onTap: StoryHelpers.noopCallback,
+          leading: AuraIcon(Icons.build_circle_outlined),
         ),
         AuraPopupMenuDivider(),
         AuraPopupMenuItem(
-          title: Text('Item 2'),
+          title: Text('Continue agent'),
+          leading: AuraIcon(Icons.play_circle_outline),
+          trailing: AuraIcon(Icons.info_outline),
+        ),
+        AuraPopupMenuItem(
+          title: Text('Compact conversation'),
+          leading: AuraIcon(Icons.compress_outlined),
+          trailing: AuraIcon(Icons.info_outline),
+        ),
+        AuraPopupMenuItem(
+          title: Text('Delete'),
           onTap: StoryHelpers.noopCallback,
+          leading: AuraIcon(Icons.delete_outline),
+          variant: .error,
         ),
       ],
       controller: controller,

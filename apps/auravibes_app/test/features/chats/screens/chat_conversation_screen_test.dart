@@ -7,6 +7,8 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
@@ -22,6 +24,7 @@ import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.da
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -963,6 +966,7 @@ Future<void> _pumpCloudConversationScreen(
     isPinned: false,
     createdAt: .new(2026),
     updatedAt: .new(2026),
+    modelId: 'model-1',
   );
   final cloudUsecase = usecaseFuture ?? Future.value(usecase);
 
@@ -1005,6 +1009,10 @@ Future<void> _pumpCloudConversationScreen(
                 }),
                 cloudTurnUsecaseProvider(_workspaceId)
                     .overrideWith((ref) => cloudUsecase),
+                workspaceModelSelectionByIdProvider(
+                  _workspaceId,
+                  'model-1',
+                ).overrideWithValue(AsyncData(_cloudModelSelection())),
                 chatMessagesProvider.overrideWith(
                   (ref, _) => Stream.value(const <MessageEntity>[]),
                 ),
@@ -1120,6 +1128,30 @@ CloudConversationState _cloudState({
   activeExecution: null,
   toolCalls: toolCalls,
   sequence: projectionRevision,
+);
+
+WorkspaceModelSelectionWithConnectionEntity _cloudModelSelection() => .new(
+  workspaceModelSelection: .new(
+    id: 'model-1',
+    modelId: 'gpt-5.5',
+    createdAt: DateTime(2026),
+    updatedAt: DateTime(2026),
+    modelConnectionId: 'connection-1',
+  ),
+  modelConnection: .new(
+    id: 'connection-1',
+    name: 'OpenAI',
+    modelId: 'openai',
+    createdAt: DateTime(2026),
+    updatedAt: DateTime(2026),
+    workspaceId: _workspaceId,
+    hasKey: true,
+  ),
+  modelsProvider: const ApiModelProviderEntity(
+    id: 'openai',
+    name: 'OpenAI',
+    type: null,
+  ),
 );
 
 ConversationSnapshot _cloudSnapshot() => ConversationSnapshot(

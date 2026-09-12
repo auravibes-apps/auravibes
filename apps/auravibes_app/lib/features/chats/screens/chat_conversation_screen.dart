@@ -40,8 +40,9 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext;
+    show AgentIterationContext, SelectedModelNotFoundException;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -1188,56 +1189,122 @@ bool _hasChatConversationStatus(_LoadedChatConversationData data) {
 }
 
 class const _ChatComposer({required final _LoadedChatConversationData data})
-    extends StatelessWidget {
+    extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => Offstage(
-    offstage: data.state.hasPendingApprovals,
-    child: _ChatComposerInput(
-      data: data,
-      onContinueAgent: data.callbacks.selectors.continueAgent(
-        isInputBusy: data.state.isInputBusy,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final modelId = data.conversation.modelId;
+    final modelState = modelId == null
+        ? null
+        : ref.watch(
+            workspaceModelSelectionByIdProvider(data.workspaceId, modelId),
+          );
+    final modelAvailable = modelState?.value != null;
+    final modelMissing =
+        modelId != null && modelState?.hasValue == true && !modelAvailable;
+    final modelLoading =
+        modelId != null &&
+        modelState?.isLoading == true &&
+        modelState?.hasValue != true;
+    final modelLoadError =
+        modelId != null &&
+        modelState?.hasError == true &&
+        modelState?.hasValue != true;
+    final modelHint = switch (modelId) {
+      null => LocaleKeys.chats_screens_chat_conversation_model_required,
+      _ when modelMissing =>
+        LocaleKeys.chats_screens_chat_conversation_model_missing,
+      _ when modelLoading =>
+        LocaleKeys.chats_screens_chat_conversation_model_loading,
+      _ when modelLoadError =>
+        LocaleKeys.chats_screens_chat_conversation_model_unavailable,
+      _ => null,
+    };
+    final canCompact =
+        ref.watch(
+          conversationCanCompactProvider(
+            data.workspaceId,
+            data.conversation.id,
+          ),
+        ) &&
+        modelAvailable;
+
+    return Offstage(
+      offstage: data.state.hasPendingApprovals,
+      child: _ChatComposerInput(
+        data: data,
+        canCompact: canCompact,
+        modelUnavailable: modelMissing,
+        compactDisabledHint: modelHint,
+        continueDisabledHint: modelHint,
+        disabledHint: modelHint == null ? null : TextLocale(modelHint),
+        disabled: !modelAvailable,
+        onContinueAgent: modelAvailable
+            ? data.callbacks.selectors.continueAgent(
+                isInputBusy: data.state.isInputBusy,
+              )
+            : null,
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _ChatComposerInput extends StatelessWidget {
-  new({required this.data, required this.onContinueAgent})
-    : input = ChatInputWidget(
-        workspaceId: data.workspaceId,
-        onSendMessage: data.callbacks.hooks.onSendMessage,
-        onToolsPress: data.callbacks.hooks.onToolsPress,
-        modelSheetControl: _ChatComposerModelSheetControl(
-          workspaceId: data.workspaceId,
-          workspaceModelSelectionId: data.conversation.modelId,
-          onChanged: data.callbacks.selectors.onModelChanged,
-        ),
-        agentSheetControl: _ChatComposerAgentSheetControl(
-          workspaceId: data.workspaceId,
-          agentId: data.conversation.agentId,
-          onChanged: data.callbacks.selectors.onAgentChanged,
-        ),
-        modelCompactControl: _ChatComposerModelCompactControl(
-          workspaceId: data.workspaceId,
-          workspaceModelSelectionId: data.conversation.modelId,
-          onChanged: data.callbacks.selectors.onModelSelectionChanged,
-        ),
-        agentCompactControl: _ChatComposerAgentCompactControl(
-          workspaceId: data.workspaceId,
-          agentId: data.conversation.agentId,
-          onChanged: data.callbacks.selectors.onAgentChanged,
-        ),
-        modalitiesInput: data.state.modalitiesInput,
-        onSkillsPress: data.callbacks.selectors.onSkillsPress,
-        onContinueAgent: onContinueAgent,
-        isBusy: data.state.isInputBusy,
-        showStopButton: data.state.isInputBusy && !data.hidesStoppedRun,
-        onStop: data.callbacks.hooks.onStop,
-        onCompact: data.callbacks.hooks.onCompact,
-        isCompacting: data.state.isCompacting,
-      );
+  new({
+    required this.data,
+    required this.canCompact,
+    required this.modelUnavailable,
+    required this.compactDisabledHint,
+    required this.continueDisabledHint,
+    required this.disabledHint,
+    required this.disabled,
+    required this.onContinueAgent,
+  }) : input = ChatInputWidget(
+         workspaceId: data.workspaceId,
+         onSendMessage: data.callbacks.hooks.onSendMessage,
+         onToolsPress: data.callbacks.hooks.onToolsPress,
+         modelSheetControl: _ChatComposerModelSheetControl(
+           workspaceId: data.workspaceId,
+           workspaceModelSelectionId: data.conversation.modelId,
+           onChanged: data.callbacks.selectors.onModelChanged,
+         ),
+         agentSheetControl: _ChatComposerAgentSheetControl(
+           workspaceId: data.workspaceId,
+           agentId: data.conversation.agentId,
+           onChanged: data.callbacks.selectors.onAgentChanged,
+         ),
+         modelCompactControl: _ChatComposerModelCompactControl(
+           workspaceId: data.workspaceId,
+           workspaceModelSelectionId: data.conversation.modelId,
+           onChanged: data.callbacks.selectors.onModelSelectionChanged,
+           modelUnavailable: modelUnavailable,
+         ),
+         agentCompactControl: _ChatComposerAgentCompactControl(
+           workspaceId: data.workspaceId,
+           agentId: data.conversation.agentId,
+           onChanged: data.callbacks.selectors.onAgentChanged,
+         ),
+         modalitiesInput: data.state.modalitiesInput,
+         onSkillsPress: data.callbacks.selectors.onSkillsPress,
+         onContinueAgent: onContinueAgent,
+         continueDisabledHint: continueDisabledHint,
+         disabledHint: disabledHint,
+         compactDisabledHint: compactDisabledHint,
+         disabled: disabled,
+         isBusy: data.state.isInputBusy,
+         showStopButton: data.state.isInputBusy && !data.hidesStoppedRun,
+         onStop: data.callbacks.hooks.onStop,
+         onCompact: data.callbacks.hooks.onCompact,
+         canCompact: canCompact,
+         isCompacting: data.state.isCompacting,
+       );
 
   final _LoadedChatConversationData data;
+  final bool canCompact;
+  final bool modelUnavailable;
+  final String? compactDisabledHint;
+  final String? continueDisabledHint;
+  final Widget? disabledHint;
+  final bool disabled;
   final VoidCallback? onContinueAgent;
   final ChatInputWidget input;
 
@@ -1277,6 +1344,7 @@ class const _ChatComposerModelCompactControl({
   required final String workspaceId,
   required final String? workspaceModelSelectionId,
   required final ValueChanged<String?> onChanged,
+  required final bool modelUnavailable,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CompactWorkspaceModelSelector(
@@ -1284,6 +1352,7 @@ class const _ChatComposerModelCompactControl({
     workspaceModelSelectionId: workspaceModelSelectionId,
     onChanged: onChanged,
     compactMode: true,
+    modelUnavailable: modelUnavailable,
   );
 }
 
@@ -1728,7 +1797,7 @@ Future<void> _continueLocalAgent(WidgetRef ref, String conversationId) async {
 void _reportContinueAgentError(_ContinueErrorRequest request) {
   _logContinueAgentError(request);
   _reportContinueAgentFlutterError(request);
-  _showContinueAgentError(request.context);
+  _showContinueAgentError(request.context, request.error);
 }
 
 void _logContinueAgentError(_ContinueErrorRequest request) {
@@ -1750,13 +1819,16 @@ void _reportContinueAgentFlutterError(_ContinueErrorRequest request) {
   );
 }
 
-void _showContinueAgentError(BuildContext context) {
+void _showContinueAgentError(BuildContext context, Exception error) {
   if (!context.mounted) return;
 
   final _ = AuraSnackBars.show(
     context: context,
     content: Text(
-      LocaleKeys.chats_screens_chat_conversation_continue_error.tr(),
+      (error is SelectedModelNotFoundException
+              ? LocaleKeys.chats_screens_chat_conversation_model_missing
+              : LocaleKeys.chats_screens_chat_conversation_continue_error)
+          .tr(),
     ),
     variant: .error,
   );
@@ -2032,18 +2104,21 @@ void _showSendMessageError(BuildContext context) {
 
 Future<void> _manualCompact(_ManualCompactRequest request) async {
   try {
-    await _runManualCompaction(request);
-    _showManualCompactSuccess(request.context);
-  } on CompactionException {
-    _showManualCompactFailure(request.context);
+    final result = await _runManualCompaction(request);
+    if (result.status == CompactionExecutionStatus.success) {
+      _showManualCompactSuccess(request.context);
+    }
+  } on CompactionException catch (error) {
+    _showManualCompactFailure(request.context, error.localeKey);
   }
 }
 
-Future<void> _runManualCompaction(_ManualCompactRequest request) async {
-  final _ = await request.ref.read(
-    compactConversationUsecaseProvider(request.workspaceId),
-  )(conversationId: request.conversationId, trigger: CompactionTrigger.manual);
-}
+Future<CompactionExecutionState> _runManualCompaction(
+  _ManualCompactRequest request,
+) => request.ref.read(compactConversationUsecaseProvider(request.workspaceId))(
+  conversationId: request.conversationId,
+  trigger: CompactionTrigger.manual,
+);
 
 void _showManualCompactSuccess(BuildContext context) {
   if (!context.mounted) return;
@@ -2055,12 +2130,12 @@ void _showManualCompactSuccess(BuildContext context) {
   );
 }
 
-void _showManualCompactFailure(BuildContext context) {
+void _showManualCompactFailure(BuildContext context, String localeKey) {
   if (!context.mounted) return;
 
   final _ = AuraSnackBars.show(
     context: context,
-    content: Text(LocaleKeys.compaction_manual_failure.tr()),
+    content: Text(localeKey.tr()),
     variant: .error,
   );
 }

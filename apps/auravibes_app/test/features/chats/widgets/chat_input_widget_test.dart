@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
@@ -47,11 +48,18 @@ void main() {
     bool isBusy = false,
     bool? showStopButton,
     VoidCallback? onStop,
+    VoidCallback? onContinueAgent,
     List<String> modalitiesInput = const [],
     Widget modelSheetControl = const SizedBox.shrink(),
     Widget agentSheetControl = const SizedBox.shrink(),
     Widget modelCompactControl = const SizedBox.shrink(),
     Widget agentCompactControl = const SizedBox.shrink(),
+    VoidCallback? onCompact,
+    bool canCompact = true,
+    String? compactDisabledHint,
+    String? continueDisabledHint,
+    Widget? disabledHint,
+    bool isCompacting = false,
   }) {
     return EasyLocalization(
       child: TestProviderScope(
@@ -78,10 +86,17 @@ void main() {
                       modelCompactControl: modelCompactControl,
                       agentCompactControl: agentCompactControl,
                       modalitiesInput: modalitiesInput,
+                      onContinueAgent: onContinueAgent,
+                      continueDisabledHint: continueDisabledHint,
+                      disabledHint: disabledHint,
+                      compactDisabledHint: compactDisabledHint,
                       disabled: disabled,
                       isBusy: isBusy,
                       showStopButton: showStopButton,
                       onStop: onStop,
+                      onCompact: onCompact,
+                      canCompact: canCompact,
+                      isCompacting: isCompacting,
                     ),
                   ),
                 ),
@@ -210,6 +225,146 @@ void main() {
     await tester.pump();
 
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+  });
+
+  testWidgets('shows manual compaction when conversation can compact', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        onCompact: _noop,
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.compress_outlined), findsOneWidget);
+  });
+
+  testWidgets('disables manual compaction when conversation cannot compact', (
+    tester,
+  ) async {
+    var wasTapped = false;
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        onCompact: () => wasTapped = true,
+        canCompact: false,
+        compactDisabledHint:
+            LocaleKeys.chats_screens_chat_conversation_model_required,
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    final compactIcon = find.byIcon(Icons.compress_outlined);
+    expect(compactIcon, findsOneWidget);
+    final compactTile = find.ancestor(
+      of: compactIcon,
+      matching: find.byType(AuraTile),
+    );
+    expect(tester.widget<AuraTile>(compactTile).enabled, isFalse);
+    expect(
+      find.descendant(
+        of: compactTile,
+        matching: find.byIcon(Icons.info_outline),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(compactIcon);
+    expect(wasTapped, isFalse);
+  });
+
+  testWidgets('blocks sending and shows disabled hint', (tester) async {
+    var wasSent = false;
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => wasSent = true,
+        disabled: true,
+        disabledHint: const Text('Select a model'),
+      ),
+    );
+
+    await tester.enterText(find.byType(EditableText), 'Hello agent');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    await tester.pump();
+
+    expect(wasSent, isFalse);
+    expect(find.text('Select a model'), findsOneWidget);
+  });
+
+  testWidgets('shows disabled Continue with reason', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        continueDisabledHint:
+            LocaleKeys.chats_screens_chat_conversation_model_required,
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    final continueIcon = find.byIcon(Icons.play_circle_outline);
+    expect(continueIcon, findsOneWidget);
+    final continueTile = find.ancestor(
+      of: continueIcon,
+      matching: find.byType(AuraTile),
+    );
+    expect(tester.widget<AuraTile>(continueTile).enabled, isFalse);
+    expect(
+      find.descendant(
+        of: continueTile,
+        matching: find.byIcon(Icons.info_outline),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('disables manual compaction while compaction is running', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        onCompact: _noop,
+        isCompacting: true,
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    final compactIcon = find.byIcon(Icons.compress_outlined);
+    expect(compactIcon, findsOneWidget);
+    expect(
+      tester
+          .widget<AuraTile>(
+            find.ancestor(of: compactIcon, matching: find.byType(AuraTile)),
+          )
+          .enabled,
+      isFalse,
+    );
   });
 
   testWidgets('hides mic button when audio is unsupported', (tester) async {

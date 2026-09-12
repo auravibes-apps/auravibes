@@ -79,6 +79,33 @@ void main() {
     expect(find.text('Claude Sonnet 4'), findsOneWidget);
   });
 
+  testWidgets('compact mode shows warning for unavailable model', (
+    tester,
+  ) async {
+    await _pumpSubject(
+      tester,
+      _SubjectBuilder.build(
+        groupedModels: {
+          'openai-work': [
+            _makeSelection(
+              'sel-2',
+              connectionId: 'openai-work',
+              modelId: 'gpt-5.5',
+              providerName: 'OpenAI',
+              modelName: 'GPT 5.5',
+            ),
+          ],
+        },
+        selectedId: 'deleted-selection',
+        compactMode: true,
+        modelUnavailable: true,
+      ),
+    );
+
+    expect(find.text('Model unavailable'), findsOneWidget);
+    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+  });
+
   testWidgets('shows empty provider placeholder', (tester) async {
     await _pumpSubject(tester, _SubjectBuilder.build(groupedModels: {}));
 
@@ -196,6 +223,7 @@ abstract final class _SubjectBuilder {
     ValueChanged<String?>? onChanged,
     bool compactMode = false,
     bool sheetMode = false,
+    bool modelUnavailable = false,
   }) {
     assert(
       groupedModels != null || groupedModelsStream != null,
@@ -215,6 +243,7 @@ abstract final class _SubjectBuilder {
               onChanged: onChanged ?? (_) => fail('Unexpected model change'),
               compactMode: compactMode,
               sheetMode: sheetMode,
+              modelUnavailable: modelUnavailable,
             ),
           ),
         ),

@@ -37,7 +37,11 @@ Future<CompactionExecutionState> _executeCompaction(
   _CloudCompactionRequest request,
 ) async {
   final startedAt = DateTime.now();
-  _markCompactionRunning(request, startedAt);
+  final executionState = _runningState(request, startedAt);
+  if (!request.execution.tryMarkRunning(executionState)) {
+    return executionState;
+  }
+
   try {
     await _completeCompaction(request);
     request.execution.markSuccess(request.conversation.id);
@@ -60,19 +64,15 @@ Future<void> _completeCompaction(_CloudCompactionRequest request) async {
   }
 }
 
-void _markCompactionRunning(
+CompactionExecutionState _runningState(
   _CloudCompactionRequest request,
   DateTime startedAt,
-) {
-  request.execution.markRunning(
-    .new(
-      conversationId: request.conversation.id,
-      trigger: request.trigger,
-      startedAt: startedAt,
-      status: CompactionExecutionStatus.running,
-    ),
-  );
-}
+) => .new(
+  conversationId: request.conversation.id,
+  trigger: request.trigger,
+  startedAt: startedAt,
+  status: CompactionExecutionStatus.running,
+);
 
 Future<TurnSnapshot> _waitForCompaction(
   CloudTurnUsecase turns,

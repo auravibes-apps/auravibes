@@ -4,6 +4,8 @@ import 'package:riverpod/riverpod.dart';
 
 /// Runtime adapter for compaction execution notifier state changes.
 class const CompactionExecutionRuntime({
+  required final bool Function(CompactionExecutionState executionState)
+  tryMarkRunning,
   required final void Function(CompactionExecutionState executionState)
   markRunning,
   required final void Function(String conversationId) markSuccess,
@@ -15,6 +17,7 @@ final compactionExecutionRuntimeProvider = Provider<CompactionExecutionRuntime>(
     final notifier = ref.watch(compactionExecutionProvider.notifier);
 
     return CompactionExecutionRuntime(
+      tryMarkRunning: notifier.tryMarkRunning,
       markRunning: notifier.markRunning,
       markSuccess: notifier.markSuccess,
       markFailure: notifier.markFailure,

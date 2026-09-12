@@ -42,6 +42,25 @@ void main() {
       expect(state['conv-1']?.trigger, CompactionTrigger.auto);
     });
 
+    test('tryMarkRunning rejects duplicate execution for conversation', () {
+      final notifier = container.read(compactionExecutionProvider.notifier);
+      CompactionExecutionState runningState(CompactionTrigger trigger) => .new(
+        conversationId: 'conv-1',
+        trigger: trigger,
+        startedAt: DateTime(2026),
+        status: CompactionExecutionStatus.running,
+      );
+      final first = runningState(.auto);
+      final duplicate = first.copyWith(trigger: CompactionTrigger.manual);
+
+      expect(notifier.tryMarkRunning(first), isTrue);
+      expect(notifier.tryMarkRunning(duplicate), isFalse);
+      expect(
+        container.read(compactionExecutionProvider)['conv-1']?.trigger,
+        CompactionTrigger.auto,
+      );
+    });
+
     test('isCompacting returns true when running', () {
       final notifier = container.read(compactionExecutionProvider.notifier);
 

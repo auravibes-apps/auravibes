@@ -1,5 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'dart:async';
+
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
@@ -19,6 +21,7 @@ import 'package:auravibes_app/features/chats/usecases/select_compaction_range_us
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
@@ -245,6 +248,63 @@ void main() {
       expect(meta?.compactionKind, CompactionKind.manual);
     });
 
+    test(
+      'manual compaction ignores duplicate execution while running',
+      () async {
+        final messages = [
+          _makeMessage(),
+          _makeMessage(id: 'msg-2', isUser: false),
+          _makeMessage(id: 'msg-3'),
+          _makeMessage(id: 'msg-4', isUser: false),
+        ];
+        final summary = StreamController<ChatResult<ChatMessage>>();
+        final sendStarted = Completer<void>();
+        addTearDown(summary.close);
+
+        when(() => fixture.mockConversationRepo.getConversationById('conv-1'))
+            .thenAnswer((_) async => _makeConversation());
+        when(
+          () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+            'model-1',
+          ),
+        ).thenAnswer((_) async => _makeModelSelection());
+        when(() => fixture.mockMessageRepo.getMessagesByConversation('conv-1'))
+            .thenAnswer((_) async => messages);
+        when(() => fixture.mockChatbotService.sendMessage(any(), any()))
+            .thenAnswer((_) {
+              if (!sendStarted.isCompleted) sendStarted.complete();
+
+              return summary.stream;
+            });
+
+        final first = fixture.usecase(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.manual,
+        );
+        await sendStarted.future;
+
+        final duplicate = await fixture.usecase(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.manual,
+        );
+
+        expect(duplicate.status, CompactionExecutionStatus.running);
+        verify(() => fixture.mockChatbotService.sendMessage(any(), any()))
+            .called(1);
+
+        summary.add(
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Summary'),
+            usage: const LanguageModelUsage(),
+          ),
+        );
+        final _ = await summary.close();
+
+        final result = await first;
+        expect(result.status, CompactionExecutionStatus.success);
+      },
+    );
+
     test('manual throws CompactionUnsafeException for busy/unsafe state', () {
       when(() => fixture.mockConversationRepo.getConversationById('conv-1'))
           .thenAnswer((_) async => _makeConversation());
@@ -388,7 +448,7 @@ void main() {
       },
     );
 
-    test('throws CompactionUnavailableException when no model selected', () {
+    test('throws a localized exception when no model selected', () {
       when(() => fixture.mockConversationRepo.getConversationById('conv-1'))
           .thenAnswer((_) async => _makeConversation(modelId: null));
 
@@ -397,7 +457,37 @@ void main() {
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
         ),
-        throwsA(isA<CompactionUnavailableException>()),
+        throwsA(
+          isA<CompactionNoModelSelectedException>().having(
+            (error) => error.localeKey,
+            'localeKey',
+            LocaleKeys.chats_screens_new_chat_no_model_selected,
+          ),
+        ),
+      );
+    });
+
+    test('throws a localized exception when selected model is missing', () {
+      when(() => fixture.mockConversationRepo.getConversationById('conv-1'))
+          .thenAnswer((_) async => _makeConversation());
+      when(
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
+      ).thenAnswer((_) async => null);
+
+      expect(
+        () => fixture.usecase(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.manual,
+        ),
+        throwsA(
+          isA<CompactionModelMissingException>().having(
+            (error) => error.localeKey,
+            'localeKey',
+            LocaleKeys.compaction_errors_model_missing,
+          ),
+        ),
       );
     });
 
