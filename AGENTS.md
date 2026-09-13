@@ -143,3 +143,17 @@
 
 - PR titles use Conventional Commits, for example `fix: Correct typo`, `feat(ui): Add button`, or `refactor!: Drop legacy API`.
 - Before opening or updating a PR with code changes, prefer `fvm dart run melos run validate`, `fvm dart run dependency_validator`, and `fvm dart run import_sorter:main --exit-if-changed`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as GitHub issues in `auravibes-apps/auravibes`; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the canonical triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context layout: root `CONTEXT-MAP.md`, per-context `CONTEXT.md`, system-wide `docs/adr/`, and context-specific ADRs. See `docs/agents/domain.md`.
