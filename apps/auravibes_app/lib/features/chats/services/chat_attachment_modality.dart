@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as engine;
 
 abstract final class ChatAttachmentModality {
@@ -48,4 +49,12 @@ abstract final class ChatAttachmentModality {
 
     return const [];
   }
+}
+
+final class const ChatAttachmentTooLargeException() implements Exception {
+  String get localizationKey =>
+      LocaleKeys.chats_screens_chat_conversation_attachment_too_large;
+
+  @override
+  String toString() => localizationKey;
 }

@@ -1,13 +1,17 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
+import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,6 +54,7 @@ void main() {
     VoidCallback? onStop,
     VoidCallback? onContinueAgent,
     List<String> modalitiesInput = const [],
+    LocalChatAttachmentService? attachmentService,
     Widget modelSheetControl = const SizedBox.shrink(),
     Widget agentSheetControl = const SizedBox.shrink(),
     Widget modelCompactControl = const SizedBox.shrink(),
@@ -69,34 +74,38 @@ void main() {
               WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
             ),
           ),
+          if (attachmentService case final service?)
+            localChatAttachmentServiceProvider.overrideWithValue(service),
         ],
         child: Builder(
           builder: (context) {
             return MaterialApp(
               home: Theme(
                 data: .new(extensions: [AuraTheme.light]),
-                child: Material(
-                  child: Portal(
-                    child: ChatInputWidget(
-                      workspaceId: 'ws-1',
-                      onSendMessage: onSendMessage,
-                      onToolsPress: onToolsPress,
-                      modelSheetControl: modelSheetControl,
-                      agentSheetControl: agentSheetControl,
-                      modelCompactControl: modelCompactControl,
-                      agentCompactControl: agentCompactControl,
-                      modalitiesInput: modalitiesInput,
-                      onContinueAgent: onContinueAgent,
-                      continueDisabledHint: continueDisabledHint,
-                      disabledHint: disabledHint,
-                      compactDisabledHint: compactDisabledHint,
-                      disabled: disabled,
-                      isBusy: isBusy,
-                      showStopButton: showStopButton,
-                      onStop: onStop,
-                      onCompact: onCompact,
-                      canCompact: canCompact,
-                      isCompacting: isCompacting,
+                child: AuraSnackBarHost(
+                  child: Material(
+                    child: Portal(
+                      child: ChatInputWidget(
+                        workspaceId: 'ws-1',
+                        onSendMessage: onSendMessage,
+                        onToolsPress: onToolsPress,
+                        modelSheetControl: modelSheetControl,
+                        agentSheetControl: agentSheetControl,
+                        modelCompactControl: modelCompactControl,
+                        agentCompactControl: agentCompactControl,
+                        modalitiesInput: modalitiesInput,
+                        onContinueAgent: onContinueAgent,
+                        continueDisabledHint: continueDisabledHint,
+                        disabledHint: disabledHint,
+                        compactDisabledHint: compactDisabledHint,
+                        disabled: disabled,
+                        isBusy: isBusy,
+                        showStopButton: showStopButton,
+                        onStop: onStop,
+                        onCompact: onCompact,
+                        canCompact: canCompact,
+                        isCompacting: isCompacting,
+                      ),
                     ),
                   ),
                 ),
@@ -172,6 +181,100 @@ void main() {
     );
 
     sendCompleter.complete();
+  });
+
+  testWidgets('sends attachment-only drafts once', (tester) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 2048,
+    );
+    final sendCompleter = Completer<void>();
+    final sentDrafts = <ChatDraft>[];
+    final previousPicker = fp.FilePickerPlatform.instance;
+    addTearDown(() => fp.FilePickerPlatform.instance = previousPicker);
+    fp.FilePickerPlatform.instance = _FakeFilePickerPlatform([
+      _FakePlatformFile(
+        name: attachment.fileName,
+        size: attachment.sizeBytes,
+        path: attachment.localPath,
+      ),
+    ]);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text', 'file'],
+        attachmentService: _FakeLocalChatAttachmentService(attachment),
+        onSendMessage: (draft) {
+          sentDrafts.add(draft);
+
+          return sendCompleter.future;
+        },
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.attach_file));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('report.pdf'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    await tester.pump();
+
+    expect(sentDrafts, hasLength(1));
+    expect(sentDrafts.single.text, isEmpty);
+    expect(sentDrafts.single.attachments, [attachment]);
+
+    sendCompleter.complete();
+    await tester.pump();
+  });
+
+  testWidgets('shows an error when a selected file exceeds 25 MiB', (
+    tester,
+  ) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/large.pdf',
+      fileName: 'large.pdf',
+      displayName: 'large.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 25 * 1024 * 1024 + 1,
+    );
+
+    final previousPicker = fp.FilePickerPlatform.instance;
+    addTearDown(() => fp.FilePickerPlatform.instance = previousPicker);
+    fp.FilePickerPlatform.instance = _FakeFilePickerPlatform([
+      _FakePlatformFile(
+        name: attachment.fileName,
+        size: attachment.sizeBytes,
+        path: attachment.localPath,
+      ),
+    ]);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text', 'file'],
+        attachmentService: _FakeLocalChatAttachmentService(
+          attachment,
+          copyError: const ChatAttachmentTooLargeException(),
+        ),
+        onSendMessage: (_) => Future.value(),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.attach_file));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Attachment must be 25 MB or smaller.'), findsOneWidget);
   });
 
   testWidgets('does not update sending state after unmount', (tester) async {
@@ -650,4 +753,77 @@ void main() {
 
 void _noop() {
   final _ = Object();
+}
+
+class _FakeLocalChatAttachmentService(
+  final MessageAttachmentToCreate attachment, {
+  final Exception? copyError,
+}) implements LocalChatAttachmentService {
+  final String storageNamespace = 'test';
+
+  @override
+  Future<MessageAttachmentToCreate> copyIntoAppStorage(
+    String sourcePath, {
+    String? displayName,
+  }) async {
+    if (copyError case final error?) throw error;
+
+    return attachment.copyWith(
+      displayName: displayName ?? attachment.displayName,
+    );
+  }
+
+  @override
+  Future<void> deleteAttachment(String _) => Future.value();
+
+  @override
+  Future<void> startVoiceRecording() => Future.value();
+
+  @override
+  Future<MessageAttachmentToCreate?> stopVoiceRecording() async => null;
+
+  @override
+  Future<void> cancelVoiceRecording() => Future.value();
+}
+
+class _FakeFilePickerPlatform(final List<fp.PlatformFile> result)
+    extends fp.FilePickerPlatform {
+  @override
+  Future<List<fp.PlatformFile>> pickFiles({
+    String? dialogTitle,
+    String? initialDirectory,
+    fp.FileType type = fp.FileType.any,
+    List<String>? allowedExtensions,
+    void Function(fp.FilePickerStatus)? onFileLoading,
+    int compressionQuality = 0,
+    fp.AndroidOptions androidOptions = const fp.AndroidOptions(),
+    fp.DarwinOptions darwinOptions = const fp.DarwinOptions(),
+    fp.WindowsOptions windowsOptions = const fp.WindowsOptions(),
+    fp.LinuxOptions linuxOptions = const fp.LinuxOptions(),
+    fp.WebOptions webOptions = const fp.WebOptions(),
+  }) async => result;
+}
+
+base class _FakePlatformFile({
+  @override required final String name,
+  required final int size,
+  required String path,
+}) extends fp.PlatformFile {
+  @override
+  final Uri uri = .file(path);
+
+  @override
+  Never get xFile => throw UnimplementedError();
+
+  @override
+  int lengthSync() => size;
+
+  @override
+  Future<int> length() async => size;
+
+  @override
+  Never readAsBytes() => throw UnimplementedError();
+
+  @override
+  Never readAsByteStream() => throw UnimplementedError();
 }

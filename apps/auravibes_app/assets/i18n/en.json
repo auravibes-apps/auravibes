@@ -288,6 +288,7 @@
       "a2ui_image_loading": "Loading image…",
       "a2ui_image_error": "Image unavailable",
       "attachment_unsupported": "Current model does not support this input.",
+      "attachment_too_large": "Attachment must be 25 MB or smaller.",
       "model_required": "Select a model to send messages, continue, or compact.",
       "model_missing": "The selected model is missing. Select another model to continue.",
       "model_loading": "Loading the selected model...",

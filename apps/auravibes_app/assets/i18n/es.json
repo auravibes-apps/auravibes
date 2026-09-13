@@ -288,6 +288,7 @@
       "a2ui_image_loading": "Cargando imagen…",
       "a2ui_image_error": "Imagen no disponible",
       "attachment_unsupported": "El modelo actual no admite esta entrada.",
+      "attachment_too_large": "El archivo adjunto debe pesar 25 MB o menos.",
       "model_required": "Selecciona un modelo para enviar mensajes, continuar o comprimir.",
       "model_missing": "Falta el modelo seleccionado. Selecciona otro modelo para continuar.",
       "model_loading": "Cargando el modelo seleccionado...",
