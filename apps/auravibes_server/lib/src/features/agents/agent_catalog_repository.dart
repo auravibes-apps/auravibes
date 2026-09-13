@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import 'agent_catalog_cursor.dart';
 
 class const AgentCatalogRow({
   required this.id,
@@ -26,8 +27,7 @@ class AgentCatalogRepository {
     required AgentCatalogType? type,
     required AgentCatalogStatus? status,
     required int limit,
-    required String? afterName,
-    required String? afterId,
+    required AgentCatalogCursor? cursor,
   }) async {
     final rows = await session.db.unsafeQuery(
       _listSql,
@@ -36,9 +36,9 @@ class AgentCatalogRepository {
         'search': search,
         'type': type?.name ?? '',
         'status': status?.name ?? '',
-        'hasCursor': afterName != null,
-        'afterName': afterName ?? '',
-        'afterId': afterId ?? '',
+        'hasCursor': cursor != null,
+        'afterName': cursor?.name ?? '',
+        'afterId': cursor?.id ?? '',
         'limit': limit,
       }),
     );

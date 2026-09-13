@@ -87,8 +87,7 @@ extension AgentCatalogUseCasesOperations on AgentCatalogUseCases {
       type: validated.type,
       status: validated.status,
       limit: validated.limit + 1,
-      afterName: validated.cursor?.name,
-      afterId: validated.cursor?.id,
+      cursor: validated.cursor,
     );
     return _AgentCatalogPageBuilder(_cursorCodec)(validated, rows);
   }
