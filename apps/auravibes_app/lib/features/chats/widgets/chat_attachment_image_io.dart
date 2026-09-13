@@ -13,16 +13,20 @@ class const ChatAttachmentImageIo({
 
     return Image.file(
       .new(localPath),
-      errorBuilder: (_, _, _) => SizedBox(
-        width: width,
-        height: height,
-        child: const Icon(Icons.broken_image_outlined),
-      ),
+      errorBuilder: _buildErrorPlaceholder,
       width: width,
       height: height,
       fit: .cover,
       cacheWidth: (pixelRatio * width).round(),
       cacheHeight: (pixelRatio * height).round(),
+    );
+  }
+
+  Widget _buildErrorPlaceholder(BuildContext _, Object _, StackTrace? _) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: const Icon(Icons.broken_image_outlined),
     );
   }
 }
