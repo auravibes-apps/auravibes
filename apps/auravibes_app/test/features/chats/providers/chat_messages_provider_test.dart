@@ -253,6 +253,62 @@ void main() {
         );
       },
     );
+
+    test(
+      'conversationCanCompactProvider follows safe compaction range',
+      () async {
+        final subscription = container.listen(
+          conversationCanCompactProvider('workspace-1', 'conversation-1'),
+          (_, _) {
+            final _ = Object();
+          },
+          fireImmediately: true,
+        );
+        addTearDown(subscription.close);
+
+        repository.emit([
+          _message(id: 'message-1', content: 'hello', isUser: true),
+          _message(id: 'message-2', content: 'hi', isUser: false),
+          _message(id: 'message-3', content: 'continue', isUser: true),
+          _message(id: 'message-4', content: 'done', isUser: false),
+        ]);
+        await Future<void>.delayed(.zero);
+
+        expect(
+          container.read(
+            conversationCanCompactProvider('workspace-1', 'conversation-1'),
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'conversationCanCompactProvider is false without safe range',
+      () async {
+        final subscription = container.listen(
+          conversationCanCompactProvider('workspace-1', 'conversation-1'),
+          (_, _) {
+            final _ = Object();
+          },
+          fireImmediately: true,
+        );
+        addTearDown(subscription.close);
+
+        repository.emit([
+          _message(id: 'message-1', content: 'hello', isUser: true),
+          _message(id: 'message-2', content: 'hi', isUser: false),
+        ]);
+        await Future<void>.delayed(.zero);
+
+        expect(
+          container.read(
+            conversationCanCompactProvider('workspace-1', 'conversation-1'),
+          ),
+          isFalse,
+        );
+      },
+    );
   });
 
   group('modelContextLimitProvider', () {

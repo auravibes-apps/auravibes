@@ -55,6 +55,8 @@ abstract class LocaleKeys {
       'models_screens.no_providers_configured';
   static const models_screens_no_models_available =
       'models_screens.no_models_available';
+  static const models_screens_model_unavailable =
+      'models_screens.model_unavailable';
   static const models_screens_title = 'models_screens.title';
   static const models_screens_list_error = 'models_screens.list_error';
   static const models_screens_list_empty_title =
@@ -371,6 +373,14 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.a2ui_image_error';
   static const chats_screens_chat_conversation_attachment_unsupported =
       'chats_screens.chat_conversation.attachment_unsupported';
+  static const chats_screens_chat_conversation_model_required =
+      'chats_screens.chat_conversation.model_required';
+  static const chats_screens_chat_conversation_model_missing =
+      'chats_screens.chat_conversation.model_missing';
+  static const chats_screens_chat_conversation_model_loading =
+      'chats_screens.chat_conversation.model_loading';
+  static const chats_screens_chat_conversation_model_unavailable =
+      'chats_screens.chat_conversation.model_unavailable';
   static const chats_screens_chat_conversation_switch_model_unsupported_title =
       'chats_screens.chat_conversation.switch_model_unsupported_title';
   static const chats_screens_chat_conversation_switch_model_unsupported_body =
@@ -960,6 +970,8 @@ abstract class LocaleKeys {
       'compaction.errors.compaction_unsafe';
   static const compaction_errors_compaction_unavailable =
       'compaction.errors.compaction_unavailable';
+  static const compaction_errors_model_missing =
+      'compaction.errors.model_missing';
   static const compaction_errors_context_overflow_retry_failed =
       'compaction.errors.context_overflow_retry_failed';
   static const compaction_errors_auto_blocked =

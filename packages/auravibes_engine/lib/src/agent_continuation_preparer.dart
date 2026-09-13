@@ -10,6 +10,11 @@ class const PreparedContinueAgentInput<TModel, TChatMessage, TTool>({
   required final int messagesCount,
 });
 
+class const SelectedModelNotFoundException() implements Exception {
+  @override
+  String toString() => 'Selected model not found';
+}
+
 abstract interface class AgentContinuationProvider<
   TModel,
   TMessage,
@@ -72,7 +77,7 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
 
     final foundModel = await provider.loadSelectedModel(modelId);
     if (foundModel == null) {
-      throw Exception('Selected model not found');
+      throw const SelectedModelNotFoundException();
     }
     final projectedModel = await provider.projectSelectedModel(foundModel);
     final messages = await provider.selectPromptMessages(conversationId);

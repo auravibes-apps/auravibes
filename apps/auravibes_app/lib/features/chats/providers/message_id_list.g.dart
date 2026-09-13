@@ -263,6 +263,90 @@ final class ChatMessagesFamily extends $Family
   String toString() => r'chatMessagesProvider';
 }
 
+@ProviderFor(conversationCanCompact)
+final conversationCanCompactProvider = ConversationCanCompactFamily._();
+
+final class ConversationCanCompactProvider
+    extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  ConversationCanCompactProvider._({
+    required ConversationCanCompactFamily super.from,
+    required (String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'conversationCanCompactProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationCanCompactHash();
+
+  @override
+  String toString() {
+    return r'conversationCanCompactProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    final argument = this.argument as (String, String);
+    return conversationCanCompact(ref, argument.$1, argument.$2);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ConversationCanCompactProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$conversationCanCompactHash() =>
+    r'5213b273f7e487d0f27ce08f52ce17f4639e5a28';
+
+final class ConversationCanCompactFamily extends $Family
+    with $FunctionalFamilyOverride<bool, (String, String)> {
+  ConversationCanCompactFamily._()
+    : super(
+        retry: null,
+        name: r'conversationCanCompactProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  ConversationCanCompactProvider call(
+    String workspaceId,
+    String conversationId,
+  ) => ConversationCanCompactProvider._(
+    argument: (workspaceId, conversationId),
+    from: this,
+  );
+
+  @override
+  String toString() => r'conversationCanCompactProvider';
+}
+
 @ProviderFor(chatMessageIds)
 final chatMessageIdsProvider = ChatMessageIdsFamily._();
 

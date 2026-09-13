@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
@@ -15,6 +16,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
@@ -434,6 +436,25 @@ Stream<List<MessageEntity>> chatMessages(
   chatMessagesByConversationProvider(workspaceId, conversationId),
   (messages) => messages,
 );
+
+@riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
+bool conversationCanCompact(
+  Ref ref,
+  String workspaceId,
+  String conversationId,
+) {
+  final messages = ref
+      .watch(chatMessagesProvider(workspaceId, conversationId))
+      .value;
+  if (messages == null) return false;
+
+  try {
+    return ref.watch(selectCompactionRangeUsecaseProvider)(messages) != null;
+  } on CompactionUnsafeException {
+    return false;
+  }
+}
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)

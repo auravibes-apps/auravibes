@@ -250,6 +250,11 @@ class const _NewChatInput({required final Widget child})
           modelCompactControl: _NewChatModelCompactControl(data: data),
           agentCompactControl: _NewChatAgentCompactControl(data: data),
           modalitiesInput: modalitiesInput,
+          disabledHint: data.state.modelId == null
+              ? const TextLocale(
+                  LocaleKeys.chats_screens_new_chat_no_model_selected,
+                )
+              : null,
           disabled: data.state.isLoading || data.state.modelId == null,
         ),
       );

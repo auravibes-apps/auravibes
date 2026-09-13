@@ -70,12 +70,15 @@ class const ChatInputWidget({
   final List<String> modalitiesInput = const [],
   final VoidCallback? onSkillsPress,
   final VoidCallback? onContinueAgent,
+  final String? continueDisabledHint,
   final Widget? disabledHint,
+  final String? compactDisabledHint,
   final bool disabled = false,
   final bool isBusy = false,
   final bool? showStopButton,
   final VoidCallback? onStop,
   final VoidCallback? onCompact,
+  final bool canCompact = true,
   final bool isCompacting = false,
   super.key,
 }) extends HookConsumerWidget {
@@ -1011,10 +1014,9 @@ List<AuraPopupMenuItem> _conversationMenuItems(_ChatInputState state) => [
   _toolsMenuItem(state),
   if (state.input.onSkillsPress case final onSkillsPress?)
     _skillsMenuItem(onSkillsPress),
-  if (state.input.onContinueAgent case final onContinueAgent?)
-    _continueMenuItem(onContinueAgent),
+  ?_continueMenuItem(state),
   if (state.input.onCompact case final onCompact?)
-    if (_canCompact(state)) _compactMenuItem(onCompact),
+    _compactMenuItem(state, onCompact),
 ];
 
 AuraPopupMenuItem _toolsMenuItem(_ChatInputState state) => AuraPopupMenuItem(
@@ -1029,22 +1031,50 @@ AuraPopupMenuItem _skillsMenuItem(VoidCallback onTap) => AuraPopupMenuItem(
   leading: const AuraIcon(Icons.psychology_alt_outlined),
 );
 
-AuraPopupMenuItem _continueMenuItem(VoidCallback onTap) => AuraPopupMenuItem(
-  title: const TextLocale(
-    LocaleKeys.chats_screens_chat_conversation_continue_agent,
-  ),
-  onTap: onTap,
-  leading: const AuraIcon(Icons.play_circle_outline),
-);
+AuraPopupMenuItem? _continueMenuItem(_ChatInputState state) {
+  final onTap = state.input.onContinueAgent;
+  final disabledHint = state.input.continueDisabledHint;
+  if (onTap == null && disabledHint == null) return null;
 
-AuraPopupMenuItem _compactMenuItem(VoidCallback onTap) => AuraPopupMenuItem(
-  title: const TextLocale(LocaleKeys.compaction_manual_button_tooltip),
-  onTap: onTap,
-  leading: const AuraIcon(Icons.compress_outlined),
-);
+  return AuraPopupMenuItem(
+    title: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_continue_agent,
+    ),
+    onTap: onTap,
+    leading: const AuraIcon(Icons.play_circle_outline),
+    trailing: _disabledMenuItemHint(onTap != null, disabledHint),
+  );
+}
+
+AuraPopupMenuItem _compactMenuItem(_ChatInputState state, VoidCallback onTap) {
+  final enabled = _canCompact(state);
+  final disabledHint = state.input.compactDisabledHint;
+
+  return AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.compaction_manual_button_tooltip),
+    onTap: enabled ? onTap : null,
+    leading: const AuraIcon(Icons.compress_outlined),
+    trailing: _disabledMenuItemHint(enabled, disabledHint),
+  );
+}
+
+Widget? _disabledMenuItemHint(bool enabled, String? localeKey) =>
+    enabled || localeKey == null
+    ? null
+    : _DisabledMenuItemHint(localeKey: localeKey);
+
+class const _DisabledMenuItemHint({required final String localeKey})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTooltip(
+    message: localeKey.tr(),
+    child: const AuraIcon(Icons.info_outline),
+  );
+}
 
 bool _canCompact(_ChatInputState state) =>
     state.input.onCompact != null &&
+    state.input.canCompact &&
     !state.input.disabled &&
     !state.input.isBusy &&
     !state.input.isCompacting;

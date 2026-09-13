@@ -194,6 +194,7 @@ void main() {
       expect(find.byType(NewChatScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(ChatInputWidget), findsOneWidget);
+      expect(find.text('Select a model to enable messaging.'), findsOneWidget);
       expect(
         find.byKey(const Key('new_chat_workspace_selector')),
         findsOneWidget,

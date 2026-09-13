@@ -14,6 +14,7 @@ class const CompactWorkspaceModelSelector({
   required final ValueChanged<String?> onChanged,
   final bool compactMode = false,
   final bool sheetMode = false,
+  final bool modelUnavailable = false,
   super.key,
 }) extends HookConsumerWidget {
   static const _selectorWidth = 220.0;
@@ -27,6 +28,7 @@ class const CompactWorkspaceModelSelector({
       onChanged: onChanged,
       compactMode: compactMode,
       sheetMode: sheetMode,
+      modelUnavailable: modelUnavailable,
     ),
   );
 }
@@ -58,6 +60,7 @@ typedef _SelectorConfig = ({
   ValueChanged<String?> onChanged,
   bool compactMode,
   bool sheetMode,
+  bool modelUnavailable,
 });
 
 class const _ModelSelectorLoading({required final bool sheetMode})
@@ -100,6 +103,7 @@ class const _CompactModelSelectorBody({
       return _ModelCompactChip(
         groupedModels: groupedModels,
         workspaceModelSelectionId: config.selectedId,
+        modelUnavailable: config.modelUnavailable,
       );
     }
 
@@ -461,9 +465,22 @@ class const _ModelCompactChip({
   required final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
   groupedModels,
   required final String? workspaceModelSelectionId,
+  required final bool modelUnavailable,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    if (modelUnavailable) {
+      return const _ModelChip(
+        label: TextLocale(
+          LocaleKeys.models_screens_model_unavailable,
+          softWrap: false,
+          overflow: .ellipsis,
+          maxLines: 1,
+        ),
+        trailing: AuraIcon(Icons.warning_amber_rounded, tint: .warning),
+      );
+    }
+
     if (groupedModels.isEmpty) {
       return const _ModelChip(
         label: TextLocale(
@@ -507,13 +524,15 @@ WorkspaceModelSelectionWithConnectionEntity? _selectedModel(
     )
     .firstOrNull;
 
-class const _ModelChip({required final Widget label}) extends StatelessWidget {
+class const _ModelChip({required final Widget label, final Widget? trailing})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DecoratedModelChip(
       label: label,
       borderColor: context.auraColors.outline,
       radius: context.auraTheme.fromBorderRadius(.xl),
+      trailing: trailing,
     );
   }
 }
@@ -523,6 +542,7 @@ class _DecoratedModelChip extends Container {
     required Widget label,
     required Color borderColor,
     required double radius,
+    Widget? trailing,
   }) : super(
          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
          decoration: BoxDecoration(
@@ -535,6 +555,10 @@ class _DecoratedModelChip extends Container {
              const AuraIcon(Icons.memory_outlined, size: .small),
              const AuraSizedBox(width: .xs),
              Flexible(child: label),
+             if (trailing case final value?) ...[
+               const AuraSizedBox(width: .xs),
+               value,
+             ],
            ],
          ),
        );
