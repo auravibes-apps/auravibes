@@ -175,6 +175,67 @@ void main() {
     expect(runtime.copyableTextFor('assistant-1'), 'Overview\nDetails\nSecond');
   });
 
+  test('projects individually bound chart series fields', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'main',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Chart',
+                'labels': {'path': '/chart/labels'},
+                'series': {'path': '/chart/series'},
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+    runtime.controller.contextFor('assistant-1:main').dataModel.update(
+      DataPath('/chart'),
+      {
+        'labels': ['January'],
+        'series': [
+          {
+            'label': {'path': '/chart/seriesLabel'},
+            'values': [
+              {'path': '/chart/seriesValue'},
+            ],
+          },
+        ],
+        'seriesLabel': 'Revenue',
+        'seriesValue': 42,
+      },
+    );
+
+    final text = runtime.copyableTextFor('assistant-1');
+    expect(text, contains('Revenue'));
+    expect(text, contains('42'));
+  });
+
   test('projects current form values into copyable text', () {
     final runtime = ChatA2uiRuntime(
       conversationId: 'conversation-1',

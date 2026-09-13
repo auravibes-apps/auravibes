@@ -468,10 +468,18 @@ class ChatA2uiRuntime extends ChangeNotifier {
     }
     final series = resolve(component['series']);
     if (series is! List) return;
-    for (final entry in series) {
+    for (final value in series) {
+      final entry = resolve(value);
       if (entry is! Map) continue;
       _appendCopyableValue(lines, resolve(entry['label']));
-      _appendCopyableValues(lines, resolve(entry['values']));
+      final values = resolve(entry['values']);
+      if (values is List) {
+        for (final value in values) {
+          _appendCopyableValue(lines, resolve(value));
+        }
+      } else {
+        _appendCopyableValue(lines, values);
+      }
     }
   }
 
