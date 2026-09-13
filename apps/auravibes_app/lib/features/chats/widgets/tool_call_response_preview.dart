@@ -3,7 +3,7 @@ import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.da
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A preview widget for tool call responses that shows a collapsed view.
 ///

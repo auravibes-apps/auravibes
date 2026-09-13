@@ -5,8 +5,8 @@ import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_warning.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ChatA2uiSurfaceHost extends StatelessWidget {
   const new message({

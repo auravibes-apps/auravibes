@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/src/atoms/atoms.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A customizable card container component following the Aura design system.
 ///

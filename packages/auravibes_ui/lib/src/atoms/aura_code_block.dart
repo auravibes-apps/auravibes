@@ -1,6 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A selectable, scrollable block of display-only code.
 class AuraCodeBlock extends StatelessWidget {

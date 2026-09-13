@@ -29,9 +29,9 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillToolDefinition;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:textf/textf.dart';
 
 const _skillDescriptionMaxCharacters = 1024;

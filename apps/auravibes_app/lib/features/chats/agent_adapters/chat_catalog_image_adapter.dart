@@ -6,8 +6,8 @@ import 'package:auravibes_app/services/url/safe_image_loader.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
+import 'package:material_ui/material_ui.dart';
 
 const _compactImageStatusWidth = 96.0;
 const _compactImageStatusHeight = 48.0;

@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:widgetbook/widgetbook.dart';
 
 const _auraSampleImageBytes = <int>[
@@ -100,11 +99,8 @@ abstract final class StoryHelpers {
     platform: .iOS,
   );
 
-  static const auraLocalizationDelegates = <LocalizationsDelegate<dynamic>>[
-    GlobalCupertinoLocalizations.delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> auraLocalizationDelegates =
+      GlobalMaterialLocalizations.delegates;
 
   static final _auraIconLabels = <IconData, String>{
     Icons.add: 'Add',

@@ -2,8 +2,8 @@ import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
+import 'package:material_ui/material_ui.dart';
 
 const _messageIconSize = 20.0;
 

@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:widgetbook_workspace/aura_ui/auravibes_choice_picker.stories.dart';
 
 void main() {

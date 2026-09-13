@@ -23,8 +23,8 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../helpers/test_app.dart';
 

@@ -15,10 +15,10 @@ import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 class _FakeGoRouter implements GoRouter {
   @override

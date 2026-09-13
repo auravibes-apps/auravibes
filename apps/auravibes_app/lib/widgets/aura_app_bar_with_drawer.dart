@@ -1,7 +1,7 @@
 // Required: UI callbacks stay local to their widgets.
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class const AuraAppBarWithDrawer({
   required final Widget title,

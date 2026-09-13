@@ -5,8 +5,8 @@ import 'package:auravibes_app/features/tools/widgets/tools_empty_state.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Widget that displays workspace tools organized by groups.
 ///

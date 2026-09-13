@@ -1,7 +1,7 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class const ChatAttachmentDraftPreview({
   required final MessageAttachmentToCreate attachment,

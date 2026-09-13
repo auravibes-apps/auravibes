@@ -5,9 +5,9 @@ import 'package:auravibes_app/features/workspaces/usecases/resolve_workspace_sel
 import 'package:auravibes_app/providers/workspace_route_resolver.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/change_notifier_with_code_gen_extension.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

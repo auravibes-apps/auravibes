@@ -4,9 +4,9 @@ import 'package:auravibes_app/features/chats/providers/context_usage_level.dart'
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   Widget buildSubject({required ContextUsageData data}) {

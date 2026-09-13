@@ -14,9 +14,12 @@ const _meta = Meta(ChoicePickerDemo.new);
 abstract final class _StorybookDefinitions {
   static final $ChoicePicker = _Story(
     name: 'Choice Picker',
-    setup: (context, child, args) => SizedBox(
-      width: 360,
-      height: 260,
+    setup: (context, child, args) => ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: 360,
+        maxWidth: 360,
+        minHeight: 260,
+      ),
       child: Padding(padding: const EdgeInsets.all(16), child: child),
     ),
     args: _Args(

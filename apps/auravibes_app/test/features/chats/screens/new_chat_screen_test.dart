@@ -8,9 +8,9 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../helpers/test_app.dart';
 
@@ -33,9 +33,10 @@ Future<void> _pumpNewChatWithinPausedBranch(
         workspaceId: 'test-ws',
       ),
     );
+    await Future<void>.delayed(.zero);
   });
   await tester.pump();
-  await tester.pump();
+  final _ = await tester.pumpAndSettle();
 }
 
 WorkspaceEntity _workspace(String id) => WorkspaceEntity(
@@ -188,9 +189,9 @@ void main() {
             workspaceId: 'test-ws',
           ),
         );
+        await Future<void>.delayed(.zero);
       });
-      await tester.pump();
-      await tester.pump();
+      final _ = await tester.pumpAndSettle();
       expect(find.byType(NewChatScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(ChatInputWidget), findsOneWidget);
@@ -218,11 +219,17 @@ void main() {
             workspaceId: 'test-ws',
           ),
         );
+        await Future<void>.delayed(.zero);
       });
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(
+        tester
+            .widget<AuraLoadingOverlay>(find.byType(AuraLoadingOverlay))
+            .isLoading,
+        isTrue,
+      );
     });
   });
 }

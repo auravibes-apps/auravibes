@@ -4,9 +4,9 @@ import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraPopupMenu', () {

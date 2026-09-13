@@ -1,8 +1,8 @@
 import 'package:auravibes_ui/src/organisms/aura_button_group.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('merges labeled item semantics and keeps a 48px hit target', (

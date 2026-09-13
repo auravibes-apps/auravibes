@@ -7,10 +7,10 @@ import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart
 import 'package:auravibes_engine/auravibes_engine.dart' as engine;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   test('every advertised icon has a concrete mapping and aliases', () {

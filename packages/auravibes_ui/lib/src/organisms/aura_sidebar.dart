@@ -4,7 +4,7 @@
 
 import 'package:auravibes_ui/src/atoms/atoms.dart';
 import 'package:auravibes_ui/src/tokens/tokens.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A generic sidebar organism component that provides navigation functionality.
 ///

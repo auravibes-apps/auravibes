@@ -3,8 +3,8 @@ import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 WorkspaceToolEntity _entity({
   String id = 'tool-1',

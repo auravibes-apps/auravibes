@@ -1,9 +1,9 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AddModelProviderWidget', () {

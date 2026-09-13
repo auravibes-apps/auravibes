@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 abstract final class MarkdownEditorLauncher {
   static Future<String?> show(

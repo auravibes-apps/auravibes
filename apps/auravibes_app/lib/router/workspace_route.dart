@@ -29,9 +29,9 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 part 'workspace_route.g.dart';
 part 'intro_route.dart';

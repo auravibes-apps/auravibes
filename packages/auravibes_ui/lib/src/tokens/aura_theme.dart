@@ -3,7 +3,7 @@
 
 import 'package:auravibes_ui/src/colors/value_color.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 typedef _SpacingCoreLerpValues = ({
   double none,
