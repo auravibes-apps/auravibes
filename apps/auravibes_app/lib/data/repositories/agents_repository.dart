@@ -61,37 +61,8 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   }
 
   @override
-  Future<AgentEntity> duplicateAgent(String agentId) {
-    return _database.transaction(() async {
-      final source = await getAgentById(agentId);
-      if (source == null) throw StateError('Agent not found: $agentId');
-      final agents = await getAgentsByWorkspace(source.workspaceId);
-      final created = await _database.agentsDao.createAgent(
-        _agentToCreateCompanion(
-          source.workspaceId,
-          .new(
-            name: _copyName(source.name, agents),
-            description: source.description,
-            content: source.content,
-            isEnabled: source.isEnabled,
-            visibility: source.visibility,
-            skills: source.skills,
-          ),
-        ),
-        _mapSkillRefsToCompanions(source.skills),
-      );
-      final overrides = await _database.agentToolsDao.getAgentTools(agentId);
-      for (final override in overrides) {
-        final _ = await _database.agentToolsDao.setAgentToolPermission(
-          created.id,
-          override.toolId,
-          permission: override.permissions,
-        );
-      }
-
-      return await _mapToAgent(created);
-    });
-  }
+  Future<AgentEntity> duplicateAgent(String agentId) =>
+      _database.transaction(() => _duplicateAgent(agentId));
 
   @override
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async {
@@ -109,6 +80,54 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   @override
   Future<bool> deleteAgent(String agentId) =>
       _database.agentsDao.deleteAgent(agentId);
+}
+
+extension AgentsRepositoryDuplication on AgentsRepository {
+  Future<AgentEntity> _duplicateAgent(String agentId) async {
+    final source = await _sourceAgent(agentId);
+    final created = await _createAgentCopy(source);
+    await _copyToolOverrides(agentId, created.id);
+
+    return await _mapToAgent(created);
+  }
+
+  Future<AgentEntity> _sourceAgent(String agentId) async {
+    final source = await getAgentById(agentId);
+    if (source == null) throw StateError('Agent not found: $agentId');
+
+    return source;
+  }
+
+  Future<AgentsTable> _createAgentCopy(AgentEntity source) async {
+    final agents = await getAgentsByWorkspace(source.workspaceId);
+    final copy = _agentCopy(source, agents);
+
+    return await _database.agentsDao.createAgent(
+      _agentToCreateCompanion(source.workspaceId, copy),
+      _mapSkillRefsToCompanions(source.skills),
+    );
+  }
+
+  AgentToCreate _agentCopy(AgentEntity source, Iterable<AgentEntity> agents) =>
+      AgentToCreate(
+        name: _copyName(source.name, agents),
+        description: source.description,
+        content: source.content,
+        isEnabled: source.isEnabled,
+        visibility: source.visibility,
+        skills: source.skills,
+      );
+
+  Future<void> _copyToolOverrides(String sourceId, String targetId) async {
+    final overrides = await _database.agentToolsDao.getAgentTools(sourceId);
+    for (final override in overrides) {
+      final _ = await _database.agentToolsDao.setAgentToolPermission(
+        targetId,
+        override.toolId,
+        permission: override.permissions,
+      );
+    }
+  }
 }
 
 typedef _AgentListCursor = ({String name, String id});

@@ -179,18 +179,10 @@ class const _AgentsList({
     String agentId,
   ) async {
     try {
-      final _ = await ref
-          .read(duplicateAgentUsecaseProvider(workspaceId))
-          .call(agentId);
-      final _ = ref.invalidate(agentsProvider(workspaceId));
-      await ref.read(agentListProvider(workspaceId).notifier).refresh();
+      await _duplicateAndRefresh(ref, workspaceId, agentId);
     } on Object {
       if (!context.mounted) return;
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: const TextLocale(LocaleKeys.agents_duplicate_error),
-        variant: .error,
-      );
+      _showDuplicateError(context);
     }
   }
 
@@ -228,6 +220,26 @@ class const _AgentsList({
     final _ = ref.invalidate(agentsProvider(workspaceId));
     await ref.read(agentListProvider(workspaceId).notifier).refresh();
   }
+}
+
+Future<void> _duplicateAndRefresh(
+  WidgetRef ref,
+  String workspaceId,
+  String agentId,
+) async {
+  final _ = await ref
+      .read(duplicateAgentUsecaseProvider(workspaceId))
+      .call(agentId);
+  final _ = ref.invalidate(agentsProvider(workspaceId));
+  await ref.read(agentListProvider(workspaceId).notifier).refresh();
+}
+
+void _showDuplicateError(BuildContext context) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(LocaleKeys.agents_duplicate_error),
+    variant: .error,
+  );
 }
 
 class const _AgentsSearchList({
