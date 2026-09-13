@@ -10,10 +10,18 @@ import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
 
+typedef _OperationCommitMetadata = ({
+  String userId,
+  String endpoint,
+  String requestId,
+  String hash,
+});
+
 class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
   static const _maxPageSize = 100;
   static const _maxOperations = 50;
   static const _endpointPatch = 'workspaceState.patch';
+  static const _endpointDuplicateAgent = 'workspaceState.duplicateAgent';
   static const _endpointSecret = 'workspaceSecret.put';
   static const _endpointCredentialMutation = 'workspaceState.mutateCredential';
   Future<ReadWorkspaceStateResponse> read(
@@ -143,56 +151,144 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         transaction,
       );
       await guard?.call(transaction);
-      final now = DateTime.now().toUtc();
-      final changed = <WorkspaceResource>[];
-      for (final operation in request.operations) {
-        changed.add(
-          await _applyOperation(
-            session,
-            operation,
-            request.workspaceId,
-            now,
-            transaction,
-          ),
-        );
-      }
-      var sequence = workspace.sequence;
-      for (final resource in changed) {
-        sequence++;
-        final event = WorkspaceResourceValidation.eventFor(resource);
-        await _recordEvent(
-          session,
-          workspaceId: request.workspaceId,
-          sequence: sequence,
-          userId: userId,
-          kind: event.kind,
-          resourceKind: event.resourceKind,
-          resourceId: event.resourceId,
-          transaction: transaction,
-        );
-      }
-      await CloudWorkspace.db.updateRow(
+      return _commitOperations(
         session,
-        workspace.copyWith(sequence: sequence, updatedAt: now),
-        transaction: transaction,
-      );
-      final response = PatchWorkspaceStateResponse(
-        resources: changed,
-        sequence: sequence,
-      );
-      await _saveReceipt(
-        session,
+        workspace: workspace,
         workspaceId: request.workspaceId,
-        userId: userId,
-        endpoint: _endpointPatch,
-        requestId: request.requestId,
-        hash: hash,
-        responseJson: jsonEncode(response.toJson()),
-        now: now,
+        metadata: (
+          userId: userId,
+          endpoint: _endpointPatch,
+          requestId: request.requestId,
+          hash: hash,
+        ),
+        operations: request.operations,
         transaction: transaction,
       );
-      return response;
     });
+  }
+
+  Future<PatchWorkspaceStateResponse> duplicateAgent(
+    Session session, {
+    required String userId,
+    required DuplicateWorkspaceAgentRequest request,
+  }) async {
+    if (request.requestId.isEmpty || request.sourceAgentId.isEmpty) {
+      _validationFailed();
+    }
+    final requestJson = jsonEncode(request.toJson());
+    final requestHash = (await Sha256().hash(utf8.encode(requestJson))).bytes;
+    final hash = base64UrlEncode(requestHash);
+
+    return session.db.transaction((transaction) async {
+      final member = await _authorize(
+        session,
+        request.workspaceId,
+        userId,
+        transaction: transaction,
+      );
+      if (member.role == WorkspaceRoles.member) {
+        throw CloudWorkspaceException(
+          code: CloudWorkspaceErrorCode.permissionDenied,
+        );
+      }
+      final workspace = await _requireLockedWorkspace(
+        session,
+        request.workspaceId,
+        transaction,
+      );
+      final receipt = await _findReceipt(
+        session,
+        request.workspaceId,
+        userId,
+        _endpointDuplicateAgent,
+        request.requestId,
+        transaction,
+      );
+      if (receipt != null) {
+        if (receipt.requestHash != hash) _idempotencyConflict();
+        return PatchWorkspaceStateResponse.fromJson(
+          jsonDecode(receipt.responseJson) as Map<String, dynamic>,
+        );
+      }
+
+      final operations = await _duplicateAgentOperations(
+        session,
+        request,
+        transaction,
+      );
+      return _commitOperations(
+        session,
+        workspace: workspace,
+        workspaceId: request.workspaceId,
+        metadata: (
+          userId: userId,
+          endpoint: _endpointDuplicateAgent,
+          requestId: request.requestId,
+          hash: hash,
+        ),
+        operations: operations,
+        transaction: transaction,
+      );
+    });
+  }
+
+  Future<PatchWorkspaceStateResponse> _commitOperations(
+    Session session, {
+    required CloudWorkspace workspace,
+    required int workspaceId,
+    required _OperationCommitMetadata metadata,
+    required Iterable<WorkspacePatchOperation> operations,
+    required Transaction transaction,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final changed = <WorkspaceResource>[];
+    for (final operation in operations) {
+      changed.add(
+        await _applyOperation(
+          session,
+          operation,
+          workspaceId,
+          now,
+          transaction,
+        ),
+      );
+    }
+    var sequence = workspace.sequence;
+    for (final resource in changed) {
+      sequence++;
+      final event = WorkspaceResourceValidation.eventFor(resource);
+      await _recordEvent(
+        session,
+        workspaceId: workspaceId,
+        sequence: sequence,
+        userId: metadata.userId,
+        kind: event.kind,
+        resourceKind: event.resourceKind,
+        resourceId: event.resourceId,
+        transaction: transaction,
+      );
+    }
+    await CloudWorkspace.db.updateRow(
+      session,
+      workspace.copyWith(sequence: sequence, updatedAt: now),
+      transaction: transaction,
+    );
+    final response = PatchWorkspaceStateResponse(
+      resources: changed,
+      sequence: sequence,
+    );
+    await _saveReceipt(
+      session,
+      workspaceId: workspaceId,
+      userId: metadata.userId,
+      endpoint: metadata.endpoint,
+      requestId: metadata.requestId,
+      hash: metadata.hash,
+      responseJson: jsonEncode(response.toJson()),
+      now: now,
+      transaction: transaction,
+    );
+    return response;
   }
 
   Future<PutWorkspaceSecretResponse> putSecret(
@@ -676,6 +772,126 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
     }
   }
+
+  Future<List<WorkspacePatchOperation>> _duplicateAgentOperations(
+    Session session,
+    DuplicateWorkspaceAgentRequest request,
+    Transaction transaction,
+  ) async {
+    final source = await _repository.findResource(
+      session,
+      workspaceId: request.workspaceId,
+      kind: WorkspaceResourceKind.agent,
+      resourceId: request.sourceAgentId,
+      transaction: transaction,
+    );
+    if (source == null || source.deletedAt != null) {
+      throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
+    }
+    final agents = await _repository.findActiveResources(
+      session,
+      workspaceId: request.workspaceId,
+      kind: WorkspaceResourceKind.agent,
+      transaction: transaction,
+    );
+    final associations = await _repository.findActiveResources(
+      session,
+      workspaceId: request.workspaceId,
+      kind: WorkspaceResourceKind.agentAssociation,
+      transaction: transaction,
+    );
+    final sourceData = _decodeResource(source);
+    final duplicateId = const Uuid().v7();
+    final duplicateData = Map<String, Object?>.from(sourceData)
+      ..['id'] = duplicateId
+      ..['name'] = _copyAgentName(sourceData['name'] as String, agents);
+
+    return [
+      _createResourceOperation(
+        kind: WorkspaceResourceKind.agent,
+        id: duplicateId,
+        data: duplicateData,
+      ),
+      ..._duplicateAgentAssociations(
+        associations,
+        sourceAgentId: request.sourceAgentId,
+        duplicateAgentId: duplicateId,
+      ),
+    ];
+  }
+
+  Map<String, Object?> _decodeResource(WorkspaceResource resource) {
+    try {
+      return WorkspaceResourceValidation.decode(
+        kind: resource.resourceKind,
+        resourceId: resource.resourceId,
+        workspaceId: resource.workspaceId,
+        data: resource.data,
+      );
+    } on FormatException {
+      _validationFailed();
+    }
+  }
+
+  String _copyAgentName(
+    String originalName,
+    Iterable<WorkspaceResource> agents,
+  ) {
+    final names = agents.map((agent) => _decodeResource(agent)['name']).toSet();
+    for (var suffix = 1; ; suffix++) {
+      final name = suffix == 1
+          ? '$originalName Copy'
+          : '$originalName Copy $suffix';
+      if (!names.contains(name)) return name;
+    }
+  }
+
+  Iterable<WorkspacePatchOperation> _duplicateAgentAssociations(
+    Iterable<WorkspaceResource> associations, {
+    required String sourceAgentId,
+    required String duplicateAgentId,
+  }) sync* {
+    for (final association in associations) {
+      final Object? raw;
+      try {
+        raw = jsonDecode(association.data);
+      } on FormatException {
+        _validationFailed();
+      }
+      if (raw is! Map<String, dynamic> || raw['agentId'] != sourceAgentId) {
+        continue;
+      }
+      final data = Map<String, Object?>.from(_decodeResource(association));
+      try {
+        WorkspaceResourceValidation.references(
+          WorkspaceResourceKind.agentAssociation,
+          data,
+        );
+      } on FormatException {
+        _validationFailed();
+      }
+      data['agentId'] = duplicateAgentId;
+      final id = const Uuid().v7();
+      if (data.containsKey('id')) data['id'] = id;
+      yield _createResourceOperation(
+        kind: WorkspaceResourceKind.agentAssociation,
+        id: id,
+        data: data,
+      );
+    }
+  }
+
+  WorkspacePatchOperation _createResourceOperation({
+    required WorkspaceResourceKind kind,
+    required String id,
+    required Map<String, Object?> data,
+  }) => WorkspacePatchOperation(
+    operation: WorkspacePatchOperationKind.create,
+    resourceKind: kind,
+    resourceId: id,
+    data: jsonEncode(data),
+    fieldMask: const [],
+  );
 
   Future<WorkspaceResource> _applyOperation(
     Session session,

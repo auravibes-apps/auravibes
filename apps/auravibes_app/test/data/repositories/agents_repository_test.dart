@@ -10,6 +10,7 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart';
+import 'package:auravibes_app/features/agents/usecases/duplicate_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/list_agent_tool_overrides_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/resolve_agent_skills_usecase.dart';
@@ -21,6 +22,86 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'lists filtered cursor pages with literal search and skill counts',
+    () async {
+      final fixture = await _AgentsRepositoryFixture.create();
+      addTearDown(fixture.close);
+      final skill = await fixture.createSkill('Catalog Skill');
+      final alpha = await fixture.agentsRepository.createAgent(
+        fixture.workspaceId,
+        .new(
+          name: 'Alpha',
+          description: r'Percent % underscore _ slash \\ design',
+          content: 'Prompt',
+          skills: [AgentSkillRef.user(skill.id)],
+        ),
+      );
+      final beta = await fixture.agentsRepository.createAgent(
+        fixture.workspaceId,
+        const AgentToCreate(
+          name: 'beta',
+          description: 'Operations',
+          content: 'Prompt',
+          isEnabled: false,
+          visibility: .subAgentList,
+        ),
+      );
+      final gamma = await fixture.agentsRepository.createAgent(
+        fixture.workspaceId,
+        const AgentToCreate(
+          name: 'Gamma',
+          description: 'Research',
+          content: 'Prompt',
+          visibility: .chatSelector,
+        ),
+      );
+
+      for (final search in ['DESIGN', '%', '_', r'\']) {
+        final page = await fixture.agentsRepository.listAgents(
+          .new(workspaceId: fixture.workspaceId, search: search),
+        );
+        expect(page.agents.single.id, alpha.id);
+        expect(page.agents.single.skillCount, 1);
+      }
+
+      final subAgents = await fixture.agentsRepository.listAgents(
+        .new(workspaceId: fixture.workspaceId, type: .subAgentList),
+      );
+      expect(subAgents.agents.map((agent) => agent.id), [alpha.id, beta.id]);
+      final disabled = await fixture.agentsRepository.listAgents(
+        .new(workspaceId: fixture.workspaceId, status: .disabled),
+      );
+      expect(disabled.agents.single.id, beta.id);
+
+      final first = await fixture.agentsRepository.listAgents(
+        .new(workspaceId: fixture.workspaceId, limit: 2),
+      );
+      final second = await fixture.agentsRepository.listAgents(
+        .new(
+          workspaceId: fixture.workspaceId,
+          limit: 2,
+          cursor: first.nextCursor,
+        ),
+      );
+      expect(first.agents.map((agent) => agent.id), [alpha.id, beta.id]);
+      expect(first.nextCursor, isNotNull);
+      expect(second.agents.map((agent) => agent.id), [gamma.id]);
+      expect(second.nextCursor, isNull);
+
+      await expectLater(
+        fixture.agentsRepository.listAgents(
+          .new(
+            workspaceId: fixture.workspaceId,
+            search: 'changed',
+            cursor: first.nextCursor,
+          ),
+        ),
+        throwsA(isA<AgentValidationException>()),
+      );
+    },
+  );
+
   test('creates, updates, watches, and deletes agents with skills', () async {
     final fixture = await _AgentsRepositoryFixture.create();
     addTearDown(fixture.close);
@@ -167,6 +248,147 @@ void main() {
     );
 
     expect(await fixture.agentToolsRepository.getAgentTools(agent.id), isEmpty);
+  });
+
+  test(
+    'duplicates an agent with copied fields and the next available name',
+    () async {
+      final fixture = await _AgentsRepositoryFixture.create();
+      addTearDown(fixture.close);
+
+      final firstSkill = await fixture.createSkill('First Skill');
+      final original = await fixture.agentsRepository.createAgent(
+        fixture.workspaceId,
+        .new(
+          name: 'Helper',
+          description: 'Use for helper work',
+          content: 'Prompt for helper',
+          isEnabled: false,
+          visibility: .chatSelector,
+          skills: [
+            AgentSkillRef.user(firstSkill.id),
+            const AgentSkillRef.app('skills_manager'),
+          ],
+        ),
+      );
+      final firstCopy = await fixture.agentsRepository.createAgent(
+        fixture.workspaceId,
+        const AgentToCreate(
+          name: 'Helper Copy',
+          description: 'Another helper',
+          content: 'Another prompt',
+        ),
+      );
+      expect(firstCopy.name, 'Helper Copy');
+
+      final firstToolId = await fixture.createTool('first_tool');
+      final secondToolId = await fixture.createTool('second_tool');
+      final thirdToolId = await fixture.createTool('third_tool');
+      final _ = await fixture.agentToolsRepository.setAgentToolPermission(
+        original.id,
+        firstToolId,
+        permissionMode: .alwaysDeny,
+      );
+      final _ = await fixture.agentToolsRepository.setAgentToolPermission(
+        original.id,
+        secondToolId,
+        permissionMode: .alwaysAllow,
+      );
+      final _ = await fixture.agentToolsRepository.setAgentToolPermission(
+        original.id,
+        thirdToolId,
+        permissionMode: .alwaysAsk,
+      );
+      final originalOverrides = {
+        for (final override in await fixture.agentToolsRepository.getAgentTools(
+          original.id,
+        ))
+          override.toolId: override.permissionMode,
+      };
+
+      final duplicate = await DuplicateAgentUsecase(fixture.agentsRepository)
+          .call(original.id);
+
+      expect(duplicate.name, 'Helper Copy 2');
+      expect(duplicate.description, original.description);
+      expect(duplicate.content, original.content);
+      expect(duplicate.isEnabled, original.isEnabled);
+      expect(duplicate.visibility, original.visibility);
+      expect(duplicate.skills, original.skills);
+      final duplicateOverrides = await fixture.agentToolsRepository
+          .getAgentTools(duplicate.id);
+      expect(duplicateOverrides, hasLength(3));
+      expect(
+        duplicateOverrides
+            .singleWhere((override) => override.toolId == firstToolId)
+            .permissionMode,
+        ToolPermissionMode.alwaysDeny,
+      );
+      expect(
+        duplicateOverrides
+            .singleWhere((override) => override.toolId == secondToolId)
+            .permissionMode,
+        ToolPermissionMode.alwaysAllow,
+      );
+      expect(
+        duplicateOverrides
+            .singleWhere((override) => override.toolId == thirdToolId)
+            .permissionMode,
+        ToolPermissionMode.alwaysAsk,
+      );
+      expect(
+        await fixture.agentsRepository.getAgentById(original.id),
+        original,
+      );
+      final originalPermissions = {
+        for (final override in await fixture.agentToolsRepository.getAgentTools(
+          original.id,
+        ))
+          override.toolId: override.permissionMode,
+      };
+      expect(originalPermissions, originalOverrides);
+    },
+  );
+
+  test('rolls back the duplicate when an override cannot be copied', () async {
+    final fixture = await _AgentsRepositoryFixture.create();
+    addTearDown(fixture.close);
+    final original = await fixture.agentsRepository.createAgent(
+      fixture.workspaceId,
+      const AgentToCreate(
+        name: 'Helper',
+        description: 'Use for helper work',
+        content: 'Prompt',
+      ),
+    );
+    final toolId = await fixture.createTool('failing_tool');
+    final _ = await fixture.agentToolsRepository.setAgentToolPermission(
+      original.id,
+      toolId,
+      permissionMode: .alwaysAllow,
+    );
+    await fixture.database.customStatement('''
+      CREATE TRIGGER fail_duplicate_override
+      BEFORE INSERT ON agent_tools
+      WHEN NEW.agent_id != '${original.id}'
+      BEGIN
+        SELECT RAISE(ABORT, 'forced duplicate failure');
+      END;
+    ''');
+
+    await expectLater(
+      fixture.agentsRepository.duplicateAgent(original.id),
+      throwsA(isA<SqliteException>()),
+    );
+
+    expect(
+      await fixture.agentsRepository.getAgentsByWorkspace(fixture.workspaceId),
+      [original],
+    );
+    expect(
+      await fixture.agentToolsRepository.getAgentTools(original.id),
+      hasLength(1),
+    );
   });
 
   test('maps agent tool permission modes', () {

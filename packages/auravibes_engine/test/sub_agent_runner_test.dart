@@ -33,6 +33,7 @@ void main() {
             'types': ['main', 'sub_agent'],
           },
         ],
+        'nextCursor': null,
       });
     });
 
@@ -83,13 +84,57 @@ void main() {
       expect(result['content'], 'Unknown agent type.');
     });
 
-    test('list_agents type schema is optional enum', () {
+    test('list_agents schema exposes optional query, type, limit, cursor', () {
       final schema = listAgentsToolSpec.inputJsonSchema;
       final properties = schema['properties']! as Map<String, Object?>;
       final type = properties['type']! as Map<String, Object?>;
 
       expect(type['enum'], ['main', 'sub_agent']);
       expect(schema['required'], isNot(contains('type')));
+      expect(properties['query'], containsPair('maxLength', 200));
+      expect(properties['limit'], containsPair('maximum', 100));
+      expect(properties['cursor'], containsPair('maxLength', 2048));
+    });
+
+    test('forwards list query, limit, cursor, and next cursor', () async {
+      final catalog = _RecordingCatalog();
+      final runner = _runner(catalog: catalog);
+
+      final result = jsonDecode(
+        await runner.listAgents(
+          'w1',
+          arguments: const {
+            'query': ' review ',
+            'type': 'main',
+            'limit': 7,
+            'cursor': 'cursor-1',
+          },
+        ),
+      ) as Map<String, Object?>;
+
+      expect(catalog.query?.workspaceId, 'w1');
+      expect(catalog.query?.query, 'review');
+      expect(catalog.query?.type, 'main');
+      expect(catalog.query?.limit, 7);
+      expect(catalog.query?.cursor, 'cursor-1');
+      expect(result['nextCursor'], 'cursor-2');
+    });
+
+    test('rejects invalid list query arguments', () async {
+      final runner = _runner();
+
+      for (final arguments in <Map<String, dynamic>>[
+        {'query': 1},
+        {'query': List.filled(201, 'x').join()},
+        {'limit': 0},
+        {'limit': 101},
+        {'cursor': ''},
+      ]) {
+        final result = jsonDecode(
+          await runner.listAgents('w1', arguments: arguments),
+        ) as Map<String, Object?>;
+        expect(result['status'], 'error');
+      }
     });
 
     test('run_sub_agent agentId schema is optional string only', () {
@@ -391,7 +436,7 @@ void main() {
 }
 
 SubAgentRunner _runner({
-  _Catalog catalog = const _Catalog(),
+  SubAgentCatalog catalog = const _Catalog(),
   _ConversationStore? conversations,
   _Messages? messages,
   _Tracker? tracker,
@@ -420,8 +465,31 @@ class const _Catalog({final List<SubAgentCatalogEntry> entries = const []})
   }
 
   @override
-  Future<List<SubAgentCatalogEntry>> listSubAgents(String workspaceId) async {
-    return entries.where((entry) => entry.workspaceId == workspaceId).toList();
+  Future<SubAgentCatalogPage> listSubAgents(SubAgentCatalogQuery query) async {
+    final filtered = entries.where(
+      (entry) =>
+          entry.workspaceId == query.workspaceId &&
+          (query.type == null || entry.types.contains(query.type)) &&
+          (query.query.isEmpty ||
+              entry.name.toLowerCase().contains(query.query.toLowerCase()) ||
+              entry.description.toLowerCase().contains(
+                query.query.toLowerCase(),
+              )),
+    );
+    return SubAgentCatalogPage(agents: filtered.take(query.limit).toList());
+  }
+}
+
+class _RecordingCatalog implements SubAgentCatalog {
+  SubAgentCatalogQuery? query;
+
+  @override
+  Future<SubAgentCatalogEntry?> getSubAgent(String agentId) async => null;
+
+  @override
+  Future<SubAgentCatalogPage> listSubAgents(SubAgentCatalogQuery query) async {
+    this.query = query;
+    return const SubAgentCatalogPage(agents: [], nextCursor: 'cursor-2');
   }
 }
 

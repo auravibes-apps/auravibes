@@ -17,10 +17,18 @@ class _Client extends Mock implements Client;
 
 class _Conversation extends Mock implements EndpointConversation;
 
+class _AgentCatalog extends Mock implements EndpointAgentCatalog;
+
 class _GetConversationRequest extends Fake implements GetConversationRequest;
 
+class _GetAgentResourcesRequest extends Fake
+    implements GetAgentResourcesRequest;
+
 void main() {
-  setUpAll(() => registerFallbackValue(_GetConversationRequest()));
+  setUpAll(() {
+    registerFallbackValue(_GetConversationRequest());
+    registerFallbackValue(_GetAgentResourcesRequest());
+  });
 
   test(
     'cloud agent execution lookup never constructs local repositories',
@@ -28,38 +36,8 @@ void main() {
       final gateway = _Gateway();
       final client = _Client();
       final conversation = _Conversation();
+      final agentCatalog = _AgentCatalog();
       final now = DateTime.utc(2026);
-      when(() => gateway.read(pages: any(named: 'pages'))).thenAnswer(
-        (_) async => ReadWorkspaceStateResponse(
-          pages: [
-            WorkspaceResourcePage(
-              resourceKind: .agent,
-              resources: [
-                WorkspaceResource(
-                  workspaceId: 1,
-                  resourceKind: .agent,
-                  resourceId: 'agent-1',
-                  data: jsonEncode({
-                    'name': 'Agent',
-                    'content': 'Cloud prompt',
-                    'visibility': 'both',
-                  }),
-                  revision: 1,
-                  createdAt: now,
-                  updatedAt: now,
-                ),
-              ],
-            ),
-            WorkspaceResourcePage(
-              resourceKind: .agentAssociation,
-              resources: const [],
-            ),
-          ],
-          currentSequence: 1,
-          events: const [],
-          requiresSnapshot: false,
-        ),
-      );
       when(() => gateway.workspace).thenReturn(
         const CloudWorkspaceRef(
           localWorkspaceId: 'local',
@@ -70,6 +48,24 @@ void main() {
       );
       when(() => gateway.client).thenReturn(client);
       when(() => client.conversation).thenReturn(conversation);
+      when(() => client.agentCatalog).thenReturn(agentCatalog);
+      when(() => agentCatalog.getResources(any())).thenAnswer(
+        (_) async => [
+          WorkspaceResource(
+            workspaceId: 1,
+            resourceKind: .agent,
+            resourceId: 'agent-1',
+            data: jsonEncode({
+              'name': 'Agent',
+              'content': 'Cloud prompt',
+              'visibility': 'both',
+            }),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ],
+      );
       when(() => conversation.get(any())).thenAnswer(
         (_) async => ConversationSummary(
           id: 'conversation-1',

@@ -1,0 +1,8 @@
+class: AgentCatalogItem
+fields:
+  id: String
+  name: String
+  description: String
+  isEnabled: bool
+  visibility: AgentCatalogVisibility
+  skillCount: int

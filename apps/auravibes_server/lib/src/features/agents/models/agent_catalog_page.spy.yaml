@@ -1,0 +1,4 @@
+class: AgentCatalogPage
+fields:
+  agents: List<AgentCatalogItem>
+  nextCursor: String?

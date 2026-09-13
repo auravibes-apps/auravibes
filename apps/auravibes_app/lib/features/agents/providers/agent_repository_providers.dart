@@ -27,13 +27,15 @@ final ProviderFamily<AgentRepository, String> agentRepositoryProvider =
       if (session.cloud == null) {
         return ref.watch(agentsRepositoryProvider);
       }
-      final store = CloudWorkspaceResourceStore.deferred(
-        ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
+      final gateway = ref.watch(
+        cloudWorkspaceStateGatewayProvider(session).future,
       );
+      final store = CloudWorkspaceResourceStore.deferred(gateway);
 
       return CloudAgentRepository.fromStore(
         workspaceId: session.workspace.localWorkspaceId,
         store: store,
+        gateway: gateway,
       );
     });
 

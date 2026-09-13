@@ -28,24 +28,25 @@ class const SubAgentRunner({
     String workspaceId, {
     Map<String, dynamic> arguments = const {},
   }) async {
-    final rawType = arguments['type'];
-    if (rawType != null && rawType != 'main' && rawType != 'sub_agent') {
-      return _error('Unknown agent type.');
+    late final SubAgentCatalogQuery query;
+    try {
+      query = SubAgentCatalogQuery.fromArguments(workspaceId, arguments);
+    } on FormatException catch (error) {
+      return _error(error.message);
     }
-    final agents = await agentCatalog.listSubAgents(workspaceId);
-    final type = rawType as String?;
+    final page = await agentCatalog.listSubAgents(query);
 
     return jsonEncode({
       'agents': [
-        for (final agent in agents)
-          if (type == null || agent.types.contains(type))
-            {
-              'id': agent.id,
-              'name': agent.name,
-              'description': agent.description,
-              'types': agent.types,
-            },
+        for (final agent in page.agents)
+          {
+            'id': agent.id,
+            'name': agent.name,
+            'description': agent.description,
+            'types': agent.types,
+          },
       ],
+      'nextCursor': page.nextCursor,
     });
   }
 
@@ -239,10 +240,54 @@ final class _SubAgentRunRequest {
 }
 
 abstract interface class SubAgentCatalog {
-  Future<List<SubAgentCatalogEntry>> listSubAgents(String workspaceId);
+  Future<SubAgentCatalogPage> listSubAgents(SubAgentCatalogQuery query);
 
   Future<SubAgentCatalogEntry?> getSubAgent(String agentId);
 }
+
+class const SubAgentCatalogQuery({
+  required final String workspaceId,
+  final String query = '',
+  final String? type,
+  final int limit = 20,
+  final String? cursor,
+}) {
+  factory fromArguments(String workspaceId, Map<String, dynamic> arguments) {
+    final rawQuery = arguments['query'];
+    if (rawQuery != null && rawQuery is! String) {
+      throw const FormatException('Invalid query.');
+    }
+    final query = (rawQuery as String? ?? '').trim();
+    if (query.length > 200) throw const FormatException('Query is too long.');
+
+    final type = arguments['type'];
+    if (type != null && type != 'main' && type != 'sub_agent') {
+      throw const FormatException('Unknown agent type.');
+    }
+    final limit = arguments['limit'] ?? 20;
+    if (limit is! int || limit < 1 || limit > 100) {
+      throw const FormatException('Invalid limit.');
+    }
+    final cursor = arguments['cursor'];
+    if (cursor != null &&
+        (cursor is! String || cursor.isEmpty || cursor.length > 2048)) {
+      throw const FormatException('Invalid cursor.');
+    }
+
+    return SubAgentCatalogQuery(
+      workspaceId: workspaceId,
+      query: query,
+      type: type as String?,
+      limit: limit,
+      cursor: cursor as String?,
+    );
+  }
+}
+
+class const SubAgentCatalogPage({
+  required final List<SubAgentCatalogEntry> agents,
+  final String? nextCursor,
+});
 
 abstract interface class SubAgentConversationStore {
   Future<SubAgentConversationRecord?> getConversation(String conversationId);

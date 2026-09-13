@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_list_query.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
 
 const _agentContentEmpty = 'Agent content cannot be empty';
@@ -22,6 +25,16 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
     final rows = await _database.agentsDao.getAgentsByWorkspace(workspaceId);
 
     return await _mapAgentRows(rows);
+  }
+
+  @override
+  Future<AgentListPage> listAgents(AgentListQuery query) async {
+    final normalized = _validateListQuery(query);
+    final cursor = _decodeCursor(normalized);
+    final page = await _loadAgentPage(_database, normalized, cursor);
+    final skillCounts = await _agentSkillCounts(_database, page.rows);
+
+    return _agentListPage(normalized, page, skillCounts);
   }
 
   @override
@@ -48,6 +61,10 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   }
 
   @override
+  Future<AgentEntity> duplicateAgent(String agentId) =>
+      _database.transaction(() => _duplicateAgent(agentId));
+
+  @override
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async {
     _validateAgentToUpdate(agent);
 
@@ -63,6 +80,226 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   @override
   Future<bool> deleteAgent(String agentId) =>
       _database.agentsDao.deleteAgent(agentId);
+}
+
+extension AgentsRepositoryDuplication on AgentsRepository {
+  Future<AgentEntity> _duplicateAgent(String agentId) async {
+    final source = await _sourceAgent(agentId);
+    final created = await _createAgentCopy(source);
+    await _copyToolOverrides(agentId, created.id);
+
+    return await _mapToAgent(created);
+  }
+
+  Future<AgentEntity> _sourceAgent(String agentId) async {
+    final source = await getAgentById(agentId);
+    if (source == null) throw StateError('Agent not found: $agentId');
+
+    return source;
+  }
+
+  Future<AgentsTable> _createAgentCopy(AgentEntity source) async {
+    final agents = await getAgentsByWorkspace(source.workspaceId);
+    final copy = _agentCopy(source, agents);
+
+    return await _database.agentsDao.createAgent(
+      _agentToCreateCompanion(source.workspaceId, copy),
+      _mapSkillRefsToCompanions(source.skills),
+    );
+  }
+
+  AgentToCreate _agentCopy(AgentEntity source, Iterable<AgentEntity> agents) =>
+      AgentToCreate(
+        name: _copyName(source.name, agents),
+        description: source.description,
+        content: source.content,
+        isEnabled: source.isEnabled,
+        visibility: source.visibility,
+        skills: source.skills,
+      );
+
+  Future<void> _copyToolOverrides(String sourceId, String targetId) async {
+    final overrides = await _database.agentToolsDao.getAgentTools(sourceId);
+    for (final override in overrides) {
+      final _ = await _database.agentToolsDao.setAgentToolPermission(
+        targetId,
+        override.toolId,
+        permission: override.permissions,
+      );
+    }
+  }
+}
+
+typedef _AgentListCursor = ({String name, String id});
+
+AgentListQuery _validateListQuery(AgentListQuery query) {
+  final search = query.search.trim().toLowerCase();
+  if (_isInvalidListQuery(query, search)) {
+    throw const AgentValidationException('Invalid agent list query');
+  }
+
+  return AgentListQuery(
+    workspaceId: query.workspaceId,
+    search: search,
+    type: query.type,
+    status: query.status,
+    limit: query.limit,
+    cursor: query.cursor,
+  );
+}
+
+bool _isInvalidListQuery(AgentListQuery query, String search) =>
+    query.workspaceId.isEmpty ||
+    query.limit < 1 ||
+    query.limit > 100 ||
+    search.length > 200 ||
+    (query.cursor?.length ?? 0) > 2048;
+
+typedef _DecodedAgentListCursor = ({
+  String workspaceId,
+  String search,
+  String? type,
+  String? status,
+  String name,
+  String id,
+});
+
+_AgentListCursor? _decodeCursor(AgentListQuery query) {
+  final value = query.cursor;
+  if (value == null) return null;
+  try {
+    final cursor = _parseCursor(_decodeCursorValue(value));
+    if (cursor != null && _cursorMatchesQuery(cursor, query)) {
+      return (name: cursor.name, id: cursor.id);
+    }
+  } on FormatException {
+    // Handled below as one typed validation failure.
+  }
+  throw const AgentValidationException('Invalid agent list cursor');
+}
+
+Object? _decodeCursorValue(String value) =>
+    jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(value))));
+
+_DecodedAgentListCursor? _parseCursor(Object? value) => switch (value) {
+  {
+    'v': 1,
+    'workspace': final String workspaceId,
+    'search': final String search,
+    'type': final String? type,
+    'status': final String? status,
+    'name': final String name,
+    'id': final String id,
+  }
+      when name.isNotEmpty && id.isNotEmpty =>
+    (
+      workspaceId: workspaceId,
+      search: search,
+      type: type,
+      status: status,
+      name: name,
+      id: id,
+    ),
+  _ => null,
+};
+
+bool _cursorMatchesQuery(
+  _DecodedAgentListCursor cursor,
+  AgentListQuery query,
+) =>
+    cursor.workspaceId == query.workspaceId &&
+    cursor.search == query.search &&
+    cursor.type == query.type?.name &&
+    cursor.status == query.status?.name;
+
+Future<Map<String, int>> _agentSkillCounts(
+  AppDatabase database,
+  List<AgentsTable> rows,
+) async {
+  final skills = await database.agentsDao.getSkillsForAgents(
+    rows.map((row) => row.id),
+  );
+  final counts = <String, int>{};
+  for (final skill in skills) {
+    _incrementCount(counts, skill.agentId);
+  }
+
+  return counts;
+}
+
+void _incrementCount(Map<String, int> counts, String agentId) {
+  final _ = counts.update(agentId, (count) => count + 1, ifAbsent: () => 1);
+}
+
+Future<({List<AgentsTable> rows, bool hasMore})> _loadAgentPage(
+  AppDatabase database,
+  AgentListQuery query,
+  _AgentListCursor? cursor,
+) async {
+  final rows = await database.agentsDao.listAgents(
+    query: query,
+    afterName: cursor?.name,
+    afterId: cursor?.id,
+  );
+
+  return (
+    rows: rows.take(query.limit).toList(),
+    hasMore: rows.length > query.limit,
+  );
+}
+
+AgentListPage _agentListPage(
+  AgentListQuery query,
+  ({List<AgentsTable> rows, bool hasMore}) page,
+  Map<String, int> skillCounts,
+) {
+  final rows = page.rows;
+
+  return AgentListPage(
+    agents: _agentListItems(rows, skillCounts),
+    nextCursor: page.hasMore && rows.isNotEmpty
+        ? _encodeCursor(query, rows.last)
+        : null,
+  );
+}
+
+List<AgentListItem> _agentListItems(
+  List<AgentsTable> rows,
+  Map<String, int> skillCounts,
+) => [
+  for (final row in rows)
+    AgentListItem(
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      isEnabled: row.isEnabled,
+      visibility: _agentVisibilityFromStorage(row.visibility),
+      skillCount: skillCounts[row.id] ?? 0,
+    ),
+];
+
+String _encodeCursor(AgentListQuery query, AgentsTable row) => base64Url.encode(
+  utf8.encode(
+    jsonEncode({
+      'v': 1,
+      'workspace': query.workspaceId,
+      'search': query.search,
+      'type': query.type?.name,
+      'status': query.status?.name,
+      'name': row.name.toLowerCase(),
+      'id': row.id,
+    }),
+  ),
+);
+
+String _copyName(String originalName, Iterable<AgentEntity> agents) {
+  final names = agents.map((agent) => agent.name).toSet();
+  for (var suffix = 1; ; suffix++) {
+    final name = suffix == 1
+        ? '$originalName Copy'
+        : '$originalName Copy $suffix';
+    if (!names.contains(name)) return name;
+  }
 }
 
 extension AgentsRepositoryValidation on AgentsRepository {
@@ -176,11 +413,10 @@ extension AgentsRepositoryPersistence on AgentsRepository {
 
     return AgentSkillRef.app(appSkillIdentifier);
   }
-
-  AgentVisibility _agentVisibilityFromStorage(String value) {
-    return AgentVisibility.values.asNameMap()[value] ?? AgentVisibility.both;
-  }
 }
+
+AgentVisibility _agentVisibilityFromStorage(String value) =>
+    AgentVisibility.values.asNameMap()[value] ?? AgentVisibility.both;
 
 AgentsCompanion _agentToCreateCompanion(
   String workspaceId,

@@ -10,6 +10,9 @@ typedef WorkspaceResourceRead = Future<ReadWorkspaceStateResponse> Function({
   required int eventLimit,
   int? afterSequence,
 });
+typedef WorkspaceAgentDuplicate = Future<PatchWorkspaceStateResponse> Function(
+  String sourceAgentId,
+);
 typedef _WorkspaceSecretWrite = Future<PutWorkspaceSecretResponse> Function({
   required WorkspaceSecretKind kind,
   required WorkspaceSecretScope scope,
@@ -139,6 +142,7 @@ class CloudWorkspaceResourceStore {
     : _read = gateway.read,
       _watch = gateway.watchResources,
       _patch = gateway.patch,
+      _duplicateAgent = gateway.duplicateAgent,
       _putSecret = gateway.putSecret,
       _mutateCredential = gateway.mutateCredential;
 
@@ -146,6 +150,7 @@ class CloudWorkspaceResourceStore {
     : _read = _deferredReadHandler(gateway),
       _watch = _deferredWatchHandler(gateway),
       _patch = _deferredPatchHandler(gateway),
+      _duplicateAgent = _deferredDuplicateAgentHandler(gateway),
       _putSecret = _deferredPutSecretHandler(gateway),
       _mutateCredential = _deferredMutateCredentialHandler(gateway);
 
@@ -155,6 +160,7 @@ class CloudWorkspaceResourceStore {
     required this._putSecret,
     required this._mutateCredential,
     this._read = _unsupportedRead,
+    this._duplicateAgent = _unsupportedDuplicateAgent,
   });
 
   final WorkspaceResourceRead _read;
@@ -167,6 +173,7 @@ class CloudWorkspaceResourceStore {
     required List<WorkspacePatchOperation> operations,
   })
   _patch;
+  final WorkspaceAgentDuplicate _duplicateAgent;
   final _WorkspaceSecretCall _putSecret;
   final _WorkspaceCredentialCall _mutateCredential;
 
@@ -181,6 +188,9 @@ class CloudWorkspaceResourceStore {
     required String requestId,
     required List<WorkspacePatchOperation> operations,
   }) => _patch(requestId: requestId, operations: operations);
+
+  Future<PatchWorkspaceStateResponse> duplicateAgent(String sourceAgentId) =>
+      _duplicateAgent(sourceAgentId);
 }
 
 _WorkspaceSecretWrite _secretWriter(_WorkspaceSecretCall putSecret) =>
@@ -365,6 +375,12 @@ _deferredPatchHandler(Future<CloudWorkspaceStateGateway?> gateway) {
       _deferredPatch(gateway, requestId: requestId, operations: operations);
 }
 
+WorkspaceAgentDuplicate _deferredDuplicateAgentHandler(
+  Future<CloudWorkspaceStateGateway?> gateway,
+) =>
+    (sourceAgentId) async =>
+        await (await _requireGateway(gateway)).duplicateAgent(sourceAgentId);
+
 _WorkspaceSecretCall _deferredPutSecretHandler(
   Future<CloudWorkspaceStateGateway?> gateway,
 ) => _DeferredPutSecretCall(gateway).call;
@@ -403,6 +419,10 @@ Future<ReadWorkspaceStateResponse> _unsupportedRead({
   required int eventLimit,
   int? afterSequence,
 }) => throw UnimplementedError('$pages$afterSequence$eventLimit');
+
+Future<PatchWorkspaceStateResponse> _unsupportedDuplicateAgent(
+  String sourceAgentId,
+) => throw UnimplementedError(sourceAgentId);
 
 Future<CloudWorkspaceStateGateway> _requireGateway(
   Future<CloudWorkspaceStateGateway?> gateway,

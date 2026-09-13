@@ -134,6 +134,139 @@ List<Catalog> auraChatCatalogs() => [
   auraChatFormCatalog(),
 ];
 
+typedef ChatA2uiTabSelectionRegistrar = VoidCallback Function(
+  CatalogItemContext context,
+  ValueGetter<int> readIndex,
+);
+
+List<Catalog> auraChatCatalogsWithTabSelection({
+  required ChatA2uiTabSelectionRegistrar register,
+  required VoidCallback onChanged,
+}) => [
+  for (final catalog in auraChatCatalogs())
+    catalog.copyWith(
+      newItems: [
+        for (final item in catalog.items)
+          if (item.name == 'Tabs')
+            CatalogItem(
+              name: item.name,
+              dataSchema: item.dataSchema,
+              exampleData: item.exampleData,
+              isImplicitlyFlexible: item.isImplicitlyFlexible,
+              widgetBuilder: (context) => _trackChatA2uiTabSelection(
+                item.widgetBuilder(context),
+                (readIndex) => register(context, readIndex),
+                onChanged,
+              ),
+            ),
+      ],
+    ),
+];
+
+/// Observes the existing catalog's tab selection without changing its bindings.
+Widget _trackChatA2uiTabSelection(
+  Widget child,
+  VoidCallback Function(ValueGetter<int>) register,
+  VoidCallback onChanged,
+) => switch (child) {
+  BoundNumber value => BoundNumber(
+    key: value.key,
+    dataContext: value.dataContext,
+    value: value.value,
+    builder: (context, number) => _trackChatA2uiTabSelection(
+      value.builder(context, number),
+      register,
+      onChanged,
+    ),
+  ),
+  BoundObject value => BoundObject(
+    key: value.key,
+    dataContext: value.dataContext,
+    value: value.value,
+    builder: (context, object) => _trackChatA2uiTabSelection(
+      value.builder(context, object),
+      register,
+      onChanged,
+    ),
+  ),
+  AuraTabs<void> tabs => _CopyableTabs(
+    key: tabs.key,
+    tabs: tabs,
+    register: register,
+    onChanged: onChanged,
+  ),
+  _ => child,
+};
+
+class _CopyableTabs extends StatefulWidget {
+  const new({
+    required this.tabs,
+    required this.register,
+    required this.onChanged,
+    super.key,
+  });
+
+  final AuraTabs<void> tabs;
+  final VoidCallback Function(ValueGetter<int>) register;
+  final VoidCallback onChanged;
+
+  @override
+  State<_CopyableTabs> createState() => _CopyableTabsState();
+}
+
+class _CopyableTabsState extends State<_CopyableTabs> {
+  var _selectedIndex = 0;
+  late VoidCallback _unregister;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.tabs.selectedIndex ?? widget.tabs.initialIndex;
+    _selectedIndex = _currentIndex();
+    _unregister = widget.register(_currentIndex);
+  }
+
+  @override
+  void didUpdateWidget(covariant _CopyableTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _selectedIndex =
+        widget.tabs.selectedIndex ??
+        (oldWidget.tabs.items.isEmpty
+            ? widget.tabs.initialIndex
+            : _selectedIndex);
+    _selectedIndex = _currentIndex();
+    _unregister();
+    _unregister = widget.register(_currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _unregister();
+    super.dispose();
+  }
+
+  int _currentIndex() => widget.tabs.items.isEmpty
+      ? 0
+      : (widget.tabs.selectedIndex ?? _selectedIndex).clamp(
+          0,
+          widget.tabs.items.length - 1,
+        );
+
+  void _select(int index) {
+    _selectedIndex = index;
+    widget.tabs.onChanged?.call(index);
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) => AuraTabs<void>(
+    items: widget.tabs.items,
+    initialIndex: widget.tabs.initialIndex,
+    selectedIndex: widget.tabs.selectedIndex,
+    onChanged: _select,
+  );
+}
+
 Catalog _buildCatalog({required String catalogId, required String rules}) {
   CatalogItem replace(CatalogItem source, CatalogWidgetBuilder builder) =>
       _replace(

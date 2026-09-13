@@ -1,0 +1,5 @@
+enum: AgentCatalogType
+serialized: byName
+values:
+  - chatSelector
+  - subAgentList

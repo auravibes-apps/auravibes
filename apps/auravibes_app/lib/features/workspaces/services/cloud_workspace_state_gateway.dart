@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:uuid/v7.dart';
 
 typedef WorkspaceStateRead = Future<ReadWorkspaceStateResponse> Function(
   ReadWorkspaceStateRequest request,
@@ -303,6 +304,18 @@ mixin _CloudWorkspaceStateWatchApi on _CloudWorkspaceStateGatewayBase {
       ),
     ),
   );
+
+  Future<PatchWorkspaceStateResponse> duplicateAgent(String sourceAgentId) =>
+      CloudAppErrors.guardCall(
+        .state,
+        () => _requireClient(_client).workspaceState.duplicateAgent(
+          .new(
+            workspaceId: _workspace.cloudWorkspaceId,
+            requestId: const UuidV7().generate(),
+            sourceAgentId: sourceAgentId,
+          ),
+        ),
+      );
 
   Stream<List<WorkspaceResource>> watchResources(
     List<WorkspaceResourceKind> kinds, {

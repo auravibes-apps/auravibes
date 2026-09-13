@@ -70,16 +70,18 @@ class _FakeSubAgentCatalog implements SubAgentCatalog {
   Future<SubAgentCatalogEntry?> getSubAgent(String agentId) async => null;
 
   @override
-  Future<List<SubAgentCatalogEntry>> listSubAgents(String workspaceId) async =>
-      [
-        const SubAgentCatalogEntry(
-          id: 'agent-1',
-          workspaceId: 'workspace-1',
-          name: 'Agent',
-          description: 'Description',
-          types: ['sub_agent'],
-        ),
-      ];
+  Future<SubAgentCatalogPage> listSubAgents(SubAgentCatalogQuery query) async =>
+      const SubAgentCatalogPage(
+        agents: [
+          SubAgentCatalogEntry(
+            id: 'agent-1',
+            workspaceId: 'workspace-1',
+            name: 'Agent',
+            description: 'Description',
+            types: ['sub_agent'],
+          ),
+        ],
+      );
 }
 
 class _FakeSubAgentConversationStore implements SubAgentConversationStore {

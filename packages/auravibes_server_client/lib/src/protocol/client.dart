@@ -14,6 +14,12 @@ import 'dart:async' as _ida;
 
 import 'package:auravibes_server_client/src/protocol/features/accounts/models/account_summary.dart'
     as _i5884lvh;
+import 'package:auravibes_server_client/src/protocol/features/agents/models/agent_catalog_page.dart'
+    as _i7fng6wf;
+import 'package:auravibes_server_client/src/protocol/features/agents/models/get_agent_resources_request.dart'
+    as _ilf9sz6u;
+import 'package:auravibes_server_client/src/protocol/features/agents/models/list_agents_request.dart'
+    as _ix3w0365;
 import 'package:auravibes_server_client/src/protocol/features/codex_oauth/models/complete_codex_oauth_request.dart'
     as _irjpqi75;
 import 'package:auravibes_server_client/src/protocol/features/codex_oauth/models/complete_codex_oauth_result.dart'
@@ -128,6 +134,8 @@ import 'package:auravibes_server_client/src/protocol/features/sync/stream/models
     as _ifwc6wsw;
 import 'package:auravibes_server_client/src/protocol/features/sync/stream/models/workspace_subscribe_request.dart'
     as _ihte0iyb;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/duplicate_workspace_agent_request.dart'
+    as _ipz1c0ew;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _i2aip5sd;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_response.dart'
@@ -144,6 +152,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _i7oqzoiv;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_response.dart'
     as _i3s0ysat;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_resource.dart'
+    as _iar0fwau;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i0tihsii;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_detail.dart'
@@ -431,6 +441,30 @@ class EndpointAccount extends _isc.EndpointRef {
         'currentUser',
         {},
       );
+}
+
+/// {@category Endpoint}
+class EndpointAgentCatalog extends _isc.EndpointRef {
+  EndpointAgentCatalog(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'agentCatalog';
+
+  _ida.Future<_i7fng6wf.AgentCatalogPage> list(
+    _ix3w0365.ListAgentsRequest request,
+  ) => caller.callServerEndpoint<_i7fng6wf.AgentCatalogPage>(
+    'agentCatalog',
+    'list',
+    {'request': request},
+  );
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> getResources(
+    _ilf9sz6u.GetAgentResourcesRequest request,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'agentCatalog',
+    'getResources',
+    {'request': request},
+  );
 }
 
 /// {@category Endpoint}
@@ -845,6 +879,14 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
     {'request': request},
   );
 
+  _ida.Future<_inzhu3sh.PatchWorkspaceStateResponse> duplicateAgent(
+    _ipz1c0ew.DuplicateWorkspaceAgentRequest request,
+  ) => caller.callServerEndpoint<_inzhu3sh.PatchWorkspaceStateResponse>(
+    'workspaceState',
+    'duplicateAgent',
+    {'request': request},
+  );
+
   _ida.Future<_i6eu5eia.MutateWorkspaceCredentialResponse> mutateCredential(
     _i2aip5sd.MutateWorkspaceCredentialRequest request,
   ) => caller.callServerEndpoint<_i6eu5eia.MutateWorkspaceCredentialResponse>(
@@ -1039,6 +1081,7 @@ class Client extends _isc.ServerpodClientShared {
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
     account = EndpointAccount(this);
+    agentCatalog = EndpointAgentCatalog(this);
     codexOAuth = EndpointCodexOAuth(this);
     conversation = EndpointConversation(this);
     mcpServer = EndpointMcpServer(this);
@@ -1056,6 +1099,8 @@ class Client extends _isc.ServerpodClientShared {
   late final EndpointJwtRefresh jwtRefresh;
 
   late final EndpointAccount account;
+
+  late final EndpointAgentCatalog agentCatalog;
 
   late final EndpointCodexOAuth codexOAuth;
 
@@ -1082,6 +1127,7 @@ class Client extends _isc.ServerpodClientShared {
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
     'account': account,
+    'agentCatalog': agentCatalog,
     'codexOAuth': codexOAuth,
     'conversation': conversation,
     'mcpServer': mcpServer,

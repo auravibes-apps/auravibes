@@ -7,6 +7,8 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../agents/agent_catalog_repository.dart';
+import '../../agents/agent_catalog_use_cases.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
@@ -800,7 +802,7 @@ class const ServerToolExecutorService({
     Map<String, dynamic> arguments,
   ) async {
     if (tool.descriptor.toolIdentifier == listAgentsToolName) {
-      return _listAgents(session, turn.workspaceId, arguments['type']);
+      return _listAgents(session, turn, arguments);
     }
     if (tool.descriptor.toolIdentifier != runSubAgentToolName) {
       throw const ServerToolNotConfiguredException();
@@ -1107,30 +1109,44 @@ class const ServerToolExecutorService({
 
   Future<Map<String, Object?>> _listAgents(
     Session session,
-    int workspaceId,
-    Object? type,
+    ConversationTurn turn,
+    Map<String, dynamic> arguments,
   ) async {
-    if (type != null && type != 'main' && type != 'sub_agent') {
-      throw const FormatException('Unknown agent type.');
-    }
-    final resources = await WorkspaceResource.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(workspaceId) &
-          table.resourceKind.equals(WorkspaceResourceKind.agent) &
-          table.deletedAt.equals(null),
+    final query = SubAgentCatalogQuery.fromArguments(
+      turn.workspaceId.toString(),
+      arguments,
     );
+    final page =
+        await AgentCatalogUseCases(
+          AgentCatalogRepository(),
+          WorkspaceStateRepository(),
+        ).list(
+          session,
+          userId: turn.initiatorUserId,
+          request: ListAgentsRequest(
+            workspaceId: turn.workspaceId,
+            search: query.query,
+            type: switch (query.type) {
+              'main' => AgentCatalogType.chatSelector,
+              'sub_agent' => AgentCatalogType.subAgentList,
+              _ => null,
+            },
+            status: AgentCatalogStatus.enabled,
+            limit: query.limit,
+            cursor: query.cursor,
+          ),
+        );
     return {
       'agents': [
-        for (final resource in resources)
-          if (_agentTypes(_jsonMap(resource.data), type).isNotEmpty)
-            {
-              'id': resource.resourceId,
-              'name': _jsonMap(resource.data)['name'],
-              'description': _jsonMap(resource.data)['description'] ?? '',
-              'types': _agentTypes(_jsonMap(resource.data), null),
-            },
+        for (final agent in page.agents)
+          {
+            'id': agent.id,
+            'name': agent.name,
+            'description': agent.description,
+            'types': _agentCatalogTypes(agent.visibility),
+          },
       ],
+      'nextCursor': page.nextCursor,
     };
   }
 
@@ -1160,6 +1176,13 @@ class const ServerToolExecutorService({
     };
     return filter == null || types.contains(filter) ? types : const [];
   }
+
+  List<String> _agentCatalogTypes(AgentCatalogVisibility visibility) =>
+      switch (visibility) {
+        .chatSelector => const ['main'],
+        .subAgentList => const ['sub_agent'],
+        .both => const ['main', 'sub_agent'],
+      };
 
   Future<Object?> _runMcp(
     Session session,

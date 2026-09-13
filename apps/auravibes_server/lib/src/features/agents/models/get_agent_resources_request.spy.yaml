@@ -1,0 +1,4 @@
+class: GetAgentResourcesRequest
+fields:
+  workspaceId: int
+  agentId: String

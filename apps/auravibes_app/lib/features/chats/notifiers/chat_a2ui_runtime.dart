@@ -40,6 +40,7 @@ typedef _PendingSurfaceContext = ({
 class ChatA2uiRuntime extends ChangeNotifier {
   new({required this.conversationId, this.enabled = false}) {
     _surfaceSubscription = _controller.surfaceUpdates.listen((_) {
+      _syncDataSubscriptions();
       notifyListeners();
     });
   }
@@ -48,7 +49,10 @@ class ChatA2uiRuntime extends ChangeNotifier {
   bool enabled;
 
   late final SurfaceController _controller = SurfaceController(
-    catalogs: auraChatCatalogs(),
+    catalogs: auraChatCatalogsWithTabSelection(
+      register: _registerTabSelection,
+      onChanged: notifyListeners,
+    ),
   );
   late final StreamSubscription<SurfaceUpdate> _surfaceSubscription;
   final StreamController<ChatUiAction> _actions =
@@ -58,6 +62,9 @@ class ChatA2uiRuntime extends ChangeNotifier {
   final Set<String> _submittedActions = {};
   final Set<ChatA2uiSurfaceIssue> _unboundIssues = {};
   final Set<String> _unboundDiagnosticPayloads = {};
+  final Map<String, ({DataModel model, ValueNotifier<Object?> notifier})>
+  _dataSubscriptions = {};
+  final Map<(String, String, DataPath), ValueGetter<int>> _tabSelections = {};
   String? _restoringMessageId;
   String? _currentMessageId;
 
@@ -194,6 +201,433 @@ class ChatA2uiRuntime extends ChangeNotifier {
 
   String? formResetLabel(String surfaceId) =>
       _formLabel(surfaceId, 'resetLabel');
+
+  VoidCallback _registerTabSelection(
+    CatalogItemContext context,
+    ValueGetter<int> readIndex,
+  ) {
+    final key = (context.surfaceId, context.id, context.dataContext.path);
+    _tabSelections[key] = readIndex;
+    return () {
+      if (_tabSelections[key] == readIndex) _tabSelections.remove(key);
+    };
+  }
+
+  void _syncDataSubscriptions() {
+    final activeIds = _controller.activeSurfaceIds.toSet();
+    for (final entry in _dataSubscriptions.entries.toList()) {
+      if (activeIds.contains(entry.key) &&
+          identical(
+            entry.value.model,
+            _controller.contextFor(entry.key).dataModel,
+          )) {
+        continue;
+      }
+      entry.value.notifier
+        ..removeListener(notifyListeners)
+        ..dispose();
+      _dataSubscriptions.remove(entry.key);
+    }
+    for (final id in activeIds) {
+      if (_dataSubscriptions.containsKey(id)) continue;
+      final model = _controller.contextFor(id).dataModel;
+      final notifier = model.subscribe<Object?>(DataPath.root)
+        ..addListener(notifyListeners);
+      _dataSubscriptions[id] = (model: model, notifier: notifier);
+    }
+  }
+
+  String? copyableTextFor(String messageId) {
+    final state = _messageStates[messageId];
+    if (state == null) return null;
+
+    final lines = <String>[];
+    for (final surfaceId in state.surfaceOrder) {
+      final surface = _surfaceStates[surfaceId];
+      if (surface == null || !isReadySurface(messageId, surfaceId)) continue;
+      final dataModel = _controller.contextFor(surfaceId).dataModel;
+      _appendCopyableComponentText(
+        surface: surface,
+        componentId: 'root',
+        lines: lines,
+        visited: <String>{},
+        dataContext: DataContext(dataModel, DataPath.root),
+      );
+    }
+
+    final text = lines.where((line) => line.trim().isNotEmpty).join('\n');
+    return text.isEmpty ? null : text;
+  }
+
+  Object? _resolveCopyableValue(Object? value, DataContext dataContext) {
+    if (value is! Map || value['path'] is! String) return value;
+    return dataContext.getValue<Object?>(DataPath(value['path']! as String));
+  }
+
+  void _appendCopyableComponentText({
+    required ChatA2uiSurfaceState surface,
+    required String componentId,
+    required List<String> lines,
+    required Set<String> visited,
+    required DataContext dataContext,
+  }) {
+    if (!visited.add(componentId)) return;
+    final component = surface.components[componentId];
+    if (component == null) return;
+
+    Object? resolve(Object? value) => _resolveCopyableValue(value, dataContext);
+    void field(String name) =>
+        _appendCopyableValue(lines, resolve(component[name]));
+    void fields(Iterable<String> names) {
+      for (final name in names) {
+        field(name);
+      }
+    }
+
+    void componentReference(Object? value) {
+      if (value is String) {
+        _appendCopyableComponentText(
+          surface: surface,
+          componentId: value,
+          lines: lines,
+          visited: visited,
+          dataContext: dataContext,
+        );
+      }
+    }
+
+    switch (component['component']) {
+      case 'Text':
+        field('text');
+      case 'Card':
+        fields(['title', 'subtitle']);
+      case 'EmptyState':
+      case 'Alert':
+      case 'Section':
+        fields(['title', 'description']);
+      case 'Fieldset':
+        fields(['legend', 'description']);
+      case 'LoadingIndicator':
+      case 'Tooltip':
+        field(component['component'] == 'Tooltip' ? 'message' : 'label');
+      case 'CodeBlock':
+        fields(['code', 'language']);
+      case 'Button':
+      case 'Badge':
+      case 'Icon':
+        field('label');
+      case 'CheckBox':
+      case 'DateTimeInput':
+      case 'Rating':
+        fields(['label', 'value']);
+      case 'TextField':
+        field('label');
+        if (component['variant'] != 'password') field('value');
+        fields(['helperText', 'errorText']);
+      case 'Slider':
+        fields(['label', 'value', 'unit']);
+      case 'TagInput':
+        field('label');
+        _appendCopyableValues(lines, resolve(component['value']));
+      case 'Stat':
+        fields(['value', 'label', 'delta']);
+      case 'Link':
+        fields(['label', 'semanticLabel']);
+      case 'ChoicePicker':
+        field('label');
+        _appendSelectedChoiceLabels(component, lines, resolve);
+      case 'KeyValue':
+        _appendKeyValueEntries(component['entries'], lines, resolve);
+      case 'Table':
+        _appendTable(component, lines, resolve);
+      case 'Chart':
+        _appendChart(component, lines, resolve);
+      case 'Avatar':
+        field('name');
+      case 'AvatarGroup':
+        _appendAvatarNames(component['avatars'], lines, resolve);
+      case 'Stepper':
+        _appendStructuredFields(
+          component['steps'],
+          ['title', 'description'],
+          lines,
+          resolve,
+        );
+      case 'Timeline':
+        _appendStructuredFields(
+          component['entries'],
+          ['title', 'description', 'time'],
+          lines,
+          resolve,
+        );
+      case 'Accordion':
+        _appendStructuredFields(component['items'], ['title'], lines, resolve);
+      case 'Tabs':
+        _appendTabs(component, surface, lines, visited, dataContext);
+      case 'Tab':
+        field('label');
+    }
+
+    for (final key in const ['child', 'trigger', 'content']) {
+      componentReference(component[key]);
+    }
+    final children = component['children'];
+    if (children is List) {
+      for (final child in children) {
+        componentReference(child);
+      }
+    } else if (children is Map) {
+      _appendTemplateChildren(children, surface, lines, visited, dataContext);
+    }
+    if (component['component'] == 'Accordion') {
+      for (final item in component['items'] as List? ?? const []) {
+        if (item is Map) componentReference(item['content']);
+      }
+    }
+  }
+
+  void _appendCopyableValue(List<String> lines, Object? value) {
+    final text = _copyableText(value);
+    if (text != null) lines.add(text);
+  }
+
+  void _appendCopyableValues(List<String> lines, Object? value) {
+    if (value is List) {
+      for (final entry in value) {
+        _appendCopyableValue(lines, entry);
+      }
+      return;
+    }
+    _appendCopyableValue(lines, value);
+  }
+
+  void _appendSelectedChoiceLabels(
+    Map<String, dynamic> component,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    final selected = resolve(component['value']);
+    final values = selected is List ? selected : [selected];
+    for (final option in component['options'] as List? ?? const []) {
+      if (option is! Map || !values.contains(option['value'])) continue;
+      _appendCopyableValue(lines, resolve(option['label']));
+    }
+  }
+
+  void _appendKeyValueEntries(
+    Object? value,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    for (final entry in value as List? ?? const []) {
+      if (entry is! Map) continue;
+      final values = <String>[];
+      for (final key in const ['label', 'value']) {
+        final resolved = resolve(entry[key]);
+        if (resolved is String || resolved is num || resolved is bool) {
+          values.add('$resolved'.trim());
+        }
+      }
+      if (values.isNotEmpty) lines.add(values.join('\t'));
+    }
+  }
+
+  void _appendTable(
+    Map<String, dynamic> component,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    _appendCopyableValue(lines, resolve(component['caption']));
+    final columns = resolve(component['columns']);
+    if (columns is List) {
+      final values = [
+        for (final column in columns)
+          if (column is Map)
+            _copyableText(resolve(column['label'])) ?? ''
+          else
+            _copyableText(resolve(column)) ?? '',
+      ];
+      if (values.isNotEmpty) lines.add(values.join('\t'));
+    }
+    final rows = resolve(component['rows']);
+    if (rows is! List) return;
+    for (final row in rows) {
+      final cells = row is Map ? row['cells'] : row;
+      if (cells is! List) continue;
+      final values = [
+        for (final cell in cells) _copyableText(resolve(cell)) ?? '',
+      ];
+      if (values.isNotEmpty) lines.add(values.join('\t'));
+    }
+  }
+
+  void _appendChart(
+    Map<String, dynamic> component,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    for (final field in const ['label', 'xAxisTitle', 'yAxisTitle']) {
+      _appendCopyableValue(lines, resolve(component[field]));
+    }
+    final labels = resolve(component['labels']);
+    if (labels is List) {
+      final values = [
+        for (final label in labels) ?_copyableText(resolve(label)),
+      ];
+      if (values.isNotEmpty) lines.add(values.join('\t'));
+    }
+    final series = resolve(component['series']);
+    if (series is! List) return;
+    for (final value in series) {
+      final entry = resolve(value);
+      if (entry is! Map) continue;
+      _appendCopyableValue(lines, resolve(entry['label']));
+      final values = resolve(entry['values']);
+      if (values is List) {
+        for (final value in values) {
+          _appendCopyableValue(lines, resolve(value));
+        }
+      } else {
+        _appendCopyableValue(lines, values);
+      }
+    }
+  }
+
+  void _appendAvatarNames(
+    Object? value,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    final avatars = resolve(value);
+    if (avatars is! List) return;
+    for (final avatar in avatars) {
+      if (avatar is Map) _appendCopyableValue(lines, resolve(avatar['name']));
+    }
+  }
+
+  void _appendStructuredFields(
+    Object? value,
+    List<String> fields,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    for (final entry in value as List? ?? const []) {
+      if (entry is! Map) continue;
+      for (final field in fields) {
+        _appendCopyableValue(lines, resolve(entry[field]));
+      }
+    }
+  }
+
+  void _appendTemplateChildren(
+    Map<Object?, Object?> children,
+    ChatA2uiSurfaceState surface,
+    List<String> lines,
+    Set<String> visited,
+    DataContext dataContext,
+  ) {
+    final componentId = children['componentId'];
+    if (componentId is! String) return;
+    for (final itemContext in _templateContexts(children, dataContext)) {
+      _appendCopyableComponentText(
+        surface: surface,
+        componentId: componentId,
+        lines: lines,
+        visited: <String>{...visited},
+        dataContext: itemContext,
+      );
+    }
+  }
+
+  void _appendTabs(
+    Map<String, dynamic> component,
+    ChatA2uiSurfaceState surface,
+    List<String> lines,
+    Set<String> visited,
+    DataContext dataContext,
+  ) {
+    Object? resolve(Object? value) => _resolveCopyableValue(value, dataContext);
+    final active = resolve(component['activeTab']);
+    final activeIndex = switch (active) {
+      num value => value.toInt(),
+      String value => num.tryParse(value)?.toInt(),
+      _ => null,
+    };
+    final controlled =
+        component['activeTab'] is Map || component['tabs'] is Map;
+    final selectedIndex = controlled && activeIndex != null
+        ? activeIndex
+        : _tabSelections[(
+                    surface.scopedSurfaceId,
+                    component['id'],
+                    dataContext.path,
+                  )]
+                  ?.call() ??
+              activeIndex ??
+              0;
+    final tabs = component['tabs'];
+    if (tabs is Map) {
+      final templateId = tabs['componentId'];
+      final template = templateId is String
+          ? surface.components[templateId]
+          : null;
+      if (template == null) return;
+      final contexts = _templateContexts(tabs, dataContext);
+      if (contexts.isEmpty) return;
+      for (final itemContext in contexts) {
+        _appendCopyableValue(
+          lines,
+          _resolveCopyableValue(template['label'], itemContext),
+        );
+      }
+      final content = template['content'];
+      if (content is String) {
+        _appendCopyableComponentText(
+          surface: surface,
+          componentId: content,
+          lines: lines,
+          visited: <String>{...visited},
+          dataContext: contexts[selectedIndex.clamp(0, contexts.length - 1)],
+        );
+      }
+      return;
+    }
+    if (tabs is! List || tabs.isEmpty) return;
+    for (final tab in tabs) {
+      if (tab is Map) _appendCopyableValue(lines, resolve(tab['label']));
+    }
+    final tab = tabs[selectedIndex.clamp(0, tabs.length - 1)];
+    if (tab is Map && tab['content'] is String) {
+      _appendCopyableComponentText(
+        surface: surface,
+        componentId: tab['content']! as String,
+        lines: lines,
+        visited: visited,
+        dataContext: dataContext,
+      );
+    }
+  }
+
+  List<DataContext> _templateContexts(Object value, DataContext dataContext) {
+    if (value is! Map || value['path'] is! String) return const [];
+    final path = value['path']! as String;
+    final data = _resolveCopyableValue(value, dataContext);
+    final keys = switch (data) {
+      List value => [
+        for (var index = 0; index < value.length; index++) '$index',
+      ],
+      Map value => [for (final key in value.keys) '$key'],
+      _ => const <String>[],
+    };
+    return [for (final key in keys) dataContext.nested(DataPath('$path/$key'))];
+  }
+
+  String? _copyableText(Object? value) => switch (value) {
+    String value => value.trim(),
+    num value => '$value',
+    bool value => '$value',
+    _ => null,
+  };
 
   String? _formLabel(String surfaceId, String field) {
     final surface = _surfaceStates[surfaceId];
@@ -756,6 +1190,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
   ) {
     try {
       _controller.handleMessage(normalizedMessage);
+      _syncDataSubscriptions();
       _captureInitialDataModel(context.surface, normalizedMessage);
       _recordAcceptedMessage(messageId, context, pendingMessage, surfaceId);
       return pendingMessage.payloadJson;
@@ -1174,6 +1609,13 @@ class ChatA2uiRuntime extends ChangeNotifier {
   void dispose() {
     unawaited(_surfaceSubscription.cancel());
     unawaited(_actions.close());
+    for (final subscription in _dataSubscriptions.values) {
+      subscription.notifier
+        ..removeListener(notifyListeners)
+        ..dispose();
+    }
+    _dataSubscriptions.clear();
+    _tabSelections.clear();
     _controller.dispose();
     super.dispose();
   }

@@ -2,6 +2,7 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_list_query.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
@@ -19,16 +20,30 @@ class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
   }
 
   @override
-  Future<List<agent.SubAgentCatalogEntry>> listSubAgents(
-    String workspaceId,
+  Future<agent.SubAgentCatalogPage> listSubAgents(
+    agent.SubAgentCatalogQuery query,
   ) async {
-    final agents = await _agentsRepository.getAgentsByWorkspace(workspaceId);
+    final page = await _agentsRepository.listAgents(_agentListQuery(query));
 
-    return [
-      for (final subAgent in agents)
-        if (subAgent.isEnabled) _toCatalogEntry(subAgent),
-    ];
+    return agent.SubAgentCatalogPage(
+      agents: [
+        for (final item in page.agents)
+          _toCatalogListEntry(item, query.workspaceId),
+      ],
+      nextCursor: page.nextCursor,
+    );
   }
+
+  agent.SubAgentCatalogEntry _toCatalogListEntry(
+    AgentListItem item,
+    String workspaceId,
+  ) => agent.SubAgentCatalogEntry(
+    id: item.id,
+    workspaceId: workspaceId,
+    name: item.name,
+    description: item.description,
+    types: _agentTypes(item.visibility),
+  );
 
   agent.SubAgentCatalogEntry _toCatalogEntry(AgentEntity subAgent) {
     return agent.SubAgentCatalogEntry(
@@ -48,6 +63,19 @@ class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
     };
   }
 }
+
+AgentListQuery _agentListQuery(agent.SubAgentCatalogQuery query) => .new(
+  workspaceId: query.workspaceId,
+  search: query.query,
+  type: switch (query.type) {
+    'main' => .chatSelector,
+    'sub_agent' => .subAgentList,
+    _ => null,
+  },
+  status: .enabled,
+  limit: query.limit,
+  cursor: query.cursor,
+);
 
 class AppSubAgentConversationStore(
   final ConversationRepository _conversationRepository,

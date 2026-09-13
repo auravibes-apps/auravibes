@@ -54,6 +54,20 @@ class WorkspaceStateEndpoint extends Endpoint {
     return response;
   }
 
+  Future<PatchWorkspaceStateResponse> duplicateAgent(
+    Session session,
+    DuplicateWorkspaceAgentRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    final response = await _useCases.duplicateAgent(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+    await SyncWakeups.publishWorkspace(session, request.workspaceId);
+    return response;
+  }
+
   Future<MutateWorkspaceCredentialResponse> mutateCredential(
     Session session,
     MutateWorkspaceCredentialRequest request,

@@ -16,6 +16,7 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
     this.issuesBySurface = const {},
     this.messageIssues = const [],
     this.interactive = true,
+    this.wrapInSelectionArea = true,
     super.key,
   }) : _historical = false;
 
@@ -23,6 +24,7 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
     required this.runtime,
     required this.messageId,
     this.interactive = true,
+    this.wrapInSelectionArea = true,
     super.key,
   }) : payloads = const [],
        issuesBySurface = const {},
@@ -32,6 +34,7 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
   const new historical({
     required this.messageId,
     required this.payloads,
+    this.wrapInSelectionArea = true,
     super.key,
   }) : runtime = null,
        interactive = false,
@@ -45,15 +48,17 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
   final Map<String, List<String>> issuesBySurface;
   final List<String> messageIssues;
   final bool interactive;
+  final bool wrapInSelectionArea;
   final bool _historical;
 
   @override
   Widget build(BuildContext context) {
     if (_historical) {
-      return ChatA2uiHistoricalSurface(
+      final child = ChatA2uiHistoricalSurface(
         messageId: messageId,
         payloads: payloads,
       );
+      return wrapInSelectionArea ? SelectionArea(child: child) : child;
     }
     final currentRuntime = runtime;
     if (currentRuntime == null) {
@@ -87,7 +92,7 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return _buildSurfaceColumn(
+    final child = _buildSurfaceColumn(
       context,
       currentRuntime,
       currentMessageId,
@@ -95,6 +100,7 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
       readyIds,
       messageHasWarning,
     );
+    return wrapInSelectionArea ? SelectionArea(child: child) : child;
   }
 
   Widget _buildEmptyState(
@@ -145,6 +151,7 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
       key: ValueKey(currentMessageId),
       messageId: currentMessageId,
       payloads: payloads,
+      wrapInSelectionArea: wrapInSelectionArea,
     );
   }
 

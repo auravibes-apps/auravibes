@@ -31,6 +31,41 @@ icon = "test"
 command = "fvm dart run melos run test"
 
 [[actions]]
+name = "Start macOS App"
+icon = "run"
+command = '''
+worktree="$PWD"
+source "$worktree/scripts/serverpod_worktree_env.sh"
+cd "$worktree/apps/auravibes_app"
+fvm flutter run -d macos --flavor dev \
+  --dart-define=AURAVIBES_SERVER_URL="$AURAVIBES_SERVER_URL" \
+  "--dart-define=DB_HASH_SOURCE=$worktree"'''
+platform = "darwin"
+
+[[actions]]
+name = "Start Linux App"
+icon = "run"
+command = '''
+worktree="$PWD"
+source "$worktree/scripts/serverpod_worktree_env.sh"
+cd "$worktree/apps/auravibes_app"
+fvm flutter run -d linux --flavor dev \
+  --dart-define=AURAVIBES_SERVER_URL="$AURAVIBES_SERVER_URL" \
+  "--dart-define=DB_HASH_SOURCE=$worktree"'''
+platform = "linux"
+
+[[actions]]
+name = "Start Windows App"
+icon = "run"
+command = "cd apps/auravibes_app && fvm flutter run -d windows --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/"
+platform = "win32"
+
+[[actions]]
+name = "Start Server"
+icon = "run"
+command = "./scripts/start_server.sh"
+
+[[actions]]
 name = "Widgetbook (Web Server)"
 icon = "tool"
 command = '''

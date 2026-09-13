@@ -3,22 +3,38 @@ import 'package:auravibes_engine/src/tool_spec.dart';
 const agentsSkillSlug = 'agents';
 const agentsSkillTitle = 'Agents';
 const agentsSkillContent =
-    'Use this skill to list enabled agents and filter them by type.';
+    'Use this skill to search enabled agents and page through results.';
 const listAgentsToolName = 'list_agents';
 const runSubAgentToolName = 'run_sub_agent';
 
 final listAgentsToolSpec = ToolSpec(
   name: listAgentsToolName,
   description:
-      'List enabled agents. Returns id, name, description, and supported '
-      'types for each agent. Use type to filter by main or sub_agent.',
+      'List enabled agents. Returns id, name, description, supported types, '
+      'and nextCursor. Reuse the same query and type with nextCursor.',
   inputJsonSchema: {
     'type': 'object',
     'properties': {
+      'query': {
+        'type': 'string',
+        'maxLength': 200,
+        'description': 'Optional name or description search.',
+      },
       'type': {
         'type': 'string',
         'enum': ['main', 'sub_agent'],
         'description': 'Optional agent type filter.',
+      },
+      'limit': {
+        'type': 'integer',
+        'minimum': 1,
+        'maximum': 100,
+        'description': 'Results per page. Defaults to 20.',
+      },
+      'cursor': {
+        'type': 'string',
+        'maxLength': 2048,
+        'description': 'Opaque nextCursor from a previous call.',
       },
     },
     'required': <String>[],
