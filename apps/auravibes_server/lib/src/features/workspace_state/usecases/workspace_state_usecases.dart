@@ -144,55 +144,17 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         transaction,
       );
       await guard?.call(transaction);
-      final now = DateTime.now().toUtc();
-      final changed = <WorkspaceResource>[];
-      for (final operation in request.operations) {
-        changed.add(
-          await _applyOperation(
-            session,
-            operation,
-            request.workspaceId,
-            now,
-            transaction,
-          ),
-        );
-      }
-      var sequence = workspace.sequence;
-      for (final resource in changed) {
-        sequence++;
-        final event = WorkspaceResourceValidation.eventFor(resource);
-        await _recordEvent(
-          session,
-          workspaceId: request.workspaceId,
-          sequence: sequence,
-          userId: userId,
-          kind: event.kind,
-          resourceKind: event.resourceKind,
-          resourceId: event.resourceId,
-          transaction: transaction,
-        );
-      }
-      await CloudWorkspace.db.updateRow(
+      return _commitOperations(
         session,
-        workspace.copyWith(sequence: sequence, updatedAt: now),
-        transaction: transaction,
-      );
-      final response = PatchWorkspaceStateResponse(
-        resources: changed,
-        sequence: sequence,
-      );
-      await _saveReceipt(
-        session,
+        workspace: workspace,
         workspaceId: request.workspaceId,
         userId: userId,
         endpoint: _endpointPatch,
+        operations: request.operations,
         requestId: request.requestId,
         hash: hash,
-        responseJson: jsonEncode(response.toJson()),
-        now: now,
         transaction: transaction,
       );
-      return response;
     });
   }
 
@@ -245,57 +207,80 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         request,
         transaction,
       );
-      final now = DateTime.now().toUtc();
-      final changed = <WorkspaceResource>[];
-      for (final operation in operations) {
-        changed.add(
-          await _applyOperation(
-            session,
-            operation,
-            request.workspaceId,
-            now,
-            transaction,
-          ),
-        );
-      }
-      var sequence = workspace.sequence;
-      for (final resource in changed) {
-        sequence++;
-        final event = WorkspaceResourceValidation.eventFor(resource);
-        await _recordEvent(
-          session,
-          workspaceId: request.workspaceId,
-          sequence: sequence,
-          userId: userId,
-          kind: event.kind,
-          resourceKind: event.resourceKind,
-          resourceId: event.resourceId,
-          transaction: transaction,
-        );
-      }
-      await CloudWorkspace.db.updateRow(
+      return _commitOperations(
         session,
-        workspace.copyWith(sequence: sequence, updatedAt: now),
-        transaction: transaction,
-      );
-      final response = PatchWorkspaceStateResponse(
-        resources: changed,
-        sequence: sequence,
-      );
-      await _saveReceipt(
-        session,
+        workspace: workspace,
         workspaceId: request.workspaceId,
         userId: userId,
         endpoint: _endpointDuplicateAgent,
+        operations: operations,
         requestId: request.requestId,
         hash: hash,
-        responseJson: jsonEncode(response.toJson()),
-        now: now,
         transaction: transaction,
       );
-
-      return response;
     });
+  }
+
+  Future<PatchWorkspaceStateResponse> _commitOperations(
+    Session session, {
+    required CloudWorkspace workspace,
+    required int workspaceId,
+    required String userId,
+    required String endpoint,
+    required Iterable<WorkspacePatchOperation> operations,
+    required String requestId,
+    required String hash,
+    required Transaction transaction,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final changed = <WorkspaceResource>[];
+    for (final operation in operations) {
+      changed.add(
+        await _applyOperation(
+          session,
+          operation,
+          workspaceId,
+          now,
+          transaction,
+        ),
+      );
+    }
+    var sequence = workspace.sequence;
+    for (final resource in changed) {
+      sequence++;
+      final event = WorkspaceResourceValidation.eventFor(resource);
+      await _recordEvent(
+        session,
+        workspaceId: workspaceId,
+        sequence: sequence,
+        userId: userId,
+        kind: event.kind,
+        resourceKind: event.resourceKind,
+        resourceId: event.resourceId,
+        transaction: transaction,
+      );
+    }
+    await CloudWorkspace.db.updateRow(
+      session,
+      workspace.copyWith(sequence: sequence, updatedAt: now),
+      transaction: transaction,
+    );
+    final response = PatchWorkspaceStateResponse(
+      resources: changed,
+      sequence: sequence,
+    );
+    await _saveReceipt(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      endpoint: endpoint,
+      requestId: requestId,
+      hash: hash,
+      responseJson: jsonEncode(response.toJson()),
+      now: now,
+      transaction: transaction,
+    );
+    return response;
   }
 
   Future<PutWorkspaceSecretResponse> putSecret(
