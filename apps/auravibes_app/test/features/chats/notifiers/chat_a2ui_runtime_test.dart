@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:a2ui_core/a2ui_core.dart' as core;
 import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
@@ -10,6 +11,605 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
 
 void main() {
+  ChatA2uiRuntime copyRuntime(
+    List<Map<String, Object?>> components, {
+    Map<String, Object?> data = const {},
+    bool form = false,
+  }) {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+    for (final message in [
+      {
+        'createSurface': {
+          'surfaceId': 'main',
+          'catalogId': form ? auraChatFormCatalogId : auraChatCatalogId,
+        },
+      },
+      {
+        'updateComponents': {'surfaceId': 'main', 'components': components},
+      },
+      {
+        'updateDataModel': {'surfaceId': 'main', 'path': '/', 'value': data},
+      },
+    ]) {
+      runtime.addMessageJson(
+        jsonEncode({
+          'protocolVersion': 'v1',
+          'interactionMode': form ? 'requiresUserAction' : 'passive',
+          'message': {'version': 'v0.9', ...message},
+        }),
+      );
+    }
+    runtime.commitCurrentMessage();
+    expect(runtime.isReadySurface('assistant-1', 'assistant-1:main'), isTrue);
+    expect(runtime.hasSurfaceIssue('assistant-1'), isFalse);
+    return runtime;
+  }
+
+  for (final form in [false, true]) {
+    test('excludes ${form ? 'bound' : 'literal'} password values', () {
+      final runtime = copyRuntime(
+        [
+          {
+            'id': 'root',
+            'component': 'TextField',
+            'variant': 'password',
+            'label': 'Password',
+            'helperText': 'Keep private',
+            'value': form ? {'path': '/password'} : 'test-secret',
+          },
+        ],
+        data: {'password': 'test-secret'},
+        form: form,
+      );
+
+      expect(runtime.copyableTextFor('assistant-1'), 'Password\nKeep private');
+      runtime.controller
+          .contextFor('assistant-1:main')
+          .dataModel
+          .update(DataPath('/password'), 'changed-test-secret');
+      expect(runtime.copyableTextFor('assistant-1'), 'Password\nKeep private');
+    });
+  }
+
+  for (final useMap in [false, true]) {
+    test(
+      'resolves nested and root bindings in ${useMap ? 'map' : 'list'} templates',
+      () {
+        const people = [
+          {
+            'profile': {'city': 'London'},
+            'notes': [
+              {'body': 'First note'},
+              {'body': 'Second note'},
+            ],
+          },
+          {
+            'profile': {'city': 'Paris'},
+            'notes': [
+              {'body': 'Third note'},
+            ],
+          },
+        ];
+        final runtime = copyRuntime(
+          [
+            {
+              'id': 'root',
+              'component': 'Column',
+              'children': {'path': '/people', 'componentId': 'person'},
+            },
+            {
+              'id': 'person',
+              'component': 'Column',
+              'children': ['city', 'shared', 'notes'],
+            },
+            {
+              'id': 'city',
+              'component': 'Text',
+              'text': {'path': 'profile/city'},
+            },
+            {
+              'id': 'shared',
+              'component': 'Text',
+              'text': {'path': '/shared/title'},
+            },
+            {
+              'id': 'notes',
+              'component': 'Column',
+              'children': {'path': 'notes', 'componentId': 'note'},
+            },
+            {
+              'id': 'note',
+              'component': 'Text',
+              'text': {'path': 'body'},
+            },
+          ],
+          data: {
+            'people': useMap ? {'ada': people[0], 'grace': people[1]} : people,
+            'shared': {'title': 'Shared heading'},
+          },
+        );
+
+        expect(
+          runtime.copyableTextFor('assistant-1'),
+          'London\nShared heading\nFirst note\nSecond note\nParis\nShared heading\nThird note',
+        );
+      },
+    );
+  }
+
+  for (final template in [false, true]) {
+    for (final selection in [
+      null,
+      1,
+      {'path': '/active'},
+    ]) {
+      test(
+        'projects ${template ? 'template' : 'static'} tabs with activeTab $selection',
+        () {
+          final runtime = copyRuntime(
+            [
+              {
+                'id': 'root',
+                'component': 'Tabs',
+                'activeTab': ?selection,
+                'tabs': template
+                    ? {'path': '/tabs', 'componentId': 'tab'}
+                    : [
+                        {'label': 'Overview', 'content': 'first'},
+                        {'label': 'Details', 'content': 'second'},
+                      ],
+              },
+              if (template) ...[
+                {
+                  'id': 'tab',
+                  'component': 'Tab',
+                  'label': {'path': 'title'},
+                  'content': 'panel',
+                },
+                {
+                  'id': 'panel',
+                  'component': 'Column',
+                  'children': ['body', 'shared'],
+                },
+                {
+                  'id': 'body',
+                  'component': 'Text',
+                  'text': {'path': 'content/body'},
+                },
+                {
+                  'id': 'shared',
+                  'component': 'Text',
+                  'text': {'path': '/shared'},
+                },
+              ] else ...[
+                {'id': 'first', 'component': 'Text', 'text': 'First'},
+                {'id': 'second', 'component': 'Text', 'text': 'Second'},
+              ],
+            ],
+            data: {
+              'shared': 'Shared heading',
+              'tabs': {
+                'overview': {
+                  'title': 'Overview',
+                  'content': {'body': 'First'},
+                },
+                'details': {
+                  'title': 'Details',
+                  'content': {'body': 'Second'},
+                },
+              },
+            },
+          );
+          final suffix = template ? '\nShared heading' : '';
+          expect(
+            runtime.copyableTextFor('assistant-1'),
+            'Overview\nDetails\n${selection == 1 ? 'Second' : 'First'}$suffix',
+          );
+          if (selection is! Map) return;
+          for (final index in [-3, 1, 20, '1', 0]) {
+            runtime.controller
+                .contextFor('assistant-1:main')
+                .dataModel
+                .update(DataPath('/active'), index);
+            expect(
+              runtime.copyableTextFor('assistant-1'),
+              'Overview\nDetails\n${index == -3 || index == 0 ? 'First' : 'Second'}$suffix',
+            );
+          }
+        },
+      );
+    }
+  }
+
+  test('preserves empty table cell positions including row boundaries', () {
+    final runtime = copyRuntime([
+      {
+        'id': 'root',
+        'component': 'Table',
+        'columns': [
+          {'label': 'A'},
+          {'label': 'B'},
+          {'label': 'C'},
+        ],
+        'rows': [
+          [null, 'B', 'C'],
+          ['A', null, 'C'],
+          ['A', 'B', null],
+        ],
+      },
+    ]);
+
+    expect(
+      runtime.copyableTextFor('assistant-1'),
+      'A\tB\tC\n\tB\tC\nA\t\tC\nA\tB\t',
+    );
+  });
+
+  test(
+    'notifies for repeated model edits and releases deleted subscriptions',
+    () async {
+      final runtime = copyRuntime([
+        {
+          'id': 'root',
+          'component': 'Text',
+          'text': {'path': '/name'},
+        },
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      final copies = <String?>[];
+      void onChanged() => copies.add(runtime.copyableTextFor('assistant-1'));
+      runtime.addListener(onChanged);
+      addTearDown(() => runtime.removeListener(onChanged));
+      final model = runtime.controller.contextFor('assistant-1:main').dataModel;
+
+      model.update(DataPath('/name'), 'Ada');
+      model.update(DataPath('/name'), 'Grace');
+      expect(copies, ['Ada', 'Grace']);
+
+      runtime.controller.handleMessage(
+        core.DeleteSurfaceMessage(surfaceId: 'assistant-1:main'),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(copies.last, isNull);
+    },
+  );
+
+  test('projects committed text surfaces into copyable text', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'main',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [
+              {'id': 'root', 'component': 'Text', 'text': 'UI answer'},
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+
+    expect(runtime.copyableTextFor('assistant-1'), 'UI answer');
+    expect(
+      runtime.copyableTextFor('assistant-1'),
+      isNot(contains('protocolVersion')),
+    );
+    runtime.controller.handleMessage(
+      core.DeleteSurfaceMessage(surfaceId: 'assistant-1:main'),
+    );
+    expect(runtime.copyableTextFor('assistant-1'), isNull);
+  });
+
+  test('projects every bound template item with its nested data context', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'main',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Column',
+                'children': {'path': '/people', 'componentId': 'person'},
+              },
+              {
+                'id': 'person',
+                'component': 'Text',
+                'text': {'path': 'name'},
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+    runtime.controller.contextFor('assistant-1:main').dataModel.update(
+      DataPath('/people'),
+      [
+        {'name': 'Ada'},
+        {'name': 'Grace'},
+      ],
+    );
+
+    expect(runtime.copyableTextFor('assistant-1'), 'Ada\nGrace');
+  });
+
+  test('projects template tab labels and the selected nested content', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'main',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Tabs',
+                'tabs': {'path': '/tabs', 'componentId': 'tab-template'},
+                'activeTab': {'path': '/activeTab'},
+              },
+              {
+                'id': 'tab-template',
+                'component': 'Tab',
+                'label': {'path': 'title'},
+                'content': 'tab-content',
+              },
+              {
+                'id': 'tab-content',
+                'component': 'Text',
+                'text': {'path': 'body'},
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+    runtime.controller.contextFor('assistant-1:main').dataModel.update(
+      DataPath('/'),
+      {
+        'activeTab': 1,
+        'tabs': [
+          {'title': 'Overview', 'body': 'First'},
+          {'title': 'Details', 'body': 'Second'},
+        ],
+      },
+    );
+
+    expect(runtime.copyableTextFor('assistant-1'), 'Overview\nDetails\nSecond');
+  });
+
+  test('projects individually bound chart series fields', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'main',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Chart',
+                'labels': {'path': '/chart/labels'},
+                'series': {'path': '/chart/series'},
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+    runtime.controller.contextFor('assistant-1:main').dataModel.update(
+      DataPath('/chart'),
+      {
+        'labels': ['January'],
+        'series': [
+          {
+            'label': {'path': '/chart/seriesLabel'},
+            'values': [
+              {'path': '/chart/seriesValue'},
+            ],
+          },
+        ],
+        'seriesLabel': 'Revenue',
+        'seriesValue': 42,
+      },
+    );
+
+    final text = runtime.copyableTextFor('assistant-1');
+    expect(text, contains('Revenue'));
+    expect(text, contains('42'));
+  });
+
+  test('projects current form values into copyable text', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'interactionMode': 'requiresUserAction',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'form',
+            'catalogId': auraChatFormCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'interactionMode': 'requiresUserAction',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'form',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Column',
+                'children': ['name'],
+              },
+              {
+                'id': 'name',
+                'component': 'TextField',
+                'label': 'Name',
+                'value': {'path': '/name'},
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+    runtime.controller
+        .contextFor('assistant-1:form')
+        .dataModel
+        .update(DataPath('/name'), 'Ada');
+
+    final text = runtime.copyableTextFor('assistant-1');
+    expect(text, contains('Name'));
+    expect(text, contains('Ada'));
+  });
+
+  test('does not project image-only surface protocols or diagnostics', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('image-only');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'secret-surface',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'secret-surface',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Image',
+                'url': 'https://example.com/private.png',
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+
+    expect(runtime.copyableTextFor('image-only'), isNull);
+    expect(
+      runtime.copyableTextFor('image-only'),
+      allOf(
+        isNot(contains('secret-surface')),
+        isNot(contains('private.png')),
+        isNot(contains('protocolVersion')),
+        isNot(contains('diagnostic')),
+      ),
+    );
+  });
+
   test('turns the trusted form submit into typed metadata', () async {
     final runtime = ChatA2uiRuntime(
       conversationId: 'conversation-1',

@@ -313,6 +313,8 @@
       "a2ui_unavailable": "No se pudo cargar esta interfaz.",
       "copy_a2ui_diagnostic": "Copiar detalles del diagnóstico",
       "a2ui_diagnostic_copied": "Diagnóstico copiado",
+      "copy_message": "Copiar mensaje",
+      "message_copied": "Mensaje copiado",
       "a2ui_form_invalid": "Revisa tus respuestas e inténtalo de nuevo.",
       "continue_error": "No se pudo continuar el agente. Inténtalo de nuevo.",
       "rate_limit_retry": "Se alcanzó el límite de uso. Reintentando en {seconds}s.",
