@@ -57,8 +57,7 @@
 
 ### Scoped database queries
 
-- From repo root, run `fvm dart run tool/db_query.dart "SELECT ..."` to query
-  the dev database scoped by the same `DB_HASH_SOURCE` used by VS Code.
+- From repo root, run `fvm dart run tool/db_query.dart "SELECT ..."` to query the dev database scoped by VS Code's `DB_HASH_SOURCE`.
 - The current repo path is the default hash source. Use
   `--hash-source PATH` for another workspace or `--database-directory PATH`
   when the platform documents directory needs an override.
@@ -82,7 +81,6 @@
 
 - Run the smallest focused check that proves the change.
 - For code edits, prefer focused tests, analysis, or boundary checks over generic whitespace checks.
-
 - Assign one owner per validation command.
 - Run broad validation once, only after implementation stabilizes and scope requires it.
 - Do not repeat a completed command unless relevant files or configuration changed.
@@ -146,14 +144,6 @@
 
 ## Agent skills
 
-### Issue tracker
-
-Issues and specs live as GitHub issues in `auravibes-apps/auravibes`; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Use the canonical triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Multi-context layout: root `CONTEXT-MAP.md`, per-context `CONTEXT.md`, system-wide `docs/adr/`, and context-specific ADRs. See `docs/agents/domain.md`.
+- Issues/specs: GitHub issues in `auravibes-apps/auravibes` via `gh`; see `docs/agents/issue-tracker.md`.
+- Triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`; see `docs/agents/triage-labels.md`.
+- Domain docs: root `CONTEXT-MAP.md`, per-context `CONTEXT.md`, system-wide `docs/adr/`, and context-specific ADRs; see `docs/agents/domain.md`.
