@@ -134,7 +134,7 @@ void main() {
       });
 
       final result = container.read(appDatabaseProvider);
-      expect(result.schemaVersion, 6);
+      expect(result.schemaVersion, 7);
     });
 
     test('overridden database has all DAOs accessible', () {

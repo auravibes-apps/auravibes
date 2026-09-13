@@ -118,7 +118,8 @@ class AppDatabase extends _$AppDatabase {
   static const _agentToolsSchemaVersion = 3;
   static const _splitSchemaVersion = 4;
   static const _cloudWorkspaceSchemaVersion = 5;
-  static const _currentSchemaVersion = 6;
+  static const _cloudWorkspaceColumnsSchemaVersion = 6;
+  static const _currentSchemaVersion = 7;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -160,6 +161,7 @@ extension on AppDatabase {
     await _upgradeCloudAgentSchema(m, from);
     await _backfillAgentDescriptions(from);
     await _upgradeCloudWorkspaceSchema(m, from);
+    await _upgradeAgentCatalogSchema(from);
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {
@@ -195,9 +197,17 @@ extension on AppDatabase {
   }
 
   Future<void> _upgradeCloudWorkspaceSchema(Migrator m, int from) async {
-    if (from >= AppDatabase._currentSchemaVersion) return;
+    if (from >= AppDatabase._cloudWorkspaceColumnsSchemaVersion) return;
     await m.addColumn(workspaces, workspaces.cloudWorkspaceId);
     await m.addColumn(workspaces, workspaces.cloudAccountId);
+  }
+
+  Future<void> _upgradeAgentCatalogSchema(int from) async {
+    if (from >= AppDatabase._currentSchemaVersion) return;
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS agents_workspace_name_id '
+      'ON agents (workspace_id, name COLLATE NOCASE, id)',
+    );
   }
 
   Future<void> _backfillAgentDescriptions(int from) async {

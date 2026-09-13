@@ -46,7 +46,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 6);
+      expect(fixture.database.schemaVersion, 7);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -85,6 +85,49 @@ void main() {
       final strategy = fixture.database.migration;
       expect(strategy.onCreate, isNotNull);
     });
+
+    test(
+      'migration from schema 6 preserves agents and adds catalog index',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 6
+          ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            content TEXT NOT NULL,
+            is_enabled INTEGER NOT NULL DEFAULT 1,
+            visibility TEXT NOT NULL DEFAULT 'both'
+          );
+        ''')
+          ..execute('''
+          INSERT INTO agents (
+            id, created_at, updated_at, workspace_id, name, description,
+            content, is_enabled, visibility
+          ) VALUES ('agent-1', 0, 0, 'workspace-1', 'Agent', 'Description',
+            'Prompt', 1, 'both')
+        ''');
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final agent = await fixture.database.customSelect(
+          '''SELECT id FROM agents WHERE id = 'agent-1' ''',
+        ).getSingle();
+        final indexes = await fixture.database.customSelect(
+          '''PRAGMA index_list('agents')''',
+        ).get();
+
+        expect(agent.read<String>('id'), 'agent-1');
+        expect(
+          indexes.map((row) => row.read<String>('name')),
+          contains('agents_workspace_name_id'),
+        );
+      },
+    );
 
     test('migration from schema 4 backfills agent defaults', () async {
       await fixture.close();

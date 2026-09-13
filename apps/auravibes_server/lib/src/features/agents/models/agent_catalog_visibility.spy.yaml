@@ -1,0 +1,6 @@
+enum: AgentCatalogVisibility
+serialized: byName
+values:
+  - chatSelector
+  - subAgentList
+  - both

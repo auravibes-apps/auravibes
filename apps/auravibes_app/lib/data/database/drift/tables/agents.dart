@@ -8,6 +8,10 @@ import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:drift/drift.dart';
 
 @DataClassName('AgentsTable')
+@TableIndex.sql('''
+CREATE INDEX agents_workspace_name_id
+ON agents (workspace_id, name COLLATE NOCASE, id)
+''')
 class Agents extends Table with TableMixin {
   TextColumn get workspaceId =>
       text().references(Workspaces, #id, onDelete: .cascade)();

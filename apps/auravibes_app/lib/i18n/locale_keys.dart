@@ -243,6 +243,12 @@ abstract class LocaleKeys {
   static const agents_details_title = 'agents.details_title';
   static const agents_details_description = 'agents.details_description';
   static const agents_required_fields_status = 'agents.required_fields_status';
+  static const agents_search_placeholder = 'agents.search_placeholder';
+  static const agents_search_no_results = 'agents.search_no_results';
+  static const agents_filter_all = 'agents.filter_all';
+  static const agents_filter_type = 'agents.filter_type';
+  static const agents_filter_status = 'agents.filter_status';
+  static const agents_load_more_error = 'agents.load_more_error';
   static const agents_name_label = 'agents.name_label';
   static const agents_name_required = 'agents.name_required';
   static const agents_description_label = 'agents.description_label';

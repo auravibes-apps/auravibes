@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/agent_skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/agents.dart';
+import 'package:auravibes_app/domain/entities/agent_list_query.dart';
 import 'package:drift/drift.dart';
 
 part 'agents_dao.g.dart';
@@ -23,6 +24,19 @@ extension AgentsDaoReadOperations on AgentsDao {
             ..orderBy([(tbl) => OrderingTerm(expression: tbl.name)]))
           .get();
 
+  Future<List<AgentsTable>> listAgents({
+    required AgentListQuery query,
+    required String? afterName,
+    required String? afterId,
+  }) =>
+      (select(agents)
+            ..where(
+              (table) => _agentListPredicate(table, query, afterName, afterId),
+            )
+            ..orderBy([_orderAgentName, _orderAgentId])
+            ..limit(query.limit + 1))
+          .get();
+
   Future<AgentsTable?> getAgentById(String agentId) => (select(
     agents,
   )..where((tbl) => tbl.id.equals(agentId))).getSingleOrNull();
@@ -37,6 +51,60 @@ extension AgentsDaoReadOperations on AgentsDao {
     return (select(agentSkills)..where((tbl) => tbl.agentId.isIn(ids))).get();
   }
 }
+
+Expression<bool> _agentListPredicate(
+  Agents table,
+  AgentListQuery query,
+  String? afterName,
+  String? afterId,
+) =>
+    table.workspaceId.equals(query.workspaceId) &
+    _agentSearchPredicate(table, query.search) &
+    _agentTypePredicate(table, query.type) &
+    _agentStatusPredicate(table, query.status) &
+    _agentCursorPredicate(table, afterName, afterId);
+
+Expression<bool> _agentSearchPredicate(Agents table, String search) {
+  if (search.isEmpty) return const Constant(true);
+  final pattern = '%${_escapeLike(search)}%';
+
+  return table.name.like(pattern, escapeChar: r'\') |
+      table.description.like(pattern, escapeChar: r'\');
+}
+
+Expression<bool> _agentTypePredicate(Agents table, AgentListType? type) =>
+    switch (type) {
+      .chatSelector => table.visibility.isIn(['chatSelector', 'both']),
+      .subAgentList => table.visibility.isIn(['subAgentList', 'both']),
+      null => const Constant(true),
+    };
+
+Expression<bool> _agentStatusPredicate(Agents table, AgentListStatus? status) =>
+    switch (status) {
+      .enabled => table.isEnabled.equals(true),
+      .disabled => table.isEnabled.equals(false),
+      null => const Constant(true),
+    };
+
+Expression<bool> _agentCursorPredicate(
+  Agents table,
+  String? afterName,
+  String? afterId,
+) {
+  if (afterName == null || afterId == null) return const Constant(true);
+  final orderedName = table.name.collate(.noCase);
+
+  return orderedName.isBiggerThanValue(afterName) |
+      orderedName.equals(afterName) & table.id.isBiggerThanValue(afterId);
+}
+
+String _escapeLike(String value) =>
+    value.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
+
+OrderingTerm _orderAgentName(Agents table) =>
+    OrderingTerm(expression: table.name.collate(.noCase));
+
+OrderingTerm _orderAgentId(Agents table) => OrderingTerm(expression: table.id);
 
 extension AgentsDaoWriteOperations on AgentsDao {
   Future<AgentsTable> createAgent(

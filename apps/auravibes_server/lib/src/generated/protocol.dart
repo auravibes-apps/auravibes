@@ -23,6 +23,8 @@ import 'package:auravibes_server/src/generated/features/model_connections/models
     as _imf0a6vt;
 import 'package:auravibes_server/src/generated/features/model_connections/models/workspace_model_selection_view.dart'
     as _ipmnqqs6;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_resource.dart'
+    as _ixyz6pla;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _i78h3alq;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
@@ -39,6 +41,13 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
 
 import 'features/accounts/models/account_summary.dart' as _i0kh9vnq;
+import 'features/agents/models/agent_catalog_item.dart' as _iczr9u8f;
+import 'features/agents/models/agent_catalog_page.dart' as _ib4whsrz;
+import 'features/agents/models/agent_catalog_status.dart' as _i0h0m7az;
+import 'features/agents/models/agent_catalog_type.dart' as _icsw3jh1;
+import 'features/agents/models/agent_catalog_visibility.dart' as _izubbx9m;
+import 'features/agents/models/get_agent_resources_request.dart' as _i84solqu;
+import 'features/agents/models/list_agents_request.dart' as _ilueer9m;
 import 'features/codex_oauth/models/codex_oauth_transaction.dart' as _ify5ufwn;
 import 'features/codex_oauth/models/complete_codex_oauth_request.dart'
     as _i2qdkbo8;
@@ -255,6 +264,13 @@ import 'features/workspaces/models/workspace_member.dart' as _i56tb1yu;
 import 'features/workspaces/models/workspace_mutation_receipt.dart'
     as _ia614g7d;
 export 'features/accounts/models/account_summary.dart';
+export 'features/agents/models/agent_catalog_item.dart';
+export 'features/agents/models/agent_catalog_page.dart';
+export 'features/agents/models/agent_catalog_status.dart';
+export 'features/agents/models/agent_catalog_type.dart';
+export 'features/agents/models/agent_catalog_visibility.dart';
+export 'features/agents/models/get_agent_resources_request.dart';
+export 'features/agents/models/list_agents_request.dart';
 export 'features/codex_oauth/models/codex_oauth_transaction.dart';
 export 'features/codex_oauth/models/complete_codex_oauth_request.dart';
 export 'features/codex_oauth/models/complete_codex_oauth_result.dart';
@@ -4108,6 +4124,27 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _i0kh9vnq.AccountSummary) {
       return _i0kh9vnq.AccountSummary.fromJson(data) as T;
     }
+    if (t == _iczr9u8f.AgentCatalogItem) {
+      return _iczr9u8f.AgentCatalogItem.fromJson(data) as T;
+    }
+    if (t == _ib4whsrz.AgentCatalogPage) {
+      return _ib4whsrz.AgentCatalogPage.fromJson(data) as T;
+    }
+    if (t == _i0h0m7az.AgentCatalogStatus) {
+      return _i0h0m7az.AgentCatalogStatus.fromJson(data) as T;
+    }
+    if (t == _icsw3jh1.AgentCatalogType) {
+      return _icsw3jh1.AgentCatalogType.fromJson(data) as T;
+    }
+    if (t == _izubbx9m.AgentCatalogVisibility) {
+      return _izubbx9m.AgentCatalogVisibility.fromJson(data) as T;
+    }
+    if (t == _i84solqu.GetAgentResourcesRequest) {
+      return _i84solqu.GetAgentResourcesRequest.fromJson(data) as T;
+    }
+    if (t == _ilueer9m.ListAgentsRequest) {
+      return _ilueer9m.ListAgentsRequest.fromJson(data) as T;
+    }
     if (t == _ify5ufwn.CodexOAuthTransaction) {
       return _ify5ufwn.CodexOAuthTransaction.fromJson(data) as T;
     }
@@ -4516,6 +4553,38 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _is.getType<_i0kh9vnq.AccountSummary?>()) {
       return (data != null ? _i0kh9vnq.AccountSummary.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_iczr9u8f.AgentCatalogItem?>()) {
+      return (data != null ? _iczr9u8f.AgentCatalogItem.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ib4whsrz.AgentCatalogPage?>()) {
+      return (data != null ? _ib4whsrz.AgentCatalogPage.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i0h0m7az.AgentCatalogStatus?>()) {
+      return (data != null ? _i0h0m7az.AgentCatalogStatus.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_icsw3jh1.AgentCatalogType?>()) {
+      return (data != null ? _icsw3jh1.AgentCatalogType.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_izubbx9m.AgentCatalogVisibility?>()) {
+      return (data != null
+              ? _izubbx9m.AgentCatalogVisibility.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i84solqu.GetAgentResourcesRequest?>()) {
+      return (data != null
+              ? _i84solqu.GetAgentResourcesRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ilueer9m.ListAgentsRequest?>()) {
+      return (data != null ? _ilueer9m.ListAgentsRequest.fromJson(data) : null)
           as T;
     }
     if (t == _is.getType<_ify5ufwn.CodexOAuthTransaction?>()) {
@@ -5253,6 +5322,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == List<_iczr9u8f.AgentCatalogItem>) {
+      return (data as List)
+              .map((e) => deserialize<_iczr9u8f.AgentCatalogItem>(e))
+              .toList()
+          as T;
+    }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
@@ -5320,6 +5395,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == List<_ivvnnphu.WorkspaceEvent>) {
       return (data as List)
               .map((e) => deserialize<_ivvnnphu.WorkspaceEvent>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ixyz6pla.WorkspaceResource>) {
+      return (data as List)
+              .map((e) => deserialize<_ixyz6pla.WorkspaceResource>(e))
               .toList()
           as T;
     }
@@ -5400,6 +5481,13 @@ class Protocol extends _is.DatabaseSerializationManager {
   static String? getClassNameForType(Type type) {
     return switch (type) {
       _i0kh9vnq.AccountSummary => 'AccountSummary',
+      _iczr9u8f.AgentCatalogItem => 'AgentCatalogItem',
+      _ib4whsrz.AgentCatalogPage => 'AgentCatalogPage',
+      _i0h0m7az.AgentCatalogStatus => 'AgentCatalogStatus',
+      _icsw3jh1.AgentCatalogType => 'AgentCatalogType',
+      _izubbx9m.AgentCatalogVisibility => 'AgentCatalogVisibility',
+      _i84solqu.GetAgentResourcesRequest => 'GetAgentResourcesRequest',
+      _ilueer9m.ListAgentsRequest => 'ListAgentsRequest',
       _ify5ufwn.CodexOAuthTransaction => 'CodexOAuthTransaction',
       _i2qdkbo8.CompleteCodexOAuthRequest => 'CompleteCodexOAuthRequest',
       _ibhl6ekj.CompleteCodexOAuthResult => 'CompleteCodexOAuthResult',
@@ -5566,6 +5654,20 @@ class Protocol extends _is.DatabaseSerializationManager {
     switch (data) {
       case _i0kh9vnq.AccountSummary():
         return 'AccountSummary';
+      case _iczr9u8f.AgentCatalogItem():
+        return 'AgentCatalogItem';
+      case _ib4whsrz.AgentCatalogPage():
+        return 'AgentCatalogPage';
+      case _i0h0m7az.AgentCatalogStatus():
+        return 'AgentCatalogStatus';
+      case _icsw3jh1.AgentCatalogType():
+        return 'AgentCatalogType';
+      case _izubbx9m.AgentCatalogVisibility():
+        return 'AgentCatalogVisibility';
+      case _i84solqu.GetAgentResourcesRequest():
+        return 'GetAgentResourcesRequest';
+      case _ilueer9m.ListAgentsRequest():
+        return 'ListAgentsRequest';
       case _ify5ufwn.CodexOAuthTransaction():
         return 'CodexOAuthTransaction';
       case _i2qdkbo8.CompleteCodexOAuthRequest():
@@ -5862,6 +5964,27 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'AccountSummary') {
       return deserialize<_i0kh9vnq.AccountSummary>(data['data']);
+    }
+    if (dataClassName == 'AgentCatalogItem') {
+      return deserialize<_iczr9u8f.AgentCatalogItem>(data['data']);
+    }
+    if (dataClassName == 'AgentCatalogPage') {
+      return deserialize<_ib4whsrz.AgentCatalogPage>(data['data']);
+    }
+    if (dataClassName == 'AgentCatalogStatus') {
+      return deserialize<_i0h0m7az.AgentCatalogStatus>(data['data']);
+    }
+    if (dataClassName == 'AgentCatalogType') {
+      return deserialize<_icsw3jh1.AgentCatalogType>(data['data']);
+    }
+    if (dataClassName == 'AgentCatalogVisibility') {
+      return deserialize<_izubbx9m.AgentCatalogVisibility>(data['data']);
+    }
+    if (dataClassName == 'GetAgentResourcesRequest') {
+      return deserialize<_i84solqu.GetAgentResourcesRequest>(data['data']);
+    }
+    if (dataClassName == 'ListAgentsRequest') {
+      return deserialize<_ilueer9m.ListAgentsRequest>(data['data']);
     }
     if (dataClassName == 'CodexOAuthTransaction') {
       return deserialize<_ify5ufwn.CodexOAuthTransaction>(data['data']);

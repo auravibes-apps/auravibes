@@ -2,35 +2,70 @@ import 'package:auravibes_app/data/repositories/agents_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_list_query.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(const AgentListQuery(workspaceId: 'fallback'));
+  });
+
   group('AppSubAgentCatalog', () {
     test('lists all enabled agents with types', () async {
       final repository = _MockAgentsRepository();
-      final now = DateTime(2026);
-      when(() => repository.getAgentsByWorkspace('workspace-1')).thenAnswer(
-        (_) async => [
-          _agent(id: 'main', now: now, visibility: .chatSelector),
-          _agent(id: 'sub', now: now, visibility: .subAgentList),
-          _agent(id: 'both', now: now, visibility: .both),
-          _agent(id: 'off', now: now, visibility: .both, isEnabled: false),
-        ],
+      when(() => repository.listAgents(any())).thenAnswer(
+        (_) async => const AgentListPage(
+          agents: [
+            AgentListItem(
+              id: 'main',
+              name: 'Main',
+              description: 'Main',
+              isEnabled: true,
+              visibility: .chatSelector,
+              skillCount: 0,
+            ),
+            AgentListItem(
+              id: 'sub',
+              name: 'Sub',
+              description: 'Sub',
+              isEnabled: true,
+              visibility: .subAgentList,
+              skillCount: 0,
+            ),
+            AgentListItem(
+              id: 'both',
+              name: 'Both',
+              description: 'Both',
+              isEnabled: true,
+              visibility: .both,
+              skillCount: 0,
+            ),
+          ],
+          nextCursor: 'next',
+        ),
       );
 
-      final agents = await AppSubAgentCatalog(repository)
-          .listSubAgents('workspace-1');
+      final page = await AppSubAgentCatalog(repository).listSubAgents(
+        const agent.SubAgentCatalogQuery(workspaceId: 'workspace-1'),
+      );
 
-      expect(agents.map((agent) => agent.id), ['main', 'sub', 'both']);
-      expect(agents.map((agent) => agent.types), [
+      expect(page.agents.map((agent) => agent.id), ['main', 'sub', 'both']);
+      expect(page.agents.map((agent) => agent.types), [
         ['main'],
         ['sub_agent'],
         ['main', 'sub_agent'],
       ]);
+      expect(page.nextCursor, 'next');
+      final query =
+          verify(() => repository.listAgents(captureAny())).captured.single
+              as AgentListQuery;
+      expect(query.workspaceId, 'workspace-1');
+      expect(query.status, AgentListStatus.enabled);
     });
 
     test('gets only enabled sub-agent-list agents', () async {

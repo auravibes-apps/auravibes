@@ -21,6 +21,86 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'lists filtered cursor pages with literal search and skill counts',
+    () async {
+      final fixture = await _AgentsRepositoryFixture.create();
+      addTearDown(fixture.close);
+      final skill = await fixture.createSkill('Catalog Skill');
+      final alpha = await fixture.agentsRepository.createAgent(
+        fixture.workspaceId,
+        .new(
+          name: 'Alpha',
+          description: r'Percent % underscore _ slash \\ design',
+          content: 'Prompt',
+          skills: [AgentSkillRef.user(skill.id)],
+        ),
+      );
+      final beta = await fixture.agentsRepository.createAgent(
+        fixture.workspaceId,
+        const AgentToCreate(
+          name: 'beta',
+          description: 'Operations',
+          content: 'Prompt',
+          isEnabled: false,
+          visibility: .subAgentList,
+        ),
+      );
+      final gamma = await fixture.agentsRepository.createAgent(
+        fixture.workspaceId,
+        const AgentToCreate(
+          name: 'Gamma',
+          description: 'Research',
+          content: 'Prompt',
+          visibility: .chatSelector,
+        ),
+      );
+
+      for (final search in ['DESIGN', '%', '_', r'\']) {
+        final page = await fixture.agentsRepository.listAgents(
+          .new(workspaceId: fixture.workspaceId, search: search),
+        );
+        expect(page.agents.single.id, alpha.id);
+        expect(page.agents.single.skillCount, 1);
+      }
+
+      final subAgents = await fixture.agentsRepository.listAgents(
+        .new(workspaceId: fixture.workspaceId, type: .subAgentList),
+      );
+      expect(subAgents.agents.map((agent) => agent.id), [alpha.id, beta.id]);
+      final disabled = await fixture.agentsRepository.listAgents(
+        .new(workspaceId: fixture.workspaceId, status: .disabled),
+      );
+      expect(disabled.agents.single.id, beta.id);
+
+      final first = await fixture.agentsRepository.listAgents(
+        .new(workspaceId: fixture.workspaceId, limit: 2),
+      );
+      final second = await fixture.agentsRepository.listAgents(
+        .new(
+          workspaceId: fixture.workspaceId,
+          limit: 2,
+          cursor: first.nextCursor,
+        ),
+      );
+      expect(first.agents.map((agent) => agent.id), [alpha.id, beta.id]);
+      expect(first.nextCursor, isNotNull);
+      expect(second.agents.map((agent) => agent.id), [gamma.id]);
+      expect(second.nextCursor, isNull);
+
+      await expectLater(
+        fixture.agentsRepository.listAgents(
+          .new(
+            workspaceId: fixture.workspaceId,
+            search: 'changed',
+            cursor: first.nextCursor,
+          ),
+        ),
+        throwsA(isA<AgentValidationException>()),
+      );
+    },
+  );
+
   test('creates, updates, watches, and deletes agents with skills', () async {
     final fixture = await _AgentsRepositoryFixture.create();
     addTearDown(fixture.close);

@@ -11,6 +11,9 @@ jwtRefresh:
   - refreshAccessToken:
 account:
   - currentUser:
+agentCatalog:
+  - list:
+  - getResources:
 codexOAuth:
   - start:
   - complete:

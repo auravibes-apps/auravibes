@@ -17,6 +17,12 @@ import 'dart:io' as _idi;
 
 import 'package:auravibes_server/src/generated/features/accounts/models/account_summary.dart'
     as _iq1nzpg1;
+import 'package:auravibes_server/src/generated/features/agents/models/agent_catalog_page.dart'
+    as _im5t09y9;
+import 'package:auravibes_server/src/generated/features/agents/models/get_agent_resources_request.dart'
+    as _ijcdp7pz;
+import 'package:auravibes_server/src/generated/features/agents/models/list_agents_request.dart'
+    as _ibj467a3;
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/complete_codex_oauth_request.dart'
     as _ir0ud11r;
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/complete_codex_oauth_result.dart'
@@ -147,6 +153,8 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/r
     as _i2v5creq;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_response.dart'
     as _iwsbsne8;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_resource.dart'
+    as _ixyz6pla;
 import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i3cjuwla;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_detail.dart'
@@ -325,6 +333,8 @@ class TestEndpoints {
 
   late final _AccountEndpoint account;
 
+  late final _AgentCatalogEndpoint agentCatalog;
+
   late final _CodexOAuthEndpoint codexOAuth;
 
   late final _ConversationEndpoint conversation;
@@ -360,6 +370,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     account = _AccountEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    agentCatalog = _AgentCatalogEndpoint(
       endpoints,
       serializationManager,
     );
@@ -733,6 +747,75 @@ class _AccountEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iq1nzpg1.AccountSummary>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _AgentCatalogEndpoint {
+  _AgentCatalogEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_im5t09y9.AgentCatalogPage> list(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ibj467a3.ListAgentsRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'agentCatalog',
+            method: 'list',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'agentCatalog',
+          methodName: 'list',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_im5t09y9.AgentCatalogPage>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_ixyz6pla.WorkspaceResource>> getResources(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ijcdp7pz.GetAgentResourcesRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'agentCatalog',
+            method: 'getResources',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'agentCatalog',
+          methodName: 'getResources',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

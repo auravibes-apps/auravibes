@@ -8,6 +8,7 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_list_query.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -297,6 +298,11 @@ class _BlockingAgentRepository({
   @override
   Future<List<AgentEntity>> getAgentsByWorkspace(String workspaceId) {
     return delegate.getAgentsByWorkspace(workspaceId);
+  }
+
+  @override
+  Future<AgentListPage> listAgents(AgentListQuery query) {
+    return delegate.listAgents(query);
   }
 
   @override

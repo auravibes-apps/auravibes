@@ -10,6 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:auravibes_server/src/generated/features/agents/models/get_agent_resources_request.dart'
+    as _ijcdp7pz;
+import 'package:auravibes_server/src/generated/features/agents/models/list_agents_request.dart'
+    as _ibj467a3;
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/complete_codex_oauth_request.dart'
     as _ir0ud11r;
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/start_codex_oauth_request.dart'
@@ -129,6 +133,7 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
 import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
 import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
 import '../features/accounts/account_endpoint.dart' as _iytsp81w;
+import '../features/agents/agent_catalog_endpoint.dart' as _ivvm0cyi;
 import '../features/codex_oauth/codex_oauth_endpoint.dart' as _igisrqgh;
 import '../features/conversations/conversation_endpoint.dart' as _ie3ymqip;
 import '../features/mcp_servers/mcp_server_endpoint.dart' as _im1tu8co;
@@ -161,6 +166,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'account',
+          null,
+        ),
+      'agentCatalog': _ivvm0cyi.AgentCatalogEndpoint()
+        ..initialize(
+          server,
+          'agentCatalog',
           null,
         ),
       'codexOAuth': _igisrqgh.CodexOAuthEndpoint()
@@ -437,6 +448,52 @@ class Endpoints extends _is.EndpointDispatch {
                 Map<String, dynamic> params,
               ) async => (endpoints['account'] as _iytsp81w.AccountEndpoint)
                   .currentUser(session),
+        ),
+      },
+    );
+    connectors['agentCatalog'] = _is.EndpointConnector(
+      name: 'agentCatalog',
+      endpoint: endpoints['agentCatalog']!,
+      methodConnectors: {
+        'list': _is.MethodConnector(
+          name: 'list',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_ibj467a3.ListAgentsRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['agentCatalog'] as _ivvm0cyi.AgentCatalogEndpoint)
+                      .list(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'getResources': _is.MethodConnector(
+          name: 'getResources',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_ijcdp7pz.GetAgentResourcesRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['agentCatalog'] as _ivvm0cyi.AgentCatalogEndpoint)
+                      .getResources(
+                        session,
+                        params['request'],
+                      ),
         ),
       },
     );

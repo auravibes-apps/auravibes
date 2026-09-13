@@ -1,0 +1,8 @@
+class: ListAgentsRequest
+fields:
+  workspaceId: int
+  search: String
+  type: AgentCatalogType?
+  status: AgentCatalogStatus?
+  limit: int
+  cursor: String?

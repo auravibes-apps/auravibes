@@ -1,11 +1,25 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/domain/entities/agent_list_query.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _Gateway extends Mock implements CloudWorkspaceStateGateway;
+
+class _Client extends Mock implements Client;
+
+class _AgentCatalog extends Mock implements EndpointAgentCatalog;
+
+class _ListAgentsRequest extends Fake implements ListAgentsRequest;
 
 void main() {
+  setUpAll(() => registerFallbackValue(_ListAgentsRequest()));
+
   test('cloud CRUD uses only workspace resource operations', () async {
     final capturedOperations = <WorkspacePatchOperation>[];
     final now = DateTime.utc(2026);
@@ -46,6 +60,22 @@ void main() {
           updatedAt: now,
         ),
       ],
+      readAgent: (_) async => [
+        WorkspaceResource(
+          workspaceId: 1,
+          resourceKind: .agent,
+          resourceId: 'agent-1',
+          data: jsonEncode({
+            'name': 'Agent',
+            'content': 'Prompt',
+            'visibility': 'both',
+          }),
+          revision: 3,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      list: (_) async => const AgentListPage(agents: []),
     );
 
     expect(
@@ -164,6 +194,8 @@ void main() {
       },
       workspaceId: 'workspace',
       read: () async => List.of(resources),
+      readAgent: (_) async => List.of(resources),
+      list: (_) async => const AgentListPage(agents: []),
     );
 
     final loaded = await repository.getAgentById('agent-1');
@@ -202,6 +234,72 @@ void main() {
       WorkspaceResourceKind.agentAssociation,
       WorkspaceResourceKind.agent,
     ]);
+  });
+
+  test('cloud list maps the query and catalog page', () async {
+    final gateway = _Gateway();
+    final client = _Client();
+    final catalog = _AgentCatalog();
+    when(() => gateway.workspace).thenReturn(
+      const CloudWorkspaceRef(
+        localWorkspaceId: 'local',
+        serverUrl: 'https://example.com',
+        accountId: 'account',
+        cloudWorkspaceId: 7,
+      ),
+    );
+    when(() => gateway.client).thenReturn(client);
+    when(() => client.agentCatalog).thenReturn(catalog);
+    when(() => catalog.list(any())).thenAnswer(
+      (_) async => AgentCatalogPage(
+        agents: [
+          AgentCatalogItem(
+            id: 'agent-1',
+            name: 'Agent',
+            description: 'Description',
+            isEnabled: false,
+            visibility: .both,
+            skillCount: 2,
+          ),
+        ],
+        nextCursor: 'next',
+      ),
+    );
+    final gatewayFuture = Future<CloudWorkspaceStateGateway?>.value(gateway);
+    final repository = CloudAgentRepository.fromStore(
+      workspaceId: 'local',
+      store: .deferred(gatewayFuture),
+      gateway: gatewayFuture,
+    );
+
+    final page = await repository.listAgents(
+      const AgentListQuery(
+        workspaceId: 'local',
+        search: 'agent',
+        type: .chatSelector,
+        status: .disabled,
+        limit: 10,
+        cursor: 'cursor',
+      ),
+    );
+    final request =
+        verify(() => catalog.list(captureAny())).captured.single
+            as ListAgentsRequest;
+
+    expect(request.workspaceId, 7);
+    expect(request.search, 'agent');
+    expect(request.type, AgentCatalogType.chatSelector);
+    expect(request.status, AgentCatalogStatus.disabled);
+    expect(request.limit, 10);
+    expect(request.cursor, 'cursor');
+    expect(page.nextCursor, 'next');
+    final agent = page.agents.single;
+    expect(agent.id, 'agent-1');
+    expect(agent.name, 'Agent');
+    expect(agent.description, 'Description');
+    expect(agent.isEnabled, isFalse);
+    expect(agent.visibility, AgentVisibility.both);
+    expect(agent.skillCount, 2);
   });
 }
 
