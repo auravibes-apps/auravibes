@@ -91,6 +91,45 @@ void main() {
     expect(find.text('Create agent'), findsWidgets);
     expect(find.byType(AuraInput), findsNothing);
   });
+
+  testWidgets('duplicates from the menu, refreshes, and localizes failures', (
+    tester,
+  ) async {
+    final source = _agent('agent-1', 'Helper', 'Use for helper work');
+    final agents = <AgentListItem>[source];
+    var duplicateCalls = 0;
+    final repository = _FakeAgentRepository(
+      (_) async => .new(agents: List.of(agents)),
+      onDuplicate: (agentId) async {
+        expect(agentId, source.id);
+        if (duplicateCalls++ == 0) {
+          final copy = _agent('agent-copy', 'Helper Copy', source.description);
+          agents.add(copy);
+
+          return _entity(copy);
+        }
+        throw StateError('missing');
+      },
+    );
+    await _pumpSubject(tester, repository);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Duplicate agent'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(duplicateCalls, 1);
+    expect(repository.queries, hasLength(2));
+    expect(find.text('Helper Copy'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Duplicate agent'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(duplicateCalls, 2);
+    expect(find.text('Unable to duplicate agent'), findsOneWidget);
+  });
 }
 
 Future<void> _pumpSubject(
@@ -124,11 +163,25 @@ AgentListItem _agent(String id, String name, String description) =>
       skillCount: 0,
     );
 
+AgentEntity _entity(AgentListItem agent) => AgentEntity(
+  id: agent.id,
+  workspaceId: _workspaceId,
+  name: agent.name,
+  content: 'Prompt',
+  skills: const [],
+  createdAt: .utc(2026),
+  updatedAt: .utc(2026),
+  description: agent.description,
+  isEnabled: agent.isEnabled,
+  visibility: agent.visibility,
+);
+
 class _FakeAgentRepository implements AgentRepository {
-  new(Future<AgentListPage> Function(AgentListQuery) onList) : _onList = onList;
+  new(this._onList, {this._onDuplicate});
 
   final queries = <AgentListQuery>[];
   final Future<AgentListPage> Function(AgentListQuery query) _onList;
+  final Future<AgentEntity> Function(String agentId)? _onDuplicate;
 
   @override
   Future<AgentListPage> listAgents(AgentListQuery query) {
@@ -140,6 +193,10 @@ class _FakeAgentRepository implements AgentRepository {
   @override
   Future<AgentEntity> createAgent(String workspaceId, AgentToCreate agent) =>
       throw UnimplementedError();
+
+  @override
+  Future<AgentEntity> duplicateAgent(String agentId) =>
+      _onDuplicate?.call(agentId) ?? (throw UnimplementedError());
 
   @override
   Future<bool> deleteAgent(String agentId) => throw UnimplementedError();

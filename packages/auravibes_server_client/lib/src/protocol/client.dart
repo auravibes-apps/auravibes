@@ -134,6 +134,8 @@ import 'package:auravibes_server_client/src/protocol/features/sync/stream/models
     as _ifwc6wsw;
 import 'package:auravibes_server_client/src/protocol/features/sync/stream/models/workspace_subscribe_request.dart'
     as _ihte0iyb;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/duplicate_workspace_agent_request.dart'
+    as _ipz1c0ew;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _i2aip5sd;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_response.dart'
@@ -874,6 +876,14 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<_inzhu3sh.PatchWorkspaceStateResponse>(
     'workspaceState',
     'patch',
+    {'request': request},
+  );
+
+  _ida.Future<_inzhu3sh.PatchWorkspaceStateResponse> duplicateAgent(
+    _ipz1c0ew.DuplicateWorkspaceAgentRequest request,
+  ) => caller.callServerEndpoint<_inzhu3sh.PatchWorkspaceStateResponse>(
+    'workspaceState',
+    'duplicateAgent',
     {'request': request},
   );
 

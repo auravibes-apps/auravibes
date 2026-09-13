@@ -183,6 +183,8 @@
     "title": "Agentes",
     "create": "Crear agente",
     "edit_title": "Editar agente",
+    "duplicate": "Duplicar agente",
+    "duplicate_error": "No se pudo duplicar el agente",
     "load_error": "No se pudieron cargar los agentes",
     "empty_title": "No hay agentes",
     "empty_subtitle": "Crea agentes para reutilizar prompts y grupos de habilidades en chats.",

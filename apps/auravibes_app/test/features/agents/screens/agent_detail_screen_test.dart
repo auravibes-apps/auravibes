@@ -321,6 +321,11 @@ class _BlockingAgentRepository({
   }
 
   @override
+  Future<AgentEntity> duplicateAgent(String agentId) {
+    return delegate.duplicateAgent(agentId);
+  }
+
+  @override
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) {
     return delegate.updateAgent(agentId, agent);
   }

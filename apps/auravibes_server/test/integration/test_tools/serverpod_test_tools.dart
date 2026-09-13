@@ -137,6 +137,8 @@ import 'package:auravibes_server/src/generated/features/sync/stream/models/works
     as _ipwuwfuw;
 import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
     as _i87sg8g4;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/duplicate_workspace_agent_request.dart'
+    as _ikwi2fyo;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _ii40hsqd;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_response.dart'
@@ -2159,6 +2161,35 @@ class _WorkspaceStateEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'workspaceState',
           methodName: 'patch',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse> duplicateAgent(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ikwi2fyo.DuplicateWorkspaceAgentRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceState',
+            method: 'duplicateAgent',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceState',
+          methodName: 'duplicateAgent',
           parameters: _ist.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
