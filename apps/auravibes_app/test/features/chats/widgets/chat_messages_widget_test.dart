@@ -393,6 +393,212 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('copies an A2UI-only assistant response', (tester) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          a2uiMessages: [
+            '{"protocolVersion":"v1","interactionMode":"passive",'
+                '"message":{"version":"v0.9","createSurface":{'
+                '"surfaceId":"main","catalogId":'
+                '"urn:auravibes:a2ui:chat:v1"}}}',
+            '{"protocolVersion":"v1","interactionMode":"passive",'
+                '"message":{"version":"v0.9","updateComponents":{'
+                '"surfaceId":"main","components":[{"id":"root",'
+                '"component":"Text","text":"UI answer"}]}}}',
+          ],
+        ),
+      );
+      String? copiedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedText = (call.arguments as Map)['text'] as String?;
+          }
+
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('UI answer'), findsOneWidget);
+      expect(find.byType(SelectionArea), findsOneWidget);
+      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      await tester.pump();
+      expect(copiedText, 'UI answer');
+    });
+
+    testWidgets('copies message text instead of an A2UI surface', (
+      tester,
+    ) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      final message = _createMessage(
+        content: 'Message answer',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          a2uiMessages: [
+            '{"protocolVersion":"v1","interactionMode":"passive",'
+                '"message":{"version":"v0.9","createSurface":{'
+                '"surfaceId":"main","catalogId":'
+                '"urn:auravibes:a2ui:chat:v1"}}}',
+            '{"protocolVersion":"v1","interactionMode":"passive",'
+                '"message":{"version":"v0.9","updateComponents":{'
+                '"surfaceId":"main","components":[{"id":"root",'
+                '"component":"Text","text":"UI answer"}]}}}',
+          ],
+        ),
+      );
+      String? copiedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedText = (call.arguments as Map)['text'] as String?;
+          }
+
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      final copyAction = find.byIcon(Icons.copy_outlined);
+      expect(find.text('UI answer'), findsOneWidget);
+      expect(find.byType(SelectionArea), findsNWidgets(2));
+      expect(
+        find.ancestor(of: copyAction, matching: find.byType(SelectionArea)),
+        findsNothing,
+      );
+      await tester.tap(copyAction);
+      await tester.pump();
+      expect(copiedText, 'Message answer');
+    });
+
+    testWidgets('does not copy an image-only A2UI surface', (tester) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          a2uiMessages: [
+            '{"protocolVersion":"v1","interactionMode":"passive",'
+                '"message":{"version":"v0.9","createSurface":{'
+                '"surfaceId":"main","catalogId":'
+                '"urn:auravibes:a2ui:chat:v1"}}}',
+            '{"protocolVersion":"v1","interactionMode":"passive",'
+                '"message":{"version":"v0.9","updateComponents":{'
+                '"surfaceId":"main","components":[{"id":"root",'
+                '"component":"Image","url":'
+                '"https://127.0.0.1/private.png"}]}}}',
+          ],
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byType(SelectionArea), findsOneWidget);
+      expect(find.byTooltip('Copy message'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('shows persisted A2UI issue when assistant text is empty', (
       tester,
     ) async {

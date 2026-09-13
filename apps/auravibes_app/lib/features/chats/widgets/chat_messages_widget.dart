@@ -501,8 +501,6 @@ List<Widget> _messageContentChildren({
       status: status,
     ),
   if (message.attachments.isNotEmpty) _MessageAttachments(message: message),
-  if (_messageCopyText(message) case final copyText?)
-    _MessageCopyAction(content: copyText, isUser: message.isUser),
   if (!message.isUser && a2uiRuntime != null)
     ChatA2uiSurfaceHost.message(
       key: ValueKey('a2ui_${message.id}'),
@@ -512,6 +510,8 @@ List<Widget> _messageContentChildren({
       issuesBySurface: message.metadata?.a2uiIssuesBySurface ?? const {},
       messageIssues: message.metadata?.a2uiMessageIssues ?? const [],
     ),
+  if (_messageCopyText(message, a2uiRuntime) case final copyText?)
+    _MessageCopyAction(content: copyText, isUser: message.isUser),
   for (final toolCall in visibleToolCalls)
     _ToolCallWidget(
       toolCall: toolCall,
@@ -528,8 +528,12 @@ List<Widget> _messageContentChildren({
     ),
 ];
 
-String? _messageCopyText(MessageEntity message) =>
-    message.content.trim().isEmpty ? null : message.content;
+String? _messageCopyText(MessageEntity message, ChatA2uiRuntime? a2uiRuntime) {
+  final content = message.content;
+  if (content.trim().isNotEmpty) return content;
+  if (message.isUser) return null;
+  return a2uiRuntime?.copyableTextFor(message.id);
+}
 
 bool _isAwaitingApproval(
   List<PendingToolCall> pendingToolCalls,

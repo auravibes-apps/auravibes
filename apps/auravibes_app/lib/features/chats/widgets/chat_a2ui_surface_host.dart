@@ -50,9 +50,11 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (_historical) {
-      return ChatA2uiHistoricalSurface(
-        messageId: messageId,
-        payloads: payloads,
+      return SelectionArea(
+        child: ChatA2uiHistoricalSurface(
+          messageId: messageId,
+          payloads: payloads,
+        ),
       );
     }
     final currentRuntime = runtime;
@@ -87,13 +89,15 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return _buildSurfaceColumn(
-      context,
-      currentRuntime,
-      currentMessageId,
-      ids,
-      readyIds,
-      messageHasWarning,
+    return SelectionArea(
+      child: _buildSurfaceColumn(
+        context,
+        currentRuntime,
+        currentMessageId,
+        ids,
+        readyIds,
+        messageHasWarning,
+      ),
     );
   }
 
