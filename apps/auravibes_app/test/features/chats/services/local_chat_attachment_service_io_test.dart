@@ -80,7 +80,13 @@ void main() {
 
     await expectLater(
       LocalChatAttachmentService().copyIntoAppStorage(source.path),
-      throwsA(isA<ChatAttachmentTooLargeException>()),
+      throwsA(
+        isA<ChatAttachmentTooLargeException>().having(
+          (error) => error.toString(),
+          'localization key',
+          const ChatAttachmentTooLargeException().localizationKey,
+        ),
+      ),
     );
   });
 
