@@ -608,7 +608,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
     }
   }
 
-  List<DataContext> _templateContexts(Object? value, DataContext dataContext) {
+  List<DataContext> _templateContexts(Object value, DataContext dataContext) {
     if (value is! Map || value['path'] is! String) return const [];
     final path = value['path']! as String;
     final data = _resolveCopyableValue(value, dataContext);
