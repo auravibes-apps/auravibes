@@ -125,6 +125,10 @@ class _FakeAgentRepository(Iterable<FutureOr<AgentListPage>> responses)
       throw UnimplementedError();
 
   @override
+  Future<AgentEntity> duplicateAgent(String agentId) =>
+      throw UnimplementedError();
+
+  @override
   Future<bool> deleteAgent(String agentId) => throw UnimplementedError();
 
   @override

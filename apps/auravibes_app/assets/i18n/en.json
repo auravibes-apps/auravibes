@@ -183,6 +183,8 @@
     "title": "Agents",
     "create": "Create agent",
     "edit_title": "Edit agent",
+    "duplicate": "Duplicate agent",
+    "duplicate_error": "Unable to duplicate agent",
     "load_error": "Unable to load agents",
     "empty_title": "No agents",
     "empty_subtitle": "Create agents to reuse prompts and skill sets across chats.",

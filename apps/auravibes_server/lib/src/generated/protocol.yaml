@@ -65,6 +65,7 @@ workspaceSecret:
 workspaceState:
   - read:
   - patch:
+  - duplicateAgent:
   - mutateCredential:
 cloudWorkspace:
   - listAuthorizedWorkspaces:

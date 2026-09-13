@@ -19,6 +19,9 @@ typedef PatchCloudAgents = Future<PatchWorkspaceStateResponse> Function({
   required String requestId,
   required List<WorkspacePatchOperation> operations,
 });
+typedef DuplicateCloudAgent = Future<PatchWorkspaceStateResponse> Function(
+  String sourceAgentId,
+);
 
 typedef _AgentData = ({
   String name,
@@ -61,6 +64,7 @@ class CloudAgentRepository({
   @override required final ReadCloudAgents read,
   @override required final ReadCloudAgent readAgent,
   @override required final ListCloudAgents list,
+  @override required final DuplicateCloudAgent duplicate,
   @override required final PatchCloudAgents patch,
 }) with _CloudAgentRepositoryRead, _CloudAgentRepositoryWrite
     implements AgentRepository {
@@ -69,11 +73,12 @@ class CloudAgentRepository({
     required CloudWorkspaceResourceStore store,
     required Future<CloudWorkspaceStateGateway?> gateway,
   }) : this(
+         duplicate: store.duplicateAgent,
          patch: store.patch,
-         workspaceId: workspaceId,
          read: () => _readCloudAgentResources(store),
          readAgent: (agentId) => _readCloudAgent(gateway, agentId),
          list: (query) => _listCloudAgents(gateway, query),
+         workspaceId: workspaceId,
        );
 
   @override
@@ -226,6 +231,7 @@ mixin _CloudAgentRepositoryWrite {
   String get workspaceId;
   ReadCloudAgent get readAgent;
   PatchCloudAgents get patch;
+  DuplicateCloudAgent get duplicate;
   Map<String, int> get _revisions;
 
   Future<AgentEntity> createAgent(
@@ -237,6 +243,16 @@ mixin _CloudAgentRepositoryWrite {
       patch,
       _createAgentOperations(id, agent),
     );
+
+    return _decodeAgent(
+      _agentResourceFromResponse(response),
+      response.resources,
+      workspaceId,
+    );
+  }
+
+  Future<AgentEntity> duplicateAgent(String agentId) async {
+    final response = await duplicate(agentId);
 
     return _decodeAgent(
       _agentResourceFromResponse(response),

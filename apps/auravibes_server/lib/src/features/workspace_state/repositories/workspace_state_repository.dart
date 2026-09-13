@@ -48,6 +48,20 @@ class WorkspaceStateRepository {
     limit: limit,
   );
 
+  Future<List<WorkspaceResource>> findActiveResources(
+    Session session, {
+    required int workspaceId,
+    required WorkspaceResourceKind kind,
+    required Transaction transaction,
+  }) => WorkspaceResource.db.find(
+    session,
+    where: (t) =>
+        t.workspaceId.equals(workspaceId) &
+        t.resourceKind.equals(kind) &
+        t.deletedAt.equals(null),
+    transaction: transaction,
+  );
+
   Future<List<WorkspaceEvent>> readEvents(
     Session session, {
     required int workspaceId,

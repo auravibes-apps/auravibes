@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/agent_visibility.dart';
 import 'package:auravibes_app/features/agents/providers/agent_list_notifier.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart';
+import 'package:auravibes_app/features/agents/usecases/duplicate_agent_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -156,14 +157,33 @@ class const _AgentsList({
   }
 
   void _handleSelection(_AgentSelection selection) {
-    if (selection.value == 'edit') {
-      _openAgent(selection.context, selection.ref, selection.agentId);
-
-      return;
+    switch (selection.value) {
+      case 'edit':
+        _openAgent(selection.context, selection.ref, selection.agentId);
+      case 'duplicate':
+        unawaited(
+          _duplicateAgent(selection.context, selection.ref, selection.agentId),
+        );
+      case 'delete':
+        unawaited(
+          _confirmDelete(selection.context, selection.ref, selection.agentId),
+        );
+      case _:
+        break;
     }
-    unawaited(
-      _confirmDelete(selection.context, selection.ref, selection.agentId),
-    );
+  }
+
+  Future<void> _duplicateAgent(
+    BuildContext context,
+    WidgetRef ref,
+    String agentId,
+  ) async {
+    try {
+      await _duplicateAndRefresh(ref, workspaceId, agentId);
+    } on Object {
+      if (!context.mounted) return;
+      _showDuplicateError(context);
+    }
   }
 
   Future<void> _confirmDelete(
@@ -200,6 +220,26 @@ class const _AgentsList({
     final _ = ref.invalidate(agentsProvider(workspaceId));
     await ref.read(agentListProvider(workspaceId).notifier).refresh();
   }
+}
+
+Future<void> _duplicateAndRefresh(
+  WidgetRef ref,
+  String workspaceId,
+  String agentId,
+) async {
+  final _ = await ref
+      .read(duplicateAgentUsecaseProvider(workspaceId))
+      .call(agentId);
+  final _ = ref.invalidate(agentsProvider(workspaceId));
+  await ref.read(agentListProvider(workspaceId).notifier).refresh();
+}
+
+void _showDuplicateError(BuildContext context) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(LocaleKeys.agents_duplicate_error),
+    variant: .error,
+  );
 }
 
 class const _AgentsSearchList({
@@ -658,6 +698,10 @@ class const _AgentMenu({required final ValueChanged<String> onSelected})
 
   List<PopupMenuEntry<String>> _items(BuildContext _) => const [
     PopupMenuItem(value: 'edit', child: TextLocale(LocaleKeys.common_edit)),
+    PopupMenuItem(
+      value: 'duplicate',
+      child: TextLocale(LocaleKeys.agents_duplicate),
+    ),
     PopupMenuItem(value: 'delete', child: TextLocale(LocaleKeys.common_delete)),
   ];
 }

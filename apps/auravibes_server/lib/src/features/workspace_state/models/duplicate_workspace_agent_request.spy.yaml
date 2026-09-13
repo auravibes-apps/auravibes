@@ -1,0 +1,5 @@
+class: DuplicateWorkspaceAgentRequest
+fields:
+  workspaceId: int
+  requestId: String
+  sourceAgentId: String

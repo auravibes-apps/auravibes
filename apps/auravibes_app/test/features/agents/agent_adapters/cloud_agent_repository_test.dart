@@ -20,6 +20,73 @@ class _ListAgentsRequest extends Fake implements ListAgentsRequest;
 void main() {
   setUpAll(() => registerFallbackValue(_ListAgentsRequest()));
 
+  test('duplicate uses one dedicated mutation and maps the copy', () async {
+    final now = DateTime.utc(2026);
+    var duplicateCalls = 0;
+    var patchCalls = 0;
+    final repository = CloudAgentRepository(
+      patch: ({required requestId, required operations}) {
+        patchCalls++;
+        fail('Duplicate must not use the generic patch API');
+      },
+      workspaceId: 'workspace',
+      read: () async => const [],
+      readAgent: (_) async => const [],
+      list: (_) async => const AgentListPage(agents: []),
+      duplicate: (sourceAgentId) async {
+        duplicateCalls++;
+        expect(sourceAgentId, 'agent-1');
+
+        return PatchWorkspaceStateResponse(
+          resources: [
+            _resource(
+              now: now,
+              kind: .agent,
+              id: 'agent-copy',
+              data: {
+                'id': 'agent-copy',
+                'name': 'Agent Copy',
+                'description': 'Description',
+                'content': 'Prompt',
+                'isEnabled': false,
+                'visibility': 'chatSelector',
+              },
+            ),
+            _resource(
+              now: now,
+              kind: .agentAssociation,
+              id: 'skill-copy',
+              data: {'agentId': 'agent-copy', 'skillId': 'skill-1'},
+            ),
+            _resource(
+              now: now,
+              kind: .agentAssociation,
+              id: 'tool-copy',
+              data: {
+                'agentId': 'agent-copy',
+                'toolId': 'tool-1',
+                'permissionMode': 'alwaysAllow',
+              },
+            ),
+          ],
+          sequence: 3,
+        );
+      },
+    );
+
+    final duplicate = await repository.duplicateAgent('agent-1');
+
+    expect(duplicateCalls, 1);
+    expect(patchCalls, 0);
+    expect(duplicate.id, 'agent-copy');
+    expect(duplicate.name, 'Agent Copy');
+    expect(duplicate.description, 'Description');
+    expect(duplicate.content, 'Prompt');
+    expect(duplicate.isEnabled, isFalse);
+    expect(duplicate.visibility, AgentVisibility.chatSelector);
+    expect(duplicate.skills, const [AgentSkillRef.user('skill-1')]);
+  });
+
   test('cloud CRUD uses only workspace resource operations', () async {
     final capturedOperations = <WorkspacePatchOperation>[];
     final now = DateTime.utc(2026);
@@ -76,6 +143,7 @@ void main() {
         ),
       ],
       list: (_) async => const AgentListPage(agents: []),
+      duplicate: (_) async => fail('Unexpected duplicate'),
     );
 
     expect(
@@ -196,6 +264,7 @@ void main() {
       read: () async => List.of(resources),
       readAgent: (_) async => List.of(resources),
       list: (_) async => const AgentListPage(agents: []),
+      duplicate: (_) async => fail('Unexpected duplicate'),
     );
 
     final loaded = await repository.getAgentById('agent-1');

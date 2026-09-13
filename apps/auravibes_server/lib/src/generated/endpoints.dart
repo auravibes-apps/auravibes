@@ -86,6 +86,8 @@ import 'package:auravibes_server/src/generated/features/objects/models/get_downl
     as _itlqxnii;
 import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
     as _i87sg8g4;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/duplicate_workspace_agent_request.dart'
+    as _ikwi2fyo;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _ii40hsqd;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_request.dart'
@@ -1406,6 +1408,27 @@ class Endpoints extends _is.EndpointDispatch {
                   (endpoints['workspaceState']
                           as _iv99006q.WorkspaceStateEndpoint)
                       .patch(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'duplicateAgent': _is.MethodConnector(
+          name: 'duplicateAgent',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_ikwi2fyo.DuplicateWorkspaceAgentRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceState']
+                          as _iv99006q.WorkspaceStateEndpoint)
+                      .duplicateAgent(
                         session,
                         params['request'],
                       ),
