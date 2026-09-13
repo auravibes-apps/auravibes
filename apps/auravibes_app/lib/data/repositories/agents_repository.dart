@@ -31,41 +31,10 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   Future<AgentListPage> listAgents(AgentListQuery query) async {
     final normalized = _validateListQuery(query);
     final cursor = _decodeCursor(normalized);
-    final rows = await _database.agentsDao.listAgents(
-      query: normalized,
-      afterName: cursor?.name,
-      afterId: cursor?.id,
-    );
-    final hasMore = rows.length > normalized.limit;
-    final pageRows = rows.take(normalized.limit).toList();
-    final skills = await _database.agentsDao.getSkillsForAgents(
-      pageRows.map((row) => row.id),
-    );
-    final skillCounts = <String, int>{};
-    for (final skill in skills) {
-      final _ = skillCounts.update(
-        skill.agentId,
-        (count) => count + 1,
-        ifAbsent: () => 1,
-      );
-    }
+    final page = await _loadAgentPage(_database, normalized, cursor);
+    final skillCounts = await _agentSkillCounts(_database, page.rows);
 
-    return AgentListPage(
-      agents: [
-        for (final row in pageRows)
-          AgentListItem(
-            id: row.id,
-            name: row.name,
-            description: row.description,
-            isEnabled: row.isEnabled,
-            visibility: _agentVisibilityFromStorage(row.visibility),
-            skillCount: skillCounts[row.id] ?? 0,
-          ),
-      ],
-      nextCursor: hasMore && pageRows.isNotEmpty
-          ? _encodeCursor(normalized, pageRows.last)
-          : null,
-    );
+    return _agentListPage(normalized, page, skillCounts);
   }
 
   @override
@@ -113,12 +82,7 @@ typedef _AgentListCursor = ({String name, String id});
 
 AgentListQuery _validateListQuery(AgentListQuery query) {
   final search = query.search.trim().toLowerCase();
-  final cursor = query.cursor;
-  if (query.workspaceId.isEmpty ||
-      query.limit < 1 ||
-      query.limit > 100 ||
-      search.length > 200 ||
-      cursor != null && cursor.length > 2048) {
+  if (_isInvalidListQuery(query, search)) {
     throw const AgentValidationException('Invalid agent list query');
   }
 
@@ -128,40 +92,139 @@ AgentListQuery _validateListQuery(AgentListQuery query) {
     type: query.type,
     status: query.status,
     limit: query.limit,
-    cursor: cursor,
+    cursor: query.cursor,
   );
 }
+
+bool _isInvalidListQuery(AgentListQuery query, String search) =>
+    query.workspaceId.isEmpty ||
+    query.limit < 1 ||
+    query.limit > 100 ||
+    search.length > 200 ||
+    (query.cursor?.length ?? 0) > 2048;
+
+typedef _DecodedAgentListCursor = ({
+  String workspaceId,
+  String search,
+  String? type,
+  String? status,
+  String name,
+  String id,
+});
 
 _AgentListCursor? _decodeCursor(AgentListQuery query) {
   final value = query.cursor;
   if (value == null) return null;
   try {
-    final decoded = jsonDecode(
-      utf8.decode(base64Url.decode(base64Url.normalize(value))),
-    );
-    if (decoded
-        case {
-          'v': 1,
-          'workspace': final String workspaceId,
-          'search': final String search,
-          'type': final String? type,
-          'status': final String? status,
-          'name': final String name,
-          'id': final String id,
-        }
-        when workspaceId == query.workspaceId &&
-            search == query.search &&
-            type == query.type?.name &&
-            status == query.status?.name &&
-            name.isNotEmpty &&
-            id.isNotEmpty) {
-      return (name: name, id: id);
+    final cursor = _parseCursor(_decodeCursorValue(value));
+    if (cursor != null && _cursorMatchesQuery(cursor, query)) {
+      return (name: cursor.name, id: cursor.id);
     }
   } on FormatException {
     // Handled below as one typed validation failure.
   }
   throw const AgentValidationException('Invalid agent list cursor');
 }
+
+Object? _decodeCursorValue(String value) =>
+    jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(value))));
+
+_DecodedAgentListCursor? _parseCursor(Object? value) => switch (value) {
+  {
+    'v': 1,
+    'workspace': final String workspaceId,
+    'search': final String search,
+    'type': final String? type,
+    'status': final String? status,
+    'name': final String name,
+    'id': final String id,
+  }
+      when name.isNotEmpty && id.isNotEmpty =>
+    (
+      workspaceId: workspaceId,
+      search: search,
+      type: type,
+      status: status,
+      name: name,
+      id: id,
+    ),
+  _ => null,
+};
+
+bool _cursorMatchesQuery(
+  _DecodedAgentListCursor cursor,
+  AgentListQuery query,
+) =>
+    cursor.workspaceId == query.workspaceId &&
+    cursor.search == query.search &&
+    cursor.type == query.type?.name &&
+    cursor.status == query.status?.name;
+
+Future<Map<String, int>> _agentSkillCounts(
+  AppDatabase database,
+  List<AgentsTable> rows,
+) async {
+  final skills = await database.agentsDao.getSkillsForAgents(
+    rows.map((row) => row.id),
+  );
+  final counts = <String, int>{};
+  for (final skill in skills) {
+    _incrementCount(counts, skill.agentId);
+  }
+
+  return counts;
+}
+
+void _incrementCount(Map<String, int> counts, String agentId) {
+  final _ = counts.update(agentId, (count) => count + 1, ifAbsent: () => 1);
+}
+
+Future<({List<AgentsTable> rows, bool hasMore})> _loadAgentPage(
+  AppDatabase database,
+  AgentListQuery query,
+  _AgentListCursor? cursor,
+) async {
+  final rows = await database.agentsDao.listAgents(
+    query: query,
+    afterName: cursor?.name,
+    afterId: cursor?.id,
+  );
+
+  return (
+    rows: rows.take(query.limit).toList(),
+    hasMore: rows.length > query.limit,
+  );
+}
+
+AgentListPage _agentListPage(
+  AgentListQuery query,
+  ({List<AgentsTable> rows, bool hasMore}) page,
+  Map<String, int> skillCounts,
+) {
+  final rows = page.rows;
+
+  return AgentListPage(
+    agents: _agentListItems(rows, skillCounts),
+    nextCursor: page.hasMore && rows.isNotEmpty
+        ? _encodeCursor(query, rows.last)
+        : null,
+  );
+}
+
+List<AgentListItem> _agentListItems(
+  List<AgentsTable> rows,
+  Map<String, int> skillCounts,
+) => [
+  for (final row in rows)
+    AgentListItem(
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      isEnabled: row.isEnabled,
+      visibility: _agentVisibilityFromStorage(row.visibility),
+      skillCount: skillCounts[row.id] ?? 0,
+    ),
+];
 
 String _encodeCursor(AgentListQuery query, AgentsTable row) => base64Url.encode(
   utf8.encode(
@@ -288,11 +351,10 @@ extension AgentsRepositoryPersistence on AgentsRepository {
 
     return AgentSkillRef.app(appSkillIdentifier);
   }
-
-  AgentVisibility _agentVisibilityFromStorage(String value) {
-    return AgentVisibility.values.asNameMap()[value] ?? AgentVisibility.both;
-  }
 }
+
+AgentVisibility _agentVisibilityFromStorage(String value) =>
+    AgentVisibility.values.asNameMap()[value] ?? AgentVisibility.both;
 
 AgentsCompanion _agentToCreateCompanion(
   String workspaceId,

@@ -480,22 +480,48 @@ Future<CloudWorkspaceStateGateway> _requireAgentGateway(
 Future<List<WorkspaceResource>> _readCloudAgent(
   Future<CloudWorkspaceStateGateway?> gateway,
   String agentId,
-) => CloudAppErrors.guardCall(.state, () async {
+) => CloudAppErrors.guardCall(
+  .state,
+  () => _loadCloudAgentResources(gateway, agentId),
+);
+
+Future<List<WorkspaceResource>> _loadCloudAgentResources(
+  Future<CloudWorkspaceStateGateway?> gateway,
+  String agentId,
+) async {
   final resolved = await _requireAgentGateway(gateway);
 
   return await resolved.client.agentCatalog.getResources(
     .new(workspaceId: resolved.workspace.cloudWorkspaceId, agentId: agentId),
   );
-});
+}
 
 Future<AgentListPage> _listCloudAgents(
   Future<CloudWorkspaceStateGateway?> gateway,
   AgentListQuery query,
-) => CloudAppErrors.guardCall(.state, () async {
+) =>
+    CloudAppErrors.guardCall(.state, () => _loadCloudAgentPage(gateway, query));
+
+Future<AgentListPage> _loadCloudAgentPage(
+  Future<CloudWorkspaceStateGateway?> gateway,
+  AgentListQuery query,
+) async {
   final resolved = await _requireAgentGateway(gateway);
   final page = await resolved.client.agentCatalog.list(
+    _cloudListRequest(resolved.workspace.cloudWorkspaceId, query),
+  );
+
+  return _cloudAgentListPage(page);
+}
+
+AgentListPage _cloudAgentListPage(AgentCatalogPage page) => .new(
+  agents: page.agents.map(_cloudAgentListItem).toList(),
+  nextCursor: page.nextCursor,
+);
+
+ListAgentsRequest _cloudListRequest(int workspaceId, AgentListQuery query) =>
     .new(
-      workspaceId: resolved.workspace.cloudWorkspaceId,
+      workspaceId: workspaceId,
       search: query.search,
       type: switch (query.type) {
         .chatSelector => .chatSelector,
@@ -509,25 +535,17 @@ Future<AgentListPage> _listCloudAgents(
       },
       limit: query.limit,
       cursor: query.cursor,
-    ),
-  );
+    );
 
-  return AgentListPage(
-    agents: [
-      for (final agent in page.agents)
-        AgentListItem(
-          id: agent.id,
-          name: agent.name,
-          description: agent.description,
-          isEnabled: agent.isEnabled,
-          visibility: switch (agent.visibility) {
-            .chatSelector => .chatSelector,
-            .subAgentList => .subAgentList,
-            .both => .both,
-          },
-          skillCount: agent.skillCount,
-        ),
-    ],
-    nextCursor: page.nextCursor,
-  );
-});
+AgentListItem _cloudAgentListItem(AgentCatalogItem item) => .new(
+  id: item.id,
+  name: item.name,
+  description: item.description,
+  isEnabled: item.isEnabled,
+  visibility: switch (item.visibility) {
+    .chatSelector => .chatSelector,
+    .subAgentList => .subAgentList,
+    .both => .both,
+  },
+  skillCount: item.skillCount,
+);

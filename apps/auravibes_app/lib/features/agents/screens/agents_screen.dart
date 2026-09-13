@@ -209,51 +209,149 @@ class const _AgentsSearchList({
   required final void Function(String value, AgentListItem agent) onSelection,
 }) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext _, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController(text: state.search);
     final notifier = ref.read(agentListProvider(workspaceId).notifier);
 
-    return Column(
-      children: [
-        Padding(
-          padding: const .only(top: 8, left: 8, right: 8),
-          child: AuraColumn(
-            children: [
-              AuraInput(
-                controller: controller,
-                placeholder: const TextLocale(
-                  LocaleKeys.agents_search_placeholder,
-                ),
-                prefixIcon: const AuraIcon(Icons.search),
-                size: .small,
-                onChanged: notifier.setSearch,
-              ),
-              _AgentFilters(state: state, notifier: notifier),
-            ],
-            spacing: .sm,
-          ),
-        ),
-        if (state.isRefreshing) const LinearProgressIndicator(minHeight: 2),
-        if (state.refreshFailed)
-          _AgentLoadError(onRetry: () => unawaited(notifier.retry())),
-        Expanded(
-          child: state.agents.isEmpty
-              ? const _AgentsSearchEmptyState()
-              : _AgentsListView(
-                  agents: state.agents,
-                  onTap: onTap,
-                  onSelection: onSelection,
-                ),
-        ),
-        if (state.nextCursor != null)
-          _LoadMore(
-            failed: state.loadMoreFailed,
-            isLoading: state.isLoadingMore,
-            onPressed: () => unawaited(notifier.loadMore()),
-          ),
-      ],
+    return _AgentSearchContent(
+      state: state,
+      notifier: notifier,
+      controller: controller,
+      interactions: (onTap: onTap, onSelection: onSelection),
     );
   }
+}
+
+typedef _AgentInteractions = ({
+  ValueChanged<AgentListItem> onTap,
+  void Function(String value, AgentListItem agent) onSelection,
+});
+
+class const _AgentSearchContent({
+  required final AgentListState state,
+  required final AgentListNotifier notifier,
+  required final TextEditingController controller,
+  required final _AgentInteractions interactions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => _AgentSearchBody(
+    controls: _AgentSearchControls(
+      controller: controller,
+      notifier: notifier,
+      state: state,
+    ),
+    status: _AgentRetryStatus(state: state, notifier: notifier),
+    results: _AgentSearchResults(
+      agents: state.agents,
+      onTap: interactions.onTap,
+      onSelection: interactions.onSelection,
+    ),
+    pagination: _AgentPagination(state: state, onPressed: notifier.loadMore),
+  );
+}
+
+class const _AgentRetryStatus({
+  required final AgentListState state,
+  required final AgentListNotifier notifier,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      _AgentListStatus(state: state, onRetry: notifier.retry);
+}
+
+class const _AgentSearchBody({
+  required final Widget controls,
+  required final Widget status,
+  required final Widget results,
+  required final Widget pagination,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      controls,
+      status,
+      Expanded(child: results),
+      pagination,
+    ],
+  );
+}
+
+class const _AgentListStatus({
+  required final AgentListState state,
+  required final Future<void> Function() onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      if (state.isRefreshing) const LinearProgressIndicator(minHeight: 2),
+      if (state.refreshFailed)
+        _AgentLoadError(onRetry: () => unawaited(onRetry())),
+    ],
+  );
+}
+
+class const _AgentSearchResults({
+  required final List<AgentListItem> agents,
+  required final ValueChanged<AgentListItem> onTap,
+  required final void Function(String value, AgentListItem agent) onSelection,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => agents.isEmpty
+      ? const _AgentsSearchEmptyState()
+      : _AgentsListView(agents: agents, onTap: onTap, onSelection: onSelection);
+}
+
+class const _AgentPagination({
+  required final AgentListState state,
+  required final Future<void> Function() onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => state.nextCursor == null
+      ? const SizedBox.shrink()
+      : _LoadMore(
+          failed: state.loadMoreFailed,
+          isLoading: state.isLoadingMore,
+          onPressed: () => unawaited(onPressed()),
+        );
+}
+
+class const _AgentSearchControls({
+  required final TextEditingController controller,
+  required final AgentListNotifier notifier,
+  required final AgentListState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final spacing = context.auraTheme.fromSpacing(.sm);
+
+    return Padding(
+      padding: EdgeInsets.only(left: spacing, top: spacing, right: spacing),
+      child: AuraColumn(
+        children: [
+          _AgentSearchInput(
+            controller: controller,
+            onChanged: notifier.setSearch,
+          ),
+          _AgentFilters(state: state, notifier: notifier),
+        ],
+        spacing: .sm,
+      ),
+    );
+  }
+}
+
+class const _AgentSearchInput({
+  required final TextEditingController controller,
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraInput(
+    controller: controller,
+    placeholder: const TextLocale(LocaleKeys.agents_search_placeholder),
+    prefixIcon: const AuraIcon(Icons.search),
+    size: .small,
+    onChanged: onChanged,
+  );
 }
 
 class const _AgentFilters({
@@ -264,28 +362,20 @@ class const _AgentFilters({
   Widget build(BuildContext _) => Row(
     children: [
       Expanded(
-        child: AuraDropdownSelector<String>(
-          options: _typeOptions,
-          value: switch (state.type) {
-            null => 'all',
-            .chatSelector => 'chat',
-            .subAgentList => 'sub',
-          },
+        child: _AgentFilter(
+          labelKey: LocaleKeys.agents_filter_type,
           onChanged: _setType,
-          label: const TextLocale(LocaleKeys.agents_filter_type),
+          options: _typeOptions,
+          value: _typeFilterValue(state.type),
         ),
       ),
       const SizedBox(width: 8),
       Expanded(
-        child: AuraDropdownSelector<String>(
-          options: _statusOptions,
-          value: switch (state.status) {
-            null => 'all',
-            .enabled => 'enabled',
-            .disabled => 'disabled',
-          },
+        child: _AgentFilter(
+          labelKey: LocaleKeys.agents_filter_status,
           onChanged: _setStatus,
-          label: const TextLocale(LocaleKeys.agents_filter_status),
+          options: _statusOptions,
+          value: _statusFilterValue(state.status),
         ),
       ),
     ],
@@ -302,6 +392,33 @@ class const _AgentFilters({
     'disabled' => .disabled,
     _ => null,
   });
+}
+
+String _typeFilterValue(AgentListType? type) => switch (type) {
+  null => 'all',
+  .chatSelector => 'chat',
+  .subAgentList => 'sub',
+};
+
+String _statusFilterValue(AgentListStatus? status) => switch (status) {
+  null => 'all',
+  .enabled => 'enabled',
+  .disabled => 'disabled',
+};
+
+class const _AgentFilter({
+  required final String labelKey,
+  required final ValueChanged<String?> onChanged,
+  required final List<AuraDropdownOption<String>> options,
+  required final String value,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraDropdownSelector<String>(
+    options: options,
+    value: value,
+    onChanged: onChanged,
+    label: TextLocale(labelKey),
+  );
 }
 
 const _typeOptions = <AuraDropdownOption<String>>[

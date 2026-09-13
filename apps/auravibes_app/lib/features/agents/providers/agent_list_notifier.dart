@@ -16,27 +16,18 @@ class AgentListNotifier extends _$AgentListNotifier {
   AgentRepository? _repository;
   Timer? _searchTimer;
   var _generation = 0;
-  var _disposed = false;
 
   AgentListState? get _current => switch (state) {
     AsyncData(:final value) => value,
     AsyncLoading() || AsyncError() => null,
   };
 
-  AgentRepository get _requiredRepository =>
-      _repository ?? (throw StateError('Agent repository is unavailable'));
-
   @override
   Future<AgentListState> build(String workspaceId) async {
-    _repository = ref.watch(agentRepositoryProvider(workspaceId));
-    final _ = ref.onDispose(() {
-      _disposed = true;
-      _generation++;
-      _searchTimer?.cancel();
-    });
-    final page = await _requiredRepository.listAgents(
-      .new(workspaceId: workspaceId),
-    );
+    final repository = ref.watch(agentRepositoryProvider(workspaceId));
+    _repository = repository;
+    final _ = ref.onDispose(() => _cancelTimer(_searchTimer));
+    final page = await repository.listAgents(.new(workspaceId: workspaceId));
 
     return AgentListState(agents: page.agents, nextCursor: page.nextCursor);
   }
@@ -47,9 +38,7 @@ class AgentListNotifier extends _$AgentListNotifier {
     _generation++;
     _searchTimer?.cancel();
     state = AsyncData(current.copyWith(search: search, refreshFailed: false));
-    _searchTimer = .new(_searchDelay, () {
-      if (!_disposed) unawaited(_replace());
-    });
+    _searchTimer = .new(_searchDelay, () => unawaited(_replaceAgents(this)));
   }
 
   void setType(AgentListType? type) {
@@ -58,7 +47,7 @@ class AgentListNotifier extends _$AgentListNotifier {
     _searchTimer?.cancel();
     _generation++;
     state = AsyncData(current.copyWith(type: type, refreshFailed: false));
-    unawaited(_replace());
+    unawaited(_replaceAgents(this));
   }
 
   void setStatus(AgentListStatus? status) {
@@ -67,101 +56,38 @@ class AgentListNotifier extends _$AgentListNotifier {
     _searchTimer?.cancel();
     _generation++;
     state = AsyncData(current.copyWith(status: status, refreshFailed: false));
-    unawaited(_replace());
+    unawaited(_replaceAgents(this));
   }
 
   Future<void> refresh() {
     _searchTimer?.cancel();
     _generation++;
 
-    return _replace();
+    return _replaceAgents(this);
   }
 
   Future<void> retry() {
-    final current = _current;
-    if (current?.loadMoreFailed == true) return loadMore();
+    if (_current?.loadMoreFailed == true) return loadMore();
 
     return refresh();
   }
 
-  Future<void> loadMore() async {
-    final current = _current;
-    if (current == null ||
-        current.nextCursor == null ||
-        current.isLoadingMore ||
-        current.isRefreshing) {
-      return;
-    }
-    final generation = ++_generation;
-    state = AsyncData(
-      current.copyWith(isLoadingMore: true, loadMoreFailed: false),
-    );
-    try {
-      final page = await _requiredRepository.listAgents(
-        _query(current, cursor: current.nextCursor),
-      );
-      if (_disposed || generation != _generation) return;
-      final agentsById = {for (final agent in current.agents) agent.id: agent};
-      for (final agent in page.agents) {
-        agentsById[agent.id] = agent;
-      }
-      state = AsyncData(
-        current.copyWith(
-          agents: agentsById.values.toList(),
-          nextCursor: page.nextCursor,
-          isLoadingMore: false,
-          loadMoreFailed: false,
-        ),
-      );
-    } on Object {
-      if (_disposed || generation != _generation) return;
-      state = AsyncData(
-        current.copyWith(isLoadingMore: false, loadMoreFailed: true),
-      );
-    }
+  Future<void> loadMore() => _loadMore(this);
+
+  Future<void> _completeRequest(_AgentPageRequest request) async {
+    final page = await _tryListAgents(request.repository, request.query);
+    if (!ref.mounted || request.generation != _generation) return;
+    state = AsyncData(request.complete(page));
   }
 
-  Future<void> _replace() async {
-    final current = _current;
-    if (current == null) return;
-    final generation = ++_generation;
-    state = AsyncData(
-      current.copyWith(
-        isRefreshing: true,
-        refreshFailed: false,
-        loadMoreFailed: false,
-      ),
-    );
-    try {
-      final page = await _requiredRepository.listAgents(_query(current));
-      if (_disposed || generation != _generation) return;
-      state = AsyncData(
-        current.copyWith(
-          agents: page.agents,
-          nextCursor: page.nextCursor,
-          isRefreshing: false,
-          refreshFailed: false,
-        ),
-      );
-    } on Object {
-      if (_disposed || generation != _generation) return;
-      state = AsyncData(
-        current.copyWith(isRefreshing: false, refreshFailed: true),
-      );
-    }
-  }
-
-  AgentListQuery _query(AgentListState current, {String? cursor}) => .new(
-    workspaceId: workspaceId,
-    search: current.search,
-    type: current.type,
-    status: current.status,
-    cursor: cursor,
-  );
+  void _setState(AgentListState value) => state = AsyncData(value);
 }
 
+@immutable
 @freezed
-abstract class AgentListState with _$AgentListState {
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class const AgentListState._() with _$AgentListState {
   const factory({
     @Default([]) List<AgentListItem> agents,
     @Default('') String search,
@@ -173,9 +99,160 @@ abstract class AgentListState with _$AgentListState {
     @Default(false) bool refreshFailed,
     @Default(false) bool loadMoreFailed,
   }) = _AgentListState;
-}
 
-extension AgentListStateFilters on AgentListState {
   bool get hasFilters =>
       search.trim().isNotEmpty || type != null || status != null;
+
+  bool get canLoadMore => nextCursor != null && !isLoadingMore && !isRefreshing;
+}
+
+AgentListQuery _agentListQuery(
+  String workspaceId,
+  AgentListState state, {
+  String? cursor,
+}) => .new(
+  workspaceId: workspaceId,
+  search: state.search,
+  type: state.type,
+  status: state.status,
+  cursor: cursor,
+);
+
+List<AgentListItem> _mergeAgents(
+  List<AgentListItem> current,
+  List<AgentListItem> next,
+) {
+  final agentsById = {for (final agent in current) agent.id: agent};
+  for (final agent in next) {
+    agentsById[agent.id] = agent;
+  }
+
+  return agentsById.values.toList();
+}
+
+void _cancelTimer(Timer? timer) => timer?.cancel();
+
+Future<void> _loadMore(AgentListNotifier notifier) {
+  final request = _loadMoreRequest(notifier);
+  if (request == null) return Future.value();
+
+  return notifier._completeRequest(request);
+}
+
+Future<void> _replaceAgents(AgentListNotifier notifier) {
+  final request = _replaceRequest(notifier);
+  if (request == null) return Future.value();
+
+  return notifier._completeRequest(request);
+}
+
+typedef _AgentPageRequest = ({
+  AgentRepository repository,
+  AgentListQuery query,
+  int generation,
+  AgentListState Function(AgentListPage? page) complete,
+});
+
+_AgentPageRequest? _loadMoreRequest(AgentListNotifier notifier) {
+  final context = _requestContext(notifier._current, notifier._repository);
+  if (context == null || !context.current.canLoadMore) return null;
+
+  return _startLoadMore(notifier, context);
+}
+
+_AgentPageRequest _startLoadMore(
+  AgentListNotifier notifier,
+  ({AgentListState current, AgentRepository repository}) context,
+) {
+  final (:current, :repository) = context;
+  final generation = ++notifier._generation;
+  notifier._setState(_loadingMore(current));
+
+  return (
+    repository: repository,
+    query: _loadMoreQuery(notifier.workspaceId, current),
+    generation: generation,
+    complete: (page) => _completedLoadMore(current, page),
+  );
+}
+
+AgentListQuery _loadMoreQuery(String workspaceId, AgentListState state) =>
+    _agentListQuery(workspaceId, state, cursor: state.nextCursor);
+
+_AgentPageRequest? _replaceRequest(AgentListNotifier notifier) {
+  final context = _requestContext(notifier._current, notifier._repository);
+  if (context == null) return null;
+
+  return _startReplace(notifier, context);
+}
+
+_AgentPageRequest _startReplace(
+  AgentListNotifier notifier,
+  ({AgentListState current, AgentRepository repository}) context,
+) {
+  final (:current, :repository) = context;
+  final generation = ++notifier._generation;
+  notifier._setState(_refreshing(current));
+
+  return (
+    repository: repository,
+    query: _agentListQuery(notifier.workspaceId, current),
+    generation: generation,
+    complete: (page) => _completedRefresh(current, page),
+  );
+}
+
+({AgentListState current, AgentRepository repository})? _requestContext(
+  AgentListState? current,
+  AgentRepository? repository,
+) => current == null || repository == null
+    ? null
+    : (current: current, repository: repository);
+
+AgentListState _loadingMore(AgentListState state) =>
+    state.copyWith(isLoadingMore: true, loadMoreFailed: false);
+
+AgentListState _loadedMore(AgentListState state, AgentListPage page) =>
+    state.copyWith(
+      agents: _mergeAgents(state.agents, page.agents),
+      nextCursor: page.nextCursor,
+      isLoadingMore: false,
+      loadMoreFailed: false,
+    );
+
+AgentListState _loadMoreFailed(AgentListState state) =>
+    state.copyWith(isLoadingMore: false, loadMoreFailed: true);
+
+AgentListState _completedLoadMore(AgentListState state, AgentListPage? page) =>
+    page == null ? _loadMoreFailed(state) : _loadedMore(state, page);
+
+AgentListState _refreshing(AgentListState state) => state.copyWith(
+  isRefreshing: true,
+  refreshFailed: false,
+  loadMoreFailed: false,
+);
+
+AgentListState _refreshed(AgentListState state, AgentListPage page) =>
+    state.copyWith(
+      agents: page.agents,
+      nextCursor: page.nextCursor,
+      isRefreshing: false,
+      refreshFailed: false,
+    );
+
+AgentListState _refreshFailed(AgentListState state) =>
+    state.copyWith(isRefreshing: false, refreshFailed: true);
+
+AgentListState _completedRefresh(AgentListState state, AgentListPage? page) =>
+    page == null ? _refreshFailed(state) : _refreshed(state, page);
+
+Future<AgentListPage?> _tryListAgents(
+  AgentRepository repository,
+  AgentListQuery query,
+) async {
+  try {
+    return await repository.listAgents(query);
+  } on Object {
+    return null;
+  }
 }

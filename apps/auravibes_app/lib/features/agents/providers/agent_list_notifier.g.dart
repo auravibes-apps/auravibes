@@ -50,7 +50,7 @@ final class AgentListNotifierProvider
   }
 }
 
-String _$agentListNotifierHash() => r'bdf827cb85896cad4179ef58b6268a23f5566e8b';
+String _$agentListNotifierHash() => r'f114fbad114af98043dda14a787ea81768c0fb27';
 
 final class AgentListNotifierFamily extends $Family
     with

@@ -23,20 +23,7 @@ class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
   Future<agent.SubAgentCatalogPage> listSubAgents(
     agent.SubAgentCatalogQuery query,
   ) async {
-    final page = await _agentsRepository.listAgents(
-      .new(
-        workspaceId: query.workspaceId,
-        search: query.query,
-        type: switch (query.type) {
-          'main' => .chatSelector,
-          'sub_agent' => .subAgentList,
-          _ => null,
-        },
-        status: .enabled,
-        limit: query.limit,
-        cursor: query.cursor,
-      ),
-    );
+    final page = await _agentsRepository.listAgents(_agentListQuery(query));
 
     return agent.SubAgentCatalogPage(
       agents: [
@@ -76,6 +63,19 @@ class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
     };
   }
 }
+
+AgentListQuery _agentListQuery(agent.SubAgentCatalogQuery query) => .new(
+  workspaceId: query.workspaceId,
+  search: query.query,
+  type: switch (query.type) {
+    'main' => .chatSelector,
+    'sub_agent' => .subAgentList,
+    _ => null,
+  },
+  status: .enabled,
+  limit: query.limit,
+  cursor: query.cursor,
+);
 
 class AppSubAgentConversationStore(
   final ConversationRepository _conversationRepository,

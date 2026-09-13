@@ -219,8 +219,8 @@ return $default(_that.agents,_that.search,_that.type,_that.status,_that.nextCurs
 /// @nodoc
 
 
-class _AgentListState implements AgentListState {
-  const _AgentListState({ List<AgentListItem> agents = const [], this.search = '', this.type, this.status, this.nextCursor, this.isRefreshing = false, this.isLoadingMore = false, this.refreshFailed = false, this.loadMoreFailed = false}): _agents = agents;
+class _AgentListState extends AgentListState {
+  const _AgentListState({ List<AgentListItem> agents = const [], this.search = '', this.type, this.status, this.nextCursor, this.isRefreshing = false, this.isLoadingMore = false, this.refreshFailed = false, this.loadMoreFailed = false}): _agents = agents,super._();
   
 
  final  List<AgentListItem> _agents;
