@@ -10,6 +10,155 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
 
 void main() {
+  test('projects committed text surfaces into copyable text', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'main',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [
+              {'id': 'root', 'component': 'Text', 'text': 'UI answer'},
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+
+    expect(runtime.copyableTextFor('assistant-1'), 'UI answer');
+    expect(
+      runtime.copyableTextFor('assistant-1'),
+      isNot(contains('protocolVersion')),
+    );
+  });
+
+  test('projects current form values into copyable text', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'interactionMode': 'requiresUserAction',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'form',
+            'catalogId': auraChatFormCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'interactionMode': 'requiresUserAction',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'form',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Column',
+                'children': ['name'],
+              },
+              {
+                'id': 'name',
+                'component': 'TextField',
+                'label': 'Name',
+                'value': {'path': '/name'},
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+    runtime.controller
+        .contextFor('assistant-1:form')
+        .dataModel
+        .update(DataPath('/name'), 'Ada');
+
+    final text = runtime.copyableTextFor('assistant-1');
+    expect(text, contains('Name'));
+    expect(text, contains('Ada'));
+  });
+
+  test('does not project image-only surface protocols or diagnostics', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('image-only');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'secret-surface',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'secret-surface',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Image',
+                'url': 'https://example.com/private.png',
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+
+    expect(runtime.copyableTextFor('image-only'), isNull);
+    expect(
+      runtime.copyableTextFor('image-only'),
+      allOf(
+        isNot(contains('secret-surface')),
+        isNot(contains('private.png')),
+        isNot(contains('protocolVersion')),
+        isNot(contains('diagnostic')),
+      ),
+    );
+  });
+
   test('turns the trusted form submit into typed metadata', () async {
     final runtime = ChatA2uiRuntime(
       conversationId: 'conversation-1',

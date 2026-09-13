@@ -195,6 +195,347 @@ class ChatA2uiRuntime extends ChangeNotifier {
   String? formResetLabel(String surfaceId) =>
       _formLabel(surfaceId, 'resetLabel');
 
+  String? copyableTextFor(String messageId) {
+    final state = _messageStates[messageId];
+    if (state == null) return null;
+
+    final lines = <String>[];
+    for (final surfaceId in state.surfaceOrder) {
+      final surface = _surfaceStates[surfaceId];
+      if (surface == null || surface.deleted || !surface.hasRoot) continue;
+      final dataModel = _controller.contextFor(surfaceId).dataModel;
+      final data =
+          _jsonObject(dataModel.getValue<Object?>(DataPath.root)) ??
+          const <String, Object?>{};
+      _appendCopyableComponentText(
+        surface: surface,
+        componentId: 'root',
+        lines: lines,
+        visited: <String>{},
+        resolve: (value) => _resolveCopyableValue(value, data),
+      );
+    }
+
+    final text = lines
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .join('\n');
+    return text.isEmpty ? null : text;
+  }
+
+  Object? _resolveCopyableValue(Object? value, Object? data) {
+    if (value is! Map || value['path'] is! String) return value;
+    final path = value['path']! as String;
+    if (!path.startsWith('/')) return null;
+    Object? current = data;
+    for (final part in path.substring(1).split('/')) {
+      final key = part.replaceAll('~1', '/').replaceAll('~0', '~');
+      current = switch (current) {
+        Map value => value[key],
+        List value => switch (int.tryParse(key)) {
+          final index? when index >= 0 && index < value.length => value[index],
+          _ => null,
+        },
+        _ => null,
+      };
+      if (current == null) return null;
+    }
+    return current;
+  }
+
+  void _appendCopyableComponentText({
+    required ChatA2uiSurfaceState surface,
+    required String componentId,
+    required List<String> lines,
+    required Set<String> visited,
+    required Object? Function(Object? value) resolve,
+  }) {
+    if (!visited.add(componentId)) return;
+    final component = surface.components[componentId];
+    if (component == null) return;
+
+    void field(String name) =>
+        _appendCopyableValue(lines, resolve(component[name]));
+    void fields(Iterable<String> names) {
+      for (final name in names) {
+        field(name);
+      }
+    }
+
+    void componentReference(Object? value) {
+      if (value is String) {
+        _appendCopyableComponentText(
+          surface: surface,
+          componentId: value,
+          lines: lines,
+          visited: visited,
+          resolve: resolve,
+        );
+      }
+    }
+
+    switch (component['component']) {
+      case 'Text':
+        field('text');
+      case 'Card':
+        fields(['title', 'subtitle']);
+      case 'EmptyState':
+      case 'Alert':
+      case 'Section':
+        fields(['title', 'description']);
+      case 'Fieldset':
+        fields(['legend', 'description']);
+      case 'LoadingIndicator':
+      case 'Tooltip':
+        field(component['component'] == 'Tooltip' ? 'message' : 'label');
+      case 'CodeBlock':
+        fields(['code', 'language']);
+      case 'Button':
+      case 'Badge':
+      case 'Icon':
+        field('label');
+      case 'CheckBox':
+      case 'DateTimeInput':
+      case 'Rating':
+      case 'TextField':
+        fields(['label', 'value']);
+        if (component['component'] == 'TextField') {
+          fields(['helperText', 'errorText']);
+        }
+      case 'Slider':
+        fields(['label', 'value', 'unit']);
+      case 'TagInput':
+        field('label');
+        _appendCopyableValues(lines, resolve(component['value']));
+      case 'Stat':
+        fields(['value', 'label', 'delta']);
+      case 'Link':
+        fields(['label', 'semanticLabel']);
+      case 'ChoicePicker':
+        field('label');
+        _appendSelectedChoiceLabels(component, lines, resolve);
+      case 'KeyValue':
+        _appendKeyValueEntries(component['entries'], lines, resolve);
+      case 'Table':
+        _appendTable(component, lines, resolve);
+      case 'Chart':
+        _appendChart(component, lines, resolve);
+      case 'Avatar':
+        field('name');
+      case 'AvatarGroup':
+        _appendAvatarNames(component['avatars'], lines, resolve);
+      case 'Stepper':
+        _appendStructuredFields(
+          component['steps'],
+          ['title', 'description'],
+          lines,
+          resolve,
+        );
+      case 'Timeline':
+        _appendStructuredFields(
+          component['entries'],
+          ['title', 'description', 'time'],
+          lines,
+          resolve,
+        );
+      case 'Accordion':
+        _appendStructuredFields(component['items'], ['title'], lines, resolve);
+      case 'Tabs':
+        _appendTabs(component, surface, lines, visited, resolve);
+      case 'Tab':
+        field('label');
+    }
+
+    for (final key in const ['child', 'trigger', 'content']) {
+      componentReference(component[key]);
+    }
+    final children = component['children'];
+    if (children is List) {
+      for (final child in children) {
+        componentReference(child);
+      }
+    } else if (children is Map) {
+      componentReference(children['componentId']);
+    }
+    if (component['component'] == 'Accordion') {
+      for (final item in component['items'] as List? ?? const []) {
+        if (item is Map) componentReference(item['content']);
+      }
+    }
+  }
+
+  void _appendCopyableValue(List<String> lines, Object? value) {
+    final text = switch (value) {
+      String value => value,
+      num value => '$value',
+      bool value => '$value',
+      _ => null,
+    };
+    if (text != null) lines.add(text);
+  }
+
+  void _appendCopyableValues(List<String> lines, Object? value) {
+    if (value is List) {
+      for (final entry in value) {
+        _appendCopyableValue(lines, entry);
+      }
+      return;
+    }
+    _appendCopyableValue(lines, value);
+  }
+
+  void _appendSelectedChoiceLabels(
+    Map<String, dynamic> component,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    final selected = resolve(component['value']);
+    final values = selected is List ? selected : [selected];
+    for (final option in component['options'] as List? ?? const []) {
+      if (option is! Map || !values.contains(option['value'])) continue;
+      _appendCopyableValue(lines, resolve(option['label']));
+    }
+  }
+
+  void _appendKeyValueEntries(
+    Object? value,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    for (final entry in value as List? ?? const []) {
+      if (entry is! Map) continue;
+      final values = <String>[];
+      for (final key in const ['label', 'value']) {
+        final resolved = resolve(entry[key]);
+        if (resolved is String || resolved is num || resolved is bool) {
+          values.add('$resolved');
+        }
+      }
+      if (values.isNotEmpty) lines.add(values.join('\t'));
+    }
+  }
+
+  void _appendTable(
+    Map<String, dynamic> component,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    _appendCopyableValue(lines, resolve(component['caption']));
+    final columns = resolve(component['columns']);
+    if (columns is List) {
+      final values = [
+        for (final column in columns)
+          if (column is Map)
+            ?_copyableText(resolve(column['label']))
+          else
+            ?_copyableText(column),
+      ];
+      if (values.isNotEmpty) lines.add(values.join('\t'));
+    }
+    final rows = resolve(component['rows']);
+    if (rows is! List) return;
+    for (final row in rows) {
+      final cells = row is Map ? row['cells'] : row;
+      if (cells is! List) continue;
+      final values = [for (final cell in cells) ?_copyableText(cell)];
+      if (values.isNotEmpty) lines.add(values.join('\t'));
+    }
+  }
+
+  void _appendChart(
+    Map<String, dynamic> component,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    for (final field in const ['label', 'xAxisTitle', 'yAxisTitle']) {
+      _appendCopyableValue(lines, resolve(component[field]));
+    }
+    final labels = resolve(component['labels']);
+    if (labels is List) {
+      final values = [for (final label in labels) ?_copyableText(label)];
+      if (values.isNotEmpty) lines.add(values.join('\t'));
+    }
+    final series = resolve(component['series']);
+    if (series is! List) return;
+    for (final entry in series) {
+      if (entry is! Map) continue;
+      _appendCopyableValue(lines, resolve(entry['label']));
+      _appendCopyableValues(lines, entry['values']);
+    }
+  }
+
+  void _appendAvatarNames(
+    Object? value,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    final avatars = resolve(value);
+    if (avatars is! List) return;
+    for (final avatar in avatars) {
+      if (avatar is Map) _appendCopyableValue(lines, resolve(avatar['name']));
+    }
+  }
+
+  void _appendStructuredFields(
+    Object? value,
+    List<String> fields,
+    List<String> lines,
+    Object? Function(Object? value) resolve,
+  ) {
+    for (final entry in value as List? ?? const []) {
+      if (entry is! Map) continue;
+      for (final field in fields) {
+        _appendCopyableValue(lines, resolve(entry[field]));
+      }
+    }
+  }
+
+  void _appendTabs(
+    Map<String, dynamic> component,
+    ChatA2uiSurfaceState surface,
+    List<String> lines,
+    Set<String> visited,
+    Object? Function(Object? value) resolve,
+  ) {
+    final tabs = component['tabs'];
+    if (tabs is Map) {
+      final templateId = tabs['componentId'];
+      if (templateId is String) {
+        _appendCopyableComponentText(
+          surface: surface,
+          componentId: templateId,
+          lines: lines,
+          visited: visited,
+          resolve: resolve,
+        );
+      }
+      return;
+    }
+    if (tabs is! List) return;
+    final activeTab = resolve(component['activeTab']);
+    for (final tab in tabs) {
+      if (tab is Map) _appendCopyableValue(lines, resolve(tab['label']));
+    }
+    if (activeTab is! num || activeTab < 0 || activeTab >= tabs.length) return;
+    final tab = tabs[activeTab.toInt()];
+    if (tab is Map && tab['content'] is String) {
+      _appendCopyableComponentText(
+        surface: surface,
+        componentId: tab['content']! as String,
+        lines: lines,
+        visited: visited,
+        resolve: resolve,
+      );
+    }
+  }
+
+  String? _copyableText(Object? value) => switch (value) {
+    String value => value,
+    num value => '$value',
+    bool value => '$value',
+    _ => null,
+  };
+
   String? _formLabel(String surfaceId, String field) {
     final surface = _surfaceStates[surfaceId];
     if (surface == null) return null;
