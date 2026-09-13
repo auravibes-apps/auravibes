@@ -74,7 +74,7 @@ Future<MessageAttachmentToCreate> _copyIntoAppStorage(
 
 void _ensureAttachmentSize(int sizeBytes) {
   if (sizeBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
-    throw StateError('Attachment is too large.');
+    throw const ChatAttachmentTooLargeException();
   }
 }
 

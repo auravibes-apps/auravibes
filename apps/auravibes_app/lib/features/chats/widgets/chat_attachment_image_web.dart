@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
-class const ChatAttachmentImageWeb({required final String localPath, super.key})
-    extends StatelessWidget {
+class const ChatAttachmentImageWeb({
+  required final String localPath,
+  final double width = 180,
+  final double height = 140,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(width: 180, height: 140);
+    return SizedBox(width: width, height: height);
   }
 }
 

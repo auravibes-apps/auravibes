@@ -276,6 +276,7 @@
       "a2ui_image_loading": "Cargando imagen…",
       "a2ui_image_error": "Imagen no disponible",
       "attachment_unsupported": "El modelo actual no admite esta entrada.",
+      "attachment_too_large": "El archivo adjunto debe pesar 25 MB o menos.",
       "switch_model_unsupported_title": "¿Cambiar modelo?",
       "switch_model_unsupported_body": "Este modelo no admite {modalities}. Los adjuntos no compatibles se omitirán.",
       "switch_model_cancel": "Cancelar",

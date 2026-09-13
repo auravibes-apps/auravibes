@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_attachment_draft_preview.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -154,10 +155,18 @@ abstract final class _ChatInputHooksFactory {
     useEffect(disposeDraft, const []);
   }
 
-  static bool isEmpty(_ChatInputHooks hooks) => useListenableSelector(
-    hooks.draft.controller,
-    () => hooks.draft.controller.text.trim().isEmpty,
-  );
+  static bool isEmpty(_ChatInputHooks hooks) {
+    final isTextEmpty = useListenableSelector(
+      hooks.draft.controller,
+      () => hooks.draft.controller.text.trim().isEmpty,
+    );
+    final areAttachmentsEmpty = useListenableSelector(
+      hooks.draft.attachments,
+      () => hooks.draft.attachments.value.isEmpty,
+    );
+
+    return isTextEmpty && areAttachmentsEmpty;
+  }
 
   static _ChatInputActions _createAndRegisterActions({
     required WidgetRef ref,
@@ -485,7 +494,7 @@ extension _ChatInputDraftActions on _ChatInputActions {
   }
 
   Future<void> sendMessage() async {
-    if (input.disabled || isEmpty) return;
+    if (input.disabled || isEmpty || _draft.isSending.value) return;
 
     _draft.isSending.value = true;
     try {
@@ -510,14 +519,28 @@ extension _ChatInputDraftActions on _ChatInputActions {
 
 extension _ChatInputAttachmentActions on _ChatInputActions {
   Future<void> addPath(String path, {required String displayName}) async {
-    final attachment = await _copyAttachment(path, displayName);
-    if (!_supportsAttachment(attachment)) {
-      deleteUnsentAttachment(attachment);
-      _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
+    try {
+      final attachment = await _copyAttachment(path, displayName);
+      if (!_supportsAttachment(attachment)) {
+        deleteUnsentAttachment(attachment);
+        _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
 
-      return;
+        return;
+      }
+      _draft.attachments.value = [..._draft.attachments.value, attachment];
+    } on ChatAttachmentTooLargeException catch (error) {
+      _showAttachmentError(error.localizationKey);
     }
-    _draft.attachments.value = [..._draft.attachments.value, attachment];
+  }
+
+  void _showAttachmentError(String localizationKey) {
+    if (!ref.context.mounted) return;
+
+    final _ = AuraSnackBars.show(
+      context: ref.context,
+      content: TextLocale(localizationKey),
+      variant: .error,
+    );
   }
 
   void pickFiles() => unawaited(_pickFiles());
@@ -1460,27 +1483,12 @@ class const _AttachmentChips({
       runSpacing: context.auraTheme.fromSpacing(.xs),
       children: [
         for (final attachment in attachments)
-          _AttachmentChip(
+          ChatAttachmentDraftPreview(
             attachment: attachment,
-            enabled: enabled,
             onRemove: onRemove,
+            enabled: enabled,
           ),
       ],
-    );
-  }
-}
-
-class const _AttachmentChip({
-  required final MessageAttachmentToCreate attachment,
-  required final bool enabled,
-  required final ValueChanged<MessageAttachmentToCreate> onRemove,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return InputChip(
-      avatar: Icon(_attachmentIcon(attachment.modality)),
-      label: Text(attachment.displayName),
-      onDeleted: enabled ? () => onRemove(attachment) : null,
     );
   }
 }
@@ -1545,12 +1553,4 @@ String _findAvailableAttachmentName(
     if (!existingNames.contains(candidate)) return candidate;
     index += 1;
   }
-}
-
-IconData _attachmentIcon(MessageAttachmentModality modality) {
-  return switch (modality) {
-    .image => Icons.image_outlined,
-    .audio => Icons.mic_none_outlined,
-    .file => Icons.insert_drive_file_outlined,
-  };
 }

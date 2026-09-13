@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service_io.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter/services.dart';
@@ -69,6 +70,18 @@ void main() {
     expect(attachment.modality, MessageAttachmentModality.image);
     expect(File(attachment.localPath).existsSync(), isTrue);
     expect(attachment.localPath, contains('chat_attachments_draft'));
+  });
+
+  test('rejects attachments larger than 25 MiB with a typed error', () async {
+    final source = File('${tempDirectory.path}/large.pdf');
+    final output = await source.open(mode: .write);
+    final _ = await output.truncate(25 * 1024 * 1024 + 1);
+    await output.close();
+
+    await expectLater(
+      LocalChatAttachmentService().copyIntoAppStorage(source.path),
+      throwsA(isA<ChatAttachmentTooLargeException>()),
+    );
   });
 
   test('copies drafts into namespaced temporary storage', () async {

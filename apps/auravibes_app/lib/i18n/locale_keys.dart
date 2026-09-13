@@ -360,6 +360,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.a2ui_image_error';
   static const chats_screens_chat_conversation_attachment_unsupported =
       'chats_screens.chat_conversation.attachment_unsupported';
+  static const chats_screens_chat_conversation_attachment_too_large =
+      'chats_screens.chat_conversation.attachment_too_large';
   static const chats_screens_chat_conversation_switch_model_unsupported_title =
       'chats_screens.chat_conversation.switch_model_unsupported_title';
   static const chats_screens_chat_conversation_switch_model_unsupported_body =
