@@ -21,6 +21,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -119,6 +120,80 @@ void main() {
       );
 
       expect(find.text('Hello AI'), findsOneWidget);
+      expect(find.byType(SelectionArea), findsOneWidget);
+      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
+      expect(
+        tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
+        'Copy message',
+      );
+    });
+
+    testWidgets('copies text message content and confirms success', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{"input": "test.txt"}',
+        responseRaw: 'tool output',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      String? copiedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedText = (call.arguments as Map)['text'] as String?;
+          }
+
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => _createMessage(
+                content: 'Hello AI',
+                isUser: false,
+                metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+              ),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
+      expect(find.byType(SelectionArea), findsOneWidget);
+      expect(
+        tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
+        'Copy message',
+      );
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      await tester.pump();
+
+      expect(copiedText, 'Hello AI');
+      expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(
+        tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
+        'Message copied',
+      );
     });
 
     testWidgets('prefers reactive message updates over initial snapshot', (
@@ -548,6 +623,7 @@ void main() {
       );
 
       expect(find.byIcon(Icons.warning_amber), findsOneWidget);
+      expect(find.byIcon(Icons.copy_outlined), findsNothing);
     });
 
     testWidgets('renders unresolved tool call awaiting approval', (

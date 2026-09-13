@@ -37,6 +37,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -500,6 +501,8 @@ List<Widget> _messageContentChildren({
       status: status,
     ),
   if (message.attachments.isNotEmpty) _MessageAttachments(message: message),
+  if (_messageCopyText(message) case final copyText?)
+    _MessageCopyAction(content: copyText, isUser: message.isUser),
   if (!message.isUser && a2uiRuntime != null)
     ChatA2uiSurfaceHost.message(
       key: ValueKey('a2ui_${message.id}'),
@@ -524,6 +527,9 @@ List<Widget> _messageContentChildren({
       key: ValueKey('tool_${toolCall.id}'),
     ),
 ];
+
+String? _messageCopyText(MessageEntity message) =>
+    message.content.trim().isEmpty ? null : message.content;
 
 bool _isAwaitingApproval(
   List<PendingToolCall> pendingToolCalls,
@@ -684,12 +690,14 @@ class const _MessageTextContent({
   @override
   Widget build(BuildContext context) {
     if (message.isUser) {
-      return AuraMessageBubble(
-        content: message.content,
-        isUser: true,
-        key: ValueKey(message.id),
-        status: status,
-        timestamp: message.createdAt,
+      return SelectionArea(
+        child: AuraMessageBubble(
+          content: message.content,
+          isUser: true,
+          key: ValueKey(message.id),
+          status: status,
+          timestamp: message.createdAt,
+        ),
       );
     }
 
@@ -707,6 +715,46 @@ class const _MessageTextContent({
           ),
       ],
     );
+  }
+}
+
+class _MessageCopyAction extends StatefulWidget {
+  const new({required this.content, required this.isUser, super.key});
+
+  final String content;
+  final bool isUser;
+
+  @override
+  State<_MessageCopyAction> createState() => _MessageCopyActionState();
+}
+
+class _MessageCopyActionState extends State<_MessageCopyAction> {
+  var _copied = false;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: widget.isUser ? Alignment.centerRight : Alignment.centerLeft,
+    child: AuraIconButton(
+      icon: _copied ? Icons.check : Icons.copy_outlined,
+      onPressed: () => unawaited(_copy()),
+      tooltip:
+          (_copied
+                  ? LocaleKeys.chats_screens_chat_conversation_message_copied
+                  : LocaleKeys.chats_screens_chat_conversation_copy_message)
+              .tr(),
+    ),
+  );
+
+  Future<void> _copy() async {
+    if (widget.content.trim().isEmpty) return;
+
+    try {
+      await Clipboard.setData(ClipboardData(text: widget.content));
+    } on Object {
+      return;
+    }
+
+    if (mounted) setState(() => _copied = true);
   }
 }
 
@@ -776,13 +824,15 @@ class const _AiMessageContent({
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GptMarkdown(
-          content,
-          style: TextStyle(
-            color: auraColors.onSurface,
-            fontSize: typography.fontSizeBase,
-            height: typography.lineHeightBase,
-            fontFamily: typography.bodyFontFamily,
+        SelectionArea(
+          child: GptMarkdown(
+            content,
+            style: TextStyle(
+              color: auraColors.onSurface,
+              fontSize: typography.fontSizeBase,
+              height: typography.lineHeightBase,
+              fontFamily: typography.bodyFontFamily,
+            ),
           ),
         ),
         const AuraSizedBox(height: .xs),
