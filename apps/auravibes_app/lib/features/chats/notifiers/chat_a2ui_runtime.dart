@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_ad
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_surface_state.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         A2uiChatAction,
@@ -40,6 +41,7 @@ typedef _PendingSurfaceContext = ({
 class ChatA2uiRuntime extends ChangeNotifier {
   new({required this.conversationId, this.enabled = false}) {
     _surfaceSubscription = _controller.surfaceUpdates.listen((_) {
+      _syncDataSubscriptions();
       notifyListeners();
     });
   }
@@ -48,7 +50,9 @@ class ChatA2uiRuntime extends ChangeNotifier {
   bool enabled;
 
   late final SurfaceController _controller = SurfaceController(
-    catalogs: auraChatCatalogs(),
+    catalogs: [
+      for (final catalog in auraChatCatalogs()) _copyableCatalog(catalog),
+    ],
   );
   late final StreamSubscription<SurfaceUpdate> _surfaceSubscription;
   final StreamController<ChatUiAction> _actions =
@@ -58,6 +62,9 @@ class ChatA2uiRuntime extends ChangeNotifier {
   final Set<String> _submittedActions = {};
   final Set<ChatA2uiSurfaceIssue> _unboundIssues = {};
   final Set<String> _unboundDiagnosticPayloads = {};
+  final Map<String, ({DataModel model, ValueNotifier<Object?> notifier})>
+  _dataSubscriptions = {};
+  final Map<(String, String, DataPath), ValueGetter<int>> _tabSelections = {};
   String? _restoringMessageId;
   String? _currentMessageId;
 
@@ -195,6 +202,60 @@ class ChatA2uiRuntime extends ChangeNotifier {
   String? formResetLabel(String surfaceId) =>
       _formLabel(surfaceId, 'resetLabel');
 
+  Catalog _copyableCatalog(Catalog catalog) => catalog.copyWith(
+    newItems: [
+      for (final item in catalog.items)
+        if (item.name == 'Tabs')
+          CatalogItem(
+            name: item.name,
+            dataSchema: item.dataSchema,
+            exampleData: item.exampleData,
+            isImplicitlyFlexible: item.isImplicitlyFlexible,
+            widgetBuilder: (context) => trackChatA2uiTabSelection(
+              item.widgetBuilder(context),
+              (readIndex) {
+                final key = (
+                  context.surfaceId,
+                  context.id,
+                  context.dataContext.path,
+                );
+                _tabSelections[key] = readIndex;
+                return () {
+                  if (_tabSelections[key] == readIndex) {
+                    _tabSelections.remove(key);
+                  }
+                };
+              },
+              notifyListeners,
+            ),
+          ),
+    ],
+  );
+
+  void _syncDataSubscriptions() {
+    final activeIds = _controller.activeSurfaceIds.toSet();
+    for (final entry in _dataSubscriptions.entries.toList()) {
+      if (activeIds.contains(entry.key) &&
+          identical(
+            entry.value.model,
+            _controller.contextFor(entry.key).dataModel,
+          )) {
+        continue;
+      }
+      entry.value.notifier
+        ..removeListener(notifyListeners)
+        ..dispose();
+      _dataSubscriptions.remove(entry.key);
+    }
+    for (final id in activeIds) {
+      if (_dataSubscriptions.containsKey(id)) continue;
+      final model = _controller.contextFor(id).dataModel;
+      final notifier = model.subscribe<Object?>(DataPath.root)
+        ..addListener(notifyListeners);
+      _dataSubscriptions[id] = (model: model, notifier: notifier);
+    }
+  }
+
   String? copyableTextFor(String messageId) {
     final state = _messageStates[messageId];
     if (state == null) return null;
@@ -204,48 +265,22 @@ class ChatA2uiRuntime extends ChangeNotifier {
       final surface = _surfaceStates[surfaceId];
       if (surface == null || !isReadySurface(messageId, surfaceId)) continue;
       final dataModel = _controller.contextFor(surfaceId).dataModel;
-      final data =
-          _jsonObject(dataModel.getValue<Object?>(DataPath.root)) ??
-          const <String, Object?>{};
       _appendCopyableComponentText(
         surface: surface,
         componentId: 'root',
         lines: lines,
         visited: <String>{},
-        data: data,
+        dataContext: DataContext(dataModel, DataPath.root),
       );
     }
 
-    final text = lines
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .join('\n');
+    final text = lines.where((line) => line.trim().isNotEmpty).join('\n');
     return text.isEmpty ? null : text;
   }
 
-  Object? _resolveCopyableValue(
-    Object? value,
-    Object? data, {
-    required bool allowRelative,
-  }) {
+  Object? _resolveCopyableValue(Object? value, DataContext dataContext) {
     if (value is! Map || value['path'] is! String) return value;
-    final path = value['path']! as String;
-    if (!allowRelative && !path.startsWith('/')) return null;
-    final parts = path.startsWith('/') ? path.substring(1).split('/') : [path];
-    Object? current = data;
-    for (final part in parts) {
-      final key = part.replaceAll('~1', '/').replaceAll('~0', '~');
-      current = switch (current) {
-        Map value => value[key],
-        List value => switch (int.tryParse(key)) {
-          final index? when index >= 0 && index < value.length => value[index],
-          _ => null,
-        },
-        _ => null,
-      };
-      if (current == null) return null;
-    }
-    return current;
+    return dataContext.getValue<Object?>(DataPath(value['path']! as String));
   }
 
   void _appendCopyableComponentText({
@@ -253,15 +288,13 @@ class ChatA2uiRuntime extends ChangeNotifier {
     required String componentId,
     required List<String> lines,
     required Set<String> visited,
-    required Object? data,
-    bool allowRelative = false,
+    required DataContext dataContext,
   }) {
     if (!visited.add(componentId)) return;
     final component = surface.components[componentId];
     if (component == null) return;
 
-    Object? resolve(Object? value) =>
-        _resolveCopyableValue(value, data, allowRelative: allowRelative);
+    Object? resolve(Object? value) => _resolveCopyableValue(value, dataContext);
     void field(String name) =>
         _appendCopyableValue(lines, resolve(component[name]));
     void fields(Iterable<String> names) {
@@ -277,8 +310,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
           componentId: value,
           lines: lines,
           visited: visited,
-          data: data,
-          allowRelative: allowRelative,
+          dataContext: dataContext,
         );
       }
     }
@@ -306,11 +338,11 @@ class ChatA2uiRuntime extends ChangeNotifier {
       case 'CheckBox':
       case 'DateTimeInput':
       case 'Rating':
-      case 'TextField':
         fields(['label', 'value']);
-        if (component['component'] == 'TextField') {
-          fields(['helperText', 'errorText']);
-        }
+      case 'TextField':
+        field('label');
+        if (component['variant'] != 'password') field('value');
+        fields(['helperText', 'errorText']);
       case 'Slider':
         fields(['label', 'value', 'unit']);
       case 'TagInput':
@@ -350,7 +382,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
       case 'Accordion':
         _appendStructuredFields(component['items'], ['title'], lines, resolve);
       case 'Tabs':
-        _appendTabs(component, surface, lines, visited, data, allowRelative);
+        _appendTabs(component, surface, lines, visited, dataContext);
       case 'Tab':
         field('label');
     }
@@ -364,7 +396,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
         componentReference(child);
       }
     } else if (children is Map) {
-      _appendTemplateChildren(children, surface, lines, visited, resolve);
+      _appendTemplateChildren(children, surface, lines, visited, dataContext);
     }
     if (component['component'] == 'Accordion') {
       for (final item in component['items'] as List? ?? const []) {
@@ -374,12 +406,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
   }
 
   void _appendCopyableValue(List<String> lines, Object? value) {
-    final text = switch (value) {
-      String value => value,
-      num value => '$value',
-      bool value => '$value',
-      _ => null,
-    };
+    final text = _copyableText(value);
     if (text != null) lines.add(text);
   }
 
@@ -417,7 +444,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
       for (final key in const ['label', 'value']) {
         final resolved = resolve(entry[key]);
         if (resolved is String || resolved is num || resolved is bool) {
-          values.add('$resolved');
+          values.add('$resolved'.trim());
         }
       }
       if (values.isNotEmpty) lines.add(values.join('\t'));
@@ -435,9 +462,9 @@ class ChatA2uiRuntime extends ChangeNotifier {
       final values = [
         for (final column in columns)
           if (column is Map)
-            ?_copyableText(resolve(column['label']))
+            _copyableText(resolve(column['label'])) ?? ''
           else
-            ?_copyableText(resolve(column)),
+            _copyableText(resolve(column)) ?? '',
       ];
       if (values.isNotEmpty) lines.add(values.join('\t'));
     }
@@ -446,7 +473,9 @@ class ChatA2uiRuntime extends ChangeNotifier {
     for (final row in rows) {
       final cells = row is Map ? row['cells'] : row;
       if (cells is! List) continue;
-      final values = [for (final cell in cells) ?_copyableText(resolve(cell))];
+      final values = [
+        for (final cell in cells) _copyableText(resolve(cell)) ?? '',
+      ];
       if (values.isNotEmpty) lines.add(values.join('\t'));
     }
   }
@@ -514,18 +543,17 @@ class ChatA2uiRuntime extends ChangeNotifier {
     ChatA2uiSurfaceState surface,
     List<String> lines,
     Set<String> visited,
-    Object? Function(Object? value) resolve,
+    DataContext dataContext,
   ) {
     final componentId = children['componentId'];
     if (componentId is! String) return;
-    for (final item in _templateValues(resolve(children))) {
+    for (final itemContext in _templateContexts(children, dataContext)) {
       _appendCopyableComponentText(
         surface: surface,
         componentId: componentId,
         lines: lines,
         visited: <String>{...visited},
-        data: item,
-        allowRelative: true,
+        dataContext: itemContext,
       );
     }
   }
@@ -535,11 +563,27 @@ class ChatA2uiRuntime extends ChangeNotifier {
     ChatA2uiSurfaceState surface,
     List<String> lines,
     Set<String> visited,
-    Object? data,
-    bool allowRelative,
+    DataContext dataContext,
   ) {
-    Object? resolve(Object? value) =>
-        _resolveCopyableValue(value, data, allowRelative: allowRelative);
+    Object? resolve(Object? value) => _resolveCopyableValue(value, dataContext);
+    final active = resolve(component['activeTab']);
+    final activeIndex = switch (active) {
+      num value => value.toInt(),
+      String value => num.tryParse(value)?.toInt(),
+      _ => null,
+    };
+    final controlled =
+        component['activeTab'] is Map || component['tabs'] is Map;
+    final selectedIndex = controlled && activeIndex != null
+        ? activeIndex
+        : _tabSelections[(
+                    surface.scopedSurfaceId,
+                    component['id'],
+                    dataContext.path,
+                  )]
+                  ?.call() ??
+              activeIndex ??
+              0;
     final tabs = component['tabs'];
     if (tabs is Map) {
       final templateId = tabs['componentId'];
@@ -547,16 +591,13 @@ class ChatA2uiRuntime extends ChangeNotifier {
           ? surface.components[templateId]
           : null;
       if (template == null) return;
-      final values = _templateValues(resolve(tabs));
-      for (final item in values) {
+      final contexts = _templateContexts(tabs, dataContext);
+      if (contexts.isEmpty) return;
+      for (final itemContext in contexts) {
         _appendCopyableValue(
           lines,
-          _resolveCopyableValue(template['label'], item, allowRelative: true),
+          _resolveCopyableValue(template['label'], itemContext),
         );
-      }
-      final activeTab = resolve(component['activeTab']);
-      if (activeTab is! num || activeTab < 0 || activeTab >= values.length) {
-        return;
       }
       final content = template['content'];
       if (content is String) {
@@ -565,39 +606,43 @@ class ChatA2uiRuntime extends ChangeNotifier {
           componentId: content,
           lines: lines,
           visited: <String>{...visited},
-          data: values[activeTab.toInt()],
-          allowRelative: true,
+          dataContext: contexts[selectedIndex.clamp(0, contexts.length - 1)],
         );
       }
       return;
     }
-    if (tabs is! List) return;
-    final activeTab = resolve(component['activeTab']);
+    if (tabs is! List || tabs.isEmpty) return;
     for (final tab in tabs) {
       if (tab is Map) _appendCopyableValue(lines, resolve(tab['label']));
     }
-    if (activeTab is! num || activeTab < 0 || activeTab >= tabs.length) return;
-    final tab = tabs[activeTab.toInt()];
+    final tab = tabs[selectedIndex.clamp(0, tabs.length - 1)];
     if (tab is Map && tab['content'] is String) {
       _appendCopyableComponentText(
         surface: surface,
         componentId: tab['content']! as String,
         lines: lines,
         visited: visited,
-        data: data,
-        allowRelative: allowRelative,
+        dataContext: dataContext,
       );
     }
   }
 
-  List<Object?> _templateValues(Object? value) => switch (value) {
-    List value => value.cast<Object?>(),
-    Map value => value.values.cast<Object?>().toList(growable: false),
-    _ => const <Object?>[],
-  };
+  List<DataContext> _templateContexts(Object? value, DataContext dataContext) {
+    if (value is! Map || value['path'] is! String) return const [];
+    final path = value['path']! as String;
+    final data = _resolveCopyableValue(value, dataContext);
+    final keys = switch (data) {
+      List value => [
+        for (var index = 0; index < value.length; index++) '$index',
+      ],
+      Map value => [for (final key in value.keys) '$key'],
+      _ => const <String>[],
+    };
+    return [for (final key in keys) dataContext.nested(DataPath('$path/$key'))];
+  }
 
   String? _copyableText(Object? value) => switch (value) {
-    String value => value,
+    String value => value.trim(),
     num value => '$value',
     bool value => '$value',
     _ => null,
@@ -1164,6 +1209,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
   ) {
     try {
       _controller.handleMessage(normalizedMessage);
+      _syncDataSubscriptions();
       _captureInitialDataModel(context.surface, normalizedMessage);
       _recordAcceptedMessage(messageId, context, pendingMessage, surfaceId);
       return pendingMessage.payloadJson;
@@ -1582,6 +1628,13 @@ class ChatA2uiRuntime extends ChangeNotifier {
   void dispose() {
     unawaited(_surfaceSubscription.cancel());
     unawaited(_actions.close());
+    for (final subscription in _dataSubscriptions.values) {
+      subscription.notifier
+        ..removeListener(notifyListeners)
+        ..dispose();
+    }
+    _dataSubscriptions.clear();
+    _tabSelections.clear();
     _controller.dispose();
     super.dispose();
   }

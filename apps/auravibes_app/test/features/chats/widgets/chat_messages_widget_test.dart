@@ -2,6 +2,8 @@
 // Required: Widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -23,6 +25,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genui/genui.dart' show DataPath;
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -78,7 +81,260 @@ void main() {
     await tester.pump();
   }
 
+  Future<({ChatA2uiRuntime runtime, List<String?> copies})> pumpCopySurface(
+    WidgetTester tester,
+    List<Map<String, Object?>> components, {
+    Map<String, Object?> data = const {},
+    bool form = false,
+  }) async {
+    final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+    addTearDown(runtime.dispose);
+    final message = _createMessage(
+      content: '',
+      isUser: false,
+      status: form ? MessageStatus.unfinished : MessageStatus.sent,
+      metadata: MessageMetadataEntity(
+        a2uiMessages: [
+          for (final operation in [
+            {
+              'createSurface': {
+                'surfaceId': 'main',
+                'catalogId': form
+                    ? 'urn:auravibes:a2ui:chat:form:v1'
+                    : 'urn:auravibes:a2ui:chat:v1',
+              },
+            },
+            {
+              'updateComponents': {
+                'surfaceId': 'main',
+                'components': components,
+              },
+            },
+            {
+              'updateDataModel': {
+                'surfaceId': 'main',
+                'path': '/',
+                'value': data,
+              },
+            },
+          ])
+            jsonEncode({
+              'protocolVersion': 'v1',
+              'interactionMode': form ? 'requiresUserAction' : 'passive',
+              'message': {'version': 'v0.9', ...operation},
+            }),
+        ],
+      ),
+    );
+    final copies = <String?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copies.add((call.arguments as Map)['text'] as String?);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        messages: [message.id],
+        messageEntitiesById: {message.id: message},
+        conversation: ConversationEntity(
+          id: 'conv-1',
+          title: 'Chat',
+          workspaceId: 'ws-1',
+          isPinned: false,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        ),
+        overrides: [
+          chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+          messageConversationByIdProvider.overrideWith((ref, id) => message),
+          isMessageStreamingProvider.overrideWith((ref, id) => false),
+          conversationBusyStateProvider.overrideWith(
+            (ref, _) async => const ConversationBusyState(
+              isStreaming: false,
+              hasPendingTools: false,
+            ),
+          ),
+        ],
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(runtime.hasSurfaceIssue(message.id), isFalse);
+    expect(tester.takeException(), isNull);
+    return (runtime: runtime, copies: copies);
+  }
+
   group('ChatMessagesWidget', () {
+    testWidgets('copies the second form edit while excluding password values', (
+      tester,
+    ) async {
+      final result = await pumpCopySurface(tester, [
+        {
+          'id': 'root',
+          'component': 'Column',
+          'children': ['name', 'password'],
+        },
+        {
+          'id': 'name',
+          'component': 'TextField',
+          'label': 'Name',
+          'value': {'path': '/name'},
+        },
+        {
+          'id': 'password',
+          'component': 'TextField',
+          'variant': 'password',
+          'label': 'Password',
+          'value': {'path': '/password'},
+        },
+      ], form: true);
+      final fields = find.byType(EditableText);
+      expect(fields, findsNWidgets(2));
+      expect(tester.widget<EditableText>(fields.at(1)).obscureText, isTrue);
+      await tester.enterText(fields.first, 'Ada');
+      await tester.enterText(fields.at(1), 'first-test-secret');
+      await tester.pump();
+      await tester.enterText(fields.first, 'Grace');
+      await tester.enterText(fields.at(1), 'second-test-secret');
+      await tester.pump();
+      await tester.tap(find.byTooltip('Copy message'));
+      await tester.pump();
+
+      expect(result.copies, ['Name\nGrace\nPassword']);
+      expect(find.byTooltip('Message copied'), findsOneWidget);
+    });
+
+    testWidgets(
+      'updates copy eligibility and resolves the model at the press',
+      (tester) async {
+        final result = await pumpCopySurface(tester, [
+          {
+            'id': 'root',
+            'component': 'Text',
+            'text': {'path': '/answer'},
+          },
+        ]);
+        expect(find.byTooltip('Copy message'), findsNothing);
+        final model = result.runtime.controller
+            .contextFor('msg-1:main')
+            .dataModel;
+        model.update(DataPath('/answer'), 'First answer');
+        await tester.pump();
+        expect(find.byTooltip('Copy message'), findsOneWidget);
+        final button = tester.widget<AuraIconButton>(
+          find.byType(AuraIconButton),
+        );
+
+        model.update(DataPath('/answer'), 'Latest answer');
+        button.onPressed!();
+        await tester.pump();
+        expect(result.copies, ['Latest answer']);
+
+        model.update(DataPath('/answer'), '');
+        await tester.pump();
+        expect(find.byType(AuraIconButton), findsNothing);
+      },
+    );
+
+    for (final template in [false, true]) {
+      for (final selection in [
+        null,
+        1,
+        {'path': '/active'},
+      ]) {
+        testWidgets(
+          'copies the visible ${template ? 'template' : 'static'} tab with activeTab $selection',
+          (tester) async {
+            final result = await pumpCopySurface(
+              tester,
+              [
+                {
+                  'id': 'root',
+                  'component': 'Tabs',
+                  'activeTab': ?selection,
+                  'tabs': template
+                      ? {'path': '/tabs', 'componentId': 'tab'}
+                      : [
+                          {'label': 'Overview', 'content': 'first'},
+                          {'label': 'Details', 'content': 'second'},
+                        ],
+                },
+                if (template) ...[
+                  {
+                    'id': 'tab',
+                    'component': 'Tab',
+                    'label': {'path': 'title'},
+                    'content': 'body',
+                  },
+                  {
+                    'id': 'body',
+                    'component': 'Text',
+                    'text': {'path': 'body'},
+                  },
+                ] else ...[
+                  {'id': 'first', 'component': 'Text', 'text': 'First panel'},
+                  {'id': 'second', 'component': 'Text', 'text': 'Second panel'},
+                ],
+              ],
+              data: {
+                'active': 1,
+                'tabs': [
+                  {'title': 'Overview', 'body': 'First panel'},
+                  {'title': 'Details', 'body': 'Second panel'},
+                ],
+              },
+            );
+            final initialPanel = selection == null
+                ? 'First panel'
+                : 'Second panel';
+            expect(find.text(initialPanel).hitTestable(), findsOneWidget);
+            expect(
+              result.runtime.copyableTextFor('msg-1'),
+              'Overview\nDetails\n$initialPanel',
+            );
+
+            await tester.tap(
+              find.text(selection == null ? 'Details' : 'Overview'),
+            );
+            await tester.pump();
+            final selectedPanel =
+                selection == null || template && selection == 1
+                ? 'Second panel'
+                : 'First panel';
+            expect(find.text(selectedPanel).hitTestable(), findsOneWidget);
+            await tester.tap(find.byTooltip('Copy message'));
+            await tester.pump();
+            expect(result.copies, ['Overview\nDetails\n$selectedPanel']);
+
+            if (selection is Map) {
+              final model = result.runtime.controller
+                  .contextFor('msg-1:main')
+                  .dataModel;
+              final button = tester.widget<AuraIconButton>(
+                find.byType(AuraIconButton),
+              );
+              model.update(DataPath('/active'), 30);
+              button.onPressed!();
+              await tester.pump();
+              expect(find.text('Second panel').hitTestable(), findsOneWidget);
+              expect(result.copies.last, 'Overview\nDetails\nSecond panel');
+            }
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+
     testWidgets('renders empty list when no messages', (tester) async {
       await pumpAndInit(
         tester,

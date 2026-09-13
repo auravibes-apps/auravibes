@@ -510,8 +510,11 @@ List<Widget> _messageContentChildren({
       issuesBySurface: message.metadata?.a2uiIssuesBySurface ?? const {},
       messageIssues: message.metadata?.a2uiMessageIssues ?? const [],
     ),
-  if (_messageCopyText(message, a2uiRuntime) case final copyText?)
-    _MessageCopyAction(content: copyText, isUser: message.isUser),
+  if (_messageCopyText(message, a2uiRuntime) != null)
+    _MessageCopyAction(
+      resolveContent: () => _messageCopyText(message, a2uiRuntime),
+      isUser: message.isUser,
+    ),
   for (final toolCall in visibleToolCalls)
     _ToolCallWidget(
       toolCall: toolCall,
@@ -723,9 +726,9 @@ class const _MessageTextContent({
 }
 
 class _MessageCopyAction extends StatefulWidget {
-  const new({required this.content, required this.isUser, super.key});
+  const new({required this.resolveContent, required this.isUser, super.key});
 
-  final String content;
+  final String? Function() resolveContent;
   final bool isUser;
 
   @override
@@ -750,10 +753,11 @@ class _MessageCopyActionState extends State<_MessageCopyAction> {
   );
 
   Future<void> _copy() async {
-    if (widget.content.trim().isEmpty) return;
+    final content = widget.resolveContent();
+    if (content == null || content.trim().isEmpty) return;
 
     try {
-      await Clipboard.setData(ClipboardData(text: widget.content));
+      await Clipboard.setData(ClipboardData(text: content));
     } on Object {
       return;
     }

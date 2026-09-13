@@ -290,6 +290,8 @@
       "a2ui_unavailable": "This UI could not be loaded.",
       "copy_a2ui_diagnostic": "Copy diagnostic details",
       "a2ui_diagnostic_copied": "Diagnostic copied",
+      "copy_message": "Copy message",
+      "message_copied": "Message copied",
       "a2ui_form_invalid": "Check your answers and try again.",
       "continue_error": "Could not continue the agent. Please try again.",
       "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",
