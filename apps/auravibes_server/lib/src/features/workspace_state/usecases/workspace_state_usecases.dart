@@ -10,6 +10,13 @@ import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
 
+typedef _OperationCommitMetadata = ({
+  String userId,
+  String endpoint,
+  String requestId,
+  String hash,
+});
+
 class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
   static const _maxPageSize = 100;
   static const _maxOperations = 50;
@@ -148,11 +155,13 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         session,
         workspace: workspace,
         workspaceId: request.workspaceId,
-        userId: userId,
-        endpoint: _endpointPatch,
+        metadata: (
+          userId: userId,
+          endpoint: _endpointPatch,
+          requestId: request.requestId,
+          hash: hash,
+        ),
         operations: request.operations,
-        requestId: request.requestId,
-        hash: hash,
         transaction: transaction,
       );
     });
@@ -211,11 +220,13 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         session,
         workspace: workspace,
         workspaceId: request.workspaceId,
-        userId: userId,
-        endpoint: _endpointDuplicateAgent,
+        metadata: (
+          userId: userId,
+          endpoint: _endpointDuplicateAgent,
+          requestId: request.requestId,
+          hash: hash,
+        ),
         operations: operations,
-        requestId: request.requestId,
-        hash: hash,
         transaction: transaction,
       );
     });
@@ -225,11 +236,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Session session, {
     required CloudWorkspace workspace,
     required int workspaceId,
-    required String userId,
-    required String endpoint,
+    required _OperationCommitMetadata metadata,
     required Iterable<WorkspacePatchOperation> operations,
-    required String requestId,
-    required String hash,
     required Transaction transaction,
   }) async {
     final now = DateTime.now().toUtc();
@@ -253,7 +261,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         session,
         workspaceId: workspaceId,
         sequence: sequence,
-        userId: userId,
+        userId: metadata.userId,
         kind: event.kind,
         resourceKind: event.resourceKind,
         resourceId: event.resourceId,
@@ -272,10 +280,10 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     await _saveReceipt(
       session,
       workspaceId: workspaceId,
-      userId: userId,
-      endpoint: endpoint,
-      requestId: requestId,
-      hash: hash,
+      userId: metadata.userId,
+      endpoint: metadata.endpoint,
+      requestId: metadata.requestId,
+      hash: metadata.hash,
       responseJson: jsonEncode(response.toJson()),
       now: now,
       transaction: transaction,
