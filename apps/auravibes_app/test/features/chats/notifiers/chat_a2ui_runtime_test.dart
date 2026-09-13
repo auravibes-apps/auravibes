@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:a2ui_core/a2ui_core.dart' as core;
 import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
@@ -50,6 +51,128 @@ void main() {
       runtime.copyableTextFor('assistant-1'),
       isNot(contains('protocolVersion')),
     );
+    runtime.controller.handleMessage(
+      core.DeleteSurfaceMessage(surfaceId: 'assistant-1:main'),
+    );
+    expect(runtime.copyableTextFor('assistant-1'), isNull);
+  });
+
+  test('projects every bound template item with its nested data context', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'main',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Column',
+                'children': {'path': '/people', 'componentId': 'person'},
+              },
+              {
+                'id': 'person',
+                'component': 'Text',
+                'text': {'path': 'name'},
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+    runtime.controller.contextFor('assistant-1:main').dataModel.update(
+      DataPath('/people'),
+      [
+        {'name': 'Ada'},
+        {'name': 'Grace'},
+      ],
+    );
+
+    expect(runtime.copyableTextFor('assistant-1'), 'Ada\nGrace');
+  });
+
+  test('projects template tab labels and the selected nested content', () {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'main',
+            'catalogId': auraChatCatalogId,
+          },
+        },
+      }),
+    );
+    runtime.addMessageJson(
+      jsonEncode({
+        'protocolVersion': 'v1',
+        'message': {
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Tabs',
+                'tabs': {'path': '/tabs', 'componentId': 'tab-template'},
+                'activeTab': {'path': '/activeTab'},
+              },
+              {
+                'id': 'tab-template',
+                'component': 'Tab',
+                'label': {'path': 'title'},
+                'content': 'tab-content',
+              },
+              {
+                'id': 'tab-content',
+                'component': 'Text',
+                'text': {'path': 'body'},
+              },
+            ],
+          },
+        },
+      }),
+    );
+    runtime.commitCurrentMessage();
+    runtime.controller.contextFor('assistant-1:main').dataModel.update(
+      DataPath('/'),
+      {
+        'activeTab': 1,
+        'tabs': [
+          {'title': 'Overview', 'body': 'First'},
+          {'title': 'Details', 'body': 'Second'},
+        ],
+      },
+    );
+
+    expect(runtime.copyableTextFor('assistant-1'), 'Overview\nDetails\nSecond');
   });
 
   test('projects current form values into copyable text', () {

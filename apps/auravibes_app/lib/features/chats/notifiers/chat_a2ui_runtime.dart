@@ -202,7 +202,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
     final lines = <String>[];
     for (final surfaceId in state.surfaceOrder) {
       final surface = _surfaceStates[surfaceId];
-      if (surface == null || surface.deleted || !surface.hasRoot) continue;
+      if (surface == null || !isReadySurface(messageId, surfaceId)) continue;
       final dataModel = _controller.contextFor(surfaceId).dataModel;
       final data =
           _jsonObject(dataModel.getValue<Object?>(DataPath.root)) ??
@@ -212,7 +212,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
         componentId: 'root',
         lines: lines,
         visited: <String>{},
-        resolve: (value) => _resolveCopyableValue(value, data),
+        data: data,
       );
     }
 
@@ -223,12 +223,17 @@ class ChatA2uiRuntime extends ChangeNotifier {
     return text.isEmpty ? null : text;
   }
 
-  Object? _resolveCopyableValue(Object? value, Object? data) {
+  Object? _resolveCopyableValue(
+    Object? value,
+    Object? data, {
+    required bool allowRelative,
+  }) {
     if (value is! Map || value['path'] is! String) return value;
     final path = value['path']! as String;
-    if (!path.startsWith('/')) return null;
+    if (!allowRelative && !path.startsWith('/')) return null;
+    final parts = path.startsWith('/') ? path.substring(1).split('/') : [path];
     Object? current = data;
-    for (final part in path.substring(1).split('/')) {
+    for (final part in parts) {
       final key = part.replaceAll('~1', '/').replaceAll('~0', '~');
       current = switch (current) {
         Map value => value[key],
@@ -248,12 +253,15 @@ class ChatA2uiRuntime extends ChangeNotifier {
     required String componentId,
     required List<String> lines,
     required Set<String> visited,
-    required Object? Function(Object? value) resolve,
+    required Object? data,
+    bool allowRelative = false,
   }) {
     if (!visited.add(componentId)) return;
     final component = surface.components[componentId];
     if (component == null) return;
 
+    Object? resolve(Object? value) =>
+        _resolveCopyableValue(value, data, allowRelative: allowRelative);
     void field(String name) =>
         _appendCopyableValue(lines, resolve(component[name]));
     void fields(Iterable<String> names) {
@@ -269,7 +277,8 @@ class ChatA2uiRuntime extends ChangeNotifier {
           componentId: value,
           lines: lines,
           visited: visited,
-          resolve: resolve,
+          data: data,
+          allowRelative: allowRelative,
         );
       }
     }
@@ -341,7 +350,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
       case 'Accordion':
         _appendStructuredFields(component['items'], ['title'], lines, resolve);
       case 'Tabs':
-        _appendTabs(component, surface, lines, visited, resolve);
+        _appendTabs(component, surface, lines, visited, data, allowRelative);
       case 'Tab':
         field('label');
     }
@@ -355,7 +364,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
         componentReference(child);
       }
     } else if (children is Map) {
-      componentReference(children['componentId']);
+      _appendTemplateChildren(children, surface, lines, visited, resolve);
     }
     if (component['component'] == 'Accordion') {
       for (final item in component['items'] as List? ?? const []) {
@@ -428,7 +437,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
           if (column is Map)
             ?_copyableText(resolve(column['label']))
           else
-            ?_copyableText(column),
+            ?_copyableText(resolve(column)),
       ];
       if (values.isNotEmpty) lines.add(values.join('\t'));
     }
@@ -437,7 +446,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
     for (final row in rows) {
       final cells = row is Map ? row['cells'] : row;
       if (cells is! List) continue;
-      final values = [for (final cell in cells) ?_copyableText(cell)];
+      final values = [for (final cell in cells) ?_copyableText(resolve(cell))];
       if (values.isNotEmpty) lines.add(values.join('\t'));
     }
   }
@@ -452,7 +461,9 @@ class ChatA2uiRuntime extends ChangeNotifier {
     }
     final labels = resolve(component['labels']);
     if (labels is List) {
-      final values = [for (final label in labels) ?_copyableText(label)];
+      final values = [
+        for (final label in labels) ?_copyableText(resolve(label)),
+      ];
       if (values.isNotEmpty) lines.add(values.join('\t'));
     }
     final series = resolve(component['series']);
@@ -460,7 +471,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
     for (final entry in series) {
       if (entry is! Map) continue;
       _appendCopyableValue(lines, resolve(entry['label']));
-      _appendCopyableValues(lines, entry['values']);
+      _appendCopyableValues(lines, resolve(entry['values']));
     }
   }
 
@@ -490,23 +501,64 @@ class ChatA2uiRuntime extends ChangeNotifier {
     }
   }
 
-  void _appendTabs(
-    Map<String, dynamic> component,
+  void _appendTemplateChildren(
+    Map<Object?, Object?> children,
     ChatA2uiSurfaceState surface,
     List<String> lines,
     Set<String> visited,
     Object? Function(Object? value) resolve,
   ) {
+    final componentId = children['componentId'];
+    if (componentId is! String) return;
+    for (final item in _templateValues(resolve(children))) {
+      _appendCopyableComponentText(
+        surface: surface,
+        componentId: componentId,
+        lines: lines,
+        visited: <String>{...visited},
+        data: item,
+        allowRelative: true,
+      );
+    }
+  }
+
+  void _appendTabs(
+    Map<String, dynamic> component,
+    ChatA2uiSurfaceState surface,
+    List<String> lines,
+    Set<String> visited,
+    Object? data,
+    bool allowRelative,
+  ) {
+    Object? resolve(Object? value) =>
+        _resolveCopyableValue(value, data, allowRelative: allowRelative);
     final tabs = component['tabs'];
     if (tabs is Map) {
       final templateId = tabs['componentId'];
-      if (templateId is String) {
+      final template = templateId is String
+          ? surface.components[templateId]
+          : null;
+      if (template == null) return;
+      final values = _templateValues(resolve(tabs));
+      for (final item in values) {
+        _appendCopyableValue(
+          lines,
+          _resolveCopyableValue(template['label'], item, allowRelative: true),
+        );
+      }
+      final activeTab = resolve(component['activeTab']);
+      if (activeTab is! num || activeTab < 0 || activeTab >= values.length) {
+        return;
+      }
+      final content = template['content'];
+      if (content is String) {
         _appendCopyableComponentText(
           surface: surface,
-          componentId: templateId,
+          componentId: content,
           lines: lines,
-          visited: visited,
-          resolve: resolve,
+          visited: <String>{...visited},
+          data: values[activeTab.toInt()],
+          allowRelative: true,
         );
       }
       return;
@@ -524,10 +576,17 @@ class ChatA2uiRuntime extends ChangeNotifier {
         componentId: tab['content']! as String,
         lines: lines,
         visited: visited,
-        resolve: resolve,
+        data: data,
+        allowRelative: allowRelative,
       );
     }
   }
+
+  List<Object?> _templateValues(Object? value) => switch (value) {
+    List value => value.cast<Object?>(),
+    Map value => value.values.cast<Object?>().toList(growable: false),
+    _ => const <Object?>[],
+  };
 
   String? _copyableText(Object? value) => switch (value) {
     String value => value,
