@@ -3,6 +3,7 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'dart:convert';
+import 'dart:ui' show Offset, PointerDeviceKind;
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -20,9 +21,11 @@ import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show DataPath;
@@ -39,6 +42,7 @@ Widget buildSubject({
   List<PendingToolCall> pendingToolCalls = const [],
   bool showThinking = false,
   ConversationEntity? conversation,
+  AuraTheme? theme,
 }) {
   return _ChatMessagesTestSubject(
     conversationId: conversationId,
@@ -48,6 +52,7 @@ Widget buildSubject({
     showThinking: showThinking,
     messageEntitiesById: messageEntitiesById,
     conversation: conversation,
+    theme: theme,
   );
 }
 
@@ -86,11 +91,12 @@ void main() {
     List<Map<String, Object?>> components, {
     Map<String, Object?> data = const {},
     bool form = false,
+    String content = '',
   }) async {
     final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
     addTearDown(runtime.dispose);
     final message = _createMessage(
-      content: '',
+      content: content,
       isUser: false,
       status: form ? MessageStatus.unfinished : MessageStatus.sent,
       metadata: MessageMetadataEntity(
@@ -391,6 +397,50 @@ void main() {
       );
     });
 
+    testWidgets('uses a visible selection color for user messages', (
+      tester,
+    ) async {
+      for (final theme in [AuraTheme.light, AuraTheme.dark]) {
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: ['msg-1'],
+            theme: theme,
+            overrides: [
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => _createMessage(content: 'Hello AI'),
+              ),
+              isMessageStreamingProvider.overrideWith((ref, id) => false),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: false,
+                ),
+              ),
+            ],
+          ),
+        );
+
+        final selectionTheme = tester.widget<TextSelectionTheme>(
+          find.byType(TextSelectionTheme),
+        );
+        final overlayColor = theme.colors.onPrimary.computeLuminance() > .5
+            ? Colors.black
+            : Colors.white;
+        expect(
+          selectionTheme.data.selectionColor,
+          Color.alphaBlend(
+            overlayColor.withValues(alpha: .24),
+            theme.colors.primary,
+          ),
+        );
+        expect(
+          selectionTheme.data.selectionColor,
+          isNot(equals(theme.colors.primary)),
+        );
+      }
+    });
+
     testWidgets('copies text message content and confirms success', (
       tester,
     ) async {
@@ -512,6 +562,37 @@ void main() {
       expect(find.text('Hello user'), findsOneWidget);
     });
 
+    testWidgets('keeps text-only assistant metadata inline', (tester) async {
+      final message = _createMessage(
+        content: 'Text-only answer',
+        isUser: false,
+      );
+      final relativeTime = RelativeTimeFormatter.format(message.createdAt);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Text-only answer'), findsOneWidget);
+      expect(find.byKey(const ValueKey('message_footer_msg-1')), findsNothing);
+      expect(find.byTooltip('Copy message'), findsOneWidget);
+      expect(find.text(relativeTime), findsOneWidget);
+    });
+
     testWidgets('renders one thinking indicator while generation is active', (
       tester,
     ) async {
@@ -573,6 +654,19 @@ void main() {
       expect(find.text('Reasoning summary'), findsOneWidget);
       expect(find.text('Reasoned before answering'), findsOneWidget);
       expect(find.text('Final answer'), findsOneWidget);
+      final selectionArea = find.byType(SelectionArea);
+      expect(selectionArea, findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text('Reasoned before answering'),
+          matching: selectionArea,
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.ancestor(of: find.text('Final answer'), matching: selectionArea),
+        findsOneWidget,
+      );
     });
 
     testWidgets('does not show unfinished status for an A2UI message', (
@@ -649,80 +743,88 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('copies an A2UI-only assistant response', (tester) async {
-      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
-      addTearDown(runtime.dispose);
-      final message = _createMessage(
-        content: '',
-        isUser: false,
-        metadata: const MessageMetadataEntity(
-          a2uiMessages: [
-            '{"protocolVersion":"v1","interactionMode":"passive",'
-                '"message":{"version":"v0.9","createSurface":{'
-                '"surfaceId":"main","catalogId":'
-                '"urn:auravibes:a2ui:chat:v1"}}}',
-            '{"protocolVersion":"v1","interactionMode":"passive",'
-                '"message":{"version":"v0.9","updateComponents":{'
-                '"surfaceId":"main","components":[{"id":"root",'
-                '"component":"Text","text":"UI answer"}]}}}',
-          ],
-        ),
+    testWidgets('renders an A2UI-only assistant footer', (tester) async {
+      final result = await pumpCopySurface(tester, [
+        {'id': 'root', 'component': 'Text', 'text': 'UI answer'},
+      ]);
+      final surface = find.byKey(const ValueKey('a2ui_msg-1'));
+      final footer = find.byKey(const ValueKey('message_footer_msg-1'));
+      final relativeTime = RelativeTimeFormatter.format(DateTime(2025));
+      final copyAction = find.descendant(
+        of: footer,
+        matching: find.byIcon(Icons.copy_outlined),
       );
-      String? copiedText;
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (call) async {
-          if (call.method == 'Clipboard.setData') {
-            copiedText = (call.arguments as Map)['text'] as String?;
-          }
-
-          return null;
-        },
+      final timestamp = find.descendant(
+        of: footer,
+        matching: find.text(relativeTime),
       );
-      addTearDown(
-        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          SystemChannels.platform,
-          null,
-        ),
-      );
-
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          messages: [message.id],
-          messageEntitiesById: {message.id: message},
-          conversation: ConversationEntity(
-            id: 'conv-1',
-            title: 'Chat',
-            workspaceId: 'ws-1',
-            isPinned: false,
-            createdAt: DateTime(2025),
-            updatedAt: DateTime(2025),
-          ),
-          overrides: [
-            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
-            messageConversationByIdProvider.overrideWith((ref, id) => message),
-            isMessageStreamingProvider.overrideWith((ref, id) => false),
-            conversationBusyStateProvider.overrideWith(
-              (ref, _) async => const ConversationBusyState(
-                isStreaming: false,
-                hasPendingTools: false,
-              ),
-            ),
-          ],
-        ),
-      );
-      final _ = await tester.pumpAndSettle();
 
       expect(find.text('UI answer'), findsOneWidget);
       expect(find.byType(SelectionArea), findsOneWidget);
-      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.copy_outlined));
+      expect(surface, findsOneWidget);
+      expect(footer, findsOneWidget);
+      expect(
+        tester.getTopLeft(surface).dy,
+        lessThan(tester.getTopLeft(footer).dy),
+      );
+      expect(copyAction, findsOneWidget);
+      expect(timestamp, findsOneWidget);
+      expect(find.text(relativeTime), findsOneWidget);
+      expect(
+        tester.getTopLeft(timestamp).dx,
+        greaterThan(tester.getTopRight(copyAction).dx),
+      );
+
+      await tester.tap(copyAction);
       await tester.pump();
-      expect(copiedText, 'UI answer');
+      expect(result.copies, ['UI answer']);
     });
 
-    testWidgets('copies message text instead of an A2UI surface', (
+    testWidgets('renders mixed text and A2UI content in one footer', (
+      tester,
+    ) async {
+      final result = await pumpCopySurface(tester, [
+        {'id': 'root', 'component': 'Text', 'text': 'UI answer'},
+      ], content: 'Intro');
+      final surface = find.byKey(const ValueKey('a2ui_msg-1'));
+      final footer = find.byKey(const ValueKey('message_footer_msg-1'));
+      final relativeTime = RelativeTimeFormatter.format(DateTime(2025));
+      final copyAction = find.descendant(
+        of: footer,
+        matching: find.byIcon(Icons.copy_outlined),
+      );
+      final timestamp = find.descendant(
+        of: footer,
+        matching: find.text(relativeTime),
+      );
+
+      expect(find.text('Intro'), findsOneWidget);
+      expect(find.text('UI answer'), findsOneWidget);
+      expect(surface, findsOneWidget);
+      expect(footer, findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Intro')).dy,
+        lessThan(tester.getTopLeft(surface).dy),
+      );
+      expect(
+        tester.getTopLeft(surface).dy,
+        lessThan(tester.getTopLeft(footer).dy),
+      );
+      expect(copyAction, findsOneWidget);
+      expect(timestamp, findsOneWidget);
+      expect(find.text(relativeTime), findsOneWidget);
+      expect(find.byType(AuraMessageStatus), findsNothing);
+      expect(
+        tester.getTopLeft(timestamp).dx,
+        greaterThan(tester.getTopRight(copyAction).dx),
+      );
+
+      await tester.tap(copyAction);
+      await tester.pump();
+      expect(result.copies, ['Intro\n\nUI answer']);
+    });
+
+    testWidgets('copies message text together with an A2UI surface', (
       tester,
     ) async {
       final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
@@ -791,14 +893,55 @@ void main() {
 
       final copyAction = find.byIcon(Icons.copy_outlined);
       expect(find.text('UI answer'), findsOneWidget);
-      expect(find.byType(SelectionArea), findsNWidgets(2));
+      final selectionArea = find.byType(SelectionArea);
+      expect(selectionArea, findsOneWidget);
+      expect(
+        find.ancestor(of: find.text('Message answer'), matching: selectionArea),
+        findsOneWidget,
+      );
+      expect(
+        find.ancestor(of: find.text('UI answer'), matching: selectionArea),
+        findsOneWidget,
+      );
       expect(
         find.ancestor(of: copyAction, matching: find.byType(SelectionArea)),
         findsNothing,
       );
+
+      final messageParagraph = tester.renderObject<RenderParagraph>(
+        find.descendant(
+          of: find.text('Message answer'),
+          matching: find.byType(RichText),
+        ),
+      );
+      final uiParagraph = tester.renderObject<RenderParagraph>(
+        find.descendant(
+          of: find.text('UI answer'),
+          matching: find.byType(RichText),
+        ),
+      );
+      expect(messageParagraph.registrar, isNotNull);
+      expect(uiParagraph.registrar, isNotNull);
+      final gesture = await tester.startGesture(
+        messageParagraph.localToGlobal(
+          Offset(2, messageParagraph.size.height / 2),
+        ),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await gesture.moveTo(
+        uiParagraph.localToGlobal(
+          Offset(uiParagraph.size.width - 2, uiParagraph.size.height / 2),
+        ),
+      );
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(messageParagraph.selections, isNotEmpty);
+      expect(uiParagraph.selections, isNotEmpty);
+
       await tester.tap(copyAction);
       await tester.pump();
-      expect(copiedText, 'Message answer');
+      expect(copiedText, 'Message answer\n\nUI answer');
     });
 
     testWidgets('does not copy an image-only A2UI surface', (tester) async {
@@ -1515,6 +1658,7 @@ class const _ChatMessagesTestSubject({
   final Map<String, MessageEntity>? messageEntitiesById,
   final bool showThinking = false,
   final ConversationEntity? conversation,
+  final AuraTheme? theme,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1543,7 +1687,7 @@ class const _ChatMessagesTestSubject({
           builder: (context) {
             return MaterialApp(
               home: Theme(
-                data: ThemeData(extensions: [AuraTheme.light]),
+                data: ThemeData(extensions: [theme ?? AuraTheme.light]),
                 child: Material(
                   child: ChatMessagesWidget(
                     workspaceId: 'ws-1',

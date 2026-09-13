@@ -126,6 +126,7 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
+        expect(find.byType(SelectionArea), findsOneWidget);
         expect(find.byIcon(Icons.dashboard), findsOneWidget);
         final description = find.textContaining('Version 3.2 focuses');
         expect(description, findsOneWidget);

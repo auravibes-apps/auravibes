@@ -7,7 +7,6 @@ import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_ad
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_surface_state.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         A2uiChatAction,
@@ -50,9 +49,10 @@ class ChatA2uiRuntime extends ChangeNotifier {
   bool enabled;
 
   late final SurfaceController _controller = SurfaceController(
-    catalogs: [
-      for (final catalog in auraChatCatalogs()) _copyableCatalog(catalog),
-    ],
+    catalogs: auraChatCatalogsWithTabSelection(
+      register: _registerTabSelection,
+      onChanged: notifyListeners,
+    ),
   );
   late final StreamSubscription<SurfaceUpdate> _surfaceSubscription;
   final StreamController<ChatUiAction> _actions =
@@ -202,35 +202,16 @@ class ChatA2uiRuntime extends ChangeNotifier {
   String? formResetLabel(String surfaceId) =>
       _formLabel(surfaceId, 'resetLabel');
 
-  Catalog _copyableCatalog(Catalog catalog) => catalog.copyWith(
-    newItems: [
-      for (final item in catalog.items)
-        if (item.name == 'Tabs')
-          CatalogItem(
-            name: item.name,
-            dataSchema: item.dataSchema,
-            exampleData: item.exampleData,
-            isImplicitlyFlexible: item.isImplicitlyFlexible,
-            widgetBuilder: (context) => trackChatA2uiTabSelection(
-              item.widgetBuilder(context),
-              (readIndex) {
-                final key = (
-                  context.surfaceId,
-                  context.id,
-                  context.dataContext.path,
-                );
-                _tabSelections[key] = readIndex;
-                return () {
-                  if (_tabSelections[key] == readIndex) {
-                    _tabSelections.remove(key);
-                  }
-                };
-              },
-              notifyListeners,
-            ),
-          ),
-    ],
-  );
+  VoidCallback _registerTabSelection(
+    CatalogItemContext context,
+    ValueGetter<int> readIndex,
+  ) {
+    final key = (context.surfaceId, context.id, context.dataContext.path);
+    _tabSelections[key] = readIndex;
+    return () {
+      if (_tabSelections[key] == readIndex) _tabSelections.remove(key);
+    };
+  }
 
   void _syncDataSubscriptions() {
     final activeIds = _controller.activeSurfaceIds.toSet();

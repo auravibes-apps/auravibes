@@ -422,6 +422,10 @@ class const _ChatMessageContent({
     );
     final visibleThinking = hasThinking && !isStreaming;
     final status = _messageDeliveryStatus(message, isStreaming);
+    final hasA2uiResponse =
+        !message.isUser &&
+        ((message.metadata?.a2uiMessages.isNotEmpty ?? false) ||
+            a2uiReplayPayloads.isNotEmpty);
 
     return AnimatedSize(
       child: AuraColumn(
@@ -432,6 +436,7 @@ class const _ChatMessageContent({
           hasThinking: visibleThinking,
           isStreaming: isStreaming,
           showTextBubble: showTextBubble,
+          hasA2uiResponse: hasA2uiResponse,
           visibleToolCalls: visibleToolCalls,
           status: status,
           pendingToolCalls: pendingToolCalls,
@@ -482,6 +487,7 @@ List<Widget> _messageContentChildren({
   required bool hasThinking,
   required bool isStreaming,
   required bool showTextBubble,
+  required bool hasA2uiResponse,
   required List<MessageToolCallEntity> visibleToolCalls,
   required AuraMessageDeliveryStatus status,
   required List<PendingToolCall> pendingToolCalls,
@@ -490,52 +496,84 @@ List<Widget> _messageContentChildren({
   required String workspaceId,
   required ChatA2uiRuntime? a2uiRuntime,
   required List<String> a2uiReplayPayloads,
-}) => [
-  if (showTextBubble)
-    _MessageTextContent(
-      message: message,
-      thinking: thinking,
-      hasContent: hasContent,
-      hasThinking: hasThinking,
-      isStreaming: isStreaming,
-      status: status,
-    ),
-  if (message.attachments.isNotEmpty) _MessageAttachments(message: message),
-  if (!message.isUser && a2uiRuntime != null)
-    ChatA2uiSurfaceHost.message(
-      key: ValueKey('a2ui_${message.id}'),
-      runtime: a2uiRuntime,
-      messageId: message.id,
-      payloads: [...?message.metadata?.a2uiMessages, ...a2uiReplayPayloads],
-      issuesBySurface: message.metadata?.a2uiIssuesBySurface ?? const {},
-      messageIssues: message.metadata?.a2uiMessageIssues ?? const [],
-    ),
-  if (_messageCopyText(message, a2uiRuntime) != null)
-    _MessageCopyAction(
-      resolveContent: () => _messageCopyText(message, a2uiRuntime),
-      isUser: message.isUser,
-    ),
-  for (final toolCall in visibleToolCalls)
-    _ToolCallWidget(
-      toolCall: toolCall,
-      messageId: message.id,
-      parentConversationId: parentConversationId,
-      childConversations: childConversations,
-      workspaceId: workspaceId,
-      isAwaitingApproval: _isAwaitingApproval(
-        pendingToolCalls,
-        message,
-        toolCall,
+}) {
+  final selectableChildren = <Widget>[
+    if (showTextBubble)
+      _MessageTextContent(
+        message: message,
+        thinking: thinking,
+        hasContent: hasContent,
+        hasThinking: hasThinking,
+        isStreaming: isStreaming,
+        hasA2uiResponse: hasA2uiResponse,
+        status: status,
       ),
-      key: ValueKey('tool_${toolCall.id}'),
-    ),
-];
+    if (message.attachments.isNotEmpty) _MessageAttachments(message: message),
+    if (!message.isUser && a2uiRuntime != null)
+      ChatA2uiSurfaceHost.message(
+        key: ValueKey('a2ui_${message.id}'),
+        runtime: a2uiRuntime,
+        messageId: message.id,
+        payloads: [...?message.metadata?.a2uiMessages, ...a2uiReplayPayloads],
+        issuesBySurface: message.metadata?.a2uiIssuesBySurface ?? const {},
+        messageIssues: message.metadata?.a2uiMessageIssues ?? const [],
+        wrapInSelectionArea: false,
+      ),
+  ];
+
+  return [
+    if (selectableChildren.isNotEmpty)
+      SelectionArea(
+        child: AuraColumn(
+          mainAxisSize: .min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: selectableChildren,
+        ),
+      ),
+    if (!hasA2uiResponse && _messageCopyText(message, a2uiRuntime) != null)
+      _MessageCopyAction(
+        resolveContent: () => _messageCopyText(message, a2uiRuntime),
+        isUser: message.isUser,
+      ),
+    for (final toolCall in visibleToolCalls)
+      _ToolCallWidget(
+        toolCall: toolCall,
+        messageId: message.id,
+        parentConversationId: parentConversationId,
+        childConversations: childConversations,
+        workspaceId: workspaceId,
+        isAwaitingApproval: _isAwaitingApproval(
+          pendingToolCalls,
+          message,
+          toolCall,
+        ),
+        key: ValueKey('tool_${toolCall.id}'),
+      ),
+    if (hasA2uiResponse)
+      _MessageFooter(
+        key: ValueKey('message_footer_${message.id}'),
+        createdAt: message.createdAt,
+        status: status,
+        resolveContent: () => _messageCopyText(message, a2uiRuntime),
+      ),
+  ];
+}
 
 String? _messageCopyText(MessageEntity message, ChatA2uiRuntime? a2uiRuntime) {
   final content = message.content;
-  if (content.trim().isNotEmpty) return content;
-  if (message.isUser) return null;
-  return a2uiRuntime?.copyableTextFor(message.id);
+  final a2uiText = message.isUser
+      ? null
+      : a2uiRuntime?.copyableTextFor(message.id);
+  if (content.trim().isEmpty) return a2uiText;
+  if (a2uiText == null || a2uiText.trim().isEmpty) return content;
+  return '$content\n\n$a2uiText';
+}
+
+Color _userMessageSelectionColor(AuraColorScheme colors) {
+  final overlayColor = colors.onPrimary.computeLuminance() > .5
+      ? Colors.black
+      : Colors.white;
+  return Color.alphaBlend(overlayColor.withValues(alpha: .24), colors.primary);
 }
 
 bool _isAwaitingApproval(
@@ -692,12 +730,18 @@ class const _MessageTextContent({
   required final bool hasContent,
   required final bool hasThinking,
   required final bool isStreaming,
+  required final bool hasA2uiResponse,
   required final AuraMessageDeliveryStatus status,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (message.isUser) {
-      return SelectionArea(
+      final colors = context.auraColors;
+      return TextSelectionTheme(
+        data: Theme.of(context).textSelectionTheme.copyWith(
+          selectionColor: _userMessageSelectionColor(colors),
+          selectionHandleColor: colors.onPrimary,
+        ),
         child: AuraMessageBubble(
           content: message.content,
           isUser: true,
@@ -719,8 +763,55 @@ class const _MessageTextContent({
             timestamp: message.createdAt,
             key: ValueKey(message.id),
             status: status,
+            showMetadata: !hasA2uiResponse,
           ),
       ],
+    );
+  }
+}
+
+class const _MessageFooter({
+  required final DateTime createdAt,
+  required final AuraMessageDeliveryStatus status,
+  required final String? Function() resolveContent,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+    final typography = context.auraTheme.typography;
+    final copyableText = resolveContent();
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (copyableText != null)
+                _MessageCopyAction(
+                  resolveContent: resolveContent,
+                  isUser: false,
+                ),
+              if (copyableText != null) const AuraSizedBox(width: .xs),
+              Text(
+                RelativeTimeFormatter.format(createdAt),
+                style: TextStyle(
+                  color: auraColors.onSurfaceVariant,
+                  fontSize: typography.fontSizeXs,
+                  fontFamily: typography.bodyFontFamily,
+                ),
+              ),
+            ],
+          ),
+          if (status != AuraMessageDeliveryStatus.sent) ...[
+            SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
+            AuraMessageStatus(status: status),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -823,6 +914,7 @@ class const _AiMessageContent({
   required final DateTime timestamp,
   super.key,
   final AuraMessageDeliveryStatus status = AuraMessageDeliveryStatus.sent,
+  final bool showMetadata = true,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -832,29 +924,29 @@ class const _AiMessageContent({
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SelectionArea(
-          child: GptMarkdown(
-            content,
-            style: TextStyle(
-              color: auraColors.onSurface,
-              fontSize: typography.fontSizeBase,
-              height: typography.lineHeightBase,
-              fontFamily: typography.bodyFontFamily,
-            ),
-          ),
-        ),
-        const AuraSizedBox(height: .xs),
-        Text(
-          RelativeTimeFormatter.format(timestamp),
+        GptMarkdown(
+          content,
           style: TextStyle(
-            color: auraColors.onSurfaceVariant,
-            fontSize: typography.fontSizeXs,
+            color: auraColors.onSurface,
+            fontSize: typography.fontSizeBase,
+            height: typography.lineHeightBase,
             fontFamily: typography.bodyFontFamily,
           ),
         ),
-        if (status != AuraMessageDeliveryStatus.sent) ...[
-          SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-          AuraMessageStatus(status: status),
+        if (showMetadata) ...[
+          const AuraSizedBox(height: .xs),
+          Text(
+            RelativeTimeFormatter.format(timestamp),
+            style: TextStyle(
+              color: auraColors.onSurfaceVariant,
+              fontSize: typography.fontSizeXs,
+              fontFamily: typography.bodyFontFamily,
+            ),
+          ),
+          if (status != AuraMessageDeliveryStatus.sent) ...[
+            SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
+            AuraMessageStatus(status: status),
+          ],
         ],
       ],
     );
