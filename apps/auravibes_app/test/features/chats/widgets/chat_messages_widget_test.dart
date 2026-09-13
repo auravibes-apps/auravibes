@@ -126,6 +126,13 @@ void main() {
         tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
         'Copy message',
       );
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Align && widget.alignment == Alignment.centerRight,
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('copies text message content and confirms success', (
