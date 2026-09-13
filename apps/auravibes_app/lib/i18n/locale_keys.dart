@@ -55,6 +55,8 @@ abstract class LocaleKeys {
       'models_screens.no_providers_configured';
   static const models_screens_no_models_available =
       'models_screens.no_models_available';
+  static const models_screens_model_unavailable =
+      'models_screens.model_unavailable';
   static const models_screens_title = 'models_screens.title';
   static const models_screens_list_error = 'models_screens.list_error';
   static const models_screens_list_empty_title =
@@ -238,8 +240,15 @@ abstract class LocaleKeys {
   static const agents_load_error = 'agents.load_error';
   static const agents_empty_title = 'agents.empty_title';
   static const agents_empty_subtitle = 'agents.empty_subtitle';
+  static const agents_details_title = 'agents.details_title';
+  static const agents_details_description = 'agents.details_description';
+  static const agents_required_fields_status = 'agents.required_fields_status';
   static const agents_name_label = 'agents.name_label';
+  static const agents_name_required = 'agents.name_required';
   static const agents_description_label = 'agents.description_label';
+  static const agents_description_hint = 'agents.description_hint';
+  static const agents_description_required = 'agents.description_required';
+  static const agents_description_too_long = 'agents.description_too_long';
   static const agents_edit_description = 'agents.edit_description';
   static const agents_description_empty = 'agents.description_empty';
   static const agents_enabled_label = 'agents.enabled_label';
@@ -251,9 +260,13 @@ abstract class LocaleKeys {
   static const agents_visibility_sub_agent_list =
       'agents.visibility_sub_agent_list';
   static const agents_visibility_both = 'agents.visibility_both';
+  static const agents_availability_title = 'agents.availability_title';
   static const agents_prompt_label = 'agents.prompt_label';
+  static const agents_prompt_required = 'agents.prompt_required';
+  static const agents_add_prompt = 'agents.add_prompt';
   static const agents_edit_prompt = 'agents.edit_prompt';
   static const agents_prompt_empty = 'agents.prompt_empty';
+  static const agents_advanced_settings = 'agents.advanced_settings';
   static const agents_profile_prompt_title = 'agents.profile_prompt_title';
   static const agents_profile_prompt_description =
       'agents.profile_prompt_description';
@@ -362,6 +375,14 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.attachment_unsupported';
   static const chats_screens_chat_conversation_attachment_too_large =
       'chats_screens.chat_conversation.attachment_too_large';
+  static const chats_screens_chat_conversation_model_required =
+      'chats_screens.chat_conversation.model_required';
+  static const chats_screens_chat_conversation_model_missing =
+      'chats_screens.chat_conversation.model_missing';
+  static const chats_screens_chat_conversation_model_loading =
+      'chats_screens.chat_conversation.model_loading';
+  static const chats_screens_chat_conversation_model_unavailable =
+      'chats_screens.chat_conversation.model_unavailable';
   static const chats_screens_chat_conversation_switch_model_unsupported_title =
       'chats_screens.chat_conversation.switch_model_unsupported_title';
   static const chats_screens_chat_conversation_switch_model_unsupported_body =
@@ -951,6 +972,8 @@ abstract class LocaleKeys {
       'compaction.errors.compaction_unsafe';
   static const compaction_errors_compaction_unavailable =
       'compaction.errors.compaction_unavailable';
+  static const compaction_errors_model_missing =
+      'compaction.errors.model_missing';
   static const compaction_errors_context_overflow_retry_failed =
       'compaction.errors.context_overflow_retry_failed';
   static const compaction_errors_auto_blocked =

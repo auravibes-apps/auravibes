@@ -218,6 +218,9 @@ extension on CompactConversationUsecase {
     }
     final conversation = await getCloudConversation(conversationId);
     if (conversation == null) throw const CompactionUnavailableException();
+    if (conversation.modelId == null) {
+      throw const CompactionNoModelSelectedException();
+    }
 
     return await cloud(conversation: conversation, trigger: trigger);
   }
@@ -225,35 +228,31 @@ extension on CompactConversationUsecase {
   Future<CompactionExecutionState> _compactLocal({
     required String conversationId,
     required CompactionTrigger trigger,
-  }) async {
+  }) {
     final dependencies = _requiredLocalDependencies();
     final startedAt = DateTime.now();
-    _markCompactionRunning(conversationId, trigger, startedAt);
+    final executionState = _runningState(conversationId, trigger, startedAt);
+    final request = _localCompactionRequest(
+      dependencies,
+      conversationId,
+      trigger,
+    );
 
-    try {
-      await _executeLocalCompaction(
-        _localCompactionRequest(dependencies, conversationId, trigger),
-      );
-      compactionExecution.markSuccess(conversationId);
-
-      return _successState(conversationId, trigger, startedAt);
-    } on Exception {
-      compactionExecution.markFailure(conversationId);
-      rethrow;
-    }
+    return compactionExecution.run(
+      runningState: executionState,
+      operation: () => _completeLocalCompaction(this, request, startedAt),
+    );
   }
 
-  void _markCompactionRunning(
+  CompactionExecutionState _runningState(
     String conversationId,
     CompactionTrigger trigger,
     DateTime startedAt,
-  ) => compactionExecution.markRunning(
-    .new(
-      conversationId: conversationId,
-      trigger: trigger,
-      startedAt: startedAt,
-      status: CompactionExecutionStatus.running,
-    ),
+  ) => .new(
+    conversationId: conversationId,
+    trigger: trigger,
+    startedAt: startedAt,
+    status: CompactionExecutionStatus.running,
   );
 
   ({
@@ -338,12 +337,12 @@ extension on CompactConversationUsecase {
   ) async {
     final modelId = conversation.modelId;
     if (modelId == null) {
-      throw const CompactionUnavailableException();
+      throw const CompactionNoModelSelectedException();
     }
 
     final model = await (await request.getModelStore(conversation.workspaceId))
         .getById(modelId);
-    if (model == null) throw const CompactionUnavailableException();
+    if (model == null) throw const CompactionModelMissingException();
 
     return model;
   }
@@ -374,6 +373,16 @@ extension on CompactConversationUsecase {
       );
     }
   }
+}
+
+Future<CompactionExecutionState> _completeLocalCompaction(
+  CompactConversationUsecase usecase,
+  _LocalCompactionRequest request,
+  DateTime startedAt,
+) async {
+  await usecase._executeLocalCompaction(request);
+
+  return _successState(request.conversationId, request.trigger, startedAt);
 }
 
 _LocalCompactionRequest _localCompactionRequest(

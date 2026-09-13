@@ -71,15 +71,12 @@ void main() {
     );
 
     final errorBuilder = tester.widget<Image>(find.byType(Image)).errorBuilder;
-    expect(errorBuilder, isNotNull);
+    if (errorBuilder == null) fail('Expected an image error builder.');
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
-          builder: (context) => errorBuilder!(
-            context,
-            StateError('Image decode failed'),
-            StackTrace.empty,
-          ),
+          builder: (context) =>
+              errorBuilder(context, StateError('Image decode failed'), .empty),
         ),
       ),
     );

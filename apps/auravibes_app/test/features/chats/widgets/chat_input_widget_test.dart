@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/services/local_chat_attachment_serv
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
@@ -51,12 +52,19 @@ void main() {
     bool isBusy = false,
     bool? showStopButton,
     VoidCallback? onStop,
+    VoidCallback? onContinueAgent,
     List<String> modalitiesInput = const [],
     LocalChatAttachmentService? attachmentService,
     Widget modelSheetControl = const SizedBox.shrink(),
     Widget agentSheetControl = const SizedBox.shrink(),
     Widget modelCompactControl = const SizedBox.shrink(),
     Widget agentCompactControl = const SizedBox.shrink(),
+    VoidCallback? onCompact,
+    bool canCompact = true,
+    String? compactDisabledHint,
+    String? continueDisabledHint,
+    Widget? disabledHint,
+    bool isCompacting = false,
   }) {
     return EasyLocalization(
       child: TestProviderScope(
@@ -86,10 +94,17 @@ void main() {
                         modelCompactControl: modelCompactControl,
                         agentCompactControl: agentCompactControl,
                         modalitiesInput: modalitiesInput,
+                        onContinueAgent: onContinueAgent,
+                        continueDisabledHint: continueDisabledHint,
+                        disabledHint: disabledHint,
+                        compactDisabledHint: compactDisabledHint,
                         disabled: disabled,
                         isBusy: isBusy,
                         showStopButton: showStopButton,
                         onStop: onStop,
+                        onCompact: onCompact,
+                        canCompact: canCompact,
+                        isCompacting: isCompacting,
                       ),
                     ),
                   ),
@@ -181,15 +196,13 @@ void main() {
     final sentDrafts = <ChatDraft>[];
     final previousPicker = fp.FilePickerPlatform.instance;
     addTearDown(() => fp.FilePickerPlatform.instance = previousPicker);
-    fp.FilePickerPlatform.instance = _FakeFilePickerPlatform(
-      .new([
-        .new(
-          path: attachment.localPath,
-          name: attachment.fileName,
-          size: attachment.sizeBytes,
-        ),
-      ]),
-    );
+    fp.FilePickerPlatform.instance = _FakeFilePickerPlatform([
+      _FakePlatformFile(
+        name: attachment.fileName,
+        size: attachment.sizeBytes,
+        path: attachment.localPath,
+      ),
+    ]);
 
     await pumpAndInit(
       tester,
@@ -236,15 +249,13 @@ void main() {
 
     final previousPicker = fp.FilePickerPlatform.instance;
     addTearDown(() => fp.FilePickerPlatform.instance = previousPicker);
-    fp.FilePickerPlatform.instance = _FakeFilePickerPlatform(
-      .new([
-        .new(
-          path: attachment.localPath,
-          name: attachment.fileName,
-          size: attachment.sizeBytes,
-        ),
-      ]),
-    );
+    fp.FilePickerPlatform.instance = _FakeFilePickerPlatform([
+      _FakePlatformFile(
+        name: attachment.fileName,
+        size: attachment.sizeBytes,
+        path: attachment.localPath,
+      ),
+    ]);
 
     await pumpAndInit(
       tester,
@@ -317,6 +328,146 @@ void main() {
     await tester.pump();
 
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+  });
+
+  testWidgets('shows manual compaction when conversation can compact', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        onCompact: _noop,
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.compress_outlined), findsOneWidget);
+  });
+
+  testWidgets('disables manual compaction when conversation cannot compact', (
+    tester,
+  ) async {
+    var wasTapped = false;
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        onCompact: () => wasTapped = true,
+        canCompact: false,
+        compactDisabledHint:
+            LocaleKeys.chats_screens_chat_conversation_model_required,
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    final compactIcon = find.byIcon(Icons.compress_outlined);
+    expect(compactIcon, findsOneWidget);
+    final compactPressable = find
+        .ancestor(of: compactIcon, matching: find.byType(AuraPressable))
+        .first;
+    expect(tester.widget<AuraPressable>(compactPressable).onPressed, isNull);
+    expect(
+      find.descendant(
+        of: compactPressable,
+        matching: find.byIcon(Icons.info_outline),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(compactIcon);
+    expect(wasTapped, isFalse);
+  });
+
+  testWidgets('blocks sending and shows disabled hint', (tester) async {
+    var wasSent = false;
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => wasSent = true,
+        disabled: true,
+        disabledHint: const Text('Select a model'),
+      ),
+    );
+
+    await tester.enterText(find.byType(EditableText), 'Hello agent');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    await tester.pump();
+
+    expect(wasSent, isFalse);
+    expect(find.text('Select a model'), findsOneWidget);
+  });
+
+  testWidgets('shows disabled Continue with reason', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        continueDisabledHint:
+            LocaleKeys.chats_screens_chat_conversation_model_required,
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    final continueIcon = find.byIcon(Icons.play_circle_outline);
+    expect(continueIcon, findsOneWidget);
+    final continuePressable = find
+        .ancestor(of: continueIcon, matching: find.byType(AuraPressable))
+        .first;
+    expect(tester.widget<AuraPressable>(continuePressable).onPressed, isNull);
+    expect(
+      find.descendant(
+        of: continuePressable,
+        matching: find.byIcon(Icons.info_outline),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('disables manual compaction while compaction is running', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        onCompact: _noop,
+        isCompacting: true,
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    final compactIcon = find.byIcon(Icons.compress_outlined);
+    expect(compactIcon, findsOneWidget);
+    expect(
+      tester
+          .widget<AuraPressable>(
+            find
+                .ancestor(of: compactIcon, matching: find.byType(AuraPressable))
+                .first,
+          )
+          .onPressed,
+      isNull,
+    );
   });
 
   testWidgets('hides mic button when audio is unsupported', (tester) async {
@@ -635,22 +786,44 @@ class _FakeLocalChatAttachmentService(
   Future<void> cancelVoiceRecording() => Future.value();
 }
 
-class _FakeFilePickerPlatform(final fp.FilePickerResult result)
+class _FakeFilePickerPlatform(final List<fp.PlatformFile> result)
     extends fp.FilePickerPlatform {
   @override
-  Future<fp.FilePickerResult?> pickFiles({
+  Future<List<fp.PlatformFile>> pickFiles({
     String? dialogTitle,
     String? initialDirectory,
     fp.FileType type = fp.FileType.any,
     List<String>? allowedExtensions,
     void Function(fp.FilePickerStatus)? onFileLoading,
     int compressionQuality = 0,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-    bool cancelUploadOnWindowBlur = true,
-    fp.AndroidSAFOptions? androidSafOptions,
+    fp.AndroidOptions androidOptions = const fp.AndroidOptions(),
+    fp.DarwinOptions darwinOptions = const fp.DarwinOptions(),
+    fp.WindowsOptions windowsOptions = const fp.WindowsOptions(),
+    fp.LinuxOptions linuxOptions = const fp.LinuxOptions(),
+    fp.WebOptions webOptions = const fp.WebOptions(),
   }) async => result;
+}
+
+base class _FakePlatformFile({
+  @override required final String name,
+  required final int size,
+  required String path,
+}) extends fp.PlatformFile {
+  @override
+  final Uri uri = .file(path);
+
+  @override
+  Never get xFile => throw UnimplementedError();
+
+  @override
+  int lengthSync() => size;
+
+  @override
+  Future<int> length() async => size;
+
+  @override
+  Never readAsBytes() => throw UnimplementedError();
+
+  @override
+  Never readAsByteStream() => throw UnimplementedError();
 }

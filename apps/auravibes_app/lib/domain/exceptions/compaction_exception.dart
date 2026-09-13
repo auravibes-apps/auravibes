@@ -41,5 +41,21 @@ class const CompactionUnavailableException() extends CompactionException {
       );
 }
 
+class const CompactionNoModelSelectedException() extends CompactionException {
+  this
+    : super(
+        LocaleKeys.chats_screens_new_chat_no_model_selected,
+        recoveryHint: LocaleKeys.chats_screens_new_chat_no_model_selected,
+      );
+}
+
+class const CompactionModelMissingException() extends CompactionException {
+  this
+    : super(
+        LocaleKeys.compaction_errors_model_missing,
+        recoveryHint: LocaleKeys.compaction_errors_model_missing,
+      );
+}
+
 class const CompactionSettingsValidationException(super.localeKey)
     extends CompactionException;

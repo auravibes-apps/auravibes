@@ -30,6 +30,14 @@ class CompactionExecution extends _$CompactionExecution {
     };
   }
 
+  bool tryMarkRunning(CompactionExecutionState executionState) {
+    if (isCompacting(executionState.conversationId)) return false;
+
+    markRunning(executionState);
+
+    return true;
+  }
+
   void markSuccess(String conversationId) {
     final current = state[conversationId];
     if (current == null) return;

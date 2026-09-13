@@ -41,6 +41,15 @@ void main() {
         throwsA(isA<Exception>()),
       );
     });
+
+    test('throws when selected model is missing', () async {
+      final usecase = _usecase(loadSelectedModel: (_) async => null);
+
+      await expectLater(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(isA<SelectedModelNotFoundException>()),
+      );
+    });
   });
 }
 

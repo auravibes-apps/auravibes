@@ -1,4 +1,9 @@
+import 'dart:ui' as ui;
+
+import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
+import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,7 +109,7 @@ void main() {
       expect(controller.isShowing, isFalse);
     });
 
-    testWidgets('menu item build creates tappable tile', (tester) async {
+    testWidgets('menu item build creates tappable row', (tester) async {
       var wasTapped = false;
       final item = AuraPopupMenuItem(
         title: const Text('Item 1'),
@@ -121,6 +126,215 @@ void main() {
       await tester.pump();
 
       expect(wasTapped, isTrue);
+    });
+
+    testWidgets('menu item with no callback renders disabled', (tester) async {
+      final semantics = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: const AuraPopupMenuItem(title: Text('Item 1')).build,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(AuraPressable), findsOneWidget);
+      final itemSemantics = tester
+          .getSemantics(find.text('Item 1'))
+          .getSemanticsData();
+      expect(itemSemantics.flagsCollection.isButton, isTrue);
+      expect(itemSemantics.flagsCollection.isEnabled, ui.Tristate.isFalse);
+      semantics.dispose();
+    });
+
+    testWidgets('disabled menu item does not invoke or close menu', (
+      tester,
+    ) async {
+      final controller = AuraPopupMenuController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: Center(
+                child: AuraPopupMenu(
+                  child: const Text('Open Menu'),
+                  items: const [AuraPopupMenuItem(title: Text('Disabled'))],
+                  controller: controller,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      controller.open();
+      await tester.pump();
+      await tester.tap(find.text('Disabled'));
+      await tester.pump();
+
+      expect(controller.isShowing, isTrue);
+      expect(find.text('Disabled'), findsOneWidget);
+    });
+
+    testWidgets('disabled rows keep full width without a background', (
+      tester,
+    ) async {
+      final controller = AuraPopupMenuController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraPopupMenu(
+                child: const Text('Open Menu'),
+                items: const [
+                  AuraPopupMenuItem(title: Text('Enabled'), onTap: _noop),
+                  AuraPopupMenuItem(title: Text('Disabled 1')),
+                  AuraPopupMenuItem(title: Text('Disabled 2')),
+                ],
+                controller: controller,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      controller.open();
+      await tester.pump();
+
+      final menuRect = tester.getRect(find.byType(AuraCard));
+      final enabledRect = _menuItemRect(tester, 'Enabled');
+      final disabledOneRect = _menuItemRect(tester, 'Disabled 1');
+      final disabledTwoRect = _menuItemRect(tester, 'Disabled 2');
+
+      expect(enabledRect.width, closeTo(menuRect.width - 2, 1));
+      expect(disabledOneRect.width, closeTo(enabledRect.width, 1));
+      expect(disabledOneRect.left, closeTo(enabledRect.left, 1));
+      expect(disabledTwoRect.left, closeTo(enabledRect.left, 1));
+      expect(disabledTwoRect.top, closeTo(disabledOneRect.bottom, 1));
+      final disabledPressable = tester.widget<AuraPressable>(
+        find
+            .ancestor(
+              of: find.text('Disabled 1'),
+              matching: find.byType(AuraPressable),
+            )
+            .first,
+      );
+      expect(disabledPressable.decoration, isNull);
+    });
+
+    testWidgets('disabled rows use readable disabled colors for content', (
+      tester,
+    ) async {
+      const leadingKey = ValueKey<String>('disabled-leading');
+      const trailingKey = ValueKey<String>('disabled-trailing');
+      final disabledColor = AuraTheme.light.colors.onSurfaceVariant.withValues(
+        alpha: 0.6,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: const AuraPopupMenuItem(
+                title: Text('Disabled'),
+                leading: Icon(Icons.info_outline, key: leadingKey),
+                trailing: Icon(Icons.chevron_right, key: trailingKey),
+              ).build,
+            ),
+          ),
+        ),
+      );
+
+      final defaultTextStyle = tester.widget<DefaultTextStyle>(
+        find
+            .ancestor(
+              of: find.text('Disabled'),
+              matching: find.byType(DefaultTextStyle),
+            )
+            .first,
+      );
+      final iconTheme = tester.widget<IconTheme>(
+        find
+            .ancestor(
+              of: find.byKey(leadingKey),
+              matching: find.byType(IconTheme),
+            )
+            .first,
+      );
+
+      expect(defaultTextStyle.style.color, disabledColor);
+      expect(iconTheme.data.color, disabledColor);
+      expect(find.byKey(trailingKey), findsOneWidget);
+    });
+
+    testWidgets('trailing content is aligned to the row end', (tester) async {
+      final controller = AuraPopupMenuController();
+      const trailingKey = ValueKey<String>('trailing');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraPopupMenu(
+                child: const Text('Open Menu'),
+                items: const [
+                  AuraPopupMenuItem(
+                    title: Text('Item'),
+                    onTap: _noop,
+                    trailing: SizedBox(key: trailingKey, width: 20, height: 20),
+                  ),
+                ],
+                controller: controller,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      controller.open();
+      await tester.pump();
+
+      final rowRect = _menuItemRect(tester, 'Item');
+      final trailingRect = tester.getRect(find.byKey(trailingKey));
+
+      expect(trailingRect.right, closeTo(rowRect.right - 16, 1));
+    });
+
+    testWidgets('menu width grows beyond the old fixed width', (tester) async {
+      final controller = AuraPopupMenuController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraPopupMenu(
+                child: const Text('Open Menu'),
+                items: const [
+                  AuraPopupMenuItem(
+                    title: Text(
+                      'A label that needs more than two hundred pixels',
+                    ),
+                    onTap: _noop,
+                  ),
+                ],
+                controller: controller,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      controller.open();
+      await tester.pump();
+
+      final menuWidth = tester.getRect(find.byType(AuraCard)).width;
+      expect(menuWidth, greaterThan(200));
+      expect(menuWidth, lessThanOrEqualTo(320));
     });
 
     testWidgets('popup menu items hide when controller closes', (tester) async {
@@ -400,3 +614,11 @@ void main() {
     });
   });
 }
+
+Rect _menuItemRect(WidgetTester tester, String title) => tester.getRect(
+  find
+      .ancestor(of: find.text(title), matching: find.byType(AuraPressable))
+      .first,
+);
+
+void _noop() => Object();

@@ -35,18 +35,23 @@ typedef _CloudCompactionRequest = ({
 
 Future<CompactionExecutionState> _executeCompaction(
   _CloudCompactionRequest request,
-) async {
+) {
   final startedAt = DateTime.now();
-  _markCompactionRunning(request, startedAt);
-  try {
-    await _completeCompaction(request);
-    request.execution.markSuccess(request.conversation.id);
+  final executionState = _runningState(request, startedAt);
 
-    return _successfulCompaction(request, startedAt);
-  } on Exception {
-    request.execution.markFailure(request.conversation.id);
-    rethrow;
-  }
+  return request.execution.run(
+    runningState: executionState,
+    operation: () => _completeCompactionRun(request, startedAt),
+  );
+}
+
+Future<CompactionExecutionState> _completeCompactionRun(
+  _CloudCompactionRequest request,
+  DateTime startedAt,
+) async {
+  await _completeCompaction(request);
+
+  return _successfulCompaction(request, startedAt);
 }
 
 Future<void> _completeCompaction(_CloudCompactionRequest request) async {
@@ -60,19 +65,15 @@ Future<void> _completeCompaction(_CloudCompactionRequest request) async {
   }
 }
 
-void _markCompactionRunning(
+CompactionExecutionState _runningState(
   _CloudCompactionRequest request,
   DateTime startedAt,
-) {
-  request.execution.markRunning(
-    .new(
-      conversationId: request.conversation.id,
-      trigger: request.trigger,
-      startedAt: startedAt,
-      status: CompactionExecutionStatus.running,
-    ),
-  );
-}
+) => .new(
+  conversationId: request.conversation.id,
+  trigger: request.trigger,
+  startedAt: startedAt,
+  status: CompactionExecutionStatus.running,
+);
 
 Future<TurnSnapshot> _waitForCompaction(
   CloudTurnUsecase turns,
