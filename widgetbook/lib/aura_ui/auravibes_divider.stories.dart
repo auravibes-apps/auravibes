@@ -1,6 +1,6 @@
 // Required: Widgetbook stories use fixed example sizes.
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:widgetbook/widgetbook.dart';
 
 part 'auravibes_divider.stories.bridge.g.dart';

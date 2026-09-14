@@ -3,8 +3,8 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'context_usage_level.g.dart';

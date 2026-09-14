@@ -2,8 +2,8 @@
 import 'package:auravibes_ui/src/atoms/aura_selectable_text.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 final AuraTypographyScale typography = AuraTheme.light.typography;
 

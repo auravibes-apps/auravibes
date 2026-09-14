@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/src/atoms/aura_icon_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 export 'aura_icon_button.dart';
 

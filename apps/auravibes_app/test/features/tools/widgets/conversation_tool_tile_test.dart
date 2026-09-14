@@ -3,8 +3,8 @@ import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.d
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_permission_selector.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../helpers/test_app.dart';
 

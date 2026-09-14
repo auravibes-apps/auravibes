@@ -1,6 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Icon button that opens an [AuraPopupMenu].
 class AuraPopupMenuButton extends StatefulWidget {

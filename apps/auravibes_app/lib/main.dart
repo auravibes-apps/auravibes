@@ -9,12 +9,12 @@ import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiOverlayStyle, appFlavor;
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 Future<void> main() async {
   _configureFlavor();
@@ -221,13 +221,17 @@ class _AuraMaterialApp extends MaterialApp {
 _appLocalization(BuildContext context) {
   return (
     locale: context.locale,
-    delegates: context.localizationDelegates,
+    delegates: [
+      ...GlobalMaterialLocalizations.delegates,
+      ...context.localizationDelegates,
+    ],
     locales: context.supportedLocales,
   );
 }
 
 Widget Function(BuildContext, Widget?) get _snackBarBuilder {
-  return (_, child) => _AuraSnackBarHost(child: child);
+  return (_, child) =>
+      AuraLegacyMaterialBridge(child: _AuraSnackBarHost(child: child));
 }
 
 bool get _showDebugBanner => AppFlavorConfig.instance.appFlavor != Flavor.prod;

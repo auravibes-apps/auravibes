@@ -3,7 +3,7 @@ import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show AuraBorderRadius, AuraTint, DesignColors;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 typedef _AuraIconButtonValues = ({
   double iconSize,

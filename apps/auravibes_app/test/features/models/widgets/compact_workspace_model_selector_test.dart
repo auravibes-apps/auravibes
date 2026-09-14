@@ -3,8 +3,8 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../helpers/test_app.dart';
 
@@ -12,10 +12,18 @@ void main() {
   testWidgets('shows loading placeholder', (tester) async {
     final _ = await tester.runAsync(() async {
       await tester.pumpWidget(
-        _SubjectBuilder.build(groupedModelsStream: const Stream.empty()),
+        _SubjectBuilder.build(
+          groupedModelsStream: .multi(
+            (controller) => controller.onCancel = Future<void>.value,
+          ),
+        ),
       );
+      await Future<void>.delayed(.zero);
     });
-    await tester.pump();
+    for (var index = 0; index < 10; index++) {
+      await tester.pump();
+      if (find.byType(AuraSpinner).evaluate().isNotEmpty) break;
+    }
 
     expect(find.byType(AuraSpinner), findsOneWidget);
   });
@@ -209,6 +217,7 @@ void main() {
 Future<void> _pumpSubject(WidgetTester tester, Widget subject) async {
   final _ = await tester.runAsync(() async {
     await tester.pumpWidget(subject);
+    await Future<void>.delayed(.zero);
   });
   final _ = await tester.pumpAndSettle();
 }

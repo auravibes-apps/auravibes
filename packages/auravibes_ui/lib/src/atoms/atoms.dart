@@ -19,6 +19,7 @@ export 'aura_flex.dart';
 export 'aura_icon.dart';
 export 'aura_image.dart';
 export 'aura_interaction_scope.dart';
+export 'aura_legacy_material_bridge.dart';
 export 'aura_linear_progress_indicator.dart';
 export 'aura_link.dart';
 export 'aura_list.dart';

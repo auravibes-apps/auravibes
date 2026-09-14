@@ -1,8 +1,8 @@
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   Widget buildSubject({

@@ -135,6 +135,14 @@ dart_code_linter:
             - package:auravibes_app/.*
             - package:auravibes_engine/.*
           message: Keep the UI package independent of app and engine code.
+        - paths:
+            - apps/auravibes_app/(lib|test|integration_test)/.*\.dart$
+            - packages/auravibes_ui/(lib|test)/.*\.dart$
+            - widgetbook/(lib|test)/.*\.dart$
+          deny:
+            - package:flutter/(material|cupertino)\.dart$
+            - package:flutter/src/(material|cupertino)/.*
+          message: Import design widgets from material_ui or cupertino_ui, not Flutter.
     ban-name:
       entries:
         - ident: print

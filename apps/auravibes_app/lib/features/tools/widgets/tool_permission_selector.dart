@@ -2,7 +2,7 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Permission mode selector widget.
 class const ToolPermissionSelector({

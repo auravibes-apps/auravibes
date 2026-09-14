@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
 class const ChatAttachmentImageIo({

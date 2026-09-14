@@ -1,8 +1,8 @@
 import 'package:auravibes_ui/src/molecules/aura_message_bubble.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraMessageBubble', () {

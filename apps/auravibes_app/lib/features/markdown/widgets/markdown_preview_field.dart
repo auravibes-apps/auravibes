@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class const MarkdownPreviewField({
   required final TextEditingController controller,

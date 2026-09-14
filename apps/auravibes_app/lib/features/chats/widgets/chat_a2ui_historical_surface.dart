@@ -9,8 +9,8 @@ import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_warning.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ChatA2uiHistoricalSurface extends StatefulWidget {
   const new({required this.messageId, required this.payloads, super.key});

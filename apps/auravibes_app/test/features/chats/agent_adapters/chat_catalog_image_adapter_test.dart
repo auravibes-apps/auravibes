@@ -6,9 +6,9 @@ import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_ad
 import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_image_adapter.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -224,7 +224,10 @@ Future<void> _pump(
         builder: (context) => MaterialApp(
           home: Scaffold(body: child),
           locale: context.locale,
-          localizationsDelegates: context.localizationDelegates,
+          localizationsDelegates: [
+            ...GlobalMaterialLocalizations.delegates,
+            ...context.localizationDelegates,
+          ],
           supportedLocales: context.supportedLocales,
         ),
       ),

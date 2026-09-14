@@ -1,6 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/material.dart' hide ThemeMode;
+import 'package:material_ui/material_ui.dart' hide ThemeMode;
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 import 'package:widgetbook_workspace/components.g.dart';
@@ -15,12 +15,23 @@ void main() {
 abstract final class WidgetbookConfig {
   static Config create() => Config(
     components: components,
+    appBuilder: applyApp,
     addons: _createAddons(),
     scenarioConfig: _createScenarioConfig(),
   );
 
+  static Widget applyApp(BuildContext _, Widget child) => MaterialApp(
+    home: child,
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    supportedLocales: _auraLocales,
+    debugShowCheckedModeBanner: false,
+  );
+
   static Widget applyTheme(BuildContext _, ThemeData theme, Widget child) =>
-      Theme(data: theme, child: child);
+      Theme(
+        data: theme,
+        child: AuraLegacyMaterialBridge(child: Material(child: child)),
+      );
 
   static Addon _createViewportAddon() => ViewportAddon([
     Viewports.none,
