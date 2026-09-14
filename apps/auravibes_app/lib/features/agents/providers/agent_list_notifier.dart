@@ -192,13 +192,14 @@ _AgentPageRequest _startReplace(
 ) {
   final (:current, :repository) = context;
   final generation = ++notifier._generation;
-  notifier._setState(_refreshing(current));
+  final refreshing = _refreshing(current);
+  notifier._setState(refreshing);
 
   return (
     repository: repository,
     query: _agentListQuery(notifier.workspaceId, current),
     generation: generation,
-    complete: (page) => _completedRefresh(current, page),
+    complete: (page) => _completedRefresh(refreshing, page),
   );
 }
 
@@ -228,6 +229,7 @@ AgentListState _completedLoadMore(AgentListState state, AgentListPage? page) =>
 
 AgentListState _refreshing(AgentListState state) => state.copyWith(
   isRefreshing: true,
+  isLoadingMore: false,
   refreshFailed: false,
   loadMoreFailed: false,
 );
