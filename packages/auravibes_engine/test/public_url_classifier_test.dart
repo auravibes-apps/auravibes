@@ -40,6 +40,26 @@ void main() {
     }
   });
 
+  test('rejects blocked host labels with a trailing dot', () {
+    expect(
+      requirePublicUriSyntax(
+        'https://example.com./path',
+        requireHttps: true,
+      ).host,
+      'example.com.',
+    );
+    for (final url in [
+      'https://localhost./',
+      'https://api.localhost./',
+      'https://127.0.0.1./',
+    ]) {
+      expect(
+        () => requirePublicUriSyntax(url, requireHttps: true),
+        throwsFormatException,
+      );
+    }
+  });
+
   test('rejects private IP literals', () {
     for (final url in [
       'https://127.0.0.1/image.png',
