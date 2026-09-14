@@ -1001,7 +1001,7 @@ void main() {
       when(
         () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
           'ws-1',
-          'write_file',
+          'tool-2',
         ),
       ).thenAnswer(
         (_) async => WorkspaceToolEntity(
@@ -1051,7 +1051,7 @@ void main() {
       when(
         () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
           'ws-1',
-          'read_file',
+          'tool-1',
         ),
       ).thenAnswer(
         (_) async => WorkspaceToolEntity(
@@ -1113,7 +1113,7 @@ void main() {
       when(
         () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
           'ws-1',
-          'read_file',
+          'tool-1',
         ),
       ).thenAnswer((_) async => wsTool);
 
@@ -1148,7 +1148,7 @@ void main() {
       when(
         () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
           'ws-1',
-          'read_file',
+          'tool-1',
         ),
       ).thenAnswer((_) async => wsTool);
 
@@ -1157,6 +1157,44 @@ void main() {
       expect(result, hasLength(1));
       expect(result.firstOrNull?.id, 'tool-1');
     });
+
+    test(
+      'keeps grouped tools available by looking them up by row id',
+      () async {
+        final wsTool = WorkspaceToolEntity(
+          id: 'grouped-tool-1',
+          workspaceId: 'ws-1',
+          toolId: 'search',
+          isEnabled: true,
+          permissionMode: .alwaysAllow,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
+          workspaceToolsGroupId: 'mcp-group',
+        );
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
+            'ws-1',
+          ),
+        ).thenAnswer((_) async => [wsTool]);
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+            'ws-1',
+            'search',
+          ),
+        ).thenAnswer((_) async => null);
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+            'ws-1',
+            'grouped-tool-1',
+          ),
+        ).thenAnswer((_) async => wsTool);
+
+        final result = await fixture.repository
+            .getAvailableToolEntitiesForConversation('conv-1', 'ws-1');
+
+        expect(result, [wsTool]);
+      },
+    );
   });
 
   group('setConversationToolsDisabled', () {
@@ -1259,7 +1297,7 @@ void main() {
         when(
           () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             any(),
-            'read_file',
+            'tool-1',
           ),
         ).thenAnswer(
           (_) async => WorkspaceToolEntity(
