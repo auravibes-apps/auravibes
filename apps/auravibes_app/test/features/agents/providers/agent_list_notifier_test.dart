@@ -85,6 +85,39 @@ void main() {
     expect(state.loadMoreFailed, isFalse);
     expect(repository.queries.last.cursor, 'cursor-1');
   });
+
+  test('clears load more state when refresh supersedes load more', () async {
+    final loadingMore = Completer<AgentListPage>();
+    final refreshed = Completer<AgentListPage>();
+    final repository = _FakeAgentRepository([
+      _page([_agent('first')], nextCursor: 'cursor-1'),
+      loadingMore.future,
+      refreshed.future,
+    ]);
+    final container = _container(repository);
+    addTearDown(container.dispose);
+    final subscription = container.listen(agentListProvider(_workspaceId), (
+      _,
+      _,
+    ) {
+      final _ = repository;
+    });
+    addTearDown(subscription.close);
+    final _ = await container.read(agentListProvider(_workspaceId).future);
+    final notifier = container.read(agentListProvider(_workspaceId).notifier);
+
+    final loadMore = notifier.loadMore();
+    final refresh = notifier.refresh();
+    refreshed.complete(_page([_agent('refreshed')]));
+    await refresh;
+    loadingMore.complete(_page([_agent('stale')]));
+    await loadMore;
+
+    final state = container.read(agentListProvider(_workspaceId)).requireValue;
+    expect(state.agents.single.id, 'refreshed');
+    expect(state.isRefreshing, isFalse);
+    expect(state.isLoadingMore, isFalse);
+  });
 }
 
 ProviderContainer _container(AgentRepository repository) => ProviderContainer(
