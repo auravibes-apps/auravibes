@@ -19,8 +19,10 @@ abstract final class PublicUrlGuard {
     return (uri: uri, addresses: addressesForPinning);
   }
 
-  static Future<PublicUrlResolution> resolveHttpsUri(String url) =>
-      resolvePublicUri(url, requireHttps: true);
+  static Future<PublicUrlResolution> resolveHttpsUri(
+    String url, {
+    PublicUrlLookup lookup = InternetAddress.lookup,
+  }) => resolvePublicUri(url, requireHttps: true, lookup: lookup);
 
   static Future<Uri> requireHttpsUri(String url) async {
     return (await resolveHttpsUri(url)).uri;
