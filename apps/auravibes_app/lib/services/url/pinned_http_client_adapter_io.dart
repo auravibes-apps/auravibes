@@ -1,3 +1,6 @@
+// Required: Dio 5.x keeps legacy callback until Dio 6 removes it.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -27,11 +30,19 @@ HttpClient _createHttpClient(
   InternetAddress resolvedAddress,
 ) {
   final connectionFactory = _connectionFactory(resolvedAddress);
-  final ioCurrent = current as IOHttpClientAdapter;
-  final configuredClient = ioCurrent.createHttpClient?.call();
-  final client = configuredClient ?? _defaultHttpClient();
+  final client = _createClient(current);
 
   return client..connectionFactory = connectionFactory;
+}
+
+HttpClient _createClient(HttpClientAdapter current) {
+  final ioCurrent = current as IOHttpClientAdapter;
+  final configuredClient = ioCurrent.createHttpClient?.call();
+  if (configuredClient != null) return configuredClient;
+
+  final defaultClient = _defaultHttpClient();
+
+  return ioCurrent.onHttpClientCreate?.call(defaultClient) ?? defaultClient;
 }
 
 HttpClient _defaultHttpClient() =>

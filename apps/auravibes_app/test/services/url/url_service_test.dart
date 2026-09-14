@@ -5,13 +5,44 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:auravibes_app/services/url/pinned_http_client_adapter.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('UrlService', () {
+    test('preserves the existing IO client creation callback when pinning', () {
+      var callbackInvoked = false;
+      final current = IOHttpClientAdapter(
+        // ignore: deprecated_member_use - Required for legacy Dio callback coverage.
+        onHttpClientCreate: (client) {
+          callbackInvoked = true;
+          client.connectionTimeout = const Duration(seconds: 7);
+
+          return client;
+        },
+      );
+      final pinned = PinnedHttpClientAdapter.create(current, ['93.184.216.34']);
+      if (pinned is! IOHttpClientAdapter) {
+        fail('Expected an IO HTTP client adapter.');
+      }
+      final clientFactory = pinned.createHttpClient;
+      if (clientFactory == null) {
+        fail('Expected a pinned HTTP client factory.');
+      }
+
+      final client = clientFactory();
+      expect(callbackInvoked, isTrue);
+      expect(client.connectionTimeout, const Duration(seconds: 7));
+
+      client.close();
+      pinned.close();
+      current.close();
+    });
+
     test('uses validated address instead of resolving host again', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       final subscription = server.listen((request) {
