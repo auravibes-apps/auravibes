@@ -179,11 +179,18 @@ class const _AgentsList({
     String agentId,
   ) async {
     try {
-      await _duplicateAndRefresh(ref, workspaceId, agentId);
+      final _ = await ref
+          .read(duplicateAgentUsecaseProvider(workspaceId))
+          .call(agentId);
     } on Object {
       if (!context.mounted) return;
       _showDuplicateError(context);
+
+      return;
     }
+
+    final _ = ref.invalidate(agentsProvider(workspaceId));
+    await ref.read(agentListProvider(workspaceId).notifier).refresh();
   }
 
   Future<void> _confirmDelete(
@@ -220,18 +227,6 @@ class const _AgentsList({
     final _ = ref.invalidate(agentsProvider(workspaceId));
     await ref.read(agentListProvider(workspaceId).notifier).refresh();
   }
-}
-
-Future<void> _duplicateAndRefresh(
-  WidgetRef ref,
-  String workspaceId,
-  String agentId,
-) async {
-  final _ = await ref
-      .read(duplicateAgentUsecaseProvider(workspaceId))
-      .call(agentId);
-  final _ = ref.invalidate(agentsProvider(workspaceId));
-  await ref.read(agentListProvider(workspaceId).notifier).refresh();
 }
 
 void _showDuplicateError(BuildContext context) {
