@@ -390,25 +390,39 @@ class const _SidebarConversationTileMenu({
         tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
             .tr(),
       ),
-      items: [
-        AuraPopupMenuItem(
-          title: const TextLocale(
-            LocaleKeys.chats_screens_chat_conversation_rename,
-          ),
-          onTap: onRename,
-          leading: const AuraIcon(Icons.edit_outlined),
-        ),
-        AuraPopupMenuItem(
-          title: const TextLocale(LocaleKeys.common_delete),
-          onTap: onDelete,
-          leading: const AuraIcon(Icons.delete_outline),
-          variant: .error,
-        ),
-      ],
+      items: _sidebarConversationMenuItems(
+        onRename: onRename,
+        onDelete: onDelete,
+      ),
       controller: controller,
     );
   }
 }
+
+List<AuraPopupMenuItem> _sidebarConversationMenuItems({
+  required VoidCallback onRename,
+  required VoidCallback onDelete,
+}) => [
+  _sidebarConversationRenameItem(onRename),
+  _sidebarConversationDeleteItem(onDelete),
+];
+
+AuraPopupMenuItem _sidebarConversationRenameItem(VoidCallback onRename) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_rename,
+      ),
+      onTap: onRename,
+      leading: const AuraIcon(Icons.edit_outlined),
+    );
+
+AuraPopupMenuItem _sidebarConversationDeleteItem(VoidCallback onDelete) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.common_delete),
+      onTap: onDelete,
+      leading: const AuraIcon(Icons.delete_outline),
+      variant: .error,
+    );
 
 Future<void> _deleteSidebarConversation(
   BuildContext context,

@@ -269,11 +269,7 @@ class const _ChatTileRow({
       Expanded(
         child: _ChatTileInfo(chat: chat, title: title),
       ),
-      if (modelDisplayName case final displayName?) ...[
-        const SizedBox(width: 8),
-        AuraBadge.text(child: Text(displayName), variant: .info),
-      ],
-      const SizedBox(width: 8),
+      _ChatTileModelBadge(displayName: modelDisplayName),
       _ChatTileMenu(
         controller: controller,
         onDelete: onDelete,
@@ -282,6 +278,24 @@ class const _ChatTileRow({
       ),
     ],
   );
+}
+
+class const _ChatTileModelBadge({required final String? displayName})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final displayName = this.displayName;
+    if (displayName == null) return const SizedBox(width: 8);
+
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        const SizedBox(width: 8),
+        AuraBadge.text(child: Text(displayName), variant: .info),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 }
 
 class const _ChatTileInfo({
@@ -342,22 +356,30 @@ class const _ChatTileMenu({
         tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
             .tr(),
       ),
-      items: [
-        AuraPopupMenuItem(
-          title: const TextLocale(
-            LocaleKeys.chats_screens_chat_conversation_rename,
-          ),
-          onTap: onRename,
-          leading: const AuraIcon(Icons.edit_outlined),
-        ),
-        AuraPopupMenuItem(
-          title: const TextLocale(LocaleKeys.common_delete),
-          onTap: onDelete,
-          leading: const AuraIcon(Icons.delete_outline),
-          variant: .error,
-        ),
-      ],
+      items: _chatTileMenuItems(onRename: onRename, onDelete: onDelete),
       controller: controller,
     );
   }
 }
+
+List<AuraPopupMenuItem> _chatTileMenuItems({
+  required VoidCallback onRename,
+  required VoidCallback onDelete,
+}) => [_chatTileRenameItem(onRename), _chatTileDeleteItem(onDelete)];
+
+AuraPopupMenuItem _chatTileRenameItem(VoidCallback onRename) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_rename,
+      ),
+      onTap: onRename,
+      leading: const AuraIcon(Icons.edit_outlined),
+    );
+
+AuraPopupMenuItem _chatTileDeleteItem(VoidCallback onDelete) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.common_delete),
+      onTap: onDelete,
+      leading: const AuraIcon(Icons.delete_outline),
+      variant: .error,
+    );
