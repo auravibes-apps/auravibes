@@ -46,7 +46,7 @@ class ConversationRepository(
 }) {
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
+    String search = '',
     int? limit,
     int offset = 0,
   }) {

@@ -39,7 +39,7 @@ mixin _ConversationDaoReadApi {
 
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
+    String search = '',
     int? limit,
     int offset = 0,
   }) => ConversationDaoReadOperations(this as ConversationDao)
@@ -99,7 +99,7 @@ extension ConversationDaoReadOperations on ConversationDao {
 
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
+    String search = '',
     int? limit,
     int offset = 0,
   }) {
@@ -122,7 +122,7 @@ extension ConversationDaoReadOperations on ConversationDao {
   }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
-  _buildWorkspaceQuery(String workspaceId, {String? search}) {
+  _buildWorkspaceQuery(String workspaceId, {String search = ''}) {
     return _orderedConversations(
       (tbl) =>
           tbl.workspaceId.equals(workspaceId) &
@@ -151,9 +151,9 @@ extension ConversationDaoReadOperations on ConversationDao {
 
 Expression<bool> _conversationSearchPredicate(
   $ConversationsTable table,
-  String? search,
+  String search,
 ) {
-  final normalizedSearch = search?.trim() ?? '';
+  final normalizedSearch = search.trim();
   if (normalizedSearch.isEmpty) return const Constant(true);
 
   return table.title.like(
