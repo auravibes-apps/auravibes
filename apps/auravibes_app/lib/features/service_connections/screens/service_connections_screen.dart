@@ -129,12 +129,6 @@ class const ServiceConnectionsScreen({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final connectionsAsync = ref.watch(serviceConnectionsProvider(workspaceId));
-    final canSyncModelCatalog = _canSyncModelCatalog(
-      ref.watch(workspaceSessionForRouteProvider(workspaceId)),
-    );
-    final isSyncingModelCatalog = ref
-        .watch(_modelCatalogSyncMutation)
-        .isPending;
     ref.listen(
       serviceConnectionsProvider(workspaceId),
       (_, next) => _logServiceConnectionsLoadError(workspaceId, next),
@@ -143,10 +137,7 @@ class const ServiceConnectionsScreen({
     return _ServiceConnectionsView(
       connectionsAsync: connectionsAsync,
       onAddConnection: () => _openCreateConnection(context, workspaceId),
-      onSyncModelCatalog: canSyncModelCatalog
-          ? () => unawaited(_syncModelCatalog(context, ref, workspaceId))
-          : null,
-      isSyncingModelCatalog: isSyncingModelCatalog,
+      workspaceId: workspaceId,
     );
   }
 }
@@ -162,33 +153,43 @@ Future<void> _syncModelCatalog(
   WidgetRef ref,
   String workspaceId,
 ) async {
-  if (ref.read(_modelCatalogSyncMutation).isPending) return;
+  final wasSuccessful = await _performModelCatalogSync(ref, workspaceId);
+  if (!context.mounted || wasSuccessful == null) return;
+
+  _showModelCatalogSyncResult(context, wasSuccessful);
+}
+
+Future<bool?> _performModelCatalogSync(
+  WidgetRef ref,
+  String workspaceId,
+) async {
+  if (ref.read(_modelCatalogSyncMutation).isPending) return null;
 
   try {
-    await _modelCatalogSyncMutation.run(ref, (_) async {
+    await _runModelCatalogSync(ref, workspaceId);
+
+    return true;
+  } on Object catch (error, stackTrace) {
+    _logger.warning('Model catalog sync failed', error, stackTrace);
+
+    return false;
+  }
+}
+
+Future<void> _runModelCatalogSync(WidgetRef ref, String workspaceId) =>
+    _modelCatalogSyncMutation.run(ref, (_) async {
       await ref.read(modelSyncServiceProvider).performManualSync();
       ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
     });
-  } on Object catch (error, stackTrace) {
-    _logger.warning('Model catalog sync failed', error, stackTrace);
-    if (!context.mounted) return;
 
+void _showModelCatalogSyncResult(BuildContext context, bool wasSuccessful) =>
     _showModelCatalogSyncSnackBar(
       context,
-      LocaleKeys.models_screens_catalog_sync_error,
-      .error,
+      wasSuccessful
+          ? LocaleKeys.models_screens_catalog_sync_success
+          : LocaleKeys.models_screens_catalog_sync_error,
+      wasSuccessful ? .success : .error,
     );
-
-    return;
-  }
-  if (!context.mounted) return;
-
-  _showModelCatalogSyncSnackBar(
-    context,
-    LocaleKeys.models_screens_catalog_sync_success,
-    .success,
-  );
-}
 
 void _showModelCatalogSyncSnackBar(
   BuildContext context,
@@ -231,8 +232,7 @@ void _openCreateConnection(BuildContext context, String workspaceId) =>
 class const _ServiceConnectionsView({
   required final AsyncValue<List<ServiceConnectionListItem>> connectionsAsync,
   required final VoidCallback onAddConnection,
-  required final VoidCallback? onSyncModelCatalog,
-  required final bool isSyncingModelCatalog,
+  required final String workspaceId,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -243,8 +243,7 @@ class const _ServiceConnectionsView({
       ),
       appBar: _ServiceConnectionsAppBar(
         onAddConnection: onAddConnection,
-        onSyncModelCatalog: onSyncModelCatalog,
-        isSyncingModelCatalog: isSyncingModelCatalog,
+        workspaceId: workspaceId,
       ),
     );
   }
@@ -289,8 +288,7 @@ class const _ConnectionsLoadError() extends StatelessWidget {
 
 class const _ServiceConnectionsAppBar({
   required final VoidCallback onAddConnection,
-  required final VoidCallback? onSyncModelCatalog,
-  required final bool isSyncingModelCatalog,
+  required final String workspaceId,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -300,11 +298,7 @@ class const _ServiceConnectionsAppBar({
     return AuraAppBar(
       title: const TextLocale(LocaleKeys.service_connections_title),
       actions: [
-        if (onSyncModelCatalog case final callback?)
-          _SyncModelCatalogButton(
-            onPressed: callback,
-            isSyncing: isSyncingModelCatalog,
-          ),
+        _SyncModelCatalogButton(workspaceId: workspaceId),
         _ConnectionsAddButton(onPressed: onAddConnection),
       ],
       leading: const _ConnectionsBackButton(),
@@ -312,7 +306,31 @@ class const _ServiceConnectionsAppBar({
   }
 }
 
-class const _SyncModelCatalogButton({
+class const _SyncModelCatalogButton({required final String workspaceId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(workspaceSessionForRouteProvider(workspaceId));
+    if (!_canSyncModelCatalog(session)) return const SizedBox.shrink();
+
+    return _SyncModelCatalogControl(workspaceId: workspaceId);
+  }
+}
+
+class const _SyncModelCatalogControl({required final String workspaceId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSyncing = ref.watch(_modelCatalogSyncMutation).isPending;
+
+    return _ModelCatalogSyncIconButton(
+      onPressed: () => unawaited(_syncModelCatalog(context, ref, workspaceId)),
+      isSyncing: isSyncing,
+    );
+  }
+}
+
+class const _ModelCatalogSyncIconButton({
   required final VoidCallback onPressed,
   required final bool isSyncing,
 }) extends StatelessWidget {
