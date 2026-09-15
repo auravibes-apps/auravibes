@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.da
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -68,6 +69,38 @@ void main() {
       );
 
       expect(find.byType(ToolCallResponsePreview), findsOneWidget);
+      expect(find.byIcon(Icons.copy_outlined), findsNothing);
+    });
+
+    testWidgets('copies the full response content', (tester) async {
+      const content = 'First line\nSecond line\nThird line\nFourth line';
+      String? copiedContent;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedContent = (call.arguments as Map)['text'] as String?;
+          }
+
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(toolName: 'test_tool', content: content),
+      );
+
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      await tester.pump();
+
+      expect(copiedContent, content);
+      expect(find.byIcon(Icons.check), findsOneWidget);
     });
 
     test('static maxPreviewLines is 3', () {
@@ -98,6 +131,10 @@ void main() {
       );
 
       expect(find.text('Show more'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byIcon(Icons.copy_outlined)).dx,
+        lessThan(tester.getTopLeft(find.text('Show more')).dx),
+      );
 
       await tester.tap(find.text('Show more'));
       final _ = await tester.pumpAndSettle();
