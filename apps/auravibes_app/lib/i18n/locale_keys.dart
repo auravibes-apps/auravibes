@@ -399,6 +399,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.switch_model_cancel';
   static const chats_screens_chat_conversation_switch_model_confirm =
       'chats_screens.chat_conversation.switch_model_confirm';
+  static const chats_screens_chat_conversation_rename =
+      'chats_screens.chat_conversation.rename';
+  static const chats_screens_chat_conversation_rename_title =
+      'chats_screens.chat_conversation.rename_title';
+  static const chats_screens_chat_conversation_rename_field_label =
+      'chats_screens.chat_conversation.rename_field_label';
   static const chats_screens_chat_conversation_stop_generation =
       'chats_screens.chat_conversation.stop_generation';
   static const chats_screens_chat_conversation_stop_error =

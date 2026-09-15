@@ -68,6 +68,24 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     );
   }
 
+  Future<void> rename(ConversationEntity conversation, String title) async {
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.isEmpty) return;
+
+    final link = ref.keepAlive();
+    try {
+      final updated = await _updateTitle(
+        _conversationForUpdate(conversation),
+        trimmedTitle,
+      );
+      if (!ref.mounted) return;
+
+      _updateTitleState(updated);
+    } finally {
+      link.close();
+    }
+  }
+
   Future<ConversationEntity> _updateModel(
     ConversationEntity conversation,
     String modelId,
@@ -107,6 +125,25 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
         .patchConversation(conversation.id, patch);
   }
 
+  Future<ConversationEntity> _updateTitle(
+    ConversationEntity conversation,
+    String title,
+  ) async {
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(_workspaceId).future,
+    );
+    if (cloud == null) {
+      return await ref
+          .read(conversationRepositoryProvider)
+          .patchConversation(conversation.id, .new(title: title));
+    }
+
+    final updated = await cloud.update(conversation, .new(title: title));
+    ref.invalidate(conversationsStreamProvider);
+
+    return _updatedTitleConversation(conversation, updated);
+  }
+
   ConversationEntity _updatedAgentConversation(
     ConversationEntity conversation,
     ConversationSummary updated,
@@ -124,6 +161,37 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     revision: updated.revision,
     updatedAt: updated.updatedAt,
   );
+
+  ConversationEntity _updatedTitleConversation(
+    ConversationEntity conversation,
+    ConversationSummary updated,
+  ) => conversation.copyWith(
+    title: updated.title,
+    revision: updated.revision,
+    updatedAt: updated.updatedAt,
+  );
+
+  ConversationEntity _conversationForUpdate(ConversationEntity fallback) {
+    final result = state.value;
+
+    return switch (result) {
+      ConversationFound(:final conversation)
+          when conversation.id == fallback.id =>
+        conversation,
+      ConversationFound() => fallback,
+      ConversationNotFound() || ConversationWorkspaceMismatch() => fallback,
+      null => fallback,
+    };
+  }
+
+  void _updateTitleState(ConversationEntity updated) {
+    final result = state.value;
+    if (result is! ConversationFound || result.conversation.id != updated.id) {
+      return;
+    }
+
+    state = AsyncData(ConversationFound(updated));
+  }
 
   ConversationPatch _agentPatch(String? agentId) => agentId == null
       ? const ConversationPatch(clearAgent: true)

@@ -370,6 +370,106 @@ void main() {
 
       sub.close();
     });
+
+    test(
+      'rename trims the title and updates the active conversation',
+      () async {
+        final updatedConversation = conversation.copyWith(title: 'Renamed');
+        final patched = <ConversationPatch>[];
+        final container = ProviderContainer(
+          overrides: [
+            conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
+            conversationByIdStreamProvider.overrideWith(
+              (ref, conversationId) => Stream.value(conversation),
+            ),
+            conversationRepositoryProvider.overrideWithValue(
+              _FakeConversationRepository(
+                onPatch: (id, patch) {
+                  patched.add(patch);
+
+                  return updatedConversation;
+                },
+              ),
+            ),
+            cloudConversationUsecaseProvider.overrideWithValue(null),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final completer = Completer<AsyncValue<ConversationResult>>();
+        final sub = container.listen<AsyncValue<ConversationResult>>(
+          conversationChatProvider('ws-1', 'conv-1'),
+          (_, next) {
+            if (next is AsyncData<ConversationResult> &&
+                !completer.isCompleted) {
+              completer.complete(next);
+            }
+          },
+          fireImmediately: true,
+        );
+
+        final _ = await completer.future;
+        await container
+            .read(conversationChatProvider('ws-1', 'conv-1').notifier)
+            .rename(conversation, '  Renamed  ');
+
+        expect(patched, hasLength(1));
+        expect(patched.single.title, 'Renamed');
+        final state = container
+            .read(conversationChatProvider('ws-1', 'conv-1'))
+            .value;
+        expect(
+          ((state ?? fail('Expected state to be non-null'))
+                  as ConversationFound)
+              .conversation
+              .title,
+          'Renamed',
+        );
+
+        sub.close();
+      },
+    );
+
+    test('rename ignores a blank title', () async {
+      final patched = <ConversationPatch>[];
+      final container = ProviderContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
+          conversationByIdStreamProvider.overrideWith(
+            (ref, conversationId) => Stream.value(conversation),
+          ),
+          conversationRepositoryProvider.overrideWithValue(
+            _FakeConversationRepository(
+              onPatch: (id, patch) {
+                patched.add(patch);
+
+                return conversation;
+              },
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final completer = Completer<AsyncValue<ConversationResult>>();
+      final sub = container.listen<AsyncValue<ConversationResult>>(
+        conversationChatProvider('ws-1', 'conv-1'),
+        (_, next) {
+          if (next is AsyncData<ConversationResult> && !completer.isCompleted) {
+            completer.complete(next);
+          }
+        },
+        fireImmediately: true,
+      );
+
+      final _ = await completer.future;
+      await container
+          .read(conversationChatProvider('ws-1', 'conv-1').notifier)
+          .rename(conversation, '   ');
+
+      expect(patched, isEmpty);
+      sub.close();
+    });
   });
 }
 

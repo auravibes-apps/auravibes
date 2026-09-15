@@ -8,11 +8,13 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
+import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -281,12 +283,16 @@ class _SidebarConversationTileState
       title: title,
       controller: _menuController,
       onDelete: _deleteConversation,
+      onRename: _renameConversation,
       onTap: _openConversation,
     );
   }
 
   void _deleteConversation() =>
       unawaited(_deleteSidebarConversation(context, ref, widget.chat));
+
+  void _renameConversation() =>
+      unawaited(_renameSidebarConversation(context, ref, widget.chat));
 
   void _openConversation() => _openSidebarConversation(context, widget.chat);
 }
@@ -302,6 +308,7 @@ class const _SidebarConversationTileView({
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onRename,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
@@ -316,6 +323,7 @@ class const _SidebarConversationTileView({
         title: title,
         controller: controller,
         onDelete: onDelete,
+        onRename: onRename,
         onTap: onTap,
       ),
     );
@@ -327,6 +335,7 @@ class const _SidebarConversationTileBody({
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onRename,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
@@ -339,6 +348,7 @@ class const _SidebarConversationTileBody({
     trailing: _SidebarConversationTileMenu(
       controller: controller,
       onDelete: onDelete,
+      onRename: onRename,
     ),
   );
 }
@@ -368,6 +378,7 @@ class const _SidebarConversationTileLeading({required final bool isActive})
 class const _SidebarConversationTileMenu({
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onRename,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -380,6 +391,13 @@ class const _SidebarConversationTileMenu({
             .tr(),
       ),
       items: [
+        AuraPopupMenuItem(
+          title: const TextLocale(
+            LocaleKeys.chats_screens_chat_conversation_rename,
+          ),
+          onTap: onRename,
+          leading: const AuraIcon(Icons.edit_outlined),
+        ),
         AuraPopupMenuItem(
           title: const TextLocale(LocaleKeys.common_delete),
           onTap: onDelete,
@@ -412,6 +430,19 @@ Future<void> _deleteSidebarConversation(
   final _ = await ref
       .read(conversationRepositoryProvider)
       .deleteConversation(chat.id);
+}
+
+Future<void> _renameSidebarConversation(
+  BuildContext context,
+  WidgetRef ref,
+  ConversationEntity chat,
+) async {
+  final title = await RenameConversationDialog.show(context, title: chat.title);
+  if (title == null) return;
+
+  await ref
+      .read(conversationChatProvider(chat.workspaceId, chat.id).notifier)
+      .rename(chat, title);
 }
 
 class const _CompactingRow() extends StatelessWidget {
