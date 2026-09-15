@@ -36,7 +36,11 @@ void main() {
               conversationsStreamProvider.overrideWith(
                 (
                   ref,
-                  ({String workspaceId, String search, int? limit, int offset})
+                  ({
+                    String workspaceId,
+                    String search,
+                    ({int? limit, int offset}) pagination,
+                  })
                   args,
                 ) => Stream.value([]),
               ),

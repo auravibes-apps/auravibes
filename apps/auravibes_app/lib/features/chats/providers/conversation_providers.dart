@@ -10,6 +10,18 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_providers.g.dart';
 
+typedef _ConversationPagination = ({int? limit, int offset});
+
+typedef _ConversationListOptions = ({
+  String search,
+  _ConversationPagination pagination,
+});
+
+const _ConversationPagination _defaultConversationPagination = (
+  limit: null,
+  offset: 0,
+);
+
 @riverpod
 Stream<ConversationEntity?> conversationByIdStream(
   Ref ref,
@@ -49,48 +61,35 @@ Stream<List<ConversationEntity>> conversationsStream(
   Ref ref, {
   required String workspaceId,
   String search = '',
-  int? limit,
-  int offset = 0,
+  _ConversationPagination pagination = _defaultConversationPagination,
 }) async* {
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
   if (!ref.mounted) return;
-  yield* _conversationsForSession(
-    ref,
-    session,
-    workspaceId,
+  yield* _conversationsForSession(ref, session, workspaceId, (
     search: search,
-    offset: offset,
-    limit: limit,
-  );
+    pagination: pagination,
+  ));
 }
 
 Stream<List<ConversationEntity>> _conversationsForSession(
   Ref ref,
   WorkspaceSession session,
-  String workspaceId, {
-  required String search,
-  required int offset,
-  int? limit,
-}) {
+  String workspaceId,
+  _ConversationListOptions options,
+) {
   if (session.cloud case final cloud?) {
-    return _cloudConversations(
-      ref,
-      cloud,
-      search: search,
-      offset: offset,
-      limit: limit,
-    );
+    return _cloudConversations(ref, cloud, options);
   }
 
   return ref
       .watch(conversationRepositoryProvider)
       .watchConversationsByWorkspace(
         workspaceId,
-        search: search,
-        limit: limit,
-        offset: offset,
+        search: options.search,
+        limit: options.pagination.limit,
+        offset: options.pagination.offset,
       );
 }
 
@@ -140,26 +139,38 @@ String? streamingTitle(Ref ref, String conversationId) {
 
 Stream<List<ConversationEntity>> _cloudConversations(
   Ref ref,
-  CloudWorkspaceRef cloud, {
-  String search = '',
-  int offset = 0,
-  int? limit,
-}) async* {
+  CloudWorkspaceRef cloud, [
+  _ConversationListOptions options = (
+    search: '',
+    pagination: _defaultConversationPagination,
+  ),
+]) async* {
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayForWorkspaceProvider(cloud.localWorkspaceId)
         .future,
   );
   if (gateway == null) return;
 
-  yield (await CloudChatGateway(
-        gateway,
-      ).listConversations(search: search, limit: limit ?? 100, offset: offset))
-      .map(
-        (conversation) =>
-            _cloudConversation(conversation, cloud.localWorkspaceId),
-      )
-      .toList();
+  final localWorkspaceId = cloud.localWorkspaceId;
+  final conversations = await _fetchCloudConversations(.new(gateway), options);
+  yield _mapCloudConversations(conversations, localWorkspaceId);
 }
+
+Future<List<ConversationSummary>> _fetchCloudConversations(
+  CloudChatGateway gateway,
+  _ConversationListOptions options,
+) => gateway.listConversations(
+  search: options.search,
+  limit: options.pagination.limit ?? 100,
+  offset: options.pagination.offset,
+);
+
+List<ConversationEntity> _mapCloudConversations(
+  List<ConversationSummary> conversations,
+  String localWorkspaceId,
+) => conversations
+    .map((conversation) => _cloudConversation(conversation, localWorkspaceId))
+    .toList();
 
 ConversationEntity _cloudConversation(
   ConversationSummary conversation,

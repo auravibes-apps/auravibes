@@ -116,7 +116,11 @@ final class ConversationsStreamProvider
         $StreamProvider<List<ConversationEntity>> {
   ConversationsStreamProvider._({
     required ConversationsStreamFamily super.from,
-    required ({String workspaceId, String search, int? limit, int offset})
+    required ({
+      String workspaceId,
+      String search,
+      _ConversationPagination pagination,
+    })
     super.argument,
   }) : super(
          retry: null,
@@ -146,13 +150,16 @@ final class ConversationsStreamProvider
   Stream<List<ConversationEntity>> create(Ref ref) {
     final argument =
         this.argument
-            as ({String workspaceId, String search, int? limit, int offset});
+            as ({
+              String workspaceId,
+              String search,
+              _ConversationPagination pagination,
+            });
     return conversationsStream(
       ref,
       workspaceId: argument.workspaceId,
       search: argument.search,
-      limit: argument.limit,
-      offset: argument.offset,
+      pagination: argument.pagination,
     );
   }
 
@@ -168,13 +175,17 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'308c05cb76654102523e2345f4035586131608f6';
+    r'340d655fa9259203e03f582a4e6b055d75dbdb44';
 
 final class ConversationsStreamFamily extends $Family
     with
         $FunctionalFamilyOverride<
           Stream<List<ConversationEntity>>,
-          ({String workspaceId, String search, int? limit, int offset})
+          ({
+            String workspaceId,
+            String search,
+            _ConversationPagination pagination,
+          })
         > {
   ConversationsStreamFamily._()
     : super(
@@ -188,14 +199,12 @@ final class ConversationsStreamFamily extends $Family
   ConversationsStreamProvider call({
     required String workspaceId,
     String search = '',
-    int? limit,
-    int offset = 0,
+    _ConversationPagination pagination = _defaultConversationPagination,
   }) => ConversationsStreamProvider._(
     argument: (
       workspaceId: workspaceId,
       search: search,
-      limit: limit,
-      offset: offset,
+      pagination: pagination,
     ),
     from: this,
   );
