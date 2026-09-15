@@ -209,6 +209,25 @@ void main() {
       expect(firstPage.nextCursor, isNotNull);
       expect(firstPage.conversations.single.id, laterConversation.id);
       expect(secondPage.conversations.single.id, liveConversation.id);
+      final searchedPage = await endpoints.conversation.list(
+        session,
+        ListConversationsRequest(
+          workspaceId: workspaceId,
+          limit: 1,
+          search: 'later',
+        ),
+      );
+      final searchedOffsetPage = await endpoints.conversation.list(
+        session,
+        ListConversationsRequest(
+          workspaceId: workspaceId,
+          limit: 1,
+          search: 'later',
+          offset: 1,
+        ),
+      );
+      expect(searchedPage.single.id, laterConversation.id);
+      expect(searchedOffsetPage, isEmpty);
       await expectLater(
         endpoints.conversation.get(
           session,

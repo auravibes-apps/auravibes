@@ -1,6 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: UI callbacks stay local to their widgets.
 // Required: Feature widgets keep closely related private widgets together.
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
@@ -13,29 +15,123 @@ import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+const _conversationPageSize = 20;
+const _conversationSearchDebounce = Duration(milliseconds: 300);
+
 class const ChatListWidget({required final String workspaceId, super.key})
-    extends ConsumerWidget {
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final searchController = useTextEditingController();
+    final searchText = useState('');
+    final loadedChats = useState<List<ConversationEntity>>([]);
+    final hasMore = useState(false);
+    final isLoadingMore = useState(false);
+    final showSearchInput = useState(false);
+    final normalizedSearch = searchText.value.trim();
+    final debouncedSearch = useDebounced(
+      normalizedSearch,
+      _conversationSearchDebounce,
+    );
+    final databaseSearch = debouncedSearch ?? '';
     final chatListAsync = ref.watch(
-      conversationsStreamProvider(workspaceId: workspaceId),
+      conversationsStreamProvider(
+        workspaceId: workspaceId,
+        search: databaseSearch,
+        limit: _conversationPageSize + 1,
+      ),
     );
 
-    return switch (chatListAsync) {
-      AsyncData(value: final chats) => _ChatListLoaded(
-        chats: chats,
+    Dispose? resetSearchEffect() {
+      hasMore.value = false;
+
+      return null;
+    }
+
+    Dispose? updateFirstPageEffect() {
+      if (chatListAsync case AsyncData(:final value)) {
+        loadedChats.value = value.take(_conversationPageSize).toList();
+        hasMore.value = value.length > _conversationPageSize;
+        if (value.isNotEmpty) showSearchInput.value = true;
+      }
+
+      return null;
+    }
+
+    useEffect(resetSearchEffect, [databaseSearch]);
+    useEffect(updateFirstPageEffect, [chatListAsync]);
+
+    Future<void> loadMore() async {
+      if (isLoadingMore.value || !hasMore.value) return;
+      isLoadingMore.value = true;
+      final nextPageProvider = conversationsStreamProvider(
         workspaceId: workspaceId,
-      ),
-      AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncError() => const Center(
+        search: databaseSearch,
+        limit: _conversationPageSize + 1,
+        offset: loadedChats.value.length,
+      );
+      final pageSubscription = ref.listenManual(
+        nextPageProvider,
+        (_, _) => isLoadingMore.value = true,
+      );
+      try {
+        final nextPage = await ref.read(nextPageProvider.future);
+        if (!context.mounted) return;
+
+        final existingIds = loadedChats.value.map((chat) => chat.id).toSet();
+        final nextChats = nextPage
+            .take(_conversationPageSize)
+            .where((chat) => !existingIds.contains(chat.id));
+        loadedChats.value = [...loadedChats.value, ...nextChats];
+        hasMore.value = nextPage.length > _conversationPageSize;
+      } finally {
+        pageSubscription.close();
+        if (context.mounted) isLoadingMore.value = false;
+      }
+    }
+
+    final fetchedChats = chatListAsync.asData?.value;
+    final isRefreshing = chatListAsync.isLoading;
+    final hasError = chatListAsync.hasError;
+    final isDebouncing = debouncedSearch == null
+        ? normalizedSearch.isNotEmpty
+        : debouncedSearch != normalizedSearch;
+    final hasSearchInput =
+        showSearchInput.value || fetchedChats?.isNotEmpty == true;
+    final fetchedHasMore =
+        fetchedChats != null && fetchedChats.length > _conversationPageSize;
+
+    if (!hasSearchInput && isRefreshing) {
+      return const Center(child: AuraSpinner());
+    }
+    if (!hasSearchInput && hasError) {
+      return const Center(
         child: AuraText(
           child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
         ),
-      ),
-    };
+      );
+    }
+
+    return _ChatListLoaded(
+      chats: loadedChats.value.isEmpty
+          ? fetchedChats?.take(_conversationPageSize).toList() ?? const []
+          : loadedChats.value,
+      hasMore: hasMore.value || (loadedChats.value.isEmpty && fetchedHasMore),
+      hasError: hasError,
+      isLoadingMore: isLoadingMore.value,
+      isSearching: isDebouncing || isRefreshing,
+      isRefreshing: isRefreshing,
+      onLoadMore: () => unawaited(loadMore()),
+      onSearchChanged: (value) => searchText.value = value,
+      searchController: searchController,
+      searchQuery: searchText.value,
+      showSearchInput: hasSearchInput,
+      workspaceId: workspaceId,
+    );
   }
 }
 
@@ -190,22 +286,129 @@ String? _chatModelDisplayName(
 
 class const _ChatListLoaded({
   required final List<ConversationEntity> chats,
+  required final bool hasMore,
+  required final bool hasError,
+  required final bool isLoadingMore,
+  required final bool isSearching,
+  required final bool isRefreshing,
+  required final VoidCallback onLoadMore,
+  required final ValueChanged<String> onSearchChanged,
+  required final TextEditingController searchController,
+  required final String searchQuery,
+  required final bool showSearchInput,
   required final String workspaceId,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    if (chats.isEmpty) {
+  Widget build(BuildContext _) {
+    if (!showSearchInput) {
       return _ChatListEmptyState(workspaceId: workspaceId);
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) =>
-          _ChatTile(chat: chats[index], workspaceId: workspaceId),
-      separatorBuilder: (context, index) => const SizedBox(height: 10),
-      itemCount: chats.length,
+    final results = switch ((
+      isRefreshing: isRefreshing,
+      hasError: hasError,
+      isEmpty: chats.isEmpty,
+      searchIsEmpty: searchQuery.trim().isEmpty,
+    )) {
+      (isRefreshing: true, hasError: _, isEmpty: _, searchIsEmpty: _) =>
+        const Center(child: AuraSpinner()),
+      (isRefreshing: false, hasError: true, isEmpty: _, searchIsEmpty: _) =>
+        const Center(
+          child: AuraText(
+            child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
+          ),
+        ),
+      (
+        isRefreshing: false,
+        hasError: false,
+        isEmpty: true,
+        searchIsEmpty: true,
+      ) =>
+        _ChatListEmptyState(workspaceId: workspaceId),
+      (
+        isRefreshing: false,
+        hasError: false,
+        isEmpty: true,
+        searchIsEmpty: false,
+      ) =>
+        const _ChatListSearchEmptyState(),
+      (
+        isRefreshing: false,
+        hasError: false,
+        isEmpty: false,
+        searchIsEmpty: _,
+      ) =>
+        ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemBuilder: (context, index) =>
+              _ChatTile(chat: chats[index], workspaceId: workspaceId),
+          separatorBuilder: (context, index) => const SizedBox(height: 10),
+          itemCount: chats.length,
+        ),
+    };
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, top: 16, right: 16),
+          child: AuraInput(
+            controller: searchController,
+            placeholder: const TextLocale(
+              LocaleKeys.chats_screens_chats_list_search_placeholder,
+            ),
+            prefixIcon: const AuraIcon(Icons.search),
+            suffixIcon: SizedBox(
+              width: 16,
+              height: 16,
+              child: AuraAnimatedContent(
+                child: isSearching
+                    ? const AuraSpinner(
+                        key: ValueKey('conversation-searching'),
+                        size: .small,
+                      )
+                    : const SizedBox(key: ValueKey('conversation-idle')),
+              ),
+            ),
+            size: .small,
+            onChanged: onSearchChanged,
+          ),
+        ),
+        Expanded(child: results),
+        if (hasMore && !isRefreshing && !hasError)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: AuraButton(
+              onPressed: onLoadMore,
+              child: const TextLocale(LocaleKeys.common_show_more),
+              size: .small,
+              isLoading: isLoadingMore,
+            ),
+          ),
+      ],
     );
   }
+}
+
+class const _ChatListSearchEmptyState() extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => const Center(
+    child: Padding(
+      padding: EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          AuraIcon(Icons.search_off, size: .extraLarge),
+          SizedBox(height: 8),
+          AuraText(
+            child: TextLocale(
+              LocaleKeys.chats_screens_chats_list_search_no_results,
+            ),
+            textAlign: .center,
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class const _ChatTileView({

@@ -46,10 +46,17 @@ class ConversationRepository(
 }) {
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
+    String? search,
     int? limit,
+    int offset = 0,
   }) {
     return _database.conversationDao
-        .watchConversationsByWorkspace(workspaceId, limit: limit)
+        .watchConversationsByWorkspace(
+          workspaceId,
+          search: search,
+          limit: limit,
+          offset: offset,
+        )
         .map((rows) => rows.map(_mapToConversation).toList());
   }
 

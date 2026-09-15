@@ -274,7 +274,9 @@
   "chats_screens": {
     "chats_list": {
       "title": "Chats",
-      "add_chat": "Add Chat"
+      "add_chat": "Add Chat",
+      "search_placeholder": "Search conversations...",
+      "search_no_results": "No conversations match your search"
     },
     "new_chat": {
       "starting": "Starting conversation...",

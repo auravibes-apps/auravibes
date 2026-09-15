@@ -119,7 +119,8 @@ class AppDatabase extends _$AppDatabase {
   static const _splitSchemaVersion = 4;
   static const _cloudWorkspaceSchemaVersion = 5;
   static const _cloudWorkspaceColumnsSchemaVersion = 6;
-  static const _currentSchemaVersion = 7;
+  static const _conversationListSchemaVersion = 8;
+  static const int _currentSchemaVersion = _conversationListSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -162,6 +163,7 @@ extension on AppDatabase {
     await _backfillAgentDescriptions(from);
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
+    await _upgradeConversationListSchema(from);
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {
@@ -207,6 +209,17 @@ extension on AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS agents_workspace_name_id '
       'ON agents (workspace_id, name COLLATE NOCASE, id)',
+    );
+  }
+
+  Future<void> _upgradeConversationListSchema(int from) async {
+    if (from >= AppDatabase._conversationListSchemaVersion) return;
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS '
+      'conversations_workspace_parent_updated_id '
+      'ON conversations ( '
+      'workspace_id, parent_conversation_id, updated_at DESC, id DESC '
+      ')',
     );
   }
 

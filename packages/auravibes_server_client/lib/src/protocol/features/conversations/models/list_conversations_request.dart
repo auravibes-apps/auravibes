@@ -18,12 +18,16 @@ abstract class ListConversationsRequest
     required this.workspaceId,
     required this.limit,
     this.cursor,
+    this.search,
+    this.offset,
   });
 
   factory ListConversationsRequest({
     required int workspaceId,
     required int limit,
     String? cursor,
+    String? search,
+    int? offset,
   }) = _ListConversationsRequestImpl;
 
   factory ListConversationsRequest.fromJson(
@@ -33,6 +37,8 @@ abstract class ListConversationsRequest
       workspaceId: jsonSerialization['workspaceId'] as int,
       limit: jsonSerialization['limit'] as int,
       cursor: jsonSerialization['cursor'] as String?,
+      search: jsonSerialization['search'] as String?,
+      offset: jsonSerialization['offset'] as int?,
     );
   }
 
@@ -42,6 +48,10 @@ abstract class ListConversationsRequest
 
   String? cursor;
 
+  String? search;
+
+  int? offset;
+
   /// Returns a shallow copy of this [ListConversationsRequest]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -49,6 +59,8 @@ abstract class ListConversationsRequest
     int? workspaceId,
     int? limit,
     String? cursor,
+    String? search,
+    int? offset,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -57,6 +69,8 @@ abstract class ListConversationsRequest
       'workspaceId': workspaceId,
       'limit': limit,
       if (cursor != null) 'cursor': cursor,
+      if (search != null) 'search': search,
+      if (offset != null) 'offset': offset,
     };
   }
 
@@ -67,6 +81,8 @@ abstract class ListConversationsRequest
       'workspaceId': workspaceId,
       'limit': limit,
       if (cursor != null) 'cursor': cursor,
+      if (search != null) 'search': search,
+      if (offset != null) 'offset': offset,
     };
   }
 
@@ -83,10 +99,14 @@ class _ListConversationsRequestImpl extends ListConversationsRequest {
     required int workspaceId,
     required int limit,
     String? cursor,
+    String? search,
+    int? offset,
   }) : super._(
          workspaceId: workspaceId,
          limit: limit,
          cursor: cursor,
+         search: search,
+         offset: offset,
        );
 
   /// Returns a shallow copy of this [ListConversationsRequest]
@@ -97,11 +117,15 @@ class _ListConversationsRequestImpl extends ListConversationsRequest {
     int? workspaceId,
     int? limit,
     Object? cursor = _Undefined,
+    Object? search = _Undefined,
+    Object? offset = _Undefined,
   }) {
     return ListConversationsRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       limit: limit ?? this.limit,
       cursor: cursor is String? ? cursor : this.cursor,
+      search: search is String? ? search : this.search,
+      offset: offset is int? ? offset : this.offset,
     );
   }
 }

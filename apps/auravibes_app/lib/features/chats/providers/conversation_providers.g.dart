@@ -116,7 +116,8 @@ final class ConversationsStreamProvider
         $StreamProvider<List<ConversationEntity>> {
   ConversationsStreamProvider._({
     required ConversationsStreamFamily super.from,
-    required ({String workspaceId, int? limit}) super.argument,
+    required ({String workspaceId, String search, int? limit, int offset})
+    super.argument,
   }) : super(
          retry: null,
          name: r'conversationsStreamProvider',
@@ -143,11 +144,15 @@ final class ConversationsStreamProvider
 
   @override
   Stream<List<ConversationEntity>> create(Ref ref) {
-    final argument = this.argument as ({String workspaceId, int? limit});
+    final argument =
+        this.argument
+            as ({String workspaceId, String search, int? limit, int offset});
     return conversationsStream(
       ref,
       workspaceId: argument.workspaceId,
+      search: argument.search,
       limit: argument.limit,
+      offset: argument.offset,
     );
   }
 
@@ -163,13 +168,13 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'970d04a44a9dc9efc04d8734c64aa06edb5025c3';
+    r'21b476d76570ace1dc794e529a3a41adb499eb45';
 
 final class ConversationsStreamFamily extends $Family
     with
         $FunctionalFamilyOverride<
           Stream<List<ConversationEntity>>,
-          ({String workspaceId, int? limit})
+          ({String workspaceId, String search, int? limit, int offset})
         > {
   ConversationsStreamFamily._()
     : super(
@@ -180,11 +185,20 @@ final class ConversationsStreamFamily extends $Family
         isAutoDispose: true,
       );
 
-  ConversationsStreamProvider call({required String workspaceId, int? limit}) =>
-      ConversationsStreamProvider._(
-        argument: (workspaceId: workspaceId, limit: limit),
-        from: this,
-      );
+  ConversationsStreamProvider call({
+    required String workspaceId,
+    String search = '',
+    int? limit,
+    int offset = 0,
+  }) => ConversationsStreamProvider._(
+    argument: (
+      workspaceId: workspaceId,
+      search: search,
+      limit: limit,
+      offset: offset,
+    ),
+    from: this,
+  );
 
   @override
   String toString() => r'conversationsStreamProvider';

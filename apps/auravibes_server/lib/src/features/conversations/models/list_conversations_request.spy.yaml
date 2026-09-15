@@ -3,3 +3,5 @@ fields:
   workspaceId: int
   limit: int
   cursor: String?
+  search: String?
+  offset: int?

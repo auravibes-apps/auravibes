@@ -178,5 +178,36 @@ void main() {
           .first;
       expect(emitted.length, equals(1));
     });
+
+    test('watchConversationsByWorkspace searches and applies offset', () async {
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
+        .insert(name: 'WS', type: WorkspaceType.local),
+      );
+      final _ = await fixture.database.conversationDao.insertConversation(
+        .insert(workspaceId: ws.id, title: 'Release Plan'),
+      );
+      final _ = await fixture.database.conversationDao.insertConversation(
+        .insert(workspaceId: ws.id, title: 'Design Brief'),
+      );
+      final _ = await fixture.database.conversationDao.insertConversation(
+        .insert(workspaceId: ws.id, title: 'Release Notes'),
+      );
+
+      final allMatches = await fixture.database.conversationDao
+          .watchConversationsByWorkspace(ws.id, search: 'release')
+          .first;
+      final page = await fixture.database.conversationDao
+          .watchConversationsByWorkspace(
+            ws.id,
+            search: 'release',
+            limit: 1,
+            offset: 1,
+          )
+          .first;
+
+      expect(allMatches, hasLength(2));
+      expect(page, hasLength(1));
+      expect(page.single.id, allMatches[1].id);
+    });
   });
 }

@@ -10,6 +10,15 @@ import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:drift/drift.dart';
 
 @DataClassName('ConversationsTable')
+@TableIndex.sql('''
+CREATE INDEX conversations_workspace_parent_updated_id
+ON conversations (
+  workspace_id,
+  parent_conversation_id,
+  updated_at DESC,
+  id DESC
+)
+''')
 class Conversations extends Table with TableMixin {
   TextColumn get workspaceId =>
       text().references(Workspaces, #id, onDelete: .cascade)();

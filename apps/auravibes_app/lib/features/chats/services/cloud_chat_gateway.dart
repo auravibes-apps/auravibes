@@ -331,13 +331,21 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
       request.copyWith(workspaceId: _workspaceId),
     ),
   );
-  Future<List<ConversationSummary>> listConversations({int limit = 100}) =>
-      CloudAppErrors.guardCall(
-        .conversation,
-        () => _client.conversation.list(
-          .new(workspaceId: _workspaceId, limit: limit),
-        ),
-      );
+  Future<List<ConversationSummary>> listConversations({
+    int limit = 100,
+    String? search,
+    int offset = 0,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.list(
+      .new(
+        workspaceId: _workspaceId,
+        limit: limit,
+        search: search,
+        offset: offset,
+      ),
+    ),
+  );
   Future<ConversationSummary> getConversation(String conversationId) =>
       CloudAppErrors.guardCall(
         .conversation,

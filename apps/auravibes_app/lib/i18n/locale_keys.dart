@@ -347,6 +347,10 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =
       'chats_screens.chats_list.add_chat';
+  static const chats_screens_chats_list_search_placeholder =
+      'chats_screens.chats_list.search_placeholder';
+  static const chats_screens_chats_list_search_no_results =
+      'chats_screens.chats_list.search_no_results';
   static const chats_screens_new_chat_starting =
       'chats_screens.new_chat.starting';
   static const chats_screens_new_chat_start_error =

@@ -98,7 +98,7 @@ class ConversationUseCases {
     required String userId,
     required ListConversationsRequest request,
   }) async {
-    if (request.limit < 1 || request.limit > 100) {
+    if (request.limit < 1 || request.limit > 100 || (request.offset ?? 0) < 0) {
       _fail(ConversationErrorCode.validationFailed);
     }
     await _requireMember(
@@ -117,7 +117,7 @@ class ConversationUseCases {
     required String userId,
     required ListConversationsRequest request,
   }) async {
-    if (request.limit < 1 || request.limit > 100) {
+    if (request.limit < 1 || request.limit > 100 || (request.offset ?? 0) < 0) {
       _fail(ConversationErrorCode.validationFailed);
     }
     await _requireMember(
@@ -2034,22 +2034,14 @@ class ConversationUseCases {
     final conversations = await _repository.listConversations(
       session,
       workspaceId: request.workspaceId,
+      search: request.search,
+      beforeUpdatedAt: cursor?.updatedAt,
+      beforeStableId: cursor?.stableId,
+      limit: request.limit + 1,
+      offset: request.offset ?? 0,
     );
-    final ordered = conversations.toList()
-      ..sort((left, right) {
-        final date = right.updatedAt.compareTo(left.updatedAt);
-        return date != 0 ? date : right.stableId.compareTo(left.stableId);
-      });
-    final filtered = cursor == null
-        ? ordered
-        : ordered.where((conversation) {
-            final date = conversation.updatedAt.compareTo(cursor.updatedAt);
-            return date < 0 ||
-                (date == 0 &&
-                    conversation.stableId.compareTo(cursor.stableId) < 0);
-          }).toList();
-    final hasMore = filtered.length > request.limit;
-    final page = filtered.take(request.limit).toList();
+    final hasMore = conversations.length > request.limit;
+    final page = conversations.take(request.limit).toList();
     return ConversationPage(
       conversations: page.map(_summary).toList(),
       nextCursor: hasMore && page.isNotEmpty ? _encodeCursor(page.last) : null,

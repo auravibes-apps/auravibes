@@ -39,10 +39,16 @@ mixin _ConversationDaoReadApi {
 
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
+    String? search,
     int? limit,
-  }) =>
-      ConversationDaoReadOperations(this as ConversationDao)
-          .watchConversationsByWorkspace(workspaceId, limit: limit);
+    int offset = 0,
+  }) => ConversationDaoReadOperations(this as ConversationDao)
+      .watchConversationsByWorkspace(
+        workspaceId,
+        search: search,
+        limit: limit,
+        offset: offset,
+      );
 
   Stream<List<ConversationsTable>> watchChildConversations(
     String parentConversationId,
@@ -93,10 +99,12 @@ extension ConversationDaoReadOperations on ConversationDao {
 
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
+    String? search,
     int? limit,
+    int offset = 0,
   }) {
-    final query = _buildWorkspaceQuery(workspaceId);
-    if (limit != null) query.limit(limit, offset: 0);
+    final query = _buildWorkspaceQuery(workspaceId, search: search);
+    if (limit != null) query.limit(limit, offset: offset);
 
     return query.watch();
   }
@@ -114,11 +122,12 @@ extension ConversationDaoReadOperations on ConversationDao {
   }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
-  _buildWorkspaceQuery(String workspaceId) {
+  _buildWorkspaceQuery(String workspaceId, {String? search}) {
     return _orderedConversations(
       (tbl) =>
           tbl.workspaceId.equals(workspaceId) &
-          tbl.parentConversationId.isNull(),
+          tbl.parentConversationId.isNull() &
+          _conversationSearchPredicate(tbl, search),
     );
   }
 
@@ -134,5 +143,24 @@ extension ConversationDaoReadOperations on ConversationDao {
     Expression<bool> Function($ConversationsTable) filter,
   ) => select(conversations)
     ..where(filter)
-    ..orderBy([(tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc)]);
+    ..orderBy([
+      (tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc),
+      (tbl) => OrderingTerm(expression: tbl.id, mode: .desc),
+    ]);
 }
+
+Expression<bool> _conversationSearchPredicate(
+  $ConversationsTable table,
+  String? search,
+) {
+  final normalizedSearch = search?.trim() ?? '';
+  if (normalizedSearch.isEmpty) return const Constant(true);
+
+  return table.title.like(
+    '%${_escapeLike(normalizedSearch)}%',
+    escapeChar: r'\',
+  );
+}
+
+String _escapeLike(String value) =>
+    value.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');

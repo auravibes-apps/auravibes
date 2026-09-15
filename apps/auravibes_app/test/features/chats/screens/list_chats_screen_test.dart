@@ -34,8 +34,11 @@ void main() {
             ),
             overrides: [
               conversationsStreamProvider.overrideWith(
-                (ref, ({String workspaceId, int? limit}) args) =>
-                    Stream.value([]),
+                (
+                  ref,
+                  ({String workspaceId, String search, int? limit, int offset})
+                  args,
+                ) => Stream.value([]),
               ),
               listWorkspaceModelSelectionsProvider.overrideWith(
                 (ref, workspaceId) => Stream.value([]),

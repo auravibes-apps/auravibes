@@ -48,31 +48,50 @@ Stream<ConversationEntity?> _localConversationById(
 Stream<List<ConversationEntity>> conversationsStream(
   Ref ref, {
   required String workspaceId,
+  String search = '',
   int? limit,
+  int offset = 0,
 }) async* {
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
   if (!ref.mounted) return;
-  yield* _conversationsForSession(ref, session, workspaceId, limit);
+  yield* _conversationsForSession(
+    ref,
+    session,
+    workspaceId,
+    search: search,
+    offset: offset,
+    limit: limit,
+  );
 }
 
 Stream<List<ConversationEntity>> _conversationsForSession(
   Ref ref,
   WorkspaceSession session,
-  String workspaceId,
+  String workspaceId, {
+  required String search,
+  required int offset,
   int? limit,
-) {
+}) {
   if (session.cloud case final cloud?) {
-    return _cloudConversations(ref, cloud).map(
-      (conversations) =>
-          conversations.take(limit ?? conversations.length).toList(),
+    return _cloudConversations(
+      ref,
+      cloud,
+      search: search,
+      offset: offset,
+      limit: limit,
     );
   }
 
   return ref
       .watch(conversationRepositoryProvider)
-      .watchConversationsByWorkspace(workspaceId, limit: limit);
+      .watchConversationsByWorkspace(
+        workspaceId,
+        search: search,
+        limit: limit,
+        offset: offset,
+      );
 }
 
 @riverpod
@@ -121,15 +140,20 @@ String? streamingTitle(Ref ref, String conversationId) {
 
 Stream<List<ConversationEntity>> _cloudConversations(
   Ref ref,
-  CloudWorkspaceRef cloud,
-) async* {
+  CloudWorkspaceRef cloud, {
+  String search = '',
+  int offset = 0,
+  int? limit,
+}) async* {
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayForWorkspaceProvider(cloud.localWorkspaceId)
         .future,
   );
   if (gateway == null) return;
 
-  yield (await CloudChatGateway(gateway).listConversations())
+  yield (await CloudChatGateway(
+        gateway,
+      ).listConversations(search: search, limit: limit ?? 100, offset: offset))
       .map(
         (conversation) =>
             _cloudConversation(conversation, cloud.localWorkspaceId),
