@@ -423,6 +423,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.copy_message';
   static const chats_screens_chat_conversation_message_copied =
       'chats_screens.chat_conversation.message_copied';
+  static const chats_screens_chat_conversation_copy_tool_response =
+      'chats_screens.chat_conversation.copy_tool_response';
+  static const chats_screens_chat_conversation_tool_response_copied =
+      'chats_screens.chat_conversation.tool_response_copied';
   static const chats_screens_chat_conversation_a2ui_form_invalid =
       'chats_screens.chat_conversation.a2ui_form_invalid';
   static const chats_screens_chat_conversation_continue_error =

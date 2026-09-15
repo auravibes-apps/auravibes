@@ -317,6 +317,8 @@
       "a2ui_diagnostic_copied": "Diagnostic copied",
       "copy_message": "Copy message",
       "message_copied": "Message copied",
+      "copy_tool_response": "Copy tool response",
+      "tool_response_copied": "Tool response copied",
       "a2ui_form_invalid": "Check your answers and try again.",
       "continue_error": "Could not continue the agent. Please try again.",
       "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",

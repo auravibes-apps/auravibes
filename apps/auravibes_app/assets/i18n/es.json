@@ -317,6 +317,8 @@
       "a2ui_diagnostic_copied": "Diagnóstico copiado",
       "copy_message": "Copiar mensaje",
       "message_copied": "Mensaje copiado",
+      "copy_tool_response": "Copiar respuesta de la herramienta",
+      "tool_response_copied": "Respuesta de la herramienta copiada",
       "a2ui_form_invalid": "Revisa tus respuestas e inténtalo de nuevo.",
       "continue_error": "No se pudo continuar el agente. Inténtalo de nuevo.",
       "rate_limit_retry": "Se alcanzó el límite de uso. Reintentando en {seconds}s.",
