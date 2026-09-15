@@ -2,6 +2,7 @@
 // Required: Widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' show Offset, PointerDeviceKind;
 
@@ -84,6 +85,28 @@ void main() {
     });
     await tester.pump();
     await tester.pump();
+  }
+
+  Future<void> revealActivityToolCalls(
+    WidgetTester tester, {
+    String runId = 'msg-1',
+  }) async {
+    final traceToggle = find.byKey(ValueKey('activity_trace_toggle_$runId'));
+    if (traceToggle.evaluate().isNotEmpty) {
+      await tester.ensureVisible(traceToggle);
+      await tester.tap(traceToggle);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+    }
+
+    final toolListToggle = find.byKey(
+      ValueKey('activity_tool_list_toggle_$runId'),
+    );
+    if (toolListToggle.evaluate().isNotEmpty) {
+      await tester.ensureVisible(toolListToggle);
+      await tester.tap(toolListToggle);
+      await tester.pump();
+    }
   }
 
   Future<({ChatA2uiRuntime runtime, List<String?> copies})> pumpCopySurface(
@@ -625,7 +648,9 @@ void main() {
       expect(find.text('Thinking...'), findsOneWidget);
     });
 
-    testWidgets('renders AI reasoning summary separately', (tester) async {
+    testWidgets('flattens one thinking card before the response', (
+      tester,
+    ) async {
       await pumpAndInit(
         tester,
         buildSubject(
@@ -651,20 +676,33 @@ void main() {
         ),
       );
 
-      expect(find.text('Reasoning summary'), findsOneWidget);
+      expect(find.text('Thinking'), findsOneWidget);
       expect(find.text('Reasoned before answering'), findsOneWidget);
       expect(find.text('Final answer'), findsOneWidget);
-      final selectionArea = find.byType(SelectionArea);
-      expect(selectionArea, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_thinking_msg-1')),
+        findsOneWidget,
+      );
+      expect(
+        tester.getTopLeft(find.text('Reasoned before answering')).dy,
+        lessThan(tester.getTopLeft(find.text('Final answer')).dy),
+      );
       expect(
         find.ancestor(
           of: find.text('Reasoned before answering'),
-          matching: selectionArea,
+          matching: find.byType(SelectionArea),
         ),
         findsOneWidget,
       );
       expect(
-        find.ancestor(of: find.text('Final answer'), matching: selectionArea),
+        find.ancestor(
+          of: find.text('Final answer'),
+          matching: find.byType(SelectionArea),
+        ),
         findsOneWidget,
       );
     });
@@ -1100,7 +1138,7 @@ void main() {
       expect(find.byType(ListView), findsOneWidget);
     });
 
-    testWidgets('renders tool calls from message metadata', (tester) async {
+    testWidgets('flattens one tool row from message metadata', (tester) async {
       const toolCall = MessageToolCallEntity(
         id: 'tc-1',
         name: 'built_in_1_read_file',
@@ -1131,10 +1169,1088 @@ void main() {
         ),
       );
 
+      expect(find.byKey(const ValueKey('activity_tool_tc-1')), findsOneWidget);
       expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+        findsNothing,
+      );
     });
 
-    testWidgets('renders reasoning summary when tool calls hide empty answer', (
+    testWidgets('reveals a finished activity run in three compact levels', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final firstToolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{"path": "argument detail"}',
+        responseRaw: 'first result detail',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final secondToolCall = MessageToolCallEntity(
+        id: 'tc-2',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{"expression": "second argument detail"}',
+        responseRaw: 'second result detail',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: 'Final answer',
+        isUser: false,
+        metadata: MessageMetadataEntity(
+          thinking: 'Need to inspect the file first',
+          toolCalls: [firstToolCall, secondToolCall],
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('2 tools'), findsOneWidget);
+      expect(find.text('Final answer'), findsOneWidget);
+      expect(find.text('Need to inspect the file first'), findsNothing);
+      expect(find.textContaining('argument detail'), findsNothing);
+      expect(find.byKey(const ValueKey('activity_tool_tc-1')), findsNothing);
+      expect(
+        tester
+            .widget<AuraPressable>(
+              find.descendant(
+                of: find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+                matching: find.byType(AuraPressable),
+              ),
+            )
+            .color,
+        AuraTheme.light.colors.onSurfaceVariant,
+      );
+      expect(
+        tester
+            .widget<AuraPressable>(
+              find.descendant(
+                of: find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+                matching: find.byType(AuraPressable),
+              ),
+            )
+            .decoration,
+        BoxDecoration(
+          color: AuraTheme.light.colors.surfaceVariant.withValues(alpha: .5),
+          borderRadius: BorderRadius.circular(
+            AuraTheme.light.fromBorderRadius(.md),
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+      );
+      await tester.pump();
+
+      expect(find.text('2 tools'), findsOneWidget);
+      expect(find.text('Need to inspect the file first'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+      );
+      await tester.pump();
+      expect(find.text('2 tools'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+      );
+      await tester.pump();
+      expect(find.text('Need to inspect the file first'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('activity_tool_tc-1')), findsNothing);
+      expect(
+        tester
+            .widget<AuraPressable>(
+              find.descendant(
+                of: find.byKey(
+                  const ValueKey('activity_tool_list_toggle_msg-1'),
+                ),
+                matching: find.byType(AuraPressable),
+              ),
+            )
+            .color,
+        AuraTheme.light.colors.secondary,
+      );
+      expect(
+        tester
+            .widget<AuraPressable>(
+              find.descendant(
+                of: find.byKey(
+                  const ValueKey('activity_tool_list_toggle_msg-1'),
+                ),
+                matching: find.byType(AuraPressable),
+              ),
+            )
+            .decoration,
+        isNull,
+      );
+      final toolSummary = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(toolSummary.maxLines, 1);
+      expect(toolSummary.overflow, TextOverflow.ellipsis);
+
+      final toolListToggle = find.byKey(
+        const ValueKey('activity_tool_list_toggle_msg-1'),
+      );
+      final toolListPressable = find.descendant(
+        of: toolListToggle,
+        matching: find.byType(AuraPressable),
+      );
+      tester.widget<AuraPressable>(toolListPressable).onPressed!.call();
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('activity_tool_tc-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity_tool_tc-2')), findsOneWidget);
+      expect(find.byType(AuraAccordion), findsNothing);
+      expect(find.byType(AuraTile), findsNothing);
+      expect(
+        tester.getSize(find.byKey(const ValueKey('activity_tool_tc-1'))).width,
+        lessThanOrEqualTo(320),
+      );
+      expect(
+        tester
+            .widget<AuraPressable>(
+              find.byKey(const ValueKey('activity_tool_tc-1')),
+            )
+            .color,
+        AuraTheme.light.colors.success,
+      );
+
+      final firstTool = find.byKey(const ValueKey('activity_tool_tc-1'));
+      tester.widget<AuraPressable>(firstTool).onPressed!.call();
+      await tester.pump();
+
+      expect(find.text('Arguments'), findsOneWidget);
+      expect(find.text('Result'), findsOneWidget);
+      expect(find.textContaining('argument detail'), findsOneWidget);
+      expect(find.textContaining('first result detail'), findsOneWidget);
+      expect(
+        tester
+            .widget<AuraContainer>(
+              find.byKey(const ValueKey('activity_tool_result_tc-1')),
+            )
+            .variant,
+        AuraContainerVariant.surfaceVariant,
+      );
+
+      final secondTool = find.byKey(const ValueKey('activity_tool_tc-2'));
+      tester.widget<AuraPressable>(secondTool).onPressed!.call();
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('activity_tool_details_tc-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_tool_details_tc-2')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('second argument detail'), findsOneWidget);
+      expect(find.textContaining('second result detail'), findsOneWidget);
+    });
+
+    testWidgets('keeps activity expansion below the tapped disclosure', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 500));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-scroll',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{"path": "details"}',
+        responseRaw: 'First line\nSecond line\nThird line\nFourth line',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final olderMessages = {
+        for (var index = 0; index < 8; index++)
+          'old-$index': _createMessage(
+            id: 'old-$index',
+            content: 'Older message $index',
+            isUser: true,
+          ),
+      };
+      final targetMessage = _createMessage(
+        id: 'target',
+        content: 'Final answer',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          thinking: 'Activity details',
+          toolCalls: [toolCall],
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [...olderMessages.keys, 'target'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => id.messageId == 'target'
+                  ? targetMessage
+                  : olderMessages[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      final activityToggle = find.byKey(
+        const ValueKey('activity_trace_toggle_target'),
+      );
+      final before = tester.getTopLeft(activityToggle).dy;
+
+      await tester.tap(activityToggle);
+      await tester.pump();
+      expect(tester.getTopLeft(activityToggle).dy, closeTo(before, 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+
+      final after = tester.getTopLeft(activityToggle).dy;
+      final toolRow = find.byKey(const ValueKey('activity_tool_tc-scroll'));
+      expect(after, closeTo(before, 1));
+      expect(tester.getTopLeft(toolRow).dy, greaterThan(after));
+      final toolBefore = tester.getTopLeft(toolRow).dy;
+
+      await tester.tap(toolRow);
+      await tester.pump();
+      expect(tester.getTopLeft(toolRow).dy, closeTo(toolBefore, 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+
+      final toolRowBottom = tester.getRect(toolRow).bottom;
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('activity_tool_details_tc-scroll')),
+            )
+            .dy,
+        greaterThanOrEqualTo(toolRowBottom),
+      );
+
+      await tester.tap(toolRow);
+      await tester.pump();
+      expect(tester.getTopLeft(toolRow).dy, closeTo(toolBefore, 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.getTopLeft(toolRow).dy, closeTo(toolBefore, 1));
+
+      await tester.tap(activityToggle);
+      await tester.pump();
+      expect(tester.getTopLeft(activityToggle).dy, closeTo(before, 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.getTopLeft(activityToggle).dy, closeTo(before, 1));
+    });
+
+    testWidgets('keeps a flattened tool expansion below its row', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 500));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-flat-scroll',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{"path": "details"}',
+        responseRaw: 'result',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final olderMessages = {
+        for (var index = 0; index < 8; index++)
+          'old-flat-$index': _createMessage(
+            id: 'old-flat-$index',
+            content: 'Older message $index',
+            isUser: true,
+          ),
+      };
+      final targetMessage = _createMessage(
+        id: 'flat-target',
+        content: 'Final answer',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [...olderMessages.keys, 'flat-target'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => id.messageId == 'flat-target'
+                  ? targetMessage
+                  : olderMessages[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      final toolRow = find.byKey(
+        const ValueKey('activity_tool_tc-flat-scroll'),
+      );
+      final before = tester.getTopLeft(toolRow).dy;
+
+      await tester.tap(toolRow);
+      await tester.pump();
+      expect(tester.getTopLeft(toolRow).dy, closeTo(before, 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+
+      final after = tester.getTopLeft(toolRow).dy;
+      expect(after, closeTo(before, 1));
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(
+                const ValueKey('activity_tool_details_tc-flat-scroll'),
+              ),
+            )
+            .dy,
+        greaterThanOrEqualTo(tester.getRect(toolRow).bottom),
+      );
+
+      await tester.tap(toolRow);
+      await tester.pump();
+      expect(tester.getTopLeft(toolRow).dy, closeTo(before, 1));
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.getTopLeft(toolRow).dy, closeTo(before, 1));
+    });
+
+    testWidgets(
+      'groups adjacent activity-only assistant messages into one run',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(320, 500));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        const firstTool = MessageToolCallEntity(
+          id: 'tc-1',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{"path": "first"}',
+          resultStatus: ToolCallResultStatus.success,
+        );
+        const secondTool = MessageToolCallEntity(
+          id: 'tc-2',
+          name: 'built_in_1_calculator',
+          argumentsRaw: '{"expression": "2 + 2"}',
+          resultStatus: ToolCallResultStatus.success,
+        );
+        const thirdTool = MessageToolCallEntity(
+          id: 'tc-3',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{"path": "third"}',
+          resultStatus: ToolCallResultStatus.success,
+        );
+        final olderMessages = {
+          for (var index = 0; index < 8; index++)
+            'old-$index': _createMessage(
+              id: 'old-$index',
+              content: 'Older message $index',
+              isUser: true,
+            ),
+        };
+        final messagesById = {
+          ...olderMessages,
+          'msg-1': _createMessage(
+            id: 'msg-1',
+            content: '',
+            isUser: false,
+            metadata: const MessageMetadataEntity(
+              thinking: 'First activity thought',
+              toolCalls: [firstTool],
+            ),
+          ),
+          'msg-2': _createMessage(
+            id: 'msg-2',
+            content: '',
+            isUser: false,
+            metadata: const MessageMetadataEntity(
+              thinking: 'Second activity thought',
+              toolCalls: [secondTool, thirdTool],
+            ),
+          ),
+        };
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: [...olderMessages.keys, 'msg-1', 'msg-2'],
+            overrides: [
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => messagesById[id.messageId],
+              ),
+              isMessageStreamingProvider.overrideWith((ref, id) => false),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: false,
+                ),
+              ),
+            ],
+          ),
+        );
+
+        expect(
+          find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_trace_toggle_msg-2')),
+          findsNothing,
+        );
+        expect(find.text('First activity thought'), findsNothing);
+        expect(find.text('Second activity thought'), findsNothing);
+
+        final activityToggle = find.byKey(
+          const ValueKey('activity_trace_toggle_msg-1'),
+        );
+        final activityBefore = tester.getTopLeft(activityToggle).dy;
+        await tester.tap(activityToggle);
+        await tester.pump();
+        expect(
+          tester.getTopLeft(activityToggle).dy,
+          closeTo(activityBefore, 1),
+        );
+
+        expect(find.text('First activity thought'), findsOneWidget);
+        expect(find.text('Second activity thought'), findsOneWidget);
+        expect(
+          tester.getTopLeft(find.text('First activity thought')).dy,
+          lessThan(tester.getTopLeft(find.text('Second activity thought')).dy),
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_list_toggle_msg-2')),
+          findsNothing,
+        );
+
+        final toolSummary = tester.widget<Text>(
+          find.descendant(
+            of: find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+            matching: find.byType(Text),
+          ),
+        );
+        expect(toolSummary.data, contains('+1'));
+        expect(toolSummary.maxLines, 1);
+        expect(toolSummary.overflow, TextOverflow.ellipsis);
+
+        final toolToggle = find.byKey(
+          const ValueKey('activity_tool_list_toggle_msg-1'),
+        );
+        await tester.ensureVisible(toolToggle);
+        await tester.pump();
+        final toolBefore = tester.getTopLeft(toolToggle).dy;
+        await tester.tap(toolToggle);
+        await tester.pump();
+        expect(tester.getTopLeft(toolToggle).dy, closeTo(toolBefore, 1));
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.getTopLeft(toolToggle).dy, closeTo(toolBefore, 1));
+
+        expect(
+          find.byKey(const ValueKey('activity_tool_tc-1')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_tc-2')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_tc-3')),
+          findsOneWidget,
+        );
+
+        await tester.tap(toolToggle);
+        await tester.pump();
+        expect(tester.getTopLeft(toolToggle).dy, closeTo(toolBefore, 1));
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.getTopLeft(toolToggle).dy, closeTo(toolBefore, 1));
+
+        await tester.tap(toolToggle);
+        await tester.pump();
+
+        final toolRow = find.byKey(const ValueKey('activity_tool_tc-1'));
+        await tester.ensureVisible(toolRow);
+        await tester.pump();
+        final toolRowBefore = tester.getTopLeft(toolRow).dy;
+        await tester.tap(toolRow);
+        await tester.pump();
+        expect(tester.getTopLeft(toolRow).dy, closeTo(toolRowBefore, 1));
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.getTopLeft(toolRow).dy, closeTo(toolRowBefore, 1));
+
+        await tester.tap(toolRow);
+        await tester.pump();
+        expect(tester.getTopLeft(toolRow).dy, closeTo(toolRowBefore, 1));
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.getTopLeft(toolRow).dy, closeTo(toolRowBefore, 1));
+      },
+    );
+
+    testWidgets('folds interim assistant progress into the activity run', (
+      tester,
+    ) async {
+      const openingTool = MessageToolCallEntity(
+        id: 'tc-opening',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const retryTool = MessageToolCallEntity(
+        id: 'tc-retry',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const finalTool = MessageToolCallEntity(
+        id: 'tc-final',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final messagesById = {
+        'opening': _createMessage(
+          id: 'opening',
+          content: 'I will look that up.',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'Opening thought',
+            toolCalls: [openingTool],
+          ),
+        ),
+        'retry': _createMessage(
+          id: 'retry',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(toolCalls: [retryTool]),
+        ),
+        'answer': _createMessage(
+          id: 'answer',
+          content: 'Final answer',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'Final thought',
+            toolCalls: [finalTool],
+            modelMetadata: {'a2uiDiagnosticPayloads': <String>[]},
+          ),
+        ),
+      };
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['opening', 'retry', 'answer'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messagesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_opening')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_retry')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_answer')),
+        findsNothing,
+      );
+      expect(find.text('I will look that up.'), findsNothing);
+      expect(find.text('Opening thought'), findsNothing);
+      expect(find.text('Final thought'), findsNothing);
+      expect(find.text('Final answer'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_opening')),
+      );
+      await tester.pump();
+
+      expect(find.text('I will look that up.'), findsOneWidget);
+      expect(find.text('Opening thought'), findsOneWidget);
+      expect(find.text('Final thought'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_tool_list_toggle_opening')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('activity_trace_toggle_opening')),
+            )
+            .dy,
+        lessThan(tester.getTopLeft(find.text('Final answer')).dy),
+      );
+    });
+
+    testWidgets('splits user boundaries and folds trailing response activity', (
+      tester,
+    ) async {
+      const firstTool = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const secondTool = MessageToolCallEntity(
+        id: 'tc-2',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const thirdTool = MessageToolCallEntity(
+        id: 'tc-3',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const fourthTool = MessageToolCallEntity(
+        id: 'tc-4',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final messagesById = {
+        'msg-1': _createMessage(
+          id: 'msg-1',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'Before user one',
+            toolCalls: [firstTool],
+          ),
+        ),
+        'msg-2': _createMessage(
+          id: 'msg-2',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'Before user two',
+            toolCalls: [secondTool],
+          ),
+        ),
+        'user-1': _createMessage(id: 'user-1', content: 'User boundary'),
+        'msg-3': _createMessage(
+          id: 'msg-3',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'After user',
+            toolCalls: [thirdTool],
+          ),
+        ),
+        'answer-1': _createMessage(
+          id: 'answer-1',
+          content: 'Visible answer',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'Before visible answer',
+            toolCalls: [fourthTool],
+          ),
+        ),
+      };
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1', 'msg-2', 'user-1', 'msg-3', 'answer-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messagesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-2')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-3')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_answer-1')),
+        findsNothing,
+      );
+      expect(find.text('User boundary'), findsOneWidget);
+      expect(find.text('Visible answer'), findsOneWidget);
+      expect(find.text('Before visible answer'), findsNothing);
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('activity_trace_toggle_msg-3')),
+            )
+            .dy,
+        lessThan(tester.getTopLeft(find.text('Visible answer')).dy),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+      );
+      await tester.pump();
+
+      expect(find.text('Before user one'), findsOneWidget);
+      expect(find.text('Before user two'), findsOneWidget);
+      expect(find.text('After user'), findsNothing);
+      expect(find.text('Before visible answer'), findsNothing);
+
+      tester
+          .widget<AuraPressable>(
+            find.descendant(
+              of: find.byKey(const ValueKey('activity_trace_toggle_msg-3')),
+              matching: find.byType(AuraPressable),
+            ),
+          )
+          .onPressed!
+          .call();
+      await tester.pump();
+
+      expect(find.text('After user'), findsOneWidget);
+      expect(find.text('Before visible answer'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_tool_list_toggle_msg-3')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'reopens a stable live run for an appended tool and collapses on completion',
+      (tester) async {
+        const firstToolCall = MessageToolCallEntity(
+          id: 'tc-1',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{"path": "first running detail"}',
+          resultStatus: ToolCallResultStatus.running,
+        );
+        const secondToolCall = MessageToolCallEntity(
+          id: 'tc-2',
+          name: 'built_in_1_calculator',
+          argumentsRaw: '{"expression": "second running detail"}',
+          resultStatus: ToolCallResultStatus.running,
+        );
+        final initialMessage = _createMessage(
+          id: 'msg-1',
+          content: '',
+          isUser: false,
+          status: MessageStatus.unfinished,
+          metadata: const MessageMetadataEntity(
+            thinking: 'First live work',
+            toolCalls: [firstToolCall],
+          ),
+        );
+        final secondToolMessage = _createMessage(
+          id: 'msg-2',
+          content: '',
+          isUser: false,
+          status: MessageStatus.unfinished,
+          metadata: const MessageMetadataEntity(
+            thinking: 'Second live work',
+            toolCalls: [secondToolCall],
+          ),
+        );
+        final completedFirstMessage = _createMessage(
+          id: 'msg-1',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'First live work',
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tc-1',
+                name: 'built_in_1_read_file',
+                argumentsRaw: '{"path": "first running detail"}',
+                resultStatus: ToolCallResultStatus.success,
+              ),
+            ],
+          ),
+        );
+        final completedSecondMessage = _createMessage(
+          id: 'msg-2',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'Second live work',
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tc-2',
+                name: 'built_in_1_calculator',
+                argumentsRaw: '{"expression": "second running detail"}',
+                resultStatus: ToolCallResultStatus.success,
+              ),
+            ],
+          ),
+        );
+        final messageUpdates =
+            StreamController<Map<String, MessageEntity>>.broadcast();
+        final streamingUpdates = StreamController<bool>.broadcast();
+        addTearDown(messageUpdates.close);
+        addTearDown(streamingUpdates.close);
+        final messageProvider = StreamProvider<Map<String, MessageEntity>>(
+          (ref) => messageUpdates.stream,
+        );
+        final streamingProvider = StreamProvider<bool>(
+          (ref) => streamingUpdates.stream,
+        );
+        var messageIds = <String>['msg-1'];
+        late StateSetter updateMessages;
+
+        await pumpAndInit(
+          tester,
+          StatefulBuilder(
+            builder: (context, setState) {
+              updateMessages = setState;
+              return buildSubject(
+                messages: messageIds,
+                overrides: [
+                  messageConversationByIdProvider.overrideWith(
+                    (ref, id) =>
+                        ref.watch(messageProvider).value?[id.messageId] ??
+                        (id.messageId == 'msg-1' ? initialMessage : null),
+                  ),
+                  isMessageStreamingProvider.overrideWith(
+                    (ref, id) => ref.watch(streamingProvider).value ?? true,
+                  ),
+                  conversationBusyStateProvider.overrideWith(
+                    (ref, _) async => const ConversationBusyState(
+                      isStreaming: true,
+                      hasPendingTools: true,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+
+        expect(find.text('1 tool'), findsOneWidget);
+        expect(find.text('First live work'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('activity_tool_tc-1')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_details_tc-1')),
+          findsOneWidget,
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+        );
+        await tester.pump();
+        expect(find.byKey(const ValueKey('activity_tool_tc-1')), findsNothing);
+
+        messageIds = ['msg-1', 'msg-2'];
+        updateMessages(() {});
+        messageUpdates.add({
+          'msg-1': initialMessage,
+          'msg-2': secondToolMessage,
+        });
+        await tester.pump();
+        await tester.pump();
+
+        expect(find.text('2 tools'), findsOneWidget);
+        expect(find.text('Second live work'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_tc-2')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_details_tc-2')),
+          findsOneWidget,
+        );
+
+        messageUpdates.add({
+          'msg-1': completedFirstMessage,
+          'msg-2': completedSecondMessage,
+        });
+        streamingUpdates.add(false);
+        await tester.pump();
+        await tester.pump();
+        await tester.pump();
+
+        expect(
+          find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('activity_tool_tc-1')), findsNothing);
+        expect(find.byKey(const ValueKey('activity_tool_tc-2')), findsNothing);
+        expect(
+          find.byKey(const ValueKey('activity_tool_details_tc-2')),
+          findsNothing,
+        );
+        expect(find.text('2 tools'), findsOneWidget);
+      },
+    );
+
+    testWidgets('keeps sub-agent navigation beside inline tool details', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'run_sub_agent',
+        argumentsRaw: '{"title": "Child agent"}',
+        responseRaw: '{"conversationId": "child-1"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      await revealActivityToolCalls(tester);
+
+      expect(
+        find.byKey(const ValueKey('activity_open_sub_agent_tc-1')),
+        findsOneWidget,
+      );
+
+      final toolRow = find.byKey(const ValueKey('activity_tool_tc-1'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.ensureVisible(toolRow);
+      await tester.tap(toolRow);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('activity_tool_details_tc-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_open_sub_agent_tc-1')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('keeps a thinking card and one tool under the tool count', (
       tester,
     ) async {
       const toolCall = MessageToolCallEntity(
@@ -1169,9 +2285,19 @@ void main() {
         ),
       );
 
-      expect(find.text('Reasoning summary'), findsOneWidget);
+      expect(find.text('1 tool'), findsOneWidget);
+      expect(find.text('Need to inspect the file first'), findsNothing);
+      expect(find.byType(AuraMessageBubble), findsNothing);
+
+      await revealActivityToolCalls(tester);
+
       expect(find.text('Need to inspect the file first'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity_tool_tc-1')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+        findsNothing,
+      );
     });
 
     testWidgets('renders multiple messages', (tester) async {
@@ -1233,6 +2359,8 @@ void main() {
           ],
         ),
       );
+
+      await revealActivityToolCalls(tester);
 
       expect(find.byIcon(Icons.warning_amber), findsOneWidget);
       expect(find.byIcon(Icons.copy_outlined), findsNothing);
@@ -1341,6 +2469,8 @@ void main() {
         ),
       );
 
+      await revealActivityToolCalls(tester);
+
       expect(find.byIcon(Icons.skip_next), findsOneWidget);
     });
 
@@ -1373,6 +2503,8 @@ void main() {
           ],
         ),
       );
+
+      await revealActivityToolCalls(tester);
 
       expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
     });
@@ -1407,6 +2539,8 @@ void main() {
         ),
       );
 
+      await revealActivityToolCalls(tester);
+
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
@@ -1439,6 +2573,8 @@ void main() {
           ],
         ),
       );
+
+      await revealActivityToolCalls(tester);
 
       expect(find.byIcon(Icons.settings), findsOneWidget);
     });
@@ -1527,6 +2663,8 @@ void main() {
           ],
         ),
       );
+
+      await revealActivityToolCalls(tester);
 
       expect(find.byIcon(Icons.block), findsOneWidget);
     });

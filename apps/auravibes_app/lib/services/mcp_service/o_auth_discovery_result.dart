@@ -4,7 +4,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart' as http_io;
 import 'package:logging/logging.dart';
 
 const _jsonAcceptHeader = {'Accept': 'application/json'};
@@ -38,14 +40,22 @@ class const OAuthConnector({
 class OAuthDiscoveryService {
   /// Automatically discovers OAuth configuration for an MCP server URL.
   static Future<OAuthDiscoveryResult?> discoverOAuth(
-    OAuthConnector registrer,
-  ) async {
+    OAuthConnector registrer, {
+    http.Client? registrationClient,
+    PublicUrlLookup? registrationLookup,
+  }) async {
     try {
       _oauthDiscoveryLogger.info(
         'Discovering OAuth configuration for MCP server',
       );
 
-      return await _discoverFromEndpoints(registrer);
+      return await _discoverFromEndpoints(
+        registrer,
+        registrationOptions: (
+          client: registrationClient,
+          lookup: registrationLookup,
+        ),
+      );
     } on Exception catch (error, stackTrace) {
       _oauthDiscoveryLogger.warning(
         'OAuth discovery failed',
@@ -59,12 +69,16 @@ class OAuthDiscoveryService {
 
   /// Try RFC 8414 OAuth 2.0 Authorization Server Metadata.
   static Future<OAuthDiscoveryResult?> _tryWellKnownEndpoint(
-    OAuthConnector connector,
-  ) async {
+    OAuthConnector connector, {
+    required _RegistrationOptions registrationOptions,
+  }) async {
     try {
       _oauthDiscoveryLogger.info('Trying well-known OAuth endpoint');
 
-      return await _wellKnownDiscovery(connector);
+      return await _wellKnownDiscovery(
+        connector,
+        registrationOptions: registrationOptions,
+      );
     } on Exception catch (error, stackTrace) {
       _oauthDiscoveryLogger.fine(
         'Well-known endpoint not available',
@@ -77,8 +91,9 @@ class OAuthDiscoveryService {
   }
 
   static Future<OAuthDiscoveryResult?> _wellKnownDiscovery(
-    OAuthConnector connector,
-  ) async {
+    OAuthConnector connector, {
+    required _RegistrationOptions registrationOptions,
+  }) async {
     final response = await _requestWellKnown(
       _wellKnownUrl(_baseUrl(connector.serverUrl)),
     );
@@ -87,6 +102,7 @@ class OAuthDiscoveryService {
       response,
       redirectUrl: connector.redirectUrl,
       clientName: connector.clientName,
+      registrationOptions: registrationOptions,
     );
   }
 
@@ -170,6 +186,7 @@ Future<OAuthDiscoveryResult?> _wellKnownResponse(
   http.Response response, {
   required String redirectUrl,
   required String clientName,
+  required _RegistrationOptions registrationOptions,
 }) {
   if (response.statusCode != HttpStatus.ok) return Future.value();
 
@@ -177,6 +194,7 @@ Future<OAuthDiscoveryResult?> _wellKnownResponse(
     json.decode(response.body) as Map<String, dynamic>,
     redirectUrl: redirectUrl,
     clientName: clientName,
+    registrationOptions: registrationOptions,
   );
 }
 
@@ -184,6 +202,7 @@ Future<OAuthDiscoveryResult?> _parseWellKnownMetadata(
   Map<String, dynamic> metadata, {
   required String redirectUrl,
   required String clientName,
+  required _RegistrationOptions registrationOptions,
 }) async {
   final endpoints = _wellKnownEndpoints(metadata);
   if (endpoints == null) return null;
@@ -193,14 +212,17 @@ Future<OAuthDiscoveryResult?> _parseWellKnownMetadata(
     metadata: metadata,
     redirectUrl: redirectUrl,
     clientName: clientName,
+    registrationOptions: registrationOptions,
   ));
 }
 
 Future<OAuthDiscoveryResult?> _discoverFromEndpoints(
-  OAuthConnector registrer,
-) async {
+  OAuthConnector registrer, {
+  required _RegistrationOptions registrationOptions,
+}) async {
   final discovered = await OAuthDiscoveryService._tryWellKnownEndpoint(
     registrer,
+    registrationOptions: registrationOptions,
   );
   if (discovered != null) return discovered;
   final direct = await OAuthDiscoveryService._tryDirectServerProbe(
@@ -236,6 +258,8 @@ String _baseUrl(String serverUrl) {
   return '${uri.scheme}://${uri.host}:${uri.port}';
 }
 
+typedef _RegistrationOptions = ({http.Client? client, PublicUrlLookup? lookup});
+
 typedef _WellKnownEndpoints = ({String authorizationUrl, String tokenUrl});
 
 typedef _WellKnownClientRequest = ({
@@ -243,6 +267,7 @@ typedef _WellKnownClientRequest = ({
   String? registrationEndpoint,
   String redirectUrl,
   String clientName,
+  _RegistrationOptions registrationOptions,
 });
 
 typedef _WellKnownMetadataInput = ({
@@ -250,12 +275,22 @@ typedef _WellKnownMetadataInput = ({
   Map<String, dynamic> metadata,
   String redirectUrl,
   String clientName,
+  _RegistrationOptions registrationOptions,
 });
 
 typedef _DynamicClientRegistrationRequest = ({
   String registrationEndpoint,
   String redirectUrl,
   String clientName,
+  _RegistrationOptions registrationOptions,
+});
+
+typedef _DynamicClientRegistrationHttpRequest = ({
+  String registrationEndpoint,
+  List<String>? resolvedAddresses,
+  String redirectUrl,
+  String clientName,
+  _RegistrationOptions registrationOptions,
 });
 
 _WellKnownEndpoints? _wellKnownEndpoints(Map<String, dynamic> metadata) {
@@ -286,6 +321,7 @@ _WellKnownClientRequest _wellKnownClientRequest(
   registrationEndpoint: input.metadata['registration_endpoint'] as String?,
   redirectUrl: input.redirectUrl,
   clientName: input.clientName,
+  registrationOptions: input.registrationOptions,
 );
 
 Future<http.Response> _requestWellKnown(String url) => http
@@ -303,6 +339,7 @@ Future<String?> _wellKnownClientId(_WellKnownClientRequest request) async {
     registrationEndpoint: registrationEndpoint,
     redirectUrl: request.redirectUrl,
     clientName: request.clientName,
+    registrationOptions: request.registrationOptions,
   );
 }
 
@@ -310,10 +347,12 @@ Future<String?> _tryDynamicClientRegistration({
   required String registrationEndpoint,
   required String redirectUrl,
   required String clientName,
+  required _RegistrationOptions registrationOptions,
 }) => _performDynamicClientRegistrationSafely((
   registrationEndpoint: registrationEndpoint,
   redirectUrl: redirectUrl,
   clientName: clientName,
+  registrationOptions: registrationOptions,
 ));
 
 Future<String?> _performDynamicClientRegistrationSafely(
@@ -326,6 +365,7 @@ Future<String?> _performDynamicClientRegistrationSafely(
       registrationEndpoint: request.registrationEndpoint,
       redirectUrl: request.redirectUrl,
       clientName: request.clientName,
+      registrationOptions: request.registrationOptions,
     );
   } on Exception catch (error, stackTrace) {
     return _dynamicClientRegistrationError(error, stackTrace);
@@ -349,13 +389,116 @@ Future<String?> _performDynamicClientRegistration({
   required String registrationEndpoint,
   required String redirectUrl,
   required String clientName,
-}) async => _registeredClientId(
-  await _postDynamicClientRegistration(
-    registrationEndpoint: registrationEndpoint,
-    redirectUrl: redirectUrl,
-    clientName: clientName,
-  ),
-);
+  required _RegistrationOptions registrationOptions,
+}) async {
+  final resolvedRegistration = await PublicUrlGuard.resolveHttpsUri(
+    registrationEndpoint,
+    lookup: registrationOptions.lookup ?? InternetAddress.lookup,
+  );
+
+  return _registeredClientId(
+    await _postDynamicClientRegistration((
+      registrationEndpoint: resolvedRegistration.uri.toString(),
+      resolvedAddresses: resolvedRegistration.addresses,
+      redirectUrl: redirectUrl,
+      clientName: clientName,
+      registrationOptions: registrationOptions,
+    )),
+  );
+}
+
+http.Client _registrationHttpClient(List<String> resolvedAddresses) {
+  if (resolvedAddresses.isEmpty) {
+    throw StateError('Missing resolved registration address');
+  }
+
+  final client = HttpClient()
+    ..findProxy = ((_) => 'DIRECT')
+    ..connectionFactory = (target, _, _) =>
+        _startPinnedConnection(target, resolvedAddresses);
+
+  return http_io.IOClient(client);
+}
+
+Future<ConnectionTask<Socket>> _startPinnedConnection(
+  Uri target,
+  List<String> resolvedAddresses,
+) async {
+  final deadline = Stopwatch()..start();
+
+  for (final address in resolvedAddresses) {
+    final connection = await _tryPinnedConnection(target, address, deadline);
+    if (connection != null) return connection;
+  }
+
+  throw const SocketException('Unable to connect to registration endpoint');
+}
+
+Future<ConnectionTask<Socket>?> _tryPinnedConnection(
+  Uri target,
+  String address,
+  Stopwatch deadline,
+) async {
+  try {
+    return await _openPinnedSocket(target, address, deadline);
+  } on Exception {
+    return null;
+  }
+}
+
+Future<ConnectionTask<Socket>> _openPinnedSocket(
+  Uri target,
+  String address,
+  Stopwatch deadline,
+) async {
+  final connectTimeout = _remainingPinnedTimeout(deadline);
+  if (connectTimeout == null) {
+    throw const SocketException('Pinned connection deadline expired');
+  }
+
+  final socket = await Socket.connect(
+    InternetAddress(address),
+    target.port,
+    timeout: connectTimeout,
+  );
+
+  return await _securePinnedSocketTask(socket, target, deadline);
+}
+
+Future<ConnectionTask<Socket>> _securePinnedSocketTask(
+  Socket socket,
+  Uri target,
+  Stopwatch deadline,
+) async {
+  final tlsTimeout = _remainingPinnedTimeout(deadline);
+  if (tlsTimeout == null) {
+    socket.destroy();
+
+    throw const SocketException('Pinned connection deadline expired');
+  }
+
+  try {
+    final secureSocket = await _securePinnedSocket(socket, target, tlsTimeout);
+
+    return .fromSocket(.value(secureSocket), secureSocket.destroy);
+  } on Exception {
+    socket.destroy();
+
+    rethrow;
+  }
+}
+
+Duration? _remainingPinnedTimeout(Stopwatch deadline) {
+  final remaining = const Duration(seconds: 10) - deadline.elapsed;
+
+  return remaining <= .zero ? null : remaining;
+}
+
+Future<SecureSocket> _securePinnedSocket(
+  Socket socket,
+  Uri target,
+  Duration timeout,
+) => SecureSocket.secure(socket, host: target.host).timeout(timeout);
 
 Future<http.Response> _requestDirectProbe(Uri uri) => http
     .get(uri, headers: {'Accept': 'text/event-stream'})
@@ -440,20 +583,52 @@ OAuthDiscoveryResult? _metadataResponse(http.Response response) {
   return _parseMetadataResponse(response.body);
 }
 
-Future<http.Response> _postDynamicClientRegistration({
-  required String registrationEndpoint,
-  required String redirectUrl,
-  required String clientName,
-}) {
-  final clientMetadata = _dynamicClientMetadata(clientName, redirectUrl);
+Future<http.Response> _postDynamicClientRegistration(
+  _DynamicClientRegistrationHttpRequest input,
+) async {
+  final request = _registrationRequest(input);
+  final registrationClient = _registrationClient(input);
 
-  return http
-      .post(
-        .parse(registrationEndpoint),
-        headers: {'Content-Type': 'application/json', ..._jsonAcceptHeader},
-        body: json.encode(clientMetadata),
-      )
-      .timeout(const Duration(seconds: 10));
+  try {
+    return await _sendRegistrationRequest(
+      registrationClient.client,
+      request,
+    ).timeout(const Duration(seconds: 10));
+  } finally {
+    if (registrationClient.close) registrationClient.client.close();
+  }
+}
+
+http.Request _registrationRequest(_DynamicClientRegistrationHttpRequest input) {
+  final clientMetadata = _dynamicClientMetadata(
+    input.clientName,
+    input.redirectUrl,
+  );
+
+  return http.Request('POST', .parse(input.registrationEndpoint))
+    ..followRedirects = false
+    ..headers.addAll({'Content-Type': 'application/json', ..._jsonAcceptHeader})
+    ..body = json.encode(clientMetadata);
+}
+
+({http.Client client, bool close}) _registrationClient(
+  _DynamicClientRegistrationHttpRequest input,
+) {
+  final resolvedAddresses = input.resolvedAddresses;
+  if (resolvedAddresses != null) {
+    return (client: _registrationHttpClient(resolvedAddresses), close: true);
+  }
+
+  final client = input.registrationOptions.client ?? http.Client();
+
+  return (client: client, close: input.registrationOptions.client == null);
+}
+
+Future<http.Response> _sendRegistrationRequest(
+  http.Client client,
+  http.Request request,
+) async {
+  return await http.Response.fromStream(await client.send(request));
 }
 
 Map<String, Object> _dynamicClientMetadata(

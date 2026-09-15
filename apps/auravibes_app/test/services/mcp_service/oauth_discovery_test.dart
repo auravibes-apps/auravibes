@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:auravibes_app/services/mcp_service/o_auth_discovery_result.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -235,7 +236,10 @@ void main() {
 
       await runWithClient(
         () async {
-          final result = await OAuthDiscoveryService.discoverOAuth(registrer);
+          final result = await OAuthDiscoveryService.discoverOAuth(
+            registrer,
+            registrationClient: .new(),
+          );
           expect(result, isNotNull);
           expect(
             (result ?? fail('Expected result to be non-null')).clientId,
@@ -252,7 +256,7 @@ void main() {
                   'authorization_endpoint':
                       'https://auth.example.com/authorize',
                   'token_endpoint': 'https://auth.example.com/token',
-                  'registration_endpoint': 'https://auth.example.com/register',
+                  'registration_endpoint': 'https://8.8.8.8/register',
                 }),
                 200,
               );
@@ -268,6 +272,172 @@ void main() {
           });
         },
       );
+    });
+
+    test(
+      'discoverOAuth rejects private dynamic registration endpoints',
+      () async {
+        const registrer = OAuthConnector(
+          clientName: 'TestApp',
+          serverUrl: 'https://example.com/sse',
+          redirectUrl: 'https://example.com/callback',
+        );
+        var registrationAttempted = false;
+
+        await runWithClient(
+          () async {
+            final result = await OAuthDiscoveryService.discoverOAuth(registrer);
+            expect(result, isNotNull);
+            expect(
+              (result ?? fail('Expected result to be non-null')).clientId,
+              isNull,
+            );
+            expect(registrationAttempted, isFalse);
+          },
+          () {
+            return MockClient((request) async {
+              if (request.url.path.contains(
+                '.well-known/oauth-authorization-server',
+              )) {
+                return Response(
+                  json.encode({
+                    'authorization_endpoint':
+                        'https://auth.example.com/authorize',
+                    'token_endpoint': 'https://auth.example.com/token',
+                    'registration_endpoint': 'https://127.0.0.1/register',
+                  }),
+                  200,
+                );
+              }
+              if (request.url.path.contains('/register')) {
+                registrationAttempted = true;
+
+                return Response(
+                  json.encode({'client_id': 'private-client-123'}),
+                  201,
+                );
+              }
+
+              return Response('{}', 404);
+            });
+          },
+        );
+      },
+    );
+
+    test('discoverOAuth disables redirects for dynamic registration', () async {
+      const registrer = OAuthConnector(
+        clientName: 'TestApp',
+        serverUrl: 'https://example.com/sse',
+        redirectUrl: 'https://example.com/callback',
+      );
+      var registrationRequests = 0;
+      var registrationFollowRedirects = true;
+
+      await runWithClient(
+        () async {
+          final result = await OAuthDiscoveryService.discoverOAuth(
+            registrer,
+            registrationClient: .new(),
+          );
+          expect(result, isNotNull);
+          expect(
+            (result ?? fail('Expected result to be non-null')).clientId,
+            isNull,
+          );
+          expect(registrationRequests, 1);
+          expect(registrationFollowRedirects, isFalse);
+        },
+        () {
+          return MockClient((request) async {
+            if (request.url.path.contains(
+              '.well-known/oauth-authorization-server',
+            )) {
+              return Response(
+                json.encode({
+                  'authorization_endpoint':
+                      'https://auth.example.com/authorize',
+                  'token_endpoint': 'https://auth.example.com/token',
+                  'registration_endpoint': 'https://8.8.8.8/register',
+                }),
+                HttpStatus.ok,
+              );
+            }
+            if (request.url.path.contains('/register')) {
+              registrationRequests++;
+              registrationFollowRedirects = request.followRedirects;
+
+              return Response(
+                '',
+                HttpStatus.temporaryRedirect,
+                headers: {'location': 'https://127.0.0.1/register'},
+              );
+            }
+
+            return Response('{}', HttpStatus.notFound);
+          });
+        },
+      );
+    });
+
+    test('discoverOAuth pins all resolved registration addresses', () async {
+      const registrer = OAuthConnector(
+        clientName: 'TestApp',
+        serverUrl: 'https://example.com/sse',
+        redirectUrl: 'https://example.com/callback',
+      );
+      final attemptedAddresses = <String>[];
+      var injectedClientUsed = false;
+      final registrationClient = MockClient((request) async {
+        injectedClientUsed = true;
+
+        return Response(
+          json.encode({'client_id': 'injected-client'}),
+          HttpStatus.created,
+        );
+      });
+
+      final result = await IOOverrides.runZoned(
+        () => runWithClient(
+          () => OAuthDiscoveryService.discoverOAuth(
+            registrer,
+            registrationClient: registrationClient,
+            registrationLookup: (_) async => [
+              InternetAddress('8.8.8.8'),
+              InternetAddress('1.1.1.1'),
+            ],
+          ),
+          () {
+            return MockClient((request) async {
+              if (request.url.path.contains(
+                '.well-known/oauth-authorization-server',
+              )) {
+                return Response(
+                  json.encode({
+                    'authorization_endpoint':
+                        'https://auth.example.com/authorize',
+                    'token_endpoint': 'https://auth.example.com/token',
+                    'registration_endpoint':
+                        'https://registration.example/register',
+                  }),
+                  HttpStatus.ok,
+                );
+              }
+
+              return Response('{}', HttpStatus.notFound);
+            });
+          },
+        ),
+        socketConnect: (host, port, {sourceAddress, sourcePort = 0, timeout}) {
+          attemptedAddresses.add((host as InternetAddress).address);
+          throw const SocketException('blocked in test');
+        },
+      );
+
+      expect(result, isNotNull);
+      expect(result?.clientId, isNull);
+      expect(attemptedAddresses, ['8.8.8.8', '1.1.1.1']);
+      expect(injectedClientUsed, isFalse);
     });
 
     test('discoverOAuth handles well-known missing endpoints', () async {
@@ -351,7 +521,10 @@ void main() {
 
         await runWithClient(
           () async {
-            final result = await OAuthDiscoveryService.discoverOAuth(registrer);
+            final result = await OAuthDiscoveryService.discoverOAuth(
+              registrer,
+              registrationClient: .new(),
+            );
             expect(result, isNotNull);
             expect(
               (result ?? fail('Expected result to be non-null')).clientId,
@@ -368,8 +541,7 @@ void main() {
                     'authorization_endpoint':
                         'https://auth.example.com/authorize',
                     'token_endpoint': 'https://auth.example.com/token',
-                    'registration_endpoint':
-                        'https://auth.example.com/register',
+                    'registration_endpoint': 'https://8.8.8.8/register',
                   }),
                   200,
                 );
