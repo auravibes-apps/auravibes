@@ -216,6 +216,30 @@ class const _ReconnectFailedMcpsButton({required final String workspaceId})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isReconnecting = useState(false);
+
+    return _ReconnectFailedMcpsButtonContent(
+      workspaceId: workspaceId,
+      isReconnecting: isReconnecting.value,
+      onPressed: () => unawaited(
+        _reconnectFailedMcps(
+          context: context,
+          isReconnecting: isReconnecting,
+          reconnect: ref
+              .read(groupedToolsProvider(workspaceId).notifier)
+              .reconnectFailedMcps,
+        ),
+      ),
+    );
+  }
+}
+
+class const _ReconnectFailedMcpsButtonContent({
+  required final String workspaceId,
+  required final bool isReconnecting,
+  required final VoidCallback onPressed,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final hasFailedMcp =
         ref
             .watch(groupedToolsProvider(workspaceId))
@@ -223,40 +247,66 @@ class const _ReconnectFailedMcpsButton({required final String workspaceId})
             ?.any((group) => group.isMcpGroup && group.needsAttention) ??
         false;
 
-    Future<void> reconnectFailedMcps() async {
-      isReconnecting.value = true;
-      try {
-        final failedMcpServerIds = await ref
-            .read(groupedToolsProvider(workspaceId).notifier)
-            .reconnectFailedMcps();
-        if (!context.mounted || failedMcpServerIds.isEmpty) return;
+    return _ReconnectFailedMcpsButtonView(
+      isReconnecting: isReconnecting,
+      hasFailedMcp: hasFailedMcp,
+      onPressed: onPressed,
+    );
+  }
+}
 
-        final _ = AuraSnackBars.show(
-          context: context,
-          content: Text(
-            LocaleKeys.tools_screen_mcp_reconnect_partial_failure.plural(
-              failedMcpServerIds.length,
-            ),
-          ),
-          variant: .error,
-        );
-      } finally {
-        if (context.mounted) isReconnecting.value = false;
-      }
-    }
-
-    if (!hasFailedMcp && !isReconnecting.value) return const SizedBox.shrink();
+class const _ReconnectFailedMcpsButtonView({
+  required final bool isReconnecting,
+  required final bool hasFailedMcp,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!hasFailedMcp && !isReconnecting) return const SizedBox.shrink();
 
     return AuraButton(
-      onPressed: () => unawaited(reconnectFailedMcps()),
+      onPressed: onPressed,
       child: const TextLocale(LocaleKeys.tools_screen_mcp_reconnect_all),
       variant: .outlined,
       size: .small,
-      isLoading: isReconnecting.value,
-      disabled: isReconnecting.value || !hasFailedMcp,
+      isLoading: isReconnecting,
+      disabled: isReconnecting || !hasFailedMcp,
       semanticLabel: LocaleKeys.tools_screen_mcp_reconnect_all.tr(),
     );
   }
+}
+
+Future<void> _reconnectFailedMcps({
+  required BuildContext context,
+  required ValueNotifier<bool> isReconnecting,
+  required Future<List<String>> Function() reconnect,
+}) async {
+  isReconnecting.value = true;
+  try {
+    final failedMcpServerIds = await reconnect();
+    if (!context.mounted) return;
+
+    _showReconnectPartialFailure(context, failedMcpServerIds);
+  } finally {
+    if (context.mounted) isReconnecting.value = false;
+  }
+}
+
+void _showReconnectPartialFailure(
+  BuildContext context,
+  List<String> failedMcpServerIds,
+) {
+  if (failedMcpServerIds.isEmpty) return;
+
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: Text(
+      LocaleKeys.tools_screen_mcp_reconnect_partial_failure.plural(
+        failedMcpServerIds.length,
+      ),
+    ),
+    variant: .error,
+  );
 }
 
 class const _AddToolButton({required final String workspaceId})

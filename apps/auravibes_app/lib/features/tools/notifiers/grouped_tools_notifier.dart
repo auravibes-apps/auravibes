@@ -116,28 +116,35 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   ///
   /// Returns server IDs that are still unavailable after their reconnect
   /// attempt, so callers can report partial failures without exposing errors.
-  Future<List<String>> reconnectFailedMcps() async {
-    final mcpServerIds = _failedMcpServerIds(state.value ?? const []);
+  Future<List<String>> reconnectFailedMcps() =>
+      _reconnectMcpServerIds(_failedMcpServerIds(state.value ?? const []));
+
+  Future<List<String>> _reconnectMcpServerIds(List<String> mcpServerIds) async {
     final failedMcpServerIds = <String>[];
 
     for (final mcpServerId in mcpServerIds) {
-      if (!ref.mounted) return failedMcpServerIds;
-
-      try {
-        await reconnectMcp(mcpServerId);
-      } on Exception {
-        failedMcpServerIds.add(mcpServerId);
-
-        continue;
-      }
-
-      if (!ref.mounted) return failedMcpServerIds;
-      if (_mcpReconnectFailed(ref.read(mcpConnectionProvider), mcpServerId)) {
+      final didReconnectFail = await _didMcpReconnectFail(mcpServerId);
+      if (didReconnectFail == null) return failedMcpServerIds;
+      if (didReconnectFail) {
         failedMcpServerIds.add(mcpServerId);
       }
     }
 
     return failedMcpServerIds;
+  }
+
+  Future<bool?> _didMcpReconnectFail(String mcpServerId) async {
+    if (!ref.mounted) return null;
+
+    try {
+      await reconnectMcp(mcpServerId);
+    } on Exception {
+      return true;
+    }
+
+    if (!ref.mounted) return null;
+
+    return _mcpReconnectFailed(ref.read(mcpConnectionProvider), mcpServerId);
   }
 
   Future<_McpGroupOperation?> _groupOperation(String groupId) async {
