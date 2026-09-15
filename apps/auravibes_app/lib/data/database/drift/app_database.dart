@@ -214,6 +214,7 @@ extension on AppDatabase {
 
   Future<void> _upgradeConversationListSchema(int from) async {
     if (from >= AppDatabase._conversationListSchemaVersion) return;
+    if (!await _tableExists('conversations')) return;
     await customStatement(
       'CREATE INDEX IF NOT EXISTS '
       'conversations_workspace_parent_updated_id '
