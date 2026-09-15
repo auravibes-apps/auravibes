@@ -523,6 +523,10 @@ abstract class LocaleKeys {
   static const tools_screen_mcp_error = 'tools_screen.mcp_error';
   static const tools_screen_mcp_disconnected = 'tools_screen.mcp_disconnected';
   static const tools_screen_mcp_reconnect = 'tools_screen.mcp_reconnect';
+  static const tools_screen_mcp_reconnect_all =
+      'tools_screen.mcp_reconnect_all';
+  static const tools_screen_mcp_reconnect_partial_failure =
+      'tools_screen.mcp_reconnect_partial_failure';
   static const tools_screen_mcp_view_error = 'tools_screen.mcp_view_error';
   static const tools_screen_tools_count = 'tools_screen.tools_count';
   static const tools_screen_delete_mcp_title = 'tools_screen.delete_mcp_title';

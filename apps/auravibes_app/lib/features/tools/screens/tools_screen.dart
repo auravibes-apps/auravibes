@@ -2,6 +2,10 @@
 // Required: Existing argument values intentionally repeat.
 // Required: UI callbacks stay local to their widgets.
 // Required: Existing code repeats lookups where extraction adds noise.
+import 'dart:async';
+
+import 'package:auravibes_app/features/tools/models/tools_group_mixin.dart';
+import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
@@ -12,6 +16,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -127,6 +132,7 @@ class const _ToolsOverviewContent({required final String workspaceId})
       children: [
         const _ToolsOverviewText(),
         _EnabledToolsBadge(workspaceId: workspaceId),
+        _ReconnectFailedMcpsButton(workspaceId: workspaceId),
       ],
       spacing: .sm,
       crossAxisAlignment: .start,
@@ -201,6 +207,54 @@ class const _EnabledToolsBadgeLabel({required final String workspaceId})
       ],
       spacing: .xs,
       mainAxisSize: .min,
+    );
+  }
+}
+
+class const _ReconnectFailedMcpsButton({required final String workspaceId})
+    extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isReconnecting = useState(false);
+    final hasFailedMcp =
+        ref
+            .watch(groupedToolsProvider(workspaceId))
+            .value
+            ?.any((group) => group.isMcpGroup && group.needsAttention) ??
+        false;
+
+    Future<void> reconnectFailedMcps() async {
+      isReconnecting.value = true;
+      try {
+        final failedMcpServerIds = await ref
+            .read(groupedToolsProvider(workspaceId).notifier)
+            .reconnectFailedMcps();
+        if (!context.mounted || failedMcpServerIds.isEmpty) return;
+
+        final _ = AuraSnackBars.show(
+          context: context,
+          content: Text(
+            LocaleKeys.tools_screen_mcp_reconnect_partial_failure.plural(
+              failedMcpServerIds.length,
+            ),
+          ),
+          variant: .error,
+        );
+      } finally {
+        if (context.mounted) isReconnecting.value = false;
+      }
+    }
+
+    if (!hasFailedMcp && !isReconnecting.value) return const SizedBox.shrink();
+
+    return AuraButton(
+      onPressed: () => unawaited(reconnectFailedMcps()),
+      child: const TextLocale(LocaleKeys.tools_screen_mcp_reconnect_all),
+      variant: .outlined,
+      size: .small,
+      isLoading: isReconnecting.value,
+      disabled: isReconnecting.value || !hasFailedMcp,
+      semanticLabel: LocaleKeys.tools_screen_mcp_reconnect_all.tr(),
     );
   }
 }
