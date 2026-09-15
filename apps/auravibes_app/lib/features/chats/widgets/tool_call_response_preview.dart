@@ -98,22 +98,30 @@ class const _ToolCallResponsePreviewContent({
     children: [
       _ToolCallResponsePreviewText(content: content, textStyle: textStyle),
       if (content.isNotEmpty || (hasOverflow && showExpandButton))
-        Wrap(
-          spacing: context.auraTheme.fromSpacing(.xs),
-          runSpacing: context.auraTheme.fromSpacing(.xs),
-          children: [
-            if (content.isNotEmpty)
-              _ToolCallResponseCopyButton(content: content),
-            if (hasOverflow && showExpandButton)
-              _ToolCallResponseExpandButton(
-                onPressed: () => ToolCallResponseModal.show(
-                  context,
-                  toolName: toolName,
-                  content: content,
-                ),
-              ),
-          ],
+        _ToolCallResponseActions(
+          content: content,
+          hasOverflow: hasOverflow,
+          showExpandButton: showExpandButton,
+          toolName: toolName,
         ),
+    ],
+  );
+}
+
+class const _ToolCallResponseActions({
+  required final String content,
+  required final bool hasOverflow,
+  required final bool showExpandButton,
+  required final String toolName,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: context.auraTheme.fromSpacing(.xs),
+    runSpacing: context.auraTheme.fromSpacing(.xs),
+    children: [
+      if (content.isNotEmpty) _ToolCallResponseCopyButton(content: content),
+      if (hasOverflow && showExpandButton)
+        _ToolCallResponseExpandButton(content: content, toolName: toolName),
     ],
   );
 }
@@ -134,12 +142,19 @@ class const _ToolCallResponsePreviewText({
 }
 
 class const _ToolCallResponseExpandButton({
-  required final VoidCallback onPressed,
+  required final String content,
+  required final String toolName,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
-    child: _ToolCallResponseExpandAction(onPressed: onPressed),
+    child: _ToolCallResponseExpandAction(
+      onPressed: () => ToolCallResponseModal.show(
+        context,
+        toolName: toolName,
+        content: content,
+      ),
+    ),
   );
 }
 
@@ -173,20 +188,22 @@ class _ToolCallResponseCopyButtonState
     extends State<_ToolCallResponseCopyButton> {
   var _copied = false;
 
+  IconData get _copyIcon => _copied ? Icons.check : Icons.copy_outlined;
+
+  String get _copyTooltip =>
+      (_copied
+              ? LocaleKeys.chats_screens_chat_conversation_tool_response_copied
+              : LocaleKeys.chats_screens_chat_conversation_copy_tool_response)
+          .tr();
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
     child: AuraIconButton(
-      icon: _copied ? Icons.check : Icons.copy_outlined,
+      icon: _copyIcon,
       onPressed: () => unawaited(_copyResponse()),
       size: .small,
-      tooltip:
-          (_copied
-                  ? LocaleKeys
-                        .chats_screens_chat_conversation_tool_response_copied
-                  : LocaleKeys
-                        .chats_screens_chat_conversation_copy_tool_response)
-              .tr(),
+      tooltip: _copyTooltip,
     ),
   );
 
