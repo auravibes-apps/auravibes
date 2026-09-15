@@ -27,35 +27,49 @@ class const ToolCallResponsePreview({
     return LayoutBuilder(
       builder: (context, constraints) {
         final textStyle = _toolCallResponsePreviewTextStyle(context);
-        final textPainter = TextPainter(
-          text: TextSpan(text: content, style: textStyle),
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-          maxLines: maxPreviewLines,
-        )..layout(maxWidth: constraints.maxWidth);
-        final hasOverflow = textPainter.didExceedMaxLines;
-        textPainter.dispose();
-
-        return Column(
-          crossAxisAlignment: .start,
-          children: [
-            _ToolCallResponsePreviewText(
-              content: content,
-              textStyle: textStyle,
-            ),
-            if (hasOverflow && showExpandButton)
-              _ToolCallResponseExpandButton(
-                onPressed: () => ToolCallResponseModal.show(
-                  context,
-                  toolName: toolName,
-                  content: content,
-                ),
-              ),
-          ],
+        return _ToolCallResponsePreviewContent(
+          content: content,
+          hasOverflow: _toolCallResponsePreviewHasOverflow(
+            context,
+            constraints,
+            content,
+          ),
+          showExpandButton: showExpandButton,
+          textStyle: textStyle,
+          toolName: toolName,
         );
       },
     );
   }
+}
+
+bool _toolCallResponsePreviewHasOverflow(
+  BuildContext context,
+  BoxConstraints constraints,
+  String content,
+) {
+  final textPainter = _toolCallResponsePreviewTextPainter(
+    context,
+    constraints,
+    content,
+  );
+  final hasOverflow = textPainter.didExceedMaxLines;
+  textPainter.dispose();
+  return hasOverflow;
+}
+
+TextPainter _toolCallResponsePreviewTextPainter(
+  BuildContext context,
+  BoxConstraints constraints,
+  String content,
+) {
+  final textStyle = _toolCallResponsePreviewTextStyle(context);
+  return TextPainter(
+    text: TextSpan(text: content, style: textStyle),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: ToolCallResponsePreview.maxPreviewLines,
+  )..layout(maxWidth: constraints.maxWidth);
 }
 
 TextStyle _toolCallResponsePreviewTextStyle(BuildContext context) => .new(
@@ -63,6 +77,30 @@ TextStyle _toolCallResponsePreviewTextStyle(BuildContext context) => .new(
   fontSize: 13,
   height: 1.4,
 );
+
+class const _ToolCallResponsePreviewContent({
+  required final String content,
+  required final bool hasOverflow,
+  required final bool showExpandButton,
+  required final TextStyle textStyle,
+  required final String toolName,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      _ToolCallResponsePreviewText(content: content, textStyle: textStyle),
+      if (hasOverflow && showExpandButton)
+        _ToolCallResponseExpandButton(
+          onPressed: () => ToolCallResponseModal.show(
+            context,
+            toolName: toolName,
+            content: content,
+          ),
+        ),
+    ],
+  );
+}
 
 class const _ToolCallResponsePreviewText({
   required final String content,
