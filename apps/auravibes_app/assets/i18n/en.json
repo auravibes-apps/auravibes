@@ -395,6 +395,11 @@
     "mcp_error": "Connection failed",
     "mcp_disconnected": "Disconnected",
     "mcp_reconnect": "Reconnect",
+    "mcp_reconnect_all": "Reconnect all failed MCPs",
+    "mcp_reconnect_partial_failure": {
+      "one": "Could not reconnect 1 MCP group.",
+      "other": "Could not reconnect {} MCP groups."
+    },
     "mcp_view_error": "View details",
     "tools_count": "{enabled} of {total} enabled",
     "delete_mcp_title": "Delete MCP Server",

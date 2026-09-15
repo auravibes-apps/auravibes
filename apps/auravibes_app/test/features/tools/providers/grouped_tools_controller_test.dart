@@ -1,9 +1,11 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -146,6 +148,37 @@ void main() {
       expect(mcpNotifier.reconnectedServerIds, ['server-1']);
     });
 
+    test(
+      'reconnectFailedMcps skips connected groups and reports partial failures',
+      () async {
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        );
+        mcpNotifier
+          ..failingServerIds.add('server-disconnected')
+          ..state = [
+            _mcpConnection('server-error', .error),
+            _mcpConnection('server-disconnected', .disconnected),
+            _mcpConnection('server-connected', .connected),
+          ];
+        notifier.state = AsyncData([
+          _mcpGroupWithStatus('server-error', .error),
+          _mcpGroupWithStatus('server-disconnected', .disconnected),
+          _mcpGroupWithStatus('server-connected', .connected),
+        ]);
+
+        final failedMcpServerIds = await notifier.reconnectFailedMcps();
+
+        expect(mcpNotifier.reconnectedServerIds, [
+          'server-error',
+          'server-disconnected',
+        ]);
+        expect(failedMcpServerIds, ['server-disconnected']);
+      },
+    );
+
     test('deleteMcpGroup skips group with null mcpServerId', () async {
       final toolsGroupsRepository = fixture.toolsGroupsRepository;
       final container = fixture.container;
@@ -239,6 +272,32 @@ final _mcpGroup = ToolsGroupEntity(
   mcpServerId: 'server-1',
 );
 
+McpConnectionState _mcpConnection(
+  String serverId,
+  McpConnectionStatus status,
+) => McpConnectionState(
+  server: .new(
+    id: serverId,
+    workspaceId: _workspace.id,
+    name: serverId,
+    url: 'http://localhost:8080',
+    transport: const McpTransportTypeSSE(),
+    authenticationType: const McpAuthenticationType.none(),
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
+  ),
+  status: status,
+);
+
+ToolsGroupWithTools _mcpGroupWithStatus(
+  String serverId,
+  McpConnectionStatus status,
+) => ToolsGroupWithTools(
+  group: _mcpGroup.copyWith(id: 'group-$serverId', mcpServerId: serverId),
+  tools: const [],
+  mcpConnectionState: _mcpConnection(serverId, status),
+);
+
 class _FakeWorkspaceToolsNotifier(final List<WorkspaceToolEntity> tools)
     extends WorkspaceToolsNotifier {
   @override
@@ -249,6 +308,7 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   final List<String> disconnectedServerIds = [];
   final List<String> reconnectedServerIds = [];
   final List<String> deletedServerIds = [];
+  final Set<String> failingServerIds = {};
 
   @override
   List<McpConnectionState> build() => const [];
@@ -261,6 +321,15 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   @override
   Future<void> reconnectMcpServer(String serverId) async {
     reconnectedServerIds.add(serverId);
+    state = [
+      for (final connection in state)
+        if (connection.server.id == serverId)
+          connection.copyWith(
+            status: failingServerIds.contains(serverId) ? .error : .connected,
+          )
+        else
+          connection,
+    ];
   }
 
   @override
