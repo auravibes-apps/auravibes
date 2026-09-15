@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -20,6 +23,52 @@ class _MockWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
 class _MockGroupedToolsNotifier extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => [];
+}
+
+class _ReconnectAllNotifier extends GroupedToolsNotifier {
+  new(this._groups);
+
+  final Completer<List<String>> _reconnectResult = .new();
+  final List<ToolsGroupWithTools> _groups;
+  int _reconnectCalls = 0;
+
+  @override
+  Future<List<ToolsGroupWithTools>> build(String workspaceId) async => _groups;
+
+  @override
+  Future<List<String>> reconnectFailedMcps() {
+    _reconnectCalls++;
+
+    return _reconnectResult.future;
+  }
+}
+
+ToolsGroupWithTools _failedMcpGroup() {
+  final server = McpServerEntity(
+    id: 'failed-server',
+    workspaceId: 'test-ws',
+    name: 'Failed MCP',
+    url: 'http://localhost:8080',
+    transport: const McpTransportTypeSSE(),
+    authenticationType: const McpAuthenticationType.none(),
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
+  );
+
+  return ToolsGroupWithTools(
+    group: .new(
+      id: 'failed-group',
+      workspaceId: 'test-ws',
+      name: 'Failed MCP',
+      isEnabled: true,
+      permissions: .ask,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+      mcpServerId: server.id,
+    ),
+    tools: const [],
+    mcpConnectionState: .new(server: server, status: .error),
+  );
 }
 
 void main() {
@@ -106,5 +155,54 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.byType(ToolsScreen), findsNothing);
     });
+
+    testWidgets(
+      'reconnect action disables while running and reports partial failures',
+      (tester) async {
+        final reconnectNotifier = _ReconnectAllNotifier([_failedMcpGroup()]);
+        await tester.runAsync(() async {
+          await tester.pumpWidget(
+            TestableApp(
+              child: Theme(
+                data: .new(extensions: [AuraTheme.light]),
+                child: const ToolsScreen(workspaceId: 'test-ws'),
+              ),
+              overrides: [
+                workspaceToolsProvider('test-ws')
+                    .overrideWith(_MockWorkspaceToolsNotifier.new),
+                groupedToolsProvider('test-ws')
+                    .overrideWith(() => reconnectNotifier),
+                workspaceSessionForRouteProvider('test-ws').overrideWithValue(
+                  const AsyncData(
+                    WorkspaceSession(
+                      LocalWorkspaceRef(localWorkspaceId: 'test-ws'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        });
+        await tester.pump();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        final reconnectButton = find.byType(AuraButton);
+        expect(find.text('Reconnect all failed MCPs'), findsOneWidget);
+        expect(reconnectButton, findsOneWidget);
+
+        await tester.tap(reconnectButton);
+        await tester.pump();
+
+        expect(reconnectNotifier._reconnectCalls, 1);
+        expect(tester.widget<AuraButton>(reconnectButton).isLoading, isTrue);
+        expect(tester.widget<AuraButton>(reconnectButton).disabled, isTrue);
+
+        reconnectNotifier._reconnectResult.complete(['failed-server']);
+        await tester.pump();
+
+        expect(find.text('Could not reconnect 1 MCP group.'), findsOneWidget);
+      },
+    );
   });
 }
