@@ -9,17 +9,16 @@ import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
-import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
-import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
@@ -57,8 +56,8 @@ class const ChatMessagesWidget({
   // ignore: unnecessary-nullable
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final data = useMemoized(() => messages.reversed.toList(), [messages]);
-    final controller = useScrollController();
+    final controller = useMemoized(_DisclosureScrollController.new);
+    useEffect(() => controller.dispose, [controller]);
     final parentConversationId = conversationId;
     final conversation = ref
         .watch(
@@ -125,6 +124,30 @@ class const ChatMessagesWidget({
     );
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
+    final resolvedMessages = <_ResolvedChatMessage?>[];
+    for (final messageId in messages) {
+      final message =
+          ref.watch(
+            messageConversationByIdProvider((
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+              messageId: messageId,
+            )),
+          ) ??
+          messageEntitiesById?[messageId];
+      final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
+      resolvedMessages.add(
+        message == null
+            ? null
+            : _ResolvedChatMessage(message: message, isStreaming: isStreaming),
+      );
+    }
+    final data = _buildChatTimelineItems(
+      resolvedMessages,
+      submittedA2uiReplayPayloads,
+    ).reversed.toList(growable: false);
+
+    void updateDisclosure(VoidCallback update) => update();
 
     final thinkingCount = showThinking ? 1 : 0;
     final compactionCount = isCompacting ? 1 : 0;
@@ -134,15 +157,16 @@ class const ChatMessagesWidget({
       reverse: true,
       controller: controller,
       padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) => _buildChatMessageItem(
+      itemBuilder: (context, index) => _buildChatTimelineItem(
         index: index,
         data: data,
         showThinking: showThinking,
         isCompacting: isCompacting,
         thinkingCount: thinkingCount,
         compactionCount: compactionCount,
-        messageEntitiesById: messageEntitiesById,
         pendingToolCalls: pendingToolCalls,
+        disclosureController: controller,
+        onDisclosureChanged: updateDisclosure,
         parentConversationId: parentConversationId,
         childConversations: childConversations,
         workspaceId: workspaceId,
@@ -273,15 +297,16 @@ void Function()? _listenToA2uiActionsEffect({
   return () => unawaited(subscription.cancel());
 }
 
-Widget _buildChatMessageItem({
+Widget _buildChatTimelineItem({
   required int index,
-  required List<String> data,
+  required List<_ChatTimelineItem> data,
   required bool showThinking,
   required bool isCompacting,
   required int thinkingCount,
   required int compactionCount,
-  required Map<String, MessageEntity>? messageEntitiesById,
   required List<PendingToolCall> pendingToolCalls,
+  required _DisclosureScrollController disclosureController,
+  required void Function(VoidCallback update) onDisclosureChanged,
   required String parentConversationId,
   required List<ConversationEntity> childConversations,
   required String workspaceId,
@@ -297,50 +322,184 @@ Widget _buildChatMessageItem({
     return const _CompactingIndicator();
   }
 
-  final messageId = data[index - thinkingCount - compactionCount];
-  return _ChatMessageRow(
-    key: ValueKey(messageId),
-    messageId: messageId,
-    baseMessage: messageEntitiesById?[messageId],
-    pendingToolCalls: pendingToolCalls,
-    parentConversationId: parentConversationId,
-    childConversations: childConversations,
-    workspaceId: workspaceId,
-    a2uiRuntime: a2uiRuntime,
-    a2uiReplayPayloads: replayPayloadsByMessageId[messageId] ?? const [],
+  final item = data[index - thinkingCount - compactionCount];
+  final child = switch (item) {
+    _ActivityRunTimelineItem(:final run) => _AssistantActivityRun(
+      key: ValueKey('activity_trace_${run.id}'),
+      run: run,
+      pendingToolCalls: pendingToolCalls,
+      onDisclosureChanged: onDisclosureChanged,
+      parentConversationId: parentConversationId,
+      childConversations: childConversations,
+      workspaceId: workspaceId,
+    ),
+    _MessageTimelineItem(:final source, :final activityRenderedInRun) =>
+      _ChatMessageTimelineItem(
+        key: ValueKey(source.message.id),
+        source: source,
+        activityRenderedInRun: activityRenderedInRun,
+        pendingToolCalls: pendingToolCalls,
+        onDisclosureChanged: onDisclosureChanged,
+        parentConversationId: parentConversationId,
+        childConversations: childConversations,
+        workspaceId: workspaceId,
+        a2uiRuntime: a2uiRuntime,
+        a2uiReplayPayloads:
+            replayPayloadsByMessageId[source.message.id] ?? const [],
+      ),
+  };
+  return _DisclosureSizeReporter(
+    controller: disclosureController,
+    child: child,
   );
 }
 
-class const _ChatMessageRow({
-  required final String messageId,
-  required final MessageEntity? baseMessage,
+class _ResolvedChatMessage {
+  const _ResolvedChatMessage({
+    required this.message,
+    required this.isStreaming,
+  });
+
+  final MessageEntity message;
+  final bool isStreaming;
+}
+
+sealed class _ChatTimelineItem {
+  const _ChatTimelineItem();
+}
+
+class _ActivityRunTimelineItem extends _ChatTimelineItem {
+  const _ActivityRunTimelineItem(this.run);
+
+  final _ActivityRun run;
+}
+
+class _MessageTimelineItem extends _ChatTimelineItem {
+  const _MessageTimelineItem(this.source, {this.activityRenderedInRun = false});
+
+  final _ResolvedChatMessage source;
+  final bool activityRenderedInRun;
+}
+
+class _ActivityRun {
+  const _ActivityRun(this.sources, {this.activityContentMessageIds = const {}});
+
+  final List<_ResolvedChatMessage> sources;
+  final Set<String> activityContentMessageIds;
+
+  String get id => sources.first.message.id;
+}
+
+List<_ChatTimelineItem> _buildChatTimelineItems(
+  List<_ResolvedChatMessage?> messages,
+  Map<String, List<String>> replayPayloadsByMessageId,
+) {
+  final items = <_ChatTimelineItem>[];
+  final activitySources = <_ResolvedChatMessage>[];
+  final activityContentMessageIds = <String>{};
+
+  void addActivityRun() {
+    if (activitySources.isEmpty) return;
+    items.add(
+      _ActivityRunTimelineItem(
+        _ActivityRun(
+          List.of(activitySources),
+          activityContentMessageIds: Set.of(activityContentMessageIds),
+        ),
+      ),
+    );
+    activitySources.clear();
+    activityContentMessageIds.clear();
+  }
+
+  for (var index = 0; index < messages.length; index++) {
+    final source = messages[index];
+    if (source == null) {
+      addActivityRun();
+      continue;
+    }
+
+    final message = source.message;
+    final hasActivity =
+        !_isTimelineBoundary(message) && _hasAssistantActivity(message);
+    final hasVisibleResponse = _hasVisibleAssistantResponse(
+      message,
+      replayPayloadsByMessageId,
+    );
+    if (hasActivity &&
+        (!hasVisibleResponse ||
+            _hasFollowingAssistantActivity(messages, index))) {
+      activitySources.add(source);
+      if (hasVisibleResponse) activityContentMessageIds.add(message.id);
+      continue;
+    }
+
+    if (hasActivity && activitySources.isNotEmpty) {
+      activitySources.add(source);
+      addActivityRun();
+      items.add(_MessageTimelineItem(source, activityRenderedInRun: true));
+      continue;
+    }
+
+    addActivityRun();
+    items.add(_MessageTimelineItem(source));
+  }
+  addActivityRun();
+
+  return items;
+}
+
+bool _hasFollowingAssistantActivity(
+  List<_ResolvedChatMessage?> messages,
+  int index,
+) {
+  if (index + 1 >= messages.length) return false;
+  final next = messages[index + 1];
+  if (next == null || _isTimelineBoundary(next.message)) return false;
+
+  return _hasAssistantActivity(next.message);
+}
+
+bool _hasAssistantActivity(MessageEntity message) =>
+    message.metadata?.thinking?.trim().isNotEmpty == true ||
+    message.metadata?.toolCalls.isNotEmpty == true;
+
+bool _hasVisibleAssistantResponse(
+  MessageEntity message,
+  Map<String, List<String>> replayPayloadsByMessageId,
+) =>
+    message.content.trim().isNotEmpty ||
+    message.attachments.isNotEmpty ||
+    _hasA2uiMessageState(message) ||
+    replayPayloadsByMessageId[message.id]?.isNotEmpty == true ||
+    message.metadata?.modelMetadata['a2uiDiagnosticPayloads'] is List;
+
+bool _isTimelineBoundary(MessageEntity message) =>
+    message.isUser ||
+    message.messageType == MessageType.system ||
+    message.status == MessageStatus.error ||
+    message.metadata?.isCompactionSummary == true;
+
+bool _isErrorSystemMessage(MessageEntity message) =>
+    !message.isUser &&
+    message.messageType == MessageType.system &&
+    message.status == MessageStatus.error;
+
+class const _ChatMessageTimelineItem({
+  required final _ResolvedChatMessage source,
+  required final bool activityRenderedInRun,
   required final List<PendingToolCall> pendingToolCalls,
+  required final void Function(VoidCallback update) onDisclosureChanged,
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
   required final String workspaceId,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
   super.key,
-}) extends HookConsumerWidget {
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final streamingResult = ref.watch(
-      messagesStreamingProvider.select((state) => state[messageId]?.lastResult),
-    );
-    final persistedMessage = ref.watch(
-      messageConversationByIdProvider((
-        workspaceId: workspaceId,
-        conversationId: parentConversationId,
-        messageId: messageId,
-      )),
-    );
-    final sourceMessage = persistedMessage ?? baseMessage;
-    final message = _mergeMessage(sourceMessage, streamingResult);
-    if (message == null) {
-      return const SizedBox.shrink();
-    }
-
-    final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
+  Widget build(BuildContext context) {
+    final message = source.message;
 
     if (message.metadata?.isCompactionSummary == true) {
       return _CompactedMessageWidget(
@@ -356,42 +515,30 @@ class const _ChatMessageRow({
       );
     }
 
-    return _ChatMessageContent(
-      message: message,
-      isStreaming: isStreaming,
-      pendingToolCalls: pendingToolCalls,
-      parentConversationId: parentConversationId,
-      childConversations: childConversations,
-      workspaceId: workspaceId,
-      a2uiRuntime: a2uiRuntime,
-      a2uiReplayPayloads: a2uiReplayPayloads,
-    );
-  }
-
-  MessageEntity? _mergeMessage(
-    MessageEntity? sourceMessage,
-    ChatResult<ChatMessage>? streamingResult,
-  ) => sourceMessage == null
-      ? null
-      : _mergeStreamingResult(sourceMessage, streamingResult);
-
-  bool _isErrorSystemMessage(MessageEntity message) =>
-      !message.isUser &&
-      message.messageType == MessageType.system &&
-      message.status == MessageStatus.error;
-
-  MessageEntity _mergeStreamingResult(
-    MessageEntity message,
-    ChatResult<ChatMessage>? streamingResult,
-  ) {
-    if (streamingResult == null) return message;
-
-    return message.copyWith(
-      content: streamingResult.output.text,
-      metadata: StreamingMessageMetadata.merge(
-        message.metadata,
-        streamingResult.entityMetadata,
-      ),
+    final showActivity =
+        !activityRenderedInRun &&
+        !_isTimelineBoundary(message) &&
+        _hasAssistantActivity(message);
+    return AuraColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (showActivity)
+          _AssistantActivityRun(
+            key: ValueKey('activity_trace_${message.id}'),
+            run: _ActivityRun([source]),
+            pendingToolCalls: pendingToolCalls,
+            onDisclosureChanged: onDisclosureChanged,
+            parentConversationId: parentConversationId,
+            childConversations: childConversations,
+            workspaceId: workspaceId,
+          ),
+        _ChatMessageContent(
+          message: message,
+          isStreaming: source.isStreaming,
+          a2uiRuntime: a2uiRuntime,
+          a2uiReplayPayloads: a2uiReplayPayloads,
+        ),
+      ],
     );
   }
 }
@@ -399,57 +546,35 @@ class const _ChatMessageRow({
 class const _ChatMessageContent({
   required final MessageEntity message,
   required final bool isStreaming,
-  required final List<PendingToolCall> pendingToolCalls,
-  required final String parentConversationId,
-  required final List<ConversationEntity> childConversations,
-  required final String workspaceId,
   required final ChatA2uiRuntime? a2uiRuntime,
   required final List<String> a2uiReplayPayloads,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final visibleToolCalls =
-        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
-    final thinking = message.metadata?.thinking?.trim();
     final hasContent = message.content.trim().isNotEmpty;
-    final hasThinking = thinking != null && thinking.isNotEmpty;
     final showTextBubble = _showTextBubble(
       message: message,
       isStreaming: isStreaming,
       hasContent: hasContent,
-      hasThinking: hasThinking,
-      visibleToolCalls: visibleToolCalls,
+      hasActivity: _hasAssistantActivity(message),
     );
-    final visibleThinking = hasThinking && !isStreaming;
     final status = _messageDeliveryStatus(message, isStreaming);
     final hasA2uiResponse =
         !message.isUser &&
         ((message.metadata?.a2uiMessages.isNotEmpty ?? false) ||
             a2uiReplayPayloads.isNotEmpty);
 
-    return AnimatedSize(
-      child: AuraColumn(
-        children: _messageContentChildren(
-          message: message,
-          thinking: thinking,
-          hasContent: hasContent,
-          hasThinking: visibleThinking,
-          isStreaming: isStreaming,
-          showTextBubble: showTextBubble,
-          hasA2uiResponse: hasA2uiResponse,
-          visibleToolCalls: visibleToolCalls,
-          status: status,
-          pendingToolCalls: pendingToolCalls,
-          parentConversationId: parentConversationId,
-          childConversations: childConversations,
-          workspaceId: workspaceId,
-          a2uiRuntime: a2uiRuntime,
-          a2uiReplayPayloads: a2uiReplayPayloads,
-        ),
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return AuraColumn(
+      children: _messageContentChildren(
+        message: message,
+        hasContent: hasContent,
+        showTextBubble: showTextBubble,
+        hasA2uiResponse: hasA2uiResponse,
+        status: status,
+        a2uiRuntime: a2uiRuntime,
+        a2uiReplayPayloads: a2uiReplayPayloads,
       ),
-      alignment: Alignment.topLeft,
-      duration: const Duration(microseconds: 200),
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }
@@ -458,12 +583,9 @@ bool _showTextBubble({
   required MessageEntity message,
   required bool isStreaming,
   required bool hasContent,
-  required bool hasThinking,
-  required List<MessageToolCallEntity> visibleToolCalls,
+  required bool hasActivity,
 }) =>
-    hasContent ||
-    hasThinking && !isStreaming ||
-    (visibleToolCalls.isEmpty && message.attachments.isEmpty && !isStreaming);
+    hasContent || (message.attachments.isEmpty && !isStreaming && !hasActivity);
 
 AuraMessageDeliveryStatus _messageDeliveryStatus(
   MessageEntity message,
@@ -482,18 +604,10 @@ AuraMessageDeliveryStatus _messageDeliveryStatus(
 
 List<Widget> _messageContentChildren({
   required MessageEntity message,
-  required String? thinking,
   required bool hasContent,
-  required bool hasThinking,
-  required bool isStreaming,
   required bool showTextBubble,
   required bool hasA2uiResponse,
-  required List<MessageToolCallEntity> visibleToolCalls,
   required AuraMessageDeliveryStatus status,
-  required List<PendingToolCall> pendingToolCalls,
-  required String parentConversationId,
-  required List<ConversationEntity> childConversations,
-  required String workspaceId,
   required ChatA2uiRuntime? a2uiRuntime,
   required List<String> a2uiReplayPayloads,
 }) {
@@ -501,10 +615,7 @@ List<Widget> _messageContentChildren({
     if (showTextBubble)
       _MessageTextContent(
         message: message,
-        thinking: thinking,
         hasContent: hasContent,
-        hasThinking: hasThinking,
-        isStreaming: isStreaming,
         hasA2uiResponse: hasA2uiResponse,
         status: status,
       ),
@@ -535,20 +646,6 @@ List<Widget> _messageContentChildren({
         resolveContent: () => _messageCopyText(message, a2uiRuntime),
         isUser: message.isUser,
       ),
-    for (final toolCall in visibleToolCalls)
-      _ToolCallWidget(
-        toolCall: toolCall,
-        messageId: message.id,
-        parentConversationId: parentConversationId,
-        childConversations: childConversations,
-        workspaceId: workspaceId,
-        isAwaitingApproval: _isAwaitingApproval(
-          pendingToolCalls,
-          message,
-          toolCall,
-        ),
-        key: ValueKey('tool_${toolCall.id}'),
-      ),
     if (hasA2uiResponse)
       _MessageFooter(
         key: ValueKey('message_footer_${message.id}'),
@@ -578,11 +675,11 @@ Color _userMessageSelectionColor(AuraColorScheme colors) {
 
 bool _isAwaitingApproval(
   List<PendingToolCall> pendingToolCalls,
-  MessageEntity message,
+  String messageId,
   MessageToolCallEntity toolCall,
 ) => pendingToolCalls.any(
   (pending) =>
-      pending.messageId == message.id && pending.toolCall.id == toolCall.id,
+      pending.messageId == messageId && pending.toolCall.id == toolCall.id,
 );
 
 AuraMessageDeliveryStatus _mapMessageStatus(
@@ -726,10 +823,7 @@ class const _AttachmentPreview({
 
 class const _MessageTextContent({
   required final MessageEntity message,
-  required final String? thinking,
   required final bool hasContent,
-  required final bool hasThinking,
-  required final bool isStreaming,
   required final bool hasA2uiResponse,
   required final AuraMessageDeliveryStatus status,
 }) extends StatelessWidget {
@@ -755,8 +849,6 @@ class const _MessageTextContent({
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (thinking case final thinking? when hasThinking && !isStreaming)
-          _ReasoningSummary(content: thinking),
         if (hasContent)
           _AiMessageContent(
             content: message.content,
@@ -857,58 +949,6 @@ class _MessageCopyActionState extends State<_MessageCopyAction> {
   }
 }
 
-class const _ReasoningSummary({required final String content})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final typography = context.auraTheme.typography;
-    const containerBorderRadius = 10.0;
-
-    return AuraContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.psychology_outlined,
-                size: context.auraTheme.fromSpacing(.lg),
-                color: auraColors.onSurfaceVariant,
-              ),
-              const AuraSizedBox(width: .xs),
-              TextLocale(
-                LocaleKeys.chats_screens_chat_conversation_reasoning_summary,
-                style: TextStyle(
-                  color: auraColors.onSurfaceVariant,
-                  fontSize: typography.fontSizeSm,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: typography.bodyFontFamily,
-                ),
-              ),
-            ],
-          ),
-          const AuraSizedBox(height: .xs),
-          GptMarkdown(
-            content,
-            style: TextStyle(
-              color: auraColors.onSurfaceVariant,
-              fontSize: typography.fontSizeSm,
-              height: typography.lineHeightBase,
-              fontFamily: typography.bodyFontFamily,
-            ),
-          ),
-        ],
-      ),
-      padding: .medium,
-      margin: .small,
-      variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: containerBorderRadius,
-    );
-  }
-}
-
 class const _AiMessageContent({
   required final String content,
   required final DateTime timestamp,
@@ -953,113 +993,655 @@ class const _AiMessageContent({
   }
 }
 
-/// Widget that displays a single tool call with optional confirmation UI.
-class const _ToolCallWidget({
-  required final MessageToolCallEntity toolCall,
-  required final String messageId,
+class const _AssistantActivityRun({
+  required final _ActivityRun run,
+  required final List<PendingToolCall> pendingToolCalls,
+  required final void Function(VoidCallback update) onDisclosureChanged,
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
-  required final String? workspaceId,
-  required final bool isAwaitingApproval,
+  required final String workspaceId,
   super.key,
-}) extends ConsumerWidget {
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const containerBorderRadius = 10.0;
-    final currentWorkspaceId = workspaceId;
-    final displayNameAsync = currentWorkspaceId == null
-        ? null
-        : ref.watch(toolDisplayNameProvider(currentWorkspaceId, toolCall.name));
-    final displayName =
-        displayNameAsync?.maybeWhen(
-          data: (name) => name,
-          orElse: () => ToolNameFormatter.formatDisplayName(
-            ToolNameFormatter.parse(toolCall.name),
-            rawName: toolCall.name,
+    final activityNarratives = [
+      for (final source in run.sources)
+        if (run.activityContentMessageIds.contains(source.message.id))
+          if (source.message.content.trim() case final content
+              when content.isNotEmpty)
+            (messageId: source.message.id, content: content),
+    ];
+    final thinkingMessages = [
+      for (final source in run.sources)
+        if (source.message.metadata?.thinking?.trim() case final content?
+            when content.isNotEmpty)
+          (messageId: source.message.id, content: content),
+    ];
+    final toolCalls = [
+      for (final source in run.sources)
+        for (final toolCall
+            in source.message.metadata?.toolCalls ??
+                const <MessageToolCallEntity>[])
+          (messageId: source.message.id, toolCall: toolCall),
+    ];
+    final isLive =
+        run.sources.any((source) => source.isStreaming) ||
+        toolCalls.any((item) => item.toolCall.isPending);
+    final toolSignature = toolCalls
+        .map((item) => '${item.messageId}\u0000${item.toolCall.id}')
+        .join('\u0000');
+    final latestPendingToolId = _latestPendingToolId(
+      toolCalls.map((item) => item.toolCall).toList(growable: false),
+    );
+    final hasToolGroup = toolCalls.length > 1;
+    final traceExpanded = useState(isLive);
+    final toolListExpanded = useState(isLive && hasToolGroup);
+    final expandedToolIds = useState(
+      latestPendingToolId == null ? <String>{} : <String>{latestPendingToolId},
+    );
+    final previousIsLive = useRef(isLive);
+    final previousToolSignature = useRef(toolSignature);
+    final previousPendingToolId = useRef(latestPendingToolId);
+
+    useEffect(() {
+      final wasLive = previousIsLive.value;
+      final hasNewTool = previousToolSignature.value != toolSignature;
+      final hasNewPendingTool =
+          previousPendingToolId.value != latestPendingToolId;
+      if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
+        onDisclosureChanged(() {
+          traceExpanded.value = true;
+          toolListExpanded.value = hasToolGroup;
+          if (latestPendingToolId != null) {
+            expandedToolIds.value = {
+              ...expandedToolIds.value,
+              latestPendingToolId,
+            };
+          }
+        });
+      } else if (!isLive && wasLive) {
+        onDisclosureChanged(() {
+          traceExpanded.value = false;
+          toolListExpanded.value = false;
+          expandedToolIds.value = <String>{};
+        });
+      }
+      previousIsLive.value = isLive;
+      previousToolSignature.value = toolSignature;
+      previousPendingToolId.value = latestPendingToolId;
+      return null;
+    }, [hasToolGroup, isLive, latestPendingToolId, toolSignature]);
+
+    final activityToolCalls = [
+      for (final item in toolCalls)
+        (
+          messageId: item.messageId,
+          toolCall: item.toolCall,
+          displayName: _toolCallDisplayName(
+            ref.watch(toolDisplayNameProvider(workspaceId, item.toolCall.name)),
+            item.toolCall.name,
           ),
-        ) ??
-        ToolNameFormatter.formatDisplayName(
-          ToolNameFormatter.parse(toolCall.name),
-          rawName: toolCall.name,
-        );
-
-    final decodedArgs = ToolMetadataDecoder.decode(toolCall.argumentsRaw);
-    final decodedResponse = ToolMetadataDecoder.decode(toolCall.responseRaw);
-    final subAgentConversationId =
-        _subAgentConversationId(toolCall) ??
-        _activeSubAgentConversationId(ref, parentConversationId, toolCall) ??
-        _persistedSubAgentConversationId(toolCall, childConversations);
-
-    final parentWorkspaceId = workspaceId;
-    final openSubAgent =
-        parentWorkspaceId == null || subAgentConversationId == null
-        ? null
-        : () => SubAgentConversationRoute(
-            workspaceId: parentWorkspaceId,
-            chatId: parentConversationId,
-            subAgentConversationId: subAgentConversationId,
-          ).go(context);
-
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: displayName,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              if (decodedArgs != null) ...[
-                const TextSpan(text: ' "'),
-                TextSpan(text: decodedArgs),
-                const TextSpan(text: '"'),
-              ],
-            ],
+          openSubAgent: _openSubAgent(
+            context: context,
+            ref: ref,
+            workspaceId: workspaceId,
+            parentConversationId: parentConversationId,
+            childConversations: childConversations,
+            toolCall: item.toolCall,
           ),
         ),
-        _ToolCallStatusIndicator(
-          statusText: TextLocale(_getStatusLocaleKey()),
-          icon: _getStatusIcon(),
-          color: _getStatusColor(context),
-        ),
-        if (decodedResponse != null)
-          Padding(
-            padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
-            child: ToolCallResponsePreview(
-              toolName: toolCall.name,
-              content: decodedResponse,
-              showExpandButton: openSubAgent == null,
+    ];
+    final toolRows = [
+      for (final activityToolCall in activityToolCalls)
+        _ActivityToolCallRow(
+          key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
+          toolCall: activityToolCall.toolCall,
+          displayName: activityToolCall.displayName,
+          isAwaitingApproval: _isAwaitingApproval(
+            pendingToolCalls,
+            activityToolCall.messageId,
+            activityToolCall.toolCall,
+          ),
+          isExpanded: expandedToolIds.value.contains(
+            activityToolCall.toolCall.id,
+          ),
+          onToggle: () => onDisclosureChanged(
+            () => expandedToolIds.value = _toggledToolIds(
+              expandedToolIds.value,
+              activityToolCall.toolCall.id,
             ),
           ),
+          openSubAgent: activityToolCall.openSubAgent,
+        ),
+    ];
+    final toolContent = switch (toolRows.length) {
+      0 => null,
+      1 => toolRows.single,
+      _ => AuraColumn(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _ActivityTraceDisclosure(
+            key: ValueKey('activity_tool_list_toggle_${run.id}'),
+            icon: Icons.build_outlined,
+            label: _toolCallsSummary(
+              activityToolCalls.map((toolCall) => toolCall.displayName),
+            ),
+            color: context.auraColors.secondary,
+            isExpanded: toolListExpanded.value,
+            onPressed: () => onDisclosureChanged(
+              () => toolListExpanded.value = !toolListExpanded.value,
+            ),
+          ),
+          if (toolListExpanded.value)
+            Padding(
+              padding: EdgeInsets.only(
+                left: context.auraTheme.fromSpacing(.sm),
+              ),
+              child: AuraColumn(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: toolRows,
+              ),
+            ),
+        ],
+      ),
+    };
+    final hasOuterDisclosure =
+        activityNarratives.length +
+            thinkingMessages.length +
+            (toolContent == null ? 0 : 1) >
+        1;
+    final activityLabel = toolCalls.isEmpty
+        ? LocaleKeys.chats_screens_chat_conversation_activity_thinking.tr()
+        : LocaleKeys.chats_screens_chat_conversation_activity_tools_count
+              .plural(toolCalls.length, context: context);
+    final activityContent = AuraColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final narrative in activityNarratives)
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: context.auraTheme.fromSpacing(.xs),
+            ),
+            child: _ActivityNarrative(
+              key: ValueKey('activity_narrative_${narrative.messageId}'),
+              content: narrative.content,
+            ),
+          ),
+        for (final thinking in thinkingMessages)
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: context.auraTheme.fromSpacing(.xs),
+            ),
+            child: _ActivityThinkingCard(
+              key: ValueKey('activity_thinking_${thinking.messageId}'),
+              content: thinking.content,
+            ),
+          ),
+        if (toolContent != null) toolContent,
       ],
     );
 
-    if (openSubAgent != null) {
-      return AuraContainer(
-        child: AuraTile(
-          child: content,
-          onTap: openSubAgent,
-          variant: AuraTileVariant.surface,
-          size: AuraTileSize.small,
-          trailing: const AuraIcon(Icons.chevron_right),
+    return AuraColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (hasOuterDisclosure)
+          _ActivityTraceDisclosure(
+            key: ValueKey('activity_trace_toggle_${run.id}'),
+            icon: Icons.psychology_outlined,
+            label: activityLabel,
+            color: context.auraColors.onSurfaceVariant,
+            isActivity: true,
+            isExpanded: traceExpanded.value,
+            onPressed: () => onDisclosureChanged(
+              () => traceExpanded.value = !traceExpanded.value,
+            ),
+          ),
+        if (hasOuterDisclosure && traceExpanded.value)
+          Padding(
+            padding: EdgeInsets.only(
+              left: context.auraTheme.fromSpacing(.sm),
+              top: context.auraTheme.fromSpacing(.xs),
+            ),
+            child: activityContent,
+          ),
+        if (!hasOuterDisclosure) activityContent,
+      ],
+    );
+  }
+}
+
+class const _ActivityNarrative({required final String content, super.key})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.auraColors;
+    final typography = context.auraTheme.typography;
+
+    return SelectionArea(
+      child: GptMarkdown(
+        content,
+        style: TextStyle(
+          color: colors.onSurfaceVariant,
+          fontSize: typography.fontSizeSm,
+          height: typography.lineHeightBase,
+          fontFamily: typography.bodyFontFamily,
         ),
-        padding: .none,
-        margin: .small,
-        variant: AuraContainerVariant.transparent,
-      );
-    }
+      ),
+    );
+  }
+}
+
+class const _ActivityThinkingCard({required final String content, super.key})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.auraColors;
+    final typography = context.auraTheme.typography;
 
     return AuraContainer(
-      child: content,
-      padding: .medium,
-      margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: containerBorderRadius,
+      padding: .small,
+      borderRadius: 8,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.psychology_outlined,
+                size: 14,
+                color: colors.onSurfaceVariant,
+              ),
+              const AuraSizedBox(width: .xs),
+              TextLocale(
+                LocaleKeys.chats_screens_chat_conversation_activity_thinking,
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
+                  fontSize: typography.fontSizeXs,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: typography.bodyFontFamily,
+                ),
+              ),
+            ],
+          ),
+          const AuraSizedBox(height: .xs),
+          SelectionArea(
+            child: GptMarkdown(
+              content,
+              style: TextStyle(
+                color: colors.onSurfaceVariant,
+                fontSize: typography.fontSizeSm,
+                height: typography.lineHeightBase,
+                fontFamily: typography.bodyFontFamily,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _toolCallDisplayName(
+  AsyncValue<String> displayNameAsync,
+  String toolName,
+) => displayNameAsync.maybeWhen(
+  data: (displayName) => displayName,
+  orElse: () => ToolNameFormatter.formatDisplayName(
+    ToolNameFormatter.parse(toolName),
+    rawName: toolName,
+  ),
+);
+
+String _toolCallsSummary(Iterable<String> displayNames) {
+  const maximumNames = 2;
+  final names = displayNames.toList(growable: false);
+  final summary = names.take(maximumNames).toList();
+  final remaining = names.length - summary.length;
+  if (remaining > 0) summary.add('+$remaining');
+
+  return summary.join(', ');
+}
+
+String? _latestPendingToolId(List<MessageToolCallEntity> toolCalls) {
+  for (var index = toolCalls.length - 1; index >= 0; index--) {
+    final toolCall = toolCalls[index];
+    if (toolCall.isPending) return toolCall.id;
+  }
+
+  return null;
+}
+
+Set<String> _toggledToolIds(Set<String> expandedToolIds, String toolCallId) {
+  final updated = {...expandedToolIds};
+  if (!updated.add(toolCallId)) updated.remove(toolCallId);
+
+  return updated;
+}
+
+VoidCallback? _openSubAgent({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String workspaceId,
+  required String parentConversationId,
+  required List<ConversationEntity> childConversations,
+  required MessageToolCallEntity toolCall,
+}) {
+  final subAgentConversationId =
+      _subAgentConversationId(toolCall) ??
+      _activeSubAgentConversationId(ref, parentConversationId, toolCall) ??
+      _persistedSubAgentConversationId(toolCall, childConversations);
+  if (subAgentConversationId == null) return null;
+
+  return () => SubAgentConversationRoute(
+    workspaceId: workspaceId,
+    chatId: parentConversationId,
+    subAgentConversationId: subAgentConversationId,
+  ).go(context);
+}
+
+class const _ActivityTraceDisclosure({
+  required final IconData icon,
+  required final String label,
+  required final Color color,
+  final bool isActivity = false,
+  required final bool isExpanded,
+  required final VoidCallback onPressed,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.auraColors;
+    final typography = context.auraTheme.typography;
+
+    return AuraPressable(
+      color: color,
+      decoration: isActivity
+          ? BoxDecoration(
+              color: colors.surfaceVariant.withValues(alpha: .5),
+              borderRadius: BorderRadius.circular(
+                context.auraTheme.fromBorderRadius(.md),
+              ),
+            )
+          : null,
+      onPressed: () => _toggleDisclosure(context: context, update: onPressed),
+      interaction: AuraPressableInteraction.localNavigation,
+      padding: const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: .sm,
+        vertical: .xs,
+      ),
+      semanticLabel: label,
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const AuraSizedBox(width: .xs),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: typography.fontSizeSm,
+                fontWeight: isActivity ? typography.fontWeightMedium : null,
+                fontFamily: typography.bodyFontFamily,
+              ),
+            ),
+          ),
+          Icon(
+            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+            size: 18,
+            color: color,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DisclosureScrollController extends ScrollController {
+  var anchorActive = false;
+  _RenderDisclosureSizeReporter? _anchorReporter;
+  double _pendingExtentDelta = 0;
+
+  void beginAnchor(_RenderDisclosureSizeReporter? reporter) {
+    anchorActive = true;
+    _anchorReporter = reporter;
+    _pendingExtentDelta = 0;
+  }
+
+  void clearAnchor() {
+    anchorActive = false;
+    _anchorReporter = null;
+    _pendingExtentDelta = 0;
+  }
+
+  void recordExtentDelta(_RenderDisclosureSizeReporter reporter, double delta) {
+    if (anchorActive && reporter == _anchorReporter) {
+      _pendingExtentDelta += delta;
+    }
+  }
+
+  double takeExtentDelta() {
+    final delta = _pendingExtentDelta;
+    _pendingExtentDelta = 0;
+    return delta;
+  }
+
+  @override
+  ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) => _DisclosureScrollPosition(
+    controller: this,
+    physics: physics,
+    context: context,
+    initialPixels: initialScrollOffset,
+    keepScrollOffset: keepScrollOffset,
+    oldPosition: oldPosition,
+    debugLabel: debugLabel,
+  );
+}
+
+class _DisclosureScrollPosition extends ScrollPositionWithSingleContext {
+  _DisclosureScrollPosition({
+    required this.controller,
+    required super.physics,
+    required super.context,
+    super.initialPixels,
+    super.keepScrollOffset,
+    super.oldPosition,
+    super.debugLabel,
+  });
+
+  final _DisclosureScrollController controller;
+
+  @override
+  bool correctForNewDimensions(
+    ScrollMetrics oldPosition,
+    ScrollMetrics newPosition,
+  ) {
+    // Correct during layout; a post-frame jump briefly paints the reverse-list
+    // size change in the wrong direction.
+    if (controller.anchorActive) {
+      final extentDelta = controller.takeExtentDelta();
+      if (extentDelta.abs() > .5) {
+        final correction = axisDirection == AxisDirection.up
+            ? extentDelta
+            : -extentDelta;
+        final targetPixels = oldPosition.pixels + correction;
+        correctPixels(
+          targetPixels.clamp(
+            newPosition.minScrollExtent,
+            newPosition.maxScrollExtent,
+          ),
+        );
+        controller.clearAnchor();
+        return false;
+      }
+      controller.clearAnchor();
+    }
+
+    return super.correctForNewDimensions(oldPosition, newPosition);
+  }
+}
+
+class const _DisclosureSizeReporter({
+  required this.controller,
+  required super.child,
+  super.key,
+}) extends SingleChildRenderObjectWidget {
+  final _DisclosureScrollController controller;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderDisclosureSizeReporter(controller);
+}
+
+class _RenderDisclosureSizeReporter extends RenderProxyBox {
+  _RenderDisclosureSizeReporter(this.controller);
+
+  final _DisclosureScrollController controller;
+  double? _previousHeight;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final previousHeight = _previousHeight;
+    final currentHeight = size.height;
+    _previousHeight = currentHeight;
+    if (previousHeight != null) {
+      controller.recordExtentDelta(this, currentHeight - previousHeight);
+    }
+  }
+}
+
+void _toggleDisclosure({
+  required BuildContext context,
+  required VoidCallback update,
+}) {
+  final position = Scrollable.maybeOf(context)?.position;
+  if (position is _DisclosureScrollPosition) {
+    var renderObject = context.findRenderObject();
+    _RenderDisclosureSizeReporter? reporter;
+    while (renderObject != null) {
+      if (renderObject is _RenderDisclosureSizeReporter) {
+        reporter = renderObject;
+        break;
+      }
+      renderObject = renderObject.parent;
+    }
+    position.controller.beginAnchor(reporter);
+  }
+  update();
+}
+
+class const _ActivityToolCallRow({
+  required final MessageToolCallEntity toolCall,
+  required final String displayName,
+  required final bool isAwaitingApproval,
+  required final bool isExpanded,
+  required final VoidCallback onToggle,
+  required final VoidCallback? openSubAgent,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final decodedArgs = ToolMetadataDecoder.decode(toolCall.argumentsRaw);
+    final decodedResponse = ToolMetadataDecoder.decode(toolCall.responseRaw);
+    final hasDetails =
+        decodedArgs?.isNotEmpty == true || decodedResponse?.isNotEmpty == true;
+    final statusKey = _statusLocaleKey();
+    final statusColor = _statusColor(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: AuraPressable(
+                key: ValueKey('activity_tool_${toolCall.id}'),
+                color: statusColor,
+                onPressed: hasDetails
+                    ? () =>
+                          _toggleDisclosure(context: context, update: onToggle)
+                    : null,
+                interaction: AuraPressableInteraction.localNavigation,
+                padding: const AuraEdgeInsetsGeometry.symmetric(
+                  horizontal: .sm,
+                  vertical: .xs,
+                ),
+                semanticLabel: '$displayName ${statusKey.tr()}',
+                child: Row(
+                  children: [
+                    Icon(_statusIcon(), size: 14, color: statusColor),
+                    const AuraSizedBox(width: .xs),
+                    Expanded(
+                      child: Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: context.auraTheme.typography.fontSizeSm,
+                          fontFamily:
+                              context.auraTheme.typography.bodyFontFamily,
+                        ),
+                      ),
+                    ),
+                    const AuraSizedBox(width: .xs),
+                    Flexible(
+                      child: Text(
+                        statusKey.tr(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: context.auraTheme.typography.fontSizeXs,
+                          fontFamily:
+                              context.auraTheme.typography.bodyFontFamily,
+                        ),
+                      ),
+                    ),
+                    if (hasDetails)
+                      Icon(
+                        isExpanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        size: 18,
+                        color: statusColor,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            if (openSubAgent != null)
+              AuraIconButton(
+                key: ValueKey('activity_open_sub_agent_${toolCall.id}'),
+                icon: Icons.open_in_new,
+                onPressed: openSubAgent,
+                tooltip: LocaleKeys
+                    .chats_screens_chat_conversation_activity_open_sub_agent
+                    .tr(),
+              ),
+          ],
+        ),
+        if (isExpanded && hasDetails)
+          _ActivityToolCallDetails(
+            key: ValueKey('activity_tool_details_${toolCall.id}'),
+            toolCall: toolCall,
+            decodedArgs: decodedArgs,
+            decodedResponse: decodedResponse,
+          ),
+      ],
     );
   }
 
-  String _getStatusLocaleKey() {
+  String _statusLocaleKey() {
     final status = toolCall.resultStatus;
     if (status != null) return status.localeKey;
 
@@ -1068,7 +1650,7 @@ class const _ToolCallWidget({
         : LocaleKeys.tool_call_status_running;
   }
 
-  IconData _getStatusIcon() {
+  IconData _statusIcon() {
     final status = toolCall.resultStatus;
     if (status == null) {
       return isAwaitingApproval ? Icons.hourglass_empty : Icons.sync;
@@ -1088,7 +1670,7 @@ class const _ToolCallWidget({
     };
   }
 
-  Color _getStatusColor(BuildContext context) {
+  Color _statusColor(BuildContext context) {
     final status = toolCall.resultStatus;
     final colors = context.auraColors;
     if (status == null) {
@@ -1108,6 +1690,88 @@ class const _ToolCallWidget({
       ToolCallResultStatus.executionError => colors.error,
     };
   }
+}
+
+class const _ActivityToolCallDetails({
+  required final MessageToolCallEntity toolCall,
+  required final String? decodedArgs,
+  required final String? decodedResponse,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.auraTheme;
+    final colors = context.auraColors;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: theme.fromSpacing(.sm),
+        top: theme.fromSpacing(.xs),
+        bottom: theme.fromSpacing(.xs),
+      ),
+      child: SelectionArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (decodedArgs case final value? when value.isNotEmpty)
+              _ActivityToolCallDetail(
+                label: LocaleKeys
+                    .chats_screens_chat_conversation_activity_arguments,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
+                    fontSize: theme.typography.fontSizeXs,
+                    fontFamily: theme.typography.monoFontFamily,
+                  ),
+                ),
+              ),
+            if (decodedResponse case final value? when value.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.only(top: theme.fromSpacing(.xs)),
+                child: _ActivityToolCallDetail(
+                  label: LocaleKeys
+                      .chats_screens_chat_conversation_activity_result,
+                  child: AuraContainer(
+                    key: ValueKey('activity_tool_result_${toolCall.id}'),
+                    variant: AuraContainerVariant.surfaceVariant,
+                    padding: .small,
+                    borderRadius: 8,
+                    child: ToolCallResponsePreview(
+                      toolName: toolCall.name,
+                      content: value,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class const _ActivityToolCallDetail({
+  required final String label,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      TextLocale(
+        label,
+        style: TextStyle(
+          color: context.auraColors.onSurfaceVariant,
+          fontSize: context.auraTheme.typography.fontSizeXs,
+          fontWeight: FontWeight.w600,
+          fontFamily: context.auraTheme.typography.bodyFontFamily,
+        ),
+      ),
+      const AuraSizedBox(height: .xs),
+      child,
+    ],
+  );
 }
 
 String? _persistedSubAgentConversationId(
@@ -1283,34 +1947,6 @@ class const _ErrorMessageWidget({required final String content, super.key})
       variant: AuraContainerVariant.surfaceVariant,
       borderRadius: containerBorderRadius,
       border: Border.fromBorderSide(BorderSide(color: auraColors.error)),
-    );
-  }
-}
-
-/// A small status indicator widget with icon and text.
-class const _ToolCallStatusIndicator({
-  required final Widget statusText,
-  required final IconData icon,
-  required final Color color,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    const iconSize = 14.0;
-    const textSize = 12.0;
-
-    return Padding(
-      padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: iconSize, color: color),
-          const AuraSizedBox(width: .xs),
-          DefaultTextStyle(
-            style: TextStyle(color: color, fontSize: textSize),
-            child: statusText,
-          ),
-        ],
-      ),
     );
   }
 }

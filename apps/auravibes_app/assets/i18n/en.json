@@ -330,7 +330,14 @@
       "turn_awaiting_approval": "Awaiting approval...",
       "turn_failed": "Generation failed.",
       "turn_cancelled": "Generation cancelled.",
-      "reasoning_summary": "Reasoning summary",
+      "activity_tools_count": {
+        "one": "1 tool",
+        "other": "{} tools"
+      },
+      "activity_thinking": "Thinking",
+      "activity_arguments": "Arguments",
+      "activity_result": "Result",
+      "activity_open_sub_agent": "Open sub-agent",
       "tool_resolution_status": "Waiting for tool resolution...",
       "queued_messages_count": {
         "one": "1 queued message",

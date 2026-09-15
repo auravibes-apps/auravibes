@@ -18,111 +18,102 @@ class const ToolCallResponsePreview({
   required final String content,
   super.key,
   final bool showExpandButton = true,
-}) extends StatefulWidget {
+}) extends StatelessWidget {
   /// Maximum number of lines to show in the preview.
   static const int maxPreviewLines = 3;
 
   @override
-  State<ToolCallResponsePreview> createState() =>
-      _ToolCallResponsePreviewState();
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textStyle = _toolCallResponsePreviewTextStyle(context);
+
+        return _ToolCallResponsePreviewContent(
+          content: content,
+          hasOverflow: _toolCallResponsePreviewHasOverflow(
+            context,
+            constraints,
+            content,
+          ),
+          showExpandButton: showExpandButton,
+          textStyle: textStyle,
+          toolName: toolName,
+        );
+      },
+    );
+  }
 }
 
-class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
-  bool _exceedsMaxLines = false;
-  final GlobalKey _textKey = .new();
+bool _toolCallResponsePreviewHasOverflow(
+  BuildContext context,
+  BoxConstraints constraints,
+  String content,
+) {
+  final textPainter = _toolCallResponsePreviewTextPainter(
+    context,
+    constraints,
+    content,
+  );
+  final hasOverflow = textPainter.didExceedMaxLines;
+  textPainter.dispose();
 
-  @override
-  void initState() {
-    super.initState();
-    // Schedule measurement after the first frame.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _measureTextOverflow();
-    });
-  }
+  return hasOverflow;
+}
 
-  @override
-  void didUpdateWidget(ToolCallResponsePreview oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.content != widget.content) {
-      // Re-measure when content changes.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _measureTextOverflow();
-      });
-    }
-  }
+TextPainter _toolCallResponsePreviewTextPainter(
+  BuildContext context,
+  BoxConstraints constraints,
+  String content,
+) {
+  final textStyle = _toolCallResponsePreviewTextStyle(context);
 
+  return TextPainter(
+    text: TextSpan(text: content, style: textStyle),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: ToolCallResponsePreview.maxPreviewLines,
+  )..layout(maxWidth: constraints.maxWidth);
+}
+
+TextStyle _toolCallResponsePreviewTextStyle(BuildContext context) => .new(
+  color: context.auraColors.onSurface.withValues(alpha: 0.8),
+  fontSize: 13,
+  height: 1.4,
+);
+
+class const _ToolCallResponsePreviewContent({
+  required final String content,
+  required final bool hasOverflow,
+  required final bool showExpandButton,
+  required final TextStyle textStyle,
+  required final String toolName,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: .start,
-      children: [
-        _ToolCallResponsePreviewText(
-          content: widget.content,
-          textKey: _textKey,
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      _ToolCallResponsePreviewText(content: content, textStyle: textStyle),
+      if (hasOverflow && showExpandButton)
+        _ToolCallResponseExpandButton(
+          onPressed: () => ToolCallResponseModal.show(
+            context,
+            toolName: toolName,
+            content: content,
+          ),
         ),
-        if (_exceedsMaxLines && widget.showExpandButton)
-          _ToolCallResponseExpandButton(onPressed: _showFullContent),
-      ],
-    );
-  }
-
-  void _measureTextOverflow() {
-    final exceedsMaxLines = _textOverflow();
-    if (exceedsMaxLines == null || exceedsMaxLines == _exceedsMaxLines) {
-      return;
-    }
-
-    setState(() {
-      _exceedsMaxLines = exceedsMaxLines;
-    });
-  }
-
-  bool? _textOverflow() {
-    final context = _textKey.currentContext;
-    if (context == null) return null;
-
-    final renderObject = context.findRenderObject();
-    if (renderObject is! RenderBox) return null;
-
-    return _doesTextOverflow(context, renderObject);
-  }
-
-  bool _doesTextOverflow(BuildContext context, RenderBox renderObject) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: widget.content,
-        style: DefaultTextStyle.of(context).style,
-      ),
-      textDirection: .ltr,
-      maxLines: ToolCallResponsePreview.maxPreviewLines,
-    )..layout(maxWidth: renderObject.constraints.maxWidth);
-
-    return textPainter.didExceedMaxLines;
-  }
-
-  void _showFullContent() {
-    ToolCallResponseModal.show(
-      context,
-      toolName: widget.toolName,
-      content: widget.content,
-    );
-  }
+    ],
+  );
 }
 
 class const _ToolCallResponsePreviewText({
   required final String content,
-  required final GlobalKey textKey,
+  required final TextStyle textStyle,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
       content,
-      key: textKey,
-      style: .new(
-        color: context.auraColors.onSurface.withValues(alpha: 0.8),
-        fontSize: 13,
-        height: 1.4,
-      ),
+      style: textStyle,
       overflow: .ellipsis,
       maxLines: ToolCallResponsePreview.maxPreviewLines,
     );

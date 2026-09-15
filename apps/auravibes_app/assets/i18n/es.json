@@ -330,7 +330,14 @@
       "turn_awaiting_approval": "Esperando aprobación...",
       "turn_failed": "La generación falló.",
       "turn_cancelled": "La generación se canceló.",
-      "reasoning_summary": "Resumen de razonamiento",
+      "activity_tools_count": {
+        "one": "1 herramienta",
+        "other": "{} herramientas"
+      },
+      "activity_thinking": "Razonamiento",
+      "activity_arguments": "Argumentos",
+      "activity_result": "Resultado",
+      "activity_open_sub_agent": "Abrir subagente",
       "tool_resolution_status": "Esperando resolución de herramientas... Los mensajes nuevos se encolarán.",
       "queued_messages_count": {
         "one": "1 mensaje en cola",

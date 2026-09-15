@@ -1,4 +1,5 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
+import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -6,17 +7,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
-  Widget buildSubject({required String toolName, required String content}) {
+  Widget buildSubject({
+    required String toolName,
+    required String content,
+    TextScaler? textScaler,
+  }) {
     return EasyLocalization(
       child: Builder(
         builder: (context) {
           return MaterialApp(
             home: Theme(
               data: .new(extensions: [AuraTheme.light]),
-              child: Scaffold(
-                body: ToolCallResponsePreview(
-                  toolName: toolName,
-                  content: content,
+              child: MediaQuery(
+                data: .new(textScaler: textScaler ?? TextScaler.noScaling),
+                child: Scaffold(
+                  body: ToolCallResponsePreview(
+                    toolName: toolName,
+                    content: content,
+                  ),
                 ),
               ),
             ),
@@ -76,6 +84,52 @@ void main() {
 
       expect(find.byType(ToolCallResponsePreview), findsOneWidget);
       expect(find.text('Short text'), findsOneWidget);
+    });
+
+    testWidgets('opens the full result modal for overflowing content', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          toolName: 'test_tool',
+          content: 'First line\nSecond line\nThird line\nFourth line',
+        ),
+      );
+
+      expect(find.text('Show more'), findsOneWidget);
+
+      await tester.tap(find.text('Show more'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byType(ToolCallResponseModal), findsOneWidget);
+      expect(find.text('test_tool'), findsOneWidget);
+    });
+
+    testWidgets('uses inherited text scaling when detecting overflow', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      const content =
+          'abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij '
+          'abcdefghij';
+
+      await pumpAndInit(
+        tester,
+        buildSubject(toolName: 'test_tool', content: content),
+      );
+      expect(find.text('Show more'), findsNothing);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          toolName: 'test_tool',
+          content: content,
+          textScaler: const .linear(2),
+        ),
+      );
+      expect(find.text('Show more'), findsOneWidget);
     });
   });
 }
