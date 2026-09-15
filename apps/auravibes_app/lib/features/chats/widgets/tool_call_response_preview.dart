@@ -27,6 +27,7 @@ class const ToolCallResponsePreview({
     return LayoutBuilder(
       builder: (context, constraints) {
         final textStyle = _toolCallResponsePreviewTextStyle(context);
+
         return _ToolCallResponsePreviewContent(
           content: content,
           hasOverflow: _toolCallResponsePreviewHasOverflow(
@@ -55,6 +56,7 @@ bool _toolCallResponsePreviewHasOverflow(
   );
   final hasOverflow = textPainter.didExceedMaxLines;
   textPainter.dispose();
+
   return hasOverflow;
 }
 
@@ -64,6 +66,7 @@ TextPainter _toolCallResponsePreviewTextPainter(
   String content,
 ) {
   final textStyle = _toolCallResponsePreviewTextStyle(context);
+
   return TextPainter(
     text: TextSpan(text: content, style: textStyle),
     textDirection: Directionality.of(context),
