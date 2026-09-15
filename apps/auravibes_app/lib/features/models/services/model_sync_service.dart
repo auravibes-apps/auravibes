@@ -10,15 +10,30 @@ final _log = Logger('service:model_sync');
 class ModelSyncService({
   required final SyncApiModelsUseCase syncApiModelsUseCase,
 }) {
+  Future<void>? _syncInFlight;
+
   /// Performs a full synchronization of all models and providers.
   ///
-  /// Errors are logged and swallowed so the periodic timer never tears down on
-  /// a transient failure.
+  /// Errors are logged and swallowed so automatic callers survive transient
+  /// failures.
   Future<void> performFullSync() async {
     try {
-      await syncApiModelsUseCase();
+      await performManualSync();
     } on Exception catch (e, s) {
       _log.severe('model sync failed', e, s);
+    }
+  }
+
+  /// Synchronizes the catalog and forwards failures to the user-triggered UI.
+  ///
+  /// Concurrent callers share one in-flight request.
+  Future<void> performManualSync() => _syncInFlight ??= .microtask(_sync);
+
+  Future<void> _sync() async {
+    try {
+      await syncApiModelsUseCase();
+    } finally {
+      _syncInFlight = null;
     }
   }
 }

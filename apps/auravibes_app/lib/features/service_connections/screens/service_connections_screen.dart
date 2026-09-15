@@ -2,9 +2,12 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -13,8 +16,10 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:riverpod/experimental/mutation.dart';
 
 final _logger = Logger('service_connections_screen');
+final _modelCatalogSyncMutation = Mutation<void>();
 const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 const _deleteConfirmationActions = AuraConfirmDialogActions(
@@ -124,6 +129,12 @@ class const ServiceConnectionsScreen({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final connectionsAsync = ref.watch(serviceConnectionsProvider(workspaceId));
+    final canSyncModelCatalog = _canSyncModelCatalog(
+      ref.watch(workspaceSessionForRouteProvider(workspaceId)),
+    );
+    final isSyncingModelCatalog = ref
+        .watch(_modelCatalogSyncMutation)
+        .isPending;
     ref.listen(
       serviceConnectionsProvider(workspaceId),
       (_, next) => _logServiceConnectionsLoadError(workspaceId, next),
@@ -132,8 +143,63 @@ class const ServiceConnectionsScreen({
     return _ServiceConnectionsView(
       connectionsAsync: connectionsAsync,
       onAddConnection: () => _openCreateConnection(context, workspaceId),
+      onSyncModelCatalog: canSyncModelCatalog
+          ? () => unawaited(_syncModelCatalog(context, ref, workspaceId))
+          : null,
+      isSyncingModelCatalog: isSyncingModelCatalog,
     );
   }
+}
+
+bool _canSyncModelCatalog(AsyncValue<WorkspaceSession> session) =>
+    switch (session) {
+      AsyncData(:final value) => value.cloud == null,
+      AsyncLoading() || AsyncError() => false,
+    };
+
+Future<void> _syncModelCatalog(
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+) async {
+  if (ref.read(_modelCatalogSyncMutation).isPending) return;
+
+  try {
+    await _modelCatalogSyncMutation.run(ref, (_) async {
+      await ref.read(modelSyncServiceProvider).performManualSync();
+      ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
+    });
+  } on Object catch (error, stackTrace) {
+    _logger.warning('Model catalog sync failed', error, stackTrace);
+    if (!context.mounted) return;
+
+    _showModelCatalogSyncSnackBar(
+      context,
+      LocaleKeys.models_screens_catalog_sync_error,
+      .error,
+    );
+
+    return;
+  }
+  if (!context.mounted) return;
+
+  _showModelCatalogSyncSnackBar(
+    context,
+    LocaleKeys.models_screens_catalog_sync_success,
+    .success,
+  );
+}
+
+void _showModelCatalogSyncSnackBar(
+  BuildContext context,
+  String localeKey,
+  AuraSnackBarVariant variant,
+) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: TextLocale(localeKey),
+    variant: variant,
+  );
 }
 
 void _logServiceConnectionsLoadError(
@@ -165,6 +231,8 @@ void _openCreateConnection(BuildContext context, String workspaceId) =>
 class const _ServiceConnectionsView({
   required final AsyncValue<List<ServiceConnectionListItem>> connectionsAsync,
   required final VoidCallback onAddConnection,
+  required final VoidCallback? onSyncModelCatalog,
+  required final bool isSyncingModelCatalog,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -173,7 +241,11 @@ class const _ServiceConnectionsView({
         connectionsAsync: connectionsAsync,
         onAddConnection: onAddConnection,
       ),
-      appBar: _ServiceConnectionsAppBar(onAddConnection: onAddConnection),
+      appBar: _ServiceConnectionsAppBar(
+        onAddConnection: onAddConnection,
+        onSyncModelCatalog: onSyncModelCatalog,
+        isSyncingModelCatalog: isSyncingModelCatalog,
+      ),
     );
   }
 }
@@ -217,6 +289,8 @@ class const _ConnectionsLoadError() extends StatelessWidget {
 
 class const _ServiceConnectionsAppBar({
   required final VoidCallback onAddConnection,
+  required final VoidCallback? onSyncModelCatalog,
+  required final bool isSyncingModelCatalog,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -225,10 +299,34 @@ class const _ServiceConnectionsAppBar({
   Widget build(BuildContext context) {
     return AuraAppBar(
       title: const TextLocale(LocaleKeys.service_connections_title),
-      actions: [_ConnectionsAddButton(onPressed: onAddConnection)],
+      actions: [
+        if (onSyncModelCatalog case final callback?)
+          _SyncModelCatalogButton(
+            onPressed: callback,
+            isSyncing: isSyncingModelCatalog,
+          ),
+        _ConnectionsAddButton(onPressed: onAddConnection),
+      ],
       leading: const _ConnectionsBackButton(),
     );
   }
+}
+
+class const _SyncModelCatalogButton({
+  required final VoidCallback onPressed,
+  required final bool isSyncing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton.custom(
+    child: isSyncing
+        ? const AuraSpinner(size: .small)
+        : const AuraIcon(Icons.sync),
+    onPressed: isSyncing ? null : onPressed,
+    disabled: isSyncing,
+    tooltip: LocaleKeys.models_screens_catalog_sync_tooltip.tr(
+      context: context,
+    ),
+  );
 }
 
 class const _ConnectionsAddButton({required final VoidCallback onPressed})
