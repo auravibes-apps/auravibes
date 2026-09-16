@@ -31,9 +31,9 @@ class const GetConversationBusyStateUsecase({
 
 bool _hasPendingTools(List<MessageEntity> messages) {
   final message = ConversationBusyStateQueries.latestAssistantMessage(messages);
+  if (message == null || message.isForkReference) return false;
 
-  return message?.metadata?.toolCalls.any((toolCall) => toolCall.isPending) ??
-      false;
+  return message.metadata?.hasPendingToolCalls ?? false;
 }
 
 abstract final class ConversationBusyStateQueries {

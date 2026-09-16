@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 typedef _DecisionRequest = ({
+  String conversationId,
   String turnId,
   String toolCallId,
   String argumentsDigest,
@@ -13,6 +14,7 @@ typedef _DecisionRequest = ({
 });
 
 typedef _DecisionRetryRequest = ({
+  String conversationId,
   String turnId,
   String toolCallId,
   String argumentsDigest,
@@ -67,6 +69,7 @@ extension on CloudTurnUsecase {
     final requestId = DateTime.now().microsecondsSinceEpoch.toString();
 
     return (
+      conversationId: request.conversationId,
       turnId: request.turnId,
       toolCallId: request.toolCallId,
       argumentsDigest: request.argumentsDigest,
@@ -131,6 +134,7 @@ extension on CloudTurnUsecase {
     int expectedRevision,
   ) => _gateway.submitToolDecision((
     requestId: requestId,
+    conversationId: request.conversationId,
     turnId: request.turnId,
     toolCallId: request.toolCallId,
     argumentsDigest: request.argumentsDigest,

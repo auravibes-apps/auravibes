@@ -6,6 +6,8 @@ import 'package:riverpod/riverpod.dart';
 
 class AgentCancellationRuntime implements AgentCancellationEffects {
   final _entries = <String, AgentCancellationScope>{};
+  final _completionByConversationId = <String, Completer<void>>{};
+  final _conversationByScope = <AgentCancellationScope, String>{};
   final _pendingStops = <String>{};
 
   void registerStreamSubscription<T>(
@@ -25,9 +27,17 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   @override
   AgentCancellationScope start(String conversationId) {
     final scope = AgentCancellationScope();
-    if (_pendingStops.remove(conversationId)) scope.requestStop();
-    _entries.remove(conversationId)?.requestStop();
+    final previous = _entries.remove(conversationId);
+    if (previous != null) {
+      previous.requestStop();
+      unawaited(_completeScope(previous));
+    }
+    final completion =
+        _completionByConversationId[conversationId] ?? Completer<void>();
+    _completionByConversationId[conversationId] = completion;
+    _conversationByScope[scope] = conversationId;
     _entries[conversationId] = scope;
+    if (_pendingStops.remove(conversationId)) scope.requestStop();
 
     return scope;
   }
@@ -38,6 +48,11 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
 
   bool isCancellationRequested(String conversationId) =>
       current(conversationId)?.isCancellationRequested ?? false;
+
+  Future<void> waitForCompletion(String conversationId) {
+    return _completionByConversationId[conversationId]?.future ??
+        Future<void>.value();
+  }
 
   void registerCleanup(
     String conversationId,
@@ -64,14 +79,40 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
 
   @override
   void clear(String conversationId, AgentCancellationScope scope) {
+    if (_conversationByScope[scope] != conversationId) return;
+    scope.close();
     if (!identical(_entries[conversationId], scope)) return;
     forceClear(conversationId);
   }
 
   @override
   void forceClear(String conversationId) {
-    _entries.remove(conversationId)?.requestStop();
+    final scope = _entries.remove(conversationId);
+    if (scope == null) {
+      if (!_conversationByScope.values.contains(conversationId)) {
+        _complete(conversationId);
+      }
+    } else {
+      scope.requestStop();
+      unawaited(_completeScope(scope));
+    }
     final _ = _pendingStops.remove(conversationId);
+  }
+
+  Future<void> _completeScope(AgentCancellationScope scope) async {
+    await scope.waitForCleanupCompletion();
+    final conversationId = _conversationByScope.remove(scope);
+    if (conversationId == null) return;
+    final completion = _completionByConversationId[conversationId];
+    if (completion == null || completion.isCompleted) return;
+    if (identical(_entries[conversationId], scope)) return;
+    final _ = _completionByConversationId.remove(conversationId);
+    completion.complete();
+  }
+
+  void _complete(String conversationId) {
+    final completion = _completionByConversationId.remove(conversationId);
+    if (completion != null && !completion.isCompleted) completion.complete();
   }
 }
 

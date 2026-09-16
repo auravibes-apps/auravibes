@@ -4006,6 +4006,50 @@ class $ConversationsTable extends Conversations
           'REFERENCES conversations (id) ON DELETE CASCADE',
         ),
       );
+  static const VerificationMeta _forkSourceConversationIdMeta =
+      const VerificationMeta('forkSourceConversationId');
+  @override
+  late final GeneratedColumn<String> forkSourceConversationId =
+      GeneratedColumn<String>(
+        'fork_source_conversation_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _forkSourceTitleMeta = const VerificationMeta(
+    'forkSourceTitle',
+  );
+  @override
+  late final GeneratedColumn<String> forkSourceTitle = GeneratedColumn<String>(
+    'fork_source_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _forkThroughMessageIdMeta =
+      const VerificationMeta('forkThroughMessageId');
+  @override
+  late final GeneratedColumn<String> forkThroughMessageId =
+      GeneratedColumn<String>(
+        'fork_through_message_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _forkMaterializedAtMeta =
+      const VerificationMeta('forkMaterializedAt');
+  @override
+  late final GeneratedColumn<DateTime> forkMaterializedAt =
+      GeneratedColumn<DateTime>(
+        'fork_materialized_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
     'isPinned',
   );
@@ -4031,6 +4075,10 @@ class $ConversationsTable extends Conversations
     modelId,
     agentId,
     parentConversationId,
+    forkSourceConversationId,
+    forkSourceTitle,
+    forkThroughMessageId,
+    forkMaterializedAt,
     isPinned,
   ];
   @override
@@ -4100,6 +4148,42 @@ class $ConversationsTable extends Conversations
         ),
       );
     }
+    if (data.containsKey('fork_source_conversation_id')) {
+      context.handle(
+        _forkSourceConversationIdMeta,
+        forkSourceConversationId.isAcceptableOrUnknown(
+          data['fork_source_conversation_id']!,
+          _forkSourceConversationIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('fork_source_title')) {
+      context.handle(
+        _forkSourceTitleMeta,
+        forkSourceTitle.isAcceptableOrUnknown(
+          data['fork_source_title']!,
+          _forkSourceTitleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('fork_through_message_id')) {
+      context.handle(
+        _forkThroughMessageIdMeta,
+        forkThroughMessageId.isAcceptableOrUnknown(
+          data['fork_through_message_id']!,
+          _forkThroughMessageIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('fork_materialized_at')) {
+      context.handle(
+        _forkMaterializedAtMeta,
+        forkMaterializedAt.isAcceptableOrUnknown(
+          data['fork_materialized_at']!,
+          _forkMaterializedAtMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_pinned')) {
       context.handle(
         _isPinnedMeta,
@@ -4147,6 +4231,22 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}parent_conversation_id'],
       ),
+      forkSourceConversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fork_source_conversation_id'],
+      ),
+      forkSourceTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fork_source_title'],
+      ),
+      forkThroughMessageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fork_through_message_id'],
+      ),
+      forkMaterializedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fork_materialized_at'],
+      ),
       isPinned: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_pinned'],
@@ -4175,6 +4275,22 @@ class ConversationsTable extends DataClass
   final String? modelId;
   final String? agentId;
   final String? parentConversationId;
+
+  /// Stable id of the conversation this fork snapshots.
+  ///
+  /// This is intentionally not a foreign key. A source conversation can be
+  /// purged after its history has been materialized while the fork keeps the
+  /// provenance for display.
+  final String? forkSourceConversationId;
+
+  /// Source title captured when the fork is created.
+  final String? forkSourceTitle;
+
+  /// Inclusive terminal message boundary captured by the fork.
+  final String? forkThroughMessageId;
+
+  /// Non-null after the source history has been materialized into this fork.
+  final DateTime? forkMaterializedAt;
   final bool isPinned;
   const ConversationsTable({
     required this.id,
@@ -4185,6 +4301,10 @@ class ConversationsTable extends DataClass
     this.modelId,
     this.agentId,
     this.parentConversationId,
+    this.forkSourceConversationId,
+    this.forkSourceTitle,
+    this.forkThroughMessageId,
+    this.forkMaterializedAt,
     required this.isPinned,
   });
   @override
@@ -4203,6 +4323,20 @@ class ConversationsTable extends DataClass
     }
     if (!nullToAbsent || parentConversationId != null) {
       map['parent_conversation_id'] = Variable<String>(parentConversationId);
+    }
+    if (!nullToAbsent || forkSourceConversationId != null) {
+      map['fork_source_conversation_id'] = Variable<String>(
+        forkSourceConversationId,
+      );
+    }
+    if (!nullToAbsent || forkSourceTitle != null) {
+      map['fork_source_title'] = Variable<String>(forkSourceTitle);
+    }
+    if (!nullToAbsent || forkThroughMessageId != null) {
+      map['fork_through_message_id'] = Variable<String>(forkThroughMessageId);
+    }
+    if (!nullToAbsent || forkMaterializedAt != null) {
+      map['fork_materialized_at'] = Variable<DateTime>(forkMaterializedAt);
     }
     map['is_pinned'] = Variable<bool>(isPinned);
     return map;
@@ -4224,6 +4358,18 @@ class ConversationsTable extends DataClass
       parentConversationId: parentConversationId == null && nullToAbsent
           ? const Value.absent()
           : Value(parentConversationId),
+      forkSourceConversationId: forkSourceConversationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(forkSourceConversationId),
+      forkSourceTitle: forkSourceTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(forkSourceTitle),
+      forkThroughMessageId: forkThroughMessageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(forkThroughMessageId),
+      forkMaterializedAt: forkMaterializedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(forkMaterializedAt),
       isPinned: Value(isPinned),
     );
   }
@@ -4244,6 +4390,16 @@ class ConversationsTable extends DataClass
       parentConversationId: serializer.fromJson<String?>(
         json['parentConversationId'],
       ),
+      forkSourceConversationId: serializer.fromJson<String?>(
+        json['forkSourceConversationId'],
+      ),
+      forkSourceTitle: serializer.fromJson<String?>(json['forkSourceTitle']),
+      forkThroughMessageId: serializer.fromJson<String?>(
+        json['forkThroughMessageId'],
+      ),
+      forkMaterializedAt: serializer.fromJson<DateTime?>(
+        json['forkMaterializedAt'],
+      ),
       isPinned: serializer.fromJson<bool>(json['isPinned']),
     );
   }
@@ -4259,6 +4415,12 @@ class ConversationsTable extends DataClass
       'modelId': serializer.toJson<String?>(modelId),
       'agentId': serializer.toJson<String?>(agentId),
       'parentConversationId': serializer.toJson<String?>(parentConversationId),
+      'forkSourceConversationId': serializer.toJson<String?>(
+        forkSourceConversationId,
+      ),
+      'forkSourceTitle': serializer.toJson<String?>(forkSourceTitle),
+      'forkThroughMessageId': serializer.toJson<String?>(forkThroughMessageId),
+      'forkMaterializedAt': serializer.toJson<DateTime?>(forkMaterializedAt),
       'isPinned': serializer.toJson<bool>(isPinned),
     };
   }
@@ -4272,6 +4434,10 @@ class ConversationsTable extends DataClass
     Value<String?> modelId = const Value.absent(),
     Value<String?> agentId = const Value.absent(),
     Value<String?> parentConversationId = const Value.absent(),
+    Value<String?> forkSourceConversationId = const Value.absent(),
+    Value<String?> forkSourceTitle = const Value.absent(),
+    Value<String?> forkThroughMessageId = const Value.absent(),
+    Value<DateTime?> forkMaterializedAt = const Value.absent(),
     bool? isPinned,
   }) => ConversationsTable(
     id: id ?? this.id,
@@ -4284,6 +4450,18 @@ class ConversationsTable extends DataClass
     parentConversationId: parentConversationId.present
         ? parentConversationId.value
         : this.parentConversationId,
+    forkSourceConversationId: forkSourceConversationId.present
+        ? forkSourceConversationId.value
+        : this.forkSourceConversationId,
+    forkSourceTitle: forkSourceTitle.present
+        ? forkSourceTitle.value
+        : this.forkSourceTitle,
+    forkThroughMessageId: forkThroughMessageId.present
+        ? forkThroughMessageId.value
+        : this.forkThroughMessageId,
+    forkMaterializedAt: forkMaterializedAt.present
+        ? forkMaterializedAt.value
+        : this.forkMaterializedAt,
     isPinned: isPinned ?? this.isPinned,
   );
   ConversationsTable copyWithCompanion(ConversationsCompanion data) {
@@ -4300,6 +4478,18 @@ class ConversationsTable extends DataClass
       parentConversationId: data.parentConversationId.present
           ? data.parentConversationId.value
           : this.parentConversationId,
+      forkSourceConversationId: data.forkSourceConversationId.present
+          ? data.forkSourceConversationId.value
+          : this.forkSourceConversationId,
+      forkSourceTitle: data.forkSourceTitle.present
+          ? data.forkSourceTitle.value
+          : this.forkSourceTitle,
+      forkThroughMessageId: data.forkThroughMessageId.present
+          ? data.forkThroughMessageId.value
+          : this.forkThroughMessageId,
+      forkMaterializedAt: data.forkMaterializedAt.present
+          ? data.forkMaterializedAt.value
+          : this.forkMaterializedAt,
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
     );
   }
@@ -4315,6 +4505,10 @@ class ConversationsTable extends DataClass
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
           ..write('parentConversationId: $parentConversationId, ')
+          ..write('forkSourceConversationId: $forkSourceConversationId, ')
+          ..write('forkSourceTitle: $forkSourceTitle, ')
+          ..write('forkThroughMessageId: $forkThroughMessageId, ')
+          ..write('forkMaterializedAt: $forkMaterializedAt, ')
           ..write('isPinned: $isPinned')
           ..write(')'))
         .toString();
@@ -4330,6 +4524,10 @@ class ConversationsTable extends DataClass
     modelId,
     agentId,
     parentConversationId,
+    forkSourceConversationId,
+    forkSourceTitle,
+    forkThroughMessageId,
+    forkMaterializedAt,
     isPinned,
   );
   @override
@@ -4344,6 +4542,10 @@ class ConversationsTable extends DataClass
           other.modelId == this.modelId &&
           other.agentId == this.agentId &&
           other.parentConversationId == this.parentConversationId &&
+          other.forkSourceConversationId == this.forkSourceConversationId &&
+          other.forkSourceTitle == this.forkSourceTitle &&
+          other.forkThroughMessageId == this.forkThroughMessageId &&
+          other.forkMaterializedAt == this.forkMaterializedAt &&
           other.isPinned == this.isPinned);
 }
 
@@ -4356,6 +4558,10 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String?> modelId;
   final Value<String?> agentId;
   final Value<String?> parentConversationId;
+  final Value<String?> forkSourceConversationId;
+  final Value<String?> forkSourceTitle;
+  final Value<String?> forkThroughMessageId;
+  final Value<DateTime?> forkMaterializedAt;
   final Value<bool> isPinned;
   final Value<int> rowid;
   const ConversationsCompanion({
@@ -4367,6 +4573,10 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
     this.parentConversationId = const Value.absent(),
+    this.forkSourceConversationId = const Value.absent(),
+    this.forkSourceTitle = const Value.absent(),
+    this.forkThroughMessageId = const Value.absent(),
+    this.forkMaterializedAt = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -4379,6 +4589,10 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
     this.parentConversationId = const Value.absent(),
+    this.forkSourceConversationId = const Value.absent(),
+    this.forkSourceTitle = const Value.absent(),
+    this.forkThroughMessageId = const Value.absent(),
+    this.forkMaterializedAt = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -4392,6 +4606,10 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? modelId,
     Expression<String>? agentId,
     Expression<String>? parentConversationId,
+    Expression<String>? forkSourceConversationId,
+    Expression<String>? forkSourceTitle,
+    Expression<String>? forkThroughMessageId,
+    Expression<DateTime>? forkMaterializedAt,
     Expression<bool>? isPinned,
     Expression<int>? rowid,
   }) {
@@ -4405,6 +4623,13 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       if (agentId != null) 'agent_id': agentId,
       if (parentConversationId != null)
         'parent_conversation_id': parentConversationId,
+      if (forkSourceConversationId != null)
+        'fork_source_conversation_id': forkSourceConversationId,
+      if (forkSourceTitle != null) 'fork_source_title': forkSourceTitle,
+      if (forkThroughMessageId != null)
+        'fork_through_message_id': forkThroughMessageId,
+      if (forkMaterializedAt != null)
+        'fork_materialized_at': forkMaterializedAt,
       if (isPinned != null) 'is_pinned': isPinned,
       if (rowid != null) 'rowid': rowid,
     });
@@ -4419,6 +4644,10 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String?>? modelId,
     Value<String?>? agentId,
     Value<String?>? parentConversationId,
+    Value<String?>? forkSourceConversationId,
+    Value<String?>? forkSourceTitle,
+    Value<String?>? forkThroughMessageId,
+    Value<DateTime?>? forkMaterializedAt,
     Value<bool>? isPinned,
     Value<int>? rowid,
   }) {
@@ -4431,6 +4660,11 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       modelId: modelId ?? this.modelId,
       agentId: agentId ?? this.agentId,
       parentConversationId: parentConversationId ?? this.parentConversationId,
+      forkSourceConversationId:
+          forkSourceConversationId ?? this.forkSourceConversationId,
+      forkSourceTitle: forkSourceTitle ?? this.forkSourceTitle,
+      forkThroughMessageId: forkThroughMessageId ?? this.forkThroughMessageId,
+      forkMaterializedAt: forkMaterializedAt ?? this.forkMaterializedAt,
       isPinned: isPinned ?? this.isPinned,
       rowid: rowid ?? this.rowid,
     );
@@ -4465,6 +4699,24 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         parentConversationId.value,
       );
     }
+    if (forkSourceConversationId.present) {
+      map['fork_source_conversation_id'] = Variable<String>(
+        forkSourceConversationId.value,
+      );
+    }
+    if (forkSourceTitle.present) {
+      map['fork_source_title'] = Variable<String>(forkSourceTitle.value);
+    }
+    if (forkThroughMessageId.present) {
+      map['fork_through_message_id'] = Variable<String>(
+        forkThroughMessageId.value,
+      );
+    }
+    if (forkMaterializedAt.present) {
+      map['fork_materialized_at'] = Variable<DateTime>(
+        forkMaterializedAt.value,
+      );
+    }
     if (isPinned.present) {
       map['is_pinned'] = Variable<bool>(isPinned.value);
     }
@@ -4485,6 +4737,10 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
           ..write('parentConversationId: $parentConversationId, ')
+          ..write('forkSourceConversationId: $forkSourceConversationId, ')
+          ..write('forkSourceTitle: $forkSourceTitle, ')
+          ..write('forkThroughMessageId: $forkThroughMessageId, ')
+          ..write('forkMaterializedAt: $forkMaterializedAt, ')
           ..write('isPinned: $isPinned, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -12508,6 +12764,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'conversations_workspace_parent_updated_id',
     'CREATE INDEX conversations_workspace_parent_updated_id ON conversations (workspace_id, parent_conversation_id, is_pinned DESC, updated_at DESC, id DESC)',
   );
+  late final Index conversationsForkSourceIdx = Index(
+    'conversations_fork_source_idx',
+    'CREATE INDEX conversations_fork_source_idx ON conversations (fork_source_conversation_id)',
+  );
   late final Index agentsWorkspaceNameId = Index(
     'agents_workspace_name_id',
     'CREATE INDEX agents_workspace_name_id ON agents (workspace_id, name COLLATE NOCASE, id)',
@@ -12616,6 +12876,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     appSkillWorkspaceSettings,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
+    conversationsForkSourceIdx,
     agentsWorkspaceNameId,
     agentSkillsWorkspaceSkill,
     agentSkillsAppSkill,
@@ -16923,6 +17184,10 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       Value<String?> modelId,
       Value<String?> agentId,
       Value<String?> parentConversationId,
+      Value<String?> forkSourceConversationId,
+      Value<String?> forkSourceTitle,
+      Value<String?> forkThroughMessageId,
+      Value<DateTime?> forkMaterializedAt,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -16936,6 +17201,10 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String?> modelId,
       Value<String?> agentId,
       Value<String?> parentConversationId,
+      Value<String?> forkSourceConversationId,
+      Value<String?> forkSourceTitle,
+      Value<String?> forkThroughMessageId,
+      Value<DateTime?> forkMaterializedAt,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -17114,6 +17383,26 @@ class $$ConversationsTableFilterComposer
 
   ColumnFilters<String> get title => $composableBuilder(
     column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get forkSourceConversationId => $composableBuilder(
+    column: $table.forkSourceConversationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get forkSourceTitle => $composableBuilder(
+    column: $table.forkSourceTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get forkThroughMessageId => $composableBuilder(
+    column: $table.forkThroughMessageId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get forkMaterializedAt => $composableBuilder(
+    column: $table.forkMaterializedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17320,6 +17609,26 @@ class $$ConversationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get forkSourceConversationId => $composableBuilder(
+    column: $table.forkSourceConversationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get forkSourceTitle => $composableBuilder(
+    column: $table.forkSourceTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get forkThroughMessageId => $composableBuilder(
+    column: $table.forkThroughMessageId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get forkMaterializedAt => $composableBuilder(
+    column: $table.forkMaterializedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isPinned => $composableBuilder(
     column: $table.isPinned,
     builder: (column) => ColumnOrderings(column),
@@ -17439,6 +17748,26 @@ class $$ConversationsTableAnnotationComposer
 
   GeneratedColumn<String> get title =>
       $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get forkSourceConversationId => $composableBuilder(
+    column: $table.forkSourceConversationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get forkSourceTitle => $composableBuilder(
+    column: $table.forkSourceTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get forkThroughMessageId => $composableBuilder(
+    column: $table.forkThroughMessageId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get forkMaterializedAt => $composableBuilder(
+    column: $table.forkMaterializedAt,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isPinned =>
       $composableBuilder(column: $table.isPinned, builder: (column) => column);
@@ -17658,6 +17987,10 @@ class $$ConversationsTableTableManager
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
                 Value<String?> parentConversationId = const Value.absent(),
+                Value<String?> forkSourceConversationId = const Value.absent(),
+                Value<String?> forkSourceTitle = const Value.absent(),
+                Value<String?> forkThroughMessageId = const Value.absent(),
+                Value<DateTime?> forkMaterializedAt = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion(
@@ -17669,6 +18002,10 @@ class $$ConversationsTableTableManager
                 modelId: modelId,
                 agentId: agentId,
                 parentConversationId: parentConversationId,
+                forkSourceConversationId: forkSourceConversationId,
+                forkSourceTitle: forkSourceTitle,
+                forkThroughMessageId: forkThroughMessageId,
+                forkMaterializedAt: forkMaterializedAt,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -17682,6 +18019,10 @@ class $$ConversationsTableTableManager
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
                 Value<String?> parentConversationId = const Value.absent(),
+                Value<String?> forkSourceConversationId = const Value.absent(),
+                Value<String?> forkSourceTitle = const Value.absent(),
+                Value<String?> forkThroughMessageId = const Value.absent(),
+                Value<DateTime?> forkMaterializedAt = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion.insert(
@@ -17693,6 +18034,10 @@ class $$ConversationsTableTableManager
                 modelId: modelId,
                 agentId: agentId,
                 parentConversationId: parentConversationId,
+                forkSourceConversationId: forkSourceConversationId,
+                forkSourceTitle: forkSourceTitle,
+                forkThroughMessageId: forkThroughMessageId,
+                forkMaterializedAt: forkMaterializedAt,
                 isPinned: isPinned,
                 rowid: rowid,
               ),

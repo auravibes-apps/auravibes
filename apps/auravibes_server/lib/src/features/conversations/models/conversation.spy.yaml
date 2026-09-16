@@ -16,6 +16,10 @@ fields:
   createdAt: DateTime
   updatedAt: DateTime
   deletedAt: DateTime?
+  forkSourceConversationId: String?
+  forkSourceTitle: String?
+  forkThroughMessageId: String?
+  forkMaterializedAt: DateTime?
 indexes:
   conversation_workspace_stable_idx:
     fields: workspaceId, stableId
@@ -25,3 +29,5 @@ indexes:
   conversation_workspace_id_idx:
     fields: workspaceId, id
     unique: true
+  conversation_fork_source_idx:
+    fields: workspaceId, forkSourceConversationId

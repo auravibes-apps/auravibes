@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/repositories/agents_repository.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_repository.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_tools_repository.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
@@ -107,6 +108,20 @@ void main() {
         ),
       ],
     );
+    when(() => gateway.watch<List<ConversationEntity>>(any(), any()))
+        .thenAnswer(
+          (_) => Stream.value([
+            ConversationEntity(
+              id: 'conversation-a',
+              title: 'Cloud',
+              workspaceId: 'mirror-a',
+              isPinned: false,
+              createdAt: now,
+              updatedAt: now,
+              revision: 3,
+            ),
+          ]),
+        );
     when(() => conversation.listMessages(any()))
         .thenAnswer((_) async => const []);
     when(() => gateway.watchResources(any()))

@@ -1163,7 +1163,7 @@ class const ServerToolExecutorService({
         lockMode: LockMode.forUpdate,
       );
       if (assistant != null &&
-          assistant.status != ConversationStatuses.cancelled) {
+          !ConversationStatuses.isMessageTerminal(assistant.status)) {
         await ConversationMessage.db.updateRow(
           session,
           assistant.copyWith(

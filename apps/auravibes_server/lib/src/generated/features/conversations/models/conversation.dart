@@ -31,6 +31,10 @@ abstract class Conversation
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.forkSourceConversationId,
+    this.forkSourceTitle,
+    this.forkThroughMessageId,
+    this.forkMaterializedAt,
   }) : projectionRevision = projectionRevision ?? 1,
        eventSequence = eventSequence ?? 0,
        executionState = executionState ?? 'idle';
@@ -52,6 +56,10 @@ abstract class Conversation
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
+    String? forkSourceConversationId,
+    String? forkSourceTitle,
+    String? forkThroughMessageId,
+    DateTime? forkMaterializedAt,
   }) = _ConversationImpl;
 
   factory Conversation.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -79,6 +87,16 @@ abstract class Conversation
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
           : _is.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+      forkSourceConversationId:
+          jsonSerialization['forkSourceConversationId'] as String?,
+      forkSourceTitle: jsonSerialization['forkSourceTitle'] as String?,
+      forkThroughMessageId:
+          jsonSerialization['forkThroughMessageId'] as String?,
+      forkMaterializedAt: jsonSerialization['forkMaterializedAt'] == null
+          ? null
+          : _is.DateTimeJsonExtension.fromJson(
+              jsonSerialization['forkMaterializedAt'],
+            ),
     );
   }
 
@@ -119,6 +137,14 @@ abstract class Conversation
 
   DateTime? deletedAt;
 
+  String? forkSourceConversationId;
+
+  String? forkSourceTitle;
+
+  String? forkThroughMessageId;
+
+  DateTime? forkMaterializedAt;
+
   @override
   _is.Table<int?> get table => t;
 
@@ -142,6 +168,10 @@ abstract class Conversation
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    String? forkSourceConversationId,
+    String? forkSourceTitle,
+    String? forkThroughMessageId,
+    DateTime? forkMaterializedAt,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -164,6 +194,13 @@ abstract class Conversation
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+      if (forkSourceConversationId != null)
+        'forkSourceConversationId': forkSourceConversationId,
+      if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
+      if (forkThroughMessageId != null)
+        'forkThroughMessageId': forkThroughMessageId,
+      if (forkMaterializedAt != null)
+        'forkMaterializedAt': forkMaterializedAt?.toJson(),
     };
   }
 
@@ -188,6 +225,13 @@ abstract class Conversation
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+      if (forkSourceConversationId != null)
+        'forkSourceConversationId': forkSourceConversationId,
+      if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
+      if (forkThroughMessageId != null)
+        'forkThroughMessageId': forkThroughMessageId,
+      if (forkMaterializedAt != null)
+        'forkMaterializedAt': forkMaterializedAt?.toJson(),
     };
   }
 
@@ -239,6 +283,10 @@ class _ConversationImpl extends Conversation {
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
+    String? forkSourceConversationId,
+    String? forkSourceTitle,
+    String? forkThroughMessageId,
+    DateTime? forkMaterializedAt,
   }) : super._(
          id: id,
          workspaceId: workspaceId,
@@ -256,6 +304,10 @@ class _ConversationImpl extends Conversation {
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
+         forkSourceConversationId: forkSourceConversationId,
+         forkSourceTitle: forkSourceTitle,
+         forkThroughMessageId: forkThroughMessageId,
+         forkMaterializedAt: forkMaterializedAt,
        );
 
   /// Returns a shallow copy of this [Conversation]
@@ -279,6 +331,10 @@ class _ConversationImpl extends Conversation {
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
+    Object? forkSourceConversationId = _Undefined,
+    Object? forkSourceTitle = _Undefined,
+    Object? forkThroughMessageId = _Undefined,
+    Object? forkMaterializedAt = _Undefined,
   }) {
     return Conversation(
       id: id is int? ? id : this.id,
@@ -301,6 +357,18 @@ class _ConversationImpl extends Conversation {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,
+      forkSourceConversationId: forkSourceConversationId is String?
+          ? forkSourceConversationId
+          : this.forkSourceConversationId,
+      forkSourceTitle: forkSourceTitle is String?
+          ? forkSourceTitle
+          : this.forkSourceTitle,
+      forkThroughMessageId: forkThroughMessageId is String?
+          ? forkThroughMessageId
+          : this.forkThroughMessageId,
+      forkMaterializedAt: forkMaterializedAt is DateTime?
+          ? forkMaterializedAt
+          : this.forkMaterializedAt,
     );
   }
 }
@@ -387,6 +455,30 @@ class ConversationUpdateTable extends _is.UpdateTable<ConversationTable> {
         table.deletedAt,
         value,
       );
+
+  _is.ColumnValue<String, String> forkSourceConversationId(String? value) =>
+      _is.ColumnValue(
+        table.forkSourceConversationId,
+        value,
+      );
+
+  _is.ColumnValue<String, String> forkSourceTitle(String? value) =>
+      _is.ColumnValue(
+        table.forkSourceTitle,
+        value,
+      );
+
+  _is.ColumnValue<String, String> forkThroughMessageId(String? value) =>
+      _is.ColumnValue(
+        table.forkThroughMessageId,
+        value,
+      );
+
+  _is.ColumnValue<DateTime, DateTime> forkMaterializedAt(DateTime? value) =>
+      _is.ColumnValue(
+        table.forkMaterializedAt,
+        value,
+      );
 }
 
 class ConversationTable extends _is.Table<int?> {
@@ -455,6 +547,22 @@ class ConversationTable extends _is.Table<int?> {
       'deletedAt',
       this,
     );
+    forkSourceConversationId = _is.ColumnString(
+      'forkSourceConversationId',
+      this,
+    );
+    forkSourceTitle = _is.ColumnString(
+      'forkSourceTitle',
+      this,
+    );
+    forkThroughMessageId = _is.ColumnString(
+      'forkThroughMessageId',
+      this,
+    );
+    forkMaterializedAt = _is.ColumnDateTime(
+      'forkMaterializedAt',
+      this,
+    );
   }
 
   late final ConversationUpdateTable updateTable;
@@ -489,6 +597,14 @@ class ConversationTable extends _is.Table<int?> {
 
   late final _is.ColumnDateTime deletedAt;
 
+  late final _is.ColumnString forkSourceConversationId;
+
+  late final _is.ColumnString forkSourceTitle;
+
+  late final _is.ColumnString forkThroughMessageId;
+
+  late final _is.ColumnDateTime forkMaterializedAt;
+
   @override
   List<_is.Column> get columns => [
     id,
@@ -507,6 +623,10 @@ class ConversationTable extends _is.Table<int?> {
     createdAt,
     updatedAt,
     deletedAt,
+    forkSourceConversationId,
+    forkSourceTitle,
+    forkThroughMessageId,
+    forkMaterializedAt,
   ];
 }
 

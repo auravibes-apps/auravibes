@@ -11,6 +11,7 @@ import '../../model_connections/domain/virtual_workspace_model_selection.dart';
 import '../../model_connections/usecases/model_connection_usecases.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
+import '../domain/conversation_values.dart';
 import 'conversation_host_effects.dart';
 import 'a2ui_protocol.dart';
 import 'server_tool_executor.dart';
@@ -88,7 +89,8 @@ Future<void> persistProviderToolBatch(
     transaction: transaction,
     lockMode: LockMode.forUpdate,
   );
-  if (assistant == null) {
+  if (assistant == null ||
+      ConversationStatuses.isMessageTerminal(assistant.status)) {
     throw const ConversationEngineConfigurationException('assistant_message');
   }
   final metadata = assistant.metadataJson == null
@@ -403,19 +405,18 @@ final class const ServerConversationEngineHost({
           'tool_execution_in_progress',
         );
       }
-      final resolvedCalls = completedCalls
-          .where((call) => call.status != 'pending' && call.status != 'running')
-          .toList(growable: false);
-      final persistedMessages = await ConversationMessage.db.find(
+      final resolvedCalls = await ConversationToolCall.db.find(
         session,
         where: (table) =>
             table.workspaceId.equals(job.workspaceId) &
-            table.conversationId.equals(job.conversationId),
-        orderBy: (table) => table.id,
+            table.messageId.inSet(
+              messages.map((message) => message.id).whereType<int>().toSet(),
+            ) &
+            table.status.notEquals('running'),
       );
       toolExchanges.addAll(
         persistedProviderToolExchanges(
-          messages: persistedMessages,
+          messages: messages,
           calls: resolvedCalls,
         ),
       );

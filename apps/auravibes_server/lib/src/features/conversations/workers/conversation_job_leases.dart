@@ -212,7 +212,8 @@ class const ConversationJobLeases() {
             transaction: transaction,
             lockMode: LockMode.forUpdate,
           );
-    if (assistant != null) {
+    if (assistant != null &&
+        !ConversationStatuses.isMessageTerminal(assistant.status)) {
       await ConversationMessage.db.updateRow(
         session,
         assistant.copyWith(

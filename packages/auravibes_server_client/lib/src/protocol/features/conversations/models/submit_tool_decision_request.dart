@@ -19,6 +19,7 @@ abstract class SubmitToolDecisionRequest
   SubmitToolDecisionRequest._({
     required this.workspaceId,
     required this.requestId,
+    required this.conversationId,
     required this.turnId,
     required this.toolCallId,
     required this.argumentsDigest,
@@ -32,6 +33,7 @@ abstract class SubmitToolDecisionRequest
   factory SubmitToolDecisionRequest({
     required int workspaceId,
     required String requestId,
+    required String conversationId,
     required String turnId,
     required String toolCallId,
     required String argumentsDigest,
@@ -48,6 +50,7 @@ abstract class SubmitToolDecisionRequest
     return SubmitToolDecisionRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
+      conversationId: jsonSerialization['conversationId'] as String,
       turnId: jsonSerialization['turnId'] as String,
       toolCallId: jsonSerialization['toolCallId'] as String,
       argumentsDigest: jsonSerialization['argumentsDigest'] as String,
@@ -69,6 +72,8 @@ abstract class SubmitToolDecisionRequest
   int workspaceId;
 
   String requestId;
+
+  String conversationId;
 
   String turnId;
 
@@ -92,6 +97,7 @@ abstract class SubmitToolDecisionRequest
   SubmitToolDecisionRequest copyWith({
     int? workspaceId,
     String? requestId,
+    String? conversationId,
     String? turnId,
     String? toolCallId,
     String? argumentsDigest,
@@ -107,6 +113,7 @@ abstract class SubmitToolDecisionRequest
       '__className__': 'SubmitToolDecisionRequest',
       'workspaceId': workspaceId,
       'requestId': requestId,
+      'conversationId': conversationId,
       'turnId': turnId,
       'toolCallId': toolCallId,
       'argumentsDigest': argumentsDigest,
@@ -126,6 +133,7 @@ abstract class SubmitToolDecisionRequest
       '__className__': 'SubmitToolDecisionRequest',
       'workspaceId': workspaceId,
       'requestId': requestId,
+      'conversationId': conversationId,
       'turnId': turnId,
       'toolCallId': toolCallId,
       'argumentsDigest': argumentsDigest,
@@ -151,6 +159,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
   _SubmitToolDecisionRequestImpl({
     required int workspaceId,
     required String requestId,
+    required String conversationId,
     required String turnId,
     required String toolCallId,
     required String argumentsDigest,
@@ -162,6 +171,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
+         conversationId: conversationId,
          turnId: turnId,
          toolCallId: toolCallId,
          argumentsDigest: argumentsDigest,
@@ -179,6 +189,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
   SubmitToolDecisionRequest copyWith({
     int? workspaceId,
     String? requestId,
+    String? conversationId,
     String? turnId,
     String? toolCallId,
     String? argumentsDigest,
@@ -191,6 +202,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
     return SubmitToolDecisionRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       requestId: requestId ?? this.requestId,
+      conversationId: conversationId ?? this.conversationId,
       turnId: turnId ?? this.turnId,
       toolCallId: toolCallId ?? this.toolCallId,
       argumentsDigest: argumentsDigest ?? this.argumentsDigest,

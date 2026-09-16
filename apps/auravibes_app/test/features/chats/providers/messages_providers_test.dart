@@ -59,7 +59,7 @@ class _FakeMessageRepository implements MessageRepository {
   }
 
   @override
-  Future<bool> deleteMessage(String id) {
+  Future<bool> deleteMessage(String id, {String? conversationId}) {
     throw UnimplementedError();
   }
 
@@ -141,7 +141,11 @@ class _FakeMessageRepository implements MessageRepository {
   }
 
   @override
-  Future<MessageEntity> patchMessage(String id, MessagePatch message) {
+  Future<MessageEntity> patchMessage(
+    String id,
+    MessagePatch message, {
+    String? conversationId,
+  }) {
     throw UnimplementedError();
   }
 

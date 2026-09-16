@@ -1,6 +1,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -16,26 +17,40 @@ class const AppToolCallActionsDataProvider({
   Future<bool> skipToolCall({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) async {
     final message = await _loadMessage(messageId);
     if (message == null) return false;
 
     final metadata = message.metadata ?? const MessageMetadataEntity();
     final updatedToolCalls = _skippedToolCalls(metadata.toolCalls, toolCallId);
+    final updatedMetadata = metadata.copyWith(toolCalls: updatedToolCalls);
 
-    await _patchToolCalls(messageId, metadata, updatedToolCalls);
+    await _patchToolCalls(
+      messageId,
+      metadata,
+      updatedToolCalls,
+      status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+      conversationId: conversationId,
+    );
     onToolCallChanged();
 
     return true;
   }
 
   @override
-  Future<void> resumeConversationIfReady({required String messageId}) {
+  Future<void> resumeConversationIfReady({
+    required String messageId,
+    required String conversationId,
+  }) {
     return agentToolResumeService.call(messageId: messageId);
   }
 
   @override
-  Future<void> stopPendingToolCalls({required String messageId}) async {
+  Future<void> stopPendingToolCalls({
+    required String messageId,
+    required String conversationId,
+  }) async {
     final message = await _loadMessage(messageId);
     if (message == null) return;
 
@@ -43,7 +58,13 @@ class const AppToolCallActionsDataProvider({
     final updatedToolCalls = _stoppedToolCalls(metadata.toolCalls);
     if (updatedToolCalls == null) return;
 
-    await _patchToolCalls(messageId, metadata, updatedToolCalls);
+    await _patchToolCalls(
+      messageId,
+      metadata,
+      updatedToolCalls,
+      status: .sent,
+      conversationId: conversationId,
+    );
     onToolCallChanged();
     _finishActiveSubAgent(message);
   }
@@ -81,11 +102,17 @@ class const AppToolCallActionsDataProvider({
   Future<void> _patchToolCalls(
     String messageId,
     MessageMetadataEntity metadata,
-    List<MessageToolCallEntity> toolCalls,
-  ) async {
+    List<MessageToolCallEntity> toolCalls, {
+    required String conversationId,
+    MessageStatus? status,
+  }) async {
     final _ = await messageRepository.patchMessage(
       messageId,
-      .new(metadata: metadata.copyWith(toolCalls: toolCalls)),
+      .new(
+        metadata: metadata.copyWith(toolCalls: toolCalls),
+        status: status,
+      ),
+      conversationId: conversationId,
     );
   }
 

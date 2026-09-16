@@ -1382,6 +1382,7 @@ void main() {
           request: SubmitToolDecisionRequest(
             workspaceId: fixture.workspaceId,
             requestId: 'approve-child-confirmation',
+            conversationId: 'conversation-1',
             turnId: pausedTurn.requestId,
             toolCallId: 'child-confirmation',
             argumentsDigest: (await ConversationToolCall.db.findFirstRow(

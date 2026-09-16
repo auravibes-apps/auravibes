@@ -28,11 +28,12 @@ abstract class ConversationMessageView
     required this.status,
     required this.content,
     this.metadataJson,
+    bool? isForkReference,
     required this.toolCalls,
     required this.revision,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : isForkReference = isForkReference ?? false;
 
   factory ConversationMessageView({
     required String id,
@@ -44,6 +45,7 @@ abstract class ConversationMessageView
     required String status,
     required String content,
     String? metadataJson,
+    bool? isForkReference,
     required List<_irozunu0.ConversationToolCallView> toolCalls,
     required int revision,
     required DateTime createdAt,
@@ -63,6 +65,11 @@ abstract class ConversationMessageView
       status: jsonSerialization['status'] as String,
       content: jsonSerialization['content'] as String,
       metadataJson: jsonSerialization['metadataJson'] as String?,
+      isForkReference: jsonSerialization['isForkReference'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(
+              jsonSerialization['isForkReference'],
+            ),
       toolCalls: _if5qez1k.Protocol()
           .deserialize<List<_irozunu0.ConversationToolCallView>>(
             jsonSerialization['toolCalls'],
@@ -95,6 +102,8 @@ abstract class ConversationMessageView
 
   String? metadataJson;
 
+  bool isForkReference;
+
   List<_irozunu0.ConversationToolCallView> toolCalls;
 
   int revision;
@@ -116,6 +125,7 @@ abstract class ConversationMessageView
     String? status,
     String? content,
     String? metadataJson,
+    bool? isForkReference,
     List<_irozunu0.ConversationToolCallView>? toolCalls,
     int? revision,
     DateTime? createdAt,
@@ -134,6 +144,7 @@ abstract class ConversationMessageView
       'status': status,
       'content': content,
       if (metadataJson != null) 'metadataJson': metadataJson,
+      'isForkReference': isForkReference,
       'toolCalls': toolCalls.toJson(valueToJson: (v) => v.toJson()),
       'revision': revision,
       'createdAt': createdAt.toJson(),
@@ -154,6 +165,7 @@ abstract class ConversationMessageView
       'status': status,
       'content': content,
       if (metadataJson != null) 'metadataJson': metadataJson,
+      'isForkReference': isForkReference,
       'toolCalls': toolCalls.toJson(valueToJson: (v) => v.toJsonForProtocol()),
       'revision': revision,
       'createdAt': createdAt.toJson(),
@@ -180,6 +192,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
     required String status,
     required String content,
     String? metadataJson,
+    bool? isForkReference,
     required List<_irozunu0.ConversationToolCallView> toolCalls,
     required int revision,
     required DateTime createdAt,
@@ -194,6 +207,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
          status: status,
          content: content,
          metadataJson: metadataJson,
+         isForkReference: isForkReference,
          toolCalls: toolCalls,
          revision: revision,
          createdAt: createdAt,
@@ -214,6 +228,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
     String? status,
     String? content,
     Object? metadataJson = _Undefined,
+    bool? isForkReference,
     List<_irozunu0.ConversationToolCallView>? toolCalls,
     int? revision,
     DateTime? createdAt,
@@ -229,6 +244,7 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
       status: status ?? this.status,
       content: content ?? this.content,
       metadataJson: metadataJson is String? ? metadataJson : this.metadataJson,
+      isForkReference: isForkReference ?? this.isForkReference,
       toolCalls:
           toolCalls ?? this.toolCalls.map((e0) => e0.copyWith()).toList(),
       revision: revision ?? this.revision,

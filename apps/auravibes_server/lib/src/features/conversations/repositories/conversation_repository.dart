@@ -7,6 +7,14 @@ import '../../model_connections/domain/virtual_workspace_model_selection.dart';
 import '../../objects/object_reference_service.dart';
 import '../domain/conversation_values.dart';
 
+const _transientForkToolCallStatuses = {
+  'pending',
+  'needsConfirmation',
+  'approved',
+  'granted',
+  'running',
+};
+
 Map<String, dynamic> _safeMetadata(String? source) {
   if (source == null) return <String, dynamic>{};
   try {
@@ -676,6 +684,77 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     limit: limit,
   );
 
+  Future<List<ConversationMessage>> listEffectiveMessages(
+    Session session, {
+    required int workspaceId,
+    required String conversationId,
+    Transaction? transaction,
+  }) async {
+    final conversation = await findConversationByStableId(
+      session,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      transaction: transaction,
+    );
+    if (conversation == null) return const [];
+    final messages = <ConversationMessage>[];
+    if (conversation.forkSourceConversationId != null &&
+        conversation.forkMaterializedAt == null) {
+      final inherited = await listEffectiveMessages(
+        session,
+        workspaceId: workspaceId,
+        conversationId: conversation.forkSourceConversationId!,
+        transaction: transaction,
+      );
+      final transientToolMessageIds =
+          (await listToolCallsByTurnIds(
+                session,
+                workspaceId: workspaceId,
+                turnIds: inherited
+                    .map((message) => message.turnId)
+                    .whereType<int>(),
+                transaction: transaction,
+              ))
+              .where(
+                (call) => _transientForkToolCallStatuses.contains(call.status),
+              )
+              .map((call) => call.messageId)
+              .toSet();
+      messages.addAll(
+        inherited.where(
+          (message) =>
+              message.pendingOrder == null &&
+              ConversationStatuses.isMessageTerminal(message.status) &&
+              !transientToolMessageIds.contains(message.id),
+        ),
+      );
+      final boundary = conversation.forkThroughMessageId;
+      if (boundary != null) {
+        final index = messages.indexWhere(
+          (message) => message.stableId == boundary,
+        );
+        if (index < 0) {
+          throw StateError('Fork boundary must be terminal');
+        }
+        messages.removeRange(index + 1, messages.length);
+      }
+    }
+    final own = await ConversationMessage.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(conversation.id!),
+      orderBy: (table) => table.id,
+      transaction: transaction,
+    );
+    messages.addAll(own);
+    messages.sort((left, right) {
+      final created = left.createdAt.compareTo(right.createdAt);
+      return created == 0 ? left.id!.compareTo(right.id!) : created;
+    });
+    return messages;
+  }
+
   Future<ConversationToolCall?> findToolCallByStableId(
     Session session, {
     required int workspaceId,
@@ -707,6 +786,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     Session session, {
     required int workspaceId,
     required Iterable<int> turnIds,
+    Transaction? transaction,
   }) {
     final ids = turnIds.toList();
     if (ids.isEmpty) return Future.value(const []);
@@ -716,6 +796,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
           table.workspaceId.equals(workspaceId) &
           table.turnId.inSet(ids.toSet()),
       orderBy: (table) => table.id,
+      transaction: transaction,
     );
   }
 

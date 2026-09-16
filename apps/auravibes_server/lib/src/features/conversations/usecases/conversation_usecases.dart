@@ -32,6 +32,20 @@ class ConversationUseCases {
 
   static const _maxAttachmentsPerTurn = 4;
   static const _maxAttachmentBytesPerTurn = maxAttachmentBytes * 2;
+  static const _transientMessageStatuses = {
+    ConversationStatuses.queued,
+    ConversationStatuses.running,
+    ConversationStatuses.awaitingApproval,
+    ConversationStatuses.awaitingUserAction,
+    ConversationStatuses.cancelRequested,
+  };
+  static const _transientToolCallStatuses = {
+    'pending',
+    'needsConfirmation',
+    'approved',
+    'granted',
+    'running',
+  };
 
   final conversation_repo.ConversationRepository _repository;
   final ConversationJobPublisher _publishConversationJob;
@@ -96,6 +110,105 @@ class ConversationUseCases {
           transaction: transaction,
         ),
       );
+      return _Mutation(summary, 'created', summary.id);
+    },
+  );
+
+  Future<ConversationSummary> fork(
+    Session session, {
+    required String userId,
+    required ForkConversationRequest request,
+  }) => _mutate(
+    session,
+    userId: userId,
+    workspaceId: request.workspaceId,
+    endpoint: 'conversation.fork',
+    requestId: request.requestId,
+    requestBody: request.toJson(),
+    decode: ConversationSummary.fromJson,
+    run: (transaction, now) async {
+      _requireId(request.requestId);
+      _requireId(request.sourceConversationId);
+      _requireId(request.forkConversationId);
+      final source = await _repository.findConversationByStableId(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: request.sourceConversationId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (source == null) _fail(ConversationErrorCode.notFound);
+      final existing = await _repository.findConversationByStableId(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: request.forkConversationId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (existing != null) _fail(ConversationErrorCode.idempotencyConflict);
+      final effectiveMessages = await _effectiveMessages(
+        session,
+        source: source,
+        transaction: transaction,
+      );
+      final sourceMessages = await _durableMessages(
+        session,
+        messages: effectiveMessages,
+        workspaceId: source.workspaceId,
+        transaction: transaction,
+      );
+      final boundary =
+          request.throughMessageId ??
+          await _automaticForkBoundary(
+            session,
+            source: source,
+            messages: effectiveMessages,
+            durableMessages: sourceMessages,
+            transaction: transaction,
+          );
+      if (boundary == null) _fail(ConversationErrorCode.validationFailed);
+      if (request.throughMessageId != null &&
+          !sourceMessages.any(
+            (message) => message.stableId == request.throughMessageId,
+          )) {
+        _fail(ConversationErrorCode.validationFailed);
+      }
+      final title = await _copyConversationTitle(
+        session,
+        workspaceId: request.workspaceId,
+        source: source,
+        transaction: transaction,
+        suffix: 'Fork',
+      );
+      final fork = await Conversation.db.insertRow(
+        session,
+        Conversation(
+          workspaceId: request.workspaceId,
+          stableId: request.forkConversationId,
+          title: title,
+          isPinned: false,
+          modelId: source.modelId,
+          agentId: source.agentId,
+          forkSourceConversationId: source.stableId,
+          forkSourceTitle: source.title,
+          forkThroughMessageId: boundary,
+          revision: 1,
+          projectionRevision: 1,
+          eventSequence: 0,
+          executionState: 'idle',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      await _copyConversationResources(
+        session,
+        workspaceId: request.workspaceId,
+        source: source,
+        fork: fork,
+        transaction: transaction,
+      );
+      final summary = _summary(fork);
       return _Mutation(summary, 'created', summary.id);
     },
   );
@@ -172,12 +285,13 @@ class ConversationUseCases {
       request.workspaceId,
       request.conversationId,
     );
-    final messages = await _repository.listConversationMessages(
+    final allMessages = await _effectiveMessages(
       session,
-      workspaceId: request.workspaceId,
-      conversationId: conversation.id!,
-      limit: request.limit,
+      source: conversation,
     );
+    final messages = allMessages.length <= request.limit
+        ? allMessages
+        : allMessages.skip(allMessages.length - request.limit).toList();
     final turnIds = messages.map((message) => message.turnId).whereType<int>();
     final turns = {
       for (final turn in await _repository.listTurns(
@@ -188,11 +302,16 @@ class ConversationUseCases {
         turn.id!: turn,
     };
     final calls = <int, List<ConversationToolCall>>{};
+    final messageIds = messages
+        .map((message) => message.id)
+        .whereType<int>()
+        .toSet();
     for (final call in await _repository.listToolCallsByTurnIds(
       session,
       workspaceId: request.workspaceId,
       turnIds: turns.keys,
     )) {
+      if (!messageIds.contains(call.messageId)) continue;
       final messageId = call.messageId;
       (calls[messageId] ??= []).add(call);
     }
@@ -207,6 +326,7 @@ class ConversationUseCases {
         kind: message.kind,
         status: message.status,
         content: message.content,
+        isForkReference: message.conversationId != conversation.id,
         metadataJson: cloudA2uiMetadataForClient(
           message.metadataJson,
           cloudA2uiComponentsForClient(
@@ -336,15 +456,121 @@ class ConversationUseCases {
       if (conversation.revision != request.expectedRevision) {
         _fail(ConversationErrorCode.staleRevision);
       }
-      await Conversation.db.updateRow(
+      final hiddenDescendants = await _lockHiddenDescendants(
         session,
-        conversation.copyWith(
-          deletedAt: now,
-          revision: conversation.revision + 1,
-        ),
+        root: conversation,
         transaction: transaction,
       );
-      return _Mutation<void>(null, 'deleted', request.conversationId);
+      final frozenForkBoundaries = await _captureForkBoundariesForDelete(
+        session,
+        source: conversation,
+        transaction: transaction,
+      );
+      final deletedConversationIds = <String>[
+        conversation.stableId,
+        ...hiddenDescendants.map((child) => child.stableId),
+      ];
+      await _cancelForDeletion(
+        session,
+        conversation: conversation,
+        now: now,
+        transaction: transaction,
+      );
+      for (final child in hiddenDescendants) {
+        await _cancelForDeletion(
+          session,
+          conversation: child,
+          now: now,
+          transaction: transaction,
+        );
+      }
+      final pendingSources = <String>[conversation.stableId];
+      final boundaryMaps = <String, Map<String, String>>{};
+      while (pendingSources.isNotEmpty) {
+        final sourceId = pendingSources.removeAt(0);
+        final forks = await Conversation.db.find(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.forkSourceConversationId.equals(sourceId) &
+              table.forkMaterializedAt.equals(null) &
+              table.deletedAt.equals(null),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        for (final fork in forks) {
+          await _cancelForDeletion(
+            session,
+            conversation: fork,
+            now: now,
+            transaction: transaction,
+          );
+          final canceledFork = await Conversation.db.findById(
+            session,
+            fork.id!,
+            transaction: transaction,
+          );
+          if (canceledFork == null) _fail(ConversationErrorCode.notFound);
+          final hasCapturedBoundary = frozenForkBoundaries.containsKey(
+            fork.stableId,
+          );
+          final boundary = hasCapturedBoundary
+              ? frozenForkBoundaries[fork.stableId]
+              : fork.forkThroughMessageId;
+          final mappedBoundary = boundary == null
+              ? null
+              : boundaryMaps[sourceId]?[boundary];
+          final forkToMaterialize = mappedBoundary == null
+              ? canceledFork
+              : canceledFork.copyWith(forkThroughMessageId: mappedBoundary);
+          if (mappedBoundary != null) {
+            await Conversation.db.updateRow(
+              session,
+              forkToMaterialize,
+              transaction: transaction,
+            );
+          }
+          boundaryMaps[fork.stableId] = await _materializeFork(
+            session,
+            source:
+                await _repository.findConversationByStableId(
+                  session,
+                  workspaceId: request.workspaceId,
+                  conversationId: sourceId,
+                  transaction: transaction,
+                  lock: true,
+                ) ??
+                _fail(ConversationErrorCode.notFound),
+            fork: forkToMaterialize,
+            actorUserId: userId,
+            requestId: request.requestId,
+            now: now,
+            transaction: transaction,
+            boundaryOverride: mappedBoundary ?? boundary,
+            boundaryWasCaptured: hasCapturedBoundary,
+          );
+          deletedConversationIds.add(fork.stableId);
+          pendingSources.add(fork.stableId);
+        }
+      }
+      for (final child in hiddenDescendants.reversed) {
+        await _purgeConversation(
+          session,
+          conversation: child,
+          transaction: transaction,
+        );
+      }
+      await _purgeConversation(
+        session,
+        conversation: conversation,
+        transaction: transaction,
+      );
+      return _Mutation<void>(
+        null,
+        'deleted',
+        request.conversationId,
+        affectedConversationIds: deletedConversationIds,
+      );
     },
   );
 
@@ -616,7 +842,7 @@ class ConversationUseCases {
         limit: 500,
       ),
     );
-    final storedMessages = await _repository.listConversationMessages(
+    final pendingStoredMessages = await _repository.listConversationMessages(
       session,
       workspaceId: request.workspaceId,
       conversationId: conversation.id!,
@@ -624,7 +850,9 @@ class ConversationUseCases {
     );
     final messageViews = {for (final message in messages) message.id: message};
     final pendingMessages =
-        storedMessages.where((message) => message.pendingOrder != null).toList()
+        pendingStoredMessages
+            .where((message) => message.pendingOrder != null)
+            .toList()
           ..sort(
             (left, right) => left.pendingOrder!.compareTo(right.pendingOrder!),
           );
@@ -640,11 +868,15 @@ class ConversationUseCases {
             session,
             execution!.assistantMessageId!,
           );
+    final effectiveMessages = await _effectiveMessages(
+      session,
+      source: conversation,
+    );
     final turns = {
       for (final turn in await _repository.listTurns(
         session,
         workspaceId: request.workspaceId,
-        turnIds: storedMessages
+        turnIds: effectiveMessages
             .map((message) => message.turnId)
             .whereType<int>(),
       ))
@@ -655,6 +887,9 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       turnIds: turns.keys,
     );
+    final effectiveMessageIds = effectiveMessages
+        .map((message) => message.id)
+        .toSet();
     return ConversationSnapshot(
       conversation: ConversationProjectionView(
         id: conversation.stableId,
@@ -664,6 +899,10 @@ class ConversationUseCases {
         sequence: conversation.eventSequence,
         modelId: conversation.modelId,
         agentId: conversation.agentId,
+        forkSourceConversationId: conversation.forkSourceConversationId,
+        forkSourceTitle: conversation.forkSourceTitle,
+        forkThroughMessageId: conversation.forkThroughMessageId,
+        forkMaterializedAt: conversation.forkMaterializedAt,
         activeExecutionId: execution?.stableId,
         updatedAt: conversation.updatedAt,
       ),
@@ -690,8 +929,13 @@ class ConversationUseCases {
             ),
       toolCalls: [
         for (final toolCall in toolCalls)
-          if (turns[toolCall.turnId] case final turn?)
-            _toolCallView(toolCall, turn, storedMessages),
+          if (effectiveMessageIds.contains(toolCall.messageId))
+            if (turns[toolCall.turnId] case final turn?)
+              _toolCallView(
+                toolCall,
+                turn,
+                effectiveMessages,
+              ),
       ],
       sequence: conversation.eventSequence,
     );
@@ -1286,7 +1530,8 @@ class ConversationUseCases {
             transaction: transaction,
             lockMode: LockMode.forUpdate,
           );
-          if (assistant != null) {
+          if (assistant != null &&
+              !ConversationStatuses.isMessageTerminal(assistant.status)) {
             await ConversationMessage.db.updateRow(
               session,
               assistant.copyWith(
@@ -1446,6 +1691,17 @@ class ConversationUseCases {
         if (request.stopAll && request.decision != 'deny') {
           _fail(ConversationErrorCode.validationFailed);
         }
+        final requestedConversation = await _repository
+            .findConversationByStableId(
+              session,
+              workspaceId: request.workspaceId,
+              conversationId: request.conversationId,
+              transaction: transaction,
+              lock: true,
+            );
+        if (requestedConversation == null) {
+          _fail(ConversationErrorCode.toolDecisionConflict);
+        }
         final turn = await _requireTurnForMutation(
           session,
           userId: userId,
@@ -1454,6 +1710,9 @@ class ConversationUseCases {
           transaction: transaction,
           initiatorOnly: false,
         );
+        if (requestedConversation.id != turn.conversationId) {
+          _fail(ConversationErrorCode.toolDecisionConflict);
+        }
         final toolCall = await _repository.findToolCallByStableId(
           session,
           workspaceId: request.workspaceId,
@@ -1837,7 +2096,8 @@ class ConversationUseCases {
               transaction: transaction,
               lockMode: LockMode.forUpdate,
             );
-      if (assistant != null) {
+      if (assistant != null &&
+          !ConversationStatuses.isMessageTerminal(assistant.status)) {
         await ConversationMessage.db.updateRow(
           session,
           assistant.copyWith(
@@ -2372,6 +2632,907 @@ class ConversationUseCases {
     ),
   );
 
+  Future<String> _copyConversationTitle(
+    Session session, {
+    required int workspaceId,
+    required Conversation source,
+    required Transaction transaction,
+    String suffix = 'Copy',
+  }) async {
+    final sourceTitle = source.title?.trim();
+    if (sourceTitle == null || sourceTitle.isEmpty) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final titles = (await _repository.listConversations(
+      session,
+      workspaceId: workspaceId,
+      transaction: transaction,
+    )).map((conversation) => conversation.title).whereType<String>().toSet();
+
+    for (var index = 1; ; index++) {
+      final candidate = index == 1
+          ? '$sourceTitle $suffix'
+          : '$sourceTitle $suffix $index';
+      if (!titles.contains(candidate)) return candidate;
+    }
+  }
+
+  Future<List<ConversationMessage>> _effectiveMessages(
+    Session session, {
+    required Conversation source,
+    Transaction? transaction,
+  }) async {
+    final messages = <ConversationMessage>[];
+    if (source.forkSourceConversationId != null &&
+        source.forkMaterializedAt == null) {
+      final parent = await _repository.findConversationByStableId(
+        session,
+        workspaceId: source.workspaceId,
+        conversationId: source.forkSourceConversationId!,
+        transaction: transaction,
+      );
+      if (parent != null) {
+        final inherited = await _durableMessages(
+          session,
+          messages: await _effectiveMessages(
+            session,
+            source: parent,
+            transaction: transaction,
+          ),
+          workspaceId: source.workspaceId,
+          transaction: transaction,
+        );
+        final boundary = source.forkThroughMessageId;
+        if (boundary != null) {
+          final boundaryIndex = inherited.indexWhere(
+            (message) => message.stableId == boundary,
+          );
+          if (boundaryIndex < 0) {
+            _fail(ConversationErrorCode.validationFailed);
+          }
+          inherited.removeRange(boundaryIndex + 1, inherited.length);
+        }
+        messages.addAll(inherited);
+      }
+    }
+    messages.addAll(
+      await ConversationMessage.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(source.workspaceId) &
+            table.conversationId.equals(source.id!),
+        orderBy: (table) => table.id,
+        transaction: transaction,
+      ),
+    );
+    return messages..sort((left, right) {
+      final created = left.createdAt.compareTo(right.createdAt);
+      return created == 0 ? left.id!.compareTo(right.id!) : created;
+    });
+  }
+
+  bool _isDurableMessage(ConversationMessage message) =>
+      message.pendingOrder == null &&
+      !_transientMessageStatuses.contains(message.status) &&
+      _isTerminalMessage(message);
+
+  Future<List<ConversationMessage>> _durableMessages(
+    Session session, {
+    required List<ConversationMessage> messages,
+    required int workspaceId,
+    Transaction? transaction,
+  }) async {
+    if (messages.isEmpty) return const [];
+    final transientToolMessageIds =
+        (await _repository.listToolCallsByTurnIds(
+              session,
+              workspaceId: workspaceId,
+              turnIds: messages
+                  .map((message) => message.turnId)
+                  .whereType<int>(),
+              transaction: transaction,
+            ))
+            .where((call) => _transientToolCallStatuses.contains(call.status))
+            .map((call) => call.messageId)
+            .toSet();
+
+    return messages
+        .where(
+          (message) =>
+              _isDurableMessage(message) &&
+              !transientToolMessageIds.contains(message.id),
+        )
+        .toList();
+  }
+
+  bool _isTerminalMessage(ConversationMessage message) =>
+      ConversationStatuses.isMessageTerminal(message.status);
+
+  Future<String?> _automaticForkBoundary(
+    Session session, {
+    required Conversation source,
+    required List<ConversationMessage> messages,
+    required List<ConversationMessage> durableMessages,
+    Transaction? transaction,
+  }) async {
+    final durableIds = durableMessages
+        .map((message) => message.id)
+        .whereType<int>()
+        .toSet();
+    var activeIndex = messages.indexWhere(
+      (message) => message.id == null || !durableIds.contains(message.id),
+    );
+
+    if (source.activeExecutionId case final executionId?) {
+      final execution = await ConversationExecution.db.findById(
+        session,
+        executionId,
+        transaction: transaction,
+      );
+      final assistantId = execution?.assistantMessageId;
+      final executionAssistantIndex = assistantId == null
+          ? null
+          : messages.indexWhere((message) => message.id == assistantId);
+      if (executionAssistantIndex != null && executionAssistantIndex >= 0) {
+        if (activeIndex < 0 || executionAssistantIndex < activeIndex) {
+          activeIndex = executionAssistantIndex;
+        }
+      } else if (activeIndex < 0) {
+        activeIndex = messages.length;
+      }
+    }
+
+    if (activeIndex < 0) {
+      return durableMessages.lastOrNull?.stableId;
+    }
+
+    var turnStart = activeIndex;
+    if (activeIndex < messages.length) {
+      final activeMessage = messages[activeIndex];
+      if (activeMessage.turnId case final turnId?) {
+        final turn = await ConversationTurn.db.findById(
+          session,
+          turnId,
+          transaction: transaction,
+        );
+        final userMessageId = turn?.userMessageId;
+        final userIndex = userMessageId == null
+            ? -1
+            : messages.indexWhere((message) => message.id == userMessageId);
+        if (userIndex >= 0 && userIndex < turnStart) turnStart = userIndex;
+      }
+      if (turnStart == activeIndex &&
+          activeMessage.role != 'user' &&
+          activeIndex > 0 &&
+          messages[activeIndex - 1].role == 'user') {
+        turnStart--;
+      }
+    }
+
+    for (var index = turnStart - 1; index >= 0; index--) {
+      final candidate = messages[index];
+      if (candidate.role == 'assistant' &&
+          candidate.id != null &&
+          durableIds.contains(candidate.id)) {
+        return candidate.stableId;
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _copyConversationResources(
+    Session session, {
+    required int workspaceId,
+    required Conversation source,
+    required Conversation fork,
+    required Transaction transaction,
+  }) async {
+    final resources = await WorkspaceResource.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.resourceKind.inSet({
+            WorkspaceResourceKind.conversationToolSelection,
+            WorkspaceResourceKind.conversationSkillSelection,
+          }),
+      transaction: transaction,
+    );
+    for (final resource in resources) {
+      Map<String, dynamic> data;
+      try {
+        final decoded = jsonDecode(resource.data);
+        if (decoded is! Map) continue;
+        data = Map<String, dynamic>.from(decoded);
+      } on Object {
+        continue;
+      }
+      if (data['conversationId'] != source.stableId) continue;
+      final suffix = resource.resourceId.startsWith('${source.stableId}:')
+          ? resource.resourceId.substring(source.stableId.length + 1)
+          : resource.resourceId;
+      final resourceId = '${fork.stableId}:$suffix';
+      data['id'] = resourceId;
+      data['conversationId'] = fork.stableId;
+      await WorkspaceResource.db.insertRow(
+        session,
+        WorkspaceResource(
+          workspaceId: workspaceId,
+          resourceKind: resource.resourceKind,
+          resourceId: resourceId,
+          data: jsonEncode(data),
+          revision: 1,
+          createdAt: resource.createdAt,
+          updatedAt: resource.updatedAt,
+        ),
+        transaction: transaction,
+      );
+    }
+  }
+
+  Future<Map<String, String>> _materializeFork(
+    Session session, {
+    required Conversation source,
+    required Conversation fork,
+    required String actorUserId,
+    required String requestId,
+    required DateTime now,
+    required Transaction transaction,
+    String? boundaryOverride,
+    bool boundaryWasCaptured = false,
+  }) async {
+    final sourceMessages = await _durableMessages(
+      session,
+      messages: await _effectiveMessages(
+        session,
+        source: source,
+        transaction: transaction,
+      ),
+      workspaceId: source.workspaceId,
+      transaction: transaction,
+    );
+    final boundary = boundaryOverride ?? fork.forkThroughMessageId;
+    if (boundaryWasCaptured && boundary == null) sourceMessages.clear();
+    if (boundary != null) {
+      final boundaryIndex = sourceMessages.indexWhere(
+        (message) => message.stableId == boundary,
+      );
+      if (boundaryIndex < 0) _fail(ConversationErrorCode.validationFailed);
+      sourceMessages.removeRange(boundaryIndex + 1, sourceMessages.length);
+    }
+    final sourceTurns = await ConversationTurn.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(source.workspaceId) &
+          table.id.inSet(
+            sourceMessages
+                .map((message) => message.turnId)
+                .whereType<int>()
+                .toSet(),
+          ),
+      transaction: transaction,
+    );
+    final turnIds = <int, int>{};
+    final messageIds = <int, int>{};
+    final stableMessageIds = <String, String>{};
+    final targetMessages = <ConversationMessage>[];
+    for (final message in sourceMessages) {
+      final copy = await ConversationMessage.db.insertRow(
+        session,
+        ConversationMessage(
+          workspaceId: fork.workspaceId,
+          conversationId: fork.id!,
+          stableId: const Uuid().v7(),
+          role: message.role,
+          kind: message.kind,
+          status: message.status,
+          content: message.content,
+          metadataJson: message.metadataJson,
+          compactedThroughMessageId: null,
+          revision: message.revision,
+          createdAt: message.createdAt,
+          updatedAt: message.updatedAt,
+        ),
+        transaction: transaction,
+      );
+      messageIds[message.id!] = copy.id!;
+      stableMessageIds[message.stableId] = copy.stableId;
+      targetMessages.add(copy);
+      final references = await ObjectReference.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(source.workspaceId) &
+            table.messageId.equals(message.id!) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+      );
+      for (final reference in references) {
+        await ObjectReference.db.insertRow(
+          session,
+          ObjectReference(
+            workspaceId: fork.workspaceId,
+            objectId: reference.objectId,
+            messageId: copy.id!,
+            createdAt: reference.createdAt,
+          ),
+          transaction: transaction,
+        );
+      }
+    }
+    for (final turn in sourceTurns.where(
+      (turn) => ConversationStatuses.isTerminal(turn.status),
+    )) {
+      final copy = await ConversationTurn.db.insertRow(
+        session,
+        ConversationTurn(
+          workspaceId: fork.workspaceId,
+          conversationId: fork.id!,
+          requestId: const Uuid().v7(),
+          requestHash: turn.requestHash,
+          initiatorUserId: turn.initiatorUserId,
+          userMessageId: null,
+          assistantMessageId: null,
+          status: turn.status,
+          revision: turn.revision,
+          acceptedSequence: turn.acceptedSequence,
+          cancellationRequestedAt: turn.cancellationRequestedAt,
+          terminalAt: turn.terminalAt,
+          createdAt: turn.createdAt,
+          updatedAt: turn.updatedAt,
+        ),
+        transaction: transaction,
+      );
+      turnIds[turn.id!] = copy.id!;
+      await ConversationTurn.db.updateRow(
+        session,
+        copy.copyWith(
+          userMessageId: messageIds[turn.userMessageId],
+          assistantMessageId: messageIds[turn.assistantMessageId],
+        ),
+        transaction: transaction,
+      );
+      for (final message in targetMessages.where(
+        (message) => messageIds.entries.any(
+          (entry) =>
+              entry.value == message.id &&
+              sourceMessages
+                      .firstWhere((source) => source.id == entry.key)
+                      .turnId ==
+                  turn.id,
+        ),
+      )) {
+        final targetIndex = targetMessages.indexWhere(
+          (target) => target.id == message.id,
+        );
+        final updatedMessage = message.copyWith(turnId: copy.id);
+        await ConversationMessage.db.updateRow(
+          session,
+          updatedMessage,
+          transaction: transaction,
+        );
+        targetMessages[targetIndex] = updatedMessage;
+      }
+    }
+    for (final message in sourceMessages) {
+      final targetId = messageIds[message.id!];
+      if (targetId == null) continue;
+      final compactedThroughMessageId =
+          message.compactedThroughMessageId == null
+          ? null
+          : messageIds[message.compactedThroughMessageId];
+      if (compactedThroughMessageId == null &&
+          message.compactedThroughMessageId != null) {
+        continue;
+      }
+      final target = targetMessages.firstWhere((copy) => copy.id == targetId);
+      await ConversationMessage.db.updateRow(
+        session,
+        target.copyWith(
+          turnId: target.turnId,
+          compactedThroughMessageId: compactedThroughMessageId,
+        ),
+        transaction: transaction,
+      );
+    }
+    final calls = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(source.workspaceId) &
+          table.turnId.inSet(turnIds.keys.toSet()),
+      transaction: transaction,
+    );
+    for (final call in calls) {
+      if (!messageIds.containsKey(call.messageId)) continue;
+      final newTurnId = turnIds[call.turnId];
+      final newMessageId = messageIds[call.messageId];
+      if (newTurnId == null || newMessageId == null) continue;
+      await ConversationToolCall.db.insertRow(
+        session,
+        ConversationToolCall(
+          workspaceId: fork.workspaceId,
+          conversationId: fork.id!,
+          turnId: newTurnId,
+          messageId: newMessageId,
+          stableId: const Uuid().v7(),
+          name: call.name,
+          argumentsJson: call.argumentsJson,
+          argumentsDigest: call.argumentsDigest,
+          status: call.status,
+          decision: call.decision,
+          decisionByUserId: call.decisionByUserId,
+          decisionAt: call.decisionAt,
+          resultJson: call.resultJson,
+          revision: call.revision,
+          createdAt: call.createdAt,
+          updatedAt: call.updatedAt,
+        ),
+        transaction: transaction,
+      );
+    }
+    final materialized = await Conversation.db.updateRow(
+      session,
+      fork.copyWith(
+        forkThroughMessageId: fork.forkThroughMessageId == null
+            ? null
+            : stableMessageIds[fork.forkThroughMessageId!] ??
+                  fork.forkThroughMessageId,
+        forkMaterializedAt: now,
+        revision: fork.revision + 1,
+        projectionRevision: fork.projectionRevision + 1,
+        eventSequence: fork.eventSequence + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await ConversationEvent.db.insertRow(
+      session,
+      ConversationEvent(
+        workspaceId: fork.workspaceId,
+        conversationId: fork.id!,
+        sequence: materialized.eventSequence,
+        eventId: const Uuid().v7(),
+        actorUserId: actorUserId,
+        requestId: requestId,
+        kind: ConversationEventType.settingsChanged,
+        payloadJson: jsonEncode({'forkMaterialized': true}),
+        createdAt: now,
+      ),
+      transaction: transaction,
+    );
+    return stableMessageIds;
+  }
+
+  Future<void> _purgeConversation(
+    Session session, {
+    required Conversation conversation,
+    required Transaction transaction,
+  }) async {
+    final workspaceId = conversation.workspaceId;
+    final messages = await ConversationMessage.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(conversation.id!),
+      transaction: transaction,
+    );
+    final messageIds = messages.map((message) => message.id!).toSet();
+    final references = await ObjectReference.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.messageId.inSet(messageIds),
+      transaction: transaction,
+    );
+    final objectIds = references.map((reference) => reference.objectId).toSet();
+    for (final reference in references) {
+      await ObjectReference.db.deleteRow(
+        session,
+        reference,
+        transaction: transaction,
+      );
+    }
+    for (final objectId in objectIds) {
+      final object = await WorkspaceObject.db.findById(
+        session,
+        objectId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (object == null ||
+          object.status != 'active' ||
+          object.deletedAt != null) {
+        continue;
+      }
+      final liveReference = await ObjectReference.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.objectId.equals(objectId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (liveReference != null) continue;
+      final existingDeletion = await ObjectDeletion.db.findFirstRow(
+        session,
+        where: (table) => table.objectId.equals(objectId),
+        transaction: transaction,
+      );
+      if (existingDeletion != null) continue;
+      final now = DateTime.now().toUtc();
+      await WorkspaceObject.db.updateRow(
+        session,
+        object.copyWith(
+          status: 'deleted',
+          revision: object.revision + 1,
+          updatedAt: now,
+          deletedAt: now,
+        ),
+        transaction: transaction,
+      );
+      await ObjectDeletion.db.insertRow(
+        session,
+        ObjectDeletion(
+          workspaceId: workspaceId,
+          objectId: objectId,
+          objectKey: object.objectKey,
+          requestId: 'conversation-purge:${conversation.stableId}:$objectId',
+          expectedRevision: object.revision,
+          requestedAt: now,
+          attempts: 0,
+          availableAt: now,
+        ),
+        transaction: transaction,
+      );
+    }
+    final toolCalls = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(conversation.id!),
+      transaction: transaction,
+    );
+    for (final call in toolCalls) {
+      await ConversationToolCall.db.deleteRow(
+        session,
+        call,
+        transaction: transaction,
+      );
+    }
+    final jobs = await ConversationJob.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(conversation.id!),
+      transaction: transaction,
+    );
+    for (final job in jobs) {
+      await ConversationJob.db.deleteRow(
+        session,
+        job,
+        transaction: transaction,
+      );
+    }
+    final executions = await ConversationExecution.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(conversation.id!),
+      transaction: transaction,
+    );
+    for (final execution in executions) {
+      await ConversationExecution.db.deleteRow(
+        session,
+        execution,
+        transaction: transaction,
+      );
+    }
+    final usages = await ConversationUsage.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(conversation.id!),
+      transaction: transaction,
+    );
+    for (final usage in usages) {
+      await ConversationUsage.db.deleteRow(
+        session,
+        usage,
+        transaction: transaction,
+      );
+    }
+    final turns = await ConversationTurn.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(conversation.id!),
+      transaction: transaction,
+    );
+    for (final turn in turns) {
+      await ConversationTurn.db.updateRow(
+        session,
+        turn.copyWith(userMessageId: null, assistantMessageId: null),
+        transaction: transaction,
+      );
+    }
+    for (final message in messages) {
+      await ConversationMessage.db.deleteRow(
+        session,
+        message,
+        transaction: transaction,
+      );
+    }
+    for (final turn in turns) {
+      await ConversationTurn.db.deleteRow(
+        session,
+        turn,
+        transaction: transaction,
+      );
+    }
+    final events = await ConversationEvent.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(conversation.id!),
+      transaction: transaction,
+    );
+    for (final event in events) {
+      await ConversationEvent.db.deleteRow(
+        session,
+        event,
+        transaction: transaction,
+      );
+    }
+    final resources = await WorkspaceResource.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.resourceKind.inSet({
+            WorkspaceResourceKind.conversationToolSelection,
+            WorkspaceResourceKind.conversationSkillSelection,
+          }) &
+          table.deletedAt.equals(null),
+      transaction: transaction,
+    );
+    for (final resource in resources) {
+      try {
+        final data = jsonDecode(resource.data);
+        if (data is Map && data['conversationId'] == conversation.stableId) {
+          await WorkspaceResource.db.deleteRow(
+            session,
+            resource,
+            transaction: transaction,
+          );
+        }
+      } on Object {
+        continue;
+      }
+    }
+    await Conversation.db.deleteRow(
+      session,
+      conversation,
+      transaction: transaction,
+    );
+  }
+
+  Future<List<Conversation>> _lockHiddenDescendants(
+    Session session, {
+    required Conversation root,
+    required Transaction transaction,
+  }) async {
+    final descendants = <Conversation>[];
+    final pending = <String>[root.stableId];
+    while (pending.isNotEmpty) {
+      final parentId = pending.removeAt(0);
+      final children = await Conversation.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(root.workspaceId) &
+            table.parentConversationStableId.equals(parentId) &
+            table.deletedAt.equals(null),
+        orderBy: (table) => table.id,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      for (final child in children) {
+        descendants.add(child);
+        pending.add(child.stableId);
+      }
+    }
+
+    return descendants;
+  }
+
+  Future<Map<String, String?>> _captureForkBoundariesForDelete(
+    Session session, {
+    required Conversation source,
+    required Transaction transaction,
+  }) async {
+    final boundaries = <String, String?>{};
+    final pendingSources = <Conversation>[source];
+    while (pendingSources.isNotEmpty) {
+      final current = pendingSources.removeAt(0);
+      final effectiveMessages = await _effectiveMessages(
+        session,
+        source: current,
+        transaction: transaction,
+      );
+      final durableMessages = await _durableMessages(
+        session,
+        messages: effectiveMessages,
+        workspaceId: current.workspaceId,
+        transaction: transaction,
+      );
+      final forks = await Conversation.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(current.workspaceId) &
+            table.forkSourceConversationId.equals(current.stableId) &
+            table.forkMaterializedAt.equals(null) &
+            table.deletedAt.equals(null),
+        orderBy: (table) => table.id,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      for (final fork in forks) {
+        final requestedBoundary = fork.forkThroughMessageId;
+        boundaries[fork.stableId] =
+            requestedBoundary != null &&
+                durableMessages.any(
+                  (message) => message.stableId == requestedBoundary,
+                )
+            ? requestedBoundary
+            : await _automaticForkBoundary(
+                session,
+                source: current,
+                messages: effectiveMessages,
+                durableMessages: durableMessages,
+                transaction: transaction,
+              );
+        pendingSources.add(fork);
+      }
+    }
+
+    return boundaries;
+  }
+
+  Future<void> _cancelForDeletion(
+    Session session, {
+    required Conversation conversation,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final turns = await ConversationTurn.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(conversation.workspaceId) &
+          table.conversationId.equals(conversation.id),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    for (final turn in turns) {
+      if (!ConversationStatuses.isTerminal(turn.status)) {
+        await ConversationTurn.db.updateRow(
+          session,
+          turn.copyWith(
+            status: ConversationStatuses.cancelled,
+            cancellationRequestedAt: turn.cancellationRequestedAt ?? now,
+            terminalAt: now,
+            revision: turn.revision + 1,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+      }
+      final assistantId = turn.assistantMessageId;
+      if (assistantId == null) continue;
+      final assistant = await ConversationMessage.db.findById(
+        session,
+        assistantId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (assistant == null ||
+          ConversationStatuses.isMessageTerminal(assistant.status)) {
+        continue;
+      }
+      await ConversationMessage.db.updateRow(
+        session,
+        assistant.copyWith(
+          status: ConversationStatuses.cancelled,
+          metadataJson: '{"errorCode":"cancelled"}',
+          revision: assistant.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+    }
+
+    final jobs = await ConversationJob.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(conversation.workspaceId) &
+          table.conversationId.equals(conversation.id),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    for (final job in jobs) {
+      if (job.status == ConversationJobStatuses.completed ||
+          job.status == ConversationJobStatuses.cancelled ||
+          job.status == ConversationJobStatuses.failed) {
+        continue;
+      }
+      await ConversationJob.db.updateRow(
+        session,
+        job.copyWith(
+          status: ConversationJobStatuses.cancelled,
+          leaseOwner: null,
+          leaseToken: null,
+          leaseExpiresAt: null,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+    }
+
+    final executions = await ConversationExecution.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(conversation.workspaceId) &
+          table.conversationId.equals(conversation.id),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    for (final execution in executions) {
+      if (ConversationStatuses.isTerminal(execution.status)) continue;
+      await ConversationExecution.db.updateRow(
+        session,
+        execution.copyWith(
+          status: ConversationStatuses.cancelled,
+          terminalAt: now,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+    }
+
+    final toolCalls = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(conversation.workspaceId) &
+          table.conversationId.equals(conversation.id),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    for (final toolCall in toolCalls) {
+      if (!_transientToolCallStatuses.contains(toolCall.status)) continue;
+      await ConversationToolCall.db.updateRow(
+        session,
+        toolCall.copyWith(
+          status: 'cancelled',
+          revision: toolCall.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+    }
+
+    if (conversation.activeExecutionId != null ||
+        conversation.executionState != 'idle') {
+      await Conversation.db.updateRow(
+        session,
+        conversation.copyWith(
+          activeExecutionId: null,
+          executionState: 'idle',
+          projectionRevision: conversation.projectionRevision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+    }
+  }
+
   Future<void> _validateReferences(
     Session session, {
     required int workspaceId,
@@ -2475,110 +3636,126 @@ class ConversationUseCases {
       DateTime now,
     )
     run,
-  }) => session.db.transaction((transaction) async {
-    _requireId(requestId);
-    final hash = base64UrlEncode(
-      (await Sha256().hash(utf8.encode(jsonEncode(requestBody)))).bytes,
-    );
-    final receipt = await WorkspaceMutationReceipt.db.findFirstRow(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(workspaceId) &
-          table.actorUserId.equals(userId) &
-          table.scopeKey.equals('workspace:$workspaceId') &
-          table.endpoint.equals(endpoint) &
-          table.requestId.equals(requestId),
-      transaction: transaction,
-    );
-    if (receipt != null) {
-      if (receipt.requestHash != hash) {
-        _fail(ConversationErrorCode.idempotencyConflict);
+  }) async {
+    var affectedConversationIds = const <String>[];
+    final result = await session.db.transaction((transaction) async {
+      _requireId(requestId);
+      final hash = base64UrlEncode(
+        (await Sha256().hash(utf8.encode(jsonEncode(requestBody)))).bytes,
+      );
+      await _requireMember(
+        session,
+        workspaceId: workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      final workspace = await CloudWorkspace.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(workspaceId) & table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (workspace == null) _fail(ConversationErrorCode.permissionDenied);
+      final receipt = await WorkspaceMutationReceipt.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.actorUserId.equals(userId) &
+            table.scopeKey.equals('workspace:$workspaceId') &
+            table.endpoint.equals(endpoint) &
+            table.requestId.equals(requestId),
+        transaction: transaction,
+      );
+      if (receipt != null) {
+        if (receipt.requestHash != hash) {
+          _fail(ConversationErrorCode.idempotencyConflict);
+        }
+        return decode(_decodeMutationResponse(receipt.responseJson));
       }
-      return decode(jsonDecode(receipt.responseJson) as Map<String, dynamic>);
-    }
-    await _requireMember(
-      session,
-      workspaceId: workspaceId,
-      userId: userId,
-      transaction: transaction,
-    );
-    final workspace = await CloudWorkspace.db.findFirstRow(
-      session,
-      where: (table) =>
-          table.id.equals(workspaceId) & table.deletedAt.equals(null),
-      transaction: transaction,
-      lockMode: LockMode.forUpdate,
-    );
-    if (workspace == null) _fail(ConversationErrorCode.permissionDenied);
-    final lockedReceipt = await WorkspaceMutationReceipt.db.findFirstRow(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(workspaceId) &
-          table.actorUserId.equals(userId) &
-          table.scopeKey.equals('workspace:$workspaceId') &
-          table.endpoint.equals(endpoint) &
-          table.requestId.equals(requestId),
-      transaction: transaction,
-    );
-    if (lockedReceipt != null) {
-      if (lockedReceipt.requestHash != hash) {
-        _fail(ConversationErrorCode.idempotencyConflict);
+      final lockedReceipt = await WorkspaceMutationReceipt.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.actorUserId.equals(userId) &
+            table.scopeKey.equals('workspace:$workspaceId') &
+            table.endpoint.equals(endpoint) &
+            table.requestId.equals(requestId),
+        transaction: transaction,
+      );
+      if (lockedReceipt != null) {
+        if (lockedReceipt.requestHash != hash) {
+          _fail(ConversationErrorCode.idempotencyConflict);
+        }
+        return decode(_decodeMutationResponse(lockedReceipt.responseJson));
       }
-      return decode(
-        jsonDecode(lockedReceipt.responseJson) as Map<String, dynamic>,
+      final now = DateTime.now().toUtc();
+      final mutation = await run(transaction, now);
+      final sequence = workspace.sequence + 1;
+      await CloudWorkspace.db.updateRow(
+        session,
+        workspace.copyWith(sequence: sequence, updatedAt: now),
+        transaction: transaction,
+      );
+      await WorkspaceEvent.db.insertRow(
+        session,
+        WorkspaceEvent(
+          eventId: const Uuid().v7(),
+          workspaceId: workspaceId,
+          sequence: sequence,
+          actorUserId: userId,
+          kind: mutation.operation,
+          resourceKind: WorkspaceResourceKind.conversation.name,
+          resourceId: mutation.resourceId,
+          createdAt: now,
+        ),
+        transaction: transaction,
+      );
+      await WorkspaceAuditRecord.db.insertRow(
+        session,
+        WorkspaceAuditRecord(
+          workspaceId: workspaceId,
+          sequence: sequence,
+          actorUserId: userId,
+          operation: mutation.operation,
+          targetKind: WorkspaceResourceKind.conversation.name,
+          targetId: mutation.resourceId,
+          createdAt: now,
+        ),
+        transaction: transaction,
+      );
+      await WorkspaceMutationReceipt.db.insertRow(
+        session,
+        WorkspaceMutationReceipt(
+          workspaceId: workspaceId,
+          actorUserId: userId,
+          scopeKey: 'workspace:$workspaceId',
+          endpoint: endpoint,
+          requestId: requestId,
+          requestHash: hash,
+          responseJson: jsonEncode(mutation.value),
+          createdAt: now,
+        ),
+        transaction: transaction,
+      );
+      affectedConversationIds = mutation.affectedConversationIds;
+      return mutation.value as T;
+    });
+    await SyncWakeups.publishWorkspace(session, workspaceId);
+    for (final conversationId in affectedConversationIds) {
+      await SyncWakeups.publishConversation(
+        session,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
       );
     }
-    final now = DateTime.now().toUtc();
-    final mutation = await run(transaction, now);
-    final sequence = workspace.sequence + 1;
-    await CloudWorkspace.db.updateRow(
-      session,
-      workspace.copyWith(sequence: sequence, updatedAt: now),
-      transaction: transaction,
-    );
-    await WorkspaceEvent.db.insertRow(
-      session,
-      WorkspaceEvent(
-        eventId: const Uuid().v7(),
-        workspaceId: workspaceId,
-        sequence: sequence,
-        actorUserId: userId,
-        kind: mutation.operation,
-        resourceKind: WorkspaceResourceKind.conversation.name,
-        resourceId: mutation.resourceId,
-        createdAt: now,
-      ),
-      transaction: transaction,
-    );
-    await WorkspaceAuditRecord.db.insertRow(
-      session,
-      WorkspaceAuditRecord(
-        workspaceId: workspaceId,
-        sequence: sequence,
-        actorUserId: userId,
-        operation: mutation.operation,
-        targetKind: WorkspaceResourceKind.conversation.name,
-        targetId: mutation.resourceId,
-        createdAt: now,
-      ),
-      transaction: transaction,
-    );
-    await WorkspaceMutationReceipt.db.insertRow(
-      session,
-      WorkspaceMutationReceipt(
-        workspaceId: workspaceId,
-        actorUserId: userId,
-        scopeKey: 'workspace:$workspaceId',
-        endpoint: endpoint,
-        requestId: requestId,
-        requestHash: hash,
-        responseJson: jsonEncode(mutation.value),
-        createdAt: now,
-      ),
-      transaction: transaction,
-    );
-    return mutation.value as T;
-  });
+    return result;
+  }
+
+  Map<String, dynamic> _decodeMutationResponse(String responseJson) {
+    final decoded = jsonDecode(responseJson);
+    return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+  }
 
   ConversationSummary _summary(Conversation conversation) =>
       ConversationSummary(
@@ -2588,6 +3765,10 @@ class ConversationUseCases {
         modelId: conversation.modelId,
         agentId: conversation.agentId,
         parentConversationId: conversation.parentConversationStableId,
+        forkSourceConversationId: conversation.forkSourceConversationId,
+        forkSourceTitle: conversation.forkSourceTitle,
+        forkThroughMessageId: conversation.forkThroughMessageId,
+        forkMaterializedAt: conversation.forkMaterializedAt,
         revision: conversation.revision,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
@@ -2598,6 +3779,7 @@ class ConversationUseCases {
     String conversationId,
     String? turnId, {
     required Set<String> a2uiSupportedComponents,
+    bool isForkReference = false,
   }) => ConversationMessageView(
     id: message.stableId,
     conversationId: conversationId,
@@ -2606,6 +3788,7 @@ class ConversationUseCases {
     kind: message.kind,
     status: message.status,
     content: message.content,
+    isForkReference: isForkReference,
     metadataJson: cloudA2uiMetadataForClient(
       message.metadataJson,
       a2uiSupportedComponents,
@@ -2879,5 +4062,6 @@ class const _ConversationCursor(
 class const _Mutation<T>(
   final T? value,
   final String operation,
-  final String resourceId,
-);
+  final String resourceId, {
+  final List<String> affectedConversationIds = const [],
+});

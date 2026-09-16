@@ -102,6 +102,7 @@ class const AppAgentConversationDataProvider({
       latestAssistantMessage.id,
       metadata,
       updatedToolCalls,
+      conversationId,
     );
   }
 }
@@ -115,10 +116,13 @@ extension on AppAgentConversationDataProvider {
     String messageId,
     MessageMetadataEntity metadata,
     List<MessageToolCallEntity> toolCalls,
+    String conversationId,
   ) async {
+    final updatedMetadata = metadata.copyWith(toolCalls: toolCalls);
     final _ = await messageRepository.patchMessage(
       messageId,
-      .new(metadata: metadata.copyWith(toolCalls: toolCalls)),
+      .new(metadata: updatedMetadata, status: .sent),
+      conversationId: conversationId,
     );
   }
 
@@ -157,7 +161,7 @@ extension on AppAgentConversationDataProvider {
 
 MessageEntity? _latestAssistantMessage(List<MessageEntity> messages) {
   for (final message in messages.reversed) {
-    if (!message.isUser) return message;
+    if (!message.isUser && !message.isForkReference) return message;
   }
 
   return null;

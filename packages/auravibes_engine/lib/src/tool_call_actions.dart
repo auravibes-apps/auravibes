@@ -13,6 +13,7 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
   Future<AgentApprovableToolCall?> loadToolCall({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   });
 
   Future<TTool?> resolveTool({
@@ -35,16 +36,21 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
   Future<void> markToolCallRunning({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   });
 
   Future<void> updateToolCallResult({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
     required AgentToolResultStatus resultStatus,
     String? responseRaw,
   });
 
-  Future<void> resumeConversationIfReady({required String messageId});
+  Future<void> resumeConversationIfReady({
+    required String messageId,
+    required String conversationId,
+  });
 
   bool isCancellationRequested(String conversationId);
 
@@ -55,13 +61,20 @@ abstract interface class SkipToolCallProvider {
   Future<bool> skipToolCall({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   });
 
-  Future<void> resumeConversationIfReady({required String messageId});
+  Future<void> resumeConversationIfReady({
+    required String messageId,
+    required String conversationId,
+  });
 }
 
 abstract interface class StopPendingToolCallsProvider {
-  Future<void> stopPendingToolCalls({required String messageId});
+  Future<void> stopPendingToolCalls({
+    required String messageId,
+    required String conversationId,
+  });
 }
 
 class const ApproveToolCallService<TTool extends Object>({
@@ -70,13 +83,18 @@ class const ApproveToolCallService<TTool extends Object>({
   Future<void> call({
     required String toolCallId,
     required String messageId,
+    required String conversationId,
     required AgentToolGrantLevel level,
   }) async {
     final toolCall = await provider.loadToolCall(
       messageId: messageId,
       toolCallId: toolCallId,
+      conversationId: conversationId,
     );
     if (toolCall == null) return;
+    if (toolCall.conversationId != conversationId) {
+      throw StateError('Tool call does not belong to conversation.');
+    }
 
     final tool = await provider.resolveTool(
       conversationId: toolCall.conversationId,
@@ -90,8 +108,12 @@ class const ApproveToolCallService<TTool extends Object>({
         resultStatus: toolCall.name == callSkillToolName
             ? .notConfigured
             : .toolNotFound,
+        conversationId: conversationId,
       );
-      await provider.resumeConversationIfReady(messageId: messageId);
+      await provider.resumeConversationIfReady(
+        messageId: messageId,
+        conversationId: conversationId,
+      );
 
       return;
     }
@@ -106,6 +128,7 @@ class const ApproveToolCallService<TTool extends Object>({
     await provider.markToolCallRunning(
       messageId: messageId,
       toolCallId: toolCallId,
+      conversationId: conversationId,
     );
 
     final executionResult = await _executeTool(
@@ -118,13 +141,17 @@ class const ApproveToolCallService<TTool extends Object>({
     await provider.updateToolCallResult(
       messageId: messageId,
       toolCallId: toolCallId,
+      conversationId: conversationId,
       resultStatus: executionResult.resultStatus,
       responseRaw: executionResult.responseRaw,
     );
 
     if (provider.isCancellationRequested(toolCall.conversationId)) return;
 
-    await provider.resumeConversationIfReady(messageId: messageId);
+    await provider.resumeConversationIfReady(
+      messageId: messageId,
+      conversationId: conversationId,
+    );
   }
 
   Future<AgentToolExecutionResult> _executeTool({
@@ -152,13 +179,18 @@ class const SkipToolCallService({
   Future<void> call({
     required String toolCallId,
     required String messageId,
+    required String conversationId,
   }) async {
     final skipped = await provider.skipToolCall(
       messageId: messageId,
       toolCallId: toolCallId,
+      conversationId: conversationId,
     );
     if (!skipped) return;
 
-    await provider.resumeConversationIfReady(messageId: messageId);
+    await provider.resumeConversationIfReady(
+      messageId: messageId,
+      conversationId: conversationId,
+    );
   }
 }

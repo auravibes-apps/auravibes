@@ -33,10 +33,18 @@ void main() {
     await service.tools.approve(
       messageId: 'message-1',
       toolCallId: 'tool-1',
+      conversationId: 'conversation-1',
       level: .conversation,
     );
-    await service.tools.skip(messageId: 'message-1', toolCallId: 'tool-2');
-    await service.tools.stopPending(messageId: 'message-1');
+    await service.tools.skip(
+      messageId: 'message-1',
+      toolCallId: 'tool-2',
+      conversationId: 'conversation-1',
+    );
+    await service.tools.stopPending(
+      messageId: 'message-1',
+      conversationId: 'conversation-1',
+    );
     await service.tools.resumeIfReady(messageId: 'message-1');
 
     expect(tools.calls, [
@@ -218,7 +226,10 @@ class _FakeToolProvider
   Future<void> stopPendingTools({required String messageId}) async {}
 
   @override
-  Future<void> stopPendingToolCalls({required String messageId}) async {
+  Future<void> stopPendingToolCalls({
+    required String messageId,
+    required String conversationId,
+  }) async {
     calls.add('stop-pending-calls:$messageId');
   }
 
@@ -233,6 +244,7 @@ class _FakeToolProvider
   Future<AgentApprovableToolCall?> loadToolCall({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) async {
     return const AgentApprovableToolCall(
       conversationId: 'conversation-1',
@@ -253,6 +265,7 @@ class _FakeToolProvider
   Future<void> updateToolCallResult({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
     required AgentToolResultStatus resultStatus,
     String? responseRaw,
   }) async {
@@ -263,12 +276,16 @@ class _FakeToolProvider
   Future<void> markToolCallRunning({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) async {
     calls.add('running:$messageId:$toolCallId');
   }
 
   @override
-  Future<void> resumeConversationIfReady({required String messageId}) async {
+  Future<void> resumeConversationIfReady({
+    required String messageId,
+    required String conversationId,
+  }) async {
     calls.add('resume:$messageId');
   }
 
@@ -276,6 +293,7 @@ class _FakeToolProvider
   Future<bool> skipToolCall({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) async {
     calls.add('skip:$messageId:$toolCallId');
 

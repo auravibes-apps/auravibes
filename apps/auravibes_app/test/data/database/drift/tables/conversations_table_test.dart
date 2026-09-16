@@ -63,8 +63,8 @@ void main() {
       );
     });
 
-    test('has 9 columns', () {
-      expect(columns.length, 9);
+    test('has 13 columns', () {
+      expect(columns.length, 13);
     });
 
     test('workspace_id is not null', () {

@@ -13,7 +13,9 @@ import 'package:auravibes_app/features/chats/providers/cloud_conversation_provid
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
@@ -24,7 +26,10 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
+
+final _logger = Logger('sidebar_conversations');
 
 class const SidebarConversationsWidget({
   required final String? workspaceId,
@@ -287,6 +292,7 @@ class _SidebarConversationTileState
         isPinned: chat.isPinned,
         title: ref.watch(streamingTitleProvider(chat.id)) ?? chat.title,
         controller: _menuController,
+        onFork: _forkConversation,
         onDelete: _deleteConversation,
         onTogglePin: _togglePin,
         onRename: _renameConversation,
@@ -297,6 +303,9 @@ class _SidebarConversationTileState
 
   void _deleteConversation() =>
       unawaited(_deleteSidebarConversation(context, ref, widget.chat));
+
+  void _forkConversation() =>
+      unawaited(_forkSidebarConversation(context, ref, widget.chat));
 
   void _togglePin() =>
       unawaited(_toggleSidebarConversationPin(context, ref, widget.chat));
@@ -330,6 +339,7 @@ class const _SidebarConversationTileContent({
   required final bool isPinned,
   required final String title,
   required final AuraPopupMenuController controller,
+  required final VoidCallback onFork,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
@@ -346,6 +356,7 @@ class const _SidebarConversationTileContent({
     menu: _SidebarConversationTileMenu(
       isPinned: isPinned,
       controller: controller,
+      onFork: onFork,
       onDelete: onDelete,
       onTogglePin: onTogglePin,
       onRename: onRename,
@@ -407,6 +418,7 @@ class const _SidebarConversationTileLeading({required final bool isActive})
 class const _SidebarConversationTileMenu({
   required final bool isPinned,
   required final AuraPopupMenuController controller,
+  required final VoidCallback onFork,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
@@ -423,6 +435,13 @@ class const _SidebarConversationTileMenu({
       ),
       items: [
         _sidebarConversationPinItem(isPinned, onTogglePin),
+        AuraPopupMenuItem(
+          title: const TextLocale(
+            LocaleKeys.chats_screens_chat_conversation_fork,
+          ),
+          onTap: onFork,
+          leading: const AuraIcon(Icons.call_split_outlined),
+        ),
         ..._sidebarConversationMenuItems(
           onRename: onRename,
           onDelete: onDelete,
@@ -479,18 +498,78 @@ Future<void> _deleteSidebarConversation(
   final confirmed = await DeleteConversationConfirmDialog.show(context);
   if (!confirmed) return;
 
-  final cloud = await ref.read(
-    cloudConversationUsecaseProvider(chat.workspaceId).future,
-  );
-  if (cloud case final cloud?) {
-    await cloud.delete(chat);
+  try {
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(chat.workspaceId).future,
+    );
+    if (cloud != null) {
+      await cloud.delete(chat);
+      _invalidateDeletedConversation(ref, chat);
 
-    return;
+      return;
+    }
+
+    final _ = await ref.read(deleteConversationUsecaseProvider).call(chat.id);
+    _invalidateDeletedConversation(ref, chat);
+  } on Object catch (error, stackTrace) {
+    _logger.severe(
+      'Failed to delete conversation ${chat.id}',
+      error,
+      stackTrace,
+    );
+    if (!context.mounted) return;
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: TextLocale(_deleteErrorKey(error)),
+      variant: .error,
+    );
   }
+}
 
-  final _ = await ref
-      .read(conversationRepositoryProvider)
-      .deleteConversation(chat.id);
+void _invalidateDeletedConversation(WidgetRef ref, ConversationEntity chat) {
+  final _ = ref.invalidate(
+    conversationsStreamProvider(workspaceId: chat.workspaceId),
+  );
+  final _ = ref.invalidate(
+    conversationByIdStreamProvider(chat.workspaceId, conversationId: chat.id),
+  );
+}
+
+String _deleteErrorKey(Object error) => error is CloudAppException
+    ? CloudAppErrors.localizationKey(error)
+    : LocaleKeys.chats_screens_chat_conversation_delete_error;
+
+Future<void> _forkSidebarConversation(
+  BuildContext context,
+  WidgetRef ref,
+  ConversationEntity chat,
+) async {
+  try {
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(chat.workspaceId).future,
+    );
+    final forkId = cloud != null
+        ? (await cloud.fork(chat)).id
+        : (await ref.read(forkConversationUsecaseProvider).call(chat)).id;
+    final _ = ref.invalidate(
+      conversationsStreamProvider(workspaceId: chat.workspaceId),
+    );
+    if (context.mounted) {
+      ConversationRoute(
+        workspaceId: chat.workspaceId,
+        chatId: forkId,
+      ).go(context);
+    }
+  } on Object {
+    if (!context.mounted) return;
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_fork_error,
+      ),
+      variant: .error,
+    );
+  }
 }
 
 Future<void> _toggleSidebarConversationPin(

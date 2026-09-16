@@ -137,7 +137,10 @@ agent.AgentPromptMessage _toAgentPromptMessage(MessageEntity message) {
     isCompactionSummary: metadata?.isCompactionSummary ?? false,
     thinking: metadata?.thinking,
     modelMetadata: metadata?.modelMetadata ?? const {},
-    toolCalls: _toAgentToolCalls(metadata?.toolCalls),
+    toolCalls: _toAgentToolCalls(
+      metadata?.toolCalls,
+      allowPending: !message.isForkReference,
+    ),
   );
 }
 
@@ -166,16 +169,18 @@ String _appendA2uiSurfaces(String content, MessageMetadataEntity? metadata) =>
     });
 
 List<agent.AgentPromptToolCall> _toAgentToolCalls(
-  List<MessageToolCallEntity>? toolCalls,
-) => [
+  List<MessageToolCallEntity>? toolCalls, {
+  required bool allowPending,
+}) => [
   for (final toolCall in toolCalls ?? const <MessageToolCallEntity>[])
-    agent.AgentPromptToolCall(
-      id: toolCall.id,
-      name: toolCall.name,
-      arguments: toolCall.arguments,
-      isResolved: toolCall.isResolved,
-      response: toolCall.getResponseForAI(),
-    ),
+    if (allowPending || !toolCall.isPending)
+      agent.AgentPromptToolCall(
+        id: toolCall.id,
+        name: toolCall.name,
+        arguments: toolCall.arguments,
+        isResolved: toolCall.isResolved,
+        response: toolCall.getResponseForAI(),
+      ),
 ];
 
 ChatMessage _toChatMessage(agent.AgentChatMessage message) => ChatMessage(

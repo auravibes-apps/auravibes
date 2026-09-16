@@ -30,6 +30,10 @@ class const CloudConversationCreator({
       modelId: created.modelId,
       agentId: created.agentId,
       parentConversationId: created.parentConversationId,
+      forkSourceConversationId: created.forkSourceConversationId,
+      forkSourceTitle: created.forkSourceTitle,
+      forkThroughMessageId: created.forkThroughMessageId,
+      forkMaterializedAt: created.forkMaterializedAt,
     );
   }
 }

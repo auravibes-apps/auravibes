@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_decision_service.dart';
@@ -55,6 +56,7 @@ typedef _AgentToolExecutionErrorRequest =
     agent.AgentToolExecutionErrorRequest<ResolvedTool>;
 
 typedef _ToolResultsRequest = ({
+  String conversationId,
   String messageId,
   List<agent.AgentToolResultUpdate> updates,
 });
@@ -158,16 +160,25 @@ class const AppAllowedToolsDataProvider({
   }
 
   @override
-  Future<void> stopPendingTools({required String messageId}) async {
-    await _stopPendingTools(messageRepository, messageId);
+  Future<void> stopPendingTools({
+    required String messageId,
+    required String conversationId,
+  }) async {
+    await _stopPendingTools(
+      messageRepository,
+      messageId,
+      conversationId: conversationId,
+    );
   }
 
   @override
   Future<void> updateToolResults({
+    required String conversationId,
     required String messageId,
     required List<agent.AgentToolResultUpdate> updates,
   }) async {
     await _updateToolResults(messageRepository, (
+      conversationId: conversationId,
       messageId: messageId,
       updates: updates,
     ));
@@ -313,8 +324,9 @@ agent.AgentToolApprovalDecision _notConfiguredApprovalDecision() =>
 
 Future<void> _stopPendingTools(
   MessageRepository messageRepository,
-  String messageId,
-) async {
+  String messageId, {
+  required String conversationId,
+}) async {
   final message = await messageRepository.getMessageById(messageId);
   if (message == null) return;
 
@@ -327,6 +339,8 @@ Future<void> _stopPendingTools(
     messageId,
     metadata,
     updated,
+    conversationId: conversationId,
+    status: .sent,
   );
 }
 
@@ -348,11 +362,17 @@ Future<void> _persistStoppedToolCalls(
   MessageRepository messageRepository,
   String messageId,
   MessageMetadataEntity metadata,
-  List<MessageToolCallEntity> updatedToolCalls,
-) async {
+  List<MessageToolCallEntity> updatedToolCalls, {
+  required String conversationId,
+  required MessageStatus status,
+}) async {
   final _ = await messageRepository.patchMessage(
     messageId,
-    .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+    .new(
+      metadata: metadata.copyWith(toolCalls: updatedToolCalls),
+      status: status,
+    ),
+    conversationId: conversationId,
   );
 }
 
@@ -368,9 +388,14 @@ Future<void> _updateToolResults(
     metadata.toolCalls,
     request.updates,
   );
+  final updatedMetadata = metadata.copyWith(toolCalls: updatedToolCalls);
   final _ = await messageRepository.patchMessage(
     request.messageId,
-    .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+    .new(
+      metadata: updatedMetadata,
+      status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+    ),
+    conversationId: request.conversationId,
   );
 }
 

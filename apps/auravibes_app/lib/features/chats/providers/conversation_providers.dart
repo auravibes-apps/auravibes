@@ -2,7 +2,6 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -158,18 +157,23 @@ Stream<List<ConversationEntity>> _cloudConversations(
   if (gateway == null) return;
 
   final localWorkspaceId = cloud.localWorkspaceId;
-  final conversations = await _fetchCloudConversations(.new(gateway), options);
-  yield _mapCloudConversations(conversations, localWorkspaceId);
-}
+  yield* gateway.watch(const {'conversation'}, () async {
+    final page = await gateway.client.conversation.listPage(
+      .new(
+        workspaceId: cloud.cloudWorkspaceId,
+        limit: options.pagination.limit ?? 100,
+        search: options.search.isEmpty ? null : options.search,
+        offset: options.pagination.offset,
+      ),
+    );
+    final state = await gateway.read(pages: const [], eventLimit: 0);
 
-Future<List<ConversationSummary>> _fetchCloudConversations(
-  CloudChatGateway gateway,
-  _ConversationListOptions options,
-) => gateway.listConversations(
-  search: options.search,
-  limit: options.pagination.limit ?? 100,
-  offset: options.pagination.offset,
-);
+    return (
+      value: _mapCloudConversations(page.conversations, localWorkspaceId),
+      currentSequence: state.currentSequence,
+    );
+  });
+}
 
 List<ConversationEntity> _mapCloudConversations(
   List<ConversationSummary> conversations,
@@ -193,5 +197,9 @@ ConversationEntity _cloudConversation(
     modelId: conversation.modelId,
     agentId: conversation.agentId,
     parentConversationId: conversation.parentConversationId,
+    forkSourceConversationId: conversation.forkSourceConversationId,
+    forkSourceTitle: conversation.forkSourceTitle,
+    forkThroughMessageId: conversation.forkThroughMessageId,
+    forkMaterializedAt: conversation.forkMaterializedAt,
   );
 }

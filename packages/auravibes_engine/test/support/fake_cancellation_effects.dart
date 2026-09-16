@@ -3,6 +3,9 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 class FakeCancellationEffects implements AgentCancellationEffects {
   final _scopes = <String, AgentCancellationScope>{};
 
+  AgentCancellationScope? scope(String conversationId) =>
+      _scopes[conversationId];
+
   @override
   AgentCancellationScope start(String conversationId) {
     final scope = AgentCancellationScope();
@@ -29,6 +32,7 @@ class FakeCancellationEffects implements AgentCancellationEffects {
   @override
   void clear(String conversationId, AgentCancellationScope scope) {
     if (identical(_scopes[conversationId], scope)) {
+      scope.close();
       _scopes.remove(conversationId);
     }
   }

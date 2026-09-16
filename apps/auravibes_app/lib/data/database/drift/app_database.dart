@@ -122,8 +122,9 @@ class AppDatabase extends _$AppDatabase {
   static const _conversationListSchemaVersion = 8;
   static const int _conversationPinOrderingSchemaVersion =
       _conversationListSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _conversationPinOrderingSchemaVersion;
+  static const int _forkSchemaVersion =
+      _conversationPinOrderingSchemaVersion + 1;
+  static const int _currentSchemaVersion = _forkSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -167,6 +168,7 @@ extension on AppDatabase {
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
     await _upgradeConversationListSchema(from);
+    await _upgradeForkSchema(m, from);
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {
@@ -236,6 +238,19 @@ extension on AppDatabase {
     await customStatement(
       'UPDATE agents SET description = substr(trim(content), 1, 512) '
       'WHERE length(description) = 0',
+    );
+  }
+
+  Future<void> _upgradeForkSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._forkSchemaVersion) return;
+    if (!await _tableExists('conversations')) return;
+    await m.addColumn(conversations, conversations.forkSourceConversationId);
+    await m.addColumn(conversations, conversations.forkSourceTitle);
+    await m.addColumn(conversations, conversations.forkThroughMessageId);
+    await m.addColumn(conversations, conversations.forkMaterializedAt);
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS conversations_fork_source_idx '
+      'ON conversations (fork_source_conversation_id)',
     );
   }
 }

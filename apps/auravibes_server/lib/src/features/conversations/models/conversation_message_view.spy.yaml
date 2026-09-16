@@ -9,6 +9,7 @@ fields:
   status: String
   content: String
   metadataJson: String?
+  isForkReference: bool, default=false
   toolCalls: List<ConversationToolCallView>
   revision: int
   createdAt: DateTime

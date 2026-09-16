@@ -8,7 +8,9 @@ import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart'
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -21,6 +23,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 
 const _conversationPageSize = 20;
@@ -224,6 +227,7 @@ List<ConversationEntity> _newConversationPage(
     .take(_conversationPageSize)
     .where((chat) => !existingIds.contains(chat.id))
     .toList();
+final _logger = Logger('chat_list');
 
 class const ChatListWidget({required final String workspaceId, super.key})
     extends HookConsumerWidget {
@@ -532,6 +536,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
       chat: chat,
       workspaceId: widget.workspaceId,
       controller: _menuController,
+      onFork: () => _handleFork(context),
       onDelete: () => _handleDelete(context),
       onTogglePin: () => _togglePin(chat),
       onRename: () => _handleRename(context),
@@ -559,7 +564,45 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
     final confirmed = await DeleteConversationConfirmDialog.show(context);
     if (!confirmed) return;
 
-    await _deleteChat(chat);
+    try {
+      await _deleteChat(chat);
+    } on Object catch (error, stackTrace) {
+      _logger.severe(
+        'Failed to delete conversation ${chat.id}',
+        error,
+        stackTrace,
+      );
+      if (!context.mounted) return;
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: TextLocale(_deleteErrorKey(error)),
+        variant: .error,
+      );
+    }
+  }
+
+  String _deleteErrorKey(Object error) => error is CloudAppException
+      ? CloudAppErrors.localizationKey(error)
+      : LocaleKeys.chats_screens_chat_conversation_delete_error;
+
+  Future<void> _handleFork(BuildContext context) async {
+    try {
+      final forkId = await _forkChat(widget.chat);
+      if (!context.mounted) return;
+      ConversationRoute(
+        workspaceId: widget.workspaceId,
+        chatId: forkId,
+      ).go(context);
+    } on Object {
+      if (!context.mounted) return;
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: const TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_fork_error,
+        ),
+        variant: .error,
+      );
+    }
   }
 
   Future<void> _deleteChat(ConversationEntity chat) async {
@@ -568,13 +611,13 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
     );
     if (cloud != null) {
       await cloud.delete(chat);
+      _invalidateConversations(chat.workspaceId);
 
       return;
     }
 
-    final _ = await ref
-        .read(conversationRepositoryProvider)
-        .deleteConversation(chat.id);
+    final _ = await ref.read(deleteConversationUsecaseProvider).call(chat.id);
+    _invalidateConversations(chat.workspaceId);
 
     return;
   }
@@ -621,6 +664,26 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
     }
   }
 
+  Future<String> _forkChat(ConversationEntity chat) async {
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(chat.workspaceId).future,
+    );
+    if (cloud != null) {
+      final fork = await cloud.fork(chat);
+      _invalidateConversations(chat.workspaceId);
+
+      return fork.id;
+    } else {
+      final fork = await ref.read(forkConversationUsecaseProvider).call(chat);
+      _invalidateConversations(chat.workspaceId);
+
+      return fork.id;
+    }
+  }
+
+  void _invalidateConversations(String workspaceId) =>
+      ref.invalidate(conversationsStreamProvider(workspaceId: workspaceId));
+
   void _openConversation(BuildContext context) {
     ConversationRoute(
       workspaceId: widget.workspaceId,
@@ -633,6 +696,7 @@ class const _ChatTileProvider({
   required final ConversationEntity chat,
   required final String workspaceId,
   required final AuraPopupMenuController controller,
+  required final VoidCallback onFork,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
@@ -649,6 +713,7 @@ class const _ChatTileProvider({
       modelDisplayName: modelDisplayName,
       title: title,
       controller: controller,
+      onFork: onFork,
       onDelete: onDelete,
       onTogglePin: onTogglePin,
       onRename: onRename,
@@ -824,6 +889,7 @@ class const _ChatTileView({
   required final String? modelDisplayName,
   required final String title,
   required final AuraPopupMenuController controller,
+  required final VoidCallback onFork,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
@@ -837,6 +903,7 @@ class const _ChatTileView({
       modelDisplayName: modelDisplayName,
       title: title,
       controller: controller,
+      onFork: onFork,
       onDelete: onDelete,
       onTogglePin: onTogglePin,
       onRename: onRename,
@@ -852,6 +919,7 @@ class const _ChatTileRow({
   required final String? modelDisplayName,
   required final String title,
   required final AuraPopupMenuController controller,
+  required final VoidCallback onFork,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
@@ -868,6 +936,7 @@ class const _ChatTileRow({
       _ChatTileMenu(
         chat: chat,
         controller: controller,
+        onFork: onFork,
         onDelete: onDelete,
         onTogglePin: onTogglePin,
         onRename: onRename,
@@ -940,6 +1009,7 @@ class const _ChatTileTitleRow({
 class const _ChatTileMenu({
   required final ConversationEntity chat,
   required final AuraPopupMenuController controller,
+  required final VoidCallback onFork,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
@@ -957,6 +1027,13 @@ class const _ChatTileMenu({
       ),
       items: [
         _chatTilePinItem(chat, onTogglePin),
+        AuraPopupMenuItem(
+          title: const TextLocale(
+            LocaleKeys.chats_screens_chat_conversation_fork,
+          ),
+          onTap: onFork,
+          leading: const AuraIcon(Icons.call_split_outlined),
+        ),
         ..._chatTileMenuItems(onRename: onRename, onDelete: onDelete),
       ],
       controller: controller,

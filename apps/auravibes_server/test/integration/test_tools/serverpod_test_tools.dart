@@ -59,6 +59,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/del
     as _il5llor3;
 import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _igstxg4l;
+import 'package:auravibes_server/src/generated/features/conversations/models/fork_conversation_request.dart'
+    as _i1ewhboi;
 import 'package:auravibes_server/src/generated/features/conversations/models/get_conversation_request.dart'
     as _itkmf3xs;
 import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
@@ -920,6 +922,35 @@ class _ConversationEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'conversation',
           methodName: 'create',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_itibmfuz.ConversationSummary>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_itibmfuz.ConversationSummary> fork(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i1ewhboi.ForkConversationRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'fork',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'fork',
           parameters: _ist.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );

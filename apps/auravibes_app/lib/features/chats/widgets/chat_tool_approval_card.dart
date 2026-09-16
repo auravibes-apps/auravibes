@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart'
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
@@ -58,6 +59,7 @@ class const _PendingToolCallsView({
 
     return _PendingToolCallsResult(
       workspaceId: workspaceId,
+      conversationId: conversationId,
       pendingCalls: pendingCalls,
       asyncCalls: asyncCalls,
     );
@@ -66,6 +68,7 @@ class const _PendingToolCallsView({
 
 class const _PendingToolCallsResult({
   required final String workspaceId,
+  required final String conversationId,
   required final List<PendingToolCall>? pendingCalls,
   required final AsyncValue<List<PendingToolCall>>? asyncCalls,
 }) extends StatelessWidget {
@@ -79,6 +82,7 @@ class const _PendingToolCallsResult({
 
     return _PendingToolCallsList(
       workspaceId: workspaceId,
+      conversationId: conversationId,
       pendingCalls: pendingCalls ?? asyncCalls?.value ?? const [],
     );
   }
@@ -86,6 +90,7 @@ class const _PendingToolCallsResult({
 
 class const _PendingToolCallsList({
   required final String workspaceId,
+  required final String conversationId,
   required final List<PendingToolCall> pendingCalls,
 }) extends StatelessWidget {
   @override
@@ -93,12 +98,14 @@ class const _PendingToolCallsList({
       ? const SizedBox.shrink()
       : _PendingToolCallsPager(
           workspaceId: workspaceId,
+          conversationId: conversationId,
           pendingCalls: pendingCalls,
         );
 }
 
 class const _PendingToolCallsPager({
   required final String workspaceId,
+  required final String conversationId,
   required final List<PendingToolCall> pendingCalls,
 }) extends HookWidget {
   @override
@@ -111,6 +118,7 @@ class const _PendingToolCallsPager({
 
     return _PendingToolCallsPagerPage(
       workspaceId: workspaceId,
+      conversationId: conversationId,
       pendingCalls: pendingCalls,
       currentIndex: currentIndex,
     );
@@ -132,6 +140,7 @@ Dispose? _resetPagerIndexEffect(
 
 class const _PendingToolCallsPagerPage({
   required final String workspaceId,
+  required final String conversationId,
   required final List<PendingToolCall> pendingCalls,
   required final ValueNotifier<int> currentIndex,
 }) extends StatelessWidget {
@@ -139,6 +148,7 @@ class const _PendingToolCallsPagerPage({
   Widget build(BuildContext context) {
     final page = _PendingToolCallsPageData(
       workspaceId: workspaceId,
+      conversationId: conversationId,
       pendingCalls: pendingCalls,
       currentIndex: currentIndex,
     );
@@ -150,16 +160,38 @@ class const _PendingToolCallsPagerPage({
 class _PendingToolCallsPageData {
   new({
     required String workspaceId,
+    required String conversationId,
     required List<PendingToolCall> pendingCalls,
     required ValueNotifier<int> currentIndex,
-  }) : request = _ApprovalCardRequest(
+  }) : request = _approvalCardRequest(
          workspaceId: workspaceId,
+         conversationId: conversationId,
          pendingCalls: pendingCalls,
-         currentIndexNotifier: currentIndex,
-         selection: .new(pendingCalls, currentIndex),
+         currentIndex: currentIndex,
        );
 
   final _ApprovalCardRequest request;
+}
+
+_ApprovalCardRequest _approvalCardRequest({
+  required String workspaceId,
+  required String conversationId,
+  required List<PendingToolCall> pendingCalls,
+  required ValueNotifier<int> currentIndex,
+}) {
+  final selection = _PendingToolCallsPageSelection(pendingCalls, currentIndex);
+  final sourceConversationId =
+      pendingCalls[selection.clamped].sourceConversationId;
+
+  return _ApprovalCardRequest(
+    workspaceId: workspaceId,
+    conversationId: sourceConversationId.isEmpty
+        ? conversationId
+        : sourceConversationId,
+    pendingCalls: pendingCalls,
+    currentIndexNotifier: currentIndex,
+    selection: selection,
+  );
 }
 
 class _PendingToolCallsPageSelection {
@@ -174,6 +206,7 @@ class _PendingToolCallsPageSelection {
 class _ApprovalCardRequest {
   new({
     required this.workspaceId,
+    required this.conversationId,
     required List<PendingToolCall> pendingCalls,
     required ValueNotifier<int> currentIndexNotifier,
     required _PendingToolCallsPageSelection selection,
@@ -186,6 +219,7 @@ class _ApprovalCardRequest {
        onNext = (() => currentIndexNotifier.value = selection.clamped + 1);
 
   final String workspaceId;
+  final String conversationId;
   final PendingToolCall current;
   final int currentIndex;
   final int totalCount;
@@ -357,6 +391,7 @@ class _ApprovalCardBodyChildren {
         ),
         _ConfirmationButtons(
           workspaceId: request.workspaceId,
+          conversationId: request.conversationId,
           toolCall: request.current.toolCall,
           messageId: request.current.messageId,
         ),
@@ -797,6 +832,7 @@ Map<String, String> _formatUrlRequestSummary(
 
 class const _ConfirmationButtons({
   required final String workspaceId,
+  required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String messageId,
 }) extends ConsumerWidget {
@@ -804,6 +840,7 @@ class const _ConfirmationButtons({
   Widget build(BuildContext context, WidgetRef ref) {
     final actionHandler = _ConfirmationActionHandler(
       workspaceId: workspaceId,
+      conversationId: conversationId,
       toolCall: toolCall,
       messageId: messageId,
     );
@@ -818,6 +855,7 @@ class const _ConfirmationButtons({
 
 class const _ConfirmationActionHandler({
   required final String workspaceId,
+  required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String messageId,
 }) {
@@ -868,7 +906,12 @@ extension _ConfirmationToolActions on _ConfirmationActionHandler {
     await ref
         .read(auraAgentServiceProvider)
         .tools
-        .approve(toolCallId: toolCall.id, messageId: messageId, level: level);
+        .approve(
+          toolCallId: toolCall.id,
+          messageId: messageId,
+          conversationId: conversationId,
+          level: level,
+        );
   }
 
   Future<void> _skip(WidgetRef ref) async {
@@ -877,7 +920,11 @@ extension _ConfirmationToolActions on _ConfirmationActionHandler {
     await ref
         .read(auraAgentServiceProvider)
         .tools
-        .skip(toolCallId: toolCall.id, messageId: messageId);
+        .skip(
+          toolCallId: toolCall.id,
+          messageId: messageId,
+          conversationId: conversationId,
+        );
   }
 
   Future<void> _stopAll(WidgetRef ref) async {
@@ -886,11 +933,12 @@ extension _ConfirmationToolActions on _ConfirmationActionHandler {
     await ref
         .read(auraAgentServiceProvider)
         .tools
-        .stopPending(messageId: messageId);
+        .stopPending(messageId: messageId, conversationId: conversationId);
   }
 }
 
 typedef _CloudDecisionData = ({
+  String conversationId,
   String turnId,
   int revision,
   String argumentsDigest,
@@ -903,13 +951,15 @@ class _CloudDecisionRequest {
     required MessageToolCallEntity toolCall,
     required this.approved,
     required this.stopAll,
-  }) : turnId = decision.turnId,
+  }) : conversationId = decision.conversationId,
+       turnId = decision.turnId,
        toolCallId = toolCall.id,
        argumentsDigest = decision.argumentsDigest,
        revision = decision.revision,
        editedArgumentsJson = approved ? toolCall.argumentsRaw : null;
 
   final CloudTurnUsecase cloud;
+  final String conversationId;
   final String turnId;
   final String toolCallId;
   final String argumentsDigest;
@@ -936,6 +986,7 @@ extension _ConfirmationCloudActions on _ConfirmationActionHandler {
     }
 
     return (
+      conversationId: conversationId,
       turnId: turnId,
       revision: revision,
       argumentsDigest: argumentsDigest,
@@ -984,6 +1035,7 @@ extension _ConfirmationCloudActions on _ConfirmationActionHandler {
 
 Future<Object?> _submitCloudDecision(_CloudDecisionRequest request) =>
     request.cloud.decide((
+      conversationId: request.conversationId,
       turnId: request.turnId,
       toolCallId: request.toolCallId,
       argumentsDigest: request.argumentsDigest,
@@ -1002,11 +1054,21 @@ extension _ConfirmationActionExecution on _ConfirmationActionHandler {
     try {
       await action();
     } on Exception catch (error, stackTrace) {
-      _logger.warning('Tool approval action failed', error, stackTrace);
+      final errorCode = error is CloudAppException ? error.code : null;
+      final errorSuffix = errorCode == null ? '' : ' ($errorCode)';
+      _logger.warning(
+        'Tool approval action failed$errorSuffix',
+        error,
+        stackTrace,
+      );
       if (!context.mounted) return;
       final _ = AuraSnackBars.show(
         context: context,
-        content: TextLocale(errorMessageKey),
+        content: TextLocale(
+          error is CloudAppException
+              ? CloudAppErrors.localizationKey(error)
+              : errorMessageKey,
+        ),
         variant: .error,
       );
     }

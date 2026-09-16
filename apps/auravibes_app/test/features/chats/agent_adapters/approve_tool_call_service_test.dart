@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/approve_tool_call_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -118,6 +119,7 @@ void main() {
       final result = await provider.loadToolCall(
         messageId: messageId,
         toolCallId: 'tool-1',
+        conversationId: conversationId,
       );
 
       expect(result?.conversationId, conversationId);
@@ -165,6 +167,7 @@ void main() {
       final loaded = await provider.loadToolCall(
         messageId: messageId,
         toolCallId: 'tool-1',
+        conversationId: conversationId,
       );
 
       expect(loaded?.name, generatedName);
@@ -185,13 +188,18 @@ void main() {
           .thenAnswer((_) async => message);
 
       expect(
-        await provider.loadToolCall(messageId: 'missing', toolCallId: 'tool-1'),
+        await provider.loadToolCall(
+          messageId: 'missing',
+          toolCallId: 'tool-1',
+          conversationId: conversationId,
+        ),
         isNull,
       );
       expect(
         await provider.loadToolCall(
           messageId: messageId,
           toolCallId: 'missing-tool',
+          conversationId: conversationId,
         ),
         isNull,
       );
@@ -352,8 +360,13 @@ void main() {
     test('updates tool call result status in message metadata', () async {
       when(() => messageRepository.getMessageById(messageId))
           .thenAnswer((_) async => message);
-      when(() => messageRepository.patchMessage(messageId, any()))
-          .thenAnswer((_) async => message);
+      when(
+        () => messageRepository.patchMessage(
+          messageId,
+          any(),
+          conversationId: conversationId,
+        ),
+      ).thenAnswer((_) async => message);
 
       const cases = {
         agent.AgentToolResultStatus.success: ToolCallResultStatus.success,
@@ -377,13 +390,18 @@ void main() {
         await provider.updateToolCallResult(
           messageId: messageId,
           toolCallId: 'tool-1',
+          conversationId: conversationId,
           resultStatus: entry.key,
           responseRaw: 'response',
         );
       }
 
       final patches = verify(
-        () => messageRepository.patchMessage(messageId, captureAny()),
+        () => messageRepository.patchMessage(
+          messageId,
+          captureAny(),
+          conversationId: conversationId,
+        ),
       ).captured.whereType<MessagePatch>().toList();
       expect(
         patches.map((patch) => patch.metadata?.toolCalls.single.resultStatus),
@@ -393,29 +411,44 @@ void main() {
         patches.map((patch) => patch.metadata?.toolCalls.single.responseRaw),
         everyElement('response'),
       );
+      expect(
+        patches.map((patch) => patch.status),
+        everyElement(MessageStatus.sent),
+      );
     });
 
     test('marks tool call running in message metadata', () async {
       when(() => messageRepository.getMessageById(messageId))
           .thenAnswer((_) async => message);
-      when(() => messageRepository.patchMessage(messageId, any()))
-          .thenAnswer((_) async => message);
+      when(
+        () => messageRepository.patchMessage(
+          messageId,
+          any(),
+          conversationId: conversationId,
+        ),
+      ).thenAnswer((_) async => message);
 
       await provider.markToolCallRunning(
         messageId: messageId,
         toolCallId: 'tool-1',
+        conversationId: conversationId,
       );
 
       final patch =
-          verify(() => messageRepository.patchMessage(messageId, captureAny()))
-                  .captured
-                  .single
+          verify(
+                () => messageRepository.patchMessage(
+                  messageId,
+                  captureAny(),
+                  conversationId: conversationId,
+                ),
+              ).captured.single
               as MessagePatch;
       expect(
         patch.metadata?.toolCalls.single.resultStatus,
         ToolCallResultStatus.running,
       );
       expect(patch.metadata?.toolCalls.single.responseRaw, isNull);
+      expect(patch.status, isNull);
     });
 
     test('resumes conversation through resume service', () async {
@@ -423,7 +456,10 @@ void main() {
           .thenAnswer((_) => Future<void>.value());
 
       await expectLater(
-        provider.resumeConversationIfReady(messageId: messageId),
+        provider.resumeConversationIfReady(
+          messageId: messageId,
+          conversationId: conversationId,
+        ),
         completes,
       );
 
