@@ -309,6 +309,11 @@ void main() {
         ),
         throwsA(isA<ConversationPinLimitException>()),
       );
+      expect(
+        ConversationPinLimitException(workspace.id).toString(),
+        'ConversationPinLimitException: workspace ${workspace.id} has reached '
+        'the pinned conversation limit',
+      );
       final emitted = await fixture.database.conversationDao
           .watchConversationsByWorkspace(workspace.id)
           .first;
