@@ -354,6 +354,8 @@
       "queued_clear_all": "Limpiar Todo",
       "delete_title": "Eliminar Conversación",
       "delete_confirm": "¿Estás seguro de que deseas eliminar esta conversación? Esta acción no se puede deshacer.",
+      "pin": "Fijar conversación",
+      "unpin": "Desfijar conversación",
       "options_tooltip": "Más opciones",
       "error_workspace_mismatch": "Esta conversación pertenece a un espacio de trabajo diferente",
       "error_not_found": "Conversación no encontrada",

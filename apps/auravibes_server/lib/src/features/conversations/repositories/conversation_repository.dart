@@ -85,6 +85,24 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     transaction: transaction,
   );
 
+  Future<int> countPinnedConversations(
+    Session session, {
+    required int workspaceId,
+    Transaction? transaction,
+  }) async {
+    final conversations = await Conversation.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.isPinned.equals(true) &
+          table.deletedAt.equals(null),
+      limit: ConversationLimits.maxPinnedPerWorkspace + 1,
+      transaction: transaction,
+    );
+
+    return conversations.length;
+  }
+
   Future<bool> resourceExists(
     Session session, {
     required int workspaceId,

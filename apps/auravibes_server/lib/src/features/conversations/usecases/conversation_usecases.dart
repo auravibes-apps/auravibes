@@ -68,6 +68,13 @@ class ConversationUseCases {
         parentConversationId: request.parentConversationId,
         transaction: transaction,
       );
+      if (request.isPinned) {
+        await _ensurePinnedCapacity(
+          session,
+          workspaceId: request.workspaceId,
+          transaction: transaction,
+        );
+      }
       final summary = _summary(
         await Conversation.db.insertRow(
           session,
@@ -266,6 +273,13 @@ class ConversationUseCases {
             : request.parentConversationId,
         transaction: transaction,
       );
+      if (request.isPinned == true && !conversation.isPinned) {
+        await _ensurePinnedCapacity(
+          session,
+          workspaceId: request.workspaceId,
+          transaction: transaction,
+        );
+      }
       final updated = await Conversation.db.updateRow(
         session,
         conversation.copyWith(
@@ -2121,6 +2135,21 @@ class ConversationUseCases {
               transaction: transaction,
             ) ==
             null) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+  }
+
+  Future<void> _ensurePinnedCapacity(
+    Session session, {
+    required int workspaceId,
+    required Transaction transaction,
+  }) async {
+    final count = await _repository.countPinnedConversations(
+      session,
+      workspaceId: workspaceId,
+      transaction: transaction,
+    );
+    if (count >= ConversationLimits.maxPinnedPerWorkspace) {
       _fail(ConversationErrorCode.validationFailed);
     }
   }

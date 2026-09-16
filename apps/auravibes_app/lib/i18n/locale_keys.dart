@@ -485,6 +485,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.delete_title';
   static const chats_screens_chat_conversation_delete_confirm =
       'chats_screens.chat_conversation.delete_confirm';
+  static const chats_screens_chat_conversation_pin =
+      'chats_screens.chat_conversation.pin';
+  static const chats_screens_chat_conversation_unpin =
+      'chats_screens.chat_conversation.unpin';
   static const chats_screens_chat_conversation_options_tooltip =
       'chats_screens.chat_conversation.options_tooltip';
   static const chats_screens_chat_conversation_error_workspace_mismatch =

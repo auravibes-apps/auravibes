@@ -28,3 +28,7 @@ abstract final class ConversationJobStatuses {
   static const cancelled = 'cancelled';
   static const failed = 'failed';
 }
+
+abstract final class ConversationLimits {
+  static const maxPinnedPerWorkspace = 10;
+}
