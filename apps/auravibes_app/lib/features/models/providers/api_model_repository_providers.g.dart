@@ -157,7 +157,7 @@ final class ModelSyncServiceProvider
   }
 }
 
-String _$modelSyncServiceHash() => r'e3c300b97ac402c0564519b7e6c7aeb3b22c2bde';
+String _$modelSyncServiceHash() => r'5e826ba4e2513c6eb5d17e65463d509e035d419e';
 
 @ProviderFor(apiModelProviders)
 final apiModelProvidersProvider = ApiModelProvidersFamily._();

@@ -249,7 +249,7 @@ void main() {
   });
 
   group('modelSyncServiceProvider', () {
-    test('creates ModelSyncService and cancels timer on dispose', () {
+    test('creates ModelSyncService', () {
       final container = ProviderContainer(
         overrides: [
           apiModelRepositoryProvider.overrideWithValue(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
@@ -8,6 +10,11 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/models/services/model_sync_service.dart';
+import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
+import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -23,7 +30,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+const _syncWorkspaceId = 'sync-workspace';
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +41,78 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('syncs the local model catalog with visible progress', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final completer = Completer<void>();
+    final usecase = _MockSyncApiModelsUseCase();
+    when(usecase.call).thenAnswer((_) => completer.future);
+    final container = _syncTestContainer(.new(syncApiModelsUseCase: usecase));
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.sync));
+    await tester.pump();
+
+    expect(find.byType(AuraSpinner), findsOneWidget);
+    final syncButton = tester
+        .widgetList<AuraIconButton>(find.byType(AuraIconButton))
+        .singleWhere((button) => button.child is AuraSpinner);
+    expect(syncButton.disabled, isTrue);
+    verify(usecase.call).called(1);
+
+    completer.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Model catalog synced'), findsOneWidget);
+    await _unmountScreen(tester);
+  });
+
+  testWidgets('shows model catalog sync failure', (tester) async {
+    _addWidgetTearDown(tester);
+    final usecase = _MockSyncApiModelsUseCase();
+    when(usecase.call).thenThrow(Exception('Network error'));
+    final container = _syncTestContainer(.new(syncApiModelsUseCase: usecase));
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.sync));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Could not sync model catalog'), findsOneWidget);
+    await _unmountScreen(tester);
+  });
+
+  testWidgets('hides local catalog sync for cloud workspaces', (tester) async {
+    _addWidgetTearDown(tester);
+    const session = WorkspaceSession(
+      CloudWorkspaceRef(
+        localWorkspaceId: _syncWorkspaceId,
+        serverUrl: 'https://example.com',
+        accountId: 'account',
+        cloudWorkspaceId: 1,
+      ),
+    );
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      session: session,
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.sync), findsNothing);
+    await _unmountScreen(tester);
   });
 
   testWidgets('deletes service connections from row menu', (tester) async {
@@ -253,37 +335,63 @@ void main() {
   });
 }
 
+ProviderContainer _syncTestContainer(
+  ModelSyncService service, {
+  WorkspaceSession? session,
+}) {
+  final workspaceSession =
+      session ??
+      const WorkspaceSession(
+        LocalWorkspaceRef(localWorkspaceId: _syncWorkspaceId),
+      );
+
+  return ProviderContainer(
+    overrides: [
+      workspaceSessionForRouteProvider(_syncWorkspaceId)
+          .overrideWithValue(AsyncData(workspaceSession)),
+      serviceConnectionsProvider(
+        _syncWorkspaceId,
+      ).overrideWith((_) => Stream.value(const <ServiceConnectionListItem>[])),
+      modelSyncServiceProvider.overrideWithValue(service),
+    ],
+  );
+}
+
 Future<void> _pumpScreen(
   WidgetTester tester,
   ProviderContainer container,
   String workspaceId,
-) {
-  return tester.pumpWidget(
-    EasyLocalization(
-      key: UniqueKey(),
-      child: Builder(
-        builder: (context) {
-          return UncontrolledProviderScope(
-            container: container,
-            child: MaterialApp(
-              home: ServiceConnectionsScreen(workspaceId: workspaceId),
-              builder: (context, child) =>
-                  AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-            ),
-          );
-        },
+) async {
+  final _ = await tester.runAsync(() async {
+    await tester.pumpWidget(
+      EasyLocalization(
+        key: UniqueKey(),
+        child: Builder(
+          builder: (context) {
+            return UncontrolledProviderScope(
+              container: container,
+              child: MaterialApp(
+                home: ServiceConnectionsScreen(workspaceId: workspaceId),
+                builder: (context, child) =>
+                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              ),
+            );
+          },
+        ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useOnlyLangCode: true,
-      useFallbackTranslations: true,
-    ),
-  );
+    );
+    await Future<void>.delayed(.zero);
+  });
+  final _ = await tester.pumpAndSettle();
 }
 
 void _addWidgetTearDown(WidgetTester tester) {
@@ -313,3 +421,5 @@ class _FakeSecretKeyManager extends SecretKeyManager {
   @override
   Future<SecretKey> getOrCreateSecretKey() async => _key;
 }
+
+class _MockSyncApiModelsUseCase extends Mock implements SyncApiModelsUseCase;

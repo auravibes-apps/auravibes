@@ -70,6 +70,12 @@ abstract class LocaleKeys {
       'models_screens.list_delete_title';
   static const models_screens_list_delete_confirm =
       'models_screens.list_delete_confirm';
+  static const models_screens_catalog_sync_tooltip =
+      'models_screens.catalog_sync_tooltip';
+  static const models_screens_catalog_sync_success =
+      'models_screens.catalog_sync_success';
+  static const models_screens_catalog_sync_error =
+      'models_screens.catalog_sync_error';
   static const models_screens_add_provider_open_button =
       'models_screens.add_provider.open_button';
   static const models_screens_add_provider_title =
