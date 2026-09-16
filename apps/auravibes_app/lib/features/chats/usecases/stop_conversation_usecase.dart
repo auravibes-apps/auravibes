@@ -92,11 +92,13 @@ class const StopConversationUsecase({
   void _releaseParent(String conversationId, String? parentId) {
     if (parentId != null &&
         activeSubAgents.parentOf(conversationId) == parentId) {
-      activeSubAgents.finish(
+      activeSubAgents.finish((
         parentId: parentId,
         childId: conversationId,
         status: .stopped,
-      );
+        error: null,
+        stackTrace: null,
+      ));
     }
   }
 }

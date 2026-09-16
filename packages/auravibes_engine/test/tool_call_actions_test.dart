@@ -29,6 +29,7 @@ void main() {
       await usecase.call(
         messageId: 'message-1',
         toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
         level: .once,
       );
 
