@@ -278,15 +278,20 @@ class _SidebarConversationTileState
 
     return _SidebarConversationTileView(
       isActive: widget.isActive,
+      isPinned: chat.isPinned,
       title: title,
       controller: _menuController,
       onDelete: _deleteConversation,
+      onTogglePin: _togglePin,
       onTap: _openConversation,
     );
   }
 
   void _deleteConversation() =>
       unawaited(_deleteSidebarConversation(context, ref, widget.chat));
+
+  void _togglePin() =>
+      unawaited(_toggleSidebarConversationPin(context, ref, widget.chat));
 
   void _openConversation() => _openSidebarConversation(context, widget.chat);
 }
@@ -299,9 +304,11 @@ void _openSidebarConversation(BuildContext context, ConversationEntity chat) =>
 
 class const _SidebarConversationTileView({
   required final bool isActive,
+  required final bool isPinned,
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onTogglePin,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
@@ -313,9 +320,11 @@ class const _SidebarConversationTileView({
       ),
       child: _SidebarConversationTileBody(
         isActive: isActive,
+        isPinned: isPinned,
         title: title,
         controller: controller,
         onDelete: onDelete,
+        onTogglePin: onTogglePin,
         onTap: onTap,
       ),
     );
@@ -324,21 +333,29 @@ class const _SidebarConversationTileView({
 
 class const _SidebarConversationTileBody({
   required final bool isActive,
+  required final bool isPinned,
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onTogglePin,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
-    child: _SidebarConversationTileLabel(title: title, isActive: isActive),
+    child: _SidebarConversationTileLabel(
+      title: title,
+      isActive: isActive,
+      isPinned: isPinned,
+    ),
     onTap: onTap,
     variant: isActive ? AuraTileVariant.selected : AuraTileVariant.ghost,
     size: .small,
     leading: _SidebarConversationTileLeading(isActive: isActive),
     trailing: _SidebarConversationTileMenu(
+      isPinned: isPinned,
       controller: controller,
       onDelete: onDelete,
+      onTogglePin: onTogglePin,
     ),
   );
 }
@@ -346,12 +363,23 @@ class const _SidebarConversationTileBody({
 class const _SidebarConversationTileLabel({
   required final String title,
   required final bool isActive,
+  required final bool isPinned,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraText(
-    child: Text(title, overflow: .ellipsis, maxLines: 1),
-    style: .bodySmall,
-    tint: isActive ? AuraTint.primary : null,
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      if (isPinned) ...[
+        const AuraIcon(Icons.push_pin_outlined, size: .small, tint: .warning),
+        const SizedBox(width: 8),
+      ],
+      Expanded(
+        child: AuraText(
+          child: Text(title, overflow: .ellipsis, maxLines: 1),
+          style: .bodySmall,
+          tint: isActive ? AuraTint.primary : null,
+        ),
+      ),
+    ],
   );
 }
 
@@ -366,8 +394,10 @@ class const _SidebarConversationTileLeading({required final bool isActive})
 }
 
 class const _SidebarConversationTileMenu({
+  required final bool isPinned,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onTogglePin,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -380,6 +410,17 @@ class const _SidebarConversationTileMenu({
             .tr(),
       ),
       items: [
+        AuraPopupMenuItem(
+          title: TextLocale(
+            isPinned
+                ? LocaleKeys.chats_screens_chat_conversation_unpin
+                : LocaleKeys.chats_screens_chat_conversation_pin,
+          ),
+          onTap: onTogglePin,
+          leading: AuraIcon(
+            isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+          ),
+        ),
         AuraPopupMenuItem(
           title: const TextLocale(LocaleKeys.common_delete),
           onTap: onDelete,
@@ -409,9 +450,51 @@ Future<void> _deleteSidebarConversation(
     return;
   }
 
+  if (!context.mounted) return;
+
   final _ = await ref
       .read(conversationRepositoryProvider)
       .deleteConversation(chat.id);
+}
+
+Future<void> _toggleSidebarConversationPin(
+  BuildContext context,
+  WidgetRef ref,
+  ConversationEntity chat,
+) async {
+  if (!chat.isPinned) {
+    final conversations = await ref.read(
+      conversationsStreamProvider(workspaceId: chat.workspaceId).future,
+    );
+    if (!hasPinnedConversationCapacity(conversations)) return;
+  }
+
+  final patch = ConversationPatch(isPinned: !chat.isPinned);
+  final cloud = await ref.read(
+    cloudConversationUsecaseProvider(chat.workspaceId).future,
+  );
+  if (cloud != null) {
+    try {
+      final _ = await cloud.update(chat, patch);
+    } on CloudAppException catch (error) {
+      if (error.code != 'validationFailed') rethrow;
+    }
+    if (context.mounted) {
+      ref.invalidate(
+        conversationsStreamProvider(workspaceId: chat.workspaceId),
+      );
+    }
+
+    return;
+  }
+
+  try {
+    final _ = await ref
+        .read(conversationRepositoryProvider)
+        .patchConversation(chat.id, patch);
+  } on ConversationPinLimitException {
+    return;
+  }
 }
 
 class const _CompactingRow() extends StatelessWidget {

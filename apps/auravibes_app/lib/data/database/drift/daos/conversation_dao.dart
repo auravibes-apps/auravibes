@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:drift/drift.dart';
 
 part 'conversation_dao.g.dart';
@@ -60,21 +61,56 @@ mixin _ConversationDaoReadApi {
 extension ConversationDaoWriteOperations on ConversationDao {
   Future<ConversationsTable> insertConversation(
     ConversationsCompanion conversation,
-  ) => into(conversations).insertReturning(conversation);
+  ) => transaction(() async {
+    if (conversation.isPinned.present &&
+        conversation.isPinned.value &&
+        conversation.workspaceId.present) {
+      await _ensurePinnedCapacity(conversation.workspaceId.value);
+    }
+
+    return await into(conversations).insertReturning(conversation);
+  });
 
   Future<ConversationsTable?> getConversationById(String id) => (select(
     conversations,
   )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
 
-  Future<bool> patchConversation(
-    String id,
-    ConversationsCompanion companion,
-  ) async {
-    final count = await (update(
-      conversations,
-    )..where((tbl) => tbl.id.equals(id))).write(companion);
+  Future<bool> patchConversation(String id, ConversationsCompanion companion) =>
+      transaction(() async {
+        final current = await getConversationById(id);
+        if (current != null) {
+          final workspaceId = companion.workspaceId.present
+              ? companion.workspaceId.value
+              : current.workspaceId;
+          final isPinned = companion.isPinned.present
+              ? companion.isPinned.value
+              : current.isPinned;
+          if (isPinned &&
+              (!current.isPinned || workspaceId != current.workspaceId)) {
+            await _ensurePinnedCapacity(workspaceId);
+          }
+        }
 
-    return count > 0;
+        final count = await (update(
+          conversations,
+        )..where((tbl) => tbl.id.equals(id))).write(companion);
+
+        return count > 0;
+      });
+
+  Future<void> _ensurePinnedCapacity(String workspaceId) async {
+    final pinned =
+        await (select(conversations)
+              ..where(
+                (tbl) =>
+                    tbl.workspaceId.equals(workspaceId) &
+                    tbl.isPinned.equals(true),
+              )
+              ..limit(ConversationLimits.maxPinnedPerWorkspace + 1))
+            .get();
+    if (pinned.length >= ConversationLimits.maxPinnedPerWorkspace) {
+      throw ConversationPinLimitException(workspaceId);
+    }
   }
 
   Future<bool> deleteConversation(String id) async {
@@ -114,13 +150,16 @@ extension ConversationDaoReadOperations on ConversationDao {
   }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
-  _buildWorkspaceQuery(String workspaceId) {
-    return _orderedConversations(
+  _buildWorkspaceQuery(String workspaceId) => select(conversations)
+    ..where(
       (tbl) =>
           tbl.workspaceId.equals(workspaceId) &
           tbl.parentConversationId.isNull(),
-    );
-  }
+    )
+    ..orderBy([
+      (tbl) => OrderingTerm(expression: tbl.isPinned, mode: .desc),
+      (tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc),
+    ]);
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
   _buildChildrenQuery(String parentConversationId) {

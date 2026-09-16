@@ -1,3 +1,4 @@
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
@@ -209,6 +210,56 @@ void main() {
       expect(firstPage.nextCursor, isNotNull);
       expect(firstPage.conversations.single.id, laterConversation.id);
       expect(secondPage.conversations.single.id, liveConversation.id);
+
+      for (
+        var index = 0;
+        index < ConversationLimits.maxPinnedPerWorkspace;
+        index++
+      ) {
+        await endpoints.conversation.create(
+          session,
+          CreateConversationRequest(
+            workspaceId: workspaceId,
+            requestId: 'create-pinned-$index',
+            conversationId: 'pinned-$index',
+            title: 'Pinned $index',
+            isPinned: true,
+          ),
+        );
+      }
+      final pinCandidate = await endpoints.conversation.create(
+        session,
+        CreateConversationRequest(
+          workspaceId: workspaceId,
+          requestId: 'create-pin-candidate',
+          conversationId: 'pin-candidate',
+          title: 'Pin candidate',
+          isPinned: false,
+        ),
+      );
+      await expectLater(
+        endpoints.conversation.update(
+          session,
+          UpdateConversationRequest(
+            workspaceId: workspaceId,
+            requestId: 'pin-eleventh',
+            conversationId: pinCandidate.id,
+            expectedRevision: pinCandidate.revision,
+            isPinned: true,
+            clearModel: false,
+            clearAgent: false,
+            clearParent: false,
+          ),
+        ),
+        throwsA(
+          isA<ConversationException>().having(
+            (error) => error.code,
+            'code',
+            ConversationErrorCode.validationFailed,
+          ),
+        ),
+      );
+
       await expectLater(
         endpoints.conversation.get(
           session,

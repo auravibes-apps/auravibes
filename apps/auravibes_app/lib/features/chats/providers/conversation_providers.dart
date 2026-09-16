@@ -63,17 +63,29 @@ Stream<List<ConversationEntity>> _conversationsForSession(
   String workspaceId,
   int? limit,
 ) {
-  if (session.cloud case final cloud?) {
-    return _cloudConversations(ref, cloud).map(
-      (conversations) =>
-          conversations.take(limit ?? conversations.length).toList(),
-    );
-  }
+  final cloud = session.cloud;
+  final conversations = cloud == null
+      ? ref
+            .watch(conversationRepositoryProvider)
+            .watchConversationsByWorkspace(workspaceId, limit: limit)
+      : _cloudConversations(ref, cloud);
 
-  return ref
-      .watch(conversationRepositoryProvider)
-      .watchConversationsByWorkspace(workspaceId, limit: limit);
+  return conversations.map(
+    (items) => _pinnedFirst(items).take(limit ?? items.length).toList(),
+  );
 }
+
+List<ConversationEntity> _pinnedFirst(List<ConversationEntity> conversations) =>
+    [
+      ...conversations.where((conversation) => conversation.isPinned),
+      ...conversations.where((conversation) => !conversation.isPinned),
+    ];
+
+bool hasPinnedConversationCapacity(
+  Iterable<ConversationEntity> conversations,
+) =>
+    conversations.where((conversation) => conversation.isPinned).length <
+    ConversationLimits.maxPinnedPerWorkspace;
 
 @riverpod
 Stream<List<ConversationEntity>> childConversationsStream(

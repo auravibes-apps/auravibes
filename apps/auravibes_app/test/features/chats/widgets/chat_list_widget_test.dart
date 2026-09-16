@@ -207,6 +207,73 @@ void main() {
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
     });
 
+    testWidgets('pins a conversation from its options menu', (tester) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([_createConversation()]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.more_vert));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Pin conversation'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
+
+      await tester.tap(find.text('Pin conversation'));
+      await tester.pump();
+
+      expect(
+        repo.patches,
+        equals([
+          (id: 'conv-1', patch: const ConversationPatch(isPinned: true)),
+        ]),
+      );
+    });
+
+    testWidgets('unpins a conversation from its options menu', (tester) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([_createConversation(isPinned: true)]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.more_vert));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Unpin conversation'), findsOneWidget);
+
+      await tester.tap(find.text('Unpin conversation'));
+      await tester.pump();
+
+      expect(
+        repo.patches,
+        equals([
+          (id: 'conv-1', patch: const ConversationPatch(isPinned: false)),
+        ]),
+      );
+    });
+
     testWidgets('shows error state when stream has error', (tester) async {
       final controller = StreamController<List<ConversationEntity>>();
       addTearDown(controller.close);
@@ -341,6 +408,8 @@ void main() {
 class _StubConversationRepository({
   required final Stream<List<ConversationEntity>> conversationsStream,
 }) implements ConversationRepository {
+  final patches = <({String id, ConversationPatch patch})>[];
+
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
@@ -384,8 +453,17 @@ class _StubConversationRepository({
   Future<ConversationEntity> patchConversation(
     String id,
     ConversationPatch conversation,
-  ) {
-    throw UnimplementedError();
+  ) async {
+    patches.add((id: id, patch: conversation));
+
+    return ConversationEntity(
+      id: id,
+      title: 'Updated chat',
+      workspaceId: 'ws-1',
+      isPinned: conversation.isPinned ?? false,
+      createdAt: .new(2025),
+      updatedAt: .new(2025),
+    );
   }
 
   @override
