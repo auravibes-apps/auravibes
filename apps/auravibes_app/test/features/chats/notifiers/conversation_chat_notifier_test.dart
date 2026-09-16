@@ -565,7 +565,9 @@ class _FakeConversationRepository({
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
+    String? search,
     int? limit,
+    int offset = 0,
   }) => throw UnimplementedError();
 
   @override

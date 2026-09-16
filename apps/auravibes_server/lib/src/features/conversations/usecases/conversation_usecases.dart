@@ -105,7 +105,7 @@ class ConversationUseCases {
     required String userId,
     required ListConversationsRequest request,
   }) async {
-    if (request.limit < 1 || request.limit > 100) {
+    if (request.limit < 1 || request.limit > 100 || (request.offset ?? 0) < 0) {
       _fail(ConversationErrorCode.validationFailed);
     }
     await _requireMember(
@@ -124,7 +124,7 @@ class ConversationUseCases {
     required String userId,
     required ListConversationsRequest request,
   }) async {
-    if (request.limit < 1 || request.limit > 100) {
+    if (request.limit < 1 || request.limit > 100 || (request.offset ?? 0) < 0) {
       _fail(ConversationErrorCode.validationFailed);
     }
     await _requireMember(
@@ -2048,22 +2048,15 @@ class ConversationUseCases {
     final conversations = await _repository.listConversations(
       session,
       workspaceId: request.workspaceId,
+      search: request.search,
+      beforeIsPinned: cursor?.isPinned,
+      beforeUpdatedAt: cursor?.updatedAt,
+      beforeStableId: cursor?.stableId,
+      limit: request.limit + 1,
+      offset: request.offset ?? 0,
     );
-    final ordered = conversations.toList()
-      ..sort((left, right) {
-        final date = right.updatedAt.compareTo(left.updatedAt);
-        return date != 0 ? date : right.stableId.compareTo(left.stableId);
-      });
-    final filtered = cursor == null
-        ? ordered
-        : ordered.where((conversation) {
-            final date = conversation.updatedAt.compareTo(cursor.updatedAt);
-            return date < 0 ||
-                (date == 0 &&
-                    conversation.stableId.compareTo(cursor.stableId) < 0);
-          }).toList();
-    final hasMore = filtered.length > request.limit;
-    final page = filtered.take(request.limit).toList();
+    final hasMore = conversations.length > request.limit;
+    final page = conversations.take(request.limit).toList();
     return ConversationPage(
       conversations: page.map(_summary).toList(),
       nextCursor: hasMore && page.isNotEmpty ? _encodeCursor(page.last) : null,
@@ -2078,12 +2071,14 @@ class ConversationUseCases {
       );
       if (decoded is! Map<String, dynamic> ||
           decoded['updatedAt'] is! String ||
-          decoded['stableId'] is! String) {
+          decoded['stableId'] is! String ||
+          (decoded['isPinned'] != null && decoded['isPinned'] is! bool)) {
         _fail(ConversationErrorCode.validationFailed);
       }
       return _ConversationCursor(
         DateTime.parse(decoded['updatedAt'] as String).toUtc(),
         decoded['stableId'] as String,
+        decoded['isPinned'] as bool?,
       );
     } on FormatException {
       _fail(ConversationErrorCode.validationFailed);
@@ -2093,6 +2088,7 @@ class ConversationUseCases {
   String _encodeCursor(Conversation conversation) => base64Url.encode(
     utf8.encode(
       jsonEncode({
+        'isPinned': conversation.isPinned,
         'updatedAt': conversation.updatedAt.toIso8601String(),
         'stableId': conversation.stableId,
       }),
@@ -2600,6 +2596,7 @@ class const _ContinueConversationReplay();
 class const _ConversationCursor(
   final DateTime updatedAt,
   final String stableId,
+  final bool? isPinned,
 );
 
 class const _Mutation<T>(

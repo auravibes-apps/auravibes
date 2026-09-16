@@ -12504,6 +12504,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
   );
+  late final Index conversationsWorkspaceParentUpdatedId = Index(
+    'conversations_workspace_parent_updated_id',
+    'CREATE INDEX conversations_workspace_parent_updated_id ON conversations (workspace_id, parent_conversation_id, is_pinned DESC, updated_at DESC, id DESC)',
+  );
   late final Index agentsWorkspaceNameId = Index(
     'agents_workspace_name_id',
     'CREATE INDEX agents_workspace_name_id ON agents (workspace_id, name COLLATE NOCASE, id)',
@@ -12611,6 +12615,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     conversationSkills,
     appSkillWorkspaceSettings,
     workspaceModelSelectionsConnectionModel,
+    conversationsWorkspaceParentUpdatedId,
     agentsWorkspaceNameId,
     agentSkillsWorkspaceSkill,
     agentSkillsAppSkill,

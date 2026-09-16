@@ -62,7 +62,9 @@ void main() {
         when(
           () => mockDao.watchConversationsByWorkspace(
             'ws-1',
+            search: any(named: 'search'),
             limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
           ),
         ).thenAnswer((_) => controller.stream);
 
@@ -80,8 +82,14 @@ void main() {
         controller.add([]);
         addTearDown(controller.close);
 
-        when(() => mockDao.watchConversationsByWorkspace('ws-1', limit: 5))
-            .thenAnswer((_) => controller.stream);
+        when(
+          () => mockDao.watchConversationsByWorkspace(
+            'ws-1',
+            search: any(named: 'search'),
+            limit: 5,
+            offset: any(named: 'offset'),
+          ),
+        ).thenAnswer((_) => controller.stream);
 
         final _ = await repository
             .watchConversationsByWorkspace('ws-1', limit: 5)
@@ -89,7 +97,12 @@ void main() {
 
         expect(
           () => verify(
-            () => mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
+            () => mockDao.watchConversationsByWorkspace(
+              'ws-1',
+              search: any(named: 'search'),
+              limit: 5,
+              offset: any(named: 'offset'),
+            ),
           ).called(1),
           returnsNormally,
         );

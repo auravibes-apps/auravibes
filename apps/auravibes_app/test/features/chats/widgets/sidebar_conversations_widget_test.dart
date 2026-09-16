@@ -423,7 +423,9 @@ class _SeededConversationRepository(
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
+    String? search,
     int? limit,
+    int offset = 0,
   }) {
     workspaceWatchCalls.add(
       _WorkspaceWatchCall(workspaceId: workspaceId, limit: limit),
@@ -520,7 +522,9 @@ class _RecordingConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
+    String? search,
     int? limit,
+    int offset = 0,
   }) {
     workspaceWatchCalls.add(
       _WorkspaceWatchCall(workspaceId: workspaceId, limit: limit),

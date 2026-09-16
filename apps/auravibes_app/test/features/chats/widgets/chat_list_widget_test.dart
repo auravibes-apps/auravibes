@@ -159,6 +159,119 @@ void main() {
       expect(find.text('Chat Two'), findsOneWidget);
     });
 
+    testWidgets('filters chats by title and restores all chats when cleared', (
+      tester,
+    ) async {
+      final conversations = [
+        _createConversation(title: 'Release Plan'),
+        _createConversation(id: 'conv-2', title: 'Design Brief'),
+      ];
+      final repo = _StubConversationRepository(
+        conversationsStream: .value(conversations),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.byType(AuraInput), findsOneWidget);
+
+      await tester.enterText(find.byType(EditableText), 'RELEASE');
+      await tester.pump(const Duration(milliseconds: 301));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Release Plan'), findsOneWidget);
+      expect(find.text('Design Brief'), findsNothing);
+
+      await tester.enterText(find.byType(EditableText), '');
+      await tester.pump(const Duration(milliseconds: 301));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Release Plan'), findsOneWidget);
+      expect(find.text('Design Brief'), findsOneWidget);
+    });
+
+    testWidgets('keeps search focused while query reloads', (tester) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([_createConversation(title: 'Release')]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      final searchField = find.byType(EditableText);
+      await tester.tap(searchField);
+      final focusNode = tester.widget<EditableText>(searchField).focusNode;
+      expect(focusNode.hasFocus, isTrue);
+      expect(repo.queries, hasLength(1));
+
+      await tester.enterText(searchField, 'R');
+      await tester.pump();
+
+      expect(repo.queries, hasLength(1));
+      expect(find.byType(AuraSpinner), findsOneWidget);
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.pump(const Duration(milliseconds: 301));
+      await tester.pump();
+
+      expect(repo.queries.last.search, 'R');
+      expect(focusNode.hasFocus, isTrue);
+    });
+
+    testWidgets('shows a no-results state for an unmatched title', (
+      tester,
+    ) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([
+          _createConversation(title: 'Release Plan'),
+        ]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      await tester.enterText(find.byType(EditableText), 'missing');
+      await tester.pump(const Duration(milliseconds: 301));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Release Plan'), findsNothing);
+      expect(find.byIcon(Icons.search_off), findsOneWidget);
+      expect(find.text('No conversations match your search'), findsOneWidget);
+    });
+
     testWidgets('shows pinned icon for pinned conversations', (tester) async {
       final conversations = [
         _createConversation(title: 'Pinned Chat', isPinned: true),
@@ -231,7 +344,7 @@ void main() {
       expect(find.text('Delete'), findsOneWidget);
 
       await tester.tap(find.text('Pin conversation'));
-      await tester.pump();
+      final _ = await tester.pumpAndSettle();
 
       expect(
         repo.patches,
@@ -264,7 +377,7 @@ void main() {
       expect(find.text('Unpin conversation'), findsOneWidget);
 
       await tester.tap(find.text('Unpin conversation'));
-      await tester.pump();
+      final _ = await tester.pumpAndSettle();
 
       expect(
         repo.patches,
@@ -316,11 +429,11 @@ void main() {
       await tester.tap(find.text('Rename'));
       final _ = await tester.pumpAndSettle();
       expect(
-        tester.widget<TextField>(find.byType(TextField)).controller?.text,
+        tester.widget<TextField>(find.byType(TextField).last).controller?.text,
         'Original',
       );
 
-      await tester.enterText(find.byType(TextField), 'Renamed');
+      await tester.enterText(find.byType(TextField).last, 'Renamed');
       await tester.tap(find.text('Save'));
       final _ = await tester.pumpAndSettle();
 
@@ -456,6 +569,40 @@ void main() {
         find.text(LocaleKeys.home_screen_conversation_states_no_chats_yet.tr()),
         findsOneWidget,
       );
+      expect(find.byType(AuraInput), findsNothing);
+    });
+
+    testWidgets('loads the next page from the repository', (tester) async {
+      final conversations = [
+        for (var index = 1; index <= 21; index++)
+          _createConversation(id: 'conv-$index', title: 'Chat $index'),
+      ];
+      final repo = _StubConversationRepository(
+        conversationsStream: .value(conversations),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Show more'), findsOneWidget);
+      expect(repo.queries.single.offset, 0);
+
+      await tester.tap(find.text('Show more'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(repo.queries.last.offset, 20);
+      expect(find.text('Show more'), findsNothing);
     });
   });
 }
@@ -464,14 +611,35 @@ class _StubConversationRepository({
   required final Stream<List<ConversationEntity>> conversationsStream,
   final Future<ConversationEntity> Function(String, ConversationPatch)? onPatch,
 }) implements ConversationRepository {
+  final queries = <({String? search, int? limit, int offset})>[];
   final patches = <({String id, ConversationPatch patch})>[];
+  List<ConversationEntity>? _cachedConversations;
 
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
+    String? search,
     int? limit,
+    int offset = 0,
   }) {
-    return conversationsStream;
+    queries.add((search: search, limit: limit, offset: offset));
+    final cachedConversations = _cachedConversations;
+    if (cachedConversations != null) {
+      return Stream.value(
+        _page(
+          cachedConversations,
+          search: search,
+          limit: limit,
+          offset: offset,
+        ),
+      );
+    }
+
+    return conversationsStream.map((conversations) {
+      _cachedConversations = conversations;
+
+      return _page(conversations, search: search, limit: limit, offset: offset);
+    });
   }
 
   @override
@@ -529,5 +697,24 @@ class _StubConversationRepository({
   @override
   Stream<ConversationEntity?> watchConversationById(String id) {
     return const Stream.empty();
+  }
+
+  List<ConversationEntity> _page(
+    List<ConversationEntity> conversations, {
+    required String? search,
+    required int? limit,
+    required int offset,
+  }) {
+    final normalizedSearch = search?.trim().toLowerCase() ?? '';
+    final matching = normalizedSearch.isEmpty
+        ? conversations
+        : conversations
+              .where(
+                (conversation) =>
+                    conversation.title.toLowerCase().contains(normalizedSearch),
+              )
+              .toList();
+
+    return matching.skip(offset).take(limit ?? matching.length).toList();
   }
 }

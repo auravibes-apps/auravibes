@@ -42,7 +42,10 @@ class const SidebarConversationsWidget({
 
     final currentChatId = _sidebarCurrentChatIdFromContext(context);
     final chatListAsync = ref.watch(
-      conversationsStreamProvider(workspaceId: workspaceId, limit: limit),
+      conversationsStreamProvider(
+        workspaceId: workspaceId,
+        pagination: (limit: limit, offset: 0),
+      ),
     );
 
     return _SidebarConversationsContent(

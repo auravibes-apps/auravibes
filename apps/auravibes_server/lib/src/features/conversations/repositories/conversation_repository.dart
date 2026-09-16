@@ -29,6 +29,9 @@ String conversationTurnJobPayload(
   'a2uiSupportedComponents': ?a2uiSupportedComponents,
 });
 
+String _escapeLike(String value) =>
+    value.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
+
 String conversationExecutionIdForJob(
   String jobRequestId,
   String? payloadJson,
@@ -77,13 +80,53 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
   Future<List<Conversation>> listConversations(
     Session session, {
     required int workspaceId,
+    String? search,
+    bool? beforeIsPinned,
+    DateTime? beforeUpdatedAt,
+    String? beforeStableId,
+    int? limit,
+    int offset = 0,
     Transaction? transaction,
-  }) => Conversation.db.find(
-    session,
-    where: (table) =>
-        table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
-    transaction: transaction,
-  );
+  }) {
+    final normalizedSearch = search?.trim();
+
+    return Conversation.db.find(
+      session,
+      where: (table) {
+        var where =
+            table.workspaceId.equals(workspaceId) &
+            table.deletedAt.equals(null);
+        if (normalizedSearch != null && normalizedSearch.isNotEmpty) {
+          where &= table.title.ilike('%${_escapeLike(normalizedSearch)}%');
+        }
+        if (beforeUpdatedAt case final updatedAt?) {
+          final stableId = beforeStableId;
+          if (stableId == null) return where;
+          final beforeDate =
+              (table.updatedAt < updatedAt) |
+              (table.updatedAt.equals(updatedAt) & (table.stableId < stableId));
+          if (beforeIsPinned == true) {
+            where &=
+                table.isPinned.equals(false) |
+                (table.isPinned.equals(true) & beforeDate);
+          } else if (beforeIsPinned == false) {
+            where &= table.isPinned.equals(false) & beforeDate;
+          } else {
+            where &= beforeDate;
+          }
+        }
+        return where;
+      },
+      orderByList: (table) => [
+        table.isPinned.desc(),
+        table.updatedAt.desc(),
+        table.stableId.desc(),
+      ],
+      limit: limit,
+      offset: offset,
+      transaction: transaction,
+    );
+  }
 
   Future<int> countPinnedConversations(
     Session session, {

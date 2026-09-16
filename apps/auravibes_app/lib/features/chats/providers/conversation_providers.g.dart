@@ -116,7 +116,12 @@ final class ConversationsStreamProvider
         $StreamProvider<List<ConversationEntity>> {
   ConversationsStreamProvider._({
     required ConversationsStreamFamily super.from,
-    required ({String workspaceId, int? limit}) super.argument,
+    required ({
+      String workspaceId,
+      String search,
+      _ConversationPagination pagination,
+    })
+    super.argument,
   }) : super(
          retry: null,
          name: r'conversationsStreamProvider',
@@ -143,11 +148,18 @@ final class ConversationsStreamProvider
 
   @override
   Stream<List<ConversationEntity>> create(Ref ref) {
-    final argument = this.argument as ({String workspaceId, int? limit});
+    final argument =
+        this.argument
+            as ({
+              String workspaceId,
+              String search,
+              _ConversationPagination pagination,
+            });
     return conversationsStream(
       ref,
       workspaceId: argument.workspaceId,
-      limit: argument.limit,
+      search: argument.search,
+      pagination: argument.pagination,
     );
   }
 
@@ -163,13 +175,17 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'1d64d36c83de6051f24fc02874a4b6f738c493a4';
+    r'340d655fa9259203e03f582a4e6b055d75dbdb44';
 
 final class ConversationsStreamFamily extends $Family
     with
         $FunctionalFamilyOverride<
           Stream<List<ConversationEntity>>,
-          ({String workspaceId, int? limit})
+          ({
+            String workspaceId,
+            String search,
+            _ConversationPagination pagination,
+          })
         > {
   ConversationsStreamFamily._()
     : super(
@@ -180,11 +196,18 @@ final class ConversationsStreamFamily extends $Family
         isAutoDispose: true,
       );
 
-  ConversationsStreamProvider call({required String workspaceId, int? limit}) =>
-      ConversationsStreamProvider._(
-        argument: (workspaceId: workspaceId, limit: limit),
-        from: this,
-      );
+  ConversationsStreamProvider call({
+    required String workspaceId,
+    String search = '',
+    _ConversationPagination pagination = _defaultConversationPagination,
+  }) => ConversationsStreamProvider._(
+    argument: (
+      workspaceId: workspaceId,
+      search: search,
+      pagination: pagination,
+    ),
+    from: this,
+  );
 
   @override
   String toString() => r'conversationsStreamProvider';
