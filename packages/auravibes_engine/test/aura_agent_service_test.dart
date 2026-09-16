@@ -126,6 +126,9 @@ class _FakeAgentProvider implements AgentDataProvider, AgentModelProvider {
   Future<void> markMessagesSent(List<String> messageIds) async {}
 
   @override
+  Future<void> markMessagesErrored(List<String> messageIds) async {}
+
+  @override
   Future<void> stopLatestPendingTools(String conversationId) async {}
 }
 
@@ -158,6 +161,7 @@ class _FakeToolProvider
   Future<String?> resolveTool({
     required String conversationId,
     required String toolName,
+    required String argumentsRaw,
   }) async => 'tool';
 
   Future<AgentToolApprovalDecision> resolveToolApprovalDecision(

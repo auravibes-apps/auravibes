@@ -74,6 +74,18 @@ class const AppAgentConversationDataProvider({
   }
 
   @override
+  Future<void> markMessagesErrored(List<String> messageIds) async {
+    final _ = await Future.wait(
+      messageIds.map(
+        (messageId) => messageRepository.patchMessage(
+          messageId,
+          const MessagePatch(status: .error),
+        ),
+      ),
+    );
+  }
+
+  @override
   Future<void> stopLatestPendingTools(String conversationId) async {
     final messages = await messageRepository.getMessagesByConversation(
       conversationId,

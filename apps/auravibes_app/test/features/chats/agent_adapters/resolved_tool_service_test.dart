@@ -1,12 +1,16 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:async/async.dart';
+import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
@@ -21,11 +25,14 @@ import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_u
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:drift/drift.dart' show DatabaseConnection;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -123,6 +130,9 @@ class _FakeSubAgentRequestHandle implements SubAgentRequestHandle {
       Future.value(SubAgentCompletionStatus.done);
 
   @override
+  SubAgentCompletionFailure? get failure => null;
+
+  @override
   bool get isStopped => false;
 
   @override
@@ -159,6 +169,7 @@ AvailableSkill _appAvailableSkill(String slug) {
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(registerTestFallbackValues);
   var cancellationRuntime = AgentCancellationRuntime();
   var mcpCalls = <({String serverId, String toolIdentifier})>[];
   var usecase = ResolvedToolService(
@@ -675,6 +686,115 @@ void main() {
     },
   );
 
+  test('routes configured native skill commands through app usecase', () async {
+    final manifests = _MockBuildLoadedSkillManifestsUsecase();
+    final templateSpecs = _MockBuildSkillTemplateToolSpecsUsecase();
+    final nativeSpecs = _MockBuildAppSkillNativeToolSpecsUsecase();
+    final appSkillTool = _MockRunAppSkillToolUsecase();
+    when(
+      () => manifests.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      ),
+    ).thenAnswer(
+      (_) async => [
+        SkillManifest(
+          slug: 'openai',
+          title: 'OpenAI',
+          instructions: 'Use OpenAI.',
+          revision: 'rev-1',
+          tools: [
+            SkillManifestTool(
+              name: 'search',
+              description: 'Search.',
+              inputJsonSchema: const {
+                'type': 'object',
+                'properties': {
+                  'query': {'type': 'string'},
+                },
+                'additionalProperties': false,
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+    when(
+      () => templateSpecs.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      ),
+    ).thenAnswer((_) async => const []);
+    when(
+      () => nativeSpecs.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      ),
+    ).thenAnswer(
+      (_) async => [
+        ToolSpec(
+          name: 'skill__app__openai__search',
+          description: 'Search.',
+          inputJsonSchema: const {
+            'type': 'object',
+            'properties': {
+              'query': {'type': 'string'},
+            },
+            'additionalProperties': false,
+          },
+        ),
+      ],
+    );
+    when(
+      () => appSkillTool.call(
+        workspaceId: 'workspace-1',
+        skillSlug: 'openai',
+        toolSlug: 'search',
+        arguments: {'query': 'dart'},
+      ),
+    ).thenAnswer((_) async => 'native result');
+
+    final provider = AppResolvedToolProvider(
+      agentCancellationRuntime: cancellationRuntime,
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
+      loadConversationSkillUsecase: (_) => _MockLoadConversationSkillUsecase(),
+      unloadConversationSkillUsecase: (_) =>
+          _MockUnloadConversationSkillUsecase(),
+      runSkillTemplateToolUsecase: _MockRunSkillTemplateToolUsecase(),
+      runAppSkillToolUsecase: appSkillTool,
+      buildLoadedSkillManifestsUsecase: manifests,
+      buildSkillTemplateToolSpecsUsecase: templateSpecs,
+      buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
+      listAvailableSkillsUsecase: (_) => _MockListAvailableSkillsUsecase(),
+    );
+
+    final result = await provider.runSkillControlTool((
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+      toolIdentifier: callSkillToolName,
+      arguments: {
+        'skill': 'openai',
+        'tool': 'search',
+        'args': {'query': 'dart'},
+        'revision': 'rev-1',
+      },
+    ));
+
+    expect(result, {'result': 'native result'});
+    verify(
+      () => appSkillTool.call(
+        workspaceId: 'workspace-1',
+        skillSlug: 'openai',
+        toolSlug: 'search',
+        arguments: {'query': 'dart'},
+      ),
+    ).called(1);
+  });
+
   test('runs and rejects sub-agent tools', () async {
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
@@ -1010,8 +1130,12 @@ void main() {
   );
 
   test('provider creates the shared tool runner', () {
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
     final container = ProviderContainer(
       overrides: [
+        appDatabaseProvider.overrideWithValue(database),
         workspaceSessionProvider(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
@@ -1023,11 +1147,103 @@ void main() {
         ),
       ],
     );
+    addTearDown(database.close);
     addTearDown(container.dispose);
 
     expect(
       container.read(resolvedToolServiceProvider),
       isA<ResolvedToolService>(),
     );
+  });
+
+  test('continues a sub-agent through the provider container', () async {
+    final conversationRepository = MockConversationRepository();
+    final messageRepository = MockMessageRepository();
+    final agentLoop = MockAgentLoopRunner();
+    final parent = ConversationEntity(
+      id: 'parent-1',
+      title: 'Parent',
+      workspaceId: 'workspace-1',
+      isPinned: false,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+      modelId: 'model-1',
+    );
+    final child = parent.copyWith(
+      id: 'child-1',
+      title: 'Child',
+      parentConversationId: 'parent-1',
+    );
+    final prompt = MessageEntity(
+      id: 'prompt-1',
+      conversationId: 'child-1',
+      content: 'Run task',
+      messageType: .text,
+      isUser: true,
+      status: .sent,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+    );
+
+    when(() => conversationRepository.getConversationById('parent-1'))
+        .thenAnswer((_) async => parent);
+    when(() => conversationRepository.createConversation(any()))
+        .thenAnswer((_) async => child);
+    when(() => messageRepository.createMessage(any()))
+        .thenAnswer((_) async => prompt);
+    when(
+      () => messageRepository.getLatestAssistantMessagesByConversations(any()),
+    ).thenAnswer((_) async => []);
+    when(
+      () => agentLoop.call(
+        conversationId: 'child-1',
+        context: any(named: 'context'),
+      ),
+    ).thenAnswer((_) async => AgentIterationDecision.done);
+
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ),
+        conversationRepositoryProvider.overrideWithValue(
+          conversationRepository,
+        ),
+        messageRepositoryProvider.overrideWithValue(messageRepository),
+        appAgentLoopProvider.overrideWithValue(agentLoop),
+      ],
+    );
+    addTearDown(database.close);
+    addTearDown(container.dispose);
+
+    final service = container.read(resolvedToolServiceProvider);
+    final result = await service.call(
+      conversationId: 'parent-1',
+      tool: ResolvedTool.skillNative(
+        tableId: runSubAgentToolName,
+        skillSlug: agentsSkillSlug,
+        toolIdentifier: runSubAgentToolName,
+      ),
+      arguments: const {'title': 'Child', 'prompt': 'Run task'},
+    );
+
+    expect(result, contains('"conversationId":"child-1"'));
+    expect(result, contains('"status":"done"'));
+    verify(
+      () => agentLoop.call(
+        conversationId: 'child-1',
+        context: any(named: 'context'),
+      ),
+    ).called(1);
   });
 }

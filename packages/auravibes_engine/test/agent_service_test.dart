@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_service.dart';
 import 'package:test/test.dart';
@@ -46,7 +48,7 @@ void main() {
     final dataProvider = _FakeAgentConversationDataProvider(workspaceId: null);
     final usecase = _buildAgentService(dataProvider);
 
-    expect(
+    await expectLater(
       () => usecase(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(origin: .userMessage),
@@ -97,6 +99,34 @@ void main() {
 
     expect(result, AgentIterationDecision.done);
     expect(dataProvider.allowedToolRuns, ['conversation-1:workspace-1']);
+  });
+
+  test('waits for all allowed tools before the next model request', () async {
+    final releaseTools = Completer<void>();
+    final dataProvider = _FakeAgentConversationDataProvider(
+      continueResults: const [
+        ContinueAgentResult(messageId: 'assistant-1', hasToolCalls: true),
+        ContinueAgentResult(messageId: 'assistant-2', hasToolCalls: false),
+      ],
+      toolDecisions: const [
+        AgentIterationDecision.continueIteration,
+        AgentIterationDecision.done,
+      ],
+      onRunAllowedTools: () => releaseTools.future,
+    );
+    final usecase = _buildAgentService(dataProvider);
+
+    final result = usecase(
+      conversationId: 'conversation-1',
+      context: const AgentIterationContext(origin: .userMessage),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 1));
+
+    expect(dataProvider.continuationContexts, hasLength(1));
+    releaseTools.complete();
+
+    expect(await result, AgentIterationDecision.done);
+    expect(dataProvider.continuationContexts, hasLength(2));
   });
 
   test('retries rate limits using known delay', () async {
@@ -227,13 +257,17 @@ void main() {
     );
     final usecase = _buildAgentService(dataProvider);
 
-    expect(
+    await expectLater(
       () => usecase(
         conversationId: 'conversation-1',
-        context: const AgentIterationContext(origin: .userMessage),
+        context: const AgentIterationContext(
+          origin: .userMessage,
+          ackMessageIds: ['message-1'],
+        ),
       ),
       throwsA(isA<StateError>()),
     );
+    expect(dataProvider.markedErrored, ['message-1']);
   });
 
   test('cancels after queued drafts and marks ack messages sent', () async {
@@ -270,6 +304,7 @@ class _FakeAgentConversationDataProvider
     List<Object>? continueErrors,
     List<AgentIterationDecision>? toolDecisions,
     this.onAutoCompact,
+    this.onRunAllowedTools,
   }) : continueResults = List.of(
          continueResults ??
              const [
@@ -289,10 +324,12 @@ class _FakeAgentConversationDataProvider
   final List<Object> continueErrors;
   final List<AgentIterationDecision> toolDecisions;
   final void Function()? onAutoCompact;
+  final Future<void> Function()? onRunAllowedTools;
   final workspaceLookups = <String>[];
   final continuationContexts = <AgentIterationContext?>[];
   final createdContents = <String>[];
   final markedSent = <String>[];
+  final markedErrored = <String>[];
   final allowedToolRuns = <String>[];
 
   @override
@@ -319,6 +356,8 @@ class _FakeAgentConversationDataProvider
     required String workspaceId,
   }) async {
     allowedToolRuns.add('$conversationId:$workspaceId');
+    final wait = onRunAllowedTools;
+    if (wait != null) await wait();
 
     return toolDecisions.isEmpty
         ? AgentIterationDecision.done
@@ -356,6 +395,11 @@ class _FakeAgentConversationDataProvider
   @override
   Future<void> markMessagesSent(List<String> messageIds) async {
     markedSent.addAll(messageIds);
+  }
+
+  @override
+  Future<void> markMessagesErrored(List<String> messageIds) async {
+    markedErrored.addAll(messageIds);
   }
 
   @override

@@ -430,8 +430,13 @@ List<String> parseModelIds(Object? response, {required int maxModels}) {
 Future<Uri> requirePublicHttpsUri(
   String source, {
   required Future<List<InternetAddress>> Function(String host) lookup,
+  Duration dnsTimeout = const Duration(seconds: 5),
 }) async {
-  return (await validatePublicHttpsUri(source, lookup: lookup)).uri;
+  return (await validatePublicHttpsUri(
+    source,
+    lookup: lookup,
+    dnsTimeout: dnsTimeout,
+  )).uri;
 }
 
 class const ValidatedPublicUri(final Uri uri, final InternetAddress address);
@@ -439,6 +444,7 @@ class const ValidatedPublicUri(final Uri uri, final InternetAddress address);
 Future<ValidatedPublicUri> validatePublicHttpsUri(
   String source, {
   required Future<List<InternetAddress>> Function(String host) lookup,
+  Duration dnsTimeout = const Duration(seconds: 5),
 }) async {
   final uri = Uri.tryParse(source);
   if (uri == null ||
@@ -448,7 +454,7 @@ Future<ValidatedPublicUri> validatePublicHttpsUri(
       uri.hasFragment) {
     return _invalid();
   }
-  final addresses = await lookup(uri.host);
+  final addresses = await lookup(uri.host).timeout(dnsTimeout);
   if (addresses.isEmpty || addresses.any((address) => !_isPublic(address))) {
     return _invalid();
   }

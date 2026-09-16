@@ -37,12 +37,20 @@ class const AgentToolExecutionResult({
   final String? responseRaw,
 });
 
+class const AgentToolExecutionFailure({
+  required final String responseRaw,
+  required final Object error,
+  required final StackTrace stackTrace,
+  required final String failurePhase,
+}) implements Exception;
+
 typedef AgentToolExecutionErrorRequest<TTool extends Object> = ({
   String conversationId,
   String toolCallId,
   TTool tool,
   Object error,
   StackTrace stackTrace,
+  String? failurePhase,
 });
 
 typedef AgentResolvedToolRunner<TTool extends Object> =
@@ -100,11 +108,26 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         tool: tool,
         error: error,
         stackTrace: stackTrace,
+        failurePhase: null,
       ));
 
       return const AgentToolExecutionResult(
         resultStatus: .executionError,
         responseRaw: 'Tool execution failed.',
+      );
+    } on AgentToolExecutionFailure catch (failure) {
+      logToolExecutionError((
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+        tool: tool,
+        error: failure.error,
+        stackTrace: failure.stackTrace,
+        failurePhase: failure.failurePhase,
+      ));
+
+      return AgentToolExecutionResult(
+        resultStatus: .executionError,
+        responseRaw: failure.responseRaw,
       );
     } on Object catch (error, stackTrace) {
       logToolExecutionError((
@@ -113,6 +136,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         tool: tool,
         error: error,
         stackTrace: stackTrace,
+        failurePhase: null,
       ));
 
       return const AgentToolExecutionResult(resultStatus: .executionError);

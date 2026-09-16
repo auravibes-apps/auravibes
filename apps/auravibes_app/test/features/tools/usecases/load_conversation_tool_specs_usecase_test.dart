@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_rep
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
@@ -178,6 +179,40 @@ void main() {
         workspaceId: 'ws-1',
       );
       expect(result.map((spec) => spec.name), [runSubAgentToolName]);
+    });
+
+    test('hides agent tools from child conversations', () async {
+      final conversationRepository = MockConversationRepository();
+      when(() => conversationRepository.getConversationById('child-1'))
+          .thenAnswer(
+            (_) async => ConversationEntity(
+              id: 'child-1',
+              title: 'Child',
+              workspaceId: 'ws-1',
+              isPinned: false,
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
+              parentConversationId: 'root-1',
+            ),
+          );
+      final usecase = LoadConversationToolSpecsUsecase(
+        conversationToolsRepository: _FakeConversationToolsRepository([]),
+        buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase([]),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
+        conversationRepository: conversationRepository,
+      );
+
+      final result = await usecase(
+        conversationId: 'child-1',
+        workspaceId: 'ws-1',
+      );
+
+      expect(
+        result.map((spec) => spec.name),
+        isNot(contains(runSubAgentToolName)),
+      );
     });
 
     test(

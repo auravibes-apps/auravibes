@@ -1,7 +1,9 @@
 // ignore_for_file: implementation_imports
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
@@ -22,6 +24,7 @@ class const LoadConversationToolSpecsUsecase({
   _buildDynamicSkillToolSpecsUsecase,
   required final SyncSkillToolPermissionsUsecase
   _syncSkillToolPermissionsUsecase,
+  final ConversationRepository? conversationRepository,
   // Ponytail: Compatibility only; manifests now own materialization.
   // ignore: avoid_unused_constructor_parameters
   BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
@@ -53,8 +56,17 @@ class const LoadConversationToolSpecsUsecase({
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
+    final conversation = await conversationRepository?.getConversationById(
+      conversationId,
+    );
 
-    return _buildCatalog(toolCandidates, skillCommandSpecs);
+    return _buildCatalog(
+      toolCandidates: toolCandidates,
+      skillCommandSpecs: skillCommandSpecs,
+      includeRunSubAgent:
+          conversationRepository == null ||
+          conversation?.parentConversationId == null && conversation != null,
+    );
   }
 
   Future<List<agent.ToolCatalogCandidate<ResolvedTool>>> _loadToolCandidates(
@@ -68,13 +80,14 @@ class const LoadConversationToolSpecsUsecase({
   }
 }
 
-agent.ToolCatalog<ResolvedTool> _buildCatalog(
-  List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
-  List<ToolSpec> skillCommandSpecs,
-) => agent.buildToolCatalog([
+agent.ToolCatalog<ResolvedTool> _buildCatalog({
+  required List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
+  required List<ToolSpec> skillCommandSpecs,
+  required bool includeRunSubAgent,
+}) => agent.buildToolCatalog([
   ...toolCandidates,
   ...skillCommandSpecs.map(_skillCommandCandidate),
-  _runSubAgentCandidate(),
+  if (includeRunSubAgent) _runSubAgentCandidate(),
 ]);
 
 agent.ToolCatalogCandidate<ResolvedTool> _skillCommandCandidate(
@@ -120,5 +133,6 @@ loadConversationToolSpecsUsecaseProvider =
         syncSkillToolPermissionsUsecase: ref.watch(
           syncSkillToolPermissionsUsecaseProvider,
         ),
+        conversationRepository: ref.watch(conversationRepositoryProvider),
       );
     });

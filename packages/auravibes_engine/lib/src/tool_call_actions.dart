@@ -1,3 +1,4 @@
+import 'package:auravibes_engine/src/skills/skill_command.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 
 enum AgentToolGrantLevel { once, conversation }
@@ -17,6 +18,7 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
   Future<TTool?> resolveTool({
     required String conversationId,
     required String toolName,
+    required String argumentsRaw,
   });
 
   Future<void> grantToolForConversation({
@@ -79,12 +81,15 @@ class const ApproveToolCallService<TTool extends Object>({
     final tool = await provider.resolveTool(
       conversationId: toolCall.conversationId,
       toolName: toolCall.name,
+      argumentsRaw: toolCall.argumentsRaw,
     );
     if (tool == null) {
       await provider.updateToolCallResult(
         messageId: messageId,
         toolCallId: toolCallId,
-        resultStatus: .toolNotFound,
+        resultStatus: toolCall.name == callSkillToolName
+            ? .notConfigured
+            : .toolNotFound,
       );
       await provider.resumeConversationIfReady(messageId: messageId);
 

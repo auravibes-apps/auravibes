@@ -96,6 +96,7 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
     implements ActiveSubAgentController {
   final _completionByChildId = <String, Completer<SubAgentCompletionStatus>>{};
   final _stoppedChildIds = <String>{};
+  final _failureByChildId = <String, SubAgentCompletionFailure>{};
 
   @override
   Map<String, Set<String>> build() => {};
@@ -118,12 +119,17 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
     required String parentId,
     required String childId,
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
+    Object? error,
+    StackTrace? stackTrace,
   }) {
-    _completeChild(childId, status);
+    _completeChild(childId, status, error: error, stackTrace: stackTrace);
 
     final children = {...state[parentId] ?? const <String>{}}..remove(childId);
     state = _stateAfterChildCompletion(parentId, children);
   }
+
+  SubAgentCompletionFailure? failure(String childId) =>
+      _failureByChildId[childId];
 
   @override
   Set<String> childrenOf(String parentId) =>
@@ -151,8 +157,21 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
 
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
 
-  void _completeChild(String childId, SubAgentCompletionStatus status) {
+  void _completeChild(
+    String childId,
+    SubAgentCompletionStatus status, {
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
     final completion = _completionByChildId.remove(childId);
+    if (error != null) {
+      _failureByChildId[childId] = SubAgentCompletionFailure(
+        error: error,
+        stackTrace: stackTrace ?? StackTrace.current,
+      );
+    } else if (completion == null) {
+      final _ = _failureByChildId.remove(childId);
+    }
     if (status == SubAgentCompletionStatus.stopped) {
       final _ = _stoppedChildIds.add(childId);
     } else {
@@ -183,6 +202,9 @@ class const _AppSubAgentRequestHandle(
   @override
   Future<SubAgentCompletionStatus> get completion =>
       _runtime.waitForCompletion(_childId);
+
+  @override
+  SubAgentCompletionFailure? get failure => _runtime.failure(_childId);
 
   @override
   bool get isStopped => _runtime.isStopped(_childId);

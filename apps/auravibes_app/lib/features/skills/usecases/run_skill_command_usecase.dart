@@ -15,6 +15,13 @@ typedef ListSkillCredentials = Future<Map<String, Object?>> Function({
   required Map<String, dynamic> arguments,
 });
 
+typedef RunSkillNativeTool = Future<Object?> Function({
+  required String conversationId,
+  required String workspaceId,
+  required AgentResolvedToolName target,
+  required Map<String, dynamic> arguments,
+});
+
 typedef _RunSkillCommandRequest = ({
   String conversationId,
   String workspaceId,
@@ -52,6 +59,7 @@ class const RunSkillCommandUsecase({
   required final RunSkillTemplateToolUsecase runSkillTemplateToolUsecase,
   required final RunAppSkillToolUsecase runAppSkillToolUsecase,
   required final ListSkillCredentials listSkillCredentials,
+  final RunSkillNativeTool? runSkillNativeTool,
 }) {
   Future<Map<String, Object?>> call(_RunSkillCommandRequest request) =>
       _runSkillCommand(this, request);
@@ -210,12 +218,13 @@ Future<Object?> _executeCallTool(
     command,
   );
 
-  return await _RunSkillCommandExecution(usecase)
-      ._runSkillTool(target, request.workspaceId, command);
+  return await _RunSkillCommandExecution(
+    usecase,
+  )._runSkillTool(target, request.conversationId, request.workspaceId, command);
 }
 
 String _slug(Map<String, dynamic> arguments) {
-  final slug = arguments['slug'];
+  final slug = arguments['slug'] ?? arguments['skillSlug'];
   if (slug is! String || slug.isEmpty) {
     throw const FormatException('Skill command requires a slug.');
   }
@@ -376,11 +385,17 @@ Map<String, Object?> _loadedSkillResult(String slug, SkillManifest manifest) =>
 class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
   Future<Object?> _runSkillTool(
     AgentResolvedToolName target,
+    String conversationId,
     String workspaceId,
     SkillCommandTarget command,
   ) => switch (target.kind) {
     .skillTemplate => _runSkillTemplateTool(workspaceId, command),
-    .skillNative => _runSkillNativeTool(workspaceId, command),
+    .skillNative => _runSkillNativeTool(
+      conversationId,
+      workspaceId,
+      target,
+      command,
+    ),
     _ => throw StateError('Unsupported skill tool target: ${target.fullName}'),
   };
 
@@ -395,12 +410,26 @@ class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
   );
 
   Future<Object?> _runSkillNativeTool(
+    String conversationId,
     String workspaceId,
+    AgentResolvedToolName target,
     SkillCommandTarget command,
-  ) => _usecase.runAppSkillToolUsecase.call(
-    workspaceId: workspaceId,
-    skillSlug: command.skill,
-    toolSlug: command.tool,
-    arguments: Map<String, dynamic>.from(command.args),
-  );
+  ) {
+    final nativeRunner = _usecase.runSkillNativeTool;
+    if (nativeRunner != null) {
+      return nativeRunner(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        target: target,
+        arguments: Map<String, dynamic>.from(command.args),
+      );
+    }
+
+    return _usecase.runAppSkillToolUsecase.call(
+      workspaceId: workspaceId,
+      skillSlug: command.skill,
+      toolSlug: command.tool,
+      arguments: Map<String, dynamic>.from(command.args),
+    );
+  }
 }

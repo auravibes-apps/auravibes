@@ -38,10 +38,22 @@ class const AppAgentToolResumeProvider({
     required String conversationId,
     required String workspaceId,
   }) async {
-    final decision = await toolExecutionService.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
+    final agent.AgentIterationDecision decision;
+    try {
+      decision = await toolExecutionService.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+      );
+    } on Object catch (error, stackTrace) {
+      _finishChildIfNeeded(
+        activeSubAgents,
+        conversationId,
+        status: .error,
+        error: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
     if (decision != agent.AgentIterationDecision.done) return decision;
 
     _finishChildIfNeeded(activeSubAgents, conversationId);
@@ -54,10 +66,22 @@ class const AppAgentToolResumeProvider({
     required String conversationId,
     required agent.AgentIterationContext context,
   }) async {
-    final decision = await agentLoop(
-      conversationId: conversationId,
-      context: context,
-    );
+    final agent.AgentIterationDecision decision;
+    try {
+      decision = await agentLoop(
+        conversationId: conversationId,
+        context: context,
+      );
+    } on Object catch (error, stackTrace) {
+      _finishChildIfNeeded(
+        activeSubAgents,
+        conversationId,
+        status: .error,
+        error: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
     if (decision == agent.AgentIterationDecision.waitForToolApproval) return;
 
     _finishChildIfNeeded(activeSubAgents, conversationId);
@@ -84,14 +108,23 @@ class const AppAgentToolResumeProvider({
 
 void _finishChildIfNeeded(
   ActiveSubAgentRuntime? runtime,
-  String conversationId,
-) {
+  String conversationId, {
+  agent.SubAgentCompletionStatus status = .done,
+  Object? error,
+  StackTrace? stackTrace,
+}) {
   if (runtime == null) return;
 
   final parentId = runtime.parentOf(conversationId);
   if (parentId == null) return;
 
-  runtime.finish(parentId: parentId, childId: conversationId);
+  runtime.finish(
+    parentId: parentId,
+    childId: conversationId,
+    status: status,
+    error: error,
+    stackTrace: stackTrace,
+  );
 }
 
 final agentToolResumeServiceProvider = Provider<AgentToolResumeService>(

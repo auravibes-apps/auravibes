@@ -913,6 +913,7 @@ class ConversationUseCases {
     required String userId,
     required ContinueConversationRequest request,
     int? parentTurnId,
+    String? parentToolCallId,
   }) async {
     _requireId(request.requestId);
     _requireId(request.conversationId);
@@ -1047,6 +1048,7 @@ class ConversationUseCases {
                 'modelId': conversation.modelId,
                 'agentId': conversation.agentId,
                 'parentTurnId': ?parentTurnId,
+                'parentToolCallId': ?parentToolCallId,
               }),
               claimedMessageIdsJson: pendingMessages.isEmpty
                   ? jsonEncode(const <String>[])
@@ -1143,6 +1145,7 @@ class ConversationUseCases {
                 userId,
                 executionId: execution.stableId,
                 parentTurnId: parentTurnId,
+                parentToolCallId: parentToolCallId,
                 a2uiSupportedComponents: request.a2uiSupportedComponents,
               ),
               attempt: 0,
@@ -1656,6 +1659,12 @@ class ConversationUseCases {
                         .conversationParentTurnIdForExecutionSettings(
                           execution.settingsJson,
                         ),
+              parentToolCallId: execution == null
+                  ? null
+                  : conversation_repo
+                        .conversationParentToolCallIdForExecutionSettings(
+                          execution.settingsJson,
+                        ),
             ),
             now: now,
             transaction: transaction,
@@ -1728,6 +1737,49 @@ class ConversationUseCases {
           transaction: transaction,
         );
       }
+      final childJobs = await ConversationJob.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.kind.equals(ConversationJobKinds.turn),
+        transaction: transaction,
+      );
+      for (final childJob in childJobs) {
+        if (conversation_repo.conversationParentTurnIdForJob(
+              childJob.payloadJson,
+            ) !=
+            turn.id) {
+          continue;
+        }
+        await _cancelChildJob(
+          session,
+          childJob,
+          now: now,
+          transaction: transaction,
+        );
+      }
+      final waitingJobs = await ConversationJob.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.turnId.equals(turn.id) &
+            table.status.equals(ConversationJobStatuses.waitingForSubAgents),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      for (final waitingJob in waitingJobs) {
+        await ConversationJob.db.updateRow(
+          session,
+          waitingJob.copyWith(
+            status: ConversationJobStatuses.cancelled,
+            leaseOwner: null,
+            leaseToken: null,
+            leaseExpiresAt: null,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+      }
       final leasedJob = await ConversationJob.db.findFirstRow(
         session,
         where: (table) =>
@@ -1738,6 +1790,31 @@ class ConversationUseCases {
         lockMode: LockMode.forUpdate,
       );
       if (leasedJob != null) return _mutationResult(session, updated);
+      final waitingToolCalls = await ConversationToolCall.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.turnId.equals(turn.id) &
+            (table.status.equals('pending') |
+                table.status.equals('awaitingSubAgents')),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      for (final toolCall in waitingToolCalls) {
+        await ConversationToolCall.db.updateRow(
+          session,
+          toolCall.copyWith(
+            decision: toolCall.decision ?? 'deny',
+            decisionByUserId: toolCall.decisionByUserId ?? userId,
+            decisionAt: toolCall.decisionAt ?? now,
+            status: 'cancelled',
+            resultJson: _cancelledSubAgentResult(toolCall.resultJson),
+            revision: toolCall.revision + 1,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+      }
       final assistant = turn.assistantMessageId == null
           ? null
           : await ConversationMessage.db.findById(
@@ -1785,6 +1862,206 @@ class ConversationUseCases {
       );
     }
     return result;
+  }
+
+  Future<void> _cancelChildJob(
+    Session session,
+    ConversationJob job, {
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final turnId = job.turnId;
+    if (turnId == null) return;
+    final turn = await ConversationTurn.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(turnId) & table.workspaceId.equals(job.workspaceId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
+    final lockedJob = await ConversationJob.db.findById(
+      session,
+      job.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (lockedJob == null) return;
+    if (lockedJob.status == ConversationJobStatuses.leased) {
+      await ConversationTurn.db.updateRow(
+        session,
+        turn.copyWith(
+          status: ConversationStatuses.cancelRequested,
+          cancellationRequestedAt: now,
+          revision: turn.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      return;
+    }
+    final assistant = turn.assistantMessageId == null
+        ? null
+        : await ConversationMessage.db.findById(
+            session,
+            turn.assistantMessageId!,
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
+    if (assistant != null) {
+      await ConversationMessage.db.updateRow(
+        session,
+        assistant.copyWith(
+          content: '',
+          status: ConversationStatuses.cancelled,
+          metadataJson: '{"errorCode":"cancelled"}',
+          revision: assistant.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+    }
+    final activeToolCalls = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.turnId.equals(turn.id) &
+          (table.status.equals('pending') |
+              table.status.equals('running') |
+              table.status.equals('awaitingSubAgents')),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    for (final toolCall in activeToolCalls) {
+      await ConversationToolCall.db.updateRow(
+        session,
+        toolCall.copyWith(
+          decision: toolCall.decision ?? 'deny',
+          decisionByUserId: toolCall.decisionByUserId ?? turn.initiatorUserId,
+          decisionAt: toolCall.decisionAt ?? now,
+          status: 'cancelled',
+          resultJson: _cancelledSubAgentResult(toolCall.resultJson),
+          revision: toolCall.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+    }
+    await ConversationTurn.db.updateRow(
+      session,
+      turn.copyWith(
+        status: ConversationStatuses.cancelled,
+        terminalAt: now,
+        revision: turn.revision + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await ConversationJob.db.updateRow(
+      session,
+      lockedJob.copyWith(
+        status: ConversationJobStatuses.cancelled,
+        leaseOwner: null,
+        leaseToken: null,
+        leaseExpiresAt: null,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(job.conversationId) &
+          table.workspaceId.equals(job.workspaceId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (conversation == null || conversation.activeExecutionId == null) return;
+    final execution = await ConversationExecution.db.findById(
+      session,
+      conversation.activeExecutionId!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (execution == null ||
+        ConversationStatuses.isTerminal(execution.status)) {
+      return;
+    }
+    await ConversationExecution.db.updateRow(
+      session,
+      execution.copyWith(
+        status: ConversationStatuses.cancelled,
+        terminalAt: now,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await Conversation.db.updateRow(
+      session,
+      conversation.copyWith(
+        executionState: 'idle',
+        activeExecutionId: null,
+        eventSequence: conversation.eventSequence + 1,
+        projectionRevision: conversation.projectionRevision + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await ConversationEvent.db.insertRow(
+      session,
+      ConversationEvent(
+        workspaceId: job.workspaceId,
+        conversationId: conversation.id!,
+        sequence: conversation.eventSequence + 1,
+        eventId: const Uuid().v7(),
+        actorUserId: turn.initiatorUserId,
+        requestId: job.requestId,
+        kind: ConversationEventType.executionStopped,
+        payloadJson: jsonEncode({
+          'executionId': execution.stableId,
+          'status': ConversationStatuses.cancelled,
+        }),
+        createdAt: now,
+      ),
+      transaction: transaction,
+    );
+  }
+
+  String _cancelledSubAgentResult(String? source) {
+    if (source == null) {
+      return jsonEncode(const {
+        'status': 'cancelled',
+        'content': 'Sub-agent cancelled.',
+      });
+    }
+    try {
+      final decoded = jsonDecode(source);
+      if (decoded is Map && decoded['children'] is List) {
+        return jsonEncode({
+          'children': [
+            for (final child in (decoded['children'] as List).whereType<Map>())
+              {
+                'conversationId': child['conversationId'],
+                'status': 'cancelled',
+                'content': 'Sub-agent cancelled.',
+                if (child['agentId'] is String) 'agentId': child['agentId'],
+              },
+          ],
+        });
+      }
+      if (decoded is Map && decoded['conversationId'] is String) {
+        return jsonEncode({
+          'conversationId': decoded['conversationId'],
+          'status': 'cancelled',
+          'content': 'Sub-agent cancelled.',
+          if (decoded['agentId'] is String) 'agentId': decoded['agentId'],
+        });
+      }
+    } on Object catch (_) {}
+    return jsonEncode(const {
+      'status': 'cancelled',
+      'content': 'Sub-agent cancelled.',
+    });
   }
 
   Future<ConversationMutationResult> compact(

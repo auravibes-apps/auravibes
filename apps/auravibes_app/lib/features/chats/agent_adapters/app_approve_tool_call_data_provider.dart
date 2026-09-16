@@ -9,7 +9,9 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_ma
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -27,6 +29,8 @@ typedef _ToolResolutionRequest = ({
   ToolResolverService toolResolverService,
   String conversationId,
   String toolName,
+  String argumentsRaw,
+  ResolveEffectiveToolApprovalUsecase? resolveEffectiveToolApprovalUsecase,
 });
 
 typedef _ToolGrantRequest = ({
@@ -68,6 +72,8 @@ class const AppApproveToolCallDataProvider({
   final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase,
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace,
+  final ResolveEffectiveToolApprovalUsecase?
+  resolveEffectiveToolApprovalUsecase,
 }) implements agent.ApproveToolCallProvider<ResolvedTool> {
   this
     : assert(
@@ -118,6 +124,7 @@ class const AppApproveToolCallDataProvider({
   Future<ResolvedTool?> resolveTool({
     required String conversationId,
     required String toolName,
+    required String argumentsRaw,
   }) {
     return _resolveTool((
       conversationRepository: conversationRepository,
@@ -127,6 +134,8 @@ class const AppApproveToolCallDataProvider({
       toolResolverService: toolResolverService,
       conversationId: conversationId,
       toolName: toolName,
+      argumentsRaw: argumentsRaw,
+      resolveEffectiveToolApprovalUsecase: resolveEffectiveToolApprovalUsecase,
     ));
   }
 
@@ -221,8 +230,19 @@ Future<ResolvedTool?> _resolveTool(_ToolResolutionRequest request) async {
   }
 
   final catalog = await _loadConversationToolCatalog(request, conversation);
+  final resolved = request.toolResolverService.resolveTool(
+    request.toolName,
+    catalog,
+  );
+  final resolver = request.resolveEffectiveToolApprovalUsecase;
+  if (resolved == null || resolver == null) return resolved;
 
-  return request.toolResolverService.resolveTool(request.toolName, catalog);
+  return await resolver.call(
+    conversationId: request.conversationId,
+    workspaceId: conversation.workspaceId,
+    requestedTool: resolved,
+    argumentsRaw: request.argumentsRaw,
+  );
 }
 
 Future<ResolvedTool?> _resolveWithoutConversation(
@@ -383,8 +403,9 @@ void _logToolExecutionError(_ToolExecutionErrorRequest request) {
     'conversationId=${request.conversationId} '
     'toolCallId=${request.toolCallId} '
     'toolType=${request.tool.type.name} '
-    'toolIdentifier=${request.tool.toolIdentifier}',
-    request.error,
-    request.stackTrace,
+    'toolIdentifier=${request.tool.toolIdentifier} '
+    'failurePhase=${request.failurePhase ?? 'unknown'} '
+    'error=${LogRedaction.redact(request.error)} '
+    'stackTrace=${LogRedaction.redact(request.stackTrace)}',
   );
 }

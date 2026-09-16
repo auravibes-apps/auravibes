@@ -27,4 +27,46 @@ void main() {
   test('preserves string results', () async {
     expect((await run('plain')).responseRaw, 'plain');
   });
+
+  test(
+    'maps typed failures to execution errors and preserves diagnostics',
+    () async {
+      final error = StateError('provider detail');
+      Object? loggedError;
+      String? loggedPhase;
+      final result =
+          await AgentToolExecutionDispatcher<String>(
+            runResolvedTool:
+                ({
+                  required conversationId,
+                  required tool,
+                  required arguments,
+                }) async {
+                  throw AgentToolExecutionFailure(
+                    responseRaw:
+                        '{"conversationId":"child-1","status":"error",'
+                        '"content":"Sub-agent failed."}',
+                    error: error,
+                    stackTrace: StackTrace.current,
+                    failurePhase: 'continueAgent',
+                  );
+                },
+            isCancellationRequested: (_) => false,
+            logToolExecutionError: (request) {
+              loggedError = request.error;
+              loggedPhase = request.failurePhase;
+            },
+          ).call(
+            conversationId: 'conversation-1',
+            toolCallId: 'call-1',
+            tool: 'tool',
+            argumentsRaw: '{}',
+          );
+
+      expect(result.resultStatus, AgentToolResultStatus.executionError);
+      expect(result.responseRaw, contains('child-1'));
+      expect(loggedError, same(error));
+      expect(loggedPhase, 'continueAgent');
+    },
+  );
 }

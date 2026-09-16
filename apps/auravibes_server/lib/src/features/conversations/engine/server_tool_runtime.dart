@@ -5,11 +5,17 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../domain/conversation_values.dart';
 import 'conversation_host_effects.dart';
+import '../repositories/conversation_repository.dart' as conversation_repo;
 
-enum ServerToolDisposition { completed, awaitingApproval }
+enum ServerToolDisposition {
+  completed,
+  awaitingApproval,
+  awaitingSubAgents,
+}
 
-enum ServerToolReplayAction { execute, pause, skip }
+enum ServerToolReplayAction { execute, pause, skip, awaitingSubAgents }
 
 // Exceeds current 90s provider and 30s skill I/O bounds; tolerates clock drift.
 // ponytail: timestamp lease; add owner tokens if tool runtimes exceed this bound.
@@ -150,7 +156,12 @@ Future<SkillManifest?> buildCloudSkillManifest({
   if (title == null || instructions == null) return null;
   final manifestTools =
       tools
-          .where((tool) => tool.descriptor.skillSlug == slug)
+          .where(
+            (tool) =>
+                tool.descriptor.skillSlug == slug &&
+                !(slug == agentsSkillSlug &&
+                    tool.descriptor.toolIdentifier == runSubAgentToolName),
+          )
           .map(
             (tool) => SkillManifestTool(
               name: tool.descriptor.toolIdentifier,
@@ -192,12 +203,15 @@ Future<ServerResolvedTool> resolveCloudSkillCommandTarget({
   if (target == null) {
     throw StateError('Skill tool is not loaded or configured.');
   }
+
   final manifest = await buildCloudSkillManifest(
     slug: command.skill,
     userSkills: userSkills,
     tools: tools,
   );
-  if (manifest == null || manifest.revision != command.revision) {
+  if (manifest == null ||
+      manifest.revision != command.revision ||
+      !manifest.tools.any((tool) => tool.name == command.tool)) {
     throw FormatException(
       'Skill manifest changed; call load_skill or list_skills to refresh: ${command.skill}',
     );
@@ -349,10 +363,12 @@ List<ServerResolvedTool> materializeCloudSkillTools({
     );
   }
   if (!isChildConversation &&
-      selectedSkillIds.contains(agentsSkillSlug) &&
       cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)) {
     tools.addAll(
-      subAgentToolSpecs.map(
+      [
+        runSubAgentToolSpec,
+        if (selectedSkillIds.contains(agentsSkillSlug)) listAgentsToolSpec,
+      ].map(
         (spec) => _nativeTool(
           skillSlug: agentsSkillSlug,
           toolIdentifier: spec.name,
@@ -542,6 +558,7 @@ ServerToolReplayAction serverToolReplayAction(String status) =>
     switch (status) {
       'approved' => ServerToolReplayAction.execute,
       'pending' => ServerToolReplayAction.pause,
+      'awaitingSubAgents' => ServerToolReplayAction.awaitingSubAgents,
       'running' => ServerToolReplayAction.skip,
       _ => ServerToolReplayAction.skip,
     };
@@ -587,6 +604,10 @@ class const ServerToolRequest({
   required final String id,
   required final String name,
   required final Map<String, dynamic> arguments,
+});
+
+class const ServerToolAwaitingSubAgents({
+  required final List<Map<String, Object?>> children,
 });
 
 typedef ServerToolExecutor = Future<Object?> Function(
@@ -657,10 +678,37 @@ class ServerToolRuntime({
         .map(_tool)
         .whereType<ServerResolvedTool>()
         .toList(growable: false);
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.stableId.equals(conversationStableId) &
+          table.deletedAt.equals(null),
+    );
+    final appSkillSettings = resources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.skillSetting,
+        )
+        .map(_data);
+    final agentTools =
+        conversation != null &&
+            conversation.parentConversationStableId == null &&
+            cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)
+        ? [
+            _nativeTool(
+              skillSlug: agentsSkillSlug,
+              toolIdentifier: runSubAgentToolName,
+              description: runSubAgentToolSpec.description,
+              inputJsonSchema: runSubAgentToolSpec.inputJsonSchema,
+            ),
+          ]
+        : const <ServerResolvedTool>[];
 
     return [
       ...genericTools,
       ...fixedCloudSkillCommandTools(),
+      ...agentTools,
     ];
   }
 
@@ -774,7 +822,14 @@ class ServerToolRuntime({
       if (replay == ServerToolReplayAction.pause) {
         return ServerToolDisposition.awaitingApproval;
       }
+      if (replay == ServerToolReplayAction.awaitingSubAgents) {
+        return await _reconcileAwaitingSubAgents(session, existing);
+      }
       if (replay == ServerToolReplayAction.skip) {
+        if (existing.status == 'running' && _isSubAgentTool(existing.name)) {
+          final recovered = await _recoverRunningSubAgent(session, existing);
+          if (recovered != null) return recovered;
+        }
         if (existing.status == 'running') {
           await _recoverStaleRunning(session, existing);
         }
@@ -1014,7 +1069,37 @@ class ServerToolRuntime({
     }
     try {
       final result = await executor(session, turn, tool, executionRequest);
+      if (result case ServerToolAwaitingSubAgents(:final children)) {
+        await _finish(
+          session,
+          call,
+          'awaitingSubAgents',
+          _boundedJson({'children': children}),
+        );
+        final waiting = await ConversationToolCall.db.findById(
+          session,
+          call.id!,
+        );
+        if (waiting == null) return ServerToolDisposition.completed;
+        return await _reconcileAwaitingSubAgents(session, waiting);
+      }
       await _finish(session, call, 'success', _boundedJson(result));
+    } on AgentToolExecutionFailure catch (failure) {
+      await _finish(
+        session,
+        call,
+        'executionError',
+        _boundedRawJson(failure.responseRaw),
+      );
+      session.log(
+        'Conversation tool execution failed: tool=${tool.spec.name}, '
+        'turn=${turn.id}, failure=${serverToolExecutionFailureCode(failure)}, '
+        'phase=${failure.failurePhase}.',
+        level: LogLevel.warning,
+      );
+      // The typed result is already durable and safe. Let the current model
+      // batch finish so sibling sub-agent calls are not skipped or retried.
+      return ServerToolDisposition.completed;
     } on Object catch (error) {
       await _finish(session, call, 'executionError', null);
       session.log(
@@ -1223,6 +1308,174 @@ class ServerToolRuntime({
     );
   });
 
+  bool _isSubAgentTool(String name) {
+    final descriptor = _resolver.resolve(name);
+    if (descriptor?.kind == AgentResolvedToolKind.skillNative &&
+        descriptor?.skillSlug == agentsSkillSlug &&
+        descriptor?.toolIdentifier == runSubAgentToolName) {
+      return true;
+    }
+    return name == callSkillToolName;
+  }
+
+  Future<ServerToolDisposition?> _recoverRunningSubAgent(
+    Session session,
+    ConversationToolCall call,
+  ) async {
+    final jobs = await ConversationJob.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(call.workspaceId) &
+          table.kind.equals(ConversationJobKinds.turn),
+      orderBy: (table) => table.id,
+    );
+    final childJob = jobs
+        .where(
+          (job) =>
+              conversation_repo.conversationParentTurnIdForJob(
+                    job.payloadJson,
+                  ) ==
+                  call.turnId &&
+              conversation_repo.conversationParentToolCallIdForJob(
+                    job.payloadJson,
+                  ) ==
+                  call.stableId,
+        )
+        .firstOrNull;
+    if (childJob == null) return null;
+    final childConversation = await Conversation.db.findById(
+      session,
+      childJob.conversationId,
+    );
+    if (childConversation == null) return null;
+    final child = <String, Object?>{
+      'conversationId': childConversation.stableId,
+      'turnId': conversation_repo.conversationExecutionIdForJob(
+        childJob.requestId,
+        childJob.payloadJson,
+      ),
+      'status': 'running',
+    };
+    await _finish(
+      session,
+      call,
+      'awaitingSubAgents',
+      _boundedJson({
+        'children': [child],
+      }),
+    );
+    final recovered = await ConversationToolCall.db.findById(
+      session,
+      call.id!,
+    );
+    return recovered == null
+        ? ServerToolDisposition.completed
+        : _reconcileAwaitingSubAgents(session, recovered);
+  }
+
+  Future<ServerToolDisposition> _reconcileAwaitingSubAgents(
+    Session session,
+    ConversationToolCall call,
+  ) async {
+    final metadata = call.resultJson == null
+        ? const <String, dynamic>{}
+        : _jsonMap(call.resultJson!);
+    final children = (metadata['children'] as List?)
+        ?.whereType<Map>()
+        .map((child) => Map<String, dynamic>.from(child))
+        .toList(growable: false);
+    if (children == null || children.isEmpty) {
+      await _finish(
+        session,
+        call,
+        'executionError',
+        _boundedJson({'content': 'Sub-agent failed.'}),
+      );
+      return ServerToolDisposition.completed;
+    }
+    final results = <Map<String, Object?>>[];
+    for (final child in children) {
+      final result = await _childTerminalResult(
+        session,
+        call.workspaceId,
+        child,
+      );
+      if (result == null) return ServerToolDisposition.awaitingSubAgents;
+      results.add(result);
+    }
+    final status = results.every((result) => result['status'] == 'success')
+        ? 'success'
+        : results.any((result) => result['status'] == 'cancelled')
+        ? 'cancelled'
+        : 'executionError';
+    await _finish(
+      session,
+      call,
+      status,
+      _boundedJson(
+        results.length == 1 ? results.single : {'children': results},
+      ),
+    );
+    return ServerToolDisposition.completed;
+  }
+
+  Future<Map<String, Object?>?> _childTerminalResult(
+    Session session,
+    int workspaceId,
+    Map<String, dynamic> child,
+  ) async {
+    final conversationId = child['conversationId'];
+    final executionId = child['turnId'];
+    if (conversationId is! String || executionId is! String) {
+      return {'status': 'error', 'content': 'Sub-agent failed.'};
+    }
+    final childConversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.stableId.equals(conversationId) &
+          table.deletedAt.equals(null),
+    );
+    if (childConversation == null) {
+      return {
+        'conversationId': conversationId,
+        'status': 'error',
+        'content': 'Sub-agent failed.',
+        if (child['agentId'] is String) 'agentId': child['agentId'],
+      };
+    }
+    final execution = await ConversationExecution.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(childConversation.id) &
+          table.stableId.equals(executionId),
+    );
+    if (execution == null) return null;
+    if (!ConversationStatuses.isTerminal(execution.status)) return null;
+    final assistant = execution.assistantMessageId == null
+        ? null
+        : await ConversationMessage.db.findById(
+            session,
+            execution.assistantMessageId!,
+          );
+    final status = switch (execution.status) {
+      ConversationStatuses.completed => 'success',
+      ConversationStatuses.cancelled => 'cancelled',
+      _ => 'error',
+    };
+    return {
+      'conversationId': conversationId,
+      'status': status,
+      'content': status == 'success'
+          ? assistant?.content ?? ''
+          : status == 'cancelled'
+          ? 'Sub-agent cancelled.'
+          : 'Sub-agent failed.',
+      if (child['agentId'] is String) 'agentId': child['agentId'],
+    };
+  }
+
   Map<String, dynamic> _data(WorkspaceResource resource) {
     final value = jsonDecode(resource.data);
     if (value is! Map<String, dynamic>) throw const FormatException();
@@ -1253,5 +1506,11 @@ class ServerToolRuntime({
     return encoded.length <= maxResultCharacters
         ? encoded
         : jsonEncode(encoded.substring(0, maxResultCharacters));
+  }
+
+  String _boundedRawJson(String value) {
+    return value.length <= maxResultCharacters
+        ? value
+        : _boundedJson({'content': 'Sub-agent failed.'});
   }
 }

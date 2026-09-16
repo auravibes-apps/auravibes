@@ -545,7 +545,7 @@ void main() {
           fixture.database,
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
-        )).single;
+        )).firstWhere((tool) => tool.spec.name == 'mcp_server-1_server_tool');
         await WorkspaceResource.db.updateRow(
           fixture.database,
           tool.copyWith(deletedAt: DateTime.now().toUtc()),
@@ -912,7 +912,7 @@ void main() {
           fixture.database,
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
-        )).single;
+        )).firstWhere((tool) => tool.spec.name == 'mcp_server-1_server_tool');
         final cancellation = _BlockedCancellationProbe();
         var executions = 0;
         final runtime = ServerToolRuntime(
@@ -1278,7 +1278,9 @@ void main() {
             arguments: {'title': 'Child', 'prompt': 'Do the work.'},
           ),
         );
-        final childId = (childResult! as Map)['conversationId']! as String;
+        final childLaunch = childResult! as ServerToolAwaitingSubAgents;
+        final childId =
+            childLaunch.children.single['conversationId']! as String;
         final child = (await Conversation.db.findFirstRow(
           fixture.database,
           where: (table) => table.stableId.equals(childId),

@@ -1,9 +1,37 @@
 part of 'message_id_list.dart';
 
 abstract final class CloudMessageTools {
+  static Set<String> childConversationIds(CloudConversationState? state) {
+    final ids = <String>{};
+    for (final call in state?.toolCalls ?? const <ConversationToolCallView>[]) {
+      final result = call.resultJson;
+      if (result is! String) continue;
+      try {
+        final decoded = jsonDecode(result);
+        if (decoded is! Map<String, dynamic>) continue;
+        final children = decoded['children'];
+        if (children is! List) continue;
+        for (final child in children) {
+          if (child is! Map<String, dynamic>) continue;
+          final conversationId = child['conversationId'];
+          if (conversationId is String) {
+            final _ = ids.add(conversationId);
+          }
+        }
+      } on Object {
+        // The tool result is provisional while the child is being created.
+      }
+    }
+
+    return ids;
+  }
+
   static ToolCallResultStatus? resultStatus(String status) => switch (status) {
     'pending' || 'needsConfirmation' => null,
-    'approved' || 'running' || 'granted' => ToolCallResultStatus.running,
+    'approved' ||
+    'running' ||
+    'granted' ||
+    'awaitingSubAgents' => ToolCallResultStatus.running,
     'success' => ToolCallResultStatus.success,
     'denied' => ToolCallResultStatus.skippedByUser,
     'toolNotFound' => ToolCallResultStatus.toolNotFound,
@@ -12,15 +40,20 @@ abstract final class CloudMessageTools {
     'disabledByAgent' => ToolCallResultStatus.disabledByAgent,
     'notConfigured' => ToolCallResultStatus.notConfigured,
     'executionError' => ToolCallResultStatus.executionError,
+    'cancelled' => ToolCallResultStatus.stoppedByUser,
     _ => ToolCallResultStatus.executionError,
   };
 
   static List<PendingToolCall> pendingToolCalls(
-    CloudConversationState? state,
-  ) => [
+    CloudConversationState? state, {
+    Iterable<CloudConversationState> childStates = const [],
+  }) => [
     if (state case final cloudState?)
       for (final call in cloudState.toolCalls)
         if (call.status == 'pending') ..._pendingCallsForTool(cloudState, call),
+    for (final childState in childStates)
+      for (final call in childState.toolCalls)
+        if (call.status == 'pending') ..._pendingCallsForTool(childState, call),
   ];
 
   static List<PendingToolCall> _pendingCallsForTool(
