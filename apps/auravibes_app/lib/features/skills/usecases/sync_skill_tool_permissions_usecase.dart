@@ -98,7 +98,24 @@ extension _SyncSkillToolPermissionsUsecaseSync
       ...await _dynamicSpecs(conversationId, workspaceId),
       ...await _templateSpecs(conversationId, workspaceId, agentSkills),
       ...await _nativeSpecs(conversationId, workspaceId, agentSkills),
+      _runSubAgentPermissionSpec(),
     ];
+  }
+
+  ToolSpec _runSubAgentPermissionSpec() {
+    final descriptor = AgentResolvedToolName.skillNative(
+      tableId: runSubAgentToolName,
+      skillSlug: agentsSkillSlug,
+      toolIdentifier: runSubAgentToolName,
+    );
+
+    return ToolSpec(
+      name: descriptor.fullName,
+      description: runSubAgentToolSpec.description,
+      inputJsonSchema: Map<String, Object?>.from(
+        runSubAgentToolSpec.inputJsonSchema,
+      ),
+    );
   }
 
   Future<List<ToolSpec>> _dynamicSpecs(

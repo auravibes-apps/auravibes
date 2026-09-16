@@ -18,6 +18,23 @@ void main() {
       expect(provider.didResume, isTrue);
     });
 
+    test('marks unresolved nested skill command as not configured', () async {
+      final provider = _FakeApproveToolCallProvider(
+        resolvedTool: null,
+        toolName: callSkillToolName,
+      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
+
+      await usecase.call(
+        messageId: 'message-1',
+        toolCallId: 'tool-1',
+        level: .once,
+      );
+
+      expect(provider.updates, [AgentToolResultStatus.notConfigured]);
+      expect(provider.didResume, isTrue);
+    });
+
     test('grants conversation permission before running tool', () async {
       final provider = _FakeApproveToolCallProvider(
         resolvedTool: 'calculator',
@@ -32,7 +49,7 @@ void main() {
       );
 
       expect(provider.calls, [
-        'resolve:conversation-1:calculator',
+        'resolve:conversation-1:calculator:{"input": "1+1"}',
         'grant:conversation-1:calculator',
         'running:message-1:tool-1',
         'run:1+1',
@@ -102,6 +119,7 @@ class _FakeApproveToolCallProvider({
   final Object? runResult,
   final Object? runError,
   final bool isCancelled = false,
+  final String toolName = 'calculator',
 }) implements ApproveToolCallProvider<String> {
   final calls = <String>[];
   final updates = <AgentToolResultStatus>[];
@@ -112,9 +130,9 @@ class _FakeApproveToolCallProvider({
     required String messageId,
     required String toolCallId,
   }) async {
-    return const AgentApprovableToolCall(
+    return AgentApprovableToolCall(
       conversationId: 'conversation-1',
-      name: 'calculator',
+      name: toolName,
       argumentsRaw: '{"input": "1+1"}',
     );
   }
@@ -123,8 +141,9 @@ class _FakeApproveToolCallProvider({
   Future<String?> resolveTool({
     required String conversationId,
     required String toolName,
+    required String argumentsRaw,
   }) async {
-    calls.add('resolve:$conversationId:$toolName');
+    calls.add('resolve:$conversationId:$toolName:$argumentsRaw');
 
     return resolvedTool;
   }

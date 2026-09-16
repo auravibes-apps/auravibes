@@ -30,6 +30,8 @@ abstract interface class AgentConversationDataProvider {
   });
 
   Future<void> markMessagesSent(List<String> messageIds);
+
+  Future<void> markMessagesErrored(List<String> messageIds);
 }
 
 abstract interface class AgentCancellationEffects {

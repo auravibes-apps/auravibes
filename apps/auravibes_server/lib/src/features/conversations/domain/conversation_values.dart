@@ -24,6 +24,7 @@ abstract final class ConversationJobKinds {
 abstract final class ConversationJobStatuses {
   static const queued = 'queued';
   static const leased = 'leased';
+  static const waitingForSubAgents = 'waitingForSubAgents';
   static const completed = 'completed';
   static const cancelled = 'cancelled';
   static const failed = 'failed';

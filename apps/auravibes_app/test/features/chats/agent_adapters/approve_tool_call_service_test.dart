@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/approve_tool_call_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -21,6 +22,7 @@ void main() {
     var resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
     var loadToolSpecs = MockLoadConversationToolSpecsUsecase();
     var agentToolResumeService = MockAgentToolResumeService();
+    var effectiveToolApproval = _FakeResolveEffectiveToolApprovalUsecase();
     var provider = AppApproveToolCallDataProvider(
       messageRepository: messageRepository,
       conversationRepository: conversationRepository,
@@ -39,6 +41,7 @@ void main() {
       conversationToolsRepository: conversationToolsRepository,
       resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
       loadConversationToolSpecsUsecase: loadToolSpecs,
+      resolveEffectiveToolApprovalUsecase: effectiveToolApproval,
     );
 
     const messageId = 'message-1';
@@ -85,6 +88,7 @@ void main() {
       resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
       loadToolSpecs = MockLoadConversationToolSpecsUsecase();
       agentToolResumeService = MockAgentToolResumeService();
+      effectiveToolApproval = _FakeResolveEffectiveToolApprovalUsecase();
       provider = AppApproveToolCallDataProvider(
         messageRepository: messageRepository,
         conversationRepository: conversationRepository,
@@ -103,6 +107,7 @@ void main() {
         conversationToolsRepository: conversationToolsRepository,
         resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
         loadConversationToolSpecsUsecase: loadToolSpecs,
+        resolveEffectiveToolApprovalUsecase: effectiveToolApproval,
       );
     });
 
@@ -167,6 +172,7 @@ void main() {
         (await provider.resolveTool(
           conversationId: conversationId,
           toolName: generatedName,
+          argumentsRaw: '{}',
         ))?.mcpServerId,
         'github-server',
       );
@@ -190,6 +196,93 @@ void main() {
         isNull,
       );
     });
+
+    test(
+      'persists conversation approval for exact nested skill target',
+      () async {
+        const argumentsRaw =
+            '{"skill":"agents","tool":"list_agents","args":{},'
+            '"revision":"rev-1"}';
+        final expected = ResolvedTool.skillCommand(
+          commandName: agent.callSkillToolName,
+          target: agent.AgentResolvedToolName.skillNative(
+            tableId: agent.listAgentsToolName,
+            skillSlug: agent.agentsSkillSlug,
+            toolIdentifier: agent.listAgentsToolName,
+          ),
+        );
+        effectiveToolApproval.effectiveTool = expected;
+        final catalog = agent.buildToolCatalog<ResolvedTool>([
+          agent.ToolCatalogCandidate.reserved(
+            spec: .new(
+              name: agent.callSkillToolName,
+              description: 'Call a loaded skill tool.',
+              inputJsonSchema: const {'type': 'object'},
+            ),
+            target: ResolvedTool.skillCommand(
+              commandName: agent.callSkillToolName,
+            ),
+          ),
+        ]);
+        final nestedMessage = message.copyWith(
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-1',
+                name: agent.callSkillToolName,
+                argumentsRaw: argumentsRaw,
+              ),
+            ],
+          ),
+        );
+        when(() => messageRepository.getMessageById(messageId))
+            .thenAnswer((_) async => nestedMessage);
+        when(() => conversationRepository.getConversationById(conversationId))
+            .thenAnswer((_) async => conversation);
+        when(
+          () => loadToolSpecs.buildCatalog(
+            conversationId: conversationId,
+            workspaceId: workspaceId,
+          ),
+        ).thenAnswer((_) async => catalog);
+        when(
+          () => resolveToolApprovalDecision.resolvePermissionTableId(
+            conversationId: conversationId,
+            workspaceId: workspaceId,
+            resolvedTool: expected,
+          ),
+        ).thenAnswer((_) async => 'agents-list-permission');
+        when(
+          () => conversationToolsRepository.setConversationToolPermission(
+            conversationId,
+            'agents-list-permission',
+            permissionMode: .alwaysAllow,
+          ),
+        ).thenAnswer((_) async => true);
+
+        final resolved = await provider.resolveTool(
+          conversationId: conversationId,
+          toolName: agent.callSkillToolName,
+          argumentsRaw: argumentsRaw,
+        );
+
+        expect(resolved, same(expected));
+        expect(resolved?.fullName, 'skill__app__agents__list_agents');
+        if (resolved == null) fail('Expected nested skill target.');
+        await provider.grantToolForConversation(
+          conversationId: conversationId,
+          tool: resolved,
+        );
+
+        verify(
+          () => conversationToolsRepository.setConversationToolPermission(
+            conversationId,
+            'agents-list-permission',
+            permissionMode: .alwaysAllow,
+          ),
+        ).called(1);
+      },
+    );
 
     test('grants resolved tool permission for the conversation', () async {
       when(() => conversationRepository.getConversationById(conversationId))
@@ -342,3 +435,30 @@ void main() {
 var _noopCalls = 0;
 
 void _noop() => _noopCalls += 1;
+
+class _FakeResolveEffectiveToolApprovalUsecase
+    implements ResolveEffectiveToolApprovalUsecase {
+  ResolvedTool? effectiveTool;
+
+  @override
+  Future<ResolvedTool?> call({
+    required String conversationId,
+    required String workspaceId,
+    required ResolvedTool requestedTool,
+    required String argumentsRaw,
+  }) async {
+    if (!requestedTool.isSkillCommand ||
+        requestedTool.toolIdentifier != agent.callSkillToolName) {
+      return requestedTool;
+    }
+
+    return effectiveTool;
+  }
+
+  @override
+  Future<agent.AgentResolvedToolName?> resolveTarget({
+    required String conversationId,
+    required String workspaceId,
+    required agent.SkillCommandTarget command,
+  }) async => effectiveTool?.target;
+}

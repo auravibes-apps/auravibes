@@ -21,11 +21,13 @@ String conversationTurnJobPayload(
   String actorUserId, {
   String? executionId,
   int? parentTurnId,
+  String? parentToolCallId,
   List<String>? a2uiSupportedComponents,
 }) => jsonEncode({
   'actorUserId': actorUserId,
   'executionId': ?executionId,
   'parentTurnId': ?parentTurnId,
+  'parentToolCallId': ?parentToolCallId,
   'a2uiSupportedComponents': ?a2uiSupportedComponents,
 });
 
@@ -51,10 +53,25 @@ int? conversationParentTurnIdForJob(String? payloadJson) {
       : null;
 }
 
+String? conversationParentToolCallIdForJob(String? payloadJson) {
+  if (payloadJson == null) return null;
+  final payload = jsonDecode(payloadJson);
+  return payload is Map && payload['parentToolCallId'] is String
+      ? payload['parentToolCallId']! as String
+      : null;
+}
+
 int? conversationParentTurnIdForExecutionSettings(String settingsJson) {
   final settings = jsonDecode(settingsJson);
   return settings is Map && settings['parentTurnId'] is int
       ? settings['parentTurnId']! as int
+      : null;
+}
+
+String? conversationParentToolCallIdForExecutionSettings(String settingsJson) {
+  final settings = jsonDecode(settingsJson);
+  return settings is Map && settings['parentToolCallId'] is String
+      ? settings['parentToolCallId']! as String
       : null;
 }
 

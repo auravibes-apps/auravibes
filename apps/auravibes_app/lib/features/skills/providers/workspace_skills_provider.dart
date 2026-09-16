@@ -5,7 +5,8 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adapter.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
-import 'package:auravibes_engine/auravibes_engine.dart' show AppSkillDefinition;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AppSkillDefinition, agentsSkillSlug;
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -91,7 +92,7 @@ void _addCloudAppSkills(Ref ref, Map<String, WorkspaceSkill> skillsById) {
 
     skillsById[skill.identifier] = _appWorkspaceSkill(
       skill,
-      isEnabled: cloudSkill?.isEnabled ?? false,
+      isEnabled: cloudSkill?.isEnabled ?? skill.slug == agentsSkillSlug,
     );
   }
 }

@@ -5,14 +5,23 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 typedef PublicUrlLookup = Future<List<InternetAddress>> Function(String host);
 typedef PublicUrlResolution = ({Uri uri, List<String>? addresses});
 
+// Shared default used by the public URL guard API.
+// ignore: prefer-static-class
+const publicUrlDnsTimeout = Duration(seconds: 5);
+
 abstract final class PublicUrlGuard {
   static Future<PublicUrlResolution> resolvePublicUri(
     String url, {
     required bool requireHttps,
     PublicUrlLookup lookup = InternetAddress.lookup,
+    Duration dnsTimeout = publicUrlDnsTimeout,
   }) async {
     final uri = requirePublicUriSyntax(url, requireHttps: requireHttps);
-    final addresses = await _resolveAddresses(uri.host, lookup: lookup);
+    final addresses = await _resolveAddresses(
+      uri.host,
+      lookup: lookup,
+      dnsTimeout: dnsTimeout,
+    );
 
     final addressesForPinning = _addressesForPinning(uri.host, addresses);
 
@@ -22,7 +31,13 @@ abstract final class PublicUrlGuard {
   static Future<PublicUrlResolution> resolveHttpsUri(
     String url, {
     PublicUrlLookup lookup = InternetAddress.lookup,
-  }) => resolvePublicUri(url, requireHttps: true, lookup: lookup);
+    Duration dnsTimeout = publicUrlDnsTimeout,
+  }) => resolvePublicUri(
+    url,
+    requireHttps: true,
+    lookup: lookup,
+    dnsTimeout: dnsTimeout,
+  );
 
   static Future<Uri> requireHttpsUri(String url) async {
     return (await resolveHttpsUri(url)).uri;
@@ -31,8 +46,13 @@ abstract final class PublicUrlGuard {
   static Future<InternetAddress> requirePublicAddress(
     String host, {
     PublicUrlLookup lookup = InternetAddress.lookup,
+    Duration dnsTimeout = publicUrlDnsTimeout,
   }) async {
-    final addresses = await _resolveAddresses(host, lookup: lookup);
+    final addresses = await _resolveAddresses(
+      host,
+      lookup: lookup,
+      dnsTimeout: dnsTimeout,
+    );
 
     final address = addresses.firstOrNull;
     if (address == null) {
@@ -42,13 +62,17 @@ abstract final class PublicUrlGuard {
     return address;
   }
 
-  static Future<void> ensureHost(String host) async {
-    final _ = await requirePublicAddress(host);
+  static Future<void> ensureHost(
+    String host, {
+    Duration dnsTimeout = publicUrlDnsTimeout,
+  }) async {
+    final _ = await requirePublicAddress(host, dnsTimeout: dnsTimeout);
   }
 
   static Future<List<InternetAddress>> _resolveAddresses(
     String host, {
     required PublicUrlLookup lookup,
+    required Duration dnsTimeout,
   }) async {
     if (isBlockedHostLabel(host)) {
       throw const FormatException(publicUrlError);
@@ -59,7 +83,7 @@ abstract final class PublicUrlGuard {
       return _validatedLiteralAddress(literalAddress);
     }
 
-    return _validatedLookup(await lookup(host));
+    return _validatedLookup(await lookup(host).timeout(dnsTimeout));
   }
 
   static List<InternetAddress> _validatedLiteralAddress(

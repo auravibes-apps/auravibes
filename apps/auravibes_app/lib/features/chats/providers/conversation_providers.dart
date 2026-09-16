@@ -43,11 +43,17 @@ Stream<ConversationEntity?> _cloudConversationById(
   Ref ref,
   CloudWorkspaceRef cloud,
   String conversationId,
-) => _cloudConversations(ref, cloud).map(
-  (conversations) => conversations
-      .where((conversation) => conversation.id == conversationId)
-      .firstOrNull,
-);
+) async* {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayForWorkspaceProvider(cloud.localWorkspaceId)
+        .future,
+  );
+  if (gateway == null) return;
+
+  final conversation = await CloudChatGateway(gateway)
+      .getConversation(conversationId);
+  yield _cloudConversation(conversation, cloud.localWorkspaceId);
+}
 
 Stream<ConversationEntity?> _localConversationById(
   Ref ref,

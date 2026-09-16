@@ -78,10 +78,12 @@ class const AgentService({
           context: currentContext,
           cancellationScope: cancellationScope,
         );
-      } catch (error) {
+      } catch (error, stackTrace) {
         final retryDelay = _rateLimitRetryDelayFor(error);
-        if (retryDelay == null) rethrow;
-        if (rateLimitRetries >= rateLimitRetryCount) rethrow;
+        if (retryDelay == null || rateLimitRetries >= rateLimitRetryCount) {
+          await _markAckMessagesErrored(currentContext);
+          Error.throwWithStackTrace(error, stackTrace);
+        }
         rateLimitRetries++;
 
         final retryAt = now().add(retryDelay);
@@ -226,6 +228,17 @@ class const AgentService({
     if (ackMessageIds.isEmpty) return;
 
     await data.markMessagesSent(ackMessageIds);
+  }
+
+  Future<void> _markAckMessagesErrored(AgentIterationContext? context) async {
+    final ackMessageIds = context?.ackMessageIds ?? const <String>[];
+    if (ackMessageIds.isEmpty) return;
+
+    try {
+      await data.markMessagesErrored(ackMessageIds);
+    } on Object {
+      // Preserve the original continuation failure when cleanup fails.
+    }
   }
 
   Future<AgentIterationDecision?> _waitForRateLimitRetry({

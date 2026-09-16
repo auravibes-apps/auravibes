@@ -93,10 +93,12 @@ class const AppToolCallActionsDataProvider({
     final parentId = activeSubAgents?.parentOf(message.conversationId);
     if (parentId == null) return;
 
-    activeSubAgents?.finish(
+    activeSubAgents?.finish((
       parentId: parentId,
       childId: message.conversationId,
       status: agent.SubAgentCompletionStatus.stopped,
-    );
+      error: null,
+      stackTrace: null,
+    ));
   }
 }

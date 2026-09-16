@@ -131,9 +131,10 @@ validateServerSkillRequestTarget(
   required bool requireHttps,
   Future<List<InternetAddress>> Function(String host) lookup =
       InternetAddress.lookup,
+  Duration dnsTimeout = const Duration(seconds: 5),
 }) async {
   final uri = requirePublicUriSyntax(request.url, requireHttps: requireHttps);
-  final addresses = await lookup(uri.host);
+  final addresses = await lookup(uri.host).timeout(dnsTimeout);
   if (addresses.isEmpty ||
       addresses.any(
         (address) => isPrivateIpAddress(
@@ -153,9 +154,10 @@ void rejectServerSkillRedirect(bool isRedirect) {
 Future<String> readBoundedServerSkillResponse(
   Stream<List<int>> response, {
   int maxBytes = McpServerPolicy.maxResponseBytes,
+  Duration idleTimeout = const Duration(seconds: 30),
 }) async {
   final bytes = <int>[];
-  await for (final chunk in response) {
+  await for (final chunk in response.timeout(idleTimeout)) {
     bytes.addAll(chunk);
     if (bytes.length > maxBytes) {
       throw const FormatException('Tool response is too large.');
@@ -263,7 +265,7 @@ class const ServerToolExecutorService({
       ),
       AgentResolvedToolKind.skillNative
           when tool.descriptor.skillSlug == agentsSkillSlug =>
-        _runSubAgentTool(session, turn, tool, request.arguments),
+        _runSubAgentTool(session, turn, tool, request),
       AgentResolvedToolKind.skillNative => _runNativeSkill(
         session,
         turn,
@@ -287,9 +289,9 @@ class const ServerToolExecutorService({
       return _listSkillCredentials(session, turn, request.arguments);
     }
     if (tool.descriptor.toolIdentifier == callSkillToolName) {
-      return _runDispatchedSkill(session, turn, request.arguments);
+      return _runDispatchedSkill(session, turn, request);
     }
-    final slug = request.arguments['slug'];
+    final slug = request.arguments['slug'] ?? request.arguments['skillSlug'];
     if (slug is! String || slug.isEmpty) {
       throw const ServerToolNotConfiguredException();
     }
@@ -464,9 +466,9 @@ class const ServerToolExecutorService({
   Future<Object?> _runDispatchedSkill(
     Session session,
     ConversationTurn turn,
-    Map<String, dynamic> arguments,
+    ServerToolRequest request,
   ) async {
-    final target = SkillCommandTarget.fromArguments(arguments);
+    final target = SkillCommandTarget.fromArguments(request.arguments);
     final state = await _skillCommandState(session, turn);
     final tools = _materializeStateTools(state);
     final resolved = await resolveCloudSkillCommandTarget(
@@ -484,7 +486,16 @@ class const ServerToolExecutorService({
       ),
       AgentResolvedToolKind.skillNative
           when resolved.descriptor.skillSlug == agentsSkillSlug =>
-        _runSubAgentTool(session, turn, resolved, normalized),
+        _runSubAgentTool(
+          session,
+          turn,
+          resolved,
+          ServerToolRequest(
+            id: request.id,
+            name: resolved.spec.name,
+            arguments: normalized,
+          ),
+        ),
       AgentResolvedToolKind.skillNative => _runNativeSkill(
         session,
         turn,
@@ -493,7 +504,7 @@ class const ServerToolExecutorService({
       ),
       _ => throw const ServerToolNotConfiguredException(),
     };
-    return {'result': result};
+    return result is ServerToolAwaitingSubAgents ? result : {'result': result};
   }
 
   Future<Object?> _listSkills(Session session, ConversationTurn turn) async {
@@ -545,7 +556,7 @@ class const ServerToolExecutorService({
     ConversationTurn turn,
     Map<String, dynamic> arguments,
   ) async {
-    final slug = arguments['slug'];
+    final slug = arguments['slug'] ?? arguments['skillSlug'];
     if (slug is! String || slug.isEmpty) {
       throw const FormatException('slug required');
     }
@@ -799,47 +810,69 @@ class const ServerToolExecutorService({
     Session session,
     ConversationTurn turn,
     ServerResolvedTool tool,
-    Map<String, dynamic> arguments,
+    ServerToolRequest request,
   ) async {
     if (tool.descriptor.toolIdentifier == listAgentsToolName) {
-      return _listAgents(session, turn, arguments);
+      return _listAgents(session, turn, request.arguments);
     }
     if (tool.descriptor.toolIdentifier != runSubAgentToolName) {
       throw const ServerToolNotConfiguredException();
     }
-    final title = arguments['title'];
-    final prompt = arguments['prompt'];
-    final agentId = arguments['agentId'];
-    if (title is! String ||
-        title.trim().isEmpty ||
-        title.length > maxSubAgentTitleLength ||
-        prompt is! String ||
-        prompt.trim().isEmpty ||
-        prompt.length > maxSubAgentPromptLength ||
-        (agentId != null && agentId is! String)) {
-      throw const FormatException('Invalid sub-agent request.');
-    }
-    final parent = await Conversation.db.findFirstRow(
-      session,
-      where: (table) =>
-          table.id.equals(turn.conversationId) &
-          table.workspaceId.equals(turn.workspaceId) &
-          table.deletedAt.equals(null),
-    );
-    if (parent == null || parent.parentConversationStableId != null) {
-      throw const ServerToolNotConfiguredException();
-    }
-    if (agentId is String &&
-        !await _isRunnableAgent(session, turn.workspaceId, agentId)) {
-      throw const ServerToolNotConfiguredException();
-    }
+    final rawAgentId = request.arguments['agentId'];
     final id = const Uuid().v4();
     final useCases = ConversationUseCases(
       conversation_repo.ConversationRepository(),
     );
     ConversationSummary? child;
+    final startedAt = DateTime.now().toUtc();
+    var failurePhase = 'run.validate';
+    void logLifecycle(
+      String phase, {
+      String? childId,
+      required String state,
+      int childCount = 1,
+    }) {
+      session.log(
+        'Sub-agent lifecycle: parentConversation=${turn.conversationId}, '
+        'parentTurn=${turn.id}, toolCall=${request.id}, '
+        'childConversation=${childId ?? '-'}, phase=$phase, '
+        'elapsedMs=${DateTime.now().toUtc().difference(startedAt).inMilliseconds}, '
+        'childCount=$childCount, state=$state.',
+      );
+    }
+
     try {
+      final title = request.arguments['title'];
+      final prompt = request.arguments['prompt'];
+      final agentId = request.arguments['agentId'];
+      if (title is! String ||
+          title.trim().isEmpty ||
+          title.length > maxSubAgentTitleLength ||
+          prompt is! String ||
+          prompt.trim().isEmpty ||
+          prompt.length > maxSubAgentPromptLength ||
+          (agentId != null && agentId is! String)) {
+        throw const FormatException('Invalid sub-agent request.');
+      }
+      failurePhase = 'run.parentValidation';
+      final parent = await Conversation.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(turn.conversationId) &
+            table.workspaceId.equals(turn.workspaceId) &
+            table.deletedAt.equals(null),
+      );
+      if (parent == null || parent.parentConversationStableId != null) {
+        throw const ServerToolNotConfiguredException();
+      }
+      failurePhase = 'run.agentValidation';
+      if (agentId is String &&
+          !await _isRunnableAgent(session, turn.workspaceId, agentId)) {
+        throw const ServerToolNotConfiguredException();
+      }
+      failurePhase = 'run.createChild';
       await _throwIfCancelled(session, turn);
+      logLifecycle('run.createChild', state: 'started');
       child = await useCases.create(
         session,
         userId: turn.initiatorUserId,
@@ -856,6 +889,9 @@ class const ServerToolExecutorService({
           parentConversationId: parent.stableId,
         ),
       );
+      logLifecycle('run.createChild', childId: child.id, state: 'completed');
+      failurePhase = 'run.createPrompt';
+      logLifecycle('run.createPrompt', childId: child.id, state: 'started');
       final queued = await useCases.queueConversationMessage(
         session,
         userId: turn.initiatorUserId,
@@ -869,7 +905,11 @@ class const ServerToolExecutorService({
           attachmentIds: const [],
         ),
       );
+      logLifecycle('run.createPrompt', childId: child.id, state: 'completed');
+      failurePhase = 'run.beforeChildLaunch';
       await beforeChildLaunch?.call();
+      failurePhase = 'run.continueAgent';
+      logLifecycle('run.continueAgent', childId: child.id, state: 'started');
       final started = await useCases.continueConversation(
         session,
         userId: turn.initiatorUserId,
@@ -880,7 +920,10 @@ class const ServerToolExecutorService({
           expectedProjectionRevision: queued.conversation.projectionRevision,
         ),
         parentTurnId: turn.id,
+        parentToolCallId: request.id,
       );
+      logLifecycle('run.continueAgent', childId: child.id, state: 'completed');
+      failurePhase = 'run.readResult';
       final execution = started.activeExecution;
       if (execution == null) throw const ServerToolNotConfiguredException();
       await afterChildContinuation?.call();
@@ -891,14 +934,28 @@ class const ServerToolExecutorService({
           transaction,
         ),
       );
-      return {
-        'conversationId': child.id,
-        'turnId': execution.id,
-        'status': execution.status,
-        if (child.agentId != null) 'agentId': child.agentId,
-      };
-    } on Object {
-      if (child != null && await _isCancelled(session, turn)) {
+      logLifecycle(
+        'run.awaitingSubAgents',
+        childId: child.id,
+        state: 'waiting',
+      );
+      return ServerToolAwaitingSubAgents(
+        children: [
+          {
+            'conversationId': child.id,
+            'turnId': execution.id,
+            'status': execution.status,
+            if (child.agentId != null) 'agentId': child.agentId,
+          },
+        ],
+      );
+    } on ConversationCancelledException {
+      logLifecycle(
+        failurePhase,
+        childId: child?.id,
+        state: 'cancelled',
+      );
+      if (child != null) {
         await _compensateCancelledChild(
           session,
           turn: turn,
@@ -907,8 +964,62 @@ class const ServerToolExecutorService({
         );
       }
       rethrow;
+    } on AgentToolExecutionFailure catch (failure) {
+      logLifecycle(
+        failure.failurePhase,
+        childId: child?.id,
+        state: 'failed',
+      );
+      if (child == null) rethrow;
+
+      throw _subAgentFailure(
+        error: failure.error,
+        stackTrace: failure.stackTrace,
+        failurePhase: failure.failurePhase,
+        childId: child.id,
+        agentId: child.agentId,
+      );
+    } on Object catch (error, stackTrace) {
+      logLifecycle(
+        failurePhase,
+        childId: child?.id,
+        state: 'failed',
+      );
+      if (child != null && await _isCancelled(session, turn)) {
+        await _compensateCancelledChild(
+          session,
+          turn: turn,
+          childId: child.id,
+          useCases: useCases,
+        );
+      }
+      throw _subAgentFailure(
+        error: error,
+        stackTrace: stackTrace,
+        failurePhase: failurePhase,
+        childId: child?.id,
+        agentId: child?.agentId ?? (rawAgentId is String ? rawAgentId : null),
+      );
     }
   }
+
+  AgentToolExecutionFailure _subAgentFailure({
+    required Object error,
+    required StackTrace stackTrace,
+    required String failurePhase,
+    String? childId,
+    String? agentId,
+  }) => AgentToolExecutionFailure(
+    responseRaw: jsonEncode({
+      'conversationId': ?childId,
+      'status': 'error',
+      'content': 'Sub-agent failed.',
+      'agentId': ?agentId,
+    }),
+    error: error,
+    stackTrace: stackTrace,
+    failurePhase: failurePhase,
+  );
 
   Future<String?> _activeTurnModelSelectionId(
     Session session,
@@ -1203,7 +1314,9 @@ class const ServerToolExecutorService({
       throw const ServerToolNotConfiguredException();
     }
     final uri = McpServerPolicy.validateUri(data['url'] as String);
-    final addresses = await InternetAddress.lookup(uri.host);
+    final addresses = await InternetAddress.lookup(
+      uri.host,
+    ).timeout(const Duration(seconds: 5));
     McpServerPolicy.validateAddresses(addresses);
     final secret = await _secret(
       session,
@@ -1304,7 +1417,9 @@ class const ServerToolExecutorService({
       request.url,
       requireHttps: credentials.isNotEmpty,
     );
-    final addresses = await InternetAddress.lookup(uri.host);
+    final addresses = await InternetAddress.lookup(
+      uri.host,
+    ).timeout(const Duration(seconds: 5));
     if (addresses.any(
       (address) => isPrivateIpAddress(
         address.rawAddress,
@@ -1383,7 +1498,9 @@ class const ServerToolExecutorService({
         request.headers.set('Authorization', 'Bearer $bearerToken');
       }
       request.write(jsonEncode(body));
-      final response = await request.close();
+      final response = await request.close().timeout(
+        const Duration(seconds: 30),
+      );
       if (response.statusCode != HttpStatus.ok || response.isRedirect) {
         throw const HttpException('Tool request failed.');
       }
@@ -1446,13 +1563,13 @@ class const ServerToolExecutorService({
       request.followRedirects = false;
       input.headers.forEach(request.headers.set);
       if (input.body != null) request.write(input.body);
-      final response = await request.close();
+      final response = await request.close().timeout(input.timeout);
       rejectServerSkillRedirect(response.isRedirect);
       final headers = <String, List<String>>{};
       response.headers.forEach((name, values) => headers[name] = values);
       return UrlResponse(
         statusCode: response.statusCode,
-        body: await _readResponse(response),
+        body: await _readResponse(response, idleTimeout: input.timeout),
         headers: headers,
         elapsed: stopwatch.elapsed,
       );
@@ -1522,8 +1639,14 @@ class const ServerToolExecutorService({
     ..connectionFactory = (target, proxyHost, proxyPort) =>
         Socket.startConnect(addresses.first, target.port);
 
-  Future<String> _readResponse(HttpClientResponse response) =>
-      readBoundedServerSkillResponse(response);
+  Future<String> _readResponse(
+    HttpClientResponse response, {
+    Duration? idleTimeout,
+  }) {
+    final timeout = idleTimeout;
+    if (timeout == null) return readBoundedServerSkillResponse(response);
+    return readBoundedServerSkillResponse(response, idleTimeout: timeout);
+  }
 
   Future<WorkspaceResource> _resource(
     Session session,

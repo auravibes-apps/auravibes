@@ -23,6 +23,8 @@ class const ConversationEngineResult({
   required final int outputTokens,
   required final int totalTokens,
   final bool awaitingApproval = false,
+  final bool awaitingSubAgents = false,
+  final List<String> awaitingSubAgentToolCallIds = const [],
   final bool requiresUserAction = false,
   final List<String> a2uiMessages = const [],
   final List<String> a2uiDiagnosticPayloads = const [],
@@ -328,10 +330,15 @@ final class const ServerConversationEngineHost({
     );
     final replayableCalls = resumedCalls
         .where(
-          (call) => call.status == 'approved' || call.status == 'running',
+          (call) =>
+              call.status == 'approved' ||
+              call.status == 'running' ||
+              call.status == 'awaitingSubAgents',
         )
         .toList(growable: false);
     if (resumedCalls.isNotEmpty) {
+      final awaitingSubAgentToolCallIds = <String>[];
+      var awaitingApproval = false;
       for (final call in replayableCalls) {
         final disposition = await runtime.handle(
           session,
@@ -344,15 +351,31 @@ final class const ServerConversationEngineHost({
           ),
         );
         if (disposition == ServerToolDisposition.awaitingApproval) {
-          return const ConversationEngineResult(
-            content: '',
-            finishReason: 'awaiting_approval',
-            inputTokens: 0,
-            outputTokens: 0,
-            totalTokens: 0,
-            awaitingApproval: true,
-          );
+          awaitingApproval = true;
+        } else if (disposition == ServerToolDisposition.awaitingSubAgents) {
+          awaitingSubAgentToolCallIds.add(call.stableId);
         }
+      }
+      if (awaitingSubAgentToolCallIds.isNotEmpty) {
+        return ConversationEngineResult(
+          content: '',
+          finishReason: 'awaiting_sub_agents',
+          inputTokens: 0,
+          outputTokens: 0,
+          totalTokens: 0,
+          awaitingSubAgents: true,
+          awaitingSubAgentToolCallIds: awaitingSubAgentToolCallIds,
+        );
+      }
+      if (awaitingApproval) {
+        return const ConversationEngineResult(
+          content: '',
+          finishReason: 'awaiting_approval',
+          inputTokens: 0,
+          outputTokens: 0,
+          totalTokens: 0,
+          awaitingApproval: true,
+        );
       }
       final completedCalls = await ConversationToolCall.db.find(
         session,
@@ -538,6 +561,7 @@ final class const ServerConversationEngineHost({
       );
 
       var paused = false;
+      final awaitingSubAgentToolCallIds = <String>[];
       for (final request in requests) {
         final disposition = await runtime.handle(
           session,
@@ -546,6 +570,25 @@ final class const ServerConversationEngineHost({
           request: request,
         );
         paused |= disposition == ServerToolDisposition.awaitingApproval;
+        if (disposition == ServerToolDisposition.awaitingSubAgents) {
+          awaitingSubAgentToolCallIds.add(request.id);
+        }
+      }
+      if (awaitingSubAgentToolCallIds.isNotEmpty) {
+        await response.close();
+        return ConversationEngineResult(
+          content: response.content,
+          finishReason: 'awaiting_sub_agents',
+          inputTokens: 0,
+          outputTokens: 0,
+          totalTokens: 0,
+          awaitingSubAgents: true,
+          awaitingSubAgentToolCallIds: awaitingSubAgentToolCallIds,
+          a2uiMessages: response.a2uiMessages,
+          a2uiDiagnosticPayloads: response.a2uiDiagnosticPayloads,
+          a2uiIssuesBySurface: response.a2uiIssuesBySurface,
+          a2uiMessageIssues: response.a2uiMessageIssues,
+        );
       }
       if (paused) {
         await response.close();
@@ -1092,9 +1135,17 @@ final class const ServerConversationEngineHost({
       return ProviderTransportResponse(
         statusCode: response.statusCode,
         body: session == null || turnId == null
-            ? _closeClientAfter(response, client, transportDone)
+            ? _closeClientAfter(
+                response.timeout(const Duration(seconds: 90)),
+                client,
+                transportDone,
+              )
             : cancellationCheckedStream(
-                _closeClientAfter(response, client, transportDone),
+                _closeClientAfter(
+                  response.timeout(const Duration(seconds: 90)),
+                  client,
+                  transportDone,
+                ),
                 () => cancellationProbe.isCancelled(session, turnId),
               ),
       );

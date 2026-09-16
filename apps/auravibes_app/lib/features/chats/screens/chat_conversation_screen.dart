@@ -1026,9 +1026,33 @@ List<String> _watchModelModalities(
 }
 
 List<PendingToolCall> _watchPendingCalls(_PendingCallsRequest request) {
-  return request.isCloud
-      ? CloudMessageTools.pendingToolCalls(request.cloudConversation)
-      : _watchLocalPendingCalls(request);
+  if (!request.isCloud) return _watchLocalPendingCalls(request);
+  final childStates = _watchCloudChildStates(request);
+
+  return CloudMessageTools.pendingToolCalls(
+    request.cloudConversation,
+    childStates: childStates,
+  );
+}
+
+List<CloudConversationState> _watchCloudChildStates(
+  _PendingCallsRequest request,
+) {
+  final childIds = CloudMessageTools.childConversationIds(
+    request.cloudConversation,
+  );
+
+  return [
+    for (final childId in childIds)
+      ?request.ref
+          .watch(
+            cloudConversationStateProvider((
+              workspaceId: request.workspaceId,
+              conversationId: childId,
+            )),
+          )
+          .value,
+  ];
 }
 
 List<PendingToolCall> _watchLocalPendingCalls(_PendingCallsRequest request) =>
@@ -2019,9 +2043,13 @@ Future<_StopConversationFailure?> _stopChildConversation(
       logName: 'child conversation',
     );
   } finally {
-    ref
-        .read(activeSubAgentRuntimeProvider.notifier)
-        .finish(parentId: parentId, childId: childId, status: .stopped);
+    ref.read(activeSubAgentRuntimeProvider.notifier).finish((
+      parentId: parentId,
+      childId: childId,
+      status: .stopped,
+      error: null,
+      stackTrace: null,
+    ));
   }
 }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:auravibes_app/services/url/public_url_guard.dart';
@@ -13,5 +14,19 @@ void main() {
 
     expect(resolved.uri.toString(), 'https://public.example/path');
     expect(resolved.addresses, ['8.8.8.8']);
+  });
+
+  test('bounds hanging DNS lookups', () async {
+    final lookup = Completer<List<InternetAddress>>();
+
+    await expectLater(
+      PublicUrlGuard.resolvePublicUri(
+        'https://public.example/path',
+        requireHttps: true,
+        lookup: (_) => lookup.future,
+        dnsTimeout: const Duration(milliseconds: 1),
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
   });
 }

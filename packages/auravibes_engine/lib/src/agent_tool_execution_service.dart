@@ -277,6 +277,7 @@ class const AgentToolExecutionService<TTool extends Object>({
         tool: toolToCall.tool,
         error: error,
         stackTrace: stackTrace,
+        failurePhase: null,
       ));
 
       return AgentToolResultUpdate(

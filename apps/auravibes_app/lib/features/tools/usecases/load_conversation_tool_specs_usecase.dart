@@ -1,7 +1,9 @@
 // ignore_for_file: implementation_imports
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
@@ -22,6 +24,7 @@ class const LoadConversationToolSpecsUsecase({
   _buildDynamicSkillToolSpecsUsecase,
   required final SyncSkillToolPermissionsUsecase
   _syncSkillToolPermissionsUsecase,
+  final ConversationRepository? conversationRepository,
   // Ponytail: Compatibility only; manifests now own materialization.
   // ignore: avoid_unused_constructor_parameters
   BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
@@ -45,16 +48,8 @@ class const LoadConversationToolSpecsUsecase({
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
-    final toolCandidates = await _loadToolCandidates(
-      conversationId,
-      workspaceId,
-    );
-    final skillCommandSpecs = await _buildDynamicSkillToolSpecsUsecase.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
 
-    return _buildCatalog(toolCandidates, skillCommandSpecs);
+    return await _buildCatalogForConversation(conversationId, workspaceId);
   }
 
   Future<List<agent.ToolCatalogCandidate<ResolvedTool>>> _loadToolCandidates(
@@ -66,15 +61,52 @@ class const LoadConversationToolSpecsUsecase({
 
     return await _buildCombinedToolSpecsUseCase.call(enabledTools);
   }
+
+  Future<agent.ToolCatalog<ResolvedTool>> _buildCatalogForConversation(
+    String conversationId,
+    String workspaceId,
+  ) async {
+    final input = await _loadCatalogInput(conversationId, workspaceId);
+
+    return _buildCatalog(
+      toolCandidates: input.toolCandidates,
+      skillCommandSpecs: input.skillCommandSpecs,
+      includeRunSubAgent: await _includeRunSubAgent(conversationId),
+    );
+  }
+
+  Future<
+    ({
+      List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
+      List<ToolSpec> skillCommandSpecs,
+    })
+  >
+  _loadCatalogInput(String conversationId, String workspaceId) async => (
+    toolCandidates: await _loadToolCandidates(conversationId, workspaceId),
+    skillCommandSpecs: await _buildDynamicSkillToolSpecsUsecase.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    ),
+  );
+
+  Future<bool> _includeRunSubAgent(String conversationId) async {
+    final repository = conversationRepository;
+    if (repository == null) return true;
+
+    final conversation = await repository.getConversationById(conversationId);
+
+    return conversation != null && conversation.parentConversationId == null;
+  }
 }
 
-agent.ToolCatalog<ResolvedTool> _buildCatalog(
-  List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
-  List<ToolSpec> skillCommandSpecs,
-) => agent.buildToolCatalog([
+agent.ToolCatalog<ResolvedTool> _buildCatalog({
+  required List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
+  required List<ToolSpec> skillCommandSpecs,
+  required bool includeRunSubAgent,
+}) => agent.buildToolCatalog([
   ...toolCandidates,
   ...skillCommandSpecs.map(_skillCommandCandidate),
-  _runSubAgentCandidate(),
+  if (includeRunSubAgent) _runSubAgentCandidate(),
 ]);
 
 agent.ToolCatalogCandidate<ResolvedTool> _skillCommandCandidate(
@@ -120,5 +152,6 @@ loadConversationToolSpecsUsecaseProvider =
         syncSkillToolPermissionsUsecase: ref.watch(
           syncSkillToolPermissionsUsecaseProvider,
         ),
+        conversationRepository: ref.watch(conversationRepositoryProvider),
       );
     });

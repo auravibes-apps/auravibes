@@ -76,12 +76,14 @@ void main() {
     test('rejects unknown list_agents type', () async {
       final runner = _runner();
 
-      final result = jsonDecode(
-        await runner.listAgents('w1', arguments: const {'type': 'other'}),
-      ) as Map<String, Object?>;
+      final failure = await _expectFailure(
+        runner.listAgents('w1', arguments: const {'type': 'other'}),
+      );
+      final result = _decodeFailure(failure);
 
       expect(result['status'], 'error');
       expect(result['content'], 'Unknown agent type.');
+      expect(failure.failurePhase, 'listAgents.validate');
     });
 
     test('list_agents schema exposes optional query, type, limit, cursor', () {
@@ -130,10 +132,12 @@ void main() {
         {'limit': 101},
         {'cursor': ''},
       ]) {
-        final result = jsonDecode(
-          await runner.listAgents('w1', arguments: arguments),
-        ) as Map<String, Object?>;
+        final failure = await _expectFailure(
+          runner.listAgents('w1', arguments: arguments),
+        );
+        final result = _decodeFailure(failure);
         expect(result['status'], 'error');
+        expect(failure.failurePhase, 'listAgents.validate');
       }
     });
 
@@ -159,16 +163,18 @@ void main() {
         );
         final runner = _runner(conversations: conversations);
 
-        final result = jsonDecode(
-          await runner.run(
+        final failure = await _expectFailure(
+          runner.run(
             parentConversationId: 'child-parent',
             workspaceId: 'w1',
             arguments: const {'title': 'Task', 'prompt': 'Do it'},
           ),
-        ) as Map<String, Object?>;
+        );
+        final result = _decodeFailure(failure);
 
         expect(result['status'], 'error');
         expect(result['content'], 'Sub-agents cannot start sub-agents.');
+        expect(failure.failurePhase, 'run.parentValidation');
         expect(conversations.createdChildren, isEmpty);
       },
     );
@@ -177,8 +183,8 @@ void main() {
       final conversations = _ConversationStore();
       final runner = _runner(conversations: conversations);
 
-      final result = jsonDecode(
-        await runner.run(
+      final failure = await _expectFailure(
+        runner.run(
           parentConversationId: 'parent',
           workspaceId: 'w1',
           arguments: const {
@@ -187,11 +193,13 @@ void main() {
             'agentId': 'missing',
           },
         ),
-      ) as Map<String, Object?>;
+      );
+      final result = _decodeFailure(failure);
 
       expect(result['status'], 'error');
       expect(result['agentId'], 'missing');
       expect(result['content'], 'Unknown agent.');
+      expect(failure.failurePhase, 'run.agentValidation');
       expect(conversations.createdChildren, isEmpty);
     });
 
@@ -199,27 +207,33 @@ void main() {
       final conversations = _ConversationStore();
       final runner = _runner(conversations: conversations);
 
-      final missingTitle = jsonDecode(
-        await runner.run(
-          parentConversationId: 'parent',
-          workspaceId: 'w1',
-          arguments: const {'prompt': 'Do it'},
+      final missingTitle = _decodeFailure(
+        await _expectFailure(
+          runner.run(
+            parentConversationId: 'parent',
+            workspaceId: 'w1',
+            arguments: const {'prompt': 'Do it'},
+          ),
         ),
-      ) as Map<String, Object?>;
-      final missingPrompt = jsonDecode(
-        await runner.run(
-          parentConversationId: 'parent',
-          workspaceId: 'w1',
-          arguments: const {'title': 'Task'},
+      );
+      final missingPrompt = _decodeFailure(
+        await _expectFailure(
+          runner.run(
+            parentConversationId: 'parent',
+            workspaceId: 'w1',
+            arguments: const {'title': 'Task'},
+          ),
         ),
-      ) as Map<String, Object?>;
-      final missingParent = jsonDecode(
-        await runner.run(
-          parentConversationId: 'missing',
-          workspaceId: 'w1',
-          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+      );
+      final missingParent = _decodeFailure(
+        await _expectFailure(
+          runner.run(
+            parentConversationId: 'missing',
+            workspaceId: 'w1',
+            arguments: const {'title': 'Task', 'prompt': 'Do it'},
+          ),
         ),
-      ) as Map<String, Object?>;
+      );
 
       expect(missingTitle['content'], 'Missing title.');
       expect(missingPrompt['content'], 'Missing prompt.');
@@ -231,26 +245,30 @@ void main() {
       final conversations = _ConversationStore();
       final runner = _runner(conversations: conversations);
 
-      final titleResult = jsonDecode(
-        await runner.run(
-          parentConversationId: 'parent',
-          workspaceId: 'w1',
-          arguments: {
-            'title': 'x' * (maxSubAgentTitleLength + 1),
-            'prompt': 'Do it',
-          },
+      final titleResult = _decodeFailure(
+        await _expectFailure(
+          runner.run(
+            parentConversationId: 'parent',
+            workspaceId: 'w1',
+            arguments: {
+              'title': 'x' * (maxSubAgentTitleLength + 1),
+              'prompt': 'Do it',
+            },
+          ),
         ),
-      ) as Map<String, Object?>;
-      final promptResult = jsonDecode(
-        await runner.run(
-          parentConversationId: 'parent',
-          workspaceId: 'w1',
-          arguments: {
-            'title': 'Task',
-            'prompt': 'x' * (maxSubAgentPromptLength + 1),
-          },
+      );
+      final promptResult = _decodeFailure(
+        await _expectFailure(
+          runner.run(
+            parentConversationId: 'parent',
+            workspaceId: 'w1',
+            arguments: {
+              'title': 'Task',
+              'prompt': 'x' * (maxSubAgentPromptLength + 1),
+            },
+          ),
         ),
-      ) as Map<String, Object?>;
+      );
 
       expect(titleResult['content'], 'Title is too long.');
       expect(promptResult['content'], 'Prompt is too long.');
@@ -362,6 +380,7 @@ void main() {
 
     test('returns error when approval wait completes with error', () async {
       final tracker = _Tracker();
+      final error = StateError('child provider secret');
       final runner = _runner(
         tracker: tracker,
         continueTurn: ({required conversationId, required context}) async {
@@ -370,6 +389,7 @@ void main() {
               parentId: 'parent',
               childId: 'child',
               status: .error,
+              error: error,
             );
           });
 
@@ -377,33 +397,130 @@ void main() {
         },
       );
 
-      final result = jsonDecode(
-        await runner.run(
+      final failure = await _expectFailure(
+        runner.run(
           parentConversationId: 'parent',
           workspaceId: 'w1',
           arguments: const {'title': 'Task', 'prompt': 'Do it'},
         ),
-      ) as Map<String, Object?>;
+      );
+      final result = _decodeFailure(failure);
 
       expect(result['conversationId'], 'child');
       expect(result['status'], 'error');
       expect(result['content'], 'Sub-agent failed.');
+      expect(failure.failurePhase, 'run.waitForApproval');
+      expect(failure.error, same(error));
+      expect(failure.responseRaw, isNot(contains('child provider secret')));
     });
 
     test('returns error when prompt creation throws', () async {
       final runner = _runner(messages: _ThrowingMessages());
 
-      final result = jsonDecode(
-        await runner.run(
+      final failure = await _expectFailure(
+        runner.run(
           parentConversationId: 'parent',
           workspaceId: 'w1',
           arguments: const {'title': 'Task', 'prompt': 'Do it'},
         ),
-      ) as Map<String, Object?>;
+      );
+      final result = _decodeFailure(failure);
 
       expect(result['conversationId'], 'child');
       expect(result['status'], 'error');
       expect(result['content'], 'Sub-agent failed.');
+      expect(failure.failurePhase, 'run.createPrompt');
+      expect(failure.error, isA<StateError>());
+      expect(failure.responseRaw, isNot(contains('boom')));
+    });
+
+    test('preserves child ID and continuation diagnostics safely', () async {
+      final error = StateError('provider secret');
+      final runner = _runner(
+        continueTurn: ({required conversationId, required context}) async {
+          throw error;
+        },
+      );
+
+      final failure = await _expectFailure(
+        runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+        ),
+      );
+      final result = _decodeFailure(failure);
+
+      expect(result, containsPair('conversationId', 'child'));
+      expect(result['status'], 'error');
+      expect(result['content'], 'Sub-agent failed.');
+      expect(failure.error, same(error));
+      expect(failure.failurePhase, 'run.continueAgent');
+      expect(failure.responseRaw, isNot(contains('provider secret')));
+    });
+
+    test('wraps typed continuation failures with the child ID', () async {
+      final error = StateError('nested provider secret');
+      final runner = _runner(
+        continueTurn: ({required conversationId, required context}) async {
+          throw AgentToolExecutionFailure(
+            responseRaw: '{"status":"error"}',
+            error: error,
+            stackTrace: StackTrace.current,
+            failurePhase: 'nested.continueAgent',
+          );
+        },
+      );
+
+      final failure = await _expectFailure(
+        runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+        ),
+      );
+      final result = _decodeFailure(failure);
+
+      expect(result['conversationId'], 'child');
+      expect(result['status'], 'error');
+      expect(result['content'], 'Sub-agent failed.');
+      expect(failure.error, same(error));
+      expect(failure.failurePhase, 'run.continueAgent');
+      expect(failure.responseRaw, isNot(contains('nested provider secret')));
+    });
+
+    test('reports result loading failures with child ID', () async {
+      final runner = _runner(messages: _ThrowingResultMessages());
+
+      final failure = await _expectFailure(
+        runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+        ),
+      );
+      final result = _decodeFailure(failure);
+
+      expect(result['conversationId'], 'child');
+      expect(result['content'], 'Sub-agent failed.');
+      expect(failure.failurePhase, 'run.readResult');
+    });
+
+    test('reports child creation failures with the creation phase', () async {
+      final error = StateError('database secret');
+      final runner = _runner(conversations: _ThrowingConversationStore(error));
+
+      final failure = await _expectFailure(
+        runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Task', 'prompt': 'Do it'},
+        ),
+      );
+
+      expect(failure.error, same(error));
+      expect(failure.failurePhase, 'run.createChild');
+      expect(_decodeFailure(failure)['conversationId'], isNull);
     });
 
     test('returns stopped when child is stopped during continuation', () async {
@@ -434,6 +551,19 @@ void main() {
     });
   });
 }
+
+Future<AgentToolExecutionFailure> _expectFailure(Future<String> result) async {
+  try {
+    await result;
+  } on AgentToolExecutionFailure catch (failure) {
+    return failure;
+  }
+
+  fail('Expected AgentToolExecutionFailure.');
+}
+
+Map<String, Object?> _decodeFailure(AgentToolExecutionFailure failure) =>
+    jsonDecode(failure.responseRaw) as Map<String, Object?>;
 
 SubAgentRunner _runner({
   SubAgentCatalog catalog = const _Catalog(),
@@ -552,9 +682,30 @@ class _ThrowingMessages extends _Messages {
   }
 }
 
+class _ThrowingResultMessages extends _Messages {
+  @override
+  Future<String> latestAssistantContent(String conversationId) async {
+    throw StateError('read secret');
+  }
+}
+
+class _ThrowingConversationStore extends _ConversationStore {
+  new(this.error);
+
+  final Error error;
+
+  @override
+  Future<SubAgentConversationRecord> createChildConversation(
+    SubAgentChildConversationRequest request,
+  ) async {
+    throw error;
+  }
+}
+
 class _Tracker {
   final _completers = <String, Completer<SubAgentCompletionStatus>>{};
   final _stoppedChildIds = <String>{};
+  final _failures = <String, SubAgentCompletionFailure>{};
 
   SubAgentRequestHandle start({
     required String parentId,
@@ -568,8 +719,18 @@ class _Tracker {
     required String parentId,
     required String childId,
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
+    Object? error,
+    StackTrace? stackTrace,
   }) {
     final completer = _completers.remove(childId);
+    if (error != null) {
+      _failures[childId] = SubAgentCompletionFailure(
+        error: error,
+        stackTrace: stackTrace ?? StackTrace.current,
+      );
+    } else if (completer == null) {
+      _failures.remove(childId);
+    }
     if (status == SubAgentCompletionStatus.stopped) {
       _stoppedChildIds.add(childId);
     }
@@ -590,6 +751,8 @@ class _Tracker {
   }
 
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
+
+  SubAgentCompletionFailure? failure(String childId) => _failures[childId];
 }
 
 class const _TestSubAgentRequestHandle(
@@ -600,6 +763,9 @@ class const _TestSubAgentRequestHandle(
   @override
   Future<SubAgentCompletionStatus> get completion =>
       _tracker.waitForCompletion(_childId);
+
+  @override
+  SubAgentCompletionFailure? get failure => _tracker.failure(_childId);
 
   @override
   bool get isStopped => _tracker.isStopped(_childId);
