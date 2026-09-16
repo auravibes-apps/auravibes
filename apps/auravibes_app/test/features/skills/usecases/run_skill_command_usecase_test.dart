@@ -156,17 +156,11 @@ void main() {
         required workspaceId,
         required arguments,
       }) async => const {},
-      runSkillNativeTool:
-          ({
-            required conversationId,
-            required workspaceId,
-            required target,
-            required arguments,
-          }) async {
-            nativeTarget.add(target);
+      runSkillNativeTool: (request) async {
+        nativeTarget.add(request.target);
 
-            return {'count': 1};
-          },
+        return {'count': 1};
+      },
     );
 
     final result = await usecase.call((

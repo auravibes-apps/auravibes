@@ -146,13 +146,22 @@ typedef _PendingResolutionRequest = ({
 
 typedef _PendingEntriesRequest = ({
   ProviderContainer container,
-  _PendingConversationRequest conversation,
-  MessageEntity message,
-  List<MessageToolCallEntity> pendingCalls,
-  ResolveToolApprovalDecisionUsecase decisionUsecase,
-  ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
+  _PendingResolutionRequest resolution,
+  _PendingApprovalServices services,
   ToolCatalog<ResolvedTool> catalog,
   String workspaceId,
+});
+
+typedef _PendingCatalogRequest = ({
+  Ref ref,
+  _PendingResolutionRequest request,
+  String workspaceId,
+  ToolCatalog<ResolvedTool> catalog,
+});
+
+typedef _PendingApprovalServices = ({
+  ResolveToolApprovalDecisionUsecase decisionUsecase,
+  ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
 });
 
 typedef _PendingToolCallListRequest = ({
@@ -1122,24 +1131,53 @@ _resolvePendingEntriesForConversation(
   _PendingResolutionRequest request,
   String workspaceId,
 ) async {
-  final decisionUsecase = _decisionUsecase(ref, workspaceId);
-  final effectiveToolApprovalUsecase =
-      request.pendingCalls.any((toolCall) => toolCall.name == callSkillToolName)
-      ? ref.watch(resolveEffectiveToolApprovalUsecaseProvider)
-      : null;
   final catalog = await _toolCatalog(ref, request.conversation, workspaceId);
 
-  return await _resolvePendingEntries((
-    container: ref.container,
-    conversation: request.conversation,
-    message: request.message,
-    pendingCalls: request.pendingCalls,
-    decisionUsecase: decisionUsecase,
-    effectiveToolApprovalUsecase: effectiveToolApprovalUsecase,
-    catalog: catalog,
+  return await _resolvePendingEntriesForCatalog((
+    ref: ref,
+    request: request,
     workspaceId: workspaceId,
+    catalog: catalog,
   ));
 }
+
+Future<List<({MessageToolCallEntity toolCall, bool needsConfirmation})>>
+_resolvePendingEntriesForCatalog(_PendingCatalogRequest input) {
+  return _resolvePendingEntries(_pendingEntriesRequest(input));
+}
+
+_PendingEntriesRequest _pendingEntriesRequest(_PendingCatalogRequest input) {
+  final ref = input.ref;
+  final workspaceId = input.workspaceId;
+  final request = input.request;
+
+  return (
+    container: ref.container,
+    resolution: request,
+    services: _pendingApprovalServices(ref, workspaceId, request.pendingCalls),
+    catalog: input.catalog,
+    workspaceId: workspaceId,
+  );
+}
+
+_PendingApprovalServices _pendingApprovalServices(
+  Ref ref,
+  String workspaceId,
+  List<MessageToolCallEntity> pendingCalls,
+) => (
+  decisionUsecase: _decisionUsecase(ref, workspaceId),
+  effectiveToolApprovalUsecase: _effectiveToolApprovalUsecase(
+    ref,
+    pendingCalls,
+  ),
+);
+
+ResolveEffectiveToolApprovalUsecase? _effectiveToolApprovalUsecase(
+  Ref ref,
+  List<MessageToolCallEntity> pendingCalls,
+) => pendingCalls.any((toolCall) => toolCall.name == callSkillToolName)
+    ? ref.watch(resolveEffectiveToolApprovalUsecaseProvider)
+    : null;
 
 ResolveToolApprovalDecisionUsecase _decisionUsecase(
   Ref ref,
@@ -1172,7 +1210,7 @@ List<PendingToolCall> _pendingConfirmationCalls(
 
 Future<List<({MessageToolCallEntity toolCall, bool needsConfirmation})>>
 _resolvePendingEntries(_PendingEntriesRequest request) => Future.wait(
-  request.pendingCalls.map(
+  request.resolution.pendingCalls.map(
     (toolCall) => _resolvePendingToolCall(
       _pendingToolCallDecisionRequest(request, toolCall),
     ),
@@ -1184,12 +1222,12 @@ _PendingToolCallDecisionRequest _pendingToolCallDecisionRequest(
   MessageToolCallEntity toolCall,
 ) => (
   container: request.container,
-  decisionUsecase: request.decisionUsecase,
-  effectiveToolApprovalUsecase: request.effectiveToolApprovalUsecase,
+  decisionUsecase: request.services.decisionUsecase,
+  effectiveToolApprovalUsecase: request.services.effectiveToolApprovalUsecase,
   catalog: request.catalog,
-  conversationId: request.conversation.conversationId,
+  conversationId: request.resolution.conversation.conversationId,
   workspaceId: request.workspaceId,
-  message: request.message,
+  message: request.resolution.message,
   toolCall: toolCall,
 );
 
@@ -1220,65 +1258,109 @@ List<PendingToolCall> _toPendingToolCalls(
 
 Future<({MessageToolCallEntity toolCall, bool needsConfirmation})>
 _resolvePendingToolCall(_PendingToolCallDecisionRequest request) async {
-  final toolCall = request.toolCall;
-  ResolvedTool? resolvedTool;
-  try {
-    resolvedTool = await _resolvedTool(request);
-  } on Object catch (error, stackTrace) {
-    _logger.warning(
-      'Error resolving pending nested tool call ${toolCall.id}/${toolCall.name}',
-      error,
-      stackTrace,
-    );
-  }
+  final resolvedTool = await _resolvePendingToolTarget(request);
   if (resolvedTool == null) {
-    if (toolCall.name == callSkillToolName) {
-      await _markNestedToolCallNotConfigured(request);
-
-      return (toolCall: toolCall, needsConfirmation: false);
-    }
-
-    return (toolCall: toolCall, needsConfirmation: true);
+    return await _unresolvedPendingToolCall(request);
   }
 
   return await _resolvePendingToolCallSafely(request, resolvedTool);
 }
 
+Future<ResolvedTool?> _resolvePendingToolTarget(
+  _PendingToolCallDecisionRequest request,
+) async {
+  try {
+    return await _resolvedTool(request);
+  } on Object catch (error, stackTrace) {
+    _logger.warning(
+      'Error resolving pending nested tool call '
+      '${request.toolCall.id}/${request.toolCall.name}',
+      error,
+      stackTrace,
+    );
+
+    return null;
+  }
+}
+
+Future<({MessageToolCallEntity toolCall, bool needsConfirmation})>
+_unresolvedPendingToolCall(_PendingToolCallDecisionRequest request) async {
+  final toolCall = request.toolCall;
+  if (toolCall.name == callSkillToolName) {
+    await _markNestedToolCallNotConfigured(request);
+
+    return (toolCall: toolCall, needsConfirmation: false);
+  }
+
+  return (toolCall: toolCall, needsConfirmation: true);
+}
+
 Future<void> _markNestedToolCallNotConfigured(
   _PendingToolCallDecisionRequest request,
 ) async {
-  final metadata = request.message.metadata;
+  final metadata = _notConfiguredMetadata(request);
   if (metadata == null) return;
-  final callIndex = metadata.toolCalls.indexWhere(
-    (toolCall) => toolCall.id == request.toolCall.id,
+
+  final _ = await request.container
+      .read(messageRepositoryProvider)
+      .patchMessage(request.message.id, .new(metadata: metadata));
+}
+
+MessageMetadataEntity? _notConfiguredMetadata(
+  _PendingToolCallDecisionRequest request,
+) {
+  final metadata = request.message.metadata;
+  if (metadata == null) return null;
+
+  final updatedCalls = _notConfiguredToolCalls(
+    metadata.toolCalls,
+    request.toolCall.id,
   );
-  if (callIndex == -1) return;
-  final updatedCalls = [...metadata.toolCalls];
+  if (updatedCalls == null) return null;
+
+  return metadata.copyWith(toolCalls: updatedCalls);
+}
+
+List<MessageToolCallEntity>? _notConfiguredToolCalls(
+  List<MessageToolCallEntity> toolCalls,
+  String toolCallId,
+) {
+  final callIndex = toolCalls.indexWhere(
+    (toolCall) => toolCall.id == toolCallId,
+  );
+  if (callIndex == -1) return null;
+
+  final updatedCalls = [...toolCalls];
   updatedCalls[callIndex] = updatedCalls[callIndex].copyWith(
     resultStatus: .notConfigured,
     responseRaw: ToolCallResultStatus.notConfigured.toResponseString(),
   );
 
-  final _ = await request.container
-      .read(messageRepositoryProvider)
-      .patchMessage(
-        request.message.id,
-        .new(metadata: metadata.copyWith(toolCalls: updatedCalls)),
-      );
+  return updatedCalls;
 }
 
 Future<ResolvedTool?> _resolvedTool(
   _PendingToolCallDecisionRequest request,
 ) async {
-  final resolved = const ToolResolverService().resolveTool(
-    request.toolCall.name,
-    request.catalog,
-  );
-  if (resolved == null ||
-      !resolved.isSkillCommand ||
-      resolved.toolIdentifier != callSkillToolName) {
-    return resolved;
-  }
+  final resolved = _catalogResolvedTool(request);
+  if (resolved == null || !_isCallSkillTool(resolved)) return resolved;
+
+  return await _resolveNestedTool(request, resolved);
+}
+
+ResolvedTool? _catalogResolvedTool(_PendingToolCallDecisionRequest request) =>
+    const ToolResolverService().resolveTool(
+      request.toolCall.name,
+      request.catalog,
+    );
+
+bool _isCallSkillTool(ResolvedTool? tool) =>
+    tool?.isSkillCommand == true && tool?.toolIdentifier == callSkillToolName;
+
+Future<ResolvedTool?> _resolveNestedTool(
+  _PendingToolCallDecisionRequest request,
+  ResolvedTool resolved,
+) async {
   final resolver = request.effectiveToolApprovalUsecase;
   if (resolver == null) return null;
 

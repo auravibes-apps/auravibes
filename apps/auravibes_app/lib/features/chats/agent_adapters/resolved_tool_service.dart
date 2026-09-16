@@ -896,35 +896,38 @@ class _ConfiguredSkillCommandRunner {
     return _credentialMap(result);
   }
 
-  Future<Object?> _runSkillNativeTool({
-    required String conversationId,
-    required String workspaceId,
-    required agent.AgentResolvedToolName target,
-    required Map<String, dynamic> arguments,
-  }) {
+  Future<Object?> _runSkillNativeTool(RunSkillNativeToolRequest request) {
+    final target = request.target;
     if (target.skillSlug == agent.agentsSkillSlug) {
       return _runSubAgentNativeTool(
         .new(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
+          conversationId: request.conversationId,
+          workspaceId: request.workspaceId,
           skillSlug: target.skillSlug ?? '',
           toolSlug: target.toolIdentifier,
-          arguments: arguments,
+          arguments: request.arguments,
           provider: _provider,
         ),
       );
     }
 
+    return _runConfiguredAppSkillTool(request);
+  }
+
+  Future<Object?> _runConfiguredAppSkillTool(
+    RunSkillNativeToolRequest request,
+  ) {
+    final target = request.target;
     final usecase = _provider.runAppSkillToolUsecase;
     if (usecase == null) {
       throw StateError('RunAppSkillToolUsecase is not configured.');
     }
 
     return usecase.call(
-      workspaceId: workspaceId,
+      workspaceId: request.workspaceId,
       skillSlug: target.skillSlug ?? '',
       toolSlug: target.toolIdentifier,
-      arguments: arguments,
+      arguments: request.arguments,
     );
   }
 }
@@ -1071,11 +1074,13 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
         agentCancellationRuntime.registerCleanup(parentId, () {
           if (activeSubAgents.parentOf(childId) != parentId) return;
           agentCancellationRuntime.requestStopOnStart(childId);
-          activeSubAgents.finish(
+          activeSubAgents.finish((
             parentId: parentId,
             childId: childId,
             status: agent.SubAgentCompletionStatus.stopped,
-          );
+            error: null,
+            stackTrace: null,
+          ));
         });
       },
     ),

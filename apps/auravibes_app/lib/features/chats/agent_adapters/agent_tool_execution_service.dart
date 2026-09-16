@@ -220,6 +220,13 @@ Future<ResolvedTool?> _resolveApprovalTool(_ToolApprovalRequest request) {
     return Future<ResolvedTool?>.value(tool);
   }
 
+  return _resolveSkillApproval(request, tool);
+}
+
+Future<ResolvedTool?> _resolveSkillApproval(
+  _ToolApprovalRequest request,
+  ResolvedTool tool,
+) {
   final effectiveResolver = request.effectiveToolApprovalUsecase;
   if (effectiveResolver != null) {
     return effectiveResolver.call(
@@ -230,6 +237,13 @@ Future<ResolvedTool?> _resolveApprovalTool(_ToolApprovalRequest request) {
     );
   }
 
+  return _resolveLegacySkillApproval(request, tool);
+}
+
+Future<ResolvedTool?> _resolveLegacySkillApproval(
+  _ToolApprovalRequest request,
+  ResolvedTool tool,
+) {
   final decoded = _decodeArguments(request.argumentsRaw);
   if (decoded == null) return Future<ResolvedTool?>.value();
 

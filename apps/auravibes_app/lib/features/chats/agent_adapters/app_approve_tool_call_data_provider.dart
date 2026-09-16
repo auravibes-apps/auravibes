@@ -229,15 +229,31 @@ Future<ResolvedTool?> _resolveTool(_ToolResolutionRequest request) async {
     return await _resolveWithoutConversation(request);
   }
 
+  return await _resolveToolInConversation(request, conversation);
+}
+
+Future<ResolvedTool?> _resolveToolInConversation(
+  _ToolResolutionRequest request,
+  ConversationEntity conversation,
+) async {
   final catalog = await _loadConversationToolCatalog(request, conversation);
   final resolved = request.toolResolverService.resolveTool(
     request.toolName,
     catalog,
   );
-  final resolver = request.resolveEffectiveToolApprovalUsecase;
-  if (resolved == null || resolver == null) return resolved;
 
-  return await resolver.call(
+  return await _resolveEffectiveTool(request, conversation, resolved);
+}
+
+Future<ResolvedTool?> _resolveEffectiveTool(
+  _ToolResolutionRequest request,
+  ConversationEntity conversation,
+  ResolvedTool? resolved,
+) {
+  final resolver = request.resolveEffectiveToolApprovalUsecase;
+  if (resolved == null || resolver == null) return Future.value(resolved);
+
+  return resolver.call(
     conversationId: request.conversationId,
     workspaceId: conversation.workspaceId,
     requestedTool: resolved,

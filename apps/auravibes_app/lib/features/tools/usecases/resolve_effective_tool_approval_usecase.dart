@@ -42,23 +42,14 @@ class const ResolveEffectiveToolApprovalUsecase(
     required String workspaceId,
     required SkillCommandTarget command,
   }) async {
-    final manifest = await _loadedManifest(
+    final manifestTool = await _loadedManifestTool(
       conversationId: conversationId,
       workspaceId: workspaceId,
       command: command,
     );
-    if (manifest == null) return null;
-
-    final manifestTool = manifest.tools
-        .where((candidate) => candidate.name == command.tool)
-        .firstOrNull;
     if (manifestTool == null) return null;
 
-    try {
-      validateToolArguments(manifestTool.inputJsonSchema, command.args);
-    } on FormatException {
-      return null;
-    }
+    if (!_hasValidArguments(manifestTool, command)) return null;
 
     final targets = await _matchingTargets(
       conversationId: conversationId,
@@ -70,26 +61,52 @@ class const ResolveEffectiveToolApprovalUsecase(
     return targets.single;
   }
 
-  bool _isCallSkillTool(ResolvedTool tool) =>
-      tool.isSkillCommand && tool.toolIdentifier == callSkillToolName;
-
   SkillCommandTarget? _parseCommand(String argumentsRaw) {
+    final arguments = _decodeCommandArguments(argumentsRaw);
+    if (arguments == null) return null;
+
+    return SkillCommandTarget.fromArguments(arguments);
+  }
+
+  Map<String, Object?>? _decodeCommandArguments(String argumentsRaw) {
+    final Object? decoded;
     try {
-      final decoded = jsonDecode(argumentsRaw);
-      if (decoded is! Map) return null;
-
-      final arguments = <String, Object?>{};
-      for (final entry in decoded.entries) {
-        if (entry.key is! String) return null;
-        arguments[entry.key as String] = entry.value;
-      }
-
-      return SkillCommandTarget.fromArguments(arguments);
-    } on FormatException {
-      return null;
+      decoded = jsonDecode(argumentsRaw);
     } on Object {
       return null;
     }
+
+    if (decoded is! Map<Object?, Object?>) return null;
+
+    return _stringKeyedArguments(decoded);
+  }
+
+  Map<String, Object?>? _stringKeyedArguments(Map<Object?, Object?> decoded) {
+    final arguments = <String, Object?>{};
+    for (final entry in decoded.entries) {
+      final key = entry.key;
+      if (key is! String) return null;
+      arguments[key] = entry.value;
+    }
+
+    return arguments;
+  }
+
+  Future<SkillManifestTool?> _loadedManifestTool({
+    required String conversationId,
+    required String workspaceId,
+    required SkillCommandTarget command,
+  }) async {
+    final manifest = await _loadedManifest(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      command: command,
+    );
+    if (manifest == null) return null;
+
+    return manifest.tools
+        .where((candidate) => candidate.name == command.tool)
+        .firstOrNull;
   }
 
   Future<SkillManifest?> _loadedManifest({
@@ -104,9 +121,21 @@ class const ResolveEffectiveToolApprovalUsecase(
     final manifest = manifests
         .where((candidate) => candidate.slug == command.skill)
         .firstOrNull;
-    if (manifest == null || manifest.revision != command.revision) return null;
+    if (manifest == null || manifest.revision != command.revision) {
+      return null;
+    }
 
     return manifest;
+  }
+
+  bool _hasValidArguments(SkillManifestTool tool, SkillCommandTarget command) {
+    try {
+      validateToolArguments(tool.inputJsonSchema, command.args);
+
+      return true;
+    } on FormatException {
+      return false;
+    }
   }
 
   Future<List<AgentResolvedToolName>> _matchingTargets({
@@ -114,16 +143,7 @@ class const ResolveEffectiveToolApprovalUsecase(
     required String workspaceId,
     required SkillCommandTarget command,
   }) async {
-    final specs = [
-      ...await _buildSkillTemplateToolSpecs.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-      ),
-      ...await _buildAppSkillNativeToolSpecs.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-      ),
-    ];
+    final specs = await _skillToolSpecs(conversationId, workspaceId);
     const resolver = AgentToolNameResolver();
 
     return [
@@ -134,6 +154,20 @@ class const ResolveEffectiveToolApprovalUsecase(
           target,
     ];
   }
+
+  Future<List<ToolSpec>> _skillToolSpecs(
+    String conversationId,
+    String workspaceId,
+  ) async => [
+    ...await _buildSkillTemplateToolSpecs.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    ),
+    ...await _buildAppSkillNativeToolSpecs.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    ),
+  ];
 }
 
 final resolveEffectiveToolApprovalUsecaseProvider =
@@ -144,3 +178,6 @@ final resolveEffectiveToolApprovalUsecaseProvider =
         ref.watch(buildAppSkillNativeToolSpecsUsecaseProvider),
       );
     });
+
+bool _isCallSkillTool(ResolvedTool tool) =>
+    tool.isSkillCommand && tool.toolIdentifier == callSkillToolName;

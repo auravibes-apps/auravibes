@@ -92,6 +92,14 @@ abstract interface class ActiveSubAgentController {
   String? parentOf(String childId);
 }
 
+typedef _SubAgentCompletionRequest = ({
+  String parentId,
+  String childId,
+  SubAgentCompletionStatus status,
+  Object? error,
+  StackTrace? stackTrace,
+});
+
 class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
     implements ActiveSubAgentController {
   final _completionByChildId = <String, Completer<SubAgentCompletionStatus>>{};
@@ -115,17 +123,12 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
     return _AppSubAgentRequestHandle(this, parentId, childId);
   }
 
-  void finish({
-    required String parentId,
-    required String childId,
-    SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    _completeChild(childId, status, error: error, stackTrace: stackTrace);
+  void finish(_SubAgentCompletionRequest request) {
+    _completeChild(request);
 
-    final children = {...state[parentId] ?? const <String>{}}..remove(childId);
-    state = _stateAfterChildCompletion(parentId, children);
+    final children = {...state[request.parentId] ?? const <String>{}}
+      ..remove(request.childId);
+    state = _stateAfterChildCompletion(request.parentId, children);
   }
 
   SubAgentCompletionFailure? failure(String childId) =>
@@ -157,28 +160,12 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
 
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
 
-  void _completeChild(
-    String childId,
-    SubAgentCompletionStatus status, {
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    final completion = _completionByChildId.remove(childId);
-    if (error != null) {
-      _failureByChildId[childId] = SubAgentCompletionFailure(
-        error: error,
-        stackTrace: stackTrace ?? StackTrace.current,
-      );
-    } else if (completion == null) {
-      final _ = _failureByChildId.remove(childId);
-    }
-    if (status == SubAgentCompletionStatus.stopped) {
-      final _ = _stoppedChildIds.add(childId);
-    } else {
-      final _ = _stoppedChildIds.remove(childId);
-    }
+  void _completeChild(_SubAgentCompletionRequest request) {
+    final completion = _completionByChildId.remove(request.childId);
+    _recordSubAgentFailure(_failureByChildId, request, completion);
+    _updateSubAgentStoppedState(_stoppedChildIds, request);
     if (completion != null && !completion.isCompleted) {
-      completion.complete(status);
+      completion.complete(request.status);
     }
   }
 
@@ -191,6 +178,33 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
         if (entry.key != parentId) entry.key: entry.value,
       if (children.isNotEmpty) parentId: children,
     };
+  }
+}
+
+void _recordSubAgentFailure(
+  Map<String, SubAgentCompletionFailure> failures,
+  _SubAgentCompletionRequest request,
+  Completer<SubAgentCompletionStatus>? completion,
+) {
+  final error = request.error;
+  if (error != null) {
+    failures[request.childId] = SubAgentCompletionFailure(
+      error: error,
+      stackTrace: request.stackTrace ?? StackTrace.current,
+    );
+  } else if (completion == null) {
+    final _ = failures.remove(request.childId);
+  }
+}
+
+void _updateSubAgentStoppedState(
+  Set<String> stoppedChildIds,
+  _SubAgentCompletionRequest request,
+) {
+  if (request.status == SubAgentCompletionStatus.stopped) {
+    final _ = stoppedChildIds.add(request.childId);
+  } else {
+    final _ = stoppedChildIds.remove(request.childId);
   }
 }
 
@@ -213,7 +227,13 @@ class const _AppSubAgentRequestHandle(
   void finish([
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
   ]) {
-    _runtime.finish(parentId: _parentId, childId: _childId, status: status);
+    _runtime.finish((
+      parentId: _parentId,
+      childId: _childId,
+      status: status,
+      error: null,
+      stackTrace: null,
+    ));
   }
 
   void finishStopped() {

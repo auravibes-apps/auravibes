@@ -48,25 +48,8 @@ class const LoadConversationToolSpecsUsecase({
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
-    final toolCandidates = await _loadToolCandidates(
-      conversationId,
-      workspaceId,
-    );
-    final skillCommandSpecs = await _buildDynamicSkillToolSpecsUsecase.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
-    final conversation = await conversationRepository?.getConversationById(
-      conversationId,
-    );
 
-    return _buildCatalog(
-      toolCandidates: toolCandidates,
-      skillCommandSpecs: skillCommandSpecs,
-      includeRunSubAgent:
-          conversationRepository == null ||
-          conversation?.parentConversationId == null && conversation != null,
-    );
+    return await _buildCatalogForConversation(conversationId, workspaceId);
   }
 
   Future<List<agent.ToolCatalogCandidate<ResolvedTool>>> _loadToolCandidates(
@@ -77,6 +60,42 @@ class const LoadConversationToolSpecsUsecase({
         .getAvailableToolEntitiesForConversation(conversationId, workspaceId);
 
     return await _buildCombinedToolSpecsUseCase.call(enabledTools);
+  }
+
+  Future<agent.ToolCatalog<ResolvedTool>> _buildCatalogForConversation(
+    String conversationId,
+    String workspaceId,
+  ) async {
+    final input = await _loadCatalogInput(conversationId, workspaceId);
+
+    return _buildCatalog(
+      toolCandidates: input.toolCandidates,
+      skillCommandSpecs: input.skillCommandSpecs,
+      includeRunSubAgent: await _includeRunSubAgent(conversationId),
+    );
+  }
+
+  Future<
+    ({
+      List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
+      List<ToolSpec> skillCommandSpecs,
+    })
+  >
+  _loadCatalogInput(String conversationId, String workspaceId) async => (
+    toolCandidates: await _loadToolCandidates(conversationId, workspaceId),
+    skillCommandSpecs: await _buildDynamicSkillToolSpecsUsecase.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    ),
+  );
+
+  Future<bool> _includeRunSubAgent(String conversationId) async {
+    final repository = conversationRepository;
+    if (repository == null) return true;
+
+    final conversation = await repository.getConversationById(conversationId);
+
+    return conversation != null && conversation.parentConversationId == null;
   }
 }
 

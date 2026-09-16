@@ -2043,9 +2043,13 @@ Future<_StopConversationFailure?> _stopChildConversation(
       logName: 'child conversation',
     );
   } finally {
-    ref
-        .read(activeSubAgentRuntimeProvider.notifier)
-        .finish(parentId: parentId, childId: childId, status: .stopped);
+    ref.read(activeSubAgentRuntimeProvider.notifier).finish((
+      parentId: parentId,
+      childId: childId,
+      status: .stopped,
+      error: null,
+      stackTrace: null,
+    ));
   }
 }
 

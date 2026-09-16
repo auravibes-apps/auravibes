@@ -2,28 +2,10 @@ part of 'message_id_list.dart';
 
 abstract final class CloudMessageTools {
   static Set<String> childConversationIds(CloudConversationState? state) {
-    final ids = <String>{};
-    for (final call in state?.toolCalls ?? const <ConversationToolCallView>[]) {
-      final result = call.resultJson;
-      if (result is! String) continue;
-      try {
-        final decoded = jsonDecode(result);
-        if (decoded is! Map<String, dynamic>) continue;
-        final children = decoded['children'];
-        if (children is! List) continue;
-        for (final child in children) {
-          if (child is! Map<String, dynamic>) continue;
-          final conversationId = child['conversationId'];
-          if (conversationId is String) {
-            final _ = ids.add(conversationId);
-          }
-        }
-      } on Object {
-        // The tool result is provisional while the child is being created.
-      }
-    }
-
-    return ids;
+    return {
+      for (final call in state?.toolCalls ?? const <ConversationToolCallView>[])
+        ..._childConversationIds(call),
+    };
   }
 
   static ToolCallResultStatus? resultStatus(String status) => switch (status) {
@@ -56,6 +38,25 @@ abstract final class CloudMessageTools {
         if (call.status == 'pending') ..._pendingCallsForTool(childState, call),
   ];
 
+  static Iterable<String> _childConversationIds(
+    ConversationToolCallView call,
+  ) =>
+      _childEntries(call.resultJson)
+          .whereType<Map<String, dynamic>>()
+          .map((child) => child['conversationId'])
+          .whereType<String>();
+
+  static Iterable<Object?> _childEntries(String? result) {
+    if (result == null) return const [];
+
+    final decoded = _decodeResult(result);
+    if (decoded is! Map<String, dynamic>) return const [];
+
+    final children = decoded['children'];
+
+    return children is List ? children : const [];
+  }
+
   static List<PendingToolCall> _pendingCallsForTool(
     CloudConversationState state,
     ConversationToolCallView call,
@@ -84,4 +85,13 @@ abstract final class CloudMessageTools {
     messageId: call.messageId,
     sourceConversationId: state.conversation.id,
   );
+}
+
+Object? _decodeResult(String result) {
+  try {
+    return jsonDecode(result);
+  } on Object {
+    // The tool result is provisional while the child is being created.
+    return null;
+  }
 }

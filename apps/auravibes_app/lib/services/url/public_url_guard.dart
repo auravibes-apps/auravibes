@@ -5,6 +5,8 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 typedef PublicUrlLookup = Future<List<InternetAddress>> Function(String host);
 typedef PublicUrlResolution = ({Uri uri, List<String>? addresses});
 
+// Shared default used by the public URL guard API.
+// ignore: prefer-static-class
 const publicUrlDnsTimeout = Duration(seconds: 5);
 
 abstract final class PublicUrlGuard {
