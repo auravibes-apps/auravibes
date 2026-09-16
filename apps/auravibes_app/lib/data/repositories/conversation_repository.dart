@@ -17,6 +17,41 @@ const _parentConversationIdEmpty = 'Parent conversation ID cannot be empty';
 const _unknownValidationError = 'Unknown validation error';
 const _workspaceIdEmpty = 'Workspace ID cannot be empty';
 
+typedef _MaterializeForkRequest = ({
+  String sourceId,
+  String forkId,
+  String? boundaryOverride,
+  bool boundaryWasCaptured,
+});
+
+typedef _MaterializeForksRequest = ({
+  String sourceId,
+  List<String> pendingSources,
+  Map<String, Map<String, String>> boundaryMaps,
+  Map<String, String?> capturedBoundaries,
+});
+
+typedef _MaterializeRowsRequest = ({
+  List<({MessagesTable table, bool isForkReference})> inherited,
+  String? boundary,
+  bool boundaryWasCaptured,
+  String forkId,
+});
+
+typedef _MaterializeForkNodeRequest = ({
+  String sourceId,
+  String forkId,
+  List<String> pendingSources,
+  Map<String, Map<String, String>> boundaryMaps,
+  Map<String, String?> capturedBoundaries,
+});
+
+typedef _ForkNodeBoundary = ({
+  String? boundary,
+  String? mappedBoundary,
+  bool wasCaptured,
+});
+
 String _conversationPatchValidationMessage(ConversationPatch conversation) =>
     _emptyPatchTitle(conversation) ??
     _emptyPatchModelId(conversation) ??
@@ -113,47 +148,12 @@ class ConversationRepository(
     String sourceConversationId, {
     String? throughMessageId,
   }) async {
-    final source = await _database.conversationDao.getConversationById(
-      sourceConversationId,
-    );
-    if (source == null) {
-      throw ConversationNotFoundException(sourceConversationId);
-    }
+    final source = await _requireForkSource(sourceConversationId);
     final effective = await _effectiveMessageRows(sourceConversationId);
-    final boundary = throughMessageId ?? _automaticForkBoundary(effective);
-    if (boundary == null) {
-      throw const ConversationValidationException(
-        'Fork requires a terminal message',
-      );
-    }
-    if (throughMessageId != null &&
-        !effective.any(
-          (row) => row.table.id == throughMessageId && _isDurable(row.table),
-        )) {
-      throw const ConversationValidationException(
-        'Fork boundary must be a terminal message',
-      );
-    }
+    final boundary = _resolveForkBoundary(effective, throughMessageId);
 
     final title = await _forkTitle(source.workspaceId, source.title);
-    final fork = await _database.transaction(() async {
-      final created = await _database.conversationDao.insertConversation(
-        .new(
-          workspaceId: .new(source.workspaceId),
-          title: .new(title),
-          modelId: .new(source.modelId),
-          agentId: .new(source.agentId),
-          parentConversationId: const Value(null),
-          forkSourceConversationId: .new(source.id),
-          forkSourceTitle: .new(source.title),
-          forkThroughMessageId: .new(boundary),
-          isPinned: const Value(false),
-        ),
-      );
-      await _copyConversationSettings(source.id, created.id);
-
-      return created;
-    });
+    final fork = await _createFork(source, title, boundary);
 
     return _mapToConversation(fork);
   }
@@ -175,128 +175,304 @@ class ConversationRepository(
       );
 }
 
-extension ConversationRepositoryForkDeletion on ConversationRepository {
-  Future<Map<String, String?>> captureForkBoundaries(String id) async {
-    final boundaries = <String, String?>{};
-    final pending = <String>[id];
-    while (pending.isNotEmpty) {
-      final sourceId = pending.removeAt(0);
-      final forks = await _database
-          .customSelect(
-            'SELECT id FROM conversations '
-            'WHERE fork_source_conversation_id = ? '
-            'AND fork_materialized_at IS NULL',
-            variables: [Variable<String>(sourceId)],
-            readsFrom: {_database.conversations},
-          )
-          .get();
-      for (final row in forks) {
-        final forkId = row.read<String>('id');
-        final fork = await _database.conversationDao.getConversationById(
-          forkId,
-        );
-        if (fork == null) continue;
-        final sourceRows = await _effectiveMessageRows(sourceId);
-        final requestedBoundary = fork.forkThroughMessageId;
-        final boundary =
-            requestedBoundary != null &&
-                sourceRows.any(
-                  (row) =>
-                      row.table.id == requestedBoundary &&
-                      _isDurable(row.table),
-                )
-            ? requestedBoundary
-            : _automaticForkBoundary(sourceRows);
-        boundaries[forkId] = boundary;
-        pending.add(forkId);
-      }
-    }
-
-    return boundaries;
-  }
+extension ConversationRepositoryForkOperations on ConversationRepository {
+  Future<Map<String, String?>> captureForkBoundaries(String id) =>
+      _captureForkBoundaries(id);
 
   Future<bool> deleteConversationWithFrozenForkBoundaries(
     String id, {
     Map<String, String?>? frozenForkBoundaries,
     bool includeDescendantAttachmentPaths = true,
-  }) async {
-    if (!await _conversationExists(id)) return false;
+  }) => _deleteConversation(
+    id,
+    frozenForkBoundaries ?? const <String, String?>{},
+    includeDescendantAttachmentPaths,
+  );
+}
 
-    final attachmentPaths = includeDescendantAttachmentPaths
-        ? await _attachmentPathsForDeletion(id)
-        : (await _attachmentPathsForConversation(id)).toSet();
-    final deleted = await _database.transaction(() async {
-      final pendingSources = <String>[id];
-      final boundaryMaps = <String, Map<String, String>>{};
-      while (pendingSources.isNotEmpty) {
-        final sourceId = pendingSources.removeAt(0);
-        final forks = await _database
-            .customSelect(
-              'SELECT id FROM conversations '
-              'WHERE fork_source_conversation_id = ? '
-              'AND fork_materialized_at IS NULL',
-              variables: [Variable<String>(sourceId)],
-              readsFrom: {_database.conversations},
-            )
-            .get();
-        for (final row in forks) {
-          final forkId = row.read<String>('id');
-          final fork = await _database.conversationDao.getConversationById(
-            forkId,
-          );
-          final capturedBoundaries =
-              frozenForkBoundaries ?? const <String, String?>{};
-          final hasCapturedBoundary = capturedBoundaries.containsKey(forkId);
-          final boundary = hasCapturedBoundary
-              ? capturedBoundaries[forkId]
-              : fork?.forkThroughMessageId;
-          final mappedBoundary = boundary == null
-              ? null
-              : boundaryMaps[sourceId]?[boundary];
-          if (mappedBoundary != null) {
-            final _ = await _database.conversationDao.patchConversation(
-              forkId,
-              .new(forkThroughMessageId: .new(mappedBoundary)),
-            );
-          }
-          boundaryMaps[forkId] = await _materializeFork(
-            sourceId,
-            forkId,
-            boundaryOverride: mappedBoundary ?? boundary,
-            boundaryWasCaptured: hasCapturedBoundary,
-          );
-          pendingSources.add(forkId);
-        }
-      }
-
-      final sourceMessageIds =
-          (await _database.messageDao.getMessagesByConversation(id))
-              .map((message) => message.id)
-              .toSet();
-      final deleted = await _database.conversationDao.deleteConversation(id);
-      if (deleted && sourceMessageIds.isNotEmpty) {
-        final _ = await (_database.delete(
-          _database.messageAttachments,
-        )..where((table) => table.messageId.isIn(sourceMessageIds))).go();
-      }
-
-      return deleted;
-    });
-    if (deleted) {
-      final _ = await Future.wait(
-        attachmentPaths.map((path) async {
-          if (!await _attachmentPathInUse(path)) {
-            await _deleteAttachmentFile(path);
-          }
-        }),
-      );
+extension on ConversationRepository {
+  Future<Map<String, String?>> _captureForkBoundaries(String id) async {
+    final boundaries = <String, String?>{};
+    final pending = <String>[id];
+    while (pending.isNotEmpty) {
+      final sourceId = pending.removeAt(0);
+      await _captureSourceBoundaries(sourceId, pending, boundaries);
     }
 
+    return boundaries;
+  }
+
+  Future<void> _captureSourceBoundaries(
+    String sourceId,
+    List<String> pending,
+    Map<String, String?> boundaries,
+  ) async {
+    final sourceRows = await _effectiveMessageRows(sourceId);
+    final forks = await _unmaterializedForkIds(sourceId);
+    for (final forkId in forks) {
+      boundaries[forkId] = await _captureForkBoundary(forkId, sourceRows);
+      pending.add(forkId);
+    }
+  }
+
+  Future<List<String>> _unmaterializedForkIds(String sourceId) async {
+    final rows = await _database
+        .customSelect(
+          'SELECT id FROM conversations '
+          'WHERE fork_source_conversation_id = ? '
+          'AND fork_materialized_at IS NULL',
+          variables: [Variable<String>(sourceId)],
+          readsFrom: {_database.conversations},
+        )
+        .get();
+
+    return rows.map((row) => row.read<String>('id')).toList();
+  }
+
+  Future<String?> _captureForkBoundary(
+    String forkId,
+    List<({MessagesTable table, bool isForkReference})> sourceRows,
+  ) async {
+    final fork = await _database.conversationDao.getConversationById(forkId);
+    if (fork == null) return null;
+    final requested = fork.forkThroughMessageId;
+    if (requested != null && _hasValidBoundary(sourceRows, requested)) {
+      return requested;
+    }
+
+    return _automaticForkBoundary(sourceRows);
+  }
+
+  Future<bool> _deleteConversation(
+    String id,
+    Map<String, String?> frozenForkBoundaries,
+    bool includeDescendantAttachmentPaths,
+  ) async {
+    if (!await _conversationExists(id)) return false;
+
+    final attachmentPaths = await _attachmentPathsForDeletionMode(
+      id,
+      includeDescendantAttachmentPaths,
+    );
+    final deleted = await _database.transaction(
+      () => _materializeAndDelete(id, frozenForkBoundaries),
+    );
+    if (deleted) await _deleteUnusedAttachments(attachmentPaths);
+
     return deleted;
+  }
+
+  Future<Set<String>> _attachmentPathsForDeletionMode(
+    String id,
+    bool includeDescendantAttachmentPaths,
+  ) async {
+    if (includeDescendantAttachmentPaths) {
+      return await _attachmentPathsForDeletion(id);
+    }
+
+    final paths = await _attachmentPathsForConversation(id);
+
+    return paths.toSet();
+  }
+
+  Future<bool> _materializeAndDelete(
+    String id,
+    Map<String, String?> capturedBoundaries,
+  ) async {
+    final pendingSources = <String>[id];
+    final boundaryMaps = <String, Map<String, String>>{};
+    while (pendingSources.isNotEmpty) {
+      final sourceId = pendingSources.removeAt(0);
+      await _materializeForksForSource((
+        sourceId: sourceId,
+        pendingSources: pendingSources,
+        boundaryMaps: boundaryMaps,
+        capturedBoundaries: capturedBoundaries,
+      ));
+    }
+
+    return await _deleteSource(id);
+  }
+
+  Future<void> _materializeForksForSource(
+    _MaterializeForksRequest request,
+  ) async {
+    final sourceId = request.sourceId;
+    final pendingSources = request.pendingSources;
+    final boundaryMaps = request.boundaryMaps;
+    final capturedBoundaries = request.capturedBoundaries;
+    final forkIds = await _unmaterializedForkIds(sourceId);
+    for (final forkId in forkIds) {
+      await _materializeForkNode((
+        sourceId: sourceId,
+        forkId: forkId,
+        pendingSources: pendingSources,
+        boundaryMaps: boundaryMaps,
+        capturedBoundaries: capturedBoundaries,
+      ));
+    }
+  }
+
+  Future<void> _materializeForkNode(_MaterializeForkNodeRequest request) async {
+    final forkId = request.forkId;
+    final fork = await _database.conversationDao.getConversationById(forkId);
+    if (fork == null) return;
+    await _writeMaterializedForkNode(request, fork);
+  }
+
+  Future<void> _writeMaterializedForkNode(
+    _MaterializeForkNodeRequest request,
+    ConversationsTable fork,
+  ) async {
+    final nodeBoundary = _forkNodeBoundary(request, fork);
+    await _updateForkBoundary(fork.id, nodeBoundary.mappedBoundary);
+    request.boundaryMaps[fork.id] = await _materializeFork(
+      _forkMaterializationRequest(request, fork.id, nodeBoundary),
+    );
+    request.pendingSources.add(fork.id);
+  }
+
+  _MaterializeForkRequest _forkMaterializationRequest(
+    _MaterializeForkNodeRequest request,
+    String forkId,
+    _ForkNodeBoundary nodeBoundary,
+  ) => (
+    sourceId: request.sourceId,
+    forkId: forkId,
+    boundaryOverride: nodeBoundary.mappedBoundary ?? nodeBoundary.boundary,
+    boundaryWasCaptured: nodeBoundary.wasCaptured,
+  );
+
+  _ForkNodeBoundary _forkNodeBoundary(
+    _MaterializeForkNodeRequest request,
+    ConversationsTable fork,
+  ) {
+    final wasCaptured = request.capturedBoundaries.containsKey(fork.id);
+    final boundary = wasCaptured
+        ? request.capturedBoundaries[fork.id]
+        : fork.forkThroughMessageId;
+
+    return (
+      boundary: boundary,
+      mappedBoundary: _mappedBoundary(request, boundary),
+      wasCaptured: wasCaptured,
+    );
+  }
+
+  String? _mappedBoundary(
+    _MaterializeForkNodeRequest request,
+    String? boundary,
+  ) => boundary == null
+      ? null
+      : request.boundaryMaps[request.sourceId]?[boundary];
+
+  Future<void> _updateForkBoundary(String forkId, String? boundary) async {
+    if (boundary == null) return;
+    final _ = await _database.conversationDao.patchConversation(
+      forkId,
+      .new(forkThroughMessageId: .new(boundary)),
+    );
+  }
+
+  Future<bool> _deleteSource(String id) async {
+    final sourceMessageIds = await _sourceMessageIds(id);
+    final deleted = await _database.conversationDao.deleteConversation(id);
+    if (deleted) await _deleteSourceAttachments(sourceMessageIds);
+
+    return deleted;
+  }
+
+  Future<Set<String>> _sourceMessageIds(String id) async =>
+      (await _database.messageDao.getMessagesByConversation(id))
+          .map((message) => message.id)
+          .toSet();
+
+  Future<void> _deleteSourceAttachments(Set<String> messageIds) async {
+    if (messageIds.isEmpty) return;
+    final _ = await (_database.delete(
+      _database.messageAttachments,
+    )..where((table) => table.messageId.isIn(messageIds))).go();
+  }
+
+  Future<void> _deleteUnusedAttachments(Set<String> paths) async {
+    final _ = await Future.wait(
+      paths.map((path) async {
+        if (!await _attachmentPathInUse(path)) {
+          await _deleteAttachmentFile(path);
+        }
+      }),
+    );
   }
 }
 
 extension on ConversationRepository {
+  ConversationsCompanion _forkCompanion(
+    ConversationsTable source,
+    String title,
+    String boundary,
+  ) => ConversationsCompanion(
+    workspaceId: .new(source.workspaceId),
+    title: .new(title),
+    modelId: .new(source.modelId),
+    agentId: .new(source.agentId),
+    parentConversationId: const Value(null),
+    forkSourceConversationId: .new(source.id),
+    forkSourceTitle: .new(source.title),
+    forkThroughMessageId: .new(boundary),
+    isPinned: const Value(false),
+  );
+
+  Future<ConversationsTable> _requireForkSource(String id) async {
+    final source = await _database.conversationDao.getConversationById(id);
+    if (source == null) throw ConversationNotFoundException(id);
+
+    return source;
+  }
+
+  String _resolveForkBoundary(
+    List<({MessagesTable table, bool isForkReference})> rows,
+    String? requestedBoundary,
+  ) {
+    if (requestedBoundary != null) {
+      if (!_hasValidBoundary(rows, requestedBoundary)) {
+        _throwInvalidForkBoundary();
+      }
+
+      return requestedBoundary;
+    }
+    final boundary = _automaticForkBoundary(rows);
+    if (boundary == null) {
+      throw const ConversationValidationException(
+        'Fork requires a terminal message',
+      );
+    }
+
+    return boundary;
+  }
+
+  bool _hasValidBoundary(
+    List<({MessagesTable table, bool isForkReference})> rows,
+    String boundary,
+  ) => rows.any((row) => row.table.id == boundary && _isDurable(row.table));
+
+  Never _throwInvalidForkBoundary() =>
+      throw const ConversationValidationException(
+        'Fork boundary must be a terminal message',
+      );
+
+  Future<ConversationsTable> _createFork(
+    ConversationsTable source,
+    String title,
+    String boundary,
+  ) => _database.transaction(() async {
+    final created = await _database.conversationDao.insertConversation(
+      _forkCompanion(source, title, boundary),
+    );
+    await _copyConversationSettings(source.id, created.id);
+
+    return created;
+  });
+
   Future<String> _forkTitle(String workspaceId, String sourceTitle) async {
     final title = sourceTitle.trim();
     if (title.isEmpty) {
@@ -304,12 +480,19 @@ extension on ConversationRepository {
         'Conversation title cannot be empty',
       );
     }
-    final titles =
-        (await _database.conversationDao
-                .watchConversationsByWorkspace(workspaceId)
-                .first)
-            .map((conversation) => conversation.title)
-            .toSet();
+    final titles = await _existingTitles(workspaceId);
+
+    return _nextForkTitle(title, titles);
+  }
+
+  Future<Set<String>> _existingTitles(String workspaceId) async =>
+      (await _database.conversationDao
+              .watchConversationsByWorkspace(workspaceId)
+              .first)
+          .map((conversation) => conversation.title)
+          .toSet();
+
+  String _nextForkTitle(String title, Set<String> titles) {
     for (var suffix = 1; ; suffix++) {
       final candidate = suffix == 1 ? '$title Fork' : '$title Fork $suffix';
       if (!titles.contains(candidate)) return candidate;
@@ -322,39 +505,60 @@ extension on ConversationRepository {
       conversationId,
     );
     if (conversation == null) return const [];
-    final rows = <({MessagesTable table, bool isForkReference})>[];
-    final sourceConversationId = conversation.forkSourceConversationId;
-    if (sourceConversationId != null &&
-        conversation.forkMaterializedAt == null) {
-      final inherited = await _effectiveMessageRows(sourceConversationId);
-      final boundary = conversation.forkThroughMessageId;
-      var foundBoundary = boundary == null;
-      for (final row in inherited) {
-        if (!_isDurable(row.table)) continue;
-        rows.add((table: row.table, isForkReference: true));
-        if (boundary == row.table.id) {
-          foundBoundary = true;
-          break;
-        }
-      }
-      if (!foundBoundary) {
-        throw const ConversationValidationException(
-          'Fork boundary must be a terminal message',
-        );
-      }
-    }
+    final inherited = await _inheritedRows(conversation);
     final own = await _database.messageDao.getMessagesByConversation(
       conversationId,
     );
-    rows
-      ..addAll(own.map((table) => (table: table, isForkReference: false)))
-      ..sort((left, right) {
-        final created = left.table.createdAt.compareTo(right.table.createdAt);
 
-        return created == 0 ? left.table.id.compareTo(right.table.id) : created;
-      });
+    return _sortRows(inherited, own);
+  }
+
+  Future<List<({MessagesTable table, bool isForkReference})>> _inheritedRows(
+    ConversationsTable conversation,
+  ) async {
+    final sourceId = conversation.forkSourceConversationId;
+    if (sourceId == null || conversation.forkMaterializedAt != null) {
+      return const [];
+    }
+    final sourceRows = await _effectiveMessageRows(sourceId);
+
+    return _rowsThroughBoundary(sourceRows, conversation.forkThroughMessageId);
+  }
+
+  List<({MessagesTable table, bool isForkReference})> _rowsThroughBoundary(
+    List<({MessagesTable table, bool isForkReference})> sourceRows,
+    String? boundary,
+  ) {
+    final rows = <({MessagesTable table, bool isForkReference})>[];
+    var foundBoundary = boundary == null;
+    for (final row in sourceRows) {
+      if (!_isDurable(row.table)) continue;
+      rows.add((table: row.table, isForkReference: true));
+      if (boundary == row.table.id) {
+        foundBoundary = true;
+        break;
+      }
+    }
+    if (!foundBoundary) _throwInvalidForkBoundary();
 
     return rows;
+  }
+
+  List<({MessagesTable table, bool isForkReference})> _sortRows(
+    List<({MessagesTable table, bool isForkReference})> inherited,
+    List<MessagesTable> own,
+  ) => [
+    ...inherited,
+    ...own.map((table) => (table: table, isForkReference: false)),
+  ]..sort(_compareRows);
+
+  int _compareRows(
+    ({MessagesTable table, bool isForkReference}) left,
+    ({MessagesTable table, bool isForkReference}) right,
+  ) {
+    final created = left.table.createdAt.compareTo(right.table.createdAt);
+
+    return created == 0 ? left.table.id.compareTo(right.table.id) : created;
   }
 
   String? _latestTerminalMessageId(
@@ -370,18 +574,36 @@ extension on ConversationRepository {
   String? _automaticForkBoundary(
     List<({MessagesTable table, bool isForkReference})> rows,
   ) {
-    final activeIndex = rows.indexWhere((row) => !_isDurable(row.table));
+    final activeIndex = _firstNonDurableIndex(rows);
     if (activeIndex < 0) return _latestTerminalMessageId(rows);
 
-    var turnStart = activeIndex;
-    final activeMessage = rows[activeIndex].table;
-    if (!activeMessage.isUser && activeIndex > 0) {
-      final previous = rows[activeIndex - 1].table;
-      if (previous.isUser && _isTerminalStatus(previous.status)) {
-        turnStart--;
-      }
-    }
+    final turnStart = _turnStart(rows, activeIndex);
 
+    return _previousDurableAssistantId(rows, turnStart);
+  }
+
+  int _firstNonDurableIndex(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) => rows.indexWhere((row) => !_isDurable(row.table));
+
+  int _turnStart(
+    List<({MessagesTable table, bool isForkReference})> rows,
+    int activeIndex,
+  ) {
+    if (activeIndex == 0 || rows[activeIndex].table.isUser) {
+      return activeIndex;
+    }
+    final previous = rows[activeIndex - 1].table;
+
+    return previous.isUser && _isTerminalStatus(previous.status)
+        ? activeIndex - 1
+        : activeIndex;
+  }
+
+  String? _previousDurableAssistantId(
+    List<({MessagesTable table, bool isForkReference})> rows,
+    int turnStart,
+  ) {
     for (var index = turnStart - 1; index >= 0; index--) {
       final candidate = rows[index].table;
       if (_isDurable(candidate) && !candidate.isUser) return candidate.id;
@@ -403,6 +625,11 @@ extension on ConversationRepository {
     String sourceId,
     String targetId,
   ) async {
+    await _copyConversationTools(sourceId, targetId);
+    await _copyConversationSkills(sourceId, targetId);
+  }
+
+  Future<void> _copyConversationTools(String sourceId, String targetId) async {
     final tools = await _database.conversationToolsDao.getConversationTools(
       sourceId,
     );
@@ -418,6 +645,9 @@ extension on ConversationRepository {
             ),
           );
     }
+  }
+
+  Future<void> _copyConversationSkills(String sourceId, String targetId) async {
     final skills = await _database.conversationSkillsDao.getConversationSkills(
       sourceId,
     );
@@ -436,77 +666,166 @@ extension on ConversationRepository {
   }
 
   Future<Map<String, String>> _materializeFork(
-    String sourceId,
-    String forkId, {
-    String? boundaryOverride,
-    bool boundaryWasCaptured = false,
-  }) async {
+    _MaterializeForkRequest request,
+  ) async {
+    final forkId = request.forkId;
     final fork = await _database.conversationDao.getConversationById(forkId);
     if (fork == null || fork.forkMaterializedAt != null) return const {};
-    final inherited = await _effectiveMessageRows(sourceId);
-    final boundary = boundaryOverride ?? fork.forkThroughMessageId;
+    final boundary = request.boundaryOverride ?? fork.forkThroughMessageId;
+
+    return await _writeForkMaterialization(request, forkId, boundary);
+  }
+
+  Future<Map<String, String>> _writeForkMaterialization(
+    _MaterializeForkRequest request,
+    String forkId,
+    String? boundary,
+  ) async {
+    final materialized = await _materializeForkRows(request, boundary);
+    await _finishMaterialization(forkId, boundary, materialized);
+
+    return materialized.idMap;
+  }
+
+  Future<({Map<String, String> idMap, String? mappedBoundary})>
+  _materializeForkRows(
+    _MaterializeForkRequest request,
+    String? boundary,
+  ) async {
+    final inherited = await _effectiveMessageRows(request.sourceId);
+
+    return await _materializeRows((
+      inherited: inherited,
+      boundary: boundary,
+      boundaryWasCaptured: request.boundaryWasCaptured,
+      forkId: request.forkId,
+    ));
+  }
+
+  Future<void> _finishMaterialization(
+    String forkId,
+    String? boundary,
+    ({Map<String, String> idMap, String? mappedBoundary}) materialized,
+  ) async {
+    _validateMaterializedBoundary(boundary, materialized.mappedBoundary);
+    await _markMaterialized(forkId, materialized.mappedBoundary ?? boundary);
+  }
+
+  Future<({Map<String, String> idMap, String? mappedBoundary})>
+  _materializeRows(_MaterializeRowsRequest request) async {
+    return await _copyMaterializedRows(
+      _rowsToMaterialize(
+        request.inherited,
+        request.boundary,
+        request.boundaryWasCaptured,
+      ),
+      request.forkId,
+      request.boundary,
+    );
+  }
+
+  Future<({Map<String, String> idMap, String? mappedBoundary})>
+  _copyMaterializedRows(
+    Iterable<({MessagesTable table, bool isForkReference})> rows,
+    String forkId,
+    String? boundary,
+  ) async {
     final idMap = <String, String>{};
     String? mappedBoundary;
-    for (final row
-        in boundaryWasCaptured && boundary == null
-            ? const <({MessagesTable table, bool isForkReference})>[]
-            : inherited) {
-      if (!_isDurable(row.table)) continue;
-      final messageId = const UuidV7().generate();
+    for (final row in rows) {
+      final messageId = await _copyForkMessage(row, forkId);
       idMap[row.table.id] = messageId;
       if (row.table.id == boundary) mappedBoundary = messageId;
-      final _ = await _database
-          .into(_database.messages)
-          .insert(
-            MessagesCompanion(
-              id: .new(messageId),
-              createdAt: .new(row.table.createdAt),
-              updatedAt: .new(row.table.updatedAt),
-              conversationId: .new(forkId),
-              content: .new(row.table.content),
-              messageType: .new(row.table.messageType),
-              isUser: .new(row.table.isUser),
-              status: .new(row.table.status),
-              metadata: .new(row.table.metadata),
-            ),
-          );
-      final attachments = await (_database.select(
-        _database.messageAttachments,
-      )..where((table) => table.messageId.equals(row.table.id))).get();
-      for (final attachment in attachments) {
-        final _ = await _database
-            .into(_database.messageAttachments)
-            .insert(
-              MessageAttachmentsCompanion(
-                id: .new(const UuidV7().generate()),
-                createdAt: .new(attachment.createdAt),
-                updatedAt: .new(attachment.updatedAt),
-                messageId: .new(messageId),
-                localPath: .new(attachment.localPath),
-                fileName: .new(attachment.fileName),
-                displayName: .new(attachment.displayName),
-                mimeType: .new(attachment.mimeType),
-                modality: .new(attachment.modality),
-                sizeBytes: .new(attachment.sizeBytes),
-              ),
-            );
-      }
-      if (boundary != null && row.table.id == boundary) break;
     }
-    if (boundary != null && mappedBoundary == null) {
-      throw const ConversationValidationException(
-        'Fork boundary must be a terminal message',
-      );
+
+    return (idMap: idMap, mappedBoundary: mappedBoundary);
+  }
+
+  Iterable<({MessagesTable table, bool isForkReference})> _rowsToMaterialize(
+    List<({MessagesTable table, bool isForkReference})> inherited,
+    String? boundary,
+    bool boundaryWasCaptured,
+  ) => boundaryWasCaptured && boundary == null
+      ? const <({MessagesTable table, bool isForkReference})>[]
+      : inherited.where((row) => _isDurable(row.table));
+
+  Future<String> _copyForkMessage(
+    ({MessagesTable table, bool isForkReference}) row,
+    String forkId,
+  ) async {
+    final messageId = const UuidV7().generate();
+    final _ = await _database
+        .into(_database.messages)
+        .insert(_forkMessageCompanion(row.table, messageId, forkId));
+    await _copyForkAttachments(row.table.id, messageId);
+
+    return messageId;
+  }
+
+  MessagesCompanion _forkMessageCompanion(
+    MessagesTable row,
+    String messageId,
+    String forkId,
+  ) => MessagesCompanion(
+    id: .new(messageId),
+    createdAt: .new(row.createdAt),
+    updatedAt: .new(row.updatedAt),
+    conversationId: .new(forkId),
+    content: .new(row.content),
+    messageType: .new(row.messageType),
+    isUser: .new(row.isUser),
+    status: .new(row.status),
+    metadata: .new(row.metadata),
+  );
+
+  Future<void> _copyForkAttachments(
+    String sourceMessageId,
+    String messageId,
+  ) async {
+    final attachments = await (_database.select(
+      _database.messageAttachments,
+    )..where((table) => table.messageId.equals(sourceMessageId))).get();
+    for (final attachment in attachments) {
+      await _copyForkAttachment(attachment, messageId);
     }
+  }
+
+  Future<void> _copyForkAttachment(
+    MessageAttachmentsTable attachment,
+    String messageId,
+  ) async {
+    final _ = await _database
+        .into(_database.messageAttachments)
+        .insert(_forkAttachmentCompanion(attachment, messageId));
+  }
+
+  MessageAttachmentsCompanion _forkAttachmentCompanion(
+    MessageAttachmentsTable attachment,
+    String messageId,
+  ) => MessageAttachmentsCompanion.insert(
+    createdAt: .new(attachment.createdAt),
+    updatedAt: .new(attachment.updatedAt),
+    messageId: messageId,
+    localPath: attachment.localPath,
+    fileName: attachment.fileName,
+    displayName: .new(attachment.displayName),
+    mimeType: attachment.mimeType,
+    modality: attachment.modality,
+    sizeBytes: attachment.sizeBytes,
+  ).copyWith(id: .new(const UuidV7().generate()));
+
+  void _validateMaterializedBoundary(String? boundary, String? mappedBoundary) {
+    if (boundary != null && mappedBoundary == null) _throwInvalidForkBoundary();
+  }
+
+  Future<void> _markMaterialized(String forkId, String? boundary) async {
     final _ = await _database.conversationDao.patchConversation(
       forkId,
       .new(
-        forkThroughMessageId: .new(mappedBoundary ?? boundary),
+        forkThroughMessageId: .new(boundary),
         forkMaterializedAt: .new(DateTime.now().toUtc()),
       ),
     );
-
-    return idMap;
   }
 
   Future<bool> _attachmentPathInUse(String path) async {
@@ -552,16 +871,23 @@ extension on ConversationRepository {
   }
 
   Future<List<String>> _attachmentPathsForConversation(String id) async {
-    final messageIds = (await _database.messageDao.getMessagesByConversation(
-      id,
-    )).map((message) => message.id).toSet();
+    final messageIds = await _messageIds(id);
     if (messageIds.isEmpty) return const [];
-    final rows = await (_database.select(
-      _database.messageAttachments,
-    )..where((table) => table.messageId.isIn(messageIds))).get();
+    final rows = await _attachmentsForMessages(messageIds);
 
     return rows.map((row) => row.localPath).toList();
   }
+
+  Future<Set<String>> _messageIds(String id) async =>
+      (await _database.messageDao.getMessagesByConversation(id))
+          .map((message) => message.id)
+          .toSet();
+
+  Future<List<MessageAttachmentsTable>> _attachmentsForMessages(
+    Set<String> messageIds,
+  ) => (_database.select(
+    _database.messageAttachments,
+  )..where((table) => table.messageId.isIn(messageIds))).get();
 
   Future<Set<String>> _attachmentPathsForDeletion(String id) async {
     final paths = <String>{};
@@ -569,14 +895,16 @@ extension on ConversationRepository {
     while (pending.isNotEmpty) {
       final conversationId = pending.removeAt(0);
       paths.addAll(await _attachmentPathsForConversation(conversationId));
-      final children = await _database.conversationDao.getChildConversations(
-        conversationId,
-      );
-      pending.addAll(children.map((conversation) => conversation.id));
+      pending.addAll(await _childConversationIds(conversationId));
     }
 
     return paths;
   }
+
+  Future<List<String>> _childConversationIds(String id) async =>
+      (await _database.conversationDao.getChildConversations(id))
+          .map((conversation) => conversation.id)
+          .toList();
 
   Future<void> _deleteAttachmentFile(String localPath) async {
     try {
@@ -629,6 +957,19 @@ extension on ConversationRepository {
   }
 
   ConversationEntity _mapToConversation(ConversationsTable conversationTable) {
+    final conversation = _mapConversationCore(conversationTable);
+
+    return conversation.copyWith(
+      forkSourceConversationId: conversationTable.forkSourceConversationId,
+      forkSourceTitle: conversationTable.forkSourceTitle,
+      forkThroughMessageId: conversationTable.forkThroughMessageId,
+      forkMaterializedAt: conversationTable.forkMaterializedAt,
+    );
+  }
+
+  ConversationEntity _mapConversationCore(
+    ConversationsTable conversationTable,
+  ) {
     return ConversationEntity(
       id: conversationTable.id,
       title: conversationTable.title,
@@ -639,10 +980,6 @@ extension on ConversationRepository {
       modelId: conversationTable.modelId,
       agentId: conversationTable.agentId,
       parentConversationId: conversationTable.parentConversationId,
-      forkSourceConversationId: conversationTable.forkSourceConversationId,
-      forkSourceTitle: conversationTable.forkSourceTitle,
-      forkThroughMessageId: conversationTable.forkThroughMessageId,
-      forkMaterializedAt: conversationTable.forkMaterializedAt,
     );
   }
 

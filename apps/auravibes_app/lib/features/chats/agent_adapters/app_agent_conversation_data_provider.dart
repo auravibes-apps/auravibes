@@ -16,6 +16,14 @@ import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_convers
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
+typedef _StoppedToolsRequest = ({
+  MessageRepository messageRepository,
+  String messageId,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> toolCalls,
+  String conversationId,
+});
+
 class const AppAgentConversationDataProvider({
   required final ConversationRepository conversationRepository,
   required final MessageRepository messageRepository,
@@ -97,13 +105,13 @@ class const AppAgentConversationDataProvider({
     final updatedToolCalls = _stoppedPendingToolCalls(metadata.toolCalls);
     if (updatedToolCalls == null) return;
 
-    await _persistStoppedTools(
-      messageRepository,
-      latestAssistantMessage.id,
-      metadata,
-      updatedToolCalls,
-      conversationId,
-    );
+    await _persistStoppedTools((
+      messageRepository: messageRepository,
+      messageId: latestAssistantMessage.id,
+      metadata: metadata,
+      toolCalls: updatedToolCalls,
+      conversationId: conversationId,
+    ));
   }
 }
 
@@ -111,18 +119,14 @@ extension on AppAgentConversationDataProvider {
   MessageMetadataEntity _messageMetadata(MessageEntity message) =>
       message.metadata ?? const MessageMetadataEntity();
 
-  Future<void> _persistStoppedTools(
-    MessageRepository messageRepository,
-    String messageId,
-    MessageMetadataEntity metadata,
-    List<MessageToolCallEntity> toolCalls,
-    String conversationId,
-  ) async {
-    final updatedMetadata = metadata.copyWith(toolCalls: toolCalls);
-    final _ = await messageRepository.patchMessage(
-      messageId,
-      .new(metadata: updatedMetadata, status: .sent),
-      conversationId: conversationId,
+  Future<void> _persistStoppedTools(_StoppedToolsRequest request) async {
+    final _ = await request.messageRepository.patchMessage(
+      request.messageId,
+      .new(
+        metadata: request.metadata.copyWith(toolCalls: request.toolCalls),
+        status: .sent,
+      ),
+      conversationId: request.conversationId,
     );
   }
 

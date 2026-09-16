@@ -58,6 +58,14 @@ typedef _ToolCallPatchRequest = ({
   String? responseRaw,
 });
 
+typedef _ToolCallPersistenceRequest = ({
+  MessageRepository messageRepository,
+  String messageId,
+  MessageMetadataEntity metadata,
+  String conversationId,
+  MessageStatus? status,
+});
+
 typedef _ToolExecutionErrorRequest =
     agent.AgentToolExecutionErrorRequest<ResolvedTool>;
 
@@ -99,18 +107,14 @@ class const AppApproveToolCallDataProvider({
       );
 
   @override
-  Future<void> updateToolCallResult({
-    required String messageId,
-    required String toolCallId,
-    required String conversationId,
-    required agent.AgentToolResultStatus resultStatus,
-    String? responseRaw,
-  }) => _patchToolCall(messageRepository, onToolCallChanged, (
-    messageId: messageId,
-    toolCallId: toolCallId,
-    resultStatus: AgentToolStatusMapper.toResultStatus(resultStatus),
-    responseRaw: responseRaw,
-    conversationId: conversationId,
+  Future<void> updateToolCallResult(
+    agent.AgentToolCallResultUpdateRequest request,
+  ) => _patchToolCall(messageRepository, onToolCallChanged, (
+    messageId: request.messageId,
+    toolCallId: request.toolCallId,
+    resultStatus: AgentToolStatusMapper.toResultStatus(request.resultStatus),
+    responseRaw: request.responseRaw,
+    conversationId: request.conversationId,
   ));
 
   @override
@@ -392,24 +396,51 @@ Future<void> _patchToolCall(
   void Function() onToolCallChanged,
   _ToolCallPatchRequest request,
 ) async {
-  final message = await messageRepository.getMessageById(request.messageId);
+  final message = await _loadOwnedToolCallMessage(messageRepository, request);
   if (message == null) return;
+
+  await _patchOwnedToolCall(messageRepository, message, request);
+  onToolCallChanged();
+}
+
+Future<void> _patchOwnedToolCall(
+  MessageRepository messageRepository,
+  MessageEntity message,
+  _ToolCallPatchRequest request,
+) async {
+  final updatedMetadata = _updatedToolCallMetadata(message, request);
+
+  await _persistToolCallPatch((
+    messageRepository: messageRepository,
+    messageId: request.messageId,
+    metadata: updatedMetadata,
+    conversationId: request.conversationId,
+    status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+  ));
+}
+
+MessageMetadataEntity _updatedToolCallMetadata(
+  MessageEntity message,
+  _ToolCallPatchRequest request,
+) {
+  final metadata = message.metadata ?? const MessageMetadataEntity();
+
+  return metadata.copyWith(
+    toolCalls: _updatedToolCalls(metadata.toolCalls, request),
+  );
+}
+
+Future<MessageEntity?> _loadOwnedToolCallMessage(
+  MessageRepository messageRepository,
+  _ToolCallPatchRequest request,
+) async {
+  final message = await messageRepository.getMessageById(request.messageId);
+  if (message == null) return null;
   if (message.conversationId != request.conversationId) {
     throw const MessageValidationException('Fork reference is read-only');
   }
 
-  final metadata = message.metadata ?? const MessageMetadataEntity();
-  final updatedToolCalls = _updatedToolCalls(metadata.toolCalls, request);
-  final updatedMetadata = metadata.copyWith(toolCalls: updatedToolCalls);
-
-  await _persistToolCallPatch(
-    messageRepository,
-    request.messageId,
-    updatedMetadata,
-    conversationId: request.conversationId,
-    status: updatedMetadata.hasPendingToolCalls ? null : .sent,
-  );
-  onToolCallChanged();
+  return message;
 }
 
 List<MessageToolCallEntity> _updatedToolCalls(
@@ -426,17 +457,11 @@ List<MessageToolCallEntity> _updatedToolCalls(
     )
     .toList();
 
-Future<void> _persistToolCallPatch(
-  MessageRepository messageRepository,
-  String messageId,
-  MessageMetadataEntity metadata, {
-  required String conversationId,
-  MessageStatus? status,
-}) async {
-  final _ = await messageRepository.patchMessage(
-    messageId,
-    .new(metadata: metadata, status: status),
-    conversationId: conversationId,
+Future<void> _persistToolCallPatch(_ToolCallPersistenceRequest request) async {
+  final _ = await request.messageRepository.patchMessage(
+    request.messageId,
+    .new(metadata: request.metadata, status: request.status),
+    conversationId: request.conversationId,
   );
 }
 

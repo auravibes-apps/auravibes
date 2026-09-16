@@ -30,6 +30,13 @@ import 'package:material_ui/material_ui.dart';
 
 final _logger = Logger('chat_tool_approval_card');
 
+typedef _ActionErrorRequest = ({
+  BuildContext context,
+  String errorMessageKey,
+  Exception error,
+  StackTrace stackTrace,
+});
+
 class const ChatToolApprovalCard({
   required final String workspaceId,
   required final String conversationId,
@@ -1054,24 +1061,43 @@ extension _ConfirmationActionExecution on _ConfirmationActionHandler {
     try {
       await action();
     } on Exception catch (error, stackTrace) {
-      final errorCode = error is CloudAppException ? error.code : null;
-      final errorSuffix = errorCode == null ? '' : ' ($errorCode)';
-      _logger.warning(
-        'Tool approval action failed$errorSuffix',
-        error,
-        stackTrace,
-      );
       if (!context.mounted) return;
-      final _ = AuraSnackBars.show(
+      _showActionError((
         context: context,
-        content: TextLocale(
-          error is CloudAppException
-              ? CloudAppErrors.localizationKey(error)
-              : errorMessageKey,
-        ),
-        variant: .error,
-      );
+        errorMessageKey: errorMessageKey,
+        error: error,
+        stackTrace: stackTrace,
+      ));
     }
+  }
+
+  void _showActionError(_ActionErrorRequest request) {
+    _logActionError(request);
+    _showActionErrorSnack(request);
+  }
+
+  void _logActionError(_ActionErrorRequest request) {
+    final error = request.error;
+    final errorCode = error is CloudAppException ? error.code : null;
+    final errorSuffix = errorCode == null ? '' : ' ($errorCode)';
+    _logger.warning(
+      'Tool approval action failed$errorSuffix',
+      error,
+      request.stackTrace,
+    );
+  }
+
+  void _showActionErrorSnack(_ActionErrorRequest request) {
+    final error = request.error;
+    final _ = AuraSnackBars.show(
+      context: request.context,
+      content: TextLocale(
+        error is CloudAppException
+            ? CloudAppErrors.localizationKey(error)
+            : request.errorMessageKey,
+      ),
+      variant: .error,
+    );
   }
 }
 

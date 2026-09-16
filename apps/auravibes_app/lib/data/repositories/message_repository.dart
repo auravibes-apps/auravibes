@@ -29,6 +29,69 @@ typedef _MessageWatchErrorInput = ({
   String conversationId,
 });
 
+typedef _MessageMapping = ({
+  MessagesTable table,
+  List<MessageAttachmentEntity> attachments,
+  String? conversationIdOverride,
+  bool isForkReference,
+});
+
+class _MessageWatchController {
+  new(this._repository, this._conversationId);
+
+  final MessageRepository _repository;
+  final String _conversationId;
+  final _controller = StreamController<List<MessageEntity>>();
+  final _subscriptions = <StreamSubscription<dynamic>>[];
+  var _pending = false;
+  var _running = false;
+
+  Stream<List<MessageEntity>> get stream => _controller.stream;
+
+  void listen() {
+    final database = _repository._database;
+    _subscriptions
+      ..add(database.select(database.messages).watch().listen(_onChange))
+      ..add(database.select(database.conversations).watch().listen(_onChange))
+      ..add(
+        database.select(database.messageAttachments).watch().listen(_onChange),
+      );
+    unawaited(emit());
+  }
+
+  Future<void> emit() async {
+    if (_running) {
+      _pending = true;
+
+      return;
+    }
+    _running = true;
+    do {
+      _pending = false;
+      await _emitOnce();
+    } while (_pending);
+    _running = false;
+  }
+
+  Future<void> cancel() async {
+    for (final subscription in _subscriptions) {
+      await subscription.cancel();
+    }
+    _subscriptions.clear();
+  }
+
+  void _onChange(Object _) => unawaited(emit());
+
+  Future<void> _emitOnce() async {
+    try {
+      final messages = await _repository._getEffectiveMessages(_conversationId);
+      if (!_controller.isClosed) _controller.add(messages);
+    } on Object catch (error, stackTrace) {
+      if (!_controller.isClosed) _controller.addError(error, stackTrace);
+    }
+  }
+}
+
 /// Implementation of [MessageRepository] interface.
 ///
 /// This class provides a concrete implementation of message data operations
@@ -169,60 +232,12 @@ extension on MessageRepository {
   }
 
   Stream<List<MessageEntity>> _watchEffectiveMessages(String conversationId) {
-    final controller = StreamController<List<MessageEntity>>();
-    final subscriptions = <StreamSubscription<dynamic>>[];
-    var pending = false;
-    var running = false;
+    final watcher = _MessageWatchController(this, conversationId);
+    watcher
+      .._controller.onListen = watcher.listen
+      .._controller.onCancel = watcher.cancel;
 
-    Future<void> emit() async {
-      if (running) {
-        pending = true;
-
-        return;
-      }
-      running = true;
-      do {
-        pending = false;
-        try {
-          final messages = await _getEffectiveMessages(conversationId);
-          if (!controller.isClosed) controller.add(messages);
-        } on Object catch (error, stackTrace) {
-          if (!controller.isClosed) controller.addError(error, stackTrace);
-        }
-      } while (pending);
-      running = false;
-    }
-
-    controller
-      ..onListen = () {
-        subscriptions
-          ..add(
-            _database.select(_database.messages).watch().listen((_) => emit()),
-          )
-          ..add(
-            _database
-                .select(_database.conversations)
-                .watch()
-                .listen((_) => emit()),
-          )
-          ..add(
-            _database
-                .select(_database.messageAttachments)
-                .watch()
-                .listen((_) => emit()),
-          );
-        emit();
-      }
-      ..onCancel = () async {
-        for (final subscription in subscriptions) {
-          await subscription.cancel();
-        }
-        subscriptions.clear();
-      };
-
-    return controller.stream.transform(
-      _messageWatchTransformer(conversationId),
-    );
+    return watcher.stream.transform(_messageWatchTransformer(conversationId));
   }
 
   Future<List<({MessagesTable table, bool isForkReference})>>
@@ -230,49 +245,69 @@ extension on MessageRepository {
     final conversation = await _database.conversationDao.getConversationById(
       conversationId,
     );
-    if (conversation == null) {
-      final own = await _database.messageDao.getMessagesByConversation(
-        conversationId,
-      );
-
-      return own
-          .map((table) => (table: table, isForkReference: false))
-          .toList();
-    }
-
     final own = await _database.messageDao.getMessagesByConversation(
       conversationId,
     );
-    final inherited = <({MessagesTable table, bool isForkReference})>[];
-    final sourceConversationId = conversation.forkSourceConversationId;
-    if (sourceConversationId != null &&
-        conversation.forkMaterializedAt == null) {
-      final source = await _effectiveMessageRows(sourceConversationId);
-      final boundary = conversation.forkThroughMessageId;
-      var foundBoundary = boundary == null;
-      for (final row in source) {
-        if (!_isDurableForkRow(row.table)) continue;
-        inherited.add((table: row.table, isForkReference: true));
-        if (boundary == row.table.id) {
-          foundBoundary = true;
-          break;
-        }
-      }
-      if (!foundBoundary) {
-        throw const MessageValidationException(
-          'Fork boundary must be a terminal message',
-        );
-      }
+
+    return _sortEffectiveRows(await _inheritedMessageRows(conversation), own);
+  }
+
+  Future<List<({MessagesTable table, bool isForkReference})>>
+  _inheritedMessageRows(ConversationsTable? conversation) async {
+    final sourceConversation = conversation;
+    final sourceId = sourceConversation?.forkSourceConversationId;
+    if (sourceConversation == null ||
+        sourceId == null ||
+        sourceConversation.forkMaterializedAt != null) {
+      return const [];
     }
 
-    return [
-      ...inherited,
-      ...own.map((table) => (table: table, isForkReference: false)),
-    ]..sort((left, right) {
-      final created = left.table.createdAt.compareTo(right.table.createdAt);
+    final sourceRows = await _effectiveMessageRows(sourceId);
 
-      return created == 0 ? left.table.id.compareTo(right.table.id) : created;
-    });
+    return _collectInheritedRows(
+      sourceRows,
+      sourceConversation.forkThroughMessageId,
+    );
+  }
+
+  List<({MessagesTable table, bool isForkReference})> _collectInheritedRows(
+    List<({MessagesTable table, bool isForkReference})> sourceRows,
+    String? boundary,
+  ) {
+    final inherited = <({MessagesTable table, bool isForkReference})>[];
+    var foundBoundary = boundary == null;
+    for (final row in sourceRows) {
+      if (!_isDurableForkRow(row.table)) continue;
+      inherited.add((table: row.table, isForkReference: true));
+      if (boundary == row.table.id) {
+        foundBoundary = true;
+        break;
+      }
+    }
+    if (!foundBoundary) _throwInvalidForkBoundary();
+
+    return inherited;
+  }
+
+  Never _throwInvalidForkBoundary() => throw const MessageValidationException(
+    'Fork boundary must be a terminal message',
+  );
+
+  List<({MessagesTable table, bool isForkReference})> _sortEffectiveRows(
+    List<({MessagesTable table, bool isForkReference})> inherited,
+    List<MessagesTable> own,
+  ) => [
+    ...inherited,
+    ...own.map((table) => (table: table, isForkReference: false)),
+  ]..sort(_compareEffectiveRows);
+
+  int _compareEffectiveRows(
+    ({MessagesTable table, bool isForkReference}) left,
+    ({MessagesTable table, bool isForkReference}) right,
+  ) {
+    final created = left.table.createdAt.compareTo(right.table.createdAt);
+
+    return created == 0 ? left.table.id.compareTo(right.table.id) : created;
   }
 
   bool _isDurableForkRow(MessagesTable message) {
@@ -295,12 +330,12 @@ extension on MessageRepository {
 
     return [
       for (final row in rows)
-        _mapToMessage(
-          row.table,
+        _mapToMessage((
+          table: row.table,
           attachments: attachmentsByMessage[row.table.id] ?? [],
           conversationIdOverride: conversationId,
           isForkReference: row.isForkReference,
-        ),
+        )),
     ];
   }
 
@@ -487,38 +522,58 @@ extension MessageRepositoryMutationOperations on MessageRepository {
     _validateMessagePatch(message);
     final existing = await _database.messageDao.getMessageById(id);
     if (existing == null) throw MessageNotFoundException(id);
-    if (conversationId != null && existing.conversationId != conversationId) {
-      throw const MessageValidationException('Fork reference is read-only');
-    }
-    final nextStatus = _messageStatusToTableStatus(message.status);
-    final existingMetadata = MessageMetadataEntity.fromJsonString(
-      existing.metadata,
-    );
-    final isLegacyPending = existingMetadata?.hasPendingToolCalls ?? false;
-    if (_isTerminalStatus(existing.status) &&
-        !isLegacyPending &&
-        (message.content != null ||
-            message.metadata != null ||
-            (nextStatus != null && nextStatus != existing.status))) {
-      throw const MessageValidationException('Terminal message is immutable');
-    }
+    _validatePatchOwnership(existing, conversationId);
+    _validateTerminalPatch(existing, message);
     await _validateSentMessage(id, message);
 
-    final messageCompanion = _mapPatchToMessagesCompanion(message);
-    final updatedMessage = await _database.messageDao.patchMessage(
-      id,
-      messageCompanion,
-    );
-
-    if (updatedMessage == null) {
-      throw MessageNotFoundException(id);
-    }
+    final updatedMessage = await _patchMessageRow(id, message);
 
     return await _mapToMessageWithAttachments(updatedMessage);
   }
 }
 
 extension on MessageRepository {
+  void _validatePatchOwnership(MessagesTable existing, String? conversationId) {
+    if (conversationId != null && existing.conversationId != conversationId) {
+      throw const MessageValidationException('Fork reference is read-only');
+    }
+  }
+
+  void _validateTerminalPatch(MessagesTable existing, MessagePatch message) {
+    if (!_isTerminalStatus(existing.status) || _hasPendingToolCalls(existing)) {
+      return;
+    }
+    if (_changesFinalMessage(existing, message)) {
+      throw const MessageValidationException('Terminal message is immutable');
+    }
+  }
+
+  bool _changesFinalMessage(MessagesTable existing, MessagePatch message) {
+    final nextStatus = _messageStatusToTableStatus(message.status);
+
+    return message.content != null ||
+        message.metadata != null ||
+        (nextStatus != null && nextStatus != existing.status);
+  }
+
+  bool _hasPendingToolCalls(MessagesTable message) =>
+      MessageMetadataEntity.fromJsonString(message.metadata)
+          ?.hasPendingToolCalls ??
+      false;
+
+  Future<MessagesTable> _patchMessageRow(
+    String id,
+    MessagePatch message,
+  ) async {
+    final updated = await _database.messageDao.patchMessage(
+      id,
+      _mapPatchToMessagesCompanion(message),
+    );
+    if (updated == null) throw MessageNotFoundException(id);
+
+    return updated;
+  }
+
   Future<void> _validateSentMessage(String id, MessagePatch message) async {
     if (message.status != MessageStatus.sent || message.content != null) {
       return;
@@ -550,17 +605,11 @@ extension MessageRepositoryStateOperations on MessageRepository {
       return false; // Return false instead of throwing for delete operations.
     }
     final existing = await _database.messageDao.getMessageById(id);
-    if (conversationId != null &&
-        (existing == null || existing.conversationId != conversationId)) {
-      throw const MessageValidationException('Fork reference is read-only');
-    }
+    _validateDeleteOwnership(existing, conversationId);
 
     final deleted = await _database.messageDao.deleteMessage(id);
     if (deleted) {
-      final _ = await (_database.delete(
-        _database.messageAttachments,
-      )..where((table) => table.messageId.equals(id))).go();
-      await _deletePersistedAttachmentFiles(message.attachments);
+      await _deleteMessageAttachments(id, message.attachments);
     }
 
     return deleted;
@@ -596,12 +645,32 @@ extension MessageRepositoryStateOperations on MessageRepository {
   ) async {
     final messages = await _getEffectiveMessages(conversationId);
 
-    return messages.lastWhereOrNull(
-      (message) =>
-          message.messageType == MessageType.system &&
-          message.status == MessageStatus.sent &&
-          message.metadata?.isCompactionSummary == true,
-    );
+    return messages.lastWhereOrNull(_isCompactionSummary);
+  }
+
+  void _validateDeleteOwnership(
+    MessagesTable? existing,
+    String? conversationId,
+  ) {
+    if (conversationId != null &&
+        (existing == null || existing.conversationId != conversationId)) {
+      throw const MessageValidationException('Fork reference is read-only');
+    }
+  }
+
+  bool _isCompactionSummary(MessageEntity message) =>
+      message.messageType == MessageType.system &&
+      message.status == MessageStatus.sent &&
+      message.metadata?.isCompactionSummary == true;
+
+  Future<void> _deleteMessageAttachments(
+    String messageId,
+    List<MessageAttachmentEntity> attachments,
+  ) async {
+    final _ = await (_database.delete(
+      _database.messageAttachments,
+    )..where((table) => table.messageId.equals(messageId))).go();
+    await _deletePersistedAttachmentFiles(attachments);
   }
 }
 
@@ -647,10 +716,12 @@ extension on MessageRepository {
     Map<String, List<MessageAttachmentEntity>> attachmentsByMessage,
   ) => messageTables
       .map(
-        (message) => _mapToMessage(
-          message,
+        (message) => _mapToMessage((
+          table: message,
           attachments: attachmentsByMessage[message.id] ?? [],
-        ),
+          conversationIdOverride: null,
+          isForkReference: false,
+        )),
       )
       .toList();
 
@@ -707,30 +778,36 @@ extension on MessageRepository {
 }
 
 extension on MessageRepository {
-  /// Maps a [messageTable] database record to a [MessageEntity] domain entity.
+  /// Maps a database record to a [MessageEntity] domain entity.
   ///
-  /// [messageTable] The database record to map.
   /// Returns the corresponding [MessageEntity] entity.
-  MessageEntity _mapToMessage(
-    MessagesTable messageTable, {
-    List<MessageAttachmentEntity> attachments = const [],
-    String? conversationIdOverride,
-    bool isForkReference = false,
-  }) {
+  MessageEntity _mapToMessage(_MessageMapping mapping) {
+    return _mapMessageDetails(_mapMessageCore(mapping), mapping);
+  }
+
+  MessageEntity _mapMessageCore(_MessageMapping mapping) {
+    final table = mapping.table;
+
     return MessageEntity(
-      id: messageTable.id,
-      conversationId: conversationIdOverride ?? messageTable.conversationId,
-      content: messageTable.content,
-      messageType: .fromString(messageTable.messageType.value),
-      isUser: messageTable.isUser,
-      status: _messageTableStatusToEntityStatus(messageTable.status),
-      createdAt: messageTable.createdAt,
-      updatedAt: messageTable.updatedAt,
-      metadata: .fromJsonString(messageTable.metadata),
-      attachments: attachments,
-      isForkReference: isForkReference,
+      id: table.id,
+      conversationId: mapping.conversationIdOverride ?? table.conversationId,
+      content: table.content,
+      messageType: .fromString(table.messageType.value),
+      isUser: table.isUser,
+      status: _messageTableStatusToEntityStatus(table.status),
+      createdAt: table.createdAt,
+      updatedAt: table.updatedAt,
     );
   }
+
+  MessageEntity _mapMessageDetails(
+    MessageEntity message,
+    _MessageMapping mapping,
+  ) => message.copyWith(
+    metadata: .fromJsonString(mapping.table.metadata),
+    attachments: mapping.attachments,
+    isForkReference: mapping.isForkReference,
+  );
 }
 
 extension on MessageRepository {

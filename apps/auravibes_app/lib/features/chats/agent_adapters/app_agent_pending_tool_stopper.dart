@@ -8,37 +8,36 @@ class const AppAgentPendingToolStopper(
     final messages = await _messageRepository.getMessagesByConversation(
       conversationId,
     );
-    final updates = <Future<void>>[];
+    await _stopMessages(conversationId, messages.where(_isPendingMessage));
+  }
+
+  Future<void> _stopMessages(
+    String conversationId,
+    Iterable<MessageEntity> messages,
+  ) async {
     for (final message in messages) {
-      final metadata = message.metadata;
-      if (message.isUser ||
-          message.isForkReference ||
-          metadata == null ||
-          !metadata.hasPendingToolCalls) {
-        continue;
-      }
-      updates.add(_stopMessage(conversationId, message.id, metadata));
+      await _stopMessage(conversationId, message);
     }
-    for (final update in updates) {
-      await update;
-    }
+  }
+
+  bool _isPendingMessage(MessageEntity message) {
+    final metadata = message.metadata;
+
+    return !message.isUser &&
+        !message.isForkReference &&
+        metadata != null &&
+        metadata.hasPendingToolCalls;
   }
 
   Future<void> _stopMessage(
     String conversationId,
-    String messageId,
-    MessageMetadataEntity metadata,
+    MessageEntity message,
   ) async {
-    final toolCalls = <MessageToolCallEntity>[];
-    for (final toolCall in metadata.toolCalls) {
-      toolCalls.add(
-        toolCall.isPending
-            ? toolCall.copyWith(resultStatus: .stoppedByUser)
-            : toolCall,
-      );
-    }
+    final metadata = message.metadata;
+    if (metadata == null) return;
+    final toolCalls = _stoppedToolCalls(metadata.toolCalls);
     final _ = await _messageRepository.patchMessage(
-      messageId,
+      message.id,
       .new(
         metadata: metadata.copyWith(toolCalls: toolCalls),
         status: .sent,
@@ -46,4 +45,14 @@ class const AppAgentPendingToolStopper(
       conversationId: conversationId,
     );
   }
+
+  List<MessageToolCallEntity> _stoppedToolCalls(
+    List<MessageToolCallEntity> toolCalls,
+  ) => [
+    for (final toolCall in toolCalls)
+      if (toolCall.isPending)
+        toolCall.copyWith(resultStatus: .stoppedByUser)
+      else
+        toolCall,
+  ];
 }

@@ -7,6 +7,14 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_se
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 
+typedef _ToolCallsPatchRequest = ({
+  String messageId,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> toolCalls,
+  String conversationId,
+  MessageStatus? status,
+});
+
 class const AppToolCallActionsDataProvider({
   required final MessageRepository messageRepository,
   required final AgentToolResumeService agentToolResumeService,
@@ -21,18 +29,7 @@ class const AppToolCallActionsDataProvider({
   }) async {
     final message = await _loadMessage(messageId);
     if (message == null) return false;
-
-    final metadata = message.metadata ?? const MessageMetadataEntity();
-    final updatedToolCalls = _skippedToolCalls(metadata.toolCalls, toolCallId);
-    final updatedMetadata = metadata.copyWith(toolCalls: updatedToolCalls);
-
-    await _patchToolCalls(
-      messageId,
-      metadata,
-      updatedToolCalls,
-      status: updatedMetadata.hasPendingToolCalls ? null : .sent,
-      conversationId: conversationId,
-    );
+    await _skipMessageToolCall(message, toolCallId, conversationId);
     onToolCallChanged();
 
     return true;
@@ -58,15 +55,33 @@ class const AppToolCallActionsDataProvider({
     final updatedToolCalls = _stoppedToolCalls(metadata.toolCalls);
     if (updatedToolCalls == null) return;
 
-    await _patchToolCalls(
-      messageId,
-      metadata,
-      updatedToolCalls,
+    await _patchToolCalls((
+      messageId: messageId,
+      metadata: metadata,
+      toolCalls: updatedToolCalls,
       status: .sent,
       conversationId: conversationId,
-    );
+    ));
     onToolCallChanged();
     _finishActiveSubAgent(message);
+  }
+
+  Future<void> _skipMessageToolCall(
+    MessageEntity message,
+    String toolCallId,
+    String conversationId,
+  ) async {
+    final metadata = message.metadata ?? const MessageMetadataEntity();
+    final toolCalls = _skippedToolCalls(metadata.toolCalls, toolCallId);
+    final updatedMetadata = metadata.copyWith(toolCalls: toolCalls);
+
+    await _patchToolCalls((
+      messageId: message.id,
+      metadata: metadata,
+      toolCalls: toolCalls,
+      status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+      conversationId: conversationId,
+    ));
   }
 
   Future<MessageEntity?> _loadMessage(String messageId) {
@@ -99,20 +114,14 @@ class const AppToolCallActionsDataProvider({
     return didUpdate ? updatedToolCalls : null;
   }
 
-  Future<void> _patchToolCalls(
-    String messageId,
-    MessageMetadataEntity metadata,
-    List<MessageToolCallEntity> toolCalls, {
-    required String conversationId,
-    MessageStatus? status,
-  }) async {
+  Future<void> _patchToolCalls(_ToolCallsPatchRequest request) async {
     final _ = await messageRepository.patchMessage(
-      messageId,
+      request.messageId,
       .new(
-        metadata: metadata.copyWith(toolCalls: toolCalls),
-        status: status,
+        metadata: request.metadata.copyWith(toolCalls: request.toolCalls),
+        status: request.status,
       ),
-      conversationId: conversationId,
+      conversationId: request.conversationId,
     );
   }
 

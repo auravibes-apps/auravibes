@@ -61,6 +61,15 @@ typedef _ToolResultsRequest = ({
   List<agent.AgentToolResultUpdate> updates,
 });
 
+typedef _StoppedToolCallsRequest = ({
+  MessageRepository messageRepository,
+  String messageId,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> updatedToolCalls,
+  String conversationId,
+  MessageStatus status,
+});
+
 class AgentToolExecutionService({
   required AgentToolCallLoader loadLatestMessageToolCallsUsecase,
   required MessageRepository messageRepository,
@@ -334,14 +343,14 @@ Future<void> _stopPendingTools(
   final updated = _stoppedPendingToolCalls(metadata.toolCalls);
   if (updated == null) return;
 
-  await _persistStoppedToolCalls(
-    messageRepository,
-    messageId,
-    metadata,
-    updated,
+  await _persistStoppedToolCalls((
+    messageRepository: messageRepository,
+    messageId: messageId,
+    metadata: metadata,
+    updatedToolCalls: updated,
     conversationId: conversationId,
     status: .sent,
-  );
+  ));
 }
 
 List<MessageToolCallEntity>? _stoppedPendingToolCalls(
@@ -358,21 +367,14 @@ List<MessageToolCallEntity>? _stoppedPendingToolCalls(
   ];
 }
 
-Future<void> _persistStoppedToolCalls(
-  MessageRepository messageRepository,
-  String messageId,
-  MessageMetadataEntity metadata,
-  List<MessageToolCallEntity> updatedToolCalls, {
-  required String conversationId,
-  required MessageStatus status,
-}) async {
-  final _ = await messageRepository.patchMessage(
-    messageId,
+Future<void> _persistStoppedToolCalls(_StoppedToolCallsRequest request) async {
+  final _ = await request.messageRepository.patchMessage(
+    request.messageId,
     .new(
-      metadata: metadata.copyWith(toolCalls: updatedToolCalls),
-      status: status,
+      metadata: request.metadata.copyWith(toolCalls: request.updatedToolCalls),
+      status: request.status,
     ),
-    conversationId: conversationId,
+    conversationId: request.conversationId,
   );
 }
 
@@ -388,7 +390,21 @@ Future<void> _updateToolResults(
     metadata.toolCalls,
     request.updates,
   );
-  final updatedMetadata = metadata.copyWith(toolCalls: updatedToolCalls);
+  await _persistToolResults(
+    messageRepository,
+    request,
+    metadata,
+    updatedToolCalls,
+  );
+}
+
+Future<void> _persistToolResults(
+  MessageRepository messageRepository,
+  _ToolResultsRequest request,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> toolCalls,
+) async {
+  final updatedMetadata = metadata.copyWith(toolCalls: toolCalls);
   final _ = await messageRepository.patchMessage(
     request.messageId,
     .new(

@@ -10,37 +10,9 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   final _conversationByScope = <AgentCancellationScope, String>{};
   final _pendingStops = <String>{};
 
-  void registerStreamSubscription<T>(
-    String conversationId,
-    StreamSubscription<T> subscription,
-  ) {
-    current(conversationId)?.registerCleanup(subscription.cancel);
-  }
-
-  void registerCancelableOperation<T>(
-    String conversationId,
-    CancelableOperation<T> operation,
-  ) {
-    current(conversationId)?.registerCleanup(operation.cancel);
-  }
-
   @override
-  AgentCancellationScope start(String conversationId) {
-    final scope = AgentCancellationScope();
-    final previous = _entries.remove(conversationId);
-    if (previous != null) {
-      previous.requestStop();
-      unawaited(_completeScope(previous));
-    }
-    final completion =
-        _completionByConversationId[conversationId] ?? Completer<void>();
-    _completionByConversationId[conversationId] = completion;
-    _conversationByScope[scope] = conversationId;
-    _entries[conversationId] = scope;
-    if (_pendingStops.remove(conversationId)) scope.requestStop();
-
-    return scope;
-  }
+  AgentCancellationScope start(String conversationId) =>
+      _startScope(conversationId);
 
   @override
   AgentCancellationScope? current(String conversationId) =>
@@ -52,13 +24,6 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   Future<void> waitForCompletion(String conversationId) {
     return _completionByConversationId[conversationId]?.future ??
         Future<void>.value();
-  }
-
-  void registerCleanup(
-    String conversationId,
-    FutureOr<void> Function() cleanup,
-  ) {
-    current(conversationId)?.registerCleanup(cleanup);
   }
 
   @override
@@ -113,6 +78,47 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   void _complete(String conversationId) {
     final completion = _completionByConversationId.remove(conversationId);
     if (completion != null && !completion.isCompleted) completion.complete();
+  }
+}
+
+extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
+  AgentCancellationScope _startScope(String conversationId) {
+    final scope = AgentCancellationScope();
+    _replaceScope(conversationId);
+    _completionByConversationId[conversationId] ??= Completer<void>();
+    _conversationByScope[scope] = conversationId;
+    _entries[conversationId] = scope;
+    if (_pendingStops.remove(conversationId)) scope.requestStop();
+
+    return scope;
+  }
+
+  void registerStreamSubscription<T>(
+    String conversationId,
+    StreamSubscription<T> subscription,
+  ) {
+    current(conversationId)?.registerCleanup(subscription.cancel);
+  }
+
+  void registerCancelableOperation<T>(
+    String conversationId,
+    CancelableOperation<T> operation,
+  ) {
+    current(conversationId)?.registerCleanup(operation.cancel);
+  }
+
+  void registerCleanup(
+    String conversationId,
+    FutureOr<void> Function() cleanup,
+  ) {
+    current(conversationId)?.registerCleanup(cleanup);
+  }
+
+  void _replaceScope(String conversationId) {
+    final previous = _entries.remove(conversationId);
+    if (previous == null) return;
+    previous.requestStop();
+    unawaited(_completeScope(previous));
   }
 }
 

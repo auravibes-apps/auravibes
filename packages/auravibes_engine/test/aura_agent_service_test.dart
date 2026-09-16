@@ -262,14 +262,13 @@ class _FakeToolProvider
   }
 
   @override
-  Future<void> updateToolCallResult({
-    required String messageId,
-    required String toolCallId,
-    required String conversationId,
-    required AgentToolResultStatus resultStatus,
-    String? responseRaw,
-  }) async {
-    calls.add('update:$toolCallId:$resultStatus:$responseRaw');
+  Future<void> updateToolCallResult(
+    AgentToolCallResultUpdateRequest request,
+  ) async {
+    calls.add(
+      'update:${request.toolCallId}:${request.resultStatus}:'
+      '${request.responseRaw}',
+    );
   }
 
   @override

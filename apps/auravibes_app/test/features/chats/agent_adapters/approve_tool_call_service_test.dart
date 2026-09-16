@@ -387,13 +387,13 @@ void main() {
       };
 
       for (final entry in cases.entries) {
-        await provider.updateToolCallResult(
+        await provider.updateToolCallResult((
           messageId: messageId,
           toolCallId: 'tool-1',
           conversationId: conversationId,
           resultStatus: entry.key,
           responseRaw: 'response',
-        );
+        ));
       }
 
       final patches = verify(

@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.d
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -156,23 +157,74 @@ Stream<List<ConversationEntity>> _cloudConversations(
   );
   if (gateway == null) return;
 
-  final localWorkspaceId = cloud.localWorkspaceId;
-  yield* gateway.watch(const {'conversation'}, () async {
-    final page = await gateway.client.conversation.listPage(
-      .new(
-        workspaceId: cloud.cloudWorkspaceId,
-        limit: options.pagination.limit ?? 100,
-        search: options.search.isEmpty ? null : options.search,
-        offset: options.pagination.offset,
-      ),
-    );
-    final state = await gateway.read(pages: const [], eventLimit: 0);
+  yield* _watchCloudConversations(gateway, cloud, options);
+}
 
-    return (
-      value: _mapCloudConversations(page.conversations, localWorkspaceId),
-      currentSequence: state.currentSequence,
-    );
-  });
+Stream<List<ConversationEntity>> _watchCloudConversations(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) {
+  const resourceKinds = {'conversation'};
+  Future<({List<ConversationEntity> value, int currentSequence})> read() =>
+      _readCloudConversations(gateway, cloud, options);
+
+  return gateway.watch(resourceKinds, read);
+}
+
+Future<({List<ConversationEntity> value, int currentSequence})>
+_readCloudConversations(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) async {
+  final conversations = await _readCloudConversationPage(
+    gateway,
+    cloud,
+    options,
+  );
+  final currentSequence = await _cloudConversationSequence(gateway);
+
+  return _cloudConversationSnapshot(
+    conversations,
+    cloud.localWorkspaceId,
+    currentSequence,
+  );
+}
+
+({List<ConversationEntity> value, int currentSequence})
+_cloudConversationSnapshot(
+  List<ConversationSummary> conversations,
+  String localWorkspaceId,
+  int currentSequence,
+) => (
+  value: _mapCloudConversations(conversations, localWorkspaceId),
+  currentSequence: currentSequence,
+);
+
+Future<List<ConversationSummary>> _readCloudConversationPage(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) async {
+  final page = await gateway.client.conversation.listPage(
+    .new(
+      workspaceId: cloud.cloudWorkspaceId,
+      limit: options.pagination.limit ?? 100,
+      search: options.search.isEmpty ? null : options.search,
+      offset: options.pagination.offset,
+    ),
+  );
+
+  return page.conversations;
+}
+
+Future<int> _cloudConversationSequence(
+  CloudWorkspaceStateGateway gateway,
+) async {
+  final state = await gateway.read(pages: const [], eventLimit: 0);
+
+  return state.currentSequence;
 }
 
 List<ConversationEntity> _mapCloudConversations(
@@ -183,6 +235,20 @@ List<ConversationEntity> _mapCloudConversations(
     .toList();
 
 ConversationEntity _cloudConversation(
+  ConversationSummary conversation,
+  String localWorkspaceId,
+) {
+  final mapped = _cloudConversationCore(conversation, localWorkspaceId);
+
+  return mapped.copyWith(
+    forkSourceConversationId: conversation.forkSourceConversationId,
+    forkSourceTitle: conversation.forkSourceTitle,
+    forkThroughMessageId: conversation.forkThroughMessageId,
+    forkMaterializedAt: conversation.forkMaterializedAt,
+  );
+}
+
+ConversationEntity _cloudConversationCore(
   ConversationSummary conversation,
   String localWorkspaceId,
 ) {
@@ -197,9 +263,5 @@ ConversationEntity _cloudConversation(
     modelId: conversation.modelId,
     agentId: conversation.agentId,
     parentConversationId: conversation.parentConversationId,
-    forkSourceConversationId: conversation.forkSourceConversationId,
-    forkSourceTitle: conversation.forkSourceTitle,
-    forkThroughMessageId: conversation.forkThroughMessageId,
-    forkMaterializedAt: conversation.forkMaterializedAt,
   );
 }

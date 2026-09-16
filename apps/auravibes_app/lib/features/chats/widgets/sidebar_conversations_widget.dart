@@ -283,23 +283,7 @@ class _SidebarConversationTileState
   }
 
   @override
-  Widget build(BuildContext context) {
-    final chat = widget.chat;
-
-    return _SidebarConversationTileView(
-      child: _SidebarConversationTileContent(
-        isActive: widget.isActive,
-        isPinned: chat.isPinned,
-        title: ref.watch(streamingTitleProvider(chat.id)) ?? chat.title,
-        controller: _menuController,
-        onFork: _forkConversation,
-        onDelete: _deleteConversation,
-        onTogglePin: _togglePin,
-        onRename: _renameConversation,
-        onTap: _openConversation,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _buildTile();
 
   void _deleteConversation() =>
       unawaited(_deleteSidebarConversation(context, ref, widget.chat));
@@ -314,6 +298,27 @@ class _SidebarConversationTileState
       unawaited(_renameSidebarConversation(context, ref, widget.chat));
 
   void _openConversation() => _openSidebarConversation(context, widget.chat);
+}
+
+extension on _SidebarConversationTileState {
+  Widget _buildTile() {
+    final chat = widget.chat;
+
+    return _SidebarConversationTileView(child: _buildTileContent(chat));
+  }
+
+  Widget _buildTileContent(ConversationEntity chat) =>
+      _SidebarConversationTileContent(
+        isActive: widget.isActive,
+        isPinned: chat.isPinned,
+        title: ref.watch(streamingTitleProvider(chat.id)) ?? chat.title,
+        controller: _menuController,
+        onFork: _forkConversation,
+        onDelete: _deleteConversation,
+        onTogglePin: _togglePin,
+        onRename: _renameConversation,
+        onTap: _openConversation,
+      );
 }
 
 void _openSidebarConversation(BuildContext context, ConversationEntity chat) =>
@@ -424,32 +429,30 @@ class const _SidebarConversationTileMenu({
   required final VoidCallback onRename,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraPopupMenu(
-      child: AuraIconButton(
-        icon: Icons.more_vert,
-        onPressed: controller.toggle,
-        size: .small,
-        tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
-            .tr(),
-      ),
-      items: [
-        _sidebarConversationPinItem(isPinned, onTogglePin),
-        AuraPopupMenuItem(
-          title: const TextLocale(
-            LocaleKeys.chats_screens_chat_conversation_fork,
-          ),
-          onTap: onFork,
-          leading: const AuraIcon(Icons.call_split_outlined),
-        ),
-        ..._sidebarConversationMenuItems(
-          onRename: onRename,
-          onDelete: onDelete,
-        ),
-      ],
-      controller: controller,
-    );
-  }
+  Widget build(BuildContext context) => _buildMenu();
+}
+
+extension on _SidebarConversationTileMenu {
+  Widget _buildMenu() => AuraPopupMenu(
+    child: AuraIconButton(
+      icon: Icons.more_vert,
+      onPressed: controller.toggle,
+      size: .small,
+      tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip.tr(),
+    ),
+    items: _menuItems(),
+    controller: controller,
+  );
+
+  List<AuraPopupMenuItem> _menuItems() => [
+    _sidebarConversationPinItem(isPinned, onTogglePin),
+    AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
+      onTap: onFork,
+      leading: const AuraIcon(Icons.call_split_outlined),
+    ),
+    ..._sidebarConversationMenuItems(onRename: onRename, onDelete: onDelete),
+  ];
 }
 
 AuraPopupMenuItem _sidebarConversationPinItem(
@@ -499,17 +502,7 @@ Future<void> _deleteSidebarConversation(
   if (!confirmed) return;
 
   try {
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(chat.workspaceId).future,
-    );
-    if (cloud != null) {
-      await cloud.delete(chat);
-      _invalidateDeletedConversation(ref, chat);
-
-      return;
-    }
-
-    final _ = await ref.read(deleteConversationUsecaseProvider).call(chat.id);
+    await _deleteSidebarConversationInStorage(ref, chat);
     _invalidateDeletedConversation(ref, chat);
   } on Object catch (error, stackTrace) {
     _logger.severe(
@@ -518,12 +511,32 @@ Future<void> _deleteSidebarConversation(
       stackTrace,
     );
     if (!context.mounted) return;
-    final _ = AuraSnackBars.show(
-      context: context,
-      content: TextLocale(_deleteErrorKey(error)),
-      variant: .error,
-    );
+    _showSidebarDeleteSnack(context, error);
   }
+}
+
+Future<void> _deleteSidebarConversationInStorage(
+  WidgetRef ref,
+  ConversationEntity chat,
+) async {
+  final cloud = await ref.read(
+    cloudConversationUsecaseProvider(chat.workspaceId).future,
+  );
+  if (cloud != null) {
+    await cloud.delete(chat);
+
+    return;
+  }
+
+  final _ = await ref.read(deleteConversationUsecaseProvider).call(chat.id);
+}
+
+void _showSidebarDeleteSnack(BuildContext context, Object error) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: TextLocale(_deleteErrorKey(error)),
+    variant: .error,
+  );
 }
 
 void _invalidateDeletedConversation(WidgetRef ref, ConversationEntity chat) {
@@ -545,31 +558,50 @@ Future<void> _forkSidebarConversation(
   ConversationEntity chat,
 ) async {
   try {
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(chat.workspaceId).future,
-    );
-    final forkId = cloud != null
-        ? (await cloud.fork(chat)).id
-        : (await ref.read(forkConversationUsecaseProvider).call(chat)).id;
-    final _ = ref.invalidate(
-      conversationsStreamProvider(workspaceId: chat.workspaceId),
-    );
-    if (context.mounted) {
-      ConversationRoute(
-        workspaceId: chat.workspaceId,
-        chatId: forkId,
-      ).go(context);
-    }
+    final forkId = await _forkSidebarConversationInStorage(ref, chat);
+    if (!context.mounted) return;
+    _navigateToSidebarFork(ref, context, chat, forkId);
   } on Object {
     if (!context.mounted) return;
-    final _ = AuraSnackBars.show(
-      context: context,
-      content: const TextLocale(
-        LocaleKeys.chats_screens_chat_conversation_fork_error,
-      ),
-      variant: .error,
-    );
+    _showSidebarForkError(context);
   }
+}
+
+void _navigateToSidebarFork(
+  WidgetRef ref,
+  BuildContext context,
+  ConversationEntity chat,
+  String forkId,
+) {
+  final _ = ref.invalidate(
+    conversationsStreamProvider(workspaceId: chat.workspaceId),
+  );
+  if (!context.mounted) return;
+  ConversationRoute(workspaceId: chat.workspaceId, chatId: forkId).go(context);
+}
+
+void _showSidebarForkError(BuildContext context) {
+  if (!context.mounted) return;
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_fork_error,
+    ),
+    variant: .error,
+  );
+}
+
+Future<String> _forkSidebarConversationInStorage(
+  WidgetRef ref,
+  ConversationEntity chat,
+) async {
+  final cloud = await ref.read(
+    cloudConversationUsecaseProvider(chat.workspaceId).future,
+  );
+
+  return cloud != null
+      ? (await cloud.fork(chat)).id
+      : (await ref.read(forkConversationUsecaseProvider).call(chat)).id;
 }
 
 Future<void> _toggleSidebarConversationPin(

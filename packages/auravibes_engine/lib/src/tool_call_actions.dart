@@ -3,6 +3,14 @@ import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 
 enum AgentToolGrantLevel { once, conversation }
 
+typedef AgentToolCallResultUpdateRequest = ({
+  String messageId,
+  String toolCallId,
+  String conversationId,
+  AgentToolResultStatus resultStatus,
+  String? responseRaw,
+});
+
 class const AgentApprovableToolCall({
   required final String conversationId,
   required final String name,
@@ -39,13 +47,7 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
     required String conversationId,
   });
 
-  Future<void> updateToolCallResult({
-    required String messageId,
-    required String toolCallId,
-    required String conversationId,
-    required AgentToolResultStatus resultStatus,
-    String? responseRaw,
-  });
+  Future<void> updateToolCallResult(AgentToolCallResultUpdateRequest request);
 
   Future<void> resumeConversationIfReady({
     required String messageId,
@@ -102,14 +104,15 @@ class const ApproveToolCallService<TTool extends Object>({
       argumentsRaw: toolCall.argumentsRaw,
     );
     if (tool == null) {
-      await provider.updateToolCallResult(
+      await provider.updateToolCallResult((
         messageId: messageId,
         toolCallId: toolCallId,
         resultStatus: toolCall.name == callSkillToolName
             ? .notConfigured
             : .toolNotFound,
         conversationId: conversationId,
-      );
+        responseRaw: null,
+      ));
       await provider.resumeConversationIfReady(
         messageId: messageId,
         conversationId: conversationId,
@@ -138,13 +141,13 @@ class const ApproveToolCallService<TTool extends Object>({
       argumentsRaw: toolCall.argumentsRaw,
     );
 
-    await provider.updateToolCallResult(
+    await provider.updateToolCallResult((
       messageId: messageId,
       toolCallId: toolCallId,
       conversationId: conversationId,
       resultStatus: executionResult.resultStatus,
       responseRaw: executionResult.responseRaw,
-    );
+    ));
 
     if (provider.isCancellationRequested(toolCall.conversationId)) return;
 

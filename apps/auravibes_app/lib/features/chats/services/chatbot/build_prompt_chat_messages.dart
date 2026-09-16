@@ -129,7 +129,19 @@ String _safeFileName(String fileName) => p
 
 agent.AgentPromptMessage _toAgentPromptMessage(MessageEntity message) {
   final metadata = message.metadata;
+  final toolCalls = _toAgentToolCalls(
+    metadata?.toolCalls,
+    allowPending: !message.isForkReference,
+  );
 
+  return _agentPromptMessage(message, metadata, toolCalls);
+}
+
+agent.AgentPromptMessage _agentPromptMessage(
+  MessageEntity message,
+  MessageMetadataEntity? metadata,
+  List<agent.AgentPromptToolCall> toolCalls,
+) {
   return agent.AgentPromptMessage(
     content: _promptContent(message),
     isUser: message.isUser,
@@ -137,10 +149,7 @@ agent.AgentPromptMessage _toAgentPromptMessage(MessageEntity message) {
     isCompactionSummary: metadata?.isCompactionSummary ?? false,
     thinking: metadata?.thinking,
     modelMetadata: metadata?.modelMetadata ?? const {},
-    toolCalls: _toAgentToolCalls(
-      metadata?.toolCalls,
-      allowPending: !message.isForkReference,
-    ),
+    toolCalls: toolCalls,
   );
 }
 
