@@ -70,6 +70,12 @@ abstract class LocaleKeys {
       'models_screens.list_delete_title';
   static const models_screens_list_delete_confirm =
       'models_screens.list_delete_confirm';
+  static const models_screens_catalog_sync_tooltip =
+      'models_screens.catalog_sync_tooltip';
+  static const models_screens_catalog_sync_success =
+      'models_screens.catalog_sync_success';
+  static const models_screens_catalog_sync_error =
+      'models_screens.catalog_sync_error';
   static const models_screens_add_provider_open_button =
       'models_screens.add_provider.open_button';
   static const models_screens_add_provider_title =
@@ -403,6 +409,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.switch_model_cancel';
   static const chats_screens_chat_conversation_switch_model_confirm =
       'chats_screens.chat_conversation.switch_model_confirm';
+  static const chats_screens_chat_conversation_rename =
+      'chats_screens.chat_conversation.rename';
+  static const chats_screens_chat_conversation_rename_title =
+      'chats_screens.chat_conversation.rename_title';
+  static const chats_screens_chat_conversation_rename_field_label =
+      'chats_screens.chat_conversation.rename_field_label';
   static const chats_screens_chat_conversation_stop_generation =
       'chats_screens.chat_conversation.stop_generation';
   static const chats_screens_chat_conversation_stop_error =
@@ -427,6 +439,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.copy_message';
   static const chats_screens_chat_conversation_message_copied =
       'chats_screens.chat_conversation.message_copied';
+  static const chats_screens_chat_conversation_copy_tool_response =
+      'chats_screens.chat_conversation.copy_tool_response';
+  static const chats_screens_chat_conversation_tool_response_copied =
+      'chats_screens.chat_conversation.tool_response_copied';
   static const chats_screens_chat_conversation_a2ui_form_invalid =
       'chats_screens.chat_conversation.a2ui_form_invalid';
   static const chats_screens_chat_conversation_continue_error =
@@ -473,6 +489,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.delete_title';
   static const chats_screens_chat_conversation_delete_confirm =
       'chats_screens.chat_conversation.delete_confirm';
+  static const chats_screens_chat_conversation_pin =
+      'chats_screens.chat_conversation.pin';
+  static const chats_screens_chat_conversation_unpin =
+      'chats_screens.chat_conversation.unpin';
   static const chats_screens_chat_conversation_options_tooltip =
       'chats_screens.chat_conversation.options_tooltip';
   static const chats_screens_chat_conversation_error_workspace_mismatch =
@@ -540,6 +560,14 @@ abstract class LocaleKeys {
   static const tools_screen_mcp_reconnect_partial_failure =
       'tools_screen.mcp_reconnect_partial_failure';
   static const tools_screen_mcp_view_error = 'tools_screen.mcp_view_error';
+  static const tools_screen_mcp_copy_error_details =
+      'tools_screen.mcp_copy_error_details';
+  static const tools_screen_mcp_error_details_copied =
+      'tools_screen.mcp_error_details_copied';
+  static const tools_screen_mcp_server = 'tools_screen.mcp_server';
+  static const tools_screen_mcp_message = 'tools_screen.mcp_message';
+  static const tools_screen_mcp_unknown_error =
+      'tools_screen.mcp_unknown_error';
   static const tools_screen_tools_count = 'tools_screen.tools_count';
   static const tools_screen_delete_mcp_title = 'tools_screen.delete_mcp_title';
   static const tools_screen_delete_mcp_confirm =

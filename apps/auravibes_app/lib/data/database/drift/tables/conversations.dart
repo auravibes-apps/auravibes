@@ -15,6 +15,7 @@ CREATE INDEX conversations_workspace_parent_updated_id
 ON conversations (
   workspace_id,
   parent_conversation_id,
+  is_pinned DESC,
   updated_at DESC,
   id DESC
 )

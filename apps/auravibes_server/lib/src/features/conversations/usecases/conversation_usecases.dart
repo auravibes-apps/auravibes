@@ -68,6 +68,13 @@ class ConversationUseCases {
         parentConversationId: request.parentConversationId,
         transaction: transaction,
       );
+      if (request.isPinned) {
+        await _ensurePinnedCapacity(
+          session,
+          workspaceId: request.workspaceId,
+          transaction: transaction,
+        );
+      }
       final summary = _summary(
         await Conversation.db.insertRow(
           session,
@@ -266,6 +273,13 @@ class ConversationUseCases {
             : request.parentConversationId,
         transaction: transaction,
       );
+      if (request.isPinned == true && !conversation.isPinned) {
+        await _ensurePinnedCapacity(
+          session,
+          workspaceId: request.workspaceId,
+          transaction: transaction,
+        );
+      }
       final updated = await Conversation.db.updateRow(
         session,
         conversation.copyWith(
@@ -2035,6 +2049,7 @@ class ConversationUseCases {
       session,
       workspaceId: request.workspaceId,
       search: request.search,
+      beforeIsPinned: cursor?.isPinned,
       beforeUpdatedAt: cursor?.updatedAt,
       beforeStableId: cursor?.stableId,
       limit: request.limit + 1,
@@ -2056,12 +2071,14 @@ class ConversationUseCases {
       );
       if (decoded is! Map<String, dynamic> ||
           decoded['updatedAt'] is! String ||
-          decoded['stableId'] is! String) {
+          decoded['stableId'] is! String ||
+          (decoded['isPinned'] != null && decoded['isPinned'] is! bool)) {
         _fail(ConversationErrorCode.validationFailed);
       }
       return _ConversationCursor(
         DateTime.parse(decoded['updatedAt'] as String).toUtc(),
         decoded['stableId'] as String,
+        decoded['isPinned'] as bool?,
       );
     } on FormatException {
       _fail(ConversationErrorCode.validationFailed);
@@ -2071,6 +2088,7 @@ class ConversationUseCases {
   String _encodeCursor(Conversation conversation) => base64Url.encode(
     utf8.encode(
       jsonEncode({
+        'isPinned': conversation.isPinned,
         'updatedAt': conversation.updatedAt.toIso8601String(),
         'stableId': conversation.stableId,
       }),
@@ -2113,6 +2131,21 @@ class ConversationUseCases {
               transaction: transaction,
             ) ==
             null) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+  }
+
+  Future<void> _ensurePinnedCapacity(
+    Session session, {
+    required int workspaceId,
+    required Transaction transaction,
+  }) async {
+    final count = await _repository.countPinnedConversations(
+      session,
+      workspaceId: workspaceId,
+      transaction: transaction,
+    );
+    if (count >= ConversationLimits.maxPinnedPerWorkspace) {
       _fail(ConversationErrorCode.validationFailed);
     }
   }
@@ -2563,6 +2596,7 @@ class const _ContinueConversationReplay();
 class const _ConversationCursor(
   final DateTime updatedAt,
   final String stableId,
+  final bool? isPinned,
 );
 
 class const _Mutation<T>(

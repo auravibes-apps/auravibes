@@ -336,87 +336,85 @@ void main() {
     expect(find.text('View All'), findsNothing);
   });
 
-  testWidgets(
-    'renders conversations with compacting row when compaction is running',
-    (tester) async {
-      final conversations = [
-        ConversationEntity(
-          id: 'conv-1',
-          title: 'Test Chat',
-          workspaceId: 'workspace-1',
-          isPinned: false,
-          createdAt: .new(2025),
-          updatedAt: .new(2025),
-        ),
-      ];
+  testWidgets('shows pinned icon during compaction', (tester) async {
+    final conversations = [
+      ConversationEntity(
+        id: 'conv-1',
+        title: 'Test Chat',
+        workspaceId: 'workspace-1',
+        isPinned: true,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
+      ),
+    ];
 
-      final repository = _SeededConversationRepository(conversations);
-      addTearDown(repository.close);
+    final repository = _SeededConversationRepository(conversations);
+    addTearDown(repository.close);
 
-      await tester.runAsync(() async {
-        await tester.pumpWidget(
-          EasyLocalization(
-            child: Builder(
-              builder: (context) {
-                return Portal(
-                  child: TestProviderScope(
-                    overrides: [
-                      workspaceSessionForRouteProvider.overrideWith(
-                        (_, workspaceId) async => WorkspaceSession(
-                          LocalWorkspaceRef(localWorkspaceId: workspaceId),
-                        ),
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return Portal(
+                child: TestProviderScope(
+                  overrides: [
+                    workspaceSessionForRouteProvider.overrideWith(
+                      (_, workspaceId) async => WorkspaceSession(
+                        LocalWorkspaceRef(localWorkspaceId: workspaceId),
                       ),
-                      conversationRepositoryProvider.overrideWithValue(
-                        repository,
-                      ),
-                      compactionExecutionProvider.overrideWith(() {
-                        return _TestCompactionExecution({
-                          'conv-1': CompactionExecutionState(
-                            conversationId: 'conv-1',
-                            trigger: .auto,
-                            startedAt: .new(2025),
-                            status: .running,
-                          ),
-                        });
-                      }),
-                    ],
-                    child: MaterialApp(
-                      home: Theme(
-                        data: .new(extensions: [AuraTheme.light]),
-                        child: const Material(
-                          child: SizedBox(
-                            width: 300,
-                            height: 800,
-                            child: SidebarConversationsWidget(
-                              workspaceId: 'workspace-1',
-                            ),
-                          ),
-                        ),
-                      ),
-                      locale: context.locale,
-                      localizationsDelegates: context.localizationDelegates,
-                      supportedLocales: context.supportedLocales,
                     ),
+                    conversationRepositoryProvider.overrideWithValue(
+                      repository,
+                    ),
+                    compactionExecutionProvider.overrideWith(() {
+                      return _TestCompactionExecution({
+                        'conv-1': CompactionExecutionState(
+                          conversationId: 'conv-1',
+                          trigger: .auto,
+                          startedAt: .new(2025),
+                          status: .running,
+                        ),
+                      });
+                    }),
+                  ],
+                  child: MaterialApp(
+                    home: Theme(
+                      data: .new(extensions: [AuraTheme.light]),
+                      child: const Material(
+                        child: SizedBox(
+                          width: 300,
+                          height: 800,
+                          child: SidebarConversationsWidget(
+                            workspaceId: 'workspace-1',
+                          ),
+                        ),
+                      ),
+                    ),
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
                   ),
-                );
-              },
-            ),
-            supportedLocales: const [Locale('en')],
-            path: 'assets/i18n',
-            fallbackLocale: const Locale('en'),
-            startLocale: const Locale('en'),
-            useOnlyLangCode: true,
-            useFallbackTranslations: true,
+                ),
+              );
+            },
           ),
-        );
-      });
-      await tester.pump();
-      await tester.pump();
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      );
+    });
+    await tester.pump();
+    await tester.pump();
 
-      expect(find.byType(AuraSpinner), findsOneWidget);
-      expect(find.text('Test Chat'), findsOneWidget);
-    },
-  );
+    expect(find.byType(AuraSpinner), findsOneWidget);
+    expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
+    expect(find.text('Test Chat'), findsOneWidget);
+  });
 }
 
 class _SeededConversationRepository(

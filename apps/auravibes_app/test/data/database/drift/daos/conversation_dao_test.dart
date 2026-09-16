@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -51,6 +54,42 @@ void main() {
       );
       expect(conv.title, equals('Test Conversation'));
       expect(conv.workspaceId, equals(ws.id));
+      expect(conv.isPinned, isFalse);
+    });
+
+    test('persists pin state after reopening the database', () async {
+      await fixture.close();
+      final directory = await Directory.systemTemp.createTemp(
+        'auravibes-conversation-',
+      );
+      final file = File('${directory.path}/conversations.sqlite');
+      var database = AppDatabase(connection: NativeDatabase(file));
+      addTearDown(() async {
+        await database.close();
+        final _ = await directory.delete(recursive: true);
+      });
+
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'WS', type: WorkspaceType.local),
+      );
+      final conversation = await database.conversationDao.insertConversation(
+        .insert(workspaceId: workspace.id, title: 'Pinned'),
+      );
+      final _ = await database.conversationDao.patchConversation(
+        conversation.id,
+        const ConversationsCompanion(isPinned: .new(true)),
+      );
+      await database.close();
+
+      database = AppDatabase(connection: NativeDatabase(file));
+      final restored = await database.conversationDao.getConversationById(
+        conversation.id,
+      );
+
+      expect(
+        (restored ?? fail('Expected restored conversation')).isPinned,
+        isTrue,
+      );
     });
 
     test('getConversationById returns conversation', () async {
@@ -161,6 +200,136 @@ void main() {
           .watchConversationsByWorkspace(ws.id)
           .first;
       expect(emitted.length, equals(2));
+    });
+
+    test(
+      'orders pinned conversations first and preserves update order',
+      () async {
+        final workspace = await fixture.database.workspaceDao.insertWorkspace(
+          .insert(name: 'WS', type: WorkspaceType.local),
+        );
+        final unpinnedOld = await fixture.database.conversationDao
+            .insertConversation(
+              .insert(workspaceId: workspace.id, title: 'Unpinned old'),
+            );
+        final pinnedOld = await fixture.database.conversationDao
+            .insertConversation(
+              .insert(
+                workspaceId: workspace.id,
+                title: 'Pinned old',
+                isPinned: const Value(true),
+              ),
+            );
+        final pinnedRecent = await fixture.database.conversationDao
+            .insertConversation(
+              .insert(
+                workspaceId: workspace.id,
+                title: 'Pinned recent',
+                isPinned: const Value(true),
+              ),
+            );
+        final unpinnedRecent = await fixture.database.conversationDao
+            .insertConversation(
+              .insert(workspaceId: workspace.id, title: 'Unpinned recent'),
+            );
+        final _ = await fixture.database.conversationDao.patchConversation(
+          unpinnedOld.id,
+          .new(updatedAt: .new(DateTime.utc(2025))),
+        );
+        final _ = await fixture.database.conversationDao.patchConversation(
+          pinnedOld.id,
+          .new(updatedAt: .new(DateTime.utc(2025, 1, 2))),
+        );
+        final _ = await fixture.database.conversationDao.patchConversation(
+          pinnedRecent.id,
+          .new(updatedAt: .new(DateTime.utc(2025, 1, 3))),
+        );
+        final _ = await fixture.database.conversationDao.patchConversation(
+          unpinnedRecent.id,
+          .new(updatedAt: .new(DateTime.utc(2025, 1, 4))),
+        );
+
+        final conversations = await fixture.database.conversationDao
+            .watchConversationsByWorkspace(workspace.id)
+            .first;
+
+        expect(
+          conversations.map((conversation) => conversation.id),
+          equals([
+            pinnedRecent.id,
+            pinnedOld.id,
+            unpinnedRecent.id,
+            unpinnedOld.id,
+          ]),
+        );
+        final firstPage = await fixture.database.conversationDao
+            .watchConversationsByWorkspace(workspace.id, limit: 1)
+            .first;
+        final secondPage = await fixture.database.conversationDao
+            .watchConversationsByWorkspace(workspace.id, limit: 1, offset: 1)
+            .first;
+
+        expect(firstPage.single.id, pinnedRecent.id);
+        expect(secondPage.single.id, pinnedOld.id);
+      },
+    );
+
+    test('rejects more than ten pinned conversations per workspace', () async {
+      final workspace = await fixture.database.workspaceDao.insertWorkspace(
+        .insert(name: 'WS', type: WorkspaceType.local),
+      );
+      final conversations = [
+        for (
+          var index = 0;
+          index < ConversationLimits.maxPinnedPerWorkspace + 1;
+          index++
+        )
+          await fixture.database.conversationDao.insertConversation(
+            .insert(workspaceId: workspace.id, title: 'Conversation $index'),
+          ),
+      ];
+
+      for (final conversation in conversations.take(
+        ConversationLimits.maxPinnedPerWorkspace,
+      )) {
+        expect(
+          await fixture.database.conversationDao.patchConversation(
+            conversation.id,
+            const ConversationsCompanion(isPinned: .new(true)),
+          ),
+          isTrue,
+        );
+      }
+
+      await expectLater(
+        fixture.database.conversationDao.patchConversation(
+          conversations.last.id,
+          const ConversationsCompanion(isPinned: .new(true)),
+        ),
+        throwsA(isA<ConversationPinLimitException>()),
+      );
+      await expectLater(
+        fixture.database.conversationDao.insertConversation(
+          .insert(
+            workspaceId: workspace.id,
+            title: 'Inserted over cap',
+            isPinned: const Value(true),
+          ),
+        ),
+        throwsA(isA<ConversationPinLimitException>()),
+      );
+      expect(
+        ConversationPinLimitException(workspace.id).toString(),
+        'ConversationPinLimitException: workspace ${workspace.id} has reached '
+        'the pinned conversation limit',
+      );
+      final emitted = await fixture.database.conversationDao
+          .watchConversationsByWorkspace(workspace.id)
+          .first;
+      expect(
+        emitted.where((conversation) => conversation.isPinned),
+        hasLength(ConversationLimits.maxPinnedPerWorkspace),
+      );
     });
 
     test('watchConversationsByWorkspace with limit', () async {

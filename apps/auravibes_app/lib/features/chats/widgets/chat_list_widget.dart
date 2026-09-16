@@ -4,11 +4,15 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
+import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
@@ -529,9 +533,25 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
       workspaceId: widget.workspaceId,
       controller: _menuController,
       onDelete: () => _handleDelete(context),
+      onTogglePin: () => _togglePin(chat),
+      onRename: () => _handleRename(context),
       onMenuToggle: _menuController.toggle,
       onTap: () => _openConversation(context),
     );
+  }
+
+  Future<void> _handleRename(BuildContext context) async {
+    final title = await RenameConversationDialog.show(
+      context,
+      title: widget.chat.title,
+    );
+    if (title == null) return;
+
+    await ref
+        .read(
+          conversationChatProvider(widget.workspaceId, widget.chat.id).notifier,
+        )
+        .rename(widget.chat, title);
   }
 
   Future<void> _handleDelete(BuildContext context) async {
@@ -559,6 +579,48 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
     return;
   }
 
+  Future<void> _togglePin(ConversationEntity chat) async {
+    if (await _toggleCloudPin(chat)) return;
+    await _toggleLocalPin(chat);
+  }
+
+  Future<bool> _toggleCloudPin(ConversationEntity chat) async {
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(chat.workspaceId).future,
+    );
+    if (cloud == null) return false;
+
+    await _updateCloudPin(cloud, chat);
+    if (!mounted) return true;
+    ref.invalidate(conversationsStreamProvider(workspaceId: chat.workspaceId));
+
+    return true;
+  }
+
+  Future<void> _updateCloudPin(
+    CloudConversationUsecase cloud,
+    ConversationEntity chat,
+  ) async {
+    final patch = ConversationPatch(isPinned: !chat.isPinned);
+    try {
+      final _ = await cloud.update(chat, patch);
+    } on CloudAppException catch (error) {
+      if (error.code != 'validationFailed') rethrow;
+    }
+  }
+
+  Future<void> _toggleLocalPin(ConversationEntity chat) async {
+    if (!mounted) return;
+    final patch = ConversationPatch(isPinned: !chat.isPinned);
+    try {
+      final _ = await ref
+          .read(conversationRepositoryProvider)
+          .patchConversation(chat.id, patch);
+    } on ConversationPinLimitException {
+      return;
+    }
+  }
+
   void _openConversation(BuildContext context) {
     ConversationRoute(
       workspaceId: widget.workspaceId,
@@ -572,6 +634,8 @@ class const _ChatTileProvider({
   required final String workspaceId,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onTogglePin,
+  required final VoidCallback onRename,
   required final VoidCallback onMenuToggle,
   required final VoidCallback onTap,
 }) extends ConsumerWidget {
@@ -586,6 +650,8 @@ class const _ChatTileProvider({
       title: title,
       controller: controller,
       onDelete: onDelete,
+      onTogglePin: onTogglePin,
+      onRename: onRename,
       onMenuToggle: onMenuToggle,
       onTap: onTap,
     );
@@ -759,6 +825,8 @@ class const _ChatTileView({
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onTogglePin,
+  required final VoidCallback onRename,
   required final VoidCallback onMenuToggle,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
@@ -770,6 +838,8 @@ class const _ChatTileView({
       title: title,
       controller: controller,
       onDelete: onDelete,
+      onTogglePin: onTogglePin,
+      onRename: onRename,
       onMenuToggle: onMenuToggle,
     ),
     onTap: onTap,
@@ -783,6 +853,8 @@ class const _ChatTileRow({
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onTogglePin,
+  required final VoidCallback onRename,
   required final VoidCallback onMenuToggle,
 }) extends StatelessWidget {
   @override
@@ -792,18 +864,35 @@ class const _ChatTileRow({
       Expanded(
         child: _ChatTileInfo(chat: chat, title: title),
       ),
-      if (modelDisplayName case final displayName?) ...[
-        const SizedBox(width: 8),
-        AuraBadge.text(child: Text(displayName), variant: .info),
-      ],
-      const SizedBox(width: 8),
+      _ChatTileModelBadge(displayName: modelDisplayName),
       _ChatTileMenu(
+        chat: chat,
         controller: controller,
         onDelete: onDelete,
+        onTogglePin: onTogglePin,
+        onRename: onRename,
         onToggle: onMenuToggle,
       ),
     ],
   );
+}
+
+class const _ChatTileModelBadge({required final String? displayName})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final displayName = this.displayName;
+    if (displayName == null) return const SizedBox(width: 8);
+
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        const SizedBox(width: 8),
+        AuraBadge.text(child: Text(displayName), variant: .info),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 }
 
 class const _ChatTileInfo({
@@ -849,8 +938,11 @@ class const _ChatTileTitleRow({
 }
 
 class const _ChatTileMenu({
+  required final ConversationEntity chat,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onTogglePin,
+  required final VoidCallback onRename,
   required final VoidCallback onToggle,
 }) extends StatelessWidget {
   @override
@@ -864,14 +956,45 @@ class const _ChatTileMenu({
             .tr(),
       ),
       items: [
-        AuraPopupMenuItem(
-          title: const TextLocale(LocaleKeys.common_delete),
-          onTap: onDelete,
-          leading: const AuraIcon(Icons.delete_outline),
-          variant: .error,
-        ),
+        _chatTilePinItem(chat, onTogglePin),
+        ..._chatTileMenuItems(onRename: onRename, onDelete: onDelete),
       ],
       controller: controller,
     );
   }
 }
+
+AuraPopupMenuItem _chatTilePinItem(
+  ConversationEntity chat,
+  VoidCallback onTogglePin,
+) => AuraPopupMenuItem(
+  title: TextLocale(
+    chat.isPinned
+        ? LocaleKeys.chats_screens_chat_conversation_unpin
+        : LocaleKeys.chats_screens_chat_conversation_pin,
+  ),
+  onTap: onTogglePin,
+  leading: AuraIcon(chat.isPinned ? Icons.push_pin : Icons.push_pin_outlined),
+);
+
+List<AuraPopupMenuItem> _chatTileMenuItems({
+  required VoidCallback onRename,
+  required VoidCallback onDelete,
+}) => [_chatTileRenameItem(onRename), _chatTileDeleteItem(onDelete)];
+
+AuraPopupMenuItem _chatTileRenameItem(VoidCallback onRename) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_rename,
+      ),
+      onTap: onRename,
+      leading: const AuraIcon(Icons.edit_outlined),
+    );
+
+AuraPopupMenuItem _chatTileDeleteItem(VoidCallback onDelete) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.common_delete),
+      onTap: onDelete,
+      leading: const AuraIcon(Icons.delete_outline),
+      variant: .error,
+    );

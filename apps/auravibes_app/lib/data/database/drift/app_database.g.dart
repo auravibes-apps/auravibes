@@ -12506,7 +12506,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final Index conversationsWorkspaceParentUpdatedId = Index(
     'conversations_workspace_parent_updated_id',
-    'CREATE INDEX conversations_workspace_parent_updated_id ON conversations (workspace_id, parent_conversation_id, updated_at DESC, id DESC)',
+    'CREATE INDEX conversations_workspace_parent_updated_id ON conversations (workspace_id, parent_conversation_id, is_pinned DESC, updated_at DESC, id DESC)',
   );
   late final Index agentsWorkspaceNameId = Index(
     'agents_workspace_name_id',

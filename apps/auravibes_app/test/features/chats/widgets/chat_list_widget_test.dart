@@ -320,6 +320,128 @@ void main() {
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
     });
 
+    testWidgets('pins a conversation from its options menu', (tester) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([_createConversation()]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.more_vert));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Pin conversation'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
+
+      await tester.tap(find.text('Pin conversation'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        repo.patches,
+        equals([
+          (id: 'conv-1', patch: const ConversationPatch(isPinned: true)),
+        ]),
+      );
+    });
+
+    testWidgets('unpins a conversation from its options menu', (tester) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([_createConversation(isPinned: true)]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.more_vert));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Unpin conversation'), findsOneWidget);
+
+      await tester.tap(find.text('Unpin conversation'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        repo.patches,
+        equals([
+          (id: 'conv-1', patch: const ConversationPatch(isPinned: false)),
+        ]),
+      );
+    });
+
+    testWidgets('renames a chat from its menu', (tester) async {
+      final initial = _createConversation(title: 'Original');
+      final renamed = _createConversation(title: 'Renamed');
+      final controller = StreamController<List<ConversationEntity>>.broadcast();
+      final patched = <ConversationPatch>[];
+      addTearDown(controller.close);
+      final repo = _StubConversationRepository(
+        conversationsStream: controller.stream,
+        onPatch: (id, patch) async {
+          patched.add(patch);
+          controller.add([renamed]);
+
+          return renamed;
+        },
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            conversationByIdStreamProvider.overrideWith(
+              (ref, conversationId) => Stream.value(initial),
+            ),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+      controller.add([initial]);
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Rename'), findsOneWidget);
+
+      await tester.tap(find.text('Rename'));
+      final _ = await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField).last).controller?.text,
+        'Original',
+      );
+
+      await tester.enterText(find.byType(TextField).last, 'Renamed');
+      await tester.tap(find.text('Save'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(patched, hasLength(1));
+      expect(patched.single.title, 'Renamed');
+      expect(find.text('Renamed'), findsOneWidget);
+    });
+
     testWidgets('shows error state when stream has error', (tester) async {
       final controller = StreamController<List<ConversationEntity>>();
       addTearDown(controller.close);
@@ -487,8 +609,10 @@ void main() {
 
 class _StubConversationRepository({
   required final Stream<List<ConversationEntity>> conversationsStream,
+  final Future<ConversationEntity> Function(String, ConversationPatch)? onPatch,
 }) implements ConversationRepository {
   final queries = <({String? search, int? limit, int offset})>[];
+  final patches = <({String id, ConversationPatch patch})>[];
   List<ConversationEntity>? _cachedConversations;
 
   @override
@@ -553,8 +677,21 @@ class _StubConversationRepository({
   Future<ConversationEntity> patchConversation(
     String id,
     ConversationPatch conversation,
-  ) {
-    throw UnimplementedError();
+  ) async {
+    patches.add((id: id, patch: conversation));
+
+    if (onPatch case final callback?) {
+      return await callback(id, conversation);
+    }
+
+    return ConversationEntity(
+      id: id,
+      title: 'Updated chat',
+      workspaceId: 'ws-1',
+      isPinned: conversation.isPinned ?? false,
+      createdAt: .new(2025),
+      updatedAt: .new(2025),
+    );
   }
 
   @override

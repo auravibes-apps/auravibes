@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
+import 'package:auravibes_ui/src/atoms/aura_tile.dart';
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -397,6 +398,112 @@ void main() {
       expect(find.text('Item 1'), findsNothing);
     });
 
+    testWidgets('outside dismissal clears the parent tile focus ring', (
+      tester,
+    ) async {
+      final previousStrategy = FocusManager.instance.highlightStrategy;
+      FocusManager.instance.highlightStrategy = .alwaysTraditional;
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy = previousStrategy,
+      );
+      final controller = AuraPopupMenuController();
+      const tileKey = ValueKey<String>('conversation-tile');
+
+      await tester.pumpWidget(
+        _PopupTileHost(controller: controller, tileKey: tileKey),
+      );
+
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      await tester.pump();
+      expect(_tileBorder(tester, tileKey), isNot(Colors.transparent));
+
+      controller.open();
+      await tester.pump();
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pump();
+
+      expect(controller.isShowing, isFalse);
+      expect(_tileBorder(tester, tileKey), Colors.transparent);
+    });
+
+    testWidgets('outside dismissal clears focus rings for multiple tiles', (
+      tester,
+    ) async {
+      final previousStrategy = FocusManager.instance.highlightStrategy;
+      FocusManager.instance.highlightStrategy = .alwaysTraditional;
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy = previousStrategy,
+      );
+      final firstController = AuraPopupMenuController();
+      final secondController = AuraPopupMenuController();
+      const firstTileKey = ValueKey<String>('first-conversation-tile');
+      const secondTileKey = ValueKey<String>('second-conversation-tile');
+
+      await tester.pumpWidget(
+        _PopupTilesHost(
+          firstController: firstController,
+          secondController: secondController,
+          firstTileKey: firstTileKey,
+          secondTileKey: secondTileKey,
+        ),
+      );
+
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      await tester.pump();
+      expect(_tileBorder(tester, firstTileKey), isNot(Colors.transparent));
+
+      firstController.open();
+      await tester.pump();
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pump();
+
+      expect(_tileBorder(tester, firstTileKey), Colors.transparent);
+
+      secondController.open();
+      await tester.pump();
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pump();
+
+      expect(_tileBorder(tester, firstTileKey), Colors.transparent);
+      expect(_tileBorder(tester, secondTileKey), Colors.transparent);
+    });
+
+    testWidgets('Escape restores focus to the popup trigger', (tester) async {
+      final controller = AuraPopupMenuController();
+      final triggerFocusNode = FocusNode();
+      addTearDown(triggerFocusNode.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraPopupMenu(
+                child: TextButton(
+                  onPressed: controller.toggle,
+                  child: const Text('Open Menu'),
+                ),
+                items: const [AuraPopupMenuItem(title: Text('Item 1'))],
+                controller: controller,
+                focusNode: triggerFocusNode,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      triggerFocusNode.requestFocus();
+      await tester.pump();
+      controller.open();
+      await tester.pump();
+
+      expect(controller.isShowing, isTrue);
+      expect(await tester.sendKeyEvent(.escape), isTrue);
+      await tester.pump();
+
+      expect(controller.isShowing, isFalse);
+      expect(triggerFocusNode.hasPrimaryFocus, isTrue);
+    });
+
     testWidgets('menu item tap works while outside dismissal is active', (
       tester,
     ) async {
@@ -622,3 +729,80 @@ Rect _menuItemRect(WidgetTester tester, String title) => tester.getRect(
 );
 
 void _noop() => Object();
+
+class const _PopupTileHost({
+  required final AuraPopupMenuController controller,
+  required final Key tileKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    home: Scaffold(
+      body: Portal(
+        child: _PopupTile(controller: controller, tileKey: tileKey),
+      ),
+    ),
+  );
+}
+
+class const _PopupTilesHost({
+  required final AuraPopupMenuController firstController,
+  required final AuraPopupMenuController secondController,
+  required final Key firstTileKey,
+  required final Key secondTileKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    home: Scaffold(
+      body: Portal(
+        child: Column(
+          children: [
+            _PopupTile(controller: firstController, tileKey: firstTileKey),
+            _PopupTile(controller: secondController, tileKey: secondTileKey),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class const _PopupTile({
+  required final AuraPopupMenuController controller,
+  required final Key tileKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    child: const Text('Conversation'),
+    key: tileKey,
+    onTap: _noop,
+    trailing: AuraPopupMenu(
+      child: TextButton(
+        onPressed: controller.toggle,
+        child: const Text('Menu'),
+      ),
+      items: const [AuraPopupMenuItem(title: Text('Rename'))],
+      controller: controller,
+    ),
+  );
+}
+
+Color _tileBorder(WidgetTester tester, Key tileKey) {
+  final container = tester.widget<AnimatedContainer>(
+    find
+        .descendant(
+          of: find.byKey(tileKey),
+          matching: find.byType(AnimatedContainer),
+        )
+        .first,
+  );
+  final decoration = container.decoration;
+  if (decoration is! BoxDecoration) {
+    fail('Expected tile decoration to be a BoxDecoration.');
+  }
+
+  final border = decoration.border;
+  if (border == null) {
+    fail('Expected tile decoration to have a border.');
+  }
+
+  return border.top.color;
+}

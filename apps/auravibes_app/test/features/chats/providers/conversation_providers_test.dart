@@ -179,7 +179,83 @@ void main() {
 
       expect(value, equals(conversations));
     });
+
+    test('preserves repository ordering for database pagination', () async {
+      final unpinnedFirst = ConversationEntity(
+        id: 'unpinned-first',
+        title: 'Unpinned first',
+        workspaceId: 'ws1',
+        isPinned: false,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+      );
+      final pinnedFirst = unpinnedFirst.copyWith(
+        id: 'pinned-first',
+        title: 'Pinned first',
+        isPinned: true,
+      );
+      final unpinnedSecond = unpinnedFirst.copyWith(
+        id: 'unpinned-second',
+        title: 'Unpinned second',
+      );
+      final pinnedSecond = unpinnedFirst.copyWith(
+        id: 'pinned-second',
+        title: 'Pinned second',
+        isPinned: true,
+      );
+      fixture.repository.conversationsByWorkspace = [
+        unpinnedFirst,
+        pinnedFirst,
+        unpinnedSecond,
+        pinnedSecond,
+      ];
+
+      final result = Completer<List<ConversationEntity>>();
+      void completeConversations(
+        AsyncValue<List<ConversationEntity>>? _,
+        AsyncValue<List<ConversationEntity>> next,
+      ) {
+        if (next case AsyncData(:final value)) result.complete(value);
+      }
+
+      final subscription = fixture.container.listen(
+        conversationsStreamProvider(workspaceId: 'ws1'),
+        completeConversations,
+        fireImmediately: true,
+      );
+      final conversations = await result.future;
+      subscription.close();
+
+      expect(
+        conversations,
+        equals([unpinnedFirst, pinnedFirst, unpinnedSecond, pinnedSecond]),
+      );
+    });
   });
+
+  test(
+    'reports whether a workspace can accept another pinned conversation',
+    () {
+      final conversation = ConversationEntity(
+        id: 'c1',
+        title: 'Chat',
+        workspaceId: 'ws1',
+        isPinned: true,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+      );
+      final pinned = List.generate(
+        ConversationLimits.maxPinnedPerWorkspace,
+        (index) => conversation.copyWith(id: 'c$index'),
+      );
+
+      expect(ConversationLimits.hasPinnedCapacity(pinned), isFalse);
+      expect(
+        ConversationLimits.hasPinnedCapacity(pinned.take(pinned.length - 1)),
+        isTrue,
+      );
+    },
+  );
 
   group('streamingTitleProvider', () {
     test('returns null when no title for conversation', () {

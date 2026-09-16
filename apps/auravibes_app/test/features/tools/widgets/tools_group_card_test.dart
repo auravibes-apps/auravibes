@@ -330,6 +330,12 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraCard), findsOneWidget);
+    expect(
+      tester
+          .widget<ToolsGroupHeader>(find.byType(ToolsGroupHeader))
+          .onViewError,
+      isNotNull,
+    );
   });
 
   testWidgets('renders multiple tools in expanded state', (tester) async {

@@ -142,3 +142,19 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
 }
 
 bool _isNullOrNonEmpty(String? value) => value == null || value.isNotEmpty;
+
+abstract final class ConversationLimits {
+  static const maxPinnedPerWorkspace = 10;
+
+  static bool hasPinnedCapacity(Iterable<ConversationEntity> conversations) =>
+      conversations.where((conversation) => conversation.isPinned).length <
+      maxPinnedPerWorkspace;
+}
+
+class const ConversationPinLimitException(final String workspaceId)
+    implements Exception {
+  @override
+  String toString() =>
+      'ConversationPinLimitException: workspace $workspaceId has reached '
+      'the pinned conversation limit';
+}

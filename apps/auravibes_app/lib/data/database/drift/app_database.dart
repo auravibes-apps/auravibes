@@ -120,7 +120,10 @@ class AppDatabase extends _$AppDatabase {
   static const _cloudWorkspaceSchemaVersion = 5;
   static const _cloudWorkspaceColumnsSchemaVersion = 6;
   static const _conversationListSchemaVersion = 8;
-  static const int _currentSchemaVersion = _conversationListSchemaVersion;
+  static const int _conversationPinOrderingSchemaVersion =
+      _conversationListSchemaVersion + 1;
+  static const int _currentSchemaVersion =
+      _conversationPinOrderingSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -213,13 +216,17 @@ extension on AppDatabase {
   }
 
   Future<void> _upgradeConversationListSchema(int from) async {
-    if (from >= AppDatabase._conversationListSchemaVersion) return;
+    if (from >= AppDatabase._conversationPinOrderingSchemaVersion) return;
     if (!await _tableExists('conversations')) return;
+    await customStatement(
+      'DROP INDEX IF EXISTS conversations_workspace_parent_updated_id',
+    );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS '
       'conversations_workspace_parent_updated_id '
       'ON conversations ( '
-      'workspace_id, parent_conversation_id, updated_at DESC, id DESC '
+      'workspace_id, parent_conversation_id, is_pinned DESC, '
+      'updated_at DESC, id DESC '
       ')',
     );
   }

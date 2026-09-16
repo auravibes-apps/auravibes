@@ -2,13 +2,14 @@
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
 
+import 'dart:async';
+
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_group_header.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/features/tools/widgets/mcp_error_details.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -17,7 +18,6 @@ import 'package:material_ui/material_ui.dart';
 
 // Locale key for no tools in group message.
 const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
-const _kMcpErrorTitle = 'tools_screen.mcp_error';
 
 typedef _ConversationToolsCallbackInput = ({
   ConversationToolsGroupWithTools groupWithTools,
@@ -96,7 +96,13 @@ class _ConversationToolsGroupCardCallbacks {
              )))
            : null,
        onViewError = groupWithTools.hasMcpError()
-           ? (() => _showConversationMcpError(groupWithTools, context))
+           ? (() => unawaited(
+               McpErrorDetails.show(
+                 context,
+                 groupName: groupWithTools.group?.name,
+                 errorMessage: groupWithTools.mcpErrorMessage,
+               ),
+             ))
            : null;
 
   final ValueChanged<bool>? onToggleAllTools;
@@ -147,20 +153,6 @@ Future<void> _reconnectConversationGroup(
         ).notifier,
       )
       .reconnectMcp(mcpServerId);
-}
-
-void _showConversationMcpError(
-  ConversationToolsGroupWithTools groupWithTools,
-  BuildContext context,
-) {
-  AuraDialogs.alert(
-    context: context,
-    title: Text(_kMcpErrorTitle.tr()),
-    message: AuraSelectableText(
-      groupWithTools.mcpErrorMessage ?? 'Unknown error',
-    ),
-    dismissLabel: const TextLocale(LocaleKeys.common_cancel),
-  );
 }
 
 class const _ConversationToolsGroupCardFrame({

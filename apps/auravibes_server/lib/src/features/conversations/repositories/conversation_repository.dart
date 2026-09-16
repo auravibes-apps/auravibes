@@ -81,6 +81,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     Session session, {
     required int workspaceId,
     String? search,
+    bool? beforeIsPinned,
     DateTime? beforeUpdatedAt,
     String? beforeStableId,
     int? limit,
@@ -101,18 +102,48 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         if (beforeUpdatedAt case final updatedAt?) {
           final stableId = beforeStableId;
           if (stableId == null) return where;
-          where &=
-              ((table.updatedAt < updatedAt) |
-              (table.updatedAt.equals(updatedAt) &
-                  (table.stableId < stableId)));
+          final beforeDate =
+              (table.updatedAt < updatedAt) |
+              (table.updatedAt.equals(updatedAt) & (table.stableId < stableId));
+          if (beforeIsPinned == true) {
+            where &=
+                table.isPinned.equals(false) |
+                (table.isPinned.equals(true) & beforeDate);
+          } else if (beforeIsPinned == false) {
+            where &= table.isPinned.equals(false) & beforeDate;
+          } else {
+            where &= beforeDate;
+          }
         }
         return where;
       },
-      orderByList: (table) => [table.updatedAt.desc(), table.stableId.desc()],
+      orderByList: (table) => [
+        table.isPinned.desc(),
+        table.updatedAt.desc(),
+        table.stableId.desc(),
+      ],
       limit: limit,
       offset: offset,
       transaction: transaction,
     );
+  }
+
+  Future<int> countPinnedConversations(
+    Session session, {
+    required int workspaceId,
+    Transaction? transaction,
+  }) async {
+    final conversations = await Conversation.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.isPinned.equals(true) &
+          table.deletedAt.equals(null),
+      limit: ConversationLimits.maxPinnedPerWorkspace + 1,
+      transaction: transaction,
+    );
+
+    return conversations.length;
   }
 
   Future<bool> resourceExists(
