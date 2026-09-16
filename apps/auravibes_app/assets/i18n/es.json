@@ -329,6 +329,7 @@
       "tool_response_copied": "Respuesta de la herramienta copiada",
       "a2ui_form_invalid": "Revisa tus respuestas e inténtalo de nuevo.",
       "continue_error": "No se pudo continuar el agente. Inténtalo de nuevo.",
+      "generation_credits_error": "Esta solicitud necesita más créditos o un límite máximo de tokens menor. Añade créditos o reduce los tokens máximos del modelo y vuelve a intentarlo.",
       "rate_limit_retry": "Se alcanzó el límite de uso. Reintentando en {seconds}s.",
       "waiting_for_tools": "Esperando a que las herramientas se conecten...",
       "waiting_for_tools_named": "Esperando a que {tools} se conecte...",

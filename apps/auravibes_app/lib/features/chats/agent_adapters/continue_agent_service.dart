@@ -16,14 +16,19 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:genkit/plugin.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
 final _logger = Logger('continue_agent_service');
+
+const String _inlineGenerationErrorMessageKey =
+    LocaleKeys.chats_screens_chat_conversation_generation_credits_error;
 
 typedef _ContinueAgentA2uiMessage = ({
   ChatA2uiRuntime? runtime,
@@ -257,16 +262,47 @@ mixin _ContinueAgentCall on _ContinueAgentServiceDependencies {
     required String conversationId,
     AgentIterationContext? context,
   }) async {
+    await _clearInlineGenerationErrors(conversationId);
+    final retryUserMessageIds = await _retryUserMessageIds(
+      conversationId,
+      context,
+    );
+    final request = await _prepareContinuationRequest(
+      conversationId: conversationId,
+      context: context,
+      retryUserMessageIds: retryUserMessageIds,
+    );
+
+    return await _runContinuation(request);
+  }
+
+  Future<ContinueAgentResult> _runContinuation(
+    _ContinueAgentRequest request,
+  ) async {
+    try {
+      return await _continueWithValidatedInput(request);
+    } on Object catch (error, stackTrace) {
+      await _persistInlineGenerationErrorSafely(request.conversationId, error);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<_ContinueAgentRequest> _prepareContinuationRequest({
+    required String conversationId,
+    required AgentIterationContext? context,
+    required List<String> retryUserMessageIds,
+  }) async {
     final preparedInput = await _prepareInput(conversationId);
     final a2uiRuntime = await _resolveA2uiRuntime(conversationId);
     _beginA2uiGeneration(a2uiRuntime);
+    await _markRetryUsersSending(retryUserMessageIds);
 
-    return await _continueWithValidatedInput((
+    return (
       conversationId: conversationId,
-      context: context,
+      context: _contextWithRetryUsers(context, retryUserMessageIds),
       preparedInput: preparedInput,
       a2uiRuntime: a2uiRuntime,
-    ));
+    );
   }
 
   Future<ChatA2uiRuntime?> _resolveA2uiRuntime(String conversationId) async {
@@ -283,6 +319,137 @@ mixin _ContinueAgentCall on _ContinueAgentServiceDependencies {
     runtime?.enable();
     runtime?.beginGeneration();
   }
+}
+
+extension _ContinueAgentFailurePersistence
+    on _ContinueAgentServiceDependencies {
+  Future<List<String>> _retryUserMessageIds(
+    String conversationId,
+    AgentIterationContext? context,
+  ) async {
+    if (context?.origin != AgentIterationOrigin.manualContinue) {
+      return const [];
+    }
+
+    try {
+      final messages = await this.messageRepository.getMessagesByStatus(
+        conversationId,
+        .error,
+      );
+      for (final message in messages) {
+        if (message.isUser) return [message.id];
+      }
+    } on Object catch (error, stackTrace) {
+      monitoringService.trackError(
+        'Failed to find errored user message for retry',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return const [];
+  }
+
+  Future<void> _markRetryUsersSending(List<String> messageIds) async {
+    try {
+      for (final messageId in messageIds) {
+        final _ = await this.messageRepository.patchMessage(
+          messageId,
+          const MessagePatch(status: .sending),
+        );
+      }
+    } on Object catch (error, stackTrace) {
+      monitoringService.trackError(
+        'Failed to mark errored user message as sending',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _clearInlineGenerationErrors(String conversationId) async {
+    try {
+      final messages = await this.messageRepository.getSystemMessages(
+        conversationId,
+      );
+      for (final message in messages.where(_isInlineGenerationErrorMessage)) {
+        final _ = await this.messageRepository.deleteMessage(message.id);
+      }
+    } on Object catch (error, stackTrace) {
+      monitoringService.trackError(
+        'Failed to clear inline generation error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _persistInlineGenerationErrorSafely(
+    String conversationId,
+    Object error,
+  ) async {
+    try {
+      await _persistInlineGenerationError(conversationId, error);
+    } on Object catch (persistError, persistStackTrace) {
+      monitoringService.trackError(
+        'Failed to persist inline generation error',
+        error: persistError,
+        stackTrace: persistStackTrace,
+      );
+    }
+  }
+
+  Future<void> _persistInlineGenerationError(
+    String conversationId,
+    Object error,
+  ) async {
+    final content = _inlineGenerationErrorKey(error);
+    if (content == null) return;
+
+    final created = await this.messageRepository.createMessage(
+      .new(
+        conversationId: conversationId,
+        content: content,
+        messageType: .system,
+        isUser: false,
+        status: .sending,
+      ),
+    );
+    final _ = await this.messageRepository.patchMessage(
+      created.id,
+      const MessagePatch(status: .error),
+    );
+  }
+}
+
+bool _isInlineGenerationErrorMessage(MessageEntity message) =>
+    message.messageType == .system &&
+    message.status == .error &&
+    message.content == _inlineGenerationErrorMessageKey;
+
+AgentIterationContext? _contextWithRetryUsers(
+  AgentIterationContext? context,
+  List<String> retryUserMessageIds,
+) {
+  if (retryUserMessageIds.isEmpty) return context;
+
+  final existingIds = context?.ackMessageIds ?? const <String>[];
+
+  return AgentIterationContext(
+    origin: context?.origin ?? AgentIterationOrigin.manualContinue,
+    ackMessageIds: [
+      ...existingIds,
+      for (final messageId in retryUserMessageIds)
+        if (!existingIds.contains(messageId)) messageId,
+    ],
+  );
+}
+
+String? _inlineGenerationErrorKey(Object error) {
+  if (error is! GenkitException) return null;
+  if (!error.message.contains('(HTTP 402)')) return null;
+
+  return _inlineGenerationErrorMessageKey;
 }
 
 extension _ContinueAgentCleanup on _ContinueAgentServiceDependencies {

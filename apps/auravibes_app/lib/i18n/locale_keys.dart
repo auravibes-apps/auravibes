@@ -447,6 +447,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.a2ui_form_invalid';
   static const chats_screens_chat_conversation_continue_error =
       'chats_screens.chat_conversation.continue_error';
+  static const chats_screens_chat_conversation_generation_credits_error =
+      'chats_screens.chat_conversation.generation_credits_error';
   static const chats_screens_chat_conversation_rate_limit_retry =
       'chats_screens.chat_conversation.rate_limit_retry';
   static const chats_screens_chat_conversation_waiting_for_tools =
