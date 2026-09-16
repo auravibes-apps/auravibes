@@ -157,11 +157,35 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     menuFocusScopeNode: _requiredMenuFocusScopeNode,
     items: widget.items,
     close: close,
+    closeOutside: _closeFromOutside,
     trigger: widget.child,
     focusNode: _requiredFocusNode,
     onKeyEvent: _handleMenuKeyEvent,
     groupId: this,
   ).child;
+
+  void _closeFromOutside() {
+    if (!_visible) {
+      return;
+    }
+
+    _requiredMenuFocusScopeNode.unfocus();
+    _requiredFocusNode.unfocus();
+    setState(() {
+      _visible = false;
+    });
+  }
+
+  void _closeFromEscape() {
+    if (!_visible) {
+      return;
+    }
+
+    setState(() {
+      _visible = false;
+    });
+    _requiredFocusNode.requestFocus();
+  }
 
   KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) =>
       _handlePopupMenuKey((
@@ -170,7 +194,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
         trigger: _requiredFocusNode,
         visible: _visible,
         toggle: toggle,
-        close: close,
+        close: _closeFromEscape,
       ));
 }
 
@@ -249,6 +273,7 @@ class _AuraPopupMenuData {
     required FocusScopeNode menuFocusScopeNode,
     required List<AuraPopupMenuEntry> items,
     required VoidCallback close,
+    required VoidCallback closeOutside,
     required Widget trigger,
     required FocusNode focusNode,
     required FocusOnKeyEventCallback onKeyEvent,
@@ -267,7 +292,7 @@ class _AuraPopupMenuData {
              child: _AuraPopupMenuSurface(items: items, close: close),
            ),
            behavior: .opaque,
-           onTapOutside: (_) => close(),
+           onTapOutside: (_) => closeOutside(),
            groupId: groupId,
          ),
          child: Focus(
