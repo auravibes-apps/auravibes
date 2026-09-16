@@ -207,6 +207,61 @@ void main() {
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
     });
 
+    testWidgets('renames a chat from its menu', (tester) async {
+      final initial = _createConversation(title: 'Original');
+      final renamed = _createConversation(title: 'Renamed');
+      final controller = StreamController<List<ConversationEntity>>.broadcast();
+      final patched = <ConversationPatch>[];
+      addTearDown(controller.close);
+      final repo = _StubConversationRepository(
+        conversationsStream: controller.stream,
+        onPatch: (id, patch) async {
+          patched.add(patch);
+          controller.add([renamed]);
+
+          return renamed;
+        },
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            conversationByIdStreamProvider.overrideWith(
+              (ref, conversationId) => Stream.value(initial),
+            ),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+      controller.add([initial]);
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Rename'), findsOneWidget);
+
+      await tester.tap(find.text('Rename'));
+      final _ = await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller?.text,
+        'Original',
+      );
+
+      await tester.enterText(find.byType(TextField), 'Renamed');
+      await tester.tap(find.text('Save'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(patched, hasLength(1));
+      expect(patched.single.title, 'Renamed');
+      expect(find.text('Renamed'), findsOneWidget);
+    });
+
     testWidgets('shows error state when stream has error', (tester) async {
       final controller = StreamController<List<ConversationEntity>>();
       addTearDown(controller.close);
@@ -340,6 +395,7 @@ void main() {
 
 class _StubConversationRepository({
   required final Stream<List<ConversationEntity>> conversationsStream,
+  final Future<ConversationEntity> Function(String, ConversationPatch)? onPatch,
 }) implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
@@ -384,9 +440,7 @@ class _StubConversationRepository({
   Future<ConversationEntity> patchConversation(
     String id,
     ConversationPatch conversation,
-  ) {
-    throw UnimplementedError();
-  }
+  ) => onPatch?.call(id, conversation) ?? (throw UnimplementedError());
 
   @override
   Stream<ConversationEntity?> watchConversationById(String id) {

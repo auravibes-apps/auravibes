@@ -2,10 +2,12 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
+import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -112,9 +114,24 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
       workspaceId: widget.workspaceId,
       controller: _menuController,
       onDelete: () => _handleDelete(context),
+      onRename: () => _handleRename(context),
       onMenuToggle: _menuController.toggle,
       onTap: () => _openConversation(context),
     );
+  }
+
+  Future<void> _handleRename(BuildContext context) async {
+    final title = await RenameConversationDialog.show(
+      context,
+      title: widget.chat.title,
+    );
+    if (title == null) return;
+
+    await ref
+        .read(
+          conversationChatProvider(widget.workspaceId, widget.chat.id).notifier,
+        )
+        .rename(widget.chat, title);
   }
 
   Future<void> _handleDelete(BuildContext context) async {
@@ -155,6 +172,7 @@ class const _ChatTileProvider({
   required final String workspaceId,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onRename,
   required final VoidCallback onMenuToggle,
   required final VoidCallback onTap,
 }) extends ConsumerWidget {
@@ -169,6 +187,7 @@ class const _ChatTileProvider({
       title: title,
       controller: controller,
       onDelete: onDelete,
+      onRename: onRename,
       onMenuToggle: onMenuToggle,
       onTap: onTap,
     );
@@ -214,6 +233,7 @@ class const _ChatTileView({
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onRename,
   required final VoidCallback onMenuToggle,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
@@ -225,6 +245,7 @@ class const _ChatTileView({
       title: title,
       controller: controller,
       onDelete: onDelete,
+      onRename: onRename,
       onMenuToggle: onMenuToggle,
     ),
     onTap: onTap,
@@ -238,6 +259,7 @@ class const _ChatTileRow({
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onRename,
   required final VoidCallback onMenuToggle,
 }) extends StatelessWidget {
   @override
@@ -247,18 +269,33 @@ class const _ChatTileRow({
       Expanded(
         child: _ChatTileInfo(chat: chat, title: title),
       ),
-      if (modelDisplayName case final displayName?) ...[
-        const SizedBox(width: 8),
-        AuraBadge.text(child: Text(displayName), variant: .info),
-      ],
-      const SizedBox(width: 8),
+      _ChatTileModelBadge(displayName: modelDisplayName),
       _ChatTileMenu(
         controller: controller,
         onDelete: onDelete,
+        onRename: onRename,
         onToggle: onMenuToggle,
       ),
     ],
   );
+}
+
+class const _ChatTileModelBadge({required final String? displayName})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final displayName = this.displayName;
+    if (displayName == null) return const SizedBox(width: 8);
+
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        const SizedBox(width: 8),
+        AuraBadge.text(child: Text(displayName), variant: .info),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 }
 
 class const _ChatTileInfo({
@@ -306,6 +343,7 @@ class const _ChatTileTitleRow({
 class const _ChatTileMenu({
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
+  required final VoidCallback onRename,
   required final VoidCallback onToggle,
 }) extends StatelessWidget {
   @override
@@ -318,15 +356,30 @@ class const _ChatTileMenu({
         tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
             .tr(),
       ),
-      items: [
-        AuraPopupMenuItem(
-          title: const TextLocale(LocaleKeys.common_delete),
-          onTap: onDelete,
-          leading: const AuraIcon(Icons.delete_outline),
-          variant: .error,
-        ),
-      ],
+      items: _chatTileMenuItems(onRename: onRename, onDelete: onDelete),
       controller: controller,
     );
   }
 }
+
+List<AuraPopupMenuItem> _chatTileMenuItems({
+  required VoidCallback onRename,
+  required VoidCallback onDelete,
+}) => [_chatTileRenameItem(onRename), _chatTileDeleteItem(onDelete)];
+
+AuraPopupMenuItem _chatTileRenameItem(VoidCallback onRename) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_rename,
+      ),
+      onTap: onRename,
+      leading: const AuraIcon(Icons.edit_outlined),
+    );
+
+AuraPopupMenuItem _chatTileDeleteItem(VoidCallback onDelete) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.common_delete),
+      onTap: onDelete,
+      leading: const AuraIcon(Icons.delete_outline),
+      variant: .error,
+    );

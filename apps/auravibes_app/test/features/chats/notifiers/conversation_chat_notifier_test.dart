@@ -11,10 +11,17 @@ import 'package:auravibes_app/features/chats/providers/cloud_conversation_provid
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
+import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
+class _CloudChatGateway extends Mock implements CloudChatGateway;
+
 void main() {
+  setUpAll(() => registerFallbackValue(_UpdateConversationRequestFake()));
+
   group('ConversationResult types', () {
     test('ConversationFound holds conversation', () {
       final conversation = ConversationEntity(
@@ -370,8 +377,165 @@ void main() {
 
       sub.close();
     });
+
+    test(
+      'rename trims the title and updates the active conversation',
+      () async {
+        final updatedConversation = conversation.copyWith(title: 'Renamed');
+        final patched = <ConversationPatch>[];
+        final container = ProviderContainer(
+          overrides: [
+            conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
+            conversationByIdStreamProvider.overrideWith(
+              (ref, conversationId) => Stream.value(conversation),
+            ),
+            conversationRepositoryProvider.overrideWithValue(
+              _FakeConversationRepository(
+                onPatch: (id, patch) {
+                  patched.add(patch);
+
+                  return updatedConversation;
+                },
+              ),
+            ),
+            cloudConversationUsecaseProvider.overrideWithValue(null),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final completer = Completer<AsyncValue<ConversationResult>>();
+        final sub = container.listen<AsyncValue<ConversationResult>>(
+          conversationChatProvider('ws-1', 'conv-1'),
+          (_, next) {
+            if (next is AsyncData<ConversationResult> &&
+                !completer.isCompleted) {
+              completer.complete(next);
+            }
+          },
+          fireImmediately: true,
+        );
+
+        final _ = await completer.future;
+        await container
+            .read(conversationChatProvider('ws-1', 'conv-1').notifier)
+            .rename(conversation, '  Renamed  ');
+
+        expect(patched, hasLength(1));
+        expect(patched.single.title, 'Renamed');
+        final state = container
+            .read(conversationChatProvider('ws-1', 'conv-1'))
+            .value;
+        expect(
+          ((state ?? fail('Expected state to be non-null'))
+                  as ConversationFound)
+              .conversation
+              .title,
+          'Renamed',
+        );
+
+        sub.close();
+      },
+    );
+
+    test('rename ignores a blank title', () async {
+      final patched = <ConversationPatch>[];
+      final container = ProviderContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
+          conversationByIdStreamProvider.overrideWith(
+            (ref, conversationId) => Stream.value(conversation),
+          ),
+          conversationRepositoryProvider.overrideWithValue(
+            _FakeConversationRepository(
+              onPatch: (id, patch) {
+                patched.add(patch);
+
+                return conversation;
+              },
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final completer = Completer<AsyncValue<ConversationResult>>();
+      final sub = container.listen<AsyncValue<ConversationResult>>(
+        conversationChatProvider('ws-1', 'conv-1'),
+        (_, next) {
+          if (next is AsyncData<ConversationResult> && !completer.isCompleted) {
+            completer.complete(next);
+          }
+        },
+        fireImmediately: true,
+      );
+
+      final _ = await completer.future;
+      await container
+          .read(conversationChatProvider('ws-1', 'conv-1').notifier)
+          .rename(conversation, '   ');
+
+      expect(patched, isEmpty);
+      sub.close();
+    });
+
+    test('rename updates a cloud conversation', () async {
+      final gateway = _CloudChatGateway();
+      final now = DateTime(2026);
+      final updatedSummary = ConversationSummary(
+        id: conversation.id,
+        title: 'Cloud renamed',
+        isPinned: conversation.isPinned,
+        revision: conversation.revision + 1,
+        createdAt: conversation.createdAt,
+        updatedAt: now,
+      );
+      when(() => gateway.updateConversation(any()))
+          .thenAnswer((_) async => updatedSummary);
+
+      final container = ProviderContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
+          conversationByIdStreamProvider.overrideWith(
+            (ref, conversationId) => Stream.value(conversation),
+          ),
+          cloudConversationUsecaseProvider.overrideWithValue(.new(gateway)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final completer = Completer<AsyncValue<ConversationResult>>();
+      final sub = container.listen<AsyncValue<ConversationResult>>(
+        conversationChatProvider('ws-1', 'conv-1'),
+        (_, next) {
+          if (next is AsyncData<ConversationResult> && !completer.isCompleted) {
+            completer.complete(next);
+          }
+        },
+        fireImmediately: true,
+      );
+
+      final _ = await completer.future;
+      await container
+          .read(conversationChatProvider('ws-1', 'conv-1').notifier)
+          .rename(conversation, 'Cloud renamed');
+
+      final state = container
+          .read(conversationChatProvider('ws-1', 'conv-1'))
+          .value;
+      expect(
+        ((state ?? fail('Expected state to be non-null')) as ConversationFound)
+            .conversation
+            .title,
+        'Cloud renamed',
+      );
+      verify(() => gateway.updateConversation(any())).called(1);
+      sub.close();
+    });
   });
 }
+
+class _UpdateConversationRequestFake extends Fake
+    implements UpdateConversationRequest;
 
 class _FakeConversationRepository({
   final ConversationEntity Function(String, ConversationPatch)? onPatch,
