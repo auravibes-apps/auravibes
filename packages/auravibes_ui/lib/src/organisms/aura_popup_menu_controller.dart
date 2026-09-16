@@ -132,7 +132,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     );
   }
 
-  void close() {
+  void close({bool restoreFocus = false}) {
     if (!_visible) {
       return;
     }
@@ -140,7 +140,11 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     setState(() {
       _visible = false;
     });
-    _requiredFocusNode.unfocus();
+    if (restoreFocus) {
+      _requiredFocusNode.requestFocus();
+    } else {
+      _requiredFocusNode.unfocus();
+    }
   }
 
   void toggle() {
@@ -176,17 +180,6 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     });
   }
 
-  void _closeFromEscape() {
-    if (!_visible) {
-      return;
-    }
-
-    setState(() {
-      _visible = false;
-    });
-    _requiredFocusNode.requestFocus();
-  }
-
   KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) =>
       _handlePopupMenuKey((
         node: node,
@@ -194,7 +187,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
         trigger: _requiredFocusNode,
         visible: _visible,
         toggle: toggle,
-        close: _closeFromEscape,
+        close: () => close(restoreFocus: true),
       ));
 }
 
