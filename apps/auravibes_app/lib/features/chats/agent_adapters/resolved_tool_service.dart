@@ -758,15 +758,7 @@ Future<Object?> _runSkillNativeTool(_SkillNativeToolRequest request) {
 }
 
 Future<Object?> _runSubAgentNativeTool(_SkillNativeToolRequest request) {
-  final operation = CancelableOperation<Object?>.fromFuture(
-    _runSubAgentTool(request: request),
-  );
-  request.provider.agentCancellationRuntime.registerCancelableOperation(
-    request.conversationId,
-    operation,
-  );
-
-  return operation.valueOrCancellation();
+  return _runSubAgentTool(request: request);
 }
 
 Future<Object?> _runAppNativeTool(_SkillNativeToolRequest request) {

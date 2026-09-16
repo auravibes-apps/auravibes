@@ -85,21 +85,30 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         tool: tool,
         arguments: arguments,
       );
-      if (isCancellationRequested(conversationId)) {
-        return const AgentToolExecutionResult(resultStatus: .stoppedByUser);
-      }
       if (result == null) {
+        if (isCancellationRequested(conversationId)) {
+          return const AgentToolExecutionResult(resultStatus: .stoppedByUser);
+        }
+
         return const AgentToolExecutionResult(resultStatus: .toolNotFound);
+      }
+
+      final responseRaw = switch (result) {
+        final String value => value,
+        final Map<Object?, Object?> value => jsonEncode(value),
+        final List<Object?> value => jsonEncode(value),
+        _ => result.toString(),
+      };
+      if (isCancellationRequested(conversationId)) {
+        return AgentToolExecutionResult(
+          resultStatus: .stoppedByUser,
+          responseRaw: responseRaw,
+        );
       }
 
       return AgentToolExecutionResult(
         resultStatus: .success,
-        responseRaw: switch (result) {
-          final String value => value,
-          final Map<Object?, Object?> value => jsonEncode(value),
-          final List<Object?> value => jsonEncode(value),
-          _ => result.toString(),
-        },
+        responseRaw: responseRaw,
       );
     } on FormatException catch (error, stackTrace) {
       logToolExecutionError((

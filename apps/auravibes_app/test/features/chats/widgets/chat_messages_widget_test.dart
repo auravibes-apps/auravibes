@@ -2555,6 +2555,50 @@ void main() {
       expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
     });
 
+    testWidgets('keeps stopped sub-agent navigation with child ID', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'run_sub_agent',
+        argumentsRaw: '{"title": "Stopped child"}',
+        responseRaw:
+            '{"conversationId":"child-stopped","status":"stopped",'
+            '"content":"Sub-agent stopped."}',
+        resultStatus: ToolCallResultStatus.stoppedByUser,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      await revealActivityToolCalls(tester);
+
+      expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_open_sub_agent_tc-1')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('renders tool call with tool not found status', (tester) async {
       const toolCall = MessageToolCallEntity(
         id: 'tc-1',

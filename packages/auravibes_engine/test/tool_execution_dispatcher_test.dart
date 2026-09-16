@@ -28,6 +28,27 @@ void main() {
     expect((await run('plain')).responseRaw, 'plain');
   });
 
+  test('preserves results when cancellation arrives after execution', () async {
+    final result =
+        await AgentToolExecutionDispatcher<String>(
+          runResolvedTool: ({
+            required conversationId,
+            required tool,
+            required arguments,
+          }) async => '{"conversationId":"child-1","status":"stopped"}',
+          isCancellationRequested: (_) => true,
+          logToolExecutionError: (_) {},
+        ).call(
+          conversationId: 'conversation-1',
+          toolCallId: 'call-1',
+          tool: 'tool',
+          argumentsRaw: '{}',
+        );
+
+    expect(result.resultStatus, AgentToolResultStatus.stoppedByUser);
+    expect(result.responseRaw, contains('child-1'));
+  });
+
   test(
     'maps typed failures to execution errors and preserves diagnostics',
     () async {

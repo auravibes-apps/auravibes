@@ -1246,4 +1246,109 @@ void main() {
       ),
     ).called(1);
   });
+
+  test(
+    'preserves a stopped sub-agent child ID through provider cancellation',
+    () async {
+      final conversationRepository = MockConversationRepository();
+      final messageRepository = MockMessageRepository();
+      final agentLoop = MockAgentLoopRunner();
+      final parent = ConversationEntity(
+        id: 'parent-1',
+        title: 'Parent',
+        workspaceId: 'workspace-1',
+        isPinned: false,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        modelId: 'model-1',
+      );
+      final child = parent.copyWith(
+        id: 'child-1',
+        title: 'Child',
+        parentConversationId: 'parent-1',
+      );
+      final prompt = MessageEntity(
+        id: 'prompt-1',
+        conversationId: 'child-1',
+        content: 'Run task',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+      );
+
+      when(() => conversationRepository.getConversationById('parent-1'))
+          .thenAnswer((_) async => parent);
+      when(() => conversationRepository.createConversation(any()))
+          .thenAnswer((_) async => child);
+      when(() => messageRepository.createMessage(any()))
+          .thenAnswer((_) async => prompt);
+      when(
+        () =>
+            messageRepository.getLatestAssistantMessagesByConversations(any()),
+      ).thenAnswer((_) async => []);
+
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          workspaceSessionProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ).overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
+          conversationRepositoryProvider.overrideWithValue(
+            conversationRepository,
+          ),
+          messageRepositoryProvider.overrideWithValue(messageRepository),
+          appAgentLoopProvider.overrideWithValue(agentLoop),
+        ],
+      );
+      addTearDown(database.close);
+      addTearDown(container.dispose);
+
+      final cancellationRuntime = container.read(
+        agentCancellationRuntimeProvider,
+      );
+      final parentScope = cancellationRuntime.start('parent-1');
+      addTearDown(() => cancellationRuntime.clear('parent-1', parentScope));
+      when(
+        () => agentLoop.call(
+          conversationId: 'child-1',
+          context: any(named: 'context'),
+        ),
+      ).thenAnswer((_) async {
+        cancellationRuntime.requestStop('parent-1');
+
+        return AgentIterationDecision.done;
+      });
+
+      final service = container.read(resolvedToolServiceProvider);
+      final result = await service.call(
+        conversationId: 'parent-1',
+        tool: ResolvedTool.skillNative(
+          tableId: runSubAgentToolName,
+          skillSlug: agentsSkillSlug,
+          toolIdentifier: runSubAgentToolName,
+        ),
+        arguments: const {'title': 'Child', 'prompt': 'Run task'},
+      );
+
+      expect(result, contains('"conversationId":"child-1"'));
+      expect(result, contains('"status":"stopped"'));
+      verify(
+        () => agentLoop.call(
+          conversationId: 'child-1',
+          context: any(named: 'context'),
+        ),
+      ).called(1);
+    },
+  );
 }
