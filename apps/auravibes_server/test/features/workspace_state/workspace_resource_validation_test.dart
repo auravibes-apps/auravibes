@@ -37,6 +37,8 @@ void main() {
       '{"name":"Agent","description":"","content":"Prompt","visibility":"both"}',
       '{"name":"Agent","description":"Description","content":"","visibility":"both"}',
       '{"name":"Agent","description":"Description","content":"Prompt","visibility":"invalid"}',
+      '{"name":"Agent","description":"Description","content":"Prompt",'
+          '"visibility":"both","isEnabled":42}',
     ]) {
       expect(
         () => WorkspaceResourceValidation.decode(

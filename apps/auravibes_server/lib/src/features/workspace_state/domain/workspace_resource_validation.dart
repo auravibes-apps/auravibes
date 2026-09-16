@@ -71,6 +71,7 @@ class WorkspaceResourceValidation {
     final description = data['description'];
     final content = data['content'];
     final visibility = data['visibility'];
+    final isEnabled = data['isEnabled'];
     if (name is! String ||
         name.trim().isEmpty ||
         description is! String ||
@@ -78,7 +79,8 @@ class WorkspaceResourceValidation {
         content is! String ||
         content.trim().isEmpty ||
         visibility is! String ||
-        !const {'chatSelector', 'subAgentList', 'both'}.contains(visibility)) {
+        !const {'chatSelector', 'subAgentList', 'both'}.contains(visibility) ||
+        (isEnabled != null && isEnabled is! bool)) {
       throw const FormatException();
     }
   }

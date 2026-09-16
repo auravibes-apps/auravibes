@@ -547,7 +547,7 @@ extension on ConversationToolsRepository {
     final permission = await checkToolPermission(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      toolId: tool.toolId,
+      toolId: tool.id,
     );
     final isAvailable = _isPermissionAvailable(permission);
 

@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -68,6 +69,36 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     );
   }
 
+  Future<void> rename(ConversationEntity conversation, String title) async {
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.isEmpty) return;
+
+    final link = ref.keepAlive();
+    try {
+      await _renameTitle(conversation, trimmedTitle);
+    } finally {
+      link.close();
+    }
+  }
+
+  Future<void> _renameTitle(
+    ConversationEntity conversation,
+    String title,
+  ) async {
+    final updated = await _updateTitle(
+      ref,
+      _workspaceId,
+      _conversationForUpdate(state.value, conversation),
+      title,
+    );
+    if (!ref.mounted) return;
+
+    final updatedResult = _renamedConversationResult(state.value, updated);
+    if (updatedResult == null) return;
+
+    state = AsyncData(updatedResult);
+  }
+
   Future<ConversationEntity> _updateModel(
     ConversationEntity conversation,
     String modelId,
@@ -124,8 +155,76 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     revision: updated.revision,
     updatedAt: updated.updatedAt,
   );
+}
 
-  ConversationPatch _agentPatch(String? agentId) => agentId == null
-      ? const ConversationPatch(clearAgent: true)
-      : ConversationPatch(agentId: agentId);
+ConversationEntity _updatedTitleConversation(
+  ConversationEntity conversation,
+  ConversationSummary updated,
+) => conversation.copyWith(
+  title: updated.title,
+  revision: updated.revision,
+  updatedAt: updated.updatedAt,
+);
+
+ConversationEntity _conversationForUpdate(
+  ConversationResult? result,
+  ConversationEntity fallback,
+) => switch (result) {
+  ConversationFound(:final conversation) when conversation.id == fallback.id =>
+    conversation,
+  ConversationFound() ||
+  ConversationNotFound() ||
+  ConversationWorkspaceMismatch() ||
+  null => fallback,
+};
+
+ConversationResult? _renamedConversationResult(
+  ConversationResult? result,
+  ConversationEntity updated,
+) {
+  if (result is! ConversationFound || result.conversation.id != updated.id) {
+    return null;
+  }
+
+  return ConversationFound(updated);
+}
+
+ConversationPatch _agentPatch(String? agentId) => agentId == null
+    ? const ConversationPatch(clearAgent: true)
+    : ConversationPatch(agentId: agentId);
+
+Future<ConversationEntity> _updateTitle(
+  Ref ref,
+  String workspaceId,
+  ConversationEntity conversation,
+  String title,
+) async {
+  final cloud = await ref.read(
+    cloudConversationUsecaseProvider(workspaceId).future,
+  );
+  if (cloud == null) {
+    return await _updateLocalTitle(ref, conversation, title);
+  }
+
+  return await _updateCloudTitle(ref, cloud, conversation, title);
+}
+
+Future<ConversationEntity> _updateLocalTitle(
+  Ref ref,
+  ConversationEntity conversation,
+  String title,
+) => ref
+    .read(conversationRepositoryProvider)
+    .patchConversation(conversation.id, .new(title: title));
+
+Future<ConversationEntity> _updateCloudTitle(
+  Ref ref,
+  CloudConversationUsecase cloud,
+  ConversationEntity conversation,
+  String title,
+) async {
+  final updated = await cloud.update(conversation, .new(title: title));
+  ref.invalidate(conversationsStreamProvider);
+
+  return _updatedTitleConversation(conversation, updated);
 }

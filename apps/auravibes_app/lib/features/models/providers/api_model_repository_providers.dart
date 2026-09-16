@@ -1,7 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
-import 'dart:async';
-
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -32,19 +30,10 @@ ModelApiService modelApiService(Ref _) {
 /// Provider for the model sync service.
 @Riverpod(keepAlive: true)
 ModelSyncService modelSyncService(Ref ref) {
-  final service = _createModelSyncService(
+  return _createModelSyncService(
     ref.watch(apiModelRepositoryProvider),
     ref.watch(modelApiServiceProvider),
   );
-
-  final timer = Timer.periodic(
-    const Duration(hours: 5),
-    (_) => service.performFullSync(),
-  );
-
-  final _ = ref.onDispose(timer.cancel);
-
-  return service;
 }
 
 ModelSyncService _createModelSyncService(

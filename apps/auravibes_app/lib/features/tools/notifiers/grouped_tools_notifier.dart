@@ -109,19 +109,42 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   }
 
   /// Reconnect to an MCP server.
-  Future<void> reconnectMcp(String mcpServerId) async {
-    final repository = ref.read(
-      toolsGroupsRepositoryProvider(_requiredSession),
-    );
-    if (repository case final CloudToolsRepository cloudRepository) {
-      final _ = await cloudRepository.discoverMcpServer(mcpServerId);
-      ref.invalidateSelf();
+  Future<void> reconnectMcp(String mcpServerId) =>
+      ref.read(mcpConnectionProvider.notifier).reconnectMcpServer(mcpServerId);
 
-      return;
+  /// Reconnect every MCP group that is currently failed or disconnected.
+  ///
+  /// Returns server IDs that are still unavailable after their reconnect
+  /// attempt, so callers can report partial failures without exposing errors.
+  Future<List<String>> reconnectFailedMcps() =>
+      _reconnectMcpServerIds(_failedMcpServerIds(state.value ?? const []));
+
+  Future<List<String>> _reconnectMcpServerIds(List<String> mcpServerIds) async {
+    final failedMcpServerIds = <String>[];
+
+    for (final mcpServerId in mcpServerIds) {
+      final didReconnectFail = await _didMcpReconnectFail(mcpServerId);
+      if (didReconnectFail == null) return failedMcpServerIds;
+      if (didReconnectFail) {
+        failedMcpServerIds.add(mcpServerId);
+      }
     }
-    await ref
-        .read(mcpConnectionProvider.notifier)
-        .reconnectMcpServer(mcpServerId);
+
+    return failedMcpServerIds;
+  }
+
+  Future<bool?> _didMcpReconnectFail(String mcpServerId) async {
+    if (!ref.mounted) return null;
+
+    try {
+      await reconnectMcp(mcpServerId);
+    } on Exception {
+      return true;
+    }
+
+    if (!ref.mounted) return null;
+
+    return _mcpReconnectFailed(ref.read(mcpConnectionProvider), mcpServerId);
   }
 
   Future<_McpGroupOperation?> _groupOperation(String groupId) async {
@@ -277,6 +300,30 @@ List<GroupedToolsViewItem> _buildGroupedTools(
   workspaceTools: workspaceTools,
   groups: groups,
   mcpConnections: connections.map(_toMcpConnectionView).toList(),
+);
+
+List<String> _failedMcpServerIds(List<ToolsGroupWithTools> groups) {
+  final mcpServerIds = <String>{};
+  for (final group in groups) {
+    final mcpServerId = group.mcpServerId;
+    if (group.isMcpGroup &&
+        group.needsAttention &&
+        mcpServerId != null &&
+        mcpServerId.isNotEmpty) {
+      final _ = mcpServerIds.add(mcpServerId);
+    }
+  }
+
+  return mcpServerIds.toList();
+}
+
+bool _mcpReconnectFailed(
+  List<McpConnectionState> connections,
+  String mcpServerId,
+) => !connections.any(
+  (connection) =>
+      connection.server.id == mcpServerId &&
+      connection.status == McpConnectionStatus.connected,
 );
 
 ToolsGroupWithTools _toToolsGroupWithTools(

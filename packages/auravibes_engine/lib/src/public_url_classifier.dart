@@ -19,7 +19,7 @@ String _urlError(bool requireHttps) =>
     requireHttps ? publicUrlError : publicHttpUrlError;
 
 bool isBlockedHostLabel(String host) {
-  final normalizedHost = host.toLowerCase();
+  final normalizedHost = host.toLowerCase().replaceFirst(RegExp(r'\.+$'), '');
   final literalAddress = _literalAddressBytes(normalizedHost);
 
   return normalizedHost == 'localhost' ||

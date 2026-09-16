@@ -63,6 +63,9 @@
     "list_api_key_label": "Clave API: {}",
     "list_delete_title": "Eliminar Proveedor de Modelo",
     "list_delete_confirm": "¿Estás seguro de que deseas eliminar {name}?",
+    "catalog_sync_tooltip": "Sincronizar catálogo de modelos",
+    "catalog_sync_success": "Catálogo de modelos sincronizado",
+    "catalog_sync_error": "No se pudo sincronizar el catálogo de modelos",
     "add_provider": {
       "open_button": "Agregar Proveedor",
       "title": "Agregar Proveedor de Modelo",
@@ -305,6 +308,9 @@
       "switch_model_unsupported_body": "Este modelo no admite {modalities}. Los adjuntos no compatibles se omitirán.",
       "switch_model_cancel": "Cancelar",
       "switch_model_confirm": "Cambiar",
+      "rename": "Cambiar nombre",
+      "rename_title": "Cambiar nombre del chat",
+      "rename_field_label": "Título del chat",
       "stop_generation": "Detener generación",
       "stop_error": "No se pudo detener la conversación. Inténtalo de nuevo.",
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
@@ -317,6 +323,8 @@
       "a2ui_diagnostic_copied": "Diagnóstico copiado",
       "copy_message": "Copiar mensaje",
       "message_copied": "Mensaje copiado",
+      "copy_tool_response": "Copiar respuesta de la herramienta",
+      "tool_response_copied": "Respuesta de la herramienta copiada",
       "a2ui_form_invalid": "Revisa tus respuestas e inténtalo de nuevo.",
       "continue_error": "No se pudo continuar el agente. Inténtalo de nuevo.",
       "rate_limit_retry": "Se alcanzó el límite de uso. Reintentando en {seconds}s.",
@@ -330,7 +338,14 @@
       "turn_awaiting_approval": "Esperando aprobación...",
       "turn_failed": "La generación falló.",
       "turn_cancelled": "La generación se canceló.",
-      "reasoning_summary": "Resumen de razonamiento",
+      "activity_tools_count": {
+        "one": "1 herramienta",
+        "other": "{} herramientas"
+      },
+      "activity_thinking": "Razonamiento",
+      "activity_arguments": "Argumentos",
+      "activity_result": "Resultado",
+      "activity_open_sub_agent": "Abrir subagente",
       "tool_resolution_status": "Esperando resolución de herramientas... Los mensajes nuevos se encolarán.",
       "queued_messages_count": {
         "one": "1 mensaje en cola",
@@ -390,6 +405,11 @@
     "mcp_error": "Error de conexión",
     "mcp_disconnected": "Desconectado",
     "mcp_reconnect": "Reconectar",
+    "mcp_reconnect_all": "Reconectar todos los MCP fallidos",
+    "mcp_reconnect_partial_failure": {
+      "one": "No se pudo reconectar 1 grupo MCP.",
+      "other": "No se pudieron reconectar {} grupos MCP."
+    },
     "mcp_view_error": "Ver detalles",
     "tools_count": "{enabled} de {total} activadas",
     "delete_mcp_title": "Eliminar Servidor MCP",

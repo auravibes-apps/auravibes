@@ -1,5 +1,6 @@
 part of 'message_id_list.dart';
 
+// ignore: unused-code, used through the excluded message_id_list.dart library.
 abstract final class StreamingMessageMetadata {
   static MessageMetadataEntity? merge(
     MessageMetadataEntity? current,

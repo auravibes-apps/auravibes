@@ -8,11 +8,13 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
+import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -283,6 +285,7 @@ class _SidebarConversationTileState
       controller: _menuController,
       onDelete: _deleteConversation,
       onTogglePin: _togglePin,
+      onRename: _renameConversation,
       onTap: _openConversation,
     );
   }
@@ -292,6 +295,9 @@ class _SidebarConversationTileState
 
   void _togglePin() =>
       unawaited(_toggleSidebarConversationPin(context, ref, widget.chat));
+
+  void _renameConversation() =>
+      unawaited(_renameSidebarConversation(context, ref, widget.chat));
 
   void _openConversation() => _openSidebarConversation(context, widget.chat);
 }
@@ -309,6 +315,7 @@ class const _SidebarConversationTileView({
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
+  required final VoidCallback onRename,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
@@ -325,6 +332,7 @@ class const _SidebarConversationTileView({
         controller: controller,
         onDelete: onDelete,
         onTogglePin: onTogglePin,
+        onRename: onRename,
         onTap: onTap,
       ),
     );
@@ -338,6 +346,7 @@ class const _SidebarConversationTileBody({
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
+  required final VoidCallback onRename,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
@@ -356,6 +365,7 @@ class const _SidebarConversationTileBody({
       controller: controller,
       onDelete: onDelete,
       onTogglePin: onTogglePin,
+      onRename: onRename,
     ),
   );
 }
@@ -398,6 +408,7 @@ class const _SidebarConversationTileMenu({
   required final AuraPopupMenuController controller,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
+  required final VoidCallback onRename,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -410,28 +421,54 @@ class const _SidebarConversationTileMenu({
             .tr(),
       ),
       items: [
-        AuraPopupMenuItem(
-          title: TextLocale(
-            isPinned
-                ? LocaleKeys.chats_screens_chat_conversation_unpin
-                : LocaleKeys.chats_screens_chat_conversation_pin,
-          ),
-          onTap: onTogglePin,
-          leading: AuraIcon(
-            isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-          ),
-        ),
-        AuraPopupMenuItem(
-          title: const TextLocale(LocaleKeys.common_delete),
-          onTap: onDelete,
-          leading: const AuraIcon(Icons.delete_outline),
-          variant: .error,
+        _sidebarConversationPinItem(isPinned, onTogglePin),
+        ..._sidebarConversationMenuItems(
+          onRename: onRename,
+          onDelete: onDelete,
         ),
       ],
       controller: controller,
     );
   }
 }
+
+AuraPopupMenuItem _sidebarConversationPinItem(
+  bool isPinned,
+  VoidCallback onTogglePin,
+) => AuraPopupMenuItem(
+  title: TextLocale(
+    isPinned
+        ? LocaleKeys.chats_screens_chat_conversation_unpin
+        : LocaleKeys.chats_screens_chat_conversation_pin,
+  ),
+  onTap: onTogglePin,
+  leading: AuraIcon(isPinned ? Icons.push_pin : Icons.push_pin_outlined),
+);
+
+List<AuraPopupMenuItem> _sidebarConversationMenuItems({
+  required VoidCallback onRename,
+  required VoidCallback onDelete,
+}) => [
+  _sidebarConversationRenameItem(onRename),
+  _sidebarConversationDeleteItem(onDelete),
+];
+
+AuraPopupMenuItem _sidebarConversationRenameItem(VoidCallback onRename) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_rename,
+      ),
+      onTap: onRename,
+      leading: const AuraIcon(Icons.edit_outlined),
+    );
+
+AuraPopupMenuItem _sidebarConversationDeleteItem(VoidCallback onDelete) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.common_delete),
+      onTap: onDelete,
+      leading: const AuraIcon(Icons.delete_outline),
+      variant: .error,
+    );
 
 Future<void> _deleteSidebarConversation(
   BuildContext context,
@@ -495,6 +532,19 @@ Future<void> _toggleSidebarConversationPin(
   } on ConversationPinLimitException {
     return;
   }
+}
+
+Future<void> _renameSidebarConversation(
+  BuildContext context,
+  WidgetRef ref,
+  ConversationEntity chat,
+) async {
+  final title = await RenameConversationDialog.show(context, title: chat.title);
+  if (title == null) return;
+
+  await ref
+      .read(conversationChatProvider(chat.workspaceId, chat.id).notifier)
+      .rename(chat, title);
 }
 
 class const _CompactingRow() extends StatelessWidget {

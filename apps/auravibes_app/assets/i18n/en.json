@@ -63,6 +63,9 @@
     "list_api_key_label": "API Key: {}",
     "list_delete_title": "Delete Model Provider",
     "list_delete_confirm": "Are you sure you want to delete {name}?",
+    "catalog_sync_tooltip": "Sync model catalog",
+    "catalog_sync_success": "Model catalog synced",
+    "catalog_sync_error": "Could not sync model catalog",
     "add_provider": {
       "open_button": "Add Provider",
       "title": "Add Model Provider",
@@ -305,6 +308,9 @@
       "switch_model_unsupported_body": "This model does not support {modalities}. Unsupported attachments will be skipped.",
       "switch_model_cancel": "Cancel",
       "switch_model_confirm": "Switch",
+      "rename": "Rename",
+      "rename_title": "Rename chat",
+      "rename_field_label": "Chat title",
       "stop_generation": "Stop generation",
       "stop_error": "Could not stop the conversation. Please try again.",
       "send_error": "Could not send the message. Please try again.",
@@ -317,6 +323,8 @@
       "a2ui_diagnostic_copied": "Diagnostic copied",
       "copy_message": "Copy message",
       "message_copied": "Message copied",
+      "copy_tool_response": "Copy tool response",
+      "tool_response_copied": "Tool response copied",
       "a2ui_form_invalid": "Check your answers and try again.",
       "continue_error": "Could not continue the agent. Please try again.",
       "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",
@@ -330,7 +338,14 @@
       "turn_awaiting_approval": "Awaiting approval...",
       "turn_failed": "Generation failed.",
       "turn_cancelled": "Generation cancelled.",
-      "reasoning_summary": "Reasoning summary",
+      "activity_tools_count": {
+        "one": "1 tool",
+        "other": "{} tools"
+      },
+      "activity_thinking": "Thinking",
+      "activity_arguments": "Arguments",
+      "activity_result": "Result",
+      "activity_open_sub_agent": "Open sub-agent",
       "tool_resolution_status": "Waiting for tool resolution...",
       "queued_messages_count": {
         "one": "1 queued message",
@@ -390,6 +405,11 @@
     "mcp_error": "Connection failed",
     "mcp_disconnected": "Disconnected",
     "mcp_reconnect": "Reconnect",
+    "mcp_reconnect_all": "Reconnect all failed MCPs",
+    "mcp_reconnect_partial_failure": {
+      "one": "Could not reconnect 1 MCP group.",
+      "other": "Could not reconnect {} MCP groups."
+    },
     "mcp_view_error": "View details",
     "tools_count": "{enabled} of {total} enabled",
     "delete_mcp_title": "Delete MCP Server",
