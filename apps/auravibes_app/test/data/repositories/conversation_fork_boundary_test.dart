@@ -270,4 +270,56 @@ void main() {
       throwsA(isA<ConversationValidationException>()),
     );
   });
+
+  test(
+    'deleting source materializes fork and keeps shared attachments',
+    () async {
+      final _ = await insertSource();
+      final base = DateTime.utc(2026);
+      final sourceMessage = await insertMessage(
+        id: 'assistant-1',
+        createdAt: base,
+        isUser: false,
+        status: .sent,
+      );
+      final _ = await database
+          .into(database.messageAttachments)
+          .insert(
+            MessageAttachmentsCompanion(
+              messageId: .new(sourceMessage.id),
+              localPath: const Value('/shared/image.png'),
+              fileName: const Value('image.png'),
+              displayName: const Value('image.png'),
+              mimeType: const Value('image/png'),
+              modality: const Value('image'),
+              sizeBytes: const Value(10),
+            ),
+          );
+
+      final fork = await repository.forkConversation(
+        'source',
+        throughMessageId: sourceMessage.id,
+      );
+      final boundaries = await repository.captureForkBoundaries('source');
+      expect(boundaries[fork.id], sourceMessage.id);
+
+      expect(
+        await repository.deleteConversationWithFrozenForkBoundaries(
+          'source',
+          frozenForkBoundaries: boundaries,
+        ),
+        isTrue,
+      );
+      expect(await repository.getConversationById('source'), isNull);
+
+      final materialized = await repository.getConversationById(fork.id);
+      expect(materialized?.isForkMaterialized, isTrue);
+      final messages = await MessageRepository(database)
+          .getMessagesByConversation(fork.id);
+      expect(messages, hasLength(1));
+      expect(messages.single.id, isNot(sourceMessage.id));
+      expect(messages.single.isForkReference, isFalse);
+      expect(messages.single.attachments.single.localPath, '/shared/image.png');
+    },
+  );
 }
