@@ -1,3 +1,5 @@
+import 'package:genkit/plugin.dart';
+
 abstract final class LogRedaction {
   static const _redacted = '[REDACTED]';
 
@@ -31,8 +33,16 @@ abstract final class LogRedaction {
     null => 'null',
     String() => value,
     StackTrace() => '$value',
+    final GenkitException error => _genkitExceptionText(error),
     _ => '${value.runtimeType}',
   };
+
+  static String _genkitExceptionText(GenkitException error) {
+    final details = error.details;
+    if (details == null || details.isEmpty) return error.message;
+
+    return '${error.message}\nDetails: $details';
+  }
 
   static String _redact(String text) {
     var redacted = text;

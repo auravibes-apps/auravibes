@@ -1,5 +1,6 @@
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/plugin.dart';
 
 void main() {
   group('MonitoringService', () {
@@ -77,6 +78,25 @@ void main() {
       expect(joined, isNot(contains('abc123')));
       expect(joined, isNot(contains('key123')));
       expect(joined, contains('[REDACTED]'));
+    });
+
+    test('trackError logs GenkitException details safely', () {
+      const secret = 'secret-provider-error';
+      final messages = <String>[];
+      MonitoringService(debugLogger: messages.add).trackError(
+        'stream_failure',
+        error: GenkitException(
+          'OpenRouter API request failed (HTTP 404).',
+          details: 'No endpoints found: api_key=$secret',
+        ),
+        stackTrace: .fromString('frame'),
+      );
+
+      final output = messages.join('\n');
+      expect(output, contains('OpenRouter API request failed (HTTP 404).'));
+      expect(output, contains('No endpoints found'));
+      expect(output, contains('[REDACTED]'));
+      expect(output, isNot(contains(secret)));
     });
   });
 }

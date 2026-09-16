@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/plugin.dart';
 import 'package:logging/logging.dart';
 
 void main() {
@@ -59,6 +60,29 @@ void main() {
       expect(logs.join('\n'), isNot(contains('secret-token')));
       expect(logs.join('\n'), isNot(contains('abc123')));
       expect(logs.join('\n'), contains('[REDACTED]'));
+    });
+
+    test('records GenkitException message and details safely', () async {
+      const secret = 'secret-provider-error';
+      AppLogging.configure(enabled: true);
+
+      Logger('test.logger').severe(
+        'failed',
+        GenkitException(
+          'OpenRouter API request failed (HTTP 404).',
+          details: 'No endpoints found: api_key=$secret',
+        ),
+      );
+      await Future<void>.delayed(.zero);
+
+      final output = logs.join('\n');
+      expect(
+        output,
+        contains('Error: OpenRouter API request failed (HTTP 404).'),
+      );
+      expect(output, contains('No endpoints found'));
+      expect(output, contains('[REDACTED]'));
+      expect(output, isNot(contains(secret)));
     });
 
     test('redacts OAuth credential-like values', () async {

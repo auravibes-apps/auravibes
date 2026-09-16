@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_servi
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -138,6 +139,8 @@ void main() {
           .thenAnswer((_) async => _conversation);
       when(() => messageRepository.getMessagesByConversation('conversation-1'))
           .thenAnswer((_) async => [_userMessage]);
+      when(() => messageRepository.getSystemMessages('conversation-1'))
+          .thenAnswer((_) async => []);
       when(() => selectPromptMessagesUsecase.call('conversation-1'))
           .thenAnswer((_) async => [_userMessage]);
       when(
@@ -1134,6 +1137,8 @@ void main() {
 
       when(() => selectPromptMessagesUsecase.call('conversation-1'))
           .thenAnswer((_) async => [_userMessage]);
+      when(() => messageRepository.getSystemMessages(any()))
+          .thenAnswer((_) async => []);
     });
 
     test('throws when conversation not found', () {
@@ -1249,6 +1254,199 @@ void main() {
         ),
       );
     });
+
+    test('persists an inline error for provider credit failures', () async {
+      final errorMessage = MessageEntity(
+        id: 'system-error-1',
+        conversationId: 'conversation-1',
+        content:
+            LocaleKeys.chats_screens_chat_conversation_generation_credits_error,
+        messageType: .system,
+        isUser: false,
+        status: .sending,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
+      );
+      final previousError = errorMessage.copyWith(
+        id: 'previous-system-error-1',
+        status: .error,
+      );
+      final previousUserError = _userMessage.copyWith(
+        id: 'previous-user-error-1',
+        status: .error,
+      );
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation);
+      when(() => messageRepository.getSystemMessages('conversation-1'))
+          .thenAnswer((_) async => [previousError]);
+      when(
+        () => messageRepository.getMessagesByStatus('conversation-1', .error),
+      ).thenAnswer((_) async => [previousUserError]);
+      when(() => messageRepository.deleteMessage(any()))
+          .thenAnswer((_) async => true);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => []);
+      when(
+        () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
+      ).thenAnswer((_) async => _model);
+      when(
+        () => loadConversationToolSpecsUsecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer((_) async => const []);
+      when(() => messageRepository.createMessage(any())).thenAnswer((
+        invocation,
+      ) {
+        final message = invocation.positionalArguments.first as MessageToCreate;
+
+        return Future.value(
+          message.messageType == MessageType.system
+              ? errorMessage
+              : _unfinishedAssistantMessage,
+        );
+      });
+      when(() => messageRepository.patchMessage(any(), any()))
+          .thenAnswer((_) async => errorMessage);
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer(
+        (_) => Stream.error(
+          GenkitException(
+            'OpenRouter API request failed (HTTP 402).',
+            details: 'This request requires more credits or fewer max_tokens.',
+          ),
+        ),
+      );
+
+      await expectLater(
+        usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(origin: .manualContinue),
+        ),
+        throwsA(isA<GenkitException>()),
+      );
+
+      final created = verify(
+        () => messageRepository.createMessage(captureAny()),
+      ).captured.cast<MessageToCreate>();
+      expect(created, hasLength(1));
+      expect(created.single.conversationId, 'conversation-1');
+      expect(created.single.content, errorMessage.content);
+      expect(created.single.messageType, MessageType.system);
+      expect(created.single.isUser, isFalse);
+      expect(created.single.status, MessageStatus.sending);
+      verify(
+        () => messageRepository.patchMessage(
+          'system-error-1',
+          const MessagePatch(status: .error),
+        ),
+      ).called(1);
+      verify(
+        () => messageRepository.patchMessage(
+          'previous-user-error-1',
+          const MessagePatch(status: .sending),
+        ),
+      ).called(1);
+      verify(
+        () => messageRepository.patchMessage(
+          'previous-user-error-1',
+          const MessagePatch(status: .error),
+        ),
+      ).called(1);
+      verify(() => messageRepository.deleteMessage('previous-system-error-1'))
+          .called(1);
+    });
+
+    test(
+      'clears the previous inline error before a successful retry',
+      () async {
+        final previousError = MessageEntity(
+          id: 'previous-system-error-1',
+          conversationId: 'conversation-1',
+          content: LocaleKeys
+              .chats_screens_chat_conversation_generation_credits_error,
+          messageType: .system,
+          isUser: false,
+          status: .error,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
+        );
+        final previousUserError = _userMessage.copyWith(
+          id: 'previous-user-error-1',
+          status: .error,
+        );
+        when(() => conversationRepository.getConversationById('conversation-1'))
+            .thenAnswer((_) async => _conversation);
+        when(() => messageRepository.getSystemMessages('conversation-1'))
+            .thenAnswer((_) async => [previousError]);
+        when(
+          () => messageRepository.getMessagesByStatus('conversation-1', .error),
+        ).thenAnswer((_) async => [previousUserError]);
+        when(() => messageRepository.deleteMessage(any()))
+            .thenAnswer((_) async => true);
+        when(
+          () => messageRepository.getMessagesByConversation('conversation-1'),
+        ).thenAnswer((_) async => []);
+        when(
+          () => workspaceModelSelectionsRepository
+              .getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => _model);
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => const []);
+        when(() => messageRepository.createMessage(any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
+        when(() => messageRepository.patchMessage(any(), any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            options: any(named: 'options'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.value(
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Done'),
+              finishReason: .stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ),
+        );
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(origin: .manualContinue),
+        );
+
+        expect(result.messageId, 'assistant-1');
+        verify(
+          () => messageRepository.patchMessage(
+            'previous-user-error-1',
+            const MessagePatch(status: .sending),
+          ),
+        ).called(1);
+        verify(
+          () => messageRepository.patchMessage(
+            'previous-user-error-1',
+            const MessagePatch(status: .sent),
+          ),
+        ).called(1);
+        verify(() => messageRepository.deleteMessage('previous-system-error-1'))
+            .called(1);
+      },
+    );
+
     test(
       'throws StateError when stream completes empty without cancellation',
       () async {
@@ -1406,6 +1604,8 @@ void main() {
           .thenAnswer((_) async => _unfinishedAssistantMessage);
       when(() => messageRepository.getMessagesByConversation(any()))
           .thenAnswer((_) async => [_userMessage]);
+      when(() => messageRepository.getSystemMessages(any()))
+          .thenAnswer((_) async => []);
     });
 
     test('uses selectPromptMessages for prompt construction', () async {

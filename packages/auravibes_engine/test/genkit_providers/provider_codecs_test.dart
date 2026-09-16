@@ -266,6 +266,64 @@ void main() {
     );
   });
 
+  test('streaming provider failures preserve safe provider details', () async {
+    const secret = 'provider-secret-value';
+    final providerMessage =
+        'Model rejected request: api_key=$secret '
+        'Authorization: Bearer $secret '
+        '{"api_key":"$secret"} ${'x' * 600}';
+    final codec = ChatCompletionsCodec(
+      errorLabel: 'Provider',
+      customize: (modelName, config) => (model: modelName, extraBody: {}),
+    );
+
+    try {
+      await codec.stream(
+        (_) async => _response({
+          'error': {'message': providerMessage},
+        }, statusCode: 404),
+        const {},
+        (_) {},
+      );
+      fail('Expected provider request to fail');
+    } on GenkitException catch (error) {
+      expect(error.status, StatusCodes.NOT_FOUND);
+      expect(error.message, 'Provider API request failed (HTTP 404).');
+      expect(error.details, contains('Model rejected request'));
+      expect(error.details, contains('[REDACTED]'));
+      expect(error.details!.length, lessThanOrEqualTo(500));
+      expect(error.toString(), isNot(contains(secret)));
+    }
+  });
+
+  test(
+    'streaming provider failures handle empty and malformed bodies',
+    () async {
+      final codec = ChatCompletionsCodec(
+        errorLabel: 'Provider',
+        customize: (modelName, config) => (model: modelName, extraBody: {}),
+      );
+
+      for (final body in ['', '{not-json']) {
+        try {
+          await codec.stream(
+            (_) async => ProviderTransportResponse(
+              statusCode: 502,
+              body: Stream.value(utf8.encode(body)),
+            ),
+            const {},
+            (_) {},
+          );
+          fail('Expected provider request to fail');
+        } on GenkitException catch (error) {
+          expect(error.message, 'Provider API request failed (HTTP 502).');
+          expect(error.status, StatusCodes.UNKNOWN);
+          expect(error.details, isNull);
+        }
+      }
+    },
+  );
+
   test('provider failures do not expose response bodies', () async {
     const secret = 'provider-secret-value';
     final codec = ChatCompletionsCodec(

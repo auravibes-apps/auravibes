@@ -142,14 +142,79 @@ class const ChatCompletionsCodec({
     };
   }
 
-  void _throwIfRawError(int statusCode, String _) {
+  void _throwIfRawError(int statusCode, String responseBody) {
     if (statusCode >= 200 && statusCode < 300) return;
 
     throw GenkitException(
       '$errorLabel API request failed (HTTP $statusCode).',
       status: .fromHttpStatus(statusCode),
+      details: _providerErrorDetail(responseBody),
     );
   }
+}
+
+const _maxProviderErrorLength = 500;
+const _providerErrorTruncationSuffix = '... [truncated]';
+
+final _providerSecretPatterns = <RegExp>[
+  RegExp(
+    r"""([\"']?(?:authorization|proxy-authorization|x-api-key)[\"']?\s*[:=]\s*(?:[\"']?(?:[A-Za-z]+\s+)?))[^,\s}\"']+""",
+    caseSensitive: false,
+  ),
+  RegExp(
+    r"""([\"']?(?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|id[_-]?token|token|secret|password)[\"']?\s*[:=]\s*[\"']?)(?:Bearer\s+)?[^,\s}\"']+""",
+    caseSensitive: false,
+  ),
+  RegExp(r'''\bBearer\s+[^\s,;}"']+''', caseSensitive: false),
+  RegExp(r'\b(?:sk|rk)-[A-Za-z0-9][A-Za-z0-9_-]*', caseSensitive: false),
+];
+
+String? _providerErrorDetail(String body) {
+  final trimmed = body.trim();
+  if (trimmed.isEmpty) return null;
+
+  late final Object? decoded;
+  try {
+    decoded = jsonDecode(trimmed);
+  } on FormatException {
+    return null;
+  }
+
+  final message = switch (decoded) {
+    final Map<String, dynamic> value => _providerErrorMessage(value),
+    _ => null,
+  };
+  if (message == null || message.trim().isEmpty) return null;
+
+  return _sanitizeProviderError(message);
+}
+
+String? _providerErrorMessage(Map<String, dynamic> response) {
+  final error = response['error'];
+  if (error is Map<String, dynamic> && error['message'] is String) {
+    return error['message'] as String;
+  }
+
+  final message = response['message'];
+  return message is String ? message : null;
+}
+
+String _sanitizeProviderError(String message) {
+  var sanitized = message.replaceAll(RegExp(r'\s+'), ' ').trim();
+  for (final pattern in _providerSecretPatterns) {
+    sanitized = sanitized.replaceAllMapped(
+      pattern,
+      (match) =>
+          '${match.groupCount > 0 ? match.group(1) ?? '' : ''}[REDACTED]',
+    );
+  }
+
+  if (sanitized.length <= _maxProviderErrorLength) return sanitized;
+
+  const prefixLength =
+      _maxProviderErrorLength - _providerErrorTruncationSuffix.length;
+  final prefix = sanitized.substring(0, prefixLength);
+  return '$prefix$_providerErrorTruncationSuffix';
 }
 
 List<Map<String, dynamic>> _messageToJson(Message message) {

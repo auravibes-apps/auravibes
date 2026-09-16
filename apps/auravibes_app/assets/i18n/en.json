@@ -327,6 +327,7 @@
       "tool_response_copied": "Tool response copied",
       "a2ui_form_invalid": "Check your answers and try again.",
       "continue_error": "Could not continue the agent. Please try again.",
+      "generation_credits_error": "This request needs more credits or a lower maximum token limit. Add credits or lower the model's maximum tokens, then try again.",
       "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",
       "waiting_for_tools": "Waiting for tools to connect...",
       "waiting_for_tools_named": "Waiting for {tools} to connect...",
