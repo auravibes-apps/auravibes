@@ -1343,7 +1343,8 @@ Future<ResolvedTool?> _resolvedTool(
   _PendingToolCallDecisionRequest request,
 ) async {
   final resolved = _catalogResolvedTool(request);
-  if (resolved == null || !_isCallSkillTool(resolved)) return resolved;
+  if (resolved == null) return null;
+  if (!_isCallSkillTool(resolved)) return resolved;
 
   return await _resolveNestedTool(request, resolved);
 }
@@ -1354,8 +1355,8 @@ ResolvedTool? _catalogResolvedTool(_PendingToolCallDecisionRequest request) =>
       request.catalog,
     );
 
-bool _isCallSkillTool(ResolvedTool? tool) =>
-    tool?.isSkillCommand == true && tool?.toolIdentifier == callSkillToolName;
+bool _isCallSkillTool(ResolvedTool tool) =>
+    tool.isSkillCommand && tool.toolIdentifier == callSkillToolName;
 
 Future<ResolvedTool?> _resolveNestedTool(
   _PendingToolCallDecisionRequest request,
