@@ -2,9 +2,12 @@
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
 
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/widgets/mcp_error_details.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_header.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -79,7 +82,13 @@ class _ToolsGroupCardCallbacks {
              )))
            : null,
        onViewError = groupWithTools.hasMcpError()
-           ? (() => _showMcpError(groupWithTools, context))
+           ? (() => unawaited(
+               showMcpErrorDetails(
+                 context,
+                 groupName: groupWithTools.group?.name,
+                 errorMessage: groupWithTools.mcpErrorMessage,
+               ),
+             ))
            : null;
 
   final ValueChanged<bool>? onToggleEnabled;
@@ -144,17 +153,6 @@ Future<bool> _confirmMcpDelete(BuildContext context) async {
   );
 
   return confirmed ?? false;
-}
-
-void _showMcpError(ToolsGroupWithTools groupWithTools, BuildContext context) {
-  AuraDialogs.alert(
-    context: context,
-    title: Text(_kDeleteMcpTitle.tr()),
-    message: AuraSelectableText(
-      groupWithTools.mcpErrorMessage ?? 'Unknown error',
-    ),
-    dismissLabel: const TextLocale(LocaleKeys.common_cancel),
-  );
 }
 
 class const _ToolsGroupCardLayout({

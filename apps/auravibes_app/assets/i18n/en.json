@@ -409,6 +409,11 @@
       "other": "Could not reconnect {} MCP groups."
     },
     "mcp_view_error": "View details",
+    "mcp_copy_error_details": "Copy",
+    "mcp_error_details_copied": "Error details copied",
+    "mcp_server": "Server",
+    "mcp_message": "Message",
+    "mcp_unknown_error": "Unknown error",
     "tools_count": "{enabled} of {total} enabled",
     "delete_mcp_title": "Delete MCP Server",
     "delete_mcp_confirm": "This will remove the MCP server and all its tools. Continue?",

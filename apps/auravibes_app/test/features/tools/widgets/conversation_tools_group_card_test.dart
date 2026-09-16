@@ -343,6 +343,12 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
+    expect(
+      tester
+          .widget<ConversationGroupHeader>(find.byType(ConversationGroupHeader))
+          .onViewError,
+      isNotNull,
+    );
   });
 
   testWidgets('MCP disconnected group renders', (tester) async {
