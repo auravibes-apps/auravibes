@@ -552,6 +552,14 @@ abstract class LocaleKeys {
   static const tools_screen_mcp_reconnect_partial_failure =
       'tools_screen.mcp_reconnect_partial_failure';
   static const tools_screen_mcp_view_error = 'tools_screen.mcp_view_error';
+  static const tools_screen_mcp_copy_error_details =
+      'tools_screen.mcp_copy_error_details';
+  static const tools_screen_mcp_error_details_copied =
+      'tools_screen.mcp_error_details_copied';
+  static const tools_screen_mcp_server = 'tools_screen.mcp_server';
+  static const tools_screen_mcp_message = 'tools_screen.mcp_message';
+  static const tools_screen_mcp_unknown_error =
+      'tools_screen.mcp_unknown_error';
   static const tools_screen_tools_count = 'tools_screen.tools_count';
   static const tools_screen_delete_mcp_title = 'tools_screen.delete_mcp_title';
   static const tools_screen_delete_mcp_confirm =
