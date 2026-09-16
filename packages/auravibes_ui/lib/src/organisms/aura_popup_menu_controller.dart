@@ -132,7 +132,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     );
   }
 
-  void close() {
+  void close({bool restoreFocus = false}) {
     if (!_visible) {
       return;
     }
@@ -140,7 +140,11 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     setState(() {
       _visible = false;
     });
-    _requiredFocusNode.unfocus();
+    if (restoreFocus) {
+      _requiredFocusNode.requestFocus();
+    } else {
+      _requiredFocusNode.unfocus();
+    }
   }
 
   void toggle() {
@@ -157,11 +161,24 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     menuFocusScopeNode: _requiredMenuFocusScopeNode,
     items: widget.items,
     close: close,
+    closeOutside: _closeFromOutside,
     trigger: widget.child,
     focusNode: _requiredFocusNode,
     onKeyEvent: _handleMenuKeyEvent,
     groupId: this,
   ).child;
+
+  void _closeFromOutside() {
+    if (!_visible) {
+      return;
+    }
+
+    _requiredMenuFocusScopeNode.unfocus();
+    _requiredFocusNode.unfocus();
+    setState(() {
+      _visible = false;
+    });
+  }
 
   KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) =>
       _handlePopupMenuKey((
@@ -170,7 +187,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
         trigger: _requiredFocusNode,
         visible: _visible,
         toggle: toggle,
-        close: close,
+        close: () => close(restoreFocus: true),
       ));
 }
 
@@ -249,6 +266,7 @@ class _AuraPopupMenuData {
     required FocusScopeNode menuFocusScopeNode,
     required List<AuraPopupMenuEntry> items,
     required VoidCallback close,
+    required VoidCallback closeOutside,
     required Widget trigger,
     required FocusNode focusNode,
     required FocusOnKeyEventCallback onKeyEvent,
@@ -267,7 +285,7 @@ class _AuraPopupMenuData {
              child: _AuraPopupMenuSurface(items: items, close: close),
            ),
            behavior: .opaque,
-           onTapOutside: (_) => close(),
+           onTapOutside: (_) => closeOutside(),
            groupId: groupId,
          ),
          child: Focus(
