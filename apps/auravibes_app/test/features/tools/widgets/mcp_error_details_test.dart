@@ -42,7 +42,7 @@ void main() {
               TextButton(
                 key: const ValueKey('redacted-error'),
                 onPressed: () => unawaited(
-                  showMcpErrorDetails(
+                  McpErrorDetails.show(
                     context,
                     groupName: 'MCP Server',
                     errorMessage:
@@ -54,7 +54,7 @@ void main() {
               TextButton(
                 key: const ValueKey('empty-error'),
                 onPressed: () => unawaited(
-                  showMcpErrorDetails(
+                  McpErrorDetails.show(
                     context,
                     groupName: 'MCP Server',
                     errorMessage: ' ',

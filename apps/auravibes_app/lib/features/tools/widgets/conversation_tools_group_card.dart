@@ -97,7 +97,7 @@ class _ConversationToolsGroupCardCallbacks {
            : null,
        onViewError = groupWithTools.hasMcpError()
            ? (() => unawaited(
-               showMcpErrorDetails(
+               McpErrorDetails.show(
                  context,
                  groupName: groupWithTools.group?.name,
                  errorMessage: groupWithTools.mcpErrorMessage,

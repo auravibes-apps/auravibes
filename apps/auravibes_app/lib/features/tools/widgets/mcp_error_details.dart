@@ -6,60 +6,85 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Shows copyable, redacted MCP error details.
-Future<void> showMcpErrorDetails(
-  BuildContext context, {
-  required String? groupName,
-  required String? errorMessage,
-}) async {
-  final details = _buildMcpErrorDetails(
-    groupName: groupName,
-    errorMessage: errorMessage,
-  );
-  final copyLabel = LocaleKeys.tools_screen_mcp_copy_error_details.tr();
-  final closeLabel = LocaleKeys.common_close.tr();
-  final shouldCopy = await AuraDialogs.confirm(
-    context: context,
-    title: Text(LocaleKeys.tools_screen_mcp_error.tr()),
-    message: AuraSelectableText(details),
-    actions: .new(confirmLabel: Text(copyLabel), cancelLabel: Text(closeLabel)),
-  );
-  if (shouldCopy != true) return;
+abstract final class McpErrorDetails {
+  static Future<void> show(
+    BuildContext context, {
+    required String? groupName,
+    required String? errorMessage,
+  }) async {
+    final details = _build(groupName: groupName, errorMessage: errorMessage);
+    final shouldCopy = await _showDialog(context, details);
+    if (shouldCopy != true) return;
 
-  try {
-    await Clipboard.setData(.new(text: details));
-  } on Object {
-    return;
+    if (!await _copy(details)) return;
+    if (!context.mounted) return;
+    _showCopied(context);
   }
-  if (!context.mounted) return;
 
-  final _ = AuraSnackBars.show(
-    context: context,
-    content: Text(LocaleKeys.tools_screen_mcp_error_details_copied.tr()),
-    variant: .success,
+  static void _showCopied(BuildContext context) {
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(LocaleKeys.tools_screen_mcp_error_details_copied.tr()),
+      variant: .success,
+    );
+  }
+
+  static Future<bool?> _showDialog(BuildContext context, String details) =>
+      AuraDialogs.confirm(
+        context: context,
+        title: Text(LocaleKeys.tools_screen_mcp_error.tr()),
+        message: AuraSelectableText(details),
+        actions: _dialogActions(),
+      );
+
+  static AuraConfirmDialogActions _dialogActions() => .new(
+    confirmLabel: Text(LocaleKeys.tools_screen_mcp_copy_error_details.tr()),
+    cancelLabel: Text(LocaleKeys.common_close.tr()),
   );
-}
 
-String _buildMcpErrorDetails({
-  required String? groupName,
-  required String? errorMessage,
-}) {
-  final displayName = _textOrNull(groupName);
-  final message =
-      _textOrNull(errorMessage) ??
-      LocaleKeys.tools_screen_mcp_unknown_error.tr();
-  final serverLabel = LocaleKeys.tools_screen_mcp_server.tr();
-  final messageLabel = LocaleKeys.tools_screen_mcp_message.tr();
+  static Future<bool> _copy(String details) async {
+    try {
+      await Clipboard.setData(.new(text: details));
+    } on Object {
+      return false;
+    }
 
-  return [
-    LocaleKeys.tools_screen_mcp_error.tr(),
-    if (displayName != null)
-      '$serverLabel: ${LogRedaction.redact(displayName)}',
-    '$messageLabel: ${LogRedaction.redact(message)}',
-  ].join('\n');
-}
+    return true;
+  }
 
-String? _textOrNull(String? value) {
-  final trimmed = value?.trim();
+  static String _build({
+    required String? groupName,
+    required String? errorMessage,
+  }) {
+    final serverLine = _serverLine(groupName);
 
-  return trimmed == null || trimmed.isEmpty ? null : trimmed;
+    return [
+      LocaleKeys.tools_screen_mcp_error.tr(),
+      ?serverLine,
+      _messageLine(errorMessage),
+    ].join('\n');
+  }
+
+  static String? _serverLine(String? groupName) {
+    final displayName = _textOrNull(groupName);
+    if (displayName == null) return null;
+
+    return '${LocaleKeys.tools_screen_mcp_server.tr()}: '
+        '${LogRedaction.redact(displayName)}';
+  }
+
+  static String _messageLine(String? errorMessage) {
+    final message =
+        _textOrNull(errorMessage) ??
+        LocaleKeys.tools_screen_mcp_unknown_error.tr();
+
+    return '${LocaleKeys.tools_screen_mcp_message.tr()}: '
+        '${LogRedaction.redact(message)}';
+  }
+
+  static String? _textOrNull(String? value) {
+    final trimmed = value?.trim();
+
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
 }
