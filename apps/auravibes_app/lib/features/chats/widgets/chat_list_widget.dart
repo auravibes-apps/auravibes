@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart'
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -166,29 +167,40 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
       final conversations = await ref.read(
         conversationsStreamProvider(workspaceId: chat.workspaceId).future,
       );
-      if (!hasPinnedConversationCapacity(conversations)) return;
+      if (!ConversationLimits.hasPinnedCapacity(conversations)) return;
     }
+    if (await _toggleCloudPin(chat)) return;
+    await _toggleLocalPin(chat);
+  }
 
-    final patch = ConversationPatch(isPinned: !chat.isPinned);
+  Future<bool> _toggleCloudPin(ConversationEntity chat) async {
     final cloud = await ref.read(
       cloudConversationUsecaseProvider(chat.workspaceId).future,
     );
-    if (cloud != null) {
-      try {
-        final _ = await cloud.update(chat, patch);
-      } on CloudAppException catch (error) {
-        if (error.code != 'validationFailed') rethrow;
-      }
-      if (!mounted) return;
-      ref.invalidate(
-        conversationsStreamProvider(workspaceId: chat.workspaceId),
-      );
+    if (cloud == null) return false;
 
-      return;
+    await _updateCloudPin(cloud, chat);
+    if (!mounted) return true;
+    ref.invalidate(conversationsStreamProvider(workspaceId: chat.workspaceId));
+
+    return true;
+  }
+
+  Future<void> _updateCloudPin(
+    CloudConversationUsecase cloud,
+    ConversationEntity chat,
+  ) async {
+    final patch = ConversationPatch(isPinned: !chat.isPinned);
+    try {
+      final _ = await cloud.update(chat, patch);
+    } on CloudAppException catch (error) {
+      if (error.code != 'validationFailed') rethrow;
     }
+  }
 
+  Future<void> _toggleLocalPin(ConversationEntity chat) async {
     if (!mounted) return;
-
+    final patch = ConversationPatch(isPinned: !chat.isPinned);
     try {
       final _ = await ref
           .read(conversationRepositoryProvider)

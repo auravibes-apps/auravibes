@@ -62,14 +62,20 @@ extension ConversationDaoWriteOperations on ConversationDao {
   Future<ConversationsTable> insertConversation(
     ConversationsCompanion conversation,
   ) => transaction(() async {
+    await _ensureInsertPinnedCapacity(conversation);
+
+    return await into(conversations).insertReturning(conversation);
+  });
+
+  Future<void> _ensureInsertPinnedCapacity(
+    ConversationsCompanion conversation,
+  ) async {
     if (conversation.isPinned.present &&
         conversation.isPinned.value &&
         conversation.workspaceId.present) {
       await _ensurePinnedCapacity(conversation.workspaceId.value);
     }
-
-    return await into(conversations).insertReturning(conversation);
-  });
+  }
 
   Future<ConversationsTable?> getConversationById(String id) => (select(
     conversations,
@@ -77,41 +83,68 @@ extension ConversationDaoWriteOperations on ConversationDao {
 
   Future<bool> patchConversation(String id, ConversationsCompanion companion) =>
       transaction(() async {
-        final current = await getConversationById(id);
-        if (current != null) {
-          final workspaceId = companion.workspaceId.present
-              ? companion.workspaceId.value
-              : current.workspaceId;
-          final isPinned = companion.isPinned.present
-              ? companion.isPinned.value
-              : current.isPinned;
-          if (isPinned &&
-              (!current.isPinned || workspaceId != current.workspaceId)) {
-            await _ensurePinnedCapacity(workspaceId);
-          }
-        }
+        await _ensurePatchPinnedCapacity(id, companion);
 
-        final count = await (update(
-          conversations,
-        )..where((tbl) => tbl.id.equals(id))).write(companion);
-
-        return count > 0;
+        return await _writeConversationPatch(id, companion);
       });
 
+  Future<bool> _writeConversationPatch(
+    String id,
+    ConversationsCompanion companion,
+  ) async {
+    final count = await (update(
+      conversations,
+    )..where((tbl) => tbl.id.equals(id))).write(companion);
+
+    return count > 0;
+  }
+
+  Future<void> _ensurePatchPinnedCapacity(
+    String id,
+    ConversationsCompanion companion,
+  ) async {
+    final current = await getConversationById(id);
+    if (current == null) return;
+
+    final workspaceId = _pinTargetWorkspace(current, companion);
+    if (workspaceId == null) return;
+
+    await _ensurePinnedCapacity(workspaceId);
+  }
+
+  String? _pinTargetWorkspace(
+    ConversationsTable current,
+    ConversationsCompanion companion,
+  ) {
+    final workspaceId = companion.workspaceId.present
+        ? companion.workspaceId.value
+        : current.workspaceId;
+    final isPinned = companion.isPinned.present
+        ? companion.isPinned.value
+        : current.isPinned;
+    if (!isPinned || (current.isPinned && workspaceId == current.workspaceId)) {
+      return null;
+    }
+
+    return workspaceId;
+  }
+
   Future<void> _ensurePinnedCapacity(String workspaceId) async {
-    final pinned =
-        await (select(conversations)
-              ..where(
-                (tbl) =>
-                    tbl.workspaceId.equals(workspaceId) &
-                    tbl.isPinned.equals(true),
-              )
-              ..limit(ConversationLimits.maxPinnedPerWorkspace + 1))
-            .get();
+    final pinned = await _pinnedConversations(workspaceId);
     if (pinned.length >= ConversationLimits.maxPinnedPerWorkspace) {
       throw ConversationPinLimitException(workspaceId);
     }
   }
+
+  Future<List<ConversationsTable>> _pinnedConversations(String workspaceId) =>
+      (select(conversations)
+            ..where(
+              (tbl) =>
+                  tbl.workspaceId.equals(workspaceId) &
+                  tbl.isPinned.equals(true),
+            )
+            ..limit(ConversationLimits.maxPinnedPerWorkspace + 1))
+          .get();
 
   Future<bool> deleteConversation(String id) async {
     final count = await (delete(
@@ -150,16 +183,13 @@ extension ConversationDaoReadOperations on ConversationDao {
   }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
-  _buildWorkspaceQuery(String workspaceId) => select(conversations)
-    ..where(
+  _buildWorkspaceQuery(String workspaceId) {
+    return _orderedConversations(
       (tbl) =>
           tbl.workspaceId.equals(workspaceId) &
           tbl.parentConversationId.isNull(),
-    )
-    ..orderBy([
-      (tbl) => OrderingTerm(expression: tbl.isPinned, mode: .desc),
-      (tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc),
-    ]);
+    );
+  }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
   _buildChildrenQuery(String parentConversationId) {
@@ -173,5 +203,8 @@ extension ConversationDaoReadOperations on ConversationDao {
     Expression<bool> Function($ConversationsTable) filter,
   ) => select(conversations)
     ..where(filter)
-    ..orderBy([(tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc)]);
+    ..orderBy([
+      (tbl) => OrderingTerm(expression: tbl.isPinned, mode: .desc),
+      (tbl) => OrderingTerm(expression: tbl.updatedAt, mode: .desc),
+    ]);
 }

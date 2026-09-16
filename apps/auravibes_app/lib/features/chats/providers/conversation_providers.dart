@@ -54,38 +54,44 @@ Stream<List<ConversationEntity>> conversationsStream(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
   if (!ref.mounted) return;
-  yield* _conversationsForSession(ref, session, workspaceId, limit);
+  yield* _conversationsForSession(ref, session, limit);
 }
 
 Stream<List<ConversationEntity>> _conversationsForSession(
   Ref ref,
   WorkspaceSession session,
-  String workspaceId,
   int? limit,
 ) {
-  final cloud = session.cloud;
-  final conversations = cloud == null
-      ? ref
-            .watch(conversationRepositoryProvider)
-            .watchConversationsByWorkspace(workspaceId, limit: limit)
-      : _cloudConversations(ref, cloud);
+  final conversations = _conversationStreamForSession(ref, session, limit);
 
-  return conversations.map(
-    (items) => _pinnedFirst(items).take(limit ?? items.length).toList(),
-  );
+  return conversations.map((items) => _pinnedAndLimited(items, limit));
 }
+
+Stream<List<ConversationEntity>> _conversationStreamForSession(
+  Ref ref,
+  WorkspaceSession session,
+  int? limit,
+) {
+  if (session.cloud case final cloud?) return _cloudConversations(ref, cloud);
+
+  return ref
+      .watch(conversationRepositoryProvider)
+      .watchConversationsByWorkspace(
+        session.workspace.localWorkspaceId,
+        limit: limit,
+      );
+}
+
+List<ConversationEntity> _pinnedAndLimited(
+  List<ConversationEntity> conversations,
+  int? limit,
+) => _pinnedFirst(conversations).take(limit ?? conversations.length).toList();
 
 List<ConversationEntity> _pinnedFirst(List<ConversationEntity> conversations) =>
     [
       ...conversations.where((conversation) => conversation.isPinned),
       ...conversations.where((conversation) => !conversation.isPinned),
     ];
-
-bool hasPinnedConversationCapacity(
-  Iterable<ConversationEntity> conversations,
-) =>
-    conversations.where((conversation) => conversation.isPinned).length <
-    ConversationLimits.maxPinnedPerWorkspace;
 
 @riverpod
 Stream<List<ConversationEntity>> childConversationsStream(

@@ -250,9 +250,9 @@ void main() {
         (index) => conversation.copyWith(id: 'c$index'),
       );
 
-      expect(hasPinnedConversationCapacity(pinned), isFalse);
+      expect(ConversationLimits.hasPinnedCapacity(pinned), isFalse);
       expect(
-        hasPinnedConversationCapacity(pinned.take(pinned.length - 1)),
+        ConversationLimits.hasPinnedCapacity(pinned.take(pinned.length - 1)),
         isTrue,
       );
     },

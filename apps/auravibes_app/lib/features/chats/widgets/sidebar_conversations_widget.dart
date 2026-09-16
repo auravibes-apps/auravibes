@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/chats/providers/cloud_conversation_provid
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
@@ -276,17 +277,18 @@ class _SidebarConversationTileState
   @override
   Widget build(BuildContext context) {
     final chat = widget.chat;
-    final title = ref.watch(streamingTitleProvider(chat.id)) ?? chat.title;
 
     return _SidebarConversationTileView(
-      isActive: widget.isActive,
-      isPinned: chat.isPinned,
-      title: title,
-      controller: _menuController,
-      onDelete: _deleteConversation,
-      onTogglePin: _togglePin,
-      onRename: _renameConversation,
-      onTap: _openConversation,
+      child: _SidebarConversationTileContent(
+        isActive: widget.isActive,
+        isPinned: chat.isPinned,
+        title: ref.watch(streamingTitleProvider(chat.id)) ?? chat.title,
+        controller: _menuController,
+        onDelete: _deleteConversation,
+        onTogglePin: _togglePin,
+        onRename: _renameConversation,
+        onTap: _openConversation,
+      ),
     );
   }
 
@@ -308,38 +310,19 @@ void _openSidebarConversation(BuildContext context, ConversationEntity chat) =>
       chatId: chat.id,
     ).go(context);
 
-class const _SidebarConversationTileView({
-  required final bool isActive,
-  required final bool isPinned,
-  required final String title,
-  required final AuraPopupMenuController controller,
-  required final VoidCallback onDelete,
-  required final VoidCallback onTogglePin,
-  required final VoidCallback onRename,
-  required final VoidCallback onTap,
-}) extends StatelessWidget {
+class const _SidebarConversationTileView({required final Widget child})
+    extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.fromSpacing(.xs),
-        horizontal: context.auraTheme.fromSpacing(.sm),
-      ),
-      child: _SidebarConversationTileBody(
-        isActive: isActive,
-        isPinned: isPinned,
-        title: title,
-        controller: controller,
-        onDelete: onDelete,
-        onTogglePin: onTogglePin,
-        onRename: onRename,
-        onTap: onTap,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.symmetric(
+      vertical: context.auraTheme.fromSpacing(.xs),
+      horizontal: context.auraTheme.fromSpacing(.sm),
+    ),
+    child: child,
+  );
 }
 
-class const _SidebarConversationTileBody({
+class const _SidebarConversationTileContent({
   required final bool isActive,
   required final bool isPinned,
   required final String title,
@@ -350,23 +333,38 @@ class const _SidebarConversationTileBody({
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraTile(
-    child: _SidebarConversationTileLabel(
+  Widget build(BuildContext context) => _SidebarConversationTileBody(
+    isActive: isActive,
+    label: _SidebarConversationTileLabel(
       title: title,
       isActive: isActive,
       isPinned: isPinned,
     ),
-    onTap: onTap,
-    variant: isActive ? AuraTileVariant.selected : AuraTileVariant.ghost,
-    size: .small,
-    leading: _SidebarConversationTileLeading(isActive: isActive),
-    trailing: _SidebarConversationTileMenu(
+    menu: _SidebarConversationTileMenu(
       isPinned: isPinned,
       controller: controller,
       onDelete: onDelete,
       onTogglePin: onTogglePin,
       onRename: onRename,
     ),
+    onTap: onTap,
+  );
+}
+
+class const _SidebarConversationTileBody({
+  required final bool isActive,
+  required final Widget label,
+  required final Widget menu,
+  required final VoidCallback onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    child: label,
+    onTap: onTap,
+    variant: isActive ? AuraTileVariant.selected : AuraTileVariant.ghost,
+    size: .small,
+    leading: _SidebarConversationTileLeading(isActive: isActive),
+    trailing: menu,
   );
 }
 
@@ -481,13 +479,11 @@ Future<void> _deleteSidebarConversation(
   final cloud = await ref.read(
     cloudConversationUsecaseProvider(chat.workspaceId).future,
   );
-  if (cloud != null) {
+  if (cloud case final cloud?) {
     await cloud.delete(chat);
 
     return;
   }
-
-  if (!context.mounted) return;
 
   final _ = await ref
       .read(conversationRepositoryProvider)
@@ -499,32 +495,61 @@ Future<void> _toggleSidebarConversationPin(
   WidgetRef ref,
   ConversationEntity chat,
 ) async {
-  if (!chat.isPinned) {
-    final conversations = await ref.read(
-      conversationsStreamProvider(workspaceId: chat.workspaceId).future,
-    );
-    if (!hasPinnedConversationCapacity(conversations)) return;
+  if (!chat.isPinned &&
+      !await _hasSidebarPinnedCapacity(ref, chat.workspaceId)) {
+    return;
   }
+  if (!context.mounted) return;
+  if (await _toggleSidebarCloudPin(context, ref, chat)) return;
+  await _toggleSidebarLocalPin(ref, chat);
+}
 
-  final patch = ConversationPatch(isPinned: !chat.isPinned);
+Future<bool> _hasSidebarPinnedCapacity(
+  WidgetRef ref,
+  String workspaceId,
+) async {
+  final conversations = await ref.read(
+    conversationsStreamProvider(workspaceId: workspaceId).future,
+  );
+
+  return ConversationLimits.hasPinnedCapacity(conversations);
+}
+
+Future<bool> _toggleSidebarCloudPin(
+  BuildContext context,
+  WidgetRef ref,
+  ConversationEntity chat,
+) async {
   final cloud = await ref.read(
     cloudConversationUsecaseProvider(chat.workspaceId).future,
   );
-  if (cloud != null) {
-    try {
-      final _ = await cloud.update(chat, patch);
-    } on CloudAppException catch (error) {
-      if (error.code != 'validationFailed') rethrow;
-    }
-    if (context.mounted) {
-      ref.invalidate(
-        conversationsStreamProvider(workspaceId: chat.workspaceId),
-      );
-    }
+  if (cloud == null) return false;
 
-    return;
+  await _updateSidebarCloudPin(cloud, chat);
+  if (context.mounted) {
+    ref.invalidate(conversationsStreamProvider(workspaceId: chat.workspaceId));
   }
 
+  return true;
+}
+
+Future<void> _updateSidebarCloudPin(
+  CloudConversationUsecase cloud,
+  ConversationEntity chat,
+) async {
+  final patch = ConversationPatch(isPinned: !chat.isPinned);
+  try {
+    final _ = await cloud.update(chat, patch);
+  } on CloudAppException catch (error) {
+    if (error.code != 'validationFailed') rethrow;
+  }
+}
+
+Future<void> _toggleSidebarLocalPin(
+  WidgetRef ref,
+  ConversationEntity chat,
+) async {
+  final patch = ConversationPatch(isPinned: !chat.isPinned);
   try {
     final _ = await ref
         .read(conversationRepositoryProvider)
