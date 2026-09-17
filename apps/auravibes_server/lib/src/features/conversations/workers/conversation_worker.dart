@@ -26,6 +26,9 @@ typedef ConversationRenewalTimer = Timer Function(
 );
 typedef ConversationApprovalPauseBarrier = Future<void> Function();
 
+const _subAgentFailedMessage = 'Sub-agent failed.';
+const _subAgentCancelledMessage = 'Sub-agent cancelled.';
+
 class const ConversationWorker({
   final ConversationEngineHost host = const ServerConversationEngineHost(),
   final ConversationJobLeases leases = const ConversationJobLeases(),
@@ -398,101 +401,133 @@ class const ConversationWorker({
     required List<String> toolCallIds,
     required String content,
   }) async {
-    final waitingJob = await session.db.transaction((transaction) async {
-      final now = DateTime.now().toUtc();
-      final lockedJob = await ConversationJob.db.findFirstRow(
+    final waitingJob = await session.db.transaction(
+      (transaction) => _pauseForSubAgentsLocked(
         session,
-        where: (table) =>
-            table.id.equals(job.id) &
-            table.status.equals(ConversationJobStatuses.leased) &
-            table.leaseToken.equals(leaseToken) &
-            (table.leaseExpiresAt > now),
-        transaction: transaction,
-        lockMode: LockMode.forUpdate,
-      );
-      if (lockedJob == null) throw StateError('Conversation job lease lost.');
-      final lockedTurn = await ConversationTurn.db.findFirstRow(
-        session,
-        where: (table) =>
-            table.id.equals(turn.id) &
-            table.workspaceId.equals(job.workspaceId),
-        transaction: transaction,
-        lockMode: LockMode.forUpdate,
-      );
-      if (lockedTurn == null) {
-        throw const ConversationEngineConfigurationException('turn');
-      }
-      if (ConversationStatuses.isTerminal(lockedTurn.status) ||
-          lockedTurn.cancellationRequestedAt != null) {
-        await _cancelLocked(
-          session,
-          job,
-          lockedTurn,
-          leaseToken,
-          now,
-          transaction,
-        );
-        return null;
-      }
-      final waitingIds = toolCallIds.isEmpty
-          ? await _waitingToolCallIds(
-              session,
-              workspaceId: job.workspaceId,
-              turnId: turn.id!,
-              transaction: transaction,
-            )
-          : toolCallIds;
-      if (waitingIds.isEmpty) {
-        throw const ConversationEngineConfigurationException(
-          'sub_agent_barrier',
-        );
-      }
-      if (content.isNotEmpty && lockedTurn.assistantMessageId != null) {
-        final assistant = await ConversationMessage.db.findById(
-          session,
-          lockedTurn.assistantMessageId!,
-          transaction: transaction,
-          lockMode: LockMode.forUpdate,
-        );
-        if (assistant != null && assistant.content != content) {
-          await ConversationMessage.db.updateRow(
-            session,
-            assistant.copyWith(
-              content: content,
-              revision: assistant.revision + 1,
-              updatedAt: now,
-            ),
-            transaction: transaction,
-          );
-        }
-      }
-      final updated = await ConversationJob.db.updateRow(
-        session,
-        lockedJob.copyWith(
-          status: ConversationJobStatuses.waitingForSubAgents,
-          leaseOwner: null,
-          leaseToken: null,
-          leaseExpiresAt: null,
-          checkpointJson: jsonEncode({
-            'phase': 'awaiting_sub_agents',
-            'toolCallIds': waitingIds,
-          }),
-          updatedAt: now,
-        ),
-        transaction: transaction,
-      );
-      session.log(
-        'Conversation sub-agent barrier entered: job=${job.id}, '
-        'turn=${turn.id}, childCount=${waitingIds.length}, '
-        'state=${ConversationJobStatuses.waitingForSubAgents}.',
-      );
-      return updated;
-    });
+        job,
+        turn,
+        leaseToken,
+        toolCallIds,
+        content,
+        transaction,
+      ),
+    );
     if (waitingJob == null) return;
     final resumed = await _reconcileWaitingSubAgentJob(session, waitingJob);
     if (resumed?.status == ConversationJobStatuses.queued) {
       await _publishRetryWake(session, resumed!);
     }
+  }
+
+  Future<ConversationJob?> _pauseForSubAgentsLocked(
+    Session session,
+    ConversationJob job,
+    ConversationTurn turn,
+    String leaseToken,
+    List<String> toolCallIds,
+    String content,
+    Transaction transaction,
+  ) async {
+    final now = DateTime.now().toUtc();
+    final lockedJob = await ConversationJob.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(job.id) &
+          table.status.equals(ConversationJobStatuses.leased) &
+          table.leaseToken.equals(leaseToken) &
+          (table.leaseExpiresAt > now),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (lockedJob == null) throw StateError('Conversation job lease lost.');
+    final lockedTurn = await ConversationTurn.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(turn.id) & table.workspaceId.equals(job.workspaceId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (lockedTurn == null) {
+      throw const ConversationEngineConfigurationException('turn');
+    }
+    if (ConversationStatuses.isTerminal(lockedTurn.status) ||
+        lockedTurn.cancellationRequestedAt != null) {
+      await _cancelLocked(
+        session,
+        job,
+        lockedTurn,
+        leaseToken,
+        now,
+        transaction,
+      );
+      return null;
+    }
+    final waitingIds = toolCallIds.isEmpty
+        ? await _waitingToolCallIds(
+            session,
+            workspaceId: job.workspaceId,
+            turnId: turn.id!,
+            transaction: transaction,
+          )
+        : toolCallIds;
+    if (waitingIds.isEmpty) {
+      throw const ConversationEngineConfigurationException('sub_agent_barrier');
+    }
+    await _updateSubAgentPauseAssistant(
+      session,
+      turn: lockedTurn,
+      content: content,
+      now: now,
+      transaction: transaction,
+    );
+    final updated = await ConversationJob.db.updateRow(
+      session,
+      lockedJob.copyWith(
+        status: ConversationJobStatuses.waitingForSubAgents,
+        leaseOwner: null,
+        leaseToken: null,
+        leaseExpiresAt: null,
+        checkpointJson: jsonEncode({
+          'phase': 'awaiting_sub_agents',
+          'toolCallIds': waitingIds,
+        }),
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    session.log(
+      'Conversation sub-agent barrier entered: job=${job.id}, '
+      'turn=${turn.id}, childCount=${waitingIds.length}, '
+      'state=${ConversationJobStatuses.waitingForSubAgents}.',
+    );
+    return updated;
+  }
+
+  Future<void> _updateSubAgentPauseAssistant(
+    Session session, {
+    required ConversationTurn turn,
+    required String content,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final assistantId = turn.assistantMessageId;
+    if (content.isEmpty || assistantId == null) return;
+    final assistant = await ConversationMessage.db.findById(
+      session,
+      assistantId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (assistant == null || assistant.content == content) return;
+    await ConversationMessage.db.updateRow(
+      session,
+      assistant.copyWith(
+        content: content,
+        revision: assistant.revision + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
   }
 
   Future<void> _reconcileWaitingSubAgentJobs(Session session) async {
@@ -559,58 +594,13 @@ class const ConversationWorker({
         return null;
       }
 
-      var waitingCount = 0;
-      for (final call in calls) {
-        final children = _childEntries(call.resultJson);
-        if (children.isEmpty) {
-          await _finishWaitingToolCall(
-            session,
-            call,
-            status: 'executionError',
-            result: const {'content': 'Sub-agent failed.'},
-            now: now,
-            transaction: transaction,
-          );
-          continue;
-        }
-        final childResults = <Map<String, Object?>>[];
-        var childWaiting = false;
-        for (final child in children) {
-          final result = await _childTerminalResult(
-            session,
-            workspaceId: lockedJob.workspaceId,
-            child: child,
-            transaction: transaction,
-          );
-          if (result == null) {
-            childWaiting = true;
-          } else {
-            childResults.add(result);
-          }
-        }
-        if (childWaiting) {
-          waitingCount++;
-          continue;
-        }
-        final status =
-            childResults.every(
-              (result) => result['status'] == 'success',
-            )
-            ? 'success'
-            : childResults.any((result) => result['status'] == 'cancelled')
-            ? 'cancelled'
-            : 'executionError';
-        await _finishWaitingToolCall(
-          session,
-          call,
-          status: status,
-          result: childResults.length == 1
-              ? childResults.single
-              : {'children': childResults},
-          now: now,
-          transaction: transaction,
-        );
-      }
+      final waitingCount = await _reconcileWaitingSubAgentToolCalls(
+        session,
+        calls: calls,
+        workspaceId: lockedJob.workspaceId,
+        now: now,
+        transaction: transaction,
+      );
       if (waitingCount > 0) {
         session.log(
           'Conversation sub-agent barrier waiting: job=${lockedJob.id}, '
@@ -644,6 +634,79 @@ class const ConversationWorker({
       return updated;
     });
     return resumed;
+  }
+
+  Future<int> _reconcileWaitingSubAgentToolCalls(
+    Session session, {
+    required List<ConversationToolCall> calls,
+    required int workspaceId,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    var waitingCount = 0;
+    for (final call in calls) {
+      if (await _reconcileWaitingSubAgentToolCall(
+        session,
+        call: call,
+        workspaceId: workspaceId,
+        now: now,
+        transaction: transaction,
+      )) {
+        waitingCount++;
+      }
+    }
+    return waitingCount;
+  }
+
+  Future<bool> _reconcileWaitingSubAgentToolCall(
+    Session session, {
+    required ConversationToolCall call,
+    required int workspaceId,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final children = _childEntries(call.resultJson);
+    if (children.isEmpty) {
+      await _finishWaitingToolCall(
+        session,
+        call,
+        status: 'executionError',
+        result: const {'content': _subAgentFailedMessage},
+        now: now,
+        transaction: transaction,
+      );
+      return false;
+    }
+    final childResults = <Map<String, Object?>>[];
+    for (final child in children) {
+      final result = await _childTerminalResult(
+        session,
+        workspaceId: workspaceId,
+        child: child,
+        transaction: transaction,
+      );
+      if (result == null) return true;
+      childResults.add(result);
+    }
+    final status = switch ((
+      childResults.every((result) => result['status'] == 'success'),
+      childResults.any((result) => result['status'] == 'cancelled'),
+    )) {
+      (true, _) => 'success',
+      (_, true) => 'cancelled',
+      _ => 'executionError',
+    };
+    await _finishWaitingToolCall(
+      session,
+      call,
+      status: status,
+      result: childResults.length == 1
+          ? childResults.single
+          : {'children': childResults},
+      now: now,
+      transaction: transaction,
+    );
+    return false;
   }
 
   Future<void> _reconcileParentAfterChild(
@@ -717,7 +780,7 @@ class const ConversationWorker({
     final conversationId = child['conversationId'];
     final executionId = child['turnId'];
     if (conversationId is! String || executionId is! String) {
-      return const {'status': 'error', 'content': 'Sub-agent failed.'};
+      return const {'status': 'error', 'content': _subAgentFailedMessage};
     }
     final conversation = await Conversation.db.findFirstRow(
       session,
@@ -731,7 +794,7 @@ class const ConversationWorker({
       return {
         'conversationId': conversationId,
         'status': 'error',
-        'content': 'Sub-agent failed.',
+        'content': _subAgentFailedMessage,
         if (child['agentId'] is String) 'agentId': child['agentId'],
       };
     }
@@ -748,7 +811,7 @@ class const ConversationWorker({
       return {
         'conversationId': conversationId,
         'status': 'error',
-        'content': 'Sub-agent failed.',
+        'content': _subAgentFailedMessage,
         if (child['agentId'] is String) 'agentId': child['agentId'],
       };
     }
@@ -768,11 +831,11 @@ class const ConversationWorker({
     return {
       'conversationId': conversationId,
       'status': status,
-      'content': status == 'success'
-          ? assistant?.content ?? ''
-          : status == 'cancelled'
-          ? 'Sub-agent cancelled.'
-          : 'Sub-agent failed.',
+      'content': switch (status) {
+        'success' => assistant?.content ?? '',
+        'cancelled' => _subAgentCancelledMessage,
+        _ => _subAgentFailedMessage,
+      },
       if (child['agentId'] is String) 'agentId': child['agentId'],
     };
   }
@@ -790,7 +853,7 @@ class const ConversationWorker({
       final result = children.isEmpty
           ? const <String, Object?>{
               'status': 'cancelled',
-              'content': 'Sub-agent cancelled.',
+              'content': _subAgentCancelledMessage,
             }
           : {
               'children': [
@@ -798,7 +861,7 @@ class const ConversationWorker({
                   {
                     'conversationId': child['conversationId'],
                     'status': 'cancelled',
-                    'content': 'Sub-agent cancelled.',
+                    'content': _subAgentCancelledMessage,
                     if (child['agentId'] is String) 'agentId': child['agentId'],
                   },
               ],
@@ -906,7 +969,7 @@ class const ConversationWorker({
     if (source == null) {
       return jsonEncode(const {
         'status': 'cancelled',
-        'content': 'Sub-agent cancelled.',
+        'content': _subAgentCancelledMessage,
       });
     }
     try {
@@ -918,7 +981,7 @@ class const ConversationWorker({
               {
                 'conversationId': child['conversationId'],
                 'status': 'cancelled',
-                'content': 'Sub-agent cancelled.',
+                'content': _subAgentCancelledMessage,
                 if (child['agentId'] is String) 'agentId': child['agentId'],
               },
           ],
@@ -928,14 +991,14 @@ class const ConversationWorker({
         return jsonEncode({
           'conversationId': decoded['conversationId'],
           'status': 'cancelled',
-          'content': 'Sub-agent cancelled.',
+          'content': _subAgentCancelledMessage,
           if (decoded['agentId'] is String) 'agentId': decoded['agentId'],
         });
       }
     } on Object catch (_) {}
     return jsonEncode(const {
       'status': 'cancelled',
-      'content': 'Sub-agent cancelled.',
+      'content': _subAgentCancelledMessage,
     });
   }
 
