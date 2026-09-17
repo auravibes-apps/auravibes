@@ -1,0 +1,3 @@
+[mcp_servers.marionette]
+command = "dart"
+args = ["pub", "global", "run", "marionette_mcp"]

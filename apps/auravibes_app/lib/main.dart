@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
@@ -8,13 +9,16 @@ import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiOverlayStyle, appFlavor;
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:material_ui/material_ui.dart';
+
+PrintLogCollector? _marionetteLogCollector;
 
 Future<void> main() async {
   _configureFlavor();
@@ -34,10 +38,24 @@ void _configureFlavor() =>
 
 void _configureLogging() => AppLogging.configure(
   enabled: AppFlavorConfig.instance.appFlavor != Flavor.prod,
+  onLog: _marionetteLogCollector?.addLog,
 );
 
 void _ensureFlutterBinding() {
-  // Ponytail: debug-only bridge; enable only for MCP driver screenshots.
+  // Debug-only bridges; enable one explicitly for agent-controlled runs.
+  if (kDebugMode && const bool.fromEnvironment('ENABLE_MARIONETTE')) {
+    final instanceId = _resolveMarionetteInstanceId();
+    final logCollector = PrintLogCollector();
+    _marionetteLogCollector = logCollector;
+    final _ = MarionetteBinding.ensureInitialized(
+      .new(logCollector: logCollector),
+    );
+    _registerMarionetteInstanceExtension(instanceId);
+    debugPrint('AURAVIBES_MARIONETTE_INSTANCE_ID=$instanceId');
+
+    return;
+  }
+
   if (kDebugMode && const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
     final _ = enableFlutterDriverExtension();
 
@@ -45,6 +63,33 @@ void _ensureFlutterBinding() {
   }
 
   final _ = WidgetsFlutterBinding.ensureInitialized();
+}
+
+String _resolveMarionetteInstanceId() {
+  const configuredInstanceId = String.fromEnvironment(
+    'AURAVIBES_MARIONETTE_INSTANCE_ID',
+  );
+  if (configuredInstanceId.isNotEmpty) return configuredInstanceId;
+
+  final timestamp = DateTime.now().toUtc().microsecondsSinceEpoch.toRadixString(
+    36,
+  );
+  final nonce = Random.secure().nextInt(1 << 32).toRadixString(36);
+
+  return 'agent-$timestamp-$nonce';
+}
+
+void _registerMarionetteInstanceExtension(String instanceId) {
+  registerMarionetteExtension(
+    name: 'auravibes.instanceIdentity',
+    description: 'Returns the identity of the connected AuraVibes instance.',
+    inputSchema: const .new(
+      title: 'AuraVibes Instance Identity',
+      description: 'No arguments. Returns the current launch instance ID.',
+    ),
+    callback: (_) async =>
+        MarionetteExtensionResult.success({'instanceId': instanceId}),
+  );
 }
 
 void _configureSystemUi() {

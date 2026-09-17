@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "marionette": {
+      "command": "dart",
+      "args": [
+        "pub",
+        "global",
+        "run",
+        "marionette_mcp"
+      ],
+      "lifecycle": "lazy",
+      "directTools": true
+    }
+  }
+}

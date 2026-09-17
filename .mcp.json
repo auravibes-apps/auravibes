@@ -33,6 +33,17 @@
       ],
       "lifecycle": "lazy"
     },
+    "marionette": {
+      "command": "dart",
+      "args": [
+        "pub",
+        "global",
+        "run",
+        "marionette_mcp"
+      ],
+      "lifecycle": "lazy",
+      "directTools": true
+    },
     "sonarqube": {
       "command": "sonar",
       "args": [
