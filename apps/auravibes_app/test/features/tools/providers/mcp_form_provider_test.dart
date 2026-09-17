@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
@@ -13,6 +14,8 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
+    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
+    bool Function()? isOAuthCancelled,
   }) async => (
     id: 'verification-id',
     toolCount: 2,
@@ -32,6 +35,8 @@ class _FailingMcpConnectionNotifier extends McpConnectionNotifier {
   Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
+    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
+    bool Function()? isOAuthCancelled,
   }) async => (
     id: 'verification-id',
     toolCount: 1,
@@ -53,6 +58,8 @@ class _TestFailingMcpConnectionNotifier extends McpConnectionNotifier {
   Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
+    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
+    bool Function()? isOAuthCancelled,
   }) async {
     throw Exception(
       'Authorization: Bearer secret-token api_key=secret-api-key',
@@ -72,6 +79,8 @@ class _ExpiredMcpConnectionNotifier extends McpConnectionNotifier {
   Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
+    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
+    bool Function()? isOAuthCancelled,
   }) async => (
     id: 'expired-verification-id',
     toolCount: 1,
@@ -89,6 +98,8 @@ void main() {
       expect(state.transport, McpTransportTypeOptions.streamableHttp);
       expect(state.authenticationType, McpAuthenticationTypeOptions.none);
       expect(state.bearerToken, '');
+      expect(state.oauthClientId, '');
+      expect(state.oauthDeviceCode, isNull);
       expect(state.useHttp2, isFalse);
       expect(state.isSubmitting, isFalse);
       expect(state.isTestingConnection, isFalse);
@@ -143,12 +154,14 @@ void main() {
           description: '  A test server  ',
           url: '  https://example.com  ',
           transport: .sse,
+          oauthClientId: '  client-id  ',
         );
         final entity = state.toCreateEntity();
         expect(entity.name, 'My Server');
         expect(entity.description, 'A test server');
         expect(entity.url, 'https://example.com');
         expect(entity.transport, isA<McpTransportTypeSSE>());
+        expect(entity.oauthClientId, 'client-id');
       });
 
       test('preserves HTTP/2 in streamable HTTP transport', () {
@@ -326,6 +339,14 @@ void main() {
       expect(
         readContainer().read(mcpFormProvider('ws1')).bearerToken,
         'my-token',
+      );
+    });
+
+    test('OAuth client ID field updates client ID', () {
+      readNotifier().setOAuthClientId('client-id');
+      expect(
+        readContainer().read(mcpFormProvider('ws1')).oauthClientId,
+        'client-id',
       );
     });
 
@@ -511,9 +532,16 @@ void main() {
       container = failingContainer;
       notifier = failingContainer.read(mcpFormProvider('ws1').notifier);
 
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      final previousLevel = Logger.root.level;
+      Logger.root.level = .ALL;
+      addTearDown(() => Logger.root.level = previousLevel);
+
       readNotifier()
         ..setName('Test')
-        ..setUrl('https://example.com')
+        ..setUrl('https://example.com/mcp?token=secret')
         ..setAuthenticationType(.none);
 
       final testResult = await readNotifier().testConnection();
@@ -525,6 +553,15 @@ void main() {
       expect(stateAfterTest.errorMessage, isNot(contains('secret-token')));
       expect(stateAfterTest.errorMessage, isNot(contains('secret-api-key')));
       expect(stateAfterTest.isTestingConnection, isFalse);
+
+      final record = records.firstWhere(
+        (record) =>
+            record.loggerName == 'mcp_form' &&
+            record.message.contains('MCP form connection test failed'),
+      );
+      expect(record.message, contains('endpoint=https://example.com/mcp'));
+      expect(record.message, contains('errorType='));
+      expect(record.message, isNot(contains('token=secret')));
 
       expect(await readNotifier().submit(), isFalse);
       expect(

@@ -743,7 +743,33 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('compact agent'));
+    await tester.tapAt(tester.getCenter(find.text('compact agent')));
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+
+    expect(find.text('sheet agent'), findsOneWidget);
+  });
+
+  testWidgets('agent control opens sheet with a non-interactive tile', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        agentCompactControl: const AuraTile(child: Text('compact agent')),
+        agentSheetControl: const Text('sheet agent'),
+      ),
+    );
+
+    await tester.tapAt(tester.getCenter(find.text('compact agent')));
     final pumpCount = await tester.pumpAndSettle();
     expect(pumpCount, greaterThanOrEqualTo(0));
 
