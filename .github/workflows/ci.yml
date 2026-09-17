@@ -387,8 +387,10 @@ jobs:
           shards=()
           paths=()
           timings=()
-          if [ "${{ needs.test-plan.outputs.mode }}" = "full" ]; then
+          if [ "${{ needs.test-plan.outputs.mode }}" != "none" ]; then
             coverage=(--coverage)
+          fi
+          if [ "${{ needs.test-plan.outputs.mode }}" = "full" ]; then
             timings=(--timings-dir "$RUNNER_TEMP/test-timings")
           fi
           if [ "${{ matrix.shardMode }}" = "timed" ]; then
@@ -419,7 +421,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Prepare coverage artifact
-        if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
+        if: ${{ success() && needs.test-plan.outputs.mode != 'none' }}
         shell: bash
         run: |
           output="$RUNNER_TEMP/coverage/${{ matrix.artifact }}"
@@ -428,7 +430,7 @@ jobs:
           printf '%s\n' "${{ matrix.package }}" > "$output/package-root"
 
       - name: Upload coverage artifact
-        if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
+        if: ${{ success() && needs.test-plan.outputs.mode != 'none' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-${{ matrix.artifact }}
@@ -486,7 +488,7 @@ jobs:
         needs.analysis.result == 'success' &&
         needs.code-health.result == 'success' &&
         needs.integrity.result == 'success' &&
-        needs.test-plan.outputs.mode == 'full' &&
+        needs.test-plan.outputs.mode != 'none' &&
         needs.test.result == 'success'
       }}
     runs-on: ubuntu-latest
