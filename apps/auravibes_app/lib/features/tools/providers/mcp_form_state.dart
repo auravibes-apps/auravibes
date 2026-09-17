@@ -350,11 +350,19 @@ Future<bool> _runMcpFormSubmit(
   }
 }
 
-Future<bool> _runMcpFormConnectionTest(McpFormNotifier notifier) async {
+Future<bool> _runMcpFormConnectionTest(McpFormNotifier notifier) {
   notifier
     .._invalidateConnectionVerification()
     .._oauthCancelled = false;
   final connectionVersion = notifier._connectionVersion;
+
+  return _executeMcpFormConnectionTest(notifier, connectionVersion);
+}
+
+Future<bool> _executeMcpFormConnectionTest(
+  McpFormNotifier notifier,
+  int connectionVersion,
+) async {
   _setMcpTesting(notifier, value: true);
   _clearMcpError(notifier);
   try {

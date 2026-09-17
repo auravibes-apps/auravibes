@@ -9,8 +9,9 @@ final _mcpOAuthLogger = Logger('McpOAuth');
 
 class const BuildMcpServerToCreateUseCase({
   required final OAuthAuthenticate _authenticator,
-  final void Function(McpOAuthDeviceCode deviceCode)? onDeviceCode,
-  final bool Function()? isOAuthCancelled,
+  final void Function(McpOAuthDeviceCode deviceCode) onDeviceCode =
+      _ignoreOAuthDeviceCode,
+  final bool Function() isOAuthCancelled = _neverCancelOAuth,
 }) {
   Future<McpServerToCreate> call(McpServerFormToCreate serverToCreate) async {
     final serverInfo = _serverInfo(serverToCreate);
@@ -53,58 +54,156 @@ class const BuildMcpServerToCreateUseCase({
     String url,
     String? configuredClientId,
   ) async {
-    final discover = await _authenticator.discover(url);
-    if (discover == null) {
-      _mcpOAuthLogger.warning(
-        'MCP OAuth discovery returned no usable configuration '
-        'server=${_safeOAuthLogUrl(url)}',
-      );
-      throw const McpOAuthException(LocaleKeys.mcp_modal_oauth_discovery);
-    }
-
-    final hasDiscoveredClientId = _hasClientId(discover.clientId);
-    final hasConfiguredClientId = _hasClientId(configuredClientId);
-    _mcpOAuthLogger.info(
-      'MCP OAuth discovery completed '
-      'server=${_safeOAuthLogUrl(url)} '
-      'issuer=${_safeOAuthLogUrl(discover.issuer)} '
-      'resource=${_safeOAuthLogUrl(discover.resource)} '
-      'authorizationEndpoint=${_safeOAuthLogUrl(discover.authorizationUrl)} '
-      'tokenEndpoint=${_safeOAuthLogUrl(discover.tokenUrl)} '
-      'deviceFlow=${discover.deviceAuthorizationUrl != null} '
-      'hasScope=${discover.scope?.trim().isNotEmpty == true} '
-      'dynamicRegistration=${discover.supportsDynamicClientRegistration} '
-      'discoveryClientId=$hasDiscoveredClientId '
-      'manualClientId=$hasConfiguredClientId',
-    );
-    if (!hasDiscoveredClientId && !hasConfiguredClientId) {
-      _mcpOAuthLogger.warning(
-        'MCP OAuth cannot start: no client ID was discovered or configured '
-        'server=${_safeOAuthLogUrl(url)} '
-        'dynamicRegistration=${discover.supportsDynamicClientRegistration}',
-      );
-    }
-
-    final clientId = _resolveClientId(discover, configuredClientId);
-    final authentication = discover.withClientId(clientId);
-    final token = authentication.deviceAuthorizationUrl == null
-        ? await _authenticator.authenticate(authentication)
-        : await _authenticator.authenticateWithDeviceCode(
-            authentication,
-            clientId: clientId,
-            onDeviceCode: onDeviceCode,
-            isCancelled: isOAuthCancelled,
-          );
+    final authentication = await _authenticateMcpOAuth((
+      authenticator: _authenticator,
+      url: url,
+      configuredClientId: configuredClientId,
+      onDeviceCode: onDeviceCode,
+      isCancelled: isOAuthCancelled,
+    ));
 
     return serverInfo.copyWith(
       authenticationType: _oauthAuthentication(
-        authentication,
-        token.toEntity(),
-        clientId: clientId,
+        authentication.result,
+        authentication.token.toEntity(),
+        clientId: authentication.clientId,
       ),
     );
   }
 }
+
+typedef _McpOAuthResolutionInput = ({
+  OAuthAuthenticate authenticator,
+  String url,
+  String? configuredClientId,
+  void Function(McpOAuthDeviceCode deviceCode) onDeviceCode,
+  bool Function() isCancelled,
+});
+
+typedef _McpOAuthAuthentication = ({
+  OAuthDiscoveryResult result,
+  String clientId,
+  OAuthTokenModel token,
+});
+
+typedef _McpOAuthAuthenticationInput = ({
+  OAuthAuthenticate authenticator,
+  OAuthDiscoveryResult authentication,
+  String clientId,
+  void Function(McpOAuthDeviceCode deviceCode) onDeviceCode,
+  bool Function() isCancelled,
+});
+
+void _ignoreOAuthDeviceCode(McpOAuthDeviceCode _) {
+  return;
+}
+
+bool _neverCancelOAuth() => false;
+
+Future<OAuthTokenModel> _authenticateOAuth(_McpOAuthAuthenticationInput input) {
+  final authentication = input.authentication;
+
+  return authentication.deviceAuthorizationUrl == null
+      ? input.authenticator.authenticate(authentication)
+      : input.authenticator.authenticateWithDeviceCode(
+          input.authentication,
+          clientId: input.clientId,
+          onDeviceCode: input.onDeviceCode,
+          isCancelled: input.isCancelled,
+        );
+}
+
+Future<_McpOAuthAuthentication> _authenticateMcpOAuth(
+  _McpOAuthResolutionInput input,
+) async {
+  final discover = await _discoverMcpOAuth(input);
+
+  final clientId = _resolveClientId(discover, input.configuredClientId);
+  final authentication = discover.withClientId(clientId);
+
+  return await _completeMcpOAuth(input, authentication, clientId);
+}
+
+Future<_McpOAuthAuthentication> _completeMcpOAuth(
+  _McpOAuthResolutionInput input,
+  OAuthDiscoveryResult authentication,
+  String clientId,
+) async {
+  final token = await _authenticateOAuth((
+    authenticator: input.authenticator,
+    authentication: authentication,
+    clientId: clientId,
+    onDeviceCode: input.onDeviceCode,
+    isCancelled: input.isCancelled,
+  ));
+
+  return (result: authentication, clientId: clientId, token: token);
+}
+
+Future<OAuthDiscoveryResult> _discoverMcpOAuth(
+  _McpOAuthResolutionInput input,
+) async {
+  final discover = await input.authenticator.discover(input.url);
+  if (discover == null) return _throwOAuthDiscoveryError(input.url);
+
+  _logOAuthDiscovery((
+    url: input.url,
+    discover: discover,
+    hasDiscoveredClientId: _hasClientId(discover.clientId),
+    hasConfiguredClientId: _hasClientId(input.configuredClientId),
+  ));
+
+  return discover;
+}
+
+Never _throwOAuthDiscoveryError(String url) {
+  _mcpOAuthLogger.warning(
+    'MCP OAuth discovery returned no usable configuration '
+    'server=${_safeOAuthLogUrl(url)}',
+  );
+  throw const McpOAuthException(LocaleKeys.mcp_modal_oauth_discovery);
+}
+
+typedef _McpOAuthLogInput = ({
+  String url,
+  OAuthDiscoveryResult discover,
+  bool hasDiscoveredClientId,
+  bool hasConfiguredClientId,
+});
+
+void _logOAuthDiscovery(_McpOAuthLogInput input) {
+  final discover = input.discover;
+  final server = _safeOAuthLogUrl(input.url);
+  _mcpOAuthLogger.info(
+    'MCP OAuth discovery completed '
+    'server=$server '
+    'issuer=${_safeOAuthLogUrl(discover.issuer)} '
+    'resource=${_safeOAuthLogUrl(discover.resource)} '
+    'discoveryClientId=${input.hasDiscoveredClientId} '
+    'manualClientId=${input.hasConfiguredClientId} '
+    '${_oauthEndpointLogDetails(discover)}',
+  );
+  if (!input.hasDiscoveredClientId && !input.hasConfiguredClientId) {
+    _logMissingOAuthClientId(server, discover);
+  }
+}
+
+String _oauthEndpointLogDetails(OAuthDiscoveryResult discover) {
+  final hasScope = discover.scope?.trim().isNotEmpty == true;
+
+  return 'authorizationEndpoint=${_safeOAuthLogUrl(discover.authorizationUrl)} '
+      'tokenEndpoint=${_safeOAuthLogUrl(discover.tokenUrl)} '
+      'deviceFlow=${discover.deviceAuthorizationUrl != null} '
+      'hasScope=$hasScope '
+      'dynamicRegistration=${discover.supportsDynamicClientRegistration}';
+}
+
+void _logMissingOAuthClientId(String server, OAuthDiscoveryResult discover) =>
+    _mcpOAuthLogger.warning(
+      'MCP OAuth cannot start: no client ID was discovered or configured '
+      'server=$server '
+      'dynamicRegistration=${discover.supportsDynamicClientRegistration}',
+    );
 
 bool _hasClientId(String? value) => value?.trim().isNotEmpty == true;
 

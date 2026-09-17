@@ -45,7 +45,89 @@ class const OAuthDiscoveryResult({
 
   /// Whether the authorization server supports the response `iss` parameter.
   final bool authorizationResponseIssuerSupported = false,
-});
+}) {
+  // ignore: unnecessary_type_name_in_constructor - Required by Dart primary constructor syntax.
+  OAuthDiscoveryResult._fromMetadataMap(
+    _MetadataMapResultInput input,
+    String? clientId,
+  ) : this(
+        authorizationUrl: input.endpoints.authorizationUrl,
+        tokenUrl: input.endpoints.tokenUrl,
+        clientId: clientId,
+        scope: _stringValue(input.metadata['scope']) ?? input.scopes.join(' '),
+        resource:
+            input.resource?.toString() ?? input.context.resourceUri?.toString(),
+        issuer: input.issuer?.toString(),
+        deviceAuthorizationUrl: _validHttpsUri(
+          input.metadata['device_authorization_endpoint'],
+        )?.toString(),
+        supportsDynamicClientRegistration:
+            _stringValue(input.metadata['registration_endpoint']) != null,
+        scopes: input.scopes,
+        authorizationResponseIssuerSupported:
+            input.metadata['authorization_response_iss_parameter_supported'] ==
+            true,
+      );
+
+  // ignore: unnecessary_type_name_in_constructor - Required by Dart primary constructor syntax.
+  OAuthDiscoveryResult._fromAuthorizationMetadata(
+    _AuthorizationMetadataResultInput input,
+  ) : this(
+        authorizationUrl: input.authorization.authorizationUrl,
+        tokenUrl: input.authorization.tokenUrl,
+        clientId: input.clientId,
+        scope: input.authorization.scopes.join(' '),
+        resource: input.server.resource,
+        issuer: input.authorization.issuer.toString(),
+        deviceAuthorizationUrl: input.authorization.deviceAuthorizationUrl
+            ?.toString(),
+        supportsDynamicClientRegistration:
+            _stringValue(input.metadata['registration_endpoint']) != null,
+        scopes: input.authorization.scopes,
+        authorizationResponseIssuerSupported:
+            input.authorization.authorizationResponseIssuerSupported,
+      );
+
+  // ignore: unnecessary_type_name_in_constructor - Required by Dart primary constructor syntax.
+  OAuthDiscoveryResult._fromWellKnown(
+    _WellKnownMetadataInput input,
+    _WellKnownMetadataValidation validated,
+    String? clientId,
+  ) : this(
+        authorizationUrl: input.endpoints.authorizationUrl,
+        tokenUrl: input.endpoints.tokenUrl,
+        clientId: clientId,
+        scope:
+            _stringValue(input.metadata['scope']) ?? validated.scopes.join(' '),
+        resource: validated.resource?.toString(),
+        issuer: validated.issuer?.toString(),
+        deviceAuthorizationUrl: _validHttpsUri(
+          input.metadata['device_authorization_endpoint'],
+        )?.toString(),
+        supportsDynamicClientRegistration:
+            _stringValue(input.metadata['registration_endpoint']) != null,
+        scopes: validated.scopes,
+        authorizationResponseIssuerSupported:
+            input.metadata['authorization_response_iss_parameter_supported'] ==
+            true,
+      );
+
+  // ignore: unnecessary_type_name_in_constructor - Required by Dart primary constructor syntax.
+  OAuthDiscoveryResult._fromHeaderChallenge(
+    _HeaderChallengeEndpoints endpoints,
+    _HeaderChallengeMetadata metadata,
+    Uri resourceUri,
+  ) : this(
+        authorizationUrl: endpoints.authorization.toString(),
+        tokenUrl: endpoints.token.toString(),
+        clientId: metadata.clientId,
+        scope: metadata.scope,
+        resource: metadata.resource?.toString() ?? resourceUri.toString(),
+        issuer: metadata.issuer?.toString(),
+        deviceAuthorizationUrl: metadata.deviceAuthorizationUrl?.toString(),
+        scopes: metadata.scopes,
+      );
+}
 
 extension OAuthDiscoveryResultClientId on OAuthDiscoveryResult {
   /// Returns this discovery result with a configured public client ID.
@@ -134,13 +216,12 @@ class OAuthDiscoveryService {
     if (baseUrl.isEmpty) return null;
     final response = await _requestWellKnown(_wellKnownUrl(baseUrl));
 
-    return await _wellKnownResponse(
-      response,
+    return await _wellKnownResponse(response, (
       redirectUrl: connector.redirectUrl,
       clientName: connector.clientName,
       resourceUri: _probeUri(connector.serverUrl),
       registrationOptions: registrationOptions,
-    );
+    ));
   }
 
   /// Try probing the MCP server directly for OAuth requirements.
@@ -153,12 +234,11 @@ class OAuthDiscoveryService {
       final uri = _probeUri(connector.serverUrl);
       if (uri == null) return null;
 
-      return await _parseDirectProbeResponse(
-        await _requestDirectProbe(uri),
+      return await _parseDirectProbeResponse(await _requestDirectProbe(uri), (
         connector: connector,
         resourceUri: uri,
         registrationOptions: registrationOptions,
-      );
+      ));
     } on Exception catch (error, stackTrace) {
       _oauthDiscoveryLogger.fine(
         'Direct server probe failed',
@@ -171,33 +251,37 @@ class OAuthDiscoveryService {
   }
 
   static Future<OAuthDiscoveryResult?> _parseDirectProbeResponse(
-    http.Response response, {
-    required OAuthConnector connector,
-    required Uri resourceUri,
-    required _RegistrationOptions registrationOptions,
-  }) async {
+    http.Response response,
+    _DirectProbeInput input,
+  ) async {
     if (response.statusCode != 401) return null;
 
+    final discovered = await _discoverFromDirectChallenge(response, input);
+    if (discovered != null) return discovered;
+
+    return _parseOAuthHeaderChallenge(response, resourceUri: input.resourceUri);
+  }
+
+  static Future<OAuthDiscoveryResult?> _discoverFromDirectChallenge(
+    http.Response response,
+    _DirectProbeInput input,
+  ) {
     final challenge = mcp.WwwAuthenticateChallenge.parse(
       response.headers['www-authenticate'],
     );
-    final bearerChallenge = challenge;
-    if (bearerChallenge != null && bearerChallenge.isBearer) {
-      final discovered = await _discoverFromProtectedResource(
-        connector,
-        resourceUri: resourceUri,
-        challenge: bearerChallenge,
-        registrationOptions: registrationOptions,
-      );
-      if (discovered != null) return discovered;
-    }
+    if (challenge == null || !challenge.isBearer) return Future.value();
 
-    return _parseOAuthHeaderChallenge(response, resourceUri: resourceUri);
+    return _discoverFromProtectedResource((
+      connector: input.connector,
+      resourceUri: input.resourceUri,
+      challenge: challenge,
+      registrationOptions: input.registrationOptions,
+    ));
   }
 
   static OAuthDiscoveryResult? _parseOAuthHeaderChallenge(
     http.Response response, {
-    Uri? resourceUri,
+    required Uri resourceUri,
   }) {
     final challenge = mcp.WwwAuthenticateChallenge.parse(
       response.headers['www-authenticate'],
@@ -220,14 +304,10 @@ class OAuthDiscoveryService {
       final metadataUrl = '$baseUrl/oauth/metadata';
       _oauthDiscoveryLogger.info('Trying OAuth metadata endpoint');
 
-      final response = await _requestOAuthMetadata(metadataUrl);
-
-      return await _metadataResponse(
-        response,
-        redirectUrl: connector.redirectUrl,
-        clientName: connector.clientName,
-        registrationOptions: registrationOptions,
-        resourceUri: _probeUri(connector.serverUrl),
+      return await _requestAndParseOAuthMetadata(
+        metadataUrl,
+        connector,
+        registrationOptions,
       );
     } on Exception catch (error, stackTrace) {
       _oauthDiscoveryLogger.fine(
@@ -241,47 +321,53 @@ class OAuthDiscoveryService {
   }
 }
 
+Future<OAuthDiscoveryResult?> _requestAndParseOAuthMetadata(
+  String metadataUrl,
+  OAuthConnector connector,
+  _RegistrationOptions registrationOptions,
+) async {
+  final response = await _requestOAuthMetadata(metadataUrl);
+
+  return await _metadataResponse(
+    response,
+    context: (
+      redirectUrl: connector.redirectUrl,
+      clientName: connector.clientName,
+      resourceUri: _probeUri(connector.serverUrl),
+      registrationOptions: registrationOptions,
+    ),
+  );
+}
+
 String _wellKnownUrl(String baseUrl) =>
     '$baseUrl/.well-known/oauth-authorization-server';
 
 Future<OAuthDiscoveryResult?> _wellKnownResponse(
-  http.Response response, {
-  required String redirectUrl,
-  required String clientName,
-  required Uri? resourceUri,
-  required _RegistrationOptions registrationOptions,
-}) {
+  http.Response response,
+  _DiscoveryContext context,
+) {
   if (response.statusCode != HttpStatus.ok) return Future.value();
 
   final metadata = _decodeJsonObject(response);
   if (metadata == null) return Future.value();
 
-  return _parseWellKnownMetadata(
-    metadata,
-    redirectUrl: redirectUrl,
-    clientName: clientName,
-    resourceUri: resourceUri,
-    registrationOptions: registrationOptions,
-  );
+  return _parseWellKnownMetadata(metadata, context);
 }
 
 Future<OAuthDiscoveryResult?> _parseWellKnownMetadata(
-  Map<String, dynamic> metadata, {
-  required String redirectUrl,
-  required String clientName,
-  required Uri? resourceUri,
-  required _RegistrationOptions registrationOptions,
-}) async {
+  Map<String, dynamic> metadata,
+  _DiscoveryContext context,
+) async {
   final endpoints = _wellKnownEndpoints(metadata);
   if (endpoints == null) return null;
 
   return await _completeWellKnownMetadata((
     endpoints: endpoints,
     metadata: metadata,
-    redirectUrl: redirectUrl,
-    clientName: clientName,
-    resourceUri: resourceUri,
-    registrationOptions: registrationOptions,
+    redirectUrl: context.redirectUrl,
+    clientName: context.clientName,
+    resourceUri: context.resourceUri,
+    registrationOptions: context.registrationOptions,
   ));
 }
 
@@ -307,105 +393,235 @@ Future<OAuthDiscoveryResult?> _discoverFromEndpoints(
   );
 }
 
-Future<OAuthDiscoveryResult?> _parseMetadataMap(
-  Map<String, dynamic> metadata, {
-  required String redirectUrl,
-  required String clientName,
-  required _RegistrationOptions registrationOptions,
-  Uri? resourceUri,
-}) async {
-  final authUrl = _stringValue(metadata['authorization_url']);
-  final tokenUrl = _stringValue(metadata['token_url']);
-  final validAuthUrl = _validHttpsUri(authUrl);
-  final validTokenUrl = _validHttpsUri(tokenUrl);
-  if (validAuthUrl == null || validTokenUrl == null) return null;
-  final resourceValue = metadata['resource'];
-  final resource = resourceValue == null ? null : _validHttpsUri(resourceValue);
-  if (resourceValue != null &&
-      (resource == null ||
-          resourceUri != null && !_sameResource(resource, resourceUri))) {
-    return null;
-  }
-  final issuerValue = metadata['issuer'];
-  final issuer = issuerValue == null ? null : _validHttpsUri(issuerValue);
-  if (issuerValue != null && issuer == null) return null;
-  final scopes = _scopes(metadata['scopes_supported'], metadata['scope']);
-  final clientId = await _wellKnownClientId((
-    metadata: metadata,
-    registrationEndpoint: _stringValue(metadata['registration_endpoint']),
-    redirectUrl: redirectUrl,
-    clientName: clientName,
-    registrationOptions: registrationOptions,
-  ));
+Future<OAuthDiscoveryResult?> _parseMetadataMap(_MetadataMapInput input) async {
+  final validated = _validateMetadataMap(input);
+  if (validated == null) return null;
 
-  return OAuthDiscoveryResult(
-    authorizationUrl: validAuthUrl.toString(),
-    tokenUrl: validTokenUrl.toString(),
-    clientId: clientId,
-    scope: _stringValue(metadata['scope']) ?? scopes.join(' '),
-    resource: resource?.toString() ?? resourceUri?.toString(),
-    issuer: issuer?.toString(),
-    deviceAuthorizationUrl: _validHttpsUri(
-      metadata['device_authorization_endpoint'],
-    )?.toString(),
-    supportsDynamicClientRegistration:
-        _stringValue(metadata['registration_endpoint']) != null,
-    scopes: scopes,
-    authorizationResponseIssuerSupported:
-        metadata['authorization_response_iss_parameter_supported'] == true,
+  return await _buildMetadataMapResult((
+    metadata: input.metadata,
+    endpoints: validated.endpoints,
+    context: input.context,
+    resource: validated.resource,
+    issuer: validated.issuer,
+    scopes: validated.scopes,
+  ));
+}
+
+_MetadataMapValidation? _validateMetadataMap(_MetadataMapInput input) {
+  final endpoints = _metadataMapEndpoints(input.metadata);
+  if (endpoints == null) return null;
+
+  final resourceAndIssuer = _metadataMapResourceAndIssuer(input);
+  if (resourceAndIssuer == null) return null;
+
+  return _metadataMapValidationResult((
+    metadata: input.metadata,
+    endpoints: endpoints,
+    resource: resourceAndIssuer.resource,
+    issuer: resourceAndIssuer.issuer,
+  ));
+}
+
+_MetadataMapResourceAndIssuer? _metadataMapResourceAndIssuer(
+  _MetadataMapInput input,
+) {
+  final metadata = input.metadata;
+  final resource = _metadataResource(
+    metadata['resource'],
+    input.context.resourceUri,
+  );
+  if (metadata['resource'] != null && resource == null) return null;
+
+  final issuer = _validHttpsUri(metadata['issuer']);
+  if (metadata['issuer'] != null && issuer == null) return null;
+
+  return (resource: resource, issuer: issuer);
+}
+
+_MetadataMapValidation _metadataMapValidationResult(
+  _MetadataMapValidationInput input,
+) => (
+  endpoints: input.endpoints,
+  resource: input.resource,
+  issuer: input.issuer,
+  scopes: _scopes(input.metadata['scopes_supported'], input.metadata['scope']),
+);
+
+_WellKnownEndpoints? _metadataMapEndpoints(Map<String, dynamic> metadata) {
+  final authorizationUrl = _validHttpsUri(metadata['authorization_url']);
+  final tokenUrl = _validHttpsUri(metadata['token_url']);
+  if (authorizationUrl == null || tokenUrl == null) return null;
+
+  return (
+    authorizationUrl: authorizationUrl.toString(),
+    tokenUrl: tokenUrl.toString(),
   );
 }
 
+Uri? _metadataResource(Object? value, Uri? expected) {
+  if (value == null) return expected;
+  final resource = _validHttpsUri(value);
+  if (resource == null ||
+      expected != null && !_sameResource(resource, expected)) {
+    return null;
+  }
+
+  return resource;
+}
+
+Future<OAuthDiscoveryResult> _buildMetadataMapResult(
+  _MetadataMapResultInput input,
+) async {
+  final clientId = await _metadataMapClientId(input);
+
+  return _createMetadataMapResult(input, clientId);
+}
+
+Future<String?> _metadataMapClientId(_MetadataMapResultInput input) {
+  final metadata = input.metadata;
+  final context = input.context;
+
+  return _wellKnownClientId((
+    metadata: metadata,
+    registrationEndpoint: _stringValue(metadata['registration_endpoint']),
+    redirectUrl: context.redirectUrl,
+    clientName: context.clientName,
+    registrationOptions: context.registrationOptions,
+  ));
+}
+
+OAuthDiscoveryResult _createMetadataMapResult(
+  _MetadataMapResultInput input,
+  String? clientId,
+) => OAuthDiscoveryResult._fromMetadataMap(input, clientId);
+
 Future<OAuthDiscoveryResult?> _discoverFromProtectedResource(
-  OAuthConnector connector, {
-  required Uri resourceUri,
-  required mcp.WwwAuthenticateChallenge challenge,
-  required _RegistrationOptions registrationOptions,
-}) async {
-  final advertised = _validHttpsUri(challenge.resourceMetadata);
-  final origin = Uri.parse(_baseUrl(connector.serverUrl));
-  final resourcePath = resourceUri.path.isEmpty ? '/' : resourceUri.path;
-  final metadataUrls = <Uri>[
+  _ProtectedResourceInput input,
+) async {
+  for (final metadataUrl in _protectedResourceMetadataUrls(input)) {
+    final discovered = await _discoverProtectedResourceAt(metadataUrl, input);
+    if (discovered != null) return discovered;
+  }
+
+  return null;
+}
+
+List<Uri> _protectedResourceMetadataUrls(_ProtectedResourceInput input) {
+  final advertised = _validHttpsUri(input.challenge.resourceMetadata);
+  final origin = Uri.parse(_baseUrl(input.connector.serverUrl));
+  final resourcePath = input.resourceUri.path.isEmpty
+      ? '/'
+      : input.resourceUri.path;
+
+  return _protectedResourceMetadataCandidates(origin, resourcePath, advertised);
+}
+
+List<Uri> _protectedResourceMetadataCandidates(
+  Uri origin,
+  String resourcePath,
+  Uri? advertised,
+) {
+  return _uniqueUris([
     ?advertised,
     _wellKnownPath(origin, 'oauth-protected-resource', resourcePath),
     _wellKnownPath(origin, 'oauth-protected-resource', '/'),
     if (resourcePath == '/')
       origin.replace(path: '/.well-known/oauth-protected-resource'),
-  ];
+  ]);
+}
 
-  for (final metadataUrl in _uniqueUris(metadataUrls)) {
-    final metadata = await _requestJsonObject(metadataUrl);
-    if (metadata == null) continue;
+Future<OAuthDiscoveryResult?> _discoverProtectedResourceAt(
+  Uri metadataUrl,
+  _ProtectedResourceInput input,
+) async {
+  final metadata = await _requestJsonObject(metadataUrl);
+  if (metadata == null) return null;
 
-    final protectedResource = _protectedResourceMetadata(metadata);
-    if (protectedResource == null) continue;
-    final resource = _validHttpsUri(protectedResource.resource);
-    if (resource == null || !_sameResource(resource, resourceUri)) continue;
+  final protectedResource = _protectedResourceMetadata(metadata);
+  if (protectedResource == null) return null;
+  final resourceUri = input.resourceUri;
+  final resource = _protectedResourceUri(protectedResource, resourceUri);
+  if (resource == null) return null;
 
-    final advertisedScopes = challenge.scopes;
-    final resourceScopes = protectedResource.scopesSupported ?? const [];
-    _oauthDiscoveryLogger.info(
-      'OAuth protected-resource metadata accepted '
-      'resource=${_safeOAuthLogUrl(resource)} '
-      'authorizationServerCount='
-      '${protectedResource.authorizationServers.length} '
-      'advertisedScopeCount=${advertisedScopes.length} '
-      'supportedScopeCount=${resourceScopes.length}',
-    );
-    for (final authorizationServer in protectedResource.authorizationServers) {
-      final server = _validHttpsUri(authorizationServer);
-      if (server == null) continue;
-      final discovered = await _discoverAuthorizationServer(
-        connector,
-        authorizationServer: server,
-        resource: resource.toString(),
-        preferredScopes: advertisedScopes.isNotEmpty
-            ? advertisedScopes
-            : resourceScopes,
-        registrationOptions: registrationOptions,
-      );
-      if (discovered != null) return discovered;
-    }
+  return await _discoverProtectedResourceAuthorization(
+    input,
+    protectedResource,
+    resource,
+  );
+}
+
+Future<OAuthDiscoveryResult?> _discoverProtectedResourceAuthorization(
+  _ProtectedResourceInput input,
+  mcp.ProtectedResourceMetadata protectedResource,
+  Uri resource,
+) => _discoverAuthorizationServers(
+  _protectedResourceDiscoveryInput(input, protectedResource, resource),
+);
+
+_ProtectedResourceDiscoveryInput _protectedResourceDiscoveryInput(
+  _ProtectedResourceInput input,
+  mcp.ProtectedResourceMetadata protectedResource,
+  Uri resource,
+) {
+  final advertisedScopes = input.challenge.scopes;
+  _logProtectedResource(resource, protectedResource, advertisedScopes);
+
+  return (
+    connector: input.connector,
+    resource: resource,
+    authorizationServers: protectedResource.authorizationServers,
+    preferredScopes: _preferredProtectedResourceScopes(
+      advertisedScopes,
+      protectedResource.scopesSupported,
+    ),
+    registrationOptions: input.registrationOptions,
+  );
+}
+
+List<String> _preferredProtectedResourceScopes(
+  List<String> advertised,
+  List<String>? supported,
+) => advertised.isNotEmpty ? advertised : supported ?? const <String>[];
+
+Uri? _protectedResourceUri(
+  mcp.ProtectedResourceMetadata metadata,
+  Uri expected,
+) {
+  final resource = _validHttpsUri(metadata.resource);
+  if (resource == null || !_sameResource(resource, expected)) return null;
+
+  return resource;
+}
+
+void _logProtectedResource(
+  Uri resource,
+  mcp.ProtectedResourceMetadata metadata,
+  List<String> advertisedScopes,
+) {
+  final resourceScopes = metadata.scopesSupported ?? const [];
+  _oauthDiscoveryLogger.info(
+    'OAuth protected-resource metadata accepted '
+    'resource=${_safeOAuthLogUrl(resource)} '
+    'authorizationServerCount=${metadata.authorizationServers.length} '
+    'advertisedScopeCount=${advertisedScopes.length} '
+    'supportedScopeCount=${resourceScopes.length}',
+  );
+}
+
+Future<OAuthDiscoveryResult?> _discoverAuthorizationServers(
+  _ProtectedResourceDiscoveryInput input,
+) async {
+  for (final authorizationServer in input.authorizationServers) {
+    final server = _validHttpsUri(authorizationServer);
+    if (server == null) continue;
+    final discovered = await _discoverAuthorizationServer((
+      connector: input.connector,
+      authorizationServer: server,
+      resource: input.resource.toString(),
+      preferredScopes: input.preferredScopes,
+      registrationOptions: input.registrationOptions,
+    ));
+    if (discovered != null) return discovered;
   }
 
   return null;
@@ -427,100 +643,148 @@ mcp.ProtectedResourceMetadata? _protectedResourceMetadata(
 }
 
 Future<OAuthDiscoveryResult?> _discoverAuthorizationServer(
-  OAuthConnector connector, {
-  required Uri authorizationServer,
-  required String resource,
-  required List<String> preferredScopes,
-  required _RegistrationOptions registrationOptions,
-}) async {
+  _AuthorizationServerInput input,
+) async {
   for (final metadataUrl in _authorizationServerMetadataUrls(
-    authorizationServer,
+    input.authorizationServer,
   )) {
-    final metadata = await _requestJsonObject(metadataUrl);
-    if (metadata == null) continue;
-
-    final issuer = _validHttpsUri(metadata['issuer']);
-    if (issuer == null || !_sameIssuer(issuer, authorizationServer)) {
-      continue;
-    }
-    final metadataResourceValue = metadata['resource'];
-    final metadataResource = metadataResourceValue == null
-        ? null
-        : _validHttpsUri(metadataResourceValue);
-    if (metadataResourceValue != null &&
-        (metadataResource == null ||
-            !_sameResource(metadataResource, .parse(resource)))) {
-      continue;
-    }
-    final authUrl = _validHttpsUri(metadata['authorization_endpoint']);
-    final tokenUrl = _validHttpsUri(metadata['token_endpoint']);
-    if (authUrl == null || tokenUrl == null) continue;
-
-    final scopes = preferredScopes.isNotEmpty
-        ? preferredScopes
-        : _scopes(metadata['scopes_supported'], metadata['scope']);
-    final deviceEndpoint = _validHttpsUri(
-      metadata['device_authorization_endpoint'],
-    );
-    _oauthDiscoveryLogger.info(
-      'OAuth authorization metadata accepted '
-      'issuer=${_safeOAuthLogUrl(issuer)} '
-      'clientIdAdvertised=${_stringValue(metadata['client_id']) != null} '
-      'dynamicRegistrationAdvertised='
-      '${_stringValue(metadata['registration_endpoint']) != null} '
-      'deviceFlow=${deviceEndpoint != null} '
-      'scopeCount=${scopes.length}',
-    );
-    final standard = await _completeWellKnownMetadataForMap(
-      connector,
-      metadata: metadata,
-      authorizationUrl: authUrl.toString(),
-      tokenUrl: tokenUrl.toString(),
-      registrationOptions: registrationOptions,
-    );
-    final scope = scopes.isEmpty ? standard.scope : scopes.join(' ');
-
-    return OAuthDiscoveryResult(
-      authorizationUrl: authUrl.toString(),
-      tokenUrl: tokenUrl.toString(),
-      clientId: standard.clientId,
-      scope: scope,
-      resource: resource,
-      issuer: issuer.toString(),
-      deviceAuthorizationUrl: deviceEndpoint?.toString(),
-      supportsDynamicClientRegistration:
-          standard.supportsDynamicClientRegistration,
-      scopes: scopes,
-      authorizationResponseIssuerSupported:
-          metadata['authorization_response_iss_parameter_supported'] == true,
-    );
+    final result = await _authorizationMetadataResult(metadataUrl, input);
+    if (result != null) return result;
   }
 
   return null;
 }
 
-Future<OAuthDiscoveryResult> _completeWellKnownMetadataForMap(
-  OAuthConnector connector, {
-  required Map<String, dynamic> metadata,
-  required String authorizationUrl,
-  required String tokenUrl,
-  required _RegistrationOptions registrationOptions,
-}) async {
-  final clientId = await _wellKnownClientId((
-    metadata: metadata,
-    registrationEndpoint: _stringValue(metadata['registration_endpoint']),
-    redirectUrl: connector.redirectUrl,
-    clientName: connector.clientName,
-    registrationOptions: registrationOptions,
-  ));
+Future<OAuthDiscoveryResult?> _authorizationMetadataResult(
+  Uri metadataUrl,
+  _AuthorizationServerInput input,
+) async {
+  final metadata = await _requestJsonObject(metadataUrl);
+  if (metadata == null) return null;
 
-  return OAuthDiscoveryResult(
-    authorizationUrl: authorizationUrl,
-    tokenUrl: tokenUrl,
+  final authorization = _parseAuthorizationMetadata((
+    metadata: metadata,
+    authorizationServer: input.authorizationServer,
+    resource: Uri.parse(input.resource),
+    preferredScopes: input.preferredScopes,
+  ));
+  if (authorization == null) return null;
+
+  return await _buildAuthorizationMetadataResult(
+    metadata,
+    input,
+    authorization,
+  );
+}
+
+Future<OAuthDiscoveryResult> _buildAuthorizationMetadataResult(
+  Map<String, dynamic> metadata,
+  _AuthorizationServerInput input,
+  _AuthorizationMetadata authorization,
+) async {
+  final clientId = await _authorizationMetadataClientId(metadata, input);
+
+  return _createAuthorizationMetadataResult((
+    metadata: metadata,
+    server: input,
+    authorization: authorization,
     clientId: clientId,
-    scope: _stringValue(metadata['scope']),
-    supportsDynamicClientRegistration:
-        _stringValue(metadata['registration_endpoint']) != null,
+  ));
+}
+
+Future<String?> _authorizationMetadataClientId(
+  Map<String, dynamic> metadata,
+  _AuthorizationServerInput input,
+) => _wellKnownClientId((
+  metadata: metadata,
+  registrationEndpoint: _stringValue(metadata['registration_endpoint']),
+  redirectUrl: input.connector.redirectUrl,
+  clientName: input.connector.clientName,
+  registrationOptions: input.registrationOptions,
+));
+
+OAuthDiscoveryResult _createAuthorizationMetadataResult(
+  _AuthorizationMetadataResultInput input,
+) {
+  _logAuthorizationMetadata(input.metadata, input.authorization);
+
+  return OAuthDiscoveryResult._fromAuthorizationMetadata(input);
+}
+
+_AuthorizationMetadata? _parseAuthorizationMetadata(
+  _AuthorizationMetadataValidationInput input,
+) {
+  final issuer = _authorizationIssuer(
+    input.metadata,
+    input.authorizationServer,
+  );
+  if (issuer == null || !_authorizationResourceMatches(input)) return null;
+
+  final endpoints = _wellKnownEndpoints(input.metadata);
+  if (endpoints == null) return null;
+
+  return _createAuthorizationMetadata(input, issuer, endpoints);
+}
+
+_AuthorizationMetadata _createAuthorizationMetadata(
+  _AuthorizationMetadataValidationInput input,
+  Uri issuer,
+  _WellKnownEndpoints endpoints,
+) {
+  final metadata = input.metadata;
+  final deviceAuthorizationUrl = _validHttpsUri(
+    metadata['device_authorization_endpoint'],
+  );
+  final scopes = input.preferredScopes.isNotEmpty
+      ? input.preferredScopes
+      : _scopes(metadata['scopes_supported'], metadata['scope']);
+
+  return (
+    issuer: issuer,
+    authorizationUrl: endpoints.authorizationUrl,
+    tokenUrl: endpoints.tokenUrl,
+    deviceAuthorizationUrl: deviceAuthorizationUrl,
+    scopes: scopes,
+    authorizationResponseIssuerSupported:
+        metadata['authorization_response_iss_parameter_supported'] == true,
+  );
+}
+
+Uri? _authorizationIssuer(
+  Map<String, dynamic> metadata,
+  Uri authorizationServer,
+) {
+  final issuer = _validHttpsUri(metadata['issuer']);
+  if (issuer == null || !_sameIssuer(issuer, authorizationServer)) return null;
+
+  return issuer;
+}
+
+bool _authorizationResourceMatches(
+  _AuthorizationMetadataValidationInput input,
+) {
+  final value = input.metadata['resource'];
+  if (value == null) return true;
+
+  final resource = _validHttpsUri(value);
+
+  return resource != null && _sameResource(resource, input.resource);
+}
+
+void _logAuthorizationMetadata(
+  Map<String, dynamic> metadata,
+  _AuthorizationMetadata authorization,
+) {
+  final clientIdAdvertised = _stringValue(metadata['client_id']) != null;
+  final dynamicRegistrationAdvertised =
+      _stringValue(metadata['registration_endpoint']) != null;
+  _oauthDiscoveryLogger.info(
+    'OAuth authorization metadata accepted '
+    'issuer=${_safeOAuthLogUrl(authorization.issuer)} '
+    'clientIdAdvertised=$clientIdAdvertised '
+    'dynamicRegistrationAdvertised=$dynamicRegistrationAdvertised '
+    'deviceFlow=${authorization.deviceAuthorizationUrl != null} '
+    'scopeCount=${authorization.scopes.length}',
   );
 }
 
@@ -613,27 +877,27 @@ List<String> _scopes(Object? supported, Object? fallback) {
       .toList();
 }
 
-bool _sameResource(Uri left, Uri right) {
-  String path(Uri uri) {
-    final value = uri.path.isEmpty ? '/' : uri.path;
+bool _sameResource(Uri left, Uri right) =>
+    _sameOrigin(left, right) && _resourcePath(left) == _resourcePath(right);
 
-    return value.endsWith('/') ? value : '$value/';
-  }
+String _resourcePath(Uri uri) {
+  final path = uri.path.isEmpty ? '/' : uri.path;
 
-  return left.scheme == right.scheme &&
-      left.host.toLowerCase() == right.host.toLowerCase() &&
-      left.port == right.port &&
-      path(left) == path(right);
+  return path.endsWith('/') ? path : '$path/';
 }
 
 bool _sameIssuer(Uri left, Uri right) =>
-    left.scheme == right.scheme &&
-    left.host.toLowerCase() == right.host.toLowerCase() &&
-    left.port == right.port &&
-    left.path.replaceAll(RegExp(r'/$'), '') ==
-        right.path.replaceAll(RegExp(r'/$'), '') &&
+    _sameOrigin(left, right) &&
+    _issuerPath(left) == _issuerPath(right) &&
     left.query == right.query &&
     left.fragment == right.fragment;
+
+bool _sameOrigin(Uri left, Uri right) =>
+    left.scheme == right.scheme &&
+    left.host.toLowerCase() == right.host.toLowerCase() &&
+    left.port == right.port;
+
+String _issuerPath(Uri uri) => uri.path.replaceAll(RegExp(r'/$'), '');
 
 String _baseUrl(String serverUrl) {
   final uri = Uri.tryParse(serverUrl);
@@ -642,8 +906,8 @@ String _baseUrl(String serverUrl) {
   return uri.origin;
 }
 
-String _safeOAuthLogUrl(Object? value) {
-  final uri = Uri.tryParse(value?.toString() ?? '');
+String _safeOAuthLogUrl(Object value) {
+  final uri = Uri.tryParse(value.toString());
   if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
     return '<none>';
   }
@@ -670,6 +934,101 @@ typedef _WellKnownMetadataInput = ({
   String clientName,
   Uri? resourceUri,
   _RegistrationOptions registrationOptions,
+});
+
+typedef _DiscoveryContext = ({
+  String redirectUrl,
+  String clientName,
+  Uri? resourceUri,
+  _RegistrationOptions registrationOptions,
+});
+
+typedef _ProtectedResourceInput = ({
+  OAuthConnector connector,
+  Uri resourceUri,
+  mcp.WwwAuthenticateChallenge challenge,
+  _RegistrationOptions registrationOptions,
+});
+
+typedef _DirectProbeInput = ({
+  OAuthConnector connector,
+  Uri resourceUri,
+  _RegistrationOptions registrationOptions,
+});
+
+typedef _ProtectedResourceDiscoveryInput = ({
+  OAuthConnector connector,
+  Uri resource,
+  List<String> authorizationServers,
+  List<String> preferredScopes,
+  _RegistrationOptions registrationOptions,
+});
+
+typedef _AuthorizationServerInput = ({
+  OAuthConnector connector,
+  Uri authorizationServer,
+  String resource,
+  List<String> preferredScopes,
+  _RegistrationOptions registrationOptions,
+});
+
+typedef _AuthorizationMetadata = ({
+  Uri issuer,
+  Uri? deviceAuthorizationUrl,
+  String authorizationUrl,
+  String tokenUrl,
+  List<String> scopes,
+  bool authorizationResponseIssuerSupported,
+});
+
+typedef _AuthorizationMetadataResultInput = ({
+  Map<String, dynamic> metadata,
+  _AuthorizationServerInput server,
+  _AuthorizationMetadata authorization,
+  String? clientId,
+});
+
+typedef _AuthorizationMetadataValidationInput = ({
+  Map<String, dynamic> metadata,
+  Uri authorizationServer,
+  Uri resource,
+  List<String> preferredScopes,
+});
+
+typedef _MetadataMapInput = ({
+  Map<String, dynamic> metadata,
+  _DiscoveryContext context,
+});
+
+typedef _MetadataMapResourceAndIssuer = ({Uri? resource, Uri? issuer});
+
+typedef _MetadataMapValidation = ({
+  _WellKnownEndpoints endpoints,
+  Uri? resource,
+  Uri? issuer,
+  List<String> scopes,
+});
+
+typedef _MetadataMapValidationInput = ({
+  Map<String, dynamic> metadata,
+  _WellKnownEndpoints endpoints,
+  Uri? resource,
+  Uri? issuer,
+});
+
+typedef _WellKnownMetadataValidation = ({
+  Uri? resource,
+  Uri? issuer,
+  List<String> scopes,
+});
+
+typedef _MetadataMapResultInput = ({
+  Map<String, dynamic> metadata,
+  _WellKnownEndpoints endpoints,
+  _DiscoveryContext context,
+  Uri? resource,
+  Uri? issuer,
+  List<String> scopes,
 });
 
 typedef _DynamicClientRegistrationRequest = ({
@@ -703,41 +1062,47 @@ _WellKnownEndpoints? _wellKnownEndpoints(Map<String, dynamic> metadata) {
 Future<OAuthDiscoveryResult?> _completeWellKnownMetadata(
   _WellKnownMetadataInput input,
 ) async {
-  final resourceValue = input.metadata['resource'];
-  final resource = resourceValue == null ? null : _validHttpsUri(resourceValue);
-  if (resourceValue != null) {
-    if (resource == null) return null;
-    final resourceUri = input.resourceUri;
-    if (resourceUri != null && !_sameResource(resource, resourceUri)) {
-      return null;
-    }
-  }
-  final issuerValue = input.metadata['issuer'];
-  final issuer = issuerValue == null ? null : _validHttpsUri(issuerValue);
-  if (issuerValue != null && issuer == null) return null;
-  final scopes = _scopes(
-    input.metadata['scopes_supported'],
-    input.metadata['scope'],
-  );
+  final validated = _validateWellKnownMetadata(input);
+  if (validated == null) return null;
   final clientId = await _wellKnownClientId(_wellKnownClientRequest(input));
 
-  return OAuthDiscoveryResult(
-    authorizationUrl: input.endpoints.authorizationUrl,
-    tokenUrl: input.endpoints.tokenUrl,
-    clientId: clientId,
-    scope: _stringValue(input.metadata['scope']) ?? scopes.join(' '),
-    resource: resource?.toString() ?? input.resourceUri?.toString(),
-    issuer: issuer?.toString(),
-    deviceAuthorizationUrl: _validHttpsUri(
-      input.metadata['device_authorization_endpoint'],
-    )?.toString(),
-    supportsDynamicClientRegistration:
-        _stringValue(input.metadata['registration_endpoint']) != null,
-    scopes: scopes,
-    authorizationResponseIssuerSupported:
-        input.metadata['authorization_response_iss_parameter_supported'] ==
-        true,
+  return _createWellKnownResult(input, validated, clientId);
+}
+
+_WellKnownMetadataValidation? _validateWellKnownMetadata(
+  _WellKnownMetadataInput input,
+) {
+  final metadata = input.metadata;
+  final resource = _wellKnownResource(input);
+  if (metadata['resource'] != null && resource == null) return null;
+  final issuer = _validHttpsUri(metadata['issuer']);
+  if (metadata['issuer'] != null && issuer == null) return null;
+
+  return (
+    resource: resource,
+    issuer: issuer,
+    scopes: _scopes(metadata['scopes_supported'], metadata['scope']),
   );
+}
+
+OAuthDiscoveryResult _createWellKnownResult(
+  _WellKnownMetadataInput input,
+  _WellKnownMetadataValidation validated,
+  String? clientId,
+) => OAuthDiscoveryResult._fromWellKnown(input, validated, clientId);
+
+Uri? _wellKnownResource(_WellKnownMetadataInput input) {
+  final value = input.metadata['resource'];
+  if (value == null) return input.resourceUri;
+
+  final resource = _validHttpsUri(value);
+  final expected = input.resourceUri;
+  if (resource == null ||
+      expected != null && !_sameResource(resource, expected)) {
+    return null;
+  }
+
+  return resource;
 }
 
 _WellKnownClientRequest _wellKnownClientRequest(
@@ -944,39 +1309,91 @@ Uri? _probeUri(String serverUrl) {
 
 OAuthDiscoveryResult? _headerChallengeResult(
   http.Response response, {
-  Uri? resourceUri,
+  required Uri resourceUri,
 }) {
-  final authEndpoint = _validHttpsUri(
+  final endpoints = _headerChallengeEndpoints(response);
+  if (endpoints == null) return null;
+  final metadata = _headerChallengeMetadata(response, resourceUri);
+  if (metadata == null) return null;
+
+  return _createHeaderChallengeResult(endpoints, metadata, resourceUri);
+}
+
+OAuthDiscoveryResult _createHeaderChallengeResult(
+  _HeaderChallengeEndpoints endpoints,
+  _HeaderChallengeMetadata metadata,
+  Uri resourceUri,
+) =>
+    OAuthDiscoveryResult._fromHeaderChallenge(endpoints, metadata, resourceUri);
+
+typedef _HeaderChallengeEndpoints = ({Uri authorization, Uri token});
+
+typedef _HeaderChallengeMetadata = ({
+  String? clientId,
+  String? scope,
+  Uri? resource,
+  Uri? issuer,
+  Uri? deviceAuthorizationUrl,
+  List<String> scopes,
+});
+
+_HeaderChallengeEndpoints? _headerChallengeEndpoints(http.Response response) {
+  final authorization = _validHttpsUri(
     response.headers['x-oauth-authorization-url'],
   );
-  final tokenEndpoint = _validHttpsUri(response.headers['x-oauth-token-url']);
-  if (authEndpoint == null || tokenEndpoint == null) return null;
+  final token = _validHttpsUri(response.headers['x-oauth-token-url']);
+  if (authorization == null || token == null) return null;
 
-  final resourceValue = response.headers['x-oauth-resource'];
-  final resource = resourceValue == null ? null : _validHttpsUri(resourceValue);
-  if (resourceValue != null &&
-      (resource == null ||
-          resourceUri != null && !_sameResource(resource, resourceUri))) {
+  return (authorization: authorization, token: token);
+}
+
+_HeaderChallengeMetadata? _headerChallengeMetadata(
+  http.Response response,
+  Uri resourceUri,
+) {
+  final headers = response.headers;
+  final resource = _headerResource(headers, resourceUri);
+  if (resource == _invalidUri) return null;
+  final issuer = _headerIssuer(headers);
+  if (headers['x-oauth-issuer'] != null && issuer == null) {
     return null;
   }
-  final issuerValue = response.headers['x-oauth-issuer'];
-  final issuer = issuerValue == null ? null : _validHttpsUri(issuerValue);
-  if (issuerValue != null && issuer == null) return null;
-  final scopes = _scopes(const [], response.headers['x-oauth-scope']);
 
-  return OAuthDiscoveryResult(
-    authorizationUrl: authEndpoint.toString(),
-    tokenUrl: tokenEndpoint.toString(),
-    clientId: response.headers['x-oauth-client-id'],
-    scope: response.headers['x-oauth-scope'],
-    resource: resource?.toString() ?? resourceUri?.toString(),
-    issuer: issuer?.toString(),
-    deviceAuthorizationUrl: _validHttpsUri(
-      response.headers['x-oauth-device-url'],
-    )?.toString(),
-    scopes: scopes,
+  return _createHeaderChallengeMetadata(headers, resource, issuer);
+}
+
+_HeaderChallengeMetadata _createHeaderChallengeMetadata(
+  Map<String, String> headers,
+  Uri? resource,
+  Uri? issuer,
+) {
+  final scope = headers['x-oauth-scope'];
+
+  return (
+    clientId: headers['x-oauth-client-id'],
+    scope: scope,
+    resource: resource,
+    issuer: issuer,
+    deviceAuthorizationUrl: _validHttpsUri(headers['x-oauth-device-url']),
+    scopes: _scopes(const [], scope),
   );
 }
+
+final Uri _invalidUri = .parse('about:blank');
+
+Uri? _headerResource(Map<String, String> headers, Uri expected) {
+  final value = headers['x-oauth-resource'];
+  if (value == null) return null;
+  final resource = _validHttpsUri(value);
+  if (resource == null || !_sameResource(resource, expected)) {
+    return _invalidUri;
+  }
+
+  return resource;
+}
+
+Uri? _headerIssuer(Map<String, String> headers) =>
+    _validHttpsUri(headers['x-oauth-issuer']);
 
 Future<http.Response> _requestOAuthMetadata(String url) => http
     .get(.parse(url), headers: _jsonAcceptHeader)
@@ -984,23 +1401,14 @@ Future<http.Response> _requestOAuthMetadata(String url) => http
 
 Future<OAuthDiscoveryResult?> _metadataResponse(
   http.Response response, {
-  required String redirectUrl,
-  required String clientName,
-  required _RegistrationOptions registrationOptions,
-  Uri? resourceUri,
+  required _DiscoveryContext context,
 }) async {
   if (response.statusCode != HttpStatus.ok) return null;
 
   final metadata = _decodeJsonObject(response);
   if (metadata == null) return null;
 
-  return await _parseMetadataMap(
-    metadata,
-    redirectUrl: redirectUrl,
-    clientName: clientName,
-    registrationOptions: registrationOptions,
-    resourceUri: resourceUri,
-  );
+  return await _parseMetadataMap((metadata: metadata, context: context));
 }
 
 Future<http.Response> _postDynamicClientRegistration(

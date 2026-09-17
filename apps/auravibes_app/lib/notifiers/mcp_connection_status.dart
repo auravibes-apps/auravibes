@@ -334,8 +334,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
-    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
-    bool Function()? isOAuthCancelled,
+    void Function(McpOAuthDeviceCode deviceCode) onOAuthDeviceCode =
+        _ignoreOAuthDeviceCode,
+    bool Function() isOAuthCancelled = _neverCancelOAuth,
   }) async {
     _prepareWorkspace(workspaceId);
     await _discardPreparedMcpConnectionsForWorkspace(workspaceId);
@@ -702,8 +703,9 @@ extension _McpPreparationOperations on McpConnectionNotifier {
   Future<McpConnectionVerification> _prepareLocalMcpConnection(
     _McpPrepareRequest request,
     McpServerFormToCreate server, {
-    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
-    bool Function()? isOAuthCancelled,
+    void Function(McpOAuthDeviceCode deviceCode) onOAuthDeviceCode =
+        _ignoreOAuthDeviceCode,
+    bool Function() isOAuthCancelled = _neverCancelOAuth,
   }) async {
     final manager = _requiredMcpManager;
     final serverInfo = await _buildMcpServerInfo(
@@ -911,8 +913,9 @@ McpAuthenticationType _preparedMcpAuthentication(
 extension _McpConnectionAddOperations on McpConnectionNotifier {
   Future<McpServerToCreate> _buildMcpServerInfo(
     McpServerFormToCreate server, {
-    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
-    bool Function()? isOAuthCancelled,
+    void Function(McpOAuthDeviceCode deviceCode) onOAuthDeviceCode =
+        _ignoreOAuthDeviceCode,
+    bool Function() isOAuthCancelled = _neverCancelOAuth,
   }) => BuildMcpServerToCreateUseCase(
     authenticator: .new(
       callbackUrlScheme: 'me-auravibes',
@@ -988,6 +991,12 @@ extension _McpConnectionAddOperations on McpConnectionNotifier {
     );
   }
 }
+
+void _ignoreOAuthDeviceCode(McpOAuthDeviceCode _) {
+  return;
+}
+
+bool _neverCancelOAuth() => false;
 
 extension _McpConnectionLocalCommitOperations on McpConnectionNotifier {
   Future<void> _persistLocalPreparedMcpConnection(

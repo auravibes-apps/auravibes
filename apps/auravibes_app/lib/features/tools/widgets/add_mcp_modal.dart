@@ -280,22 +280,26 @@ class const _ErrorBanner({required final String workspaceId})
   }
 }
 
-String _displayErrorMessage(String errorMessage) => switch (errorMessage) {
-  LocaleKeys.tools_screen_mcp_error ||
-  LocaleKeys.workspace_capabilities_unsupported_error ||
-  LocaleKeys.mcp_modal_verification_required ||
-  LocaleKeys.mcp_modal_verification_expired ||
-  LocaleKeys.mcp_modal_oauth_configuration ||
-  LocaleKeys.mcp_modal_oauth_client_id_required ||
-  LocaleKeys.mcp_modal_oauth_registration_failed ||
-  LocaleKeys.mcp_modal_oauth_malformed ||
-  LocaleKeys.mcp_modal_oauth_cancelled ||
-  LocaleKeys.mcp_modal_oauth_expired ||
-  LocaleKeys.mcp_modal_oauth_issuer_mismatch ||
-  LocaleKeys.mcp_modal_oauth_token_exchange ||
-  LocaleKeys.mcp_modal_oauth_discovery => errorMessage.tr(),
-  _ => errorMessage,
+const _localizedMcpErrorKeys = <String>{
+  LocaleKeys.tools_screen_mcp_error,
+  LocaleKeys.workspace_capabilities_unsupported_error,
+  LocaleKeys.mcp_modal_verification_required,
+  LocaleKeys.mcp_modal_verification_expired,
+  LocaleKeys.mcp_modal_oauth_configuration,
+  LocaleKeys.mcp_modal_oauth_client_id_required,
+  LocaleKeys.mcp_modal_oauth_registration_failed,
+  LocaleKeys.mcp_modal_oauth_malformed,
+  LocaleKeys.mcp_modal_oauth_cancelled,
+  LocaleKeys.mcp_modal_oauth_expired,
+  LocaleKeys.mcp_modal_oauth_issuer_mismatch,
+  LocaleKeys.mcp_modal_oauth_token_exchange,
+  LocaleKeys.mcp_modal_oauth_discovery,
 };
+
+String _displayErrorMessage(String errorMessage) =>
+    _localizedMcpErrorKeys.contains(errorMessage)
+    ? errorMessage.tr()
+    : errorMessage;
 
 class const _McpOAuthDeviceCodePanel({
   required final McpOAuthDeviceCode deviceCode,
