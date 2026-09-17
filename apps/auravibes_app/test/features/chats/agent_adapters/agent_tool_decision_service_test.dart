@@ -70,7 +70,7 @@ void main() {
       },
     );
 
-    test('returns continueIteration when tool call is running', () async {
+    test('returns waitForToolApproval when tool call is running', () async {
       when(() => messageRepository.getMessageById('message-4')).thenAnswer(
         (_) async => _message(
           metadata: const MessageMetadataEntity(
@@ -88,7 +88,7 @@ void main() {
 
       final result = await usecase.call(messageId: 'message-4');
 
-      expect(result, AgentIterationDecision.continueIteration);
+      expect(result, AgentIterationDecision.waitForToolApproval);
     });
 
     test('returns done when a tool status stops the agent loop', () async {
