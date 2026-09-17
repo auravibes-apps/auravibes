@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
@@ -54,6 +56,35 @@ void main() {
     expect(selected, isNull);
   });
 
+  testWidgets('sheet mode updates when agents arrive after mount', (
+    tester,
+  ) async {
+    final controller = StreamController<List<AgentEntity>>();
+    addTearDown(controller.close);
+    String? selected;
+    controller.add(const []);
+
+    await _pumpSubject(
+      tester,
+      agents: const [],
+      onChanged: (value) => selected = value,
+      agentStream: controller.stream,
+      sheetMode: true,
+    );
+
+    expect(find.text('No agent'), findsOneWidget);
+
+    controller.add([_makeAgent('agent-1', 'Research Agent')]);
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+
+    expect(find.text('Research Agent'), findsOneWidget);
+    await tester.tap(find.text('Research Agent'));
+    await tester.pump();
+
+    expect(selected, 'agent-1');
+  });
+
   testWidgets('sheet mode omits hidden and disabled agents', (tester) async {
     await _pumpSubject(
       tester,
@@ -94,6 +125,7 @@ Future<void> _pumpSubject(
   WidgetTester tester, {
   required List<AgentEntity> agents,
   required ValueChanged<String?> onChanged,
+  Stream<List<AgentEntity>>? agentStream,
   String? agentId,
   bool compactMode = false,
   bool sheetMode = false,
@@ -114,7 +146,8 @@ Future<void> _pumpSubject(
           ),
         ),
         overrides: [
-          agentsProvider('ws-1').overrideWith((ref) => Stream.value(agents)),
+          agentsProvider('ws-1')
+              .overrideWith((ref) => agentStream ?? Stream.value(agents)),
         ],
       ),
     );

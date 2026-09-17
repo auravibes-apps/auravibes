@@ -446,12 +446,13 @@ class const _ChatInputAgentSelector({
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        child: compactControl,
+        child: IgnorePointer(child: compactControl),
         onTap: () => _showSelectorSheet(
           context: context,
           title: const TextLocale(LocaleKeys.agents_title),
           child: sheetControl,
         ),
+        behavior: .opaque,
       ),
     );
   }
