@@ -26,6 +26,12 @@ class _FakeMcpFormNotifier extends McpFormNotifier {
   McpFormState build(String workspaceId) => const McpFormState();
 }
 
+class _OAuthMcpFormNotifier extends McpFormNotifier {
+  @override
+  McpFormState build(String workspaceId) =>
+      const McpFormState(authenticationType: .oauth);
+}
+
 class _ValidationMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) =>
@@ -200,6 +206,49 @@ void main() {
       await _showDialog(tester);
 
       expect(find.byType(AuraInput), findsAtLeast(2));
+    });
+
+    testWidgets('hides OAuth client ID field in collapsed advanced settings', (
+      tester,
+    ) async {
+      await _pumpAndInit(
+        tester,
+        const _Subject(formNotifier: _OAuthMcpFormNotifier.new),
+      );
+      await _showDialog(tester);
+
+      expect(
+        find.text(LocaleKeys.mcp_modal_advanced_settings.tr()),
+        findsOneWidget,
+      );
+      expect(
+        find.text(LocaleKeys.mcp_modal_fields_client_id_label.tr()),
+        findsNothing,
+      );
+
+      final advancedSettings = find.text(
+        LocaleKeys.mcp_modal_advanced_settings.tr(),
+      );
+      await tester.ensureVisible(advancedSettings);
+      await tester.tap(advancedSettings);
+      await tester.pump();
+
+      expect(
+        find.text(LocaleKeys.mcp_modal_fields_client_id_label.tr()),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('does not show OAuth client ID field for no auth', (
+      tester,
+    ) async {
+      await _pumpAndInit(tester, const _Subject());
+      await _showDialog(tester);
+
+      expect(
+        find.text(LocaleKeys.mcp_modal_fields_client_id_label.tr()),
+        findsNothing,
+      );
     });
 
     testWidgets('dialog renders with correct structure', (tester) async {

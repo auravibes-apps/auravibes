@@ -2,6 +2,7 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_sdk_adapter.dart';
+import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
 class McpManagerClient._(
@@ -15,6 +16,9 @@ class McpManagerClient._(
 }
 
 class McpManagerService {
+  new({this.oauthCredentialService});
+  final OAuthCredentialService? oauthCredentialService;
+
   Future<void> disconnect(McpManagerClient? client) async {
     if (client == null) return;
     client.disconnect();
@@ -38,11 +42,18 @@ class McpManagerService {
     );
 
     final clientResult = mcp.McpClient.createClient(config);
-    await clientResult.connect(await _createTransportConfig(serverInfo));
+    await clientResult.connect(
+      await _createTransportConfig(
+        serverInfo,
+        oauthCredentialService: oauthCredentialService,
+      ),
+    );
 
     return McpManagerClient._(
       clientResult,
-      tokenManager: _tokenManager(serverInfo),
+      tokenManager: serverInfo.transport is McpTransportTypeSSE
+          ? _tokenManager(serverInfo)
+          : null,
     );
   }
 
@@ -63,11 +74,16 @@ OAuthTokenEntity _oauthTokenEntity(mcp.OAuthToken mcpToken) => .new(
   scopes: mcpToken.scopes,
 );
 
-Future<mcp.ClientTransport> _createTransportConfig(McpServerToCreate server) =>
-    switch (server.transport) {
-      McpTransportTypeSSE() => _createSseTransportConfig(server),
-      McpTransportTypeStreamableHttp() => _createHttpTransportConfig(server),
-    };
+Future<mcp.ClientTransport> _createTransportConfig(
+  McpServerToCreate server, {
+  required OAuthCredentialService? oauthCredentialService,
+}) => switch (server.transport) {
+  McpTransportTypeSSE() => _createSseTransportConfig(server),
+  McpTransportTypeStreamableHttp() => _createHttpTransportConfig(
+    server,
+    oauthCredentialService: oauthCredentialService,
+  ),
+};
 
 Future<mcp.ClientTransport> _createSseTransportConfig(
   McpServerToCreate server,
@@ -86,8 +102,9 @@ Future<mcp.ClientTransport> _createSseTransportConfig(
 }
 
 Future<mcp.ClientTransport> _createHttpTransportConfig(
-  McpServerToCreate server,
-) async {
+  McpServerToCreate server, {
+  required OAuthCredentialService? oauthCredentialService,
+}) async {
   final transportType = server.transport;
   if (transportType is! McpTransportTypeStreamableHttp) {
     throw Exception('Invalid transport type for HTTP transport');
@@ -98,8 +115,11 @@ Future<mcp.ClientTransport> _createHttpTransportConfig(
     server,
     authType,
     transportType,
+    oauthCredentialService: oauthCredentialService,
   );
-  _setOAuthToken(transport, authType);
+  if (authType is! McpAuthenticationTypeOAuth) {
+    _setOAuthToken(transport, authType);
+  }
 
   return transport;
 }
@@ -107,13 +127,40 @@ Future<mcp.ClientTransport> _createHttpTransportConfig(
 Future<mcp.StreamableHttpClientTransport> _createStreamableTransport(
   McpServerToCreate server,
   McpAuthenticationType authType,
-  McpTransportTypeStreamableHttp transportType,
-) => mcp.StreamableHttpClientTransport.create(
+  McpTransportTypeStreamableHttp transportType, {
+  required OAuthCredentialService? oauthCredentialService,
+}) => mcp.StreamableHttpClientTransport.create(
   baseUrl: server.url,
-  oauthConfig: _getOauthConfig(authType),
-  headers: _httpHeaders(authType),
+  oauthConfig: authType is McpAuthenticationTypeOAuth
+      ? null
+      : _getOauthConfig(authType),
+  headers: authType is McpAuthenticationTypeOAuth
+      ? const {}
+      : _httpHeaders(authType),
+  headersProvider: authType is McpAuthenticationTypeOAuth
+      ? (_) => _oauthHeaders(server, authType, oauthCredentialService)
+      : null,
   useHttp2: transportType.useHttp2,
 );
+
+Future<Map<String, String>> _oauthHeaders(
+  McpServerToCreate server,
+  McpAuthenticationTypeOAuth authType,
+  OAuthCredentialService? oauthCredentialService,
+) async {
+  final serviceConnectionId = server.serviceConnectionId;
+  final token =
+      oauthCredentialService == null ||
+          serviceConnectionId == null ||
+          serviceConnectionId.isEmpty
+      ? authType.token.accessToken
+      : await oauthCredentialService.getValidAccessToken(serviceConnectionId);
+  if (token.isEmpty) {
+    throw const FormatException('OAuth access token is empty.');
+  }
+
+  return {'Authorization': 'Bearer $token'};
+}
 
 Map<String, String> _httpHeaders(McpAuthenticationType authType) =>
     switch (authType) {

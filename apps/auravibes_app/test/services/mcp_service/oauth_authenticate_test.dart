@@ -161,6 +161,7 @@ void main() {
             tokenUrl: 'https://example.com/oauth/token',
             clientId: 'client-123',
             scope: 'tools.read tools.write',
+            resource: 'https://mcp.example.com/',
           ),
           redirectUrl: 'auravibes:/',
           stateParam: 'state-123',
@@ -168,6 +169,8 @@ void main() {
         );
 
         expect(uri.queryParameters['scope'], 'tools.read tools.write');
+        expect(uri.queryParameters['client_id'], 'client-123');
+        expect(uri.queryParameters['resource'], 'https://mcp.example.com/');
       });
 
       test('omits scope when discovery did not provide one', () {
@@ -297,6 +300,130 @@ void main() {
         );
 
         expect(results.toSet().length, results.length);
+      });
+    });
+
+    group('authenticateWithDeviceCode', () {
+      test('sends resource and polls the discovered token endpoint', () async {
+        var tokenRequests = 0;
+        final opened = <Uri>[];
+        final adapter = FakeHttpClientAdapter(
+          fetchCallback: (options, _, _) async {
+            final data = options.data;
+            final body = data is FormData
+                ? {for (final field in data.fields) field.key: field.value}
+                : Map<String, dynamic>.from(data as Map);
+            if (options.path == 'https://github.com/login/device/code') {
+              expect(body['client_id'], 'public-client');
+              expect(body['scope'], 'repo read:user');
+              expect(body['resource'], 'https://api.githubcopilot.com/mcp/');
+
+              return ResponseBody.fromString(
+                jsonEncode({
+                  'device_code': 'device-code',
+                  'user_code': 'ABCD-EFGH',
+                  'verification_uri': 'https://github.com/login/device',
+                  'expires_in': 30,
+                  'interval': 1,
+                }),
+                200,
+                headers: {
+                  Headers.contentTypeHeader: ['application/json'],
+                },
+              );
+            }
+
+            expect(options.path, 'https://github.com/login/oauth/access_token');
+            expect(
+              body['grant_type'],
+              'urn:ietf:params:oauth:grant-type:device_code',
+            );
+            expect(body['device_code'], 'device-code');
+            expect(body['client_id'], 'public-client');
+            expect(body['resource'], 'https://api.githubcopilot.com/mcp/');
+            tokenRequests++;
+            final response = tokenRequests == 1
+                ? {'error': 'authorization_pending'}
+                : {'access_token': 'github-token', 'token_type': 'Bearer'};
+
+            return ResponseBody.fromString(
+              jsonEncode(response),
+              tokenRequests == 1 ? 400 : 200,
+              headers: {
+                Headers.contentTypeHeader: ['application/json'],
+              },
+            );
+          },
+        );
+        final auth = OAuthAuthenticate(
+          callbackUrlScheme: 'auravibes',
+          clientName: 'AuraVibes',
+          dio: Dio()..httpClientAdapter = adapter,
+          openBrowser: (uri) async => opened.add(uri),
+        );
+
+        McpOAuthDeviceCode? deviceCode;
+        final token = await auth.authenticateWithDeviceCode(
+          const OAuthDiscoveryResult(
+            authorizationUrl: 'https://github.com/login/oauth/authorize',
+            tokenUrl: 'https://github.com/login/oauth/access_token',
+            clientId: null,
+            scope: 'repo read:user',
+            resource: 'https://api.githubcopilot.com/mcp/',
+            deviceAuthorizationUrl: 'https://github.com/login/device/code',
+          ),
+          clientId: 'public-client',
+          onDeviceCode: (value) => deviceCode = value,
+        );
+
+        expect(token.accessToken, 'github-token');
+        expect(deviceCode?.userCode, 'ABCD-EFGH');
+        expect(opened, [Uri.parse('https://github.com/login/device')]);
+        expect(tokenRequests, 2);
+      });
+
+      test('cancellation after showing device code stops polling', () async {
+        var cancelled = false;
+        final adapter = FakeHttpClientAdapter(
+          fetchCallback: (options, _, _) async {
+            expect(options.path, 'https://github.com/login/device/code');
+
+            return ResponseBody.fromString(
+              jsonEncode({
+                'device_code': 'device-code',
+                'user_code': 'ABCD-EFGH',
+                'verification_uri': 'https://github.com/login/device',
+                'expires_in': 30,
+              }),
+              200,
+              headers: {
+                Headers.contentTypeHeader: ['application/json'],
+              },
+            );
+          },
+        );
+        final auth = OAuthAuthenticate(
+          callbackUrlScheme: 'auravibes',
+          clientName: 'AuraVibes',
+          dio: Dio()..httpClientAdapter = adapter,
+          openBrowser: (_) => Future.value(),
+        );
+
+        await expectLater(
+          () => auth.authenticateWithDeviceCode(
+            const OAuthDiscoveryResult(
+              authorizationUrl: 'https://github.com/login/oauth/authorize',
+              tokenUrl: 'https://github.com/login/oauth/access_token',
+              clientId: null,
+              scope: null,
+              deviceAuthorizationUrl: 'https://github.com/login/device/code',
+            ),
+            clientId: 'public-client',
+            onDeviceCode: (_) => cancelled = true,
+            isCancelled: () => cancelled,
+          ),
+          throwsA(isA<OAuthAuthenticationCanceledException>()),
+        );
       });
     });
 
