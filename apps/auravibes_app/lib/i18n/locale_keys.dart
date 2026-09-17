@@ -495,6 +495,14 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.pin';
   static const chats_screens_chat_conversation_unpin =
       'chats_screens.chat_conversation.unpin';
+  static const chats_screens_chat_conversation_delete_error =
+      'chats_screens.chat_conversation.delete_error';
+  static const chats_screens_chat_conversation_fork =
+      'chats_screens.chat_conversation.fork';
+  static const chats_screens_chat_conversation_fork_error =
+      'chats_screens.chat_conversation.fork_error';
+  static const chats_screens_chat_conversation_forked_from =
+      'chats_screens.chat_conversation.forked_from';
   static const chats_screens_chat_conversation_options_tooltip =
       'chats_screens.chat_conversation.options_tooltip';
   static const chats_screens_chat_conversation_error_workspace_mismatch =

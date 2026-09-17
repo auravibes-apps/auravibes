@@ -15,6 +15,7 @@ class _ToolCall extends Mock implements ConversationToolCallView;
 
 typedef _SubmitToolDecisionRequest = ({
   String requestId,
+  String conversationId,
   String turnId,
   String toolCallId,
   String argumentsDigest,
@@ -28,6 +29,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue((
       requestId: '',
+      conversationId: '',
       turnId: '',
       toolCallId: '',
       argumentsDigest: '',
@@ -92,6 +94,7 @@ void main() {
         .thenAnswer((_) async => result);
 
     final actual = await CloudTurnUsecase(gateway).decide((
+      conversationId: 'conversation-1',
       turnId: 'turn-1',
       toolCallId: 'call-1',
       argumentsDigest: 'observed-digest',
@@ -140,6 +143,7 @@ void main() {
       final usecase = CloudTurnUsecase(gateway);
       expect(
         await usecase.decide((
+          conversationId: 'conversation-1',
           turnId: 'turn-1',
           toolCallId: 'call-1',
           argumentsDigest: 'digest-1',
@@ -152,6 +156,7 @@ void main() {
       );
       expect(
         await usecase.decide((
+          conversationId: 'conversation-1',
           turnId: 'turn-1',
           toolCallId: 'call-2',
           argumentsDigest: 'digest-2',
@@ -203,6 +208,7 @@ void main() {
 
     expect(
       await CloudTurnUsecase(gateway).decide((
+        conversationId: 'conversation-1',
         turnId: 'turn-1',
         toolCallId: 'call-1',
         argumentsDigest: 'digest-1',
@@ -225,6 +231,7 @@ void main() {
         .thenAnswer((_) async => result);
 
     final actual = await CloudTurnUsecase(gateway).decide((
+      conversationId: 'conversation-1',
       turnId: 'turn-1',
       toolCallId: 'call-1',
       argumentsDigest: 'observed-digest',

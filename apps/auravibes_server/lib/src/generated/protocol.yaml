@@ -19,6 +19,7 @@ codexOAuth:
   - complete:
 conversation:
   - create:
+  - fork:
   - list:
   - listPage:
   - get:

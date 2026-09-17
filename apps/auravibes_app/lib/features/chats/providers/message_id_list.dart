@@ -370,6 +370,7 @@ MessageEntity _cloudMessageEntity(
   createdAt: message.createdAt,
   updatedAt: message.updatedAt,
   metadata: metadata,
+  isForkReference: message.isForkReference,
 );
 
 MessageMetadataEntity _readCloudMessageMetadata(
@@ -568,8 +569,10 @@ ConversationBusyState _cloudConversationBusyState(
     )),
   );
 
+  final state = projection.asData?.value;
+
   return ConversationBusyState.cloud(
-    isBusy: switch (projection.asData?.value.conversation.executionState) {
+    isBusy: switch (state?.conversation.executionState) {
       'running' || 'awaitingApproval' => true,
       _ => false,
     },
@@ -1067,6 +1070,7 @@ Future<List<PendingToolCall>> _pendingToolCallsForMessage(
   _PendingConversationRequest request,
   MessageEntity latestAssistantMessage,
 ) async {
+  if (latestAssistantMessage.isForkReference) return const [];
   final pendingCalls = _awaitingApprovalToolCalls(latestAssistantMessage);
   if (pendingCalls.isEmpty) return const [];
 

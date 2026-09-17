@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -157,19 +158,75 @@ Stream<List<ConversationEntity>> _cloudConversations(
   );
   if (gateway == null) return;
 
-  final localWorkspaceId = cloud.localWorkspaceId;
-  final conversations = await _fetchCloudConversations(.new(gateway), options);
-  yield _mapCloudConversations(conversations, localWorkspaceId);
+  yield* _watchCloudConversations(gateway, cloud, options);
 }
 
-Future<List<ConversationSummary>> _fetchCloudConversations(
-  CloudChatGateway gateway,
+Stream<List<ConversationEntity>> _watchCloudConversations(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
   _ConversationListOptions options,
-) => gateway.listConversations(
-  search: options.search,
-  limit: options.pagination.limit ?? 100,
-  offset: options.pagination.offset,
+) {
+  const resourceKinds = {'conversation'};
+  Future<({List<ConversationEntity> value, int currentSequence})> read() =>
+      _readCloudConversations(gateway, cloud, options);
+
+  return gateway.watch(resourceKinds, read);
+}
+
+Future<({List<ConversationEntity> value, int currentSequence})>
+_readCloudConversations(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) async {
+  final conversations = await _readCloudConversationPage(
+    gateway,
+    cloud,
+    options,
+  );
+  final currentSequence = await _cloudConversationSequence(gateway);
+
+  return _cloudConversationSnapshot(
+    conversations,
+    cloud.localWorkspaceId,
+    currentSequence,
+  );
+}
+
+({List<ConversationEntity> value, int currentSequence})
+_cloudConversationSnapshot(
+  List<ConversationSummary> conversations,
+  String localWorkspaceId,
+  int currentSequence,
+) => (
+  value: _mapCloudConversations(conversations, localWorkspaceId),
+  currentSequence: currentSequence,
 );
+
+Future<List<ConversationSummary>> _readCloudConversationPage(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) async {
+  final page = await gateway.client.conversation.listPage(
+    .new(
+      workspaceId: cloud.cloudWorkspaceId,
+      limit: options.pagination.limit ?? 100,
+      search: options.search.isEmpty ? null : options.search,
+      offset: options.pagination.offset,
+    ),
+  );
+
+  return page.conversations;
+}
+
+Future<int> _cloudConversationSequence(
+  CloudWorkspaceStateGateway gateway,
+) async {
+  final state = await gateway.read(pages: const [], eventLimit: 0);
+
+  return state.currentSequence;
+}
 
 List<ConversationEntity> _mapCloudConversations(
   List<ConversationSummary> conversations,
@@ -179,6 +236,20 @@ List<ConversationEntity> _mapCloudConversations(
     .toList();
 
 ConversationEntity _cloudConversation(
+  ConversationSummary conversation,
+  String localWorkspaceId,
+) {
+  final mapped = _cloudConversationCore(conversation, localWorkspaceId);
+
+  return mapped.copyWith(
+    forkSourceConversationId: conversation.forkSourceConversationId,
+    forkSourceTitle: conversation.forkSourceTitle,
+    forkThroughMessageId: conversation.forkThroughMessageId,
+    forkMaterializedAt: conversation.forkMaterializedAt,
+  );
+}
+
+ConversationEntity _cloudConversationCore(
   ConversationSummary conversation,
   String localWorkspaceId,
 ) {

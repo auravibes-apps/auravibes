@@ -20,6 +20,10 @@ ON conversations (
   id DESC
 )
 ''')
+@TableIndex(
+  name: 'conversations_fork_source_idx',
+  columns: {#forkSourceConversationId},
+)
 class Conversations extends Table with TableMixin {
   TextColumn get workspaceId =>
       text().references(Workspaces, #id, onDelete: .cascade)();
@@ -33,5 +37,22 @@ class Conversations extends Table with TableMixin {
       text().nullable().references(Agents, #id, onDelete: .setNull)();
   TextColumn get parentConversationId =>
       text().nullable().references(Conversations, #id, onDelete: .cascade)();
+
+  /// Stable id of the conversation this fork snapshots.
+  ///
+  /// This is intentionally not a foreign key. A source conversation can be
+  /// purged after its history has been materialized while the fork keeps the
+  /// provenance for display.
+  TextColumn get forkSourceConversationId => text().nullable()();
+
+  /// Source title captured when the fork is created.
+  TextColumn get forkSourceTitle => text().nullable()();
+
+  /// Inclusive terminal message boundary captured by the fork.
+  TextColumn get forkThroughMessageId => text().nullable()();
+
+  /// Non-null after the source history has been materialized into this fork.
+  DateTimeColumn get forkMaterializedAt => dateTime().nullable()();
+
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 }

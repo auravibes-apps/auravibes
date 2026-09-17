@@ -1,4 +1,7 @@
+import 'dart:async';
+
 // ignore_for_file: cascade_invocations
+
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -58,6 +61,25 @@ void main() {
 
       expect(scope.isCancellationRequested, isTrue);
       expect(runtime.current('c1'), isNull);
+    });
+
+    test('waits for asynchronous cleanup before completion', () async {
+      final runtime = AgentCancellationRuntime();
+      final cleanupRelease = Completer<void>();
+      final scope = runtime.start('c1');
+      scope.registerCleanup(() => cleanupRelease.future);
+
+      runtime.forceClear('c1');
+      var completed = false;
+      final wait = runtime.waitForCompletion('c1');
+      await Future<void>.delayed(.zero);
+      expect(completed, isFalse);
+
+      cleanupRelease.complete();
+      runtime.clear('c1', scope);
+      await wait;
+      completed = true;
+      expect(completed, isTrue);
     });
   });
 }

@@ -104,7 +104,11 @@ class _StubMessageRepository implements MessageRepository {
   }
 
   @override
-  Future<MessageEntity> patchMessage(String id, MessagePatch message) async {
+  Future<MessageEntity> patchMessage(
+    String id,
+    MessagePatch message, {
+    String? conversationId,
+  }) async {
     final entity = MessageEntity(
       id: id,
       conversationId: 'conv-1',
@@ -121,7 +125,7 @@ class _StubMessageRepository implements MessageRepository {
   }
 
   @override
-  Future<bool> deleteMessage(String id) async {
+  Future<bool> deleteMessage(String id, {String? conversationId}) async {
     return deleteResult;
   }
 

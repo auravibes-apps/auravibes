@@ -83,17 +83,24 @@ class const ConversationWorker({
       return true;
     } on ConversationCancelledException {
       if (isActive != null && !isActive()) return true;
-      await _cancel(session, job, leaseToken);
+      try {
+        await _cancel(session, job, leaseToken);
+      } on ConversationJobLeaseLostException {
+        return true;
+      }
+      return true;
+    } on ConversationJobLeaseLostException {
       return true;
     } on ConversationEngineConfigurationException {
       if (isActive != null && !isActive()) return true;
-      final updated = await _retryOrFail(
+      final updated = await _retryOrFailIfLeased(
         session,
         jobId: job.id!,
         leaseToken: leaseToken,
         errorCode: 'configuration',
         now: DateTime.now().toUtc(),
       );
+      if (updated == null) return true;
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
       }
@@ -104,13 +111,14 @@ class const ConversationWorker({
       return true;
     } on ConversationResponseLimitException {
       if (isActive != null && !isActive()) return true;
-      final updated = await _retryOrFail(
+      final updated = await _retryOrFailIfLeased(
         session,
         jobId: job.id!,
         leaseToken: leaseToken,
         errorCode: 'configuration',
         now: DateTime.now().toUtc(),
       );
+      if (updated == null) return true;
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
       }
@@ -121,13 +129,14 @@ class const ConversationWorker({
       return true;
     } on Object catch (error, stackTrace) {
       if (isActive != null && !isActive()) return true;
-      final updated = await _retryOrFail(
+      final updated = await _retryOrFailIfLeased(
         session,
         jobId: job.id!,
         leaseToken: leaseToken,
         errorCode: 'provider_unavailable',
         now: DateTime.now().toUtc(),
       );
+      if (updated == null) return true;
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
       }
@@ -160,6 +169,26 @@ class const ConversationWorker({
       await _publishRetryWake(session, updated);
     }
     return updated;
+  }
+
+  Future<ConversationJob?> _retryOrFailIfLeased(
+    Session session, {
+    required int jobId,
+    required String leaseToken,
+    required String errorCode,
+    required DateTime now,
+  }) async {
+    try {
+      return await _retryOrFail(
+        session,
+        jobId: jobId,
+        leaseToken: leaseToken,
+        errorCode: errorCode,
+        now: now,
+      );
+    } on ConversationJobLeaseLostException {
+      return null;
+    }
   }
 
   Future<void> _publishRetryWake(Session session, ConversationJob job) async {
@@ -209,13 +238,12 @@ class const ConversationWorker({
     }
     if (await _cancelIfParentTurnInactive(session, job, leaseToken)) return;
     if (isActive != null && !isActive()) return;
-    final messages = await ConversationMessage.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(job.workspaceId) &
-          table.conversationId.equals(job.conversationId),
-      orderBy: (table) => table.id,
-    );
+    final messages = await conversation_repo.ConversationRepository()
+        .listEffectiveMessages(
+          session,
+          workspaceId: job.workspaceId,
+          conversationId: conversation.stableId,
+        );
     final phaseTurn = await _turnForJobAssistant(
       session,
       job: job,
@@ -303,14 +331,17 @@ class const ConversationWorker({
         a2uiIssuesBySurface: result.a2uiIssuesBySurface,
         a2uiMessageIssues: result.a2uiMessageIssues,
       );
-      await SyncWakeups.publishConversation(
+      final currentConversation = await Conversation.db.findById(
         session,
-        workspaceId: job.workspaceId,
-        conversationId: (await Conversation.db.findById(
-          session,
-          job.conversationId,
-        ))!.stableId,
+        job.conversationId,
       );
+      if (currentConversation != null) {
+        await SyncWakeups.publishConversation(
+          session,
+          workspaceId: job.workspaceId,
+          conversationId: currentConversation.stableId,
+        );
+      }
       return;
     }
     if (result.requiresUserAction) {
@@ -323,14 +354,17 @@ class const ConversationWorker({
         status: ConversationStatuses.awaitingUserAction,
       );
       await SyncWakeups.publishWorkspace(session, job.workspaceId);
-      await SyncWakeups.publishConversation(
+      final currentConversation = await Conversation.db.findById(
         session,
-        workspaceId: job.workspaceId,
-        conversationId: (await Conversation.db.findById(
-          session,
-          job.conversationId,
-        ))!.stableId,
+        job.conversationId,
       );
+      if (currentConversation != null) {
+        await SyncWakeups.publishConversation(
+          session,
+          workspaceId: job.workspaceId,
+          conversationId: currentConversation.stableId,
+        );
+      }
       return;
     }
     await _commitResult(
@@ -343,14 +377,17 @@ class const ConversationWorker({
     await _reconcileParentAfterChild(session, job);
 
     await SyncWakeups.publishWorkspace(session, job.workspaceId);
-    await SyncWakeups.publishConversation(
+    final currentConversation = await Conversation.db.findById(
       session,
-      workspaceId: job.workspaceId,
-      conversationId: (await Conversation.db.findById(
-        session,
-        job.conversationId,
-      ))!.stableId,
+      job.conversationId,
     );
+    if (currentConversation != null) {
+      await SyncWakeups.publishConversation(
+        session,
+        workspaceId: job.workspaceId,
+        conversationId: currentConversation.stableId,
+      );
+    }
   }
 
   Future<void> _pauseForSubAgents(
@@ -913,6 +950,15 @@ class const ConversationWorker({
     if (parentTurnId == null) return false;
     return session.db.transaction((transaction) async {
       final now = DateTime.now().toUtc();
+      final conversation = await Conversation.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(job.conversationId) &
+            table.workspaceId.equals(job.workspaceId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (conversation == null) return true;
       final parentTurn = await ConversationTurn.db.findFirstRow(
         session,
         where: (table) =>
@@ -922,7 +968,25 @@ class const ConversationWorker({
         lockMode: LockMode.forUpdate,
       );
       if (parentTurn == null) {
-        throw const ConversationEngineConfigurationException('parent_turn');
+        final childTurn = await ConversationTurn.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.id.equals(job.turnId) &
+              table.workspaceId.equals(job.workspaceId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (childTurn != null) {
+          await _cancelLocked(
+            session,
+            job,
+            childTurn,
+            leaseToken,
+            now,
+            transaction,
+          );
+        }
+        return true;
       }
       if (parentTurn.cancellationRequestedAt == null &&
           !ConversationStatuses.isTerminal(parentTurn.status)) {
@@ -936,9 +1000,7 @@ class const ConversationWorker({
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
-      if (childTurn == null) {
-        throw const ConversationEngineConfigurationException('turn');
-      }
+      if (childTurn == null) return true;
       await _cancelLocked(
         session,
         job,
@@ -1040,7 +1102,11 @@ class const ConversationWorker({
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
-      if (assistant == null || assistant.content == content) return;
+      if (assistant == null ||
+          ConversationStatuses.isMessageTerminal(assistant.status) ||
+          assistant.content == content) {
+        return;
+      }
       await ConversationMessage.db.updateRow(
         session,
         assistant.copyWith(
@@ -1065,17 +1131,6 @@ class const ConversationWorker({
     List<String> a2uiMessageIssues = const [],
   }) => session.db.transaction((transaction) async {
     final now = DateTime.now().toUtc();
-    final lockedTurn = await ConversationTurn.db.findFirstRow(
-      session,
-      where: (table) =>
-          table.id.equals(turn.id) & table.workspaceId.equals(job.workspaceId),
-      transaction: transaction,
-      lockMode: LockMode.forUpdate,
-    );
-    if (lockedTurn == null) {
-      throw const ConversationEngineConfigurationException('turn');
-    }
-    await afterApprovalTurnLock?.call();
     final conversation = await Conversation.db.findFirstRow(
       session,
       where: (table) =>
@@ -1087,6 +1142,17 @@ class const ConversationWorker({
     if (conversation == null) {
       throw const ConversationEngineConfigurationException('conversation');
     }
+    final lockedTurn = await ConversationTurn.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(turn.id) & table.workspaceId.equals(job.workspaceId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (lockedTurn == null) {
+      return;
+    }
+    await afterApprovalTurnLock?.call();
     final lockedJob = await ConversationJob.db.findFirstRow(
       session,
       where: (table) =>
@@ -1096,7 +1162,7 @@ class const ConversationWorker({
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (lockedJob == null) throw StateError('Conversation job lease lost.');
+    if (lockedJob == null) throw ConversationJobLeaseLostException(job.id!);
     final executionId = conversation_repo.conversationExecutionIdForJob(
       job.requestId,
       job.payloadJson,
@@ -1151,6 +1217,9 @@ class const ConversationWorker({
         assistant.conversationId != job.conversationId ||
         assistant.turnId != lockedTurn.id ||
         assistant.role != 'assistant') {
+      throw const ConversationEngineConfigurationException('assistant_message');
+    }
+    if (ConversationStatuses.isMessageTerminal(assistant.status)) {
       throw const ConversationEngineConfigurationException('assistant_message');
     }
     final metadata = _metadataObject(assistant.metadataJson);
@@ -1218,6 +1287,17 @@ class const ConversationWorker({
     String status = ConversationStatuses.completed,
   }) => session.db.transaction((transaction) async {
     final now = DateTime.now().toUtc();
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(job.conversationId) &
+          table.workspaceId.equals(job.workspaceId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (conversation == null) {
+      throw const ConversationEngineConfigurationException('conversation');
+    }
     final lockedTurn = await ConversationTurn.db.findFirstRow(
       session,
       where: (table) =>
@@ -1227,6 +1307,10 @@ class const ConversationWorker({
     );
     if (lockedTurn == null) {
       throw const ConversationEngineConfigurationException('turn');
+    }
+    if (ConversationStatuses.isTerminal(lockedTurn.status)) {
+      await _completeLease(session, job, leaseToken, now, transaction);
+      return true;
     }
     if (lockedTurn.cancellationRequestedAt != null) {
       await _cancelLocked(
@@ -1246,6 +1330,9 @@ class const ConversationWorker({
       lockMode: LockMode.forUpdate,
     );
     if (assistant == null) {
+      throw const ConversationEngineConfigurationException('assistant_message');
+    }
+    if (ConversationStatuses.isMessageTerminal(assistant.status)) {
       throw const ConversationEngineConfigurationException('assistant_message');
     }
     final metadata = _metadataObject(assistant.metadataJson);
@@ -1324,6 +1411,15 @@ class const ConversationWorker({
   ) async {
     await session.db.transaction((transaction) async {
       final now = DateTime.now().toUtc();
+      final conversation = await Conversation.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(job.conversationId) &
+            table.workspaceId.equals(job.workspaceId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (conversation == null) return;
       final lockedTurn = await ConversationTurn.db.findFirstRow(
         session,
         where: (table) =>
@@ -1333,7 +1429,7 @@ class const ConversationWorker({
         lockMode: LockMode.forUpdate,
       );
       if (lockedTurn == null) {
-        throw const ConversationEngineConfigurationException('turn');
+        return;
       }
       await _cancelLocked(
         session,
@@ -1405,7 +1501,8 @@ class const ConversationWorker({
             transaction: transaction,
             lockMode: LockMode.forUpdate,
           );
-    if (assistant != null) {
+    if (assistant != null &&
+        !ConversationStatuses.isMessageTerminal(assistant.status)) {
       await ConversationMessage.db.updateRow(
         session,
         assistant.copyWith(
@@ -1479,6 +1576,15 @@ class const ConversationWorker({
       job.requestId,
       job.payloadJson,
     );
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(job.conversationId) &
+          table.workspaceId.equals(job.workspaceId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (conversation == null) return;
     final execution = await ConversationExecution.db.findFirstRow(
       session,
       where: (table) =>
@@ -1489,16 +1595,7 @@ class const ConversationWorker({
       lockMode: LockMode.forUpdate,
     );
     if (execution == null || execution.status == status) return;
-    final conversation = await Conversation.db.findFirstRow(
-      session,
-      where: (table) =>
-          table.id.equals(job.conversationId) &
-          table.workspaceId.equals(job.workspaceId),
-      transaction: transaction,
-      lockMode: LockMode.forUpdate,
-    );
-    if (conversation == null ||
-        conversation.activeExecutionId != execution.id) {
+    if (conversation.activeExecutionId != execution.id) {
       return;
     }
     await ConversationExecution.db.updateRow(
@@ -1549,13 +1646,17 @@ class const ConversationWorker({
     bool Function()? isActive,
   ) async {
     if (isActive != null && !isActive()) return;
-    final messages = await ConversationMessage.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(job.workspaceId) &
-          table.conversationId.equals(job.conversationId),
-      orderBy: (table) => table.id,
-    );
+    final messages = await conversation_repo.ConversationRepository()
+        .listEffectiveMessages(
+          session,
+          workspaceId: job.workspaceId,
+          conversationId:
+              (await Conversation.db.findById(
+                session,
+                job.conversationId,
+              ))?.stableId ??
+              '',
+        );
     if (isActive != null && !isActive()) return;
     final result = await _withLeaseRenewal(
       session,
@@ -1726,7 +1827,7 @@ class const ConversationWorker({
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (locked == null) throw StateError('Conversation job lease lost.');
+    if (locked == null) throw ConversationJobLeaseLostException(job.id!);
     await ConversationJob.db.updateRow(
       session,
       locked.copyWith(

@@ -58,6 +58,7 @@ void main() {
       ),
       'submitToolDecision': () => gateway.submitToolDecision((
         requestId: 'decision',
+        conversationId: 'conversation',
         turnId: 'turn',
         toolCallId: 'tool',
         argumentsDigest: 'digest',

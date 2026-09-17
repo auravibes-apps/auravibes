@@ -19,6 +19,18 @@ class ConversationEndpoint extends Endpoint {
     return _useCases.create(session, userId: account.userId, request: request);
   }
 
+  Future<ConversationSummary> fork(
+    Session session,
+    ForkConversationRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.fork(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
   Future<List<ConversationSummary>> list(
     Session session,
     ListConversationsRequest request,

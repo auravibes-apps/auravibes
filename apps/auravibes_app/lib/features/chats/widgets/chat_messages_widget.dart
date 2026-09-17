@@ -16,9 +16,12 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
+import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
@@ -172,6 +175,7 @@ class const ChatMessagesWidget({
         workspaceId: workspaceId,
         a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
         replayPayloadsByMessageId: submittedA2uiReplayPayloads,
+        conversation: conversation,
       ),
       separatorBuilder: (context, index) => const AuraSizedBox(height: .md),
       itemCount: itemCount,
@@ -221,6 +225,7 @@ void _restoreA2uiMessages({
   runtime.enable();
   if (messageEntitiesById == null) return;
   for (final message in messageEntitiesById.values) {
+    if (message.isForkReference) continue;
     _restoreA2uiMessage(
       runtime: runtime,
       message: message,
@@ -312,6 +317,7 @@ Widget _buildChatTimelineItem({
   required String workspaceId,
   required ChatA2uiRuntime? a2uiRuntime,
   required Map<String, List<String>> replayPayloadsByMessageId,
+  required ConversationEntity? conversation,
 }) {
   if (showThinking && index == 0) {
     return const ChatThinkingIndicator(
@@ -323,6 +329,10 @@ Widget _buildChatTimelineItem({
   }
 
   final item = data[index - thinkingCount - compactionCount];
+  final messageId = switch (item) {
+    _ActivityRunTimelineItem() => null,
+    _MessageTimelineItem(:final source) => source.message.id,
+  };
   final child = switch (item) {
     _ActivityRunTimelineItem(:final run) => _AssistantActivityRun(
       key: ValueKey('activity_trace_${run.id}'),
@@ -348,10 +358,25 @@ Widget _buildChatTimelineItem({
             replayPayloadsByMessageId[source.message.id] ?? const [],
       ),
   };
-  return _DisclosureSizeReporter(
+  final rendered = _DisclosureSizeReporter(
     controller: disclosureController,
     child: child,
   );
+  if (conversation != null &&
+      messageId != null &&
+      conversation.forkThroughMessageId == messageId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        rendered,
+        _ForkBoundaryDivider(
+          conversation: conversation!,
+          workspaceId: workspaceId,
+        ),
+      ],
+    );
+  }
+  return rendered;
 }
 
 class _ResolvedChatMessage {
@@ -535,6 +560,8 @@ class const _ChatMessageTimelineItem({
         _ChatMessageContent(
           message: message,
           isStreaming: source.isStreaming,
+          workspaceId: workspaceId,
+          conversationId: parentConversationId,
           a2uiRuntime: a2uiRuntime,
           a2uiReplayPayloads: a2uiReplayPayloads,
         ),
@@ -546,6 +573,8 @@ class const _ChatMessageTimelineItem({
 class const _ChatMessageContent({
   required final MessageEntity message,
   required final bool isStreaming,
+  required final String workspaceId,
+  required final String conversationId,
   required final ChatA2uiRuntime? a2uiRuntime,
   required final List<String> a2uiReplayPayloads,
 }) extends StatelessWidget {
@@ -561,6 +590,7 @@ class const _ChatMessageContent({
     final status = _messageDeliveryStatus(message, isStreaming);
     final hasA2uiResponse =
         !message.isUser &&
+        !message.isForkReference &&
         ((message.metadata?.a2uiMessages.isNotEmpty ?? false) ||
             a2uiReplayPayloads.isNotEmpty);
 
@@ -571,6 +601,8 @@ class const _ChatMessageContent({
         showTextBubble: showTextBubble,
         hasA2uiResponse: hasA2uiResponse,
         status: status,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
         a2uiRuntime: a2uiRuntime,
         a2uiReplayPayloads: a2uiReplayPayloads,
       ),
@@ -608,6 +640,8 @@ List<Widget> _messageContentChildren({
   required bool showTextBubble,
   required bool hasA2uiResponse,
   required AuraMessageDeliveryStatus status,
+  required String workspaceId,
+  required String conversationId,
   required ChatA2uiRuntime? a2uiRuntime,
   required List<String> a2uiReplayPayloads,
 }) {
@@ -620,7 +654,7 @@ List<Widget> _messageContentChildren({
         status: status,
       ),
     if (message.attachments.isNotEmpty) _MessageAttachments(message: message),
-    if (!message.isUser && a2uiRuntime != null)
+    if (!message.isUser && !message.isForkReference && a2uiRuntime != null)
       ChatA2uiSurfaceHost.message(
         key: ValueKey('a2ui_${message.id}'),
         runtime: a2uiRuntime,
@@ -642,9 +676,11 @@ List<Widget> _messageContentChildren({
         ),
       ),
     if (!hasA2uiResponse && _messageCopyText(message, a2uiRuntime) != null)
-      _MessageCopyAction(
+      _MessageActions(
+        message: message,
         resolveContent: () => _messageCopyText(message, a2uiRuntime),
-        isUser: message.isUser,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
       ),
     if (hasA2uiResponse)
       _MessageFooter(
@@ -652,6 +688,9 @@ List<Widget> _messageContentChildren({
         createdAt: message.createdAt,
         status: status,
         resolveContent: () => _messageCopyText(message, a2uiRuntime),
+        message: message,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
       ),
   ];
 }
@@ -677,9 +716,12 @@ bool _isAwaitingApproval(
   List<PendingToolCall> pendingToolCalls,
   String messageId,
   MessageToolCallEntity toolCall,
+  bool isForkReference,
 ) => pendingToolCalls.any(
   (pending) =>
-      pending.messageId == messageId && pending.toolCall.id == toolCall.id,
+      !isForkReference &&
+      pending.messageId == messageId &&
+      pending.toolCall.id == toolCall.id,
 );
 
 AuraMessageDeliveryStatus _mapMessageStatus(
@@ -701,7 +743,7 @@ Map<String, List<String>> _submittedA2uiReplayPayloads(
 ) {
   final payloadsByAssistantMessage = <String, List<String>>{};
   for (final message in messages) {
-    if (!message.isUser) continue;
+    if (!message.isUser || message.isForkReference) continue;
     final action = A2uiChatContract.decodeActionMetadata(
       message.metadata?.modelMetadata,
       conversationId: conversationId,
@@ -745,7 +787,8 @@ int _latestUserMessageIndex(
 }
 
 bool _hasA2uiMessageState(MessageEntity? message) {
-  if (message == null || message.isUser) return false;
+  if (message == null || message.isUser || message.isForkReference)
+    return false;
   final metadata = message.metadata;
   if (metadata == null) return false;
   return metadata.a2uiMessages.isNotEmpty ||
@@ -863,6 +906,9 @@ class const _MessageTextContent({
 }
 
 class const _MessageFooter({
+  required final MessageEntity message,
+  required final String workspaceId,
+  required final String conversationId,
   required final DateTime createdAt,
   required final AuraMessageDeliveryStatus status,
   required final String? Function() resolveContent,
@@ -883,11 +929,18 @@ class const _MessageFooter({
             mainAxisSize: MainAxisSize.min,
             children: [
               if (copyableText != null)
-                _MessageCopyAction(
+                _MessageActions(
+                  message: message,
                   resolveContent: resolveContent,
-                  isUser: false,
+                  workspaceId: workspaceId,
+                  conversationId: conversationId,
                 ),
-              if (copyableText != null) const AuraSizedBox(width: .xs),
+              if (copyableText == null && _canForkMessage(message))
+                _MessageForkAction(
+                  message: message,
+                  workspaceId: workspaceId,
+                  conversationId: conversationId,
+                ),
               Text(
                 RelativeTimeFormatter.format(createdAt),
                 style: TextStyle(
@@ -905,6 +958,146 @@ class const _MessageFooter({
         ],
       ),
     );
+  }
+}
+
+bool _canForkMessage(MessageEntity message) =>
+    !message.isUser && message.status == MessageStatus.sent;
+
+class const _MessageActions({
+  required final MessageEntity message,
+  required final String? Function() resolveContent,
+  required final String workspaceId,
+  required final String conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      _MessageCopyAction(
+        resolveContent: resolveContent,
+        isUser: message.isUser,
+      ),
+      if (_canForkMessage(message))
+        _MessageForkAction(
+          message: message,
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ),
+    ],
+  );
+}
+
+class const _MessageForkAction({
+  required final MessageEntity message,
+  required final String workspaceId,
+  required final String conversationId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Tooltip(
+    message: LocaleKeys.chats_screens_chat_conversation_fork.tr(),
+    child: IconButton(
+      icon: const Icon(Icons.call_split_outlined),
+      onPressed: () => unawaited(
+        _forkMessage(context, ref, message, workspaceId, conversationId),
+      ),
+    ),
+  );
+}
+
+Future<void> _forkMessage(
+  BuildContext context,
+  WidgetRef ref,
+  MessageEntity message,
+  String workspaceId,
+  String conversationId,
+) async {
+  try {
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(workspaceId).future,
+    );
+    final String forkId;
+    if (cloud != null) {
+      forkId = (await cloud.fork(
+        (await ref.read(
+          conversationByIdStreamProvider(
+            workspaceId,
+            conversationId: conversationId,
+          ).future,
+        ))!,
+        throughMessageId: message.id,
+      )).id;
+    } else {
+      final conversation = await ref.read(
+        conversationByIdStreamProvider(
+          workspaceId,
+          conversationId: conversationId,
+        ).future,
+      );
+      if (conversation == null) return;
+      forkId =
+          (await ref
+                  .read(forkConversationUsecaseProvider)
+                  .call(conversation, throughMessageId: message.id))
+              .id;
+    }
+    ref.invalidate(conversationsStreamProvider(workspaceId: workspaceId));
+    if (context.mounted) {
+      ConversationRoute(workspaceId: workspaceId, chatId: forkId).go(context);
+    }
+  } on Object {
+    if (!context.mounted) return;
+    AuraSnackBars.show(
+      context: context,
+      content: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_fork_error,
+      ),
+      variant: .error,
+    );
+  }
+}
+
+class const _ForkBoundaryDivider({
+  required final ConversationEntity conversation,
+  required final String workspaceId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sourceId = conversation.forkSourceConversationId;
+    final source = sourceId == null
+        ? null
+        : ref
+              .watch(
+                conversationByIdStreamProvider(
+                  workspaceId,
+                  conversationId: sourceId,
+                ),
+              )
+              .value;
+    final label = TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_forked_from,
+      args: [conversation.forkSourceTitle ?? ''],
+      style: TextStyle(color: context.auraColors.onSurfaceVariant),
+    );
+    final row = Row(
+      children: [
+        const Expanded(child: Divider()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: label,
+        ),
+        const Expanded(child: Divider()),
+      ],
+    );
+    return source == null
+        ? row
+        : InkWell(
+            onTap: () => ConversationRoute(
+              workspaceId: source.workspaceId,
+              chatId: source.id,
+            ).go(context),
+            child: row,
+          );
   }
 }
 
@@ -1022,16 +1215,27 @@ class const _AssistantActivityRun({
         for (final toolCall
             in source.message.metadata?.toolCalls ??
                 const <MessageToolCallEntity>[])
-          (messageId: source.message.id, toolCall: toolCall),
+          (
+            messageId: source.message.id,
+            toolCall: toolCall,
+            isForkReference: source.message.isForkReference,
+          ),
     ];
     final isLive =
-        run.sources.any((source) => source.isStreaming) ||
-        toolCalls.any((item) => item.toolCall.isPending);
+        run.sources.any(
+          (source) => !source.message.isForkReference && source.isStreaming,
+        ) ||
+        toolCalls.any(
+          (item) => !item.isForkReference && item.toolCall.isPending,
+        );
     final toolSignature = toolCalls
         .map((item) => '${item.messageId}\u0000${item.toolCall.id}')
         .join('\u0000');
     final latestPendingToolId = _latestPendingToolId(
-      toolCalls.map((item) => item.toolCall).toList(growable: false),
+      toolCalls
+          .where((item) => !item.isForkReference)
+          .map((item) => item.toolCall)
+          .toList(growable: false),
     );
     final hasToolGroup = toolCalls.length > 1;
     final traceExpanded = useState(isLive);
@@ -1077,6 +1281,7 @@ class const _AssistantActivityRun({
         (
           messageId: item.messageId,
           toolCall: item.toolCall,
+          isForkReference: item.isForkReference,
           displayName: _toolCallDisplayName(
             ref.watch(toolDisplayNameProvider(workspaceId, item.toolCall.name)),
             item.toolCall.name,
@@ -1101,6 +1306,7 @@ class const _AssistantActivityRun({
             pendingToolCalls,
             activityToolCall.messageId,
             activityToolCall.toolCall,
+            activityToolCall.isForkReference,
           ),
           isExpanded: expandedToolIds.value.contains(
             activityToolCall.toolCall.id,

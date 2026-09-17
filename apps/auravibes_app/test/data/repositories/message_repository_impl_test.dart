@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -476,6 +477,96 @@ void main() {
         const MessagePatch(status: .sent),
       );
       expect(patched.status, MessageStatus.sent);
+    });
+
+    test(
+      'owner can resolve a legacy sent message with pending tools',
+      () async {
+        const pendingMetadata = MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'calculator',
+              argumentsRaw: '{}',
+            ),
+          ],
+        );
+        final created = await repository.createMessage(
+          .new(
+            conversationId: 'conv-1',
+            content: 'assistant',
+            messageType: .text,
+            isUser: false,
+            status: .sent,
+            metadata: jsonEncode(pendingMetadata.toJson()),
+          ),
+        );
+
+        final patched = await repository.patchMessage(
+          created.id,
+          const MessagePatch(
+            metadata: .new(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'tool-1',
+                  name: 'calculator',
+                  argumentsRaw: '{}',
+                  resultStatus: .success,
+                ),
+              ],
+            ),
+          ),
+          conversationId: 'conv-1',
+        );
+
+        expect(
+          patched.metadata?.toolCalls.single.resultStatus,
+          ToolCallResultStatus.success,
+        );
+      },
+    );
+
+    test('fork cannot mutate a source message', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'assistant',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+        ),
+      );
+
+      await expectLater(
+        repository.patchMessage(
+          created.id,
+          const MessagePatch(content: 'changed'),
+          conversationId: 'fork-1',
+        ),
+        throwsA(isA<MessageValidationException>()),
+      );
+    });
+
+    test('resolved terminal message rejects later metadata writes', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'assistant',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          metadata: '{"thinking":"before"}',
+        ),
+      );
+
+      await expectLater(
+        repository.patchMessage(
+          created.id,
+          const MessagePatch(metadata: .new(thinking: 'after')),
+          conversationId: 'conv-1',
+        ),
+        throwsA(isA<MessageValidationException>()),
+      );
     });
 
     test(

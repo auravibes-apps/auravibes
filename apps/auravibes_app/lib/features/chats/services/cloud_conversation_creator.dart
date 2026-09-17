@@ -18,6 +18,16 @@ class const CloudConversationCreator({
   ConversationEntity _toConversation(
     ConversationSummary created,
     String workspaceId,
+  ) => _conversationCore(created, workspaceId).copyWith(
+    forkSourceConversationId: created.forkSourceConversationId,
+    forkSourceTitle: created.forkSourceTitle,
+    forkThroughMessageId: created.forkThroughMessageId,
+    forkMaterializedAt: created.forkMaterializedAt,
+  );
+
+  ConversationEntity _conversationCore(
+    ConversationSummary created,
+    String workspaceId,
   ) {
     return ConversationEntity(
       id: created.id,

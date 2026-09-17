@@ -1,0 +1,7 @@
+class: ForkConversationRequest
+fields:
+  workspaceId: int
+  requestId: String
+  forkConversationId: String
+  sourceConversationId: String
+  throughMessageId: String?

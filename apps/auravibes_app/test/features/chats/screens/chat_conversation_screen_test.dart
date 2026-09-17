@@ -177,6 +177,51 @@ void main() {
     expect(pendingCalls.single.messageId, 'message-1');
   });
 
+  test(
+    'cloud pending calls from inherited messages stay read-only history',
+    () {
+      final now = DateTime.utc(2026);
+      final pendingCalls = CloudMessageTools.pendingToolCalls(
+        _cloudState(
+          projectionRevision: 7,
+          messages: [
+            ConversationMessageView(
+              id: 'message-1',
+              conversationId: _chatId,
+              turnId: 'turn-1',
+              turnRevision: 11,
+              role: 'assistant',
+              kind: 'message',
+              status: 'sent',
+              content: '',
+              isForkReference: true,
+              toolCalls: const [],
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          ],
+          toolCalls: [
+            ConversationToolCallView(
+              id: 'tool-call-1',
+              turnId: 'turn-1',
+              messageId: 'message-1',
+              name: 'load_skill',
+              argumentsJson: '{"slug":"research"}',
+              argumentsDigest: 'digest-1',
+              status: 'pending',
+              revision: 3,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          ],
+        ),
+      );
+
+      expect(pendingCalls, isEmpty);
+    },
+  );
+
   test('ConversationResult subclasses have correct types', () {
     const notFound = ConversationNotFound();
     const mismatch = ConversationWorkspaceMismatch();
@@ -1273,4 +1318,10 @@ class _StubConversationRepository({
   ) async {
     return const [];
   }
+
+  @override
+  Future<ConversationEntity> forkConversation(
+    String sourceConversationId, {
+    String? throughMessageId,
+  }) => throw UnimplementedError();
 }

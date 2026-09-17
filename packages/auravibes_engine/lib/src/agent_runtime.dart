@@ -50,9 +50,39 @@ abstract interface class AgentCancellationEffects {
 
 class AgentCancellationScope {
   final _cleanupCallbacks = <FutureOr<void> Function()>[];
+  final _cleanupFutures = <Future<void>>[];
+  final _closedCompleter = Completer<void>();
   bool _isCancellationRequested = false;
+  bool _isClosed = false;
 
   bool get isCancellationRequested => _isCancellationRequested;
+
+  Future<void> get cleanupCompletion async {
+    if (_cleanupFutures.isEmpty) return;
+
+    await Future.wait(List<Future<void>>.of(_cleanupFutures));
+  }
+
+  Future<void> waitForCleanupCompletion() async {
+    var observed = 0;
+    while (true) {
+      final futures = List<Future<void>>.of(_cleanupFutures);
+      if (futures.length > observed) {
+        observed = futures.length;
+        await Future.wait(futures);
+        continue;
+      }
+      if (_isClosed) return;
+      await _closedCompleter.future;
+    }
+  }
+
+  void close() {
+    if (_isClosed) return;
+
+    _isClosed = true;
+    _closedCompleter.complete();
+  }
 
   void requestStop() {
     if (_isCancellationRequested) return;
@@ -70,7 +100,8 @@ class AgentCancellationScope {
     try {
       final result = cleanup();
       if (result is Future<void>) {
-        unawaited(result.catchError((Object _) => null));
+        final future = result.catchError((Object _) {});
+        _cleanupFutures.add(future);
       }
     } on Object {
       return;

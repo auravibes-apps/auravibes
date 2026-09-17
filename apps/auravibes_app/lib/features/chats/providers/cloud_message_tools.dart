@@ -62,7 +62,9 @@ abstract final class CloudMessageTools {
     ConversationToolCallView call,
   ) => [
     for (final message in state.messages)
-      if (message.id == call.messageId)
+      if (message.id == call.messageId &&
+          !message.isForkReference &&
+          message.conversationId == state.conversation.id)
         if (message.turnRevision case final turnRevision?)
           _pendingToolCall(state, call, message, turnRevision),
   ];

@@ -302,6 +302,29 @@ void main() {
     });
 
     group('deleteConversation', () {
+      test('deletes even when source execution rows are active', () async {
+        final _ = await database.messageDao.insertMessage(
+          const MessagesCompanion(
+            conversationId: .new('conv-1'),
+            content: .new('assistant'),
+            messageType: .new(MessagesTableType.text),
+            isUser: .new(false),
+            status: .new(MessageTableStatus.sent),
+            metadata: .new(
+              '{"toolCalls":[{"id":"tool-1",'
+              '"name":"calculator","argumentsRaw":"{}"}]}',
+            ),
+          ),
+        );
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => createConversationRow());
+        when(() => mockDao.deleteConversation('conv-1'))
+            .thenAnswer((_) async => true);
+
+        expect(await repository.deleteConversation('conv-1'), isTrue);
+        verify(() => mockDao.deleteConversation('conv-1')).called(1);
+      });
+
       test('returns true when deleted', () async {
         when(() => mockDao.getConversationById('conv-1'))
             .thenAnswer((_) async => createConversationRow());

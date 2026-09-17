@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_decision_service.dart';
@@ -55,8 +56,18 @@ typedef _AgentToolExecutionErrorRequest =
     agent.AgentToolExecutionErrorRequest<ResolvedTool>;
 
 typedef _ToolResultsRequest = ({
+  String conversationId,
   String messageId,
   List<agent.AgentToolResultUpdate> updates,
+});
+
+typedef _StoppedToolCallsRequest = ({
+  MessageRepository messageRepository,
+  String messageId,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> updatedToolCalls,
+  String conversationId,
+  MessageStatus status,
 });
 
 class AgentToolExecutionService({
@@ -158,16 +169,25 @@ class const AppAllowedToolsDataProvider({
   }
 
   @override
-  Future<void> stopPendingTools({required String messageId}) async {
-    await _stopPendingTools(messageRepository, messageId);
+  Future<void> stopPendingTools({
+    required String messageId,
+    required String conversationId,
+  }) async {
+    await _stopPendingTools(
+      messageRepository,
+      messageId,
+      conversationId: conversationId,
+    );
   }
 
   @override
   Future<void> updateToolResults({
+    required String conversationId,
     required String messageId,
     required List<agent.AgentToolResultUpdate> updates,
   }) async {
     await _updateToolResults(messageRepository, (
+      conversationId: conversationId,
       messageId: messageId,
       updates: updates,
     ));
@@ -313,8 +333,9 @@ agent.AgentToolApprovalDecision _notConfiguredApprovalDecision() =>
 
 Future<void> _stopPendingTools(
   MessageRepository messageRepository,
-  String messageId,
-) async {
+  String messageId, {
+  required String conversationId,
+}) async {
   final message = await messageRepository.getMessageById(messageId);
   if (message == null) return;
 
@@ -322,12 +343,14 @@ Future<void> _stopPendingTools(
   final updated = _stoppedPendingToolCalls(metadata.toolCalls);
   if (updated == null) return;
 
-  await _persistStoppedToolCalls(
-    messageRepository,
-    messageId,
-    metadata,
-    updated,
-  );
+  await _persistStoppedToolCalls((
+    messageRepository: messageRepository,
+    messageId: messageId,
+    metadata: metadata,
+    updatedToolCalls: updated,
+    conversationId: conversationId,
+    status: .sent,
+  ));
 }
 
 List<MessageToolCallEntity>? _stoppedPendingToolCalls(
@@ -344,15 +367,14 @@ List<MessageToolCallEntity>? _stoppedPendingToolCalls(
   ];
 }
 
-Future<void> _persistStoppedToolCalls(
-  MessageRepository messageRepository,
-  String messageId,
-  MessageMetadataEntity metadata,
-  List<MessageToolCallEntity> updatedToolCalls,
-) async {
-  final _ = await messageRepository.patchMessage(
-    messageId,
-    .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+Future<void> _persistStoppedToolCalls(_StoppedToolCallsRequest request) async {
+  final _ = await request.messageRepository.patchMessage(
+    request.messageId,
+    .new(
+      metadata: request.metadata.copyWith(toolCalls: request.updatedToolCalls),
+      status: request.status,
+    ),
+    conversationId: request.conversationId,
   );
 }
 
@@ -368,9 +390,28 @@ Future<void> _updateToolResults(
     metadata.toolCalls,
     request.updates,
   );
+  await _persistToolResults(
+    messageRepository,
+    request,
+    metadata,
+    updatedToolCalls,
+  );
+}
+
+Future<void> _persistToolResults(
+  MessageRepository messageRepository,
+  _ToolResultsRequest request,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> toolCalls,
+) async {
+  final updatedMetadata = metadata.copyWith(toolCalls: toolCalls);
   final _ = await messageRepository.patchMessage(
     request.messageId,
-    .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+    .new(
+      metadata: updatedMetadata,
+      status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+    ),
+    conversationId: request.conversationId,
   );
 }
 

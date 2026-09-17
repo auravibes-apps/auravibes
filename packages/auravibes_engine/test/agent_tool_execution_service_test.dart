@@ -300,12 +300,16 @@ class _FakeExecutionProvider({
   }
 
   @override
-  Future<void> stopPendingTools({required String messageId}) async {
+  Future<void> stopPendingTools({
+    required String messageId,
+    required String conversationId,
+  }) async {
     stoppedMessageIds.add(messageId);
   }
 
   @override
   Future<void> updateToolResults({
+    required String conversationId,
     required String messageId,
     required List<AgentToolResultUpdate> updates,
   }) async {

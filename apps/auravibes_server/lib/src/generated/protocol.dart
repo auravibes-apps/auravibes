@@ -99,6 +99,8 @@ import 'features/conversations/models/delete_conversation_request.dart'
     as _iqsppx3t;
 import 'features/conversations/models/edit_pending_conversation_message_request.dart'
     as _iybdpw96;
+import 'features/conversations/models/fork_conversation_request.dart'
+    as _i4amghcc;
 import 'features/conversations/models/get_conversation_request.dart'
     as _ixb0z1tn;
 import 'features/conversations/models/get_turn_request.dart' as _ilyvwvdb;
@@ -307,6 +309,7 @@ export 'features/conversations/models/conversation_usage.dart';
 export 'features/conversations/models/create_conversation_request.dart';
 export 'features/conversations/models/delete_conversation_request.dart';
 export 'features/conversations/models/edit_pending_conversation_message_request.dart';
+export 'features/conversations/models/fork_conversation_request.dart';
 export 'features/conversations/models/get_conversation_request.dart';
 export 'features/conversations/models/get_turn_request.dart';
 export 'features/conversations/models/list_conversation_messages_request.dart';
@@ -918,6 +921,30 @@ class Protocol extends _is.DatabaseSerializationManager {
           isNullable: true,
           dartType: 'DateTime?',
         ),
+        _isp.ColumnDefinition(
+          name: 'forkSourceConversationId',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'forkSourceTitle',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'forkThroughMessageId',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'forkMaterializedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
       ],
       foreignKeys: [
         _isp.ForeignKeyDefinition(
@@ -981,6 +1008,23 @@ class Protocol extends _is.DatabaseSerializationManager {
           ],
           type: 'btree',
           isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'conversation_fork_source_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'forkSourceConversationId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
           isPrimary: false,
         ),
       ],
@@ -4251,6 +4295,9 @@ class Protocol extends _is.DatabaseSerializationManager {
       return _iybdpw96.EditPendingConversationMessageRequest.fromJson(data)
           as T;
     }
+    if (t == _i4amghcc.ForkConversationRequest) {
+      return _i4amghcc.ForkConversationRequest.fromJson(data) as T;
+    }
     if (t == _ixb0z1tn.GetConversationRequest) {
       return _ixb0z1tn.GetConversationRequest.fromJson(data) as T;
     }
@@ -4779,6 +4826,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _is.getType<_iybdpw96.EditPendingConversationMessageRequest?>()) {
       return (data != null
               ? _iybdpw96.EditPendingConversationMessageRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i4amghcc.ForkConversationRequest?>()) {
+      return (data != null
+              ? _i4amghcc.ForkConversationRequest.fromJson(data)
               : null)
           as T;
     }
@@ -5535,6 +5588,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iqsppx3t.DeleteConversationRequest => 'DeleteConversationRequest',
       _iybdpw96.EditPendingConversationMessageRequest =>
         'EditPendingConversationMessageRequest',
+      _i4amghcc.ForkConversationRequest => 'ForkConversationRequest',
       _ixb0z1tn.GetConversationRequest => 'GetConversationRequest',
       _ilyvwvdb.GetTurnRequest => 'GetTurnRequest',
       _it91nt4l.ListConversationMessagesRequest =>
@@ -5750,6 +5804,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'DeleteConversationRequest';
       case _iybdpw96.EditPendingConversationMessageRequest():
         return 'EditPendingConversationMessageRequest';
+      case _i4amghcc.ForkConversationRequest():
+        return 'ForkConversationRequest';
       case _ixb0z1tn.GetConversationRequest():
         return 'GetConversationRequest';
       case _ilyvwvdb.GetTurnRequest():
@@ -6105,6 +6161,9 @@ class Protocol extends _is.DatabaseSerializationManager {
       return deserialize<_iybdpw96.EditPendingConversationMessageRequest>(
         data['data'],
       );
+    }
+    if (dataClassName == 'ForkConversationRequest') {
+      return deserialize<_i4amghcc.ForkConversationRequest>(data['data']);
     }
     if (dataClassName == 'GetConversationRequest') {
       return deserialize<_ixb0z1tn.GetConversationRequest>(data['data']);

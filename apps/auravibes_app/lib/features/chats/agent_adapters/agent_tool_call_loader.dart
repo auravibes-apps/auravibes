@@ -102,15 +102,19 @@ agent.AgentToolMessage _toAgentToolMessage(MessageEntity message) {
   return agent.AgentToolMessage(
     id: message.id,
     isUser: message.isUser,
-    toolCalls: _agentToolCalls(message.metadata?.toolCalls),
+    toolCalls: _agentToolCalls(
+      message.metadata?.toolCalls,
+      allowPending: !message.isForkReference,
+    ),
   );
 }
 
 List<agent.AgentMessageToolCall> _agentToolCalls(
-  Iterable<MessageToolCallEntity>? toolCalls,
-) => [
+  Iterable<MessageToolCallEntity>? toolCalls, {
+  required bool allowPending,
+}) => [
   for (final toolCall in toolCalls ?? const <MessageToolCallEntity>[])
-    if (!toolCall.isRunning)
+    if (!toolCall.isRunning && (allowPending || !toolCall.isPending))
       agent.AgentMessageToolCall(
         id: toolCall.id,
         name: toolCall.name,

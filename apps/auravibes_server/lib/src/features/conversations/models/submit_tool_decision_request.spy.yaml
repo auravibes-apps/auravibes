@@ -2,6 +2,7 @@ class: SubmitToolDecisionRequest
 fields:
   workspaceId: int
   requestId: String
+  conversationId: String
   turnId: String
   toolCallId: String
   argumentsDigest: String

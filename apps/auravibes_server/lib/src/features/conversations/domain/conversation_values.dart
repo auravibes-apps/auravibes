@@ -11,6 +11,9 @@ abstract final class ConversationStatuses {
   static bool isTerminal(String status) =>
       status == cancelled || status == completed || status == failed;
 
+  static bool isMessageTerminal(String status) =>
+      status == 'sent' || status == 'error' || isTerminal(status);
+
   static bool isActive(String status) => !isTerminal(status);
 }
 

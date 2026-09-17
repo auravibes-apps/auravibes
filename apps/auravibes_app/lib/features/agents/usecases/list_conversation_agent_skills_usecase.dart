@@ -111,6 +111,10 @@ final listConversationAgentSkillsUsecaseProvider =
             modelId: conversation.modelId,
             agentId: conversation.agentId,
             parentConversationId: conversation.parentConversationId,
+            forkSourceConversationId: conversation.forkSourceConversationId,
+            forkSourceTitle: conversation.forkSourceTitle,
+            forkThroughMessageId: conversation.forkThroughMessageId,
+            forkMaterializedAt: conversation.forkMaterializedAt,
           );
         },
         (workspaceId) => ref.read(agentRepositoryProvider(workspaceId)),

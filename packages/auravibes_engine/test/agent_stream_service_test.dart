@@ -188,6 +188,47 @@ void main() {
       ]);
     },
   );
+
+  test(
+    'keeps cancellation pending until stopped-message cleanup finishes',
+    () async {
+      final cancellationRuntime = FakeCancellationEffects()..start('c1');
+      final cleanupRelease = Completer<void>();
+      final messageStreamingStarted = Completer<void>();
+      final usecase = AgentStreamService<_Chunk>(
+        cancellationEffects: cancellationRuntime,
+        provider: _FakeAgentStreamProvider(
+          persistenceSink: _MemorySink<_Chunk>(),
+          uiSink: _MemorySink<_Chunk>(),
+          calls: <String>[],
+          onStartMessageStreaming: (_) {
+            messageStreamingStarted.complete();
+            cancellationRuntime.requestStop('c1');
+          },
+          onPersistStopped: (_, _) => cleanupRelease.future,
+        ),
+      );
+
+      final run = usecase.call(
+        conversationId: 'c1',
+        responseStream: .fromIterable([const _Chunk('a')]),
+        pendingUserMessageIds: const [],
+      );
+      await messageStreamingStarted.future;
+      final scope = cancellationRuntime.scope('c1');
+      expect(scope, isNotNull);
+      final cleanup = scope!.cleanupCompletion;
+      var completed = false;
+      final wait = cleanup.then((_) => completed = true);
+      await Future<void>.delayed(.zero);
+      expect(completed, isFalse);
+
+      cleanupRelease.complete();
+      await run;
+      await wait;
+      expect(completed, isTrue);
+    },
+  );
 }
 
 class const _Chunk(final String text);
@@ -198,6 +239,8 @@ class const _FakeAgentStreamProvider({
   required final List<String> calls,
   final bool throwOnConcat = false,
   final void Function(String messageId)? onStartMessageStreaming,
+  final Future<void> Function(String? messageId, _Chunk? result)?
+  onPersistStopped,
 }) implements AgentStreamProvider<_Chunk> {
   @override
   void startConversationStreaming(String conversationId) {
@@ -256,6 +299,7 @@ class const _FakeAgentStreamProvider({
     _Chunk? result,
   ) async {
     calls.add('stopped:$messageId:${result?.text}');
+    await onPersistStopped?.call(messageId, result);
   }
 
   @override

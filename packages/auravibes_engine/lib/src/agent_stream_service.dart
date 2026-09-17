@@ -108,7 +108,13 @@ class const AgentStreamService<TChunk>({
     } on Object catch (error, stackTrace) {
       await _handleContinuationError(state, error, stackTrace);
     } finally {
-      await _cleanupContinuation(state);
+      try {
+        await _cleanupContinuation(state);
+      } finally {
+        if (!state.cleanupCompleter.isCompleted) {
+          state.cleanupCompleter.complete();
+        }
+      }
     }
 
     final messageId = state.messageId;
@@ -132,6 +138,7 @@ class const AgentStreamService<TChunk>({
       await state.responseSubscription?.cancel();
       await state.activeChunkProcessing;
       _completeResponse(state);
+      await state.cleanupCompleter.future;
     });
     // ignore: cancel_subscriptions, cancelled by registered cleanup/finalizer.
     final subscription = responseStream.listen(
@@ -338,6 +345,7 @@ class _ContinueAgentStreamState<TChunk>({
   required final List<String> pendingUserMessageIds,
 }) {
   final Completer<void> responseCompleter = Completer<void>();
+  final Completer<void> cleanupCompleter = Completer<void>();
 
   TChunk? accumulatedResult;
   String? messageId;

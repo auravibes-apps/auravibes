@@ -582,4 +582,10 @@ class _FakeConversationRepository({
 
   @override
   Future<bool> deleteConversation(String id) => throw UnimplementedError();
+
+  @override
+  Future<ConversationEntity> forkConversation(
+    String sourceConversationId, {
+    String? throughMessageId,
+  }) => throw UnimplementedError();
 }

@@ -1229,6 +1229,14 @@ class ServerToolRuntime({
     if (current == null || !serverToolStatusCanBeClaimed(current.status)) {
       return null;
     }
+    final turn = await ConversationTurn.db.findById(
+      session,
+      current.turnId,
+      transaction: transaction,
+    );
+    if (turn == null || ConversationStatuses.isTerminal(turn.status)) {
+      return null;
+    }
     return ConversationToolCall.db.updateRow(
       session,
       current.copyWith(
@@ -1261,6 +1269,12 @@ class ServerToolRuntime({
         )) {
       return;
     }
+    final turn = await ConversationTurn.db.findById(
+      session,
+      current.turnId,
+      transaction: transaction,
+    );
+    if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
     await ConversationToolCall.db.updateRow(
       session,
       current.copyWith(
@@ -1294,6 +1308,12 @@ class ServerToolRuntime({
         )) {
       return;
     }
+    final turn = await ConversationTurn.db.findById(
+      session,
+      current.turnId,
+      transaction: transaction,
+    );
+    if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
     await ConversationToolCall.db.updateRow(
       session,
       current.copyWith(

@@ -22,6 +22,23 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     );
   }
 
+  Future<ConversationSummary> fork(
+    ConversationEntity conversation, {
+    String? throughMessageId,
+  }) {
+    final id = const UuidV7().generate();
+
+    return _gateway.forkConversation(
+      .new(
+        workspaceId: 0,
+        requestId: id,
+        sourceConversationId: conversation.id,
+        forkConversationId: id,
+        throughMessageId: throughMessageId,
+      ),
+    );
+  }
+
   Future<ConversationSummary> update(
     ConversationEntity conversation,
     ConversationPatch patch,
@@ -38,15 +55,16 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     String modelId,
   ) => _updateModel(conversation, modelId);
 
-  Future<void> delete(ConversationEntity conversation) =>
-      _gateway.deleteConversation(
-        .new(
-          workspaceId: 0,
-          requestId: const UuidV7().generate(),
-          conversationId: conversation.id,
-          expectedRevision: conversation.revision,
-        ),
-      );
+  Future<void> delete(ConversationEntity conversation) async {
+    await _gateway.deleteConversation(
+      .new(
+        workspaceId: 0,
+        requestId: const UuidV7().generate(),
+        conversationId: conversation.id,
+        expectedRevision: conversation.revision,
+      ),
+    );
+  }
 
   Future<ConversationMutationResult> compact(ConversationEntity conversation) =>
       _gateway.compactConversation(

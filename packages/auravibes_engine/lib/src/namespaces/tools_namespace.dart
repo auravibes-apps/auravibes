@@ -14,21 +14,37 @@ class ToolsNamespace<TTool extends Object>({
   Future<void> approve({
     required String toolCallId,
     required String messageId,
+    required String conversationId,
     required AgentToolGrantLevel level,
   }) {
     return _approve.call(
       toolCallId: toolCallId,
       messageId: messageId,
+      conversationId: conversationId,
       level: level,
     );
   }
 
-  Future<void> skip({required String toolCallId, required String messageId}) {
-    return _skip.call(toolCallId: toolCallId, messageId: messageId);
+  Future<void> skip({
+    required String toolCallId,
+    required String messageId,
+    required String conversationId,
+  }) {
+    return _skip.call(
+      toolCallId: toolCallId,
+      messageId: messageId,
+      conversationId: conversationId,
+    );
   }
 
-  Future<void> stopPending({required String messageId}) {
-    return _stopPending.stopPendingToolCalls(messageId: messageId);
+  Future<void> stopPending({
+    required String messageId,
+    required String conversationId,
+  }) {
+    return _stopPending.stopPendingToolCalls(
+      messageId: messageId,
+      conversationId: conversationId,
+    );
   }
 
   Future<void> resumeIfReady({required String messageId}) {
