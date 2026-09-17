@@ -126,6 +126,28 @@ void main() {
         expect(selections.single.modelId, 'gpt-test');
         expect(selections.single.modelName, 'GPT Test');
 
+        expect(
+          await endpoints.modelConnection.listRecentSelections(
+            session,
+            ListRecentModelSelectionsRequest(workspaceId: workspaceId),
+          ),
+          isEmpty,
+        );
+        await endpoints.modelConnection.recordRecentSelection(
+          session,
+          RecordRecentModelSelectionRequest(
+            workspaceId: workspaceId,
+            selectionId: selections.single.id,
+          ),
+        );
+        expect(
+          await endpoints.modelConnection.listRecentSelections(
+            session,
+            ListRecentModelSelectionsRequest(workspaceId: workspaceId),
+          ),
+          [selections.single.id],
+        );
+
         final updated = await endpoints.modelConnection.update(
           session,
           UpdateModelConnectionRequest(

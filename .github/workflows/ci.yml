@@ -632,6 +632,11 @@ jobs:
             push)
               base="$BEFORE_SHA"
               ;;
+            workflow_dispatch)
+              if git cat-file -e 'origin/main^{commit}' 2>/dev/null; then
+                base="$(git merge-base origin/main "$head")"
+              fi
+              ;;
           esac
 
           if [ -n "$head" ] && git cat-file -e "$head^{commit}" 2>/dev/null; then

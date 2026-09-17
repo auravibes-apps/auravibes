@@ -26,6 +26,7 @@ class ModelConnectionUseCases {
        _lookup = lookup ?? InternetAddress.lookup;
 
   static const maxModels = 500;
+  static const maxRecentSelections = 5;
   final ModelConnectionRepository _repository;
   final ModelCatalogFetcher _fetch;
   final Future<List<InternetAddress>> Function(String host) _lookup;
@@ -257,6 +258,104 @@ class ModelConnectionUseCases {
       );
     }
     return views;
+  }
+
+  Future<List<String>> listRecentSelections(
+    Session session, {
+    required String userId,
+    required ListRecentModelSelectionsRequest request,
+  }) async {
+    await _requireMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+    );
+    final selections = await _repository.listRecentSelections(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+      limit: maxRecentSelections,
+    );
+
+    return selections.map((selection) => selection.selectionId).toList();
+  }
+
+  Future<void> recordRecentSelection(
+    Session session, {
+    required String userId,
+    required RecordRecentModelSelectionRequest request,
+  }) async {
+    final selectionId = request.selectionId;
+    if (selectionId.trim().isEmpty || selectionId.length > 500) _invalid();
+
+    await session.db.transaction((transaction) async {
+      await _requireMember(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+      );
+      final resolved = await const VirtualWorkspaceModelSelectionResolver()
+          .resolve(
+            session,
+            workspaceId: request.workspaceId,
+            selectionId: selectionId,
+            transaction: transaction,
+          );
+      if (resolved == null) _invalid();
+
+      final existing = await _repository.findRecentSelection(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        selectionId: selectionId,
+        transaction: transaction,
+      );
+      final latest = (await _repository.listRecentSelections(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        limit: 1,
+        transaction: transaction,
+      )).firstOrNull;
+      final now = DateTime.now().toUtc();
+      final selectedAt = latest == null || latest.selectedAt.isBefore(now)
+          ? now
+          : latest.selectedAt.add(const Duration(microseconds: 1));
+      final updated = existing?.copyWith(selectedAt: selectedAt);
+      if (updated == null) {
+        await _repository.insertRecentSelection(
+          session,
+          RecentModelSelection(
+            workspaceId: request.workspaceId,
+            userId: userId,
+            selectionId: selectionId,
+            selectedAt: selectedAt,
+          ),
+          transaction: transaction,
+        );
+      } else {
+        await _repository.updateRecentSelection(
+          session,
+          updated,
+          transaction: transaction,
+        );
+      }
+
+      final overflow = await _repository.listRecentSelections(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        limit: maxRecentSelections + 1,
+        transaction: transaction,
+      );
+      for (final selection in overflow.skip(maxRecentSelections)) {
+        await _repository.deleteRecentSelection(
+          session,
+          selection,
+          transaction: transaction,
+        );
+      }
+    });
   }
 
   Future<ModelSyncResult> testAndSync(

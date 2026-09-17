@@ -46,7 +46,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 10);
+      expect(fixture.database.schemaVersion, 11);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -67,6 +67,7 @@ void main() {
       expect(fixture.database.skillTemplateToolsDao, isNotNull);
       expect(fixture.database.conversationSkillsDao, isNotNull);
       expect(fixture.database.appSkillWorkspaceSettingsDao, isNotNull);
+      expect(fixture.database.recentModelSelectionsDao, isNotNull);
     });
 
     test('all DAO getters return non-null', () {

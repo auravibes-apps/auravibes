@@ -1,0 +1,13 @@
+class: RecentModelSelection
+table: recent_model_selection
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  userId: String
+  selectionId: String
+  selectedAt: DateTime
+indexes:
+  recent_model_selection_identity_idx:
+    fields: workspaceId, userId, selectionId
+    unique: true
+  recent_model_selection_order_idx:
+    fields: workspaceId, userId, selectedAt, selectionId

@@ -51,6 +51,8 @@
   "models_screens": {
     "select_provider": "Select Provider",
     "select_model": "Model",
+    "recent_models": "Recent models",
+    "all_models": "All models",
     "select_provider_first": "Select provider first",
     "no_providers_configured": "No model",
     "no_models_available": "No models available",

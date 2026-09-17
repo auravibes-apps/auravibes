@@ -27,6 +27,36 @@ void main() {
 
     expect(connection.id, 'connection');
   });
+
+  test('lists recent model selections through the cloud endpoint', () async {
+    final gateway = CloudModelGateway.forTesting(
+      stateGateway: _stateGateway(),
+      listRecentSelections: (request) {
+        expect(request.workspaceId, 1);
+
+        return Future.value(['selection']);
+      },
+    );
+
+    expect(await gateway.listRecentModelSelections(), ['selection']);
+  });
+
+  test('records recent model selections through the cloud endpoint', () async {
+    String? recorded;
+    final gateway = CloudModelGateway.forTesting(
+      stateGateway: _stateGateway(),
+      recordRecentSelection: (request) {
+        expect(request.workspaceId, 1);
+        recorded = request.selectionId;
+
+        return Future.value();
+      },
+    );
+
+    await gateway.recordRecentModelSelection('selection');
+
+    expect(recorded, 'selection');
+  });
 }
 
 CloudWorkspaceStateGateway _stateGateway() =>

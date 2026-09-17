@@ -51,6 +51,8 @@
   "models_screens": {
     "select_provider": "Seleccionar Proveedor",
     "select_model": "Modelo",
+    "recent_models": "Modelos recientes",
+    "all_models": "Todos los modelos",
     "select_provider_first": "Selecciona proveedor primero",
     "no_providers_configured": "Sin modelo",
     "no_models_available": "No hay modelos disponibles",

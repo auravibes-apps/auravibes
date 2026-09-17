@@ -84,6 +84,30 @@ class ModelConnectionEndpoint extends Endpoint {
     );
   }
 
+  Future<List<String>> listRecentSelections(
+    Session session,
+    ListRecentModelSelectionsRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.listRecentSelections(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<void> recordRecentSelection(
+    Session session,
+    RecordRecentModelSelectionRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    await _useCases.recordRecentSelection(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
   Future<ModelSyncResult> testAndSync(
     Session session,
     TestAndSyncModelConnectionRequest request,

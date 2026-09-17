@@ -54,6 +54,8 @@ modelConnection:
   - update:
   - delete:
   - listSelections:
+  - listRecentSelections:
+  - recordRecentSelection:
   - testAndSync:
 object:
   - beginUpload:
