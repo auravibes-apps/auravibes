@@ -221,6 +221,11 @@ melos:
       stdio: inherit
       description: Run AuraVibes app with shared data
 
+    start:marionette:
+      run: fvm dart run tool/marionette_run.dart
+      stdio: inherit
+      description: Run AuraVibes app for Marionette MCP control
+
     start:server:
       run: cd apps/auravibes_server && fvm dart run bin/main.dart --mode development --apply-migrations
       stdio: inherit

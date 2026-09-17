@@ -1,6 +1,7 @@
 {
   "packages": [
-    "npm:@narumitw/pi-lsp"
+    "npm:@narumitw/pi-lsp",
+    "npm:pi-mcp-adapter"
   ],
   "subagents": {
     "defaultThinking": "medium",

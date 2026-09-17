@@ -43,6 +43,14 @@
       "program": "lib/main.dart"
     },
     {
+      "name": "dev Marionette",
+      "request": "launch",
+      "type": "dart",
+      "cwd": ".",
+      "program": "tool/marionette_run.dart",
+      "args": ["--device", "macos"]
+    },
+    {
       "name": "AuraVibes Server",
       "request": "launch",
       "type": "dart",

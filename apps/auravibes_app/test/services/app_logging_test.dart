@@ -62,6 +62,20 @@ void main() {
       expect(logs.join('\n'), contains('[REDACTED]'));
     });
 
+    test('sends redacted log entries to an external sink', () async {
+      final collected = <String>[];
+      AppLogging.configure(enabled: true, onLog: collected.add);
+
+      Logger('test.logger')
+          .warning('Authorization: Bearer secret-token api_key=abc123');
+      await Future<void>.delayed(.zero);
+
+      final output = collected.join('\n');
+      expect(output, isNot(contains('secret-token')));
+      expect(output, isNot(contains('abc123')));
+      expect(output, contains('[REDACTED]'));
+    });
+
     test('records GenkitException message and details safely', () async {
       const secret = 'secret-provider-error';
       AppLogging.configure(enabled: true);

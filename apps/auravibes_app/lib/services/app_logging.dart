@@ -12,12 +12,17 @@ class AppLogging._() {
   static bool _configured = false;
   static StreamSubscription<LogRecord>? _subscription;
 
-  static void configure({required bool enabled}) {
+  static void configure({
+    required bool enabled,
+    void Function(String log)? onLog,
+  }) {
     if (_configured || !enabled) return;
     _configured = true;
 
     Logger.root.level = .ALL;
-    _subscription = Logger.root.onRecord.listen(_handleRecord);
+    _subscription = Logger.root.onRecord.listen(
+      (record) => _handleRecord(record, onLog),
+    );
     _configureFlutterErrorHandler();
     _configurePlatformErrorHandler();
   }
@@ -51,17 +56,29 @@ class AppLogging._() {
     };
   }
 
-  static void _handleRecord(LogRecord record) {
-    debugPrint(_logLine(record));
-    _printRecordValue('Error', record.error);
-    _printRecordValue('StackTrace', record.stackTrace);
+  static void _handleRecord(
+    LogRecord record,
+    void Function(String log)? onLog,
+  ) {
+    final logLine = _logLine(record);
+    debugPrint(logLine);
+    onLog?.call(logLine);
+    _printRecordValue('Error', record.error, onLog);
+    _printRecordValue('StackTrace', record.stackTrace, onLog);
   }
 
   static String _logLine(LogRecord record) =>
       '[${record.time.toIso8601String()}] [${record.level.name}] '
       '${record.loggerName}: ${LogRedaction.redact(record.message)}';
 
-  static void _printRecordValue(String label, Object? value) {
-    if (value != null) debugPrint('$label: ${LogRedaction.redact(value)}');
+  static void _printRecordValue(
+    String label,
+    Object? value,
+    void Function(String log)? onLog,
+  ) {
+    if (value == null) return;
+    final line = '$label: ${LogRedaction.redact(value)}';
+    debugPrint(line);
+    onLog?.call(line);
   }
 }
