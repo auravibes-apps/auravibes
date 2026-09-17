@@ -1,7 +1,11 @@
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
-import 'package:flutter/widgets.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../helpers/test_provider_scope.dart';
 
 void main() {
   group('workspacePathPrefix', () {
@@ -95,6 +99,84 @@ void main() {
       );
       expect(route.chatId, 'abc-123_def');
       expect(route.location, contains('abc-123_def'));
+    });
+  });
+
+  group('SubAgentConversationRoute', () {
+    test('location is full correct path', () {
+      final route = SubAgentConversationRoute(
+        workspaceId: 'ws-1',
+        chatId: 'parent-1',
+        subAgentConversationId: 'child-1',
+      );
+
+      expect(
+        route.location,
+        '/workspaces/ws-1/chats/parent-1/sub-agents/child-1',
+      );
+    });
+
+    testWidgets('shows not found when the sub-agent run was deleted', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const SizedBox.shrink()),
+        ],
+      );
+      addTearDown(router.dispose);
+      final state = GoRouterState(
+        router.configuration,
+        uri: .parse('/workspaces/ws-1/chats/parent-1/sub-agents/missing-1'),
+        matchedLocation: '/workspaces/ws-1/chats/parent-1/sub-agents/missing-1',
+        path: '/workspaces/:workspaceId/chats/:chatId/sub-agents/:subAgentConversationId',
+        fullPath: '/workspaces/:workspaceId/chats/:chatId/sub-agents/:subAgentConversationId',
+        pathParameters: const {
+          'workspaceId': 'ws-1',
+          'chatId': 'parent-1',
+          'subAgentConversationId': 'missing-1',
+        },
+        pageKey: const ValueKey('sub-agent-run'),
+      );
+      final route = SubAgentConversationRoute(
+        workspaceId: 'ws-1',
+        chatId: 'parent-1',
+        subAgentConversationId: 'missing-1',
+      );
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          EasyLocalization(
+            child: TestProviderScope(
+              overrides: [
+                conversationByIdStreamProvider.overrideWith(
+                  (ref, _) => Stream.value(null),
+                ),
+              ],
+              child: Builder(
+                builder: (context) => MaterialApp(
+                  home: Builder(
+                    builder: (context) => route.build(context, state),
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
+              ),
+            ),
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
+            useOnlyLangCode: true,
+            useFallbackTranslations: true,
+          ),
+        );
+      });
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Conversation not found'), findsOneWidget);
     });
   });
 

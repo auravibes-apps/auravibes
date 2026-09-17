@@ -1519,7 +1519,7 @@ VoidCallback? _openSubAgent({
     workspaceId: workspaceId,
     chatId: parentConversationId,
     subAgentConversationId: subAgentConversationId,
-  ).go(context);
+  ).push(context);
 }
 
 class const _ActivityTraceDisclosure({
@@ -1735,6 +1735,7 @@ class const _ActivityToolCallRow({
         decodedArgs?.isNotEmpty == true || decodedResponse?.isNotEmpty == true;
     final statusKey = _statusLocaleKey();
     final statusColor = _statusColor(context);
+    final onOpenSubAgent = openSubAgent;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1799,14 +1800,23 @@ class const _ActivityToolCallRow({
                 ),
               ),
             ),
-            if (openSubAgent != null)
-              AuraIconButton(
+            if (onOpenSubAgent != null)
+              AuraButton(
                 key: ValueKey('activity_open_sub_agent_${toolCall.id}'),
-                icon: Icons.open_in_new,
-                onPressed: openSubAgent,
-                tooltip: LocaleKeys
-                    .chats_screens_chat_conversation_activity_open_sub_agent
-                    .tr(),
+                onPressed: onOpenSubAgent,
+                child: const AuraRow(
+                  children: [
+                    TextLocale(
+                      LocaleKeys
+                          .chats_screens_chat_conversation_view_sub_agent_run,
+                    ),
+                    AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
+                  ],
+                  spacing: .xs,
+                  mainAxisSize: .min,
+                ),
+                variant: .ghost,
+                size: .small,
               ),
           ],
         ),

@@ -28,7 +28,9 @@ import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -293,7 +295,12 @@ class const _SubAgentConversationView({
         chatId: chatId,
         showInputComposer: false,
       ),
-    AsyncData() || AsyncLoading() || AsyncError() => const SizedBox.shrink(),
+    AsyncData() => const Center(
+      child: TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_error_not_found,
+      ),
+    ),
+    AsyncLoading() || AsyncError() => const SizedBox.shrink(),
   };
 
   bool _matchesConversation(ConversationEntity? value) =>
