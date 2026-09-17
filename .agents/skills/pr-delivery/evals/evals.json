@@ -1,0 +1,23 @@
+{
+  "skill_name": "pr-delivery",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Do a dry run for the current AuraVibes branch. Read the GitHub workflows, identify the local gates for the changed paths, and report the commands and remote-only checks. Do not commit, push, or create a PR.",
+      "expected_output": "The agent reads the applicable instructions and workflows, derives checks from changed paths, distinguishes local, remote-only, skipped, and blocked validation, and performs no remote write.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "The current branch has an open PR. Push the requested changes if local validation is clean, then wait for every PR check. If checks fail, inspect all failed logs, fix the causes, push again, and keep waiting. Do not merge the PR.",
+      "expected_output": "The agent validates before writing, preserves unrelated changes, pushes only the intended commit, watches the current PR head without fail-fast, fixes all actionable failures, and stops only at a verified green or explicit blocker.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "An existing PR reports a merge conflict and a Sonar issue. Inspect the current head and all check results, merge the PR base without rebasing, resolve the conflict, fix the Sonar finding, validate locally, push, and wait for the new checks. Do not claim success if Sonar is skipped or GitHub still reports a dirty merge state.",
+      "expected_output": "The agent handles the merge conflict and Sonar result as separate causes, reruns applicable local gates, verifies the new head, waits for all checks, and reports skipped or blocked Sonar status instead of claiming a green PR.",
+      "files": []
+    }
+  ]
+}
