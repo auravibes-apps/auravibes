@@ -5,6 +5,8 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod/riverpod.dart';
@@ -101,6 +103,7 @@ typedef _OAuthRefreshRequest = ({
   String refreshToken,
   String? clientId,
   String? clientSecret,
+  String? resource,
   List<String> previousScopes,
 });
 
@@ -140,10 +143,19 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
 
     return McpAuthenticationType.oauth(
       token: token,
-      clientId: metadata.clientId ?? 'app-client-id',
-      authorizationEndpoint: metadata.authorizationEndpoint ?? '',
-      tokenEndpoint: metadata.tokenEndpoint ?? '',
+      clientId: _requiredMetadataValue(metadata.clientId),
+      authorizationEndpoint: _requiredMetadataValue(
+        metadata.authorizationEndpoint,
+      ),
+      tokenEndpoint: _requiredMetadataValue(metadata.tokenEndpoint),
+      resource: metadata.resource,
     );
+  }
+
+  String _requiredMetadataValue(String? value) {
+    if (value != null && value.isNotEmpty) return value;
+
+    throw const McpOAuthException(LocaleKeys.mcp_modal_oauth_configuration);
   }
 
   Future<_OAuthCachedTokenContext> _loadCachedTokenContext(String id) async {
@@ -162,7 +174,7 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
   }
 
   bool _tokenStillValid(DateTime? expiresAt) =>
-      expiresAt != null &&
+      expiresAt == null ||
       DateTime.now().isBefore(expiresAt.subtract(const Duration(minutes: 5)));
 
   OAuthTokenEntity _cachedToken(
@@ -175,18 +187,13 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
     return ServiceConnectionAuthCodec.tokenFromSecret(
       secret: secret,
       issuedAt: issuedAt,
-      expiresIn: _requiredExpiresIn(row.expiresAt, issuedAt),
+      expiresIn: _expiresIn(row.expiresAt, issuedAt),
       scopes: scopes,
     );
   }
 
-  int _requiredExpiresIn(DateTime? expiresAt, DateTime issuedAt) {
-    if (expiresAt == null) {
-      throw StateError('OAuth credential has no expiration time.');
-    }
-
-    return expiresAt.difference(issuedAt).inSeconds;
-  }
+  int? _expiresIn(DateTime? expiresAt, DateTime issuedAt) =>
+      expiresAt?.difference(issuedAt).inSeconds;
 }
 
 extension _OAuthCredentialRefresh on OAuthCredentialService {
@@ -259,6 +266,8 @@ extension _OAuthCredentialTokenRequests on OAuthCredentialService {
       'client_id': value,
     if (request.clientSecret case final value? when value.isNotEmpty)
       'client_secret': value,
+    if (request.resource case final value? when value.isNotEmpty)
+      'resource': value,
   };
 
   Options _refreshTokenOptions() => .new(
@@ -370,6 +379,7 @@ extension _OAuthCredentialRefreshContext on OAuthCredentialService {
     refreshToken: context.refreshToken,
     clientId: metadata.clientId,
     clientSecret: context.clientSecret,
+    resource: metadata.resource,
     previousScopes: metadata.scopes,
   );
 

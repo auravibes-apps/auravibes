@@ -90,8 +90,13 @@ void main() {
       var refreshCalls = 0;
       final dio = Dio()
         ..httpClientAdapter = _FakeHttpClientAdapter(
-          onFetch: (_) async {
+          onFetch: (options) async {
             refreshCalls++;
+            final data = options.data;
+            final body = data is FormData
+                ? {for (final field in data.fields) field.key: field.value}
+                : Map<String, dynamic>.from(data as Map);
+            expect(body['resource'], 'https://api.githubcopilot.com/mcp/');
 
             return ResponseBody.fromString(
               jsonEncode({
@@ -128,6 +133,7 @@ void main() {
                 clientId: 'client-id',
                 authorizationEndpoint: 'https://1.1.1.1/authorize',
                 tokenEndpoint: 'https://1.1.1.1/token',
+                resource: 'https://api.githubcopilot.com/mcp/',
               ),
             ),
           );
@@ -290,6 +296,7 @@ void main() {
                   clientId: 'client-id',
                   authorizationEndpoint: 'https://1.1.1.1/authorize',
                   tokenEndpoint: 'https://1.1.1.1/token',
+                  resource: 'https://api.githubcopilot.com/mcp/',
                 ),
               ),
             );
@@ -303,6 +310,7 @@ void main() {
         expect(oauth.clientId, 'client-id');
         expect(oauth.authorizationEndpoint, 'https://1.1.1.1/authorize');
         expect(oauth.tokenEndpoint, 'https://1.1.1.1/token');
+        expect(oauth.resource, 'https://api.githubcopilot.com/mcp/');
       },
     );
 
@@ -335,6 +343,36 @@ void main() {
       final accessToken = await service.getValidAccessToken(credentialId);
 
       expect(accessToken, 'access-token');
+    });
+
+    test('getValidAccessToken accepts non-expiring OAuth tokens', () async {
+      final fixture = await createFixture();
+      addTearDown(fixture.close);
+      final service = OAuthCredentialService(
+        fixture.serviceConnectionRepository,
+      );
+      final credentialId = await fixture.serviceConnectionRepository
+          .createMcpServiceConnection(
+            workspaceId: fixture.workspaceId,
+            profile: .new(
+              name: 'Server',
+              authenticationType: McpAuthenticationType.oauth(
+                token: .new(
+                  accessToken: 'access-token',
+                  issuedAt: DateTime.now(),
+                  refreshToken: null,
+                  expiresIn: null,
+                ),
+                clientId: 'client-id',
+                authorizationEndpoint: 'https://1.1.1.1/authorize',
+                tokenEndpoint: 'https://1.1.1.1/token',
+                resource: 'https://api.githubcopilot.com/mcp/',
+              ),
+            ),
+          );
+      if (credentialId == null) fail('OAuth credential was not created.');
+
+      expect(await service.getValidAccessToken(credentialId), 'access-token');
     });
 
     test('forceRefresh marks reauth when refresh config is missing', () async {

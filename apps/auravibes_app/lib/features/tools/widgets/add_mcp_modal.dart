@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -120,22 +121,32 @@ class const _McpFormFields({required final String workspaceId})
   @override
   Widget build(BuildContext context, WidgetRef ref) => _McpFormFieldsLayout(
     workspaceId: workspaceId,
+    oauthDeviceCode: ref.watch(
+      mcpFormProvider(workspaceId).select((value) => value.oauthDeviceCode),
+    ),
     showBearerTokenField: ref.watch(
       mcpFormProvider(workspaceId)
           .select((value) => value.showBearerTokenField),
+    ),
+    showOAuthFields: ref.watch(
+      mcpFormProvider(workspaceId).select((value) => value.showOAuthFields),
     ),
   );
 }
 
 class const _McpFormFieldsLayout({
   required final String workspaceId,
+  required final McpOAuthDeviceCode? oauthDeviceCode,
   required final bool showBearerTokenField,
+  required final bool showOAuthFields,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: _McpFormFieldChildren(
       workspaceId: workspaceId,
+      oauthDeviceCode: oauthDeviceCode,
       showBearerTokenField: showBearerTokenField,
+      showOAuthFields: showOAuthFields,
     ).values,
     spacing: .md,
     crossAxisAlignment: .stretch,
@@ -143,20 +154,27 @@ class const _McpFormFieldsLayout({
 }
 
 class _McpFormFieldChildren {
-  new({required String workspaceId, required bool showBearerTokenField})
-    : values = [
-        _ErrorBanner(workspaceId: workspaceId),
-        _NameInput(workspaceId: workspaceId),
-        _DescriptionInput(workspaceId: workspaceId),
-        _UrlInput(workspaceId: workspaceId),
-        _TransportSelector(workspaceId: workspaceId),
-        _AuthenticationSelector(workspaceId: workspaceId),
-        Visibility(
-          child: _BearerTokenField(workspaceId: workspaceId),
-          visible: showBearerTokenField,
-        ),
-        _VerificationStatus(workspaceId: workspaceId),
-      ];
+  new({
+    required String workspaceId,
+    required McpOAuthDeviceCode? oauthDeviceCode,
+    required bool showBearerTokenField,
+    required bool showOAuthFields,
+  }) : values = [
+         _ErrorBanner(workspaceId: workspaceId),
+         _NameInput(workspaceId: workspaceId),
+         _DescriptionInput(workspaceId: workspaceId),
+         _UrlInput(workspaceId: workspaceId),
+         _TransportSelector(workspaceId: workspaceId),
+         _AuthenticationSelector(workspaceId: workspaceId),
+         if (showOAuthFields) _OAuthAdvancedSettings(workspaceId: workspaceId),
+         if (oauthDeviceCode case final value?)
+           _McpOAuthDeviceCodePanel(deviceCode: value),
+         Visibility(
+           child: _BearerTokenField(workspaceId: workspaceId),
+           visible: showBearerTokenField,
+         ),
+         _VerificationStatus(workspaceId: workspaceId),
+       ];
 
   final List<Widget> values;
 }
@@ -217,13 +235,20 @@ class const _LoadingOverlay({required final String workspaceId})
       mcpFormProvider(workspaceId)
           .select((value) => value.isSubmitting || value.isTestingConnection),
     ),
+    hasDeviceCode:
+        ref.watch(
+          mcpFormProvider(workspaceId).select((value) => value.oauthDeviceCode),
+        ) !=
+        null,
   );
 }
 
-class const _LoadingOverlayContent({required final bool isBusy})
-    extends StatelessWidget {
+class const _LoadingOverlayContent({
+  required final bool isBusy,
+  required final bool hasDeviceCode,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => isBusy
+  Widget build(BuildContext context) => isBusy && !hasDeviceCode
       ? _LoadingOverlaySurface(color: context.auraColors.surface)
       : const SizedBox.shrink();
 }
@@ -259,9 +284,47 @@ String _displayErrorMessage(String errorMessage) => switch (errorMessage) {
   LocaleKeys.tools_screen_mcp_error ||
   LocaleKeys.workspace_capabilities_unsupported_error ||
   LocaleKeys.mcp_modal_verification_required ||
-  LocaleKeys.mcp_modal_verification_expired => errorMessage.tr(),
+  LocaleKeys.mcp_modal_verification_expired ||
+  LocaleKeys.mcp_modal_oauth_configuration ||
+  LocaleKeys.mcp_modal_oauth_client_id_required ||
+  LocaleKeys.mcp_modal_oauth_registration_failed ||
+  LocaleKeys.mcp_modal_oauth_malformed ||
+  LocaleKeys.mcp_modal_oauth_cancelled ||
+  LocaleKeys.mcp_modal_oauth_expired ||
+  LocaleKeys.mcp_modal_oauth_issuer_mismatch ||
+  LocaleKeys.mcp_modal_oauth_token_exchange ||
+  LocaleKeys.mcp_modal_oauth_discovery => errorMessage.tr(),
   _ => errorMessage,
 };
+
+class const _McpOAuthDeviceCodePanel({
+  required final McpOAuthDeviceCode deviceCode,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCard(
+    child: AuraColumn(
+      children: [
+        const AuraText(
+          child: TextLocale(LocaleKeys.mcp_modal_oauth_device_code_title),
+          style: .heading6,
+        ),
+        const AuraText(
+          child: TextLocale(
+            LocaleKeys.mcp_modal_oauth_device_code_instructions,
+          ),
+        ),
+        AuraSelectableText(
+          deviceCode.userCode,
+          style: .heading5,
+          tint: .primary,
+        ),
+        AuraSelectableText(deviceCode.verificationUrl, tint: .primary),
+      ],
+      spacing: .sm,
+      crossAxisAlignment: .stretch,
+    ),
+  );
+}
 
 class const _ErrorBannerContent({required final String message})
     extends StatelessWidget {
@@ -704,6 +767,34 @@ class _AuthenticationSelectorChildren {
        ];
 
   final List<Widget> values;
+}
+
+class const _OAuthAdvancedSettings({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraAccordion(
+    items: [
+      AuraAccordionItem(
+        title: LocaleKeys.mcp_modal_advanced_settings.tr(context: context),
+        child: _OAuthClientIdField(workspaceId: workspaceId),
+      ),
+    ],
+  );
+}
+
+class const _OAuthClientIdField({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _McpTextInput(
+    workspaceId: workspaceId,
+    valueSelector: (value) => value.oauthClientId,
+    onChangedSelector: (value) => value.setOAuthClientId,
+    placeholder: const TextLocale(
+      LocaleKeys.mcp_modal_fields_client_id_placeholder,
+    ),
+    label: const TextLocale(LocaleKeys.mcp_modal_fields_client_id_label),
+    hint: const TextLocale(LocaleKeys.mcp_modal_fields_client_id_hint),
+  );
 }
 
 McpAuthenticationTypeOptions _watchMcpAuthentication(

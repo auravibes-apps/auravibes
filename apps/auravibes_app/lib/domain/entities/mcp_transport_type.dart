@@ -148,6 +148,8 @@ sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
     required String clientId,
     required String authorizationEndpoint,
     required String tokenEndpoint,
+    String? issuer,
+    String? resource,
   }) = McpAuthenticationTypeOAuth;
 
   const factory bearerToken({required String bearerToken}) =
@@ -283,6 +285,8 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
 
     required String? bearerToken,
 
+    String? oauthClientId,
+
     String? description,
   }) = _McpServerFormToCreate;
 
@@ -295,7 +299,7 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
       case .none:
         return true;
       case .oauth:
-        // OAuth requires no additional fields here.
+        // Discovery may provide the OAuth client ID.
         return true;
       case .bearerToken:
         return hasValidAuthentication();

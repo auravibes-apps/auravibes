@@ -928,7 +928,25 @@ abstract class LocaleKeys {
   static const mcp_modal_auth_none = 'mcp_modal.auth.none';
   static const mcp_modal_auth_oauth = 'mcp_modal.auth.oauth';
   static const mcp_modal_auth_bearer_token = 'mcp_modal.auth.bearer_token';
+  static const mcp_modal_oauth_configuration = 'mcp_modal.oauth.configuration';
+  static const mcp_modal_oauth_client_id_required =
+      'mcp_modal.oauth.client_id_required';
+  static const mcp_modal_oauth_registration_failed =
+      'mcp_modal.oauth.registration_failed';
+  static const mcp_modal_oauth_malformed = 'mcp_modal.oauth.malformed';
+  static const mcp_modal_oauth_cancelled = 'mcp_modal.oauth.cancelled';
+  static const mcp_modal_oauth_expired = 'mcp_modal.oauth.expired';
+  static const mcp_modal_oauth_issuer_mismatch =
+      'mcp_modal.oauth.issuer_mismatch';
+  static const mcp_modal_oauth_token_exchange =
+      'mcp_modal.oauth.token_exchange';
+  static const mcp_modal_oauth_discovery = 'mcp_modal.oauth.discovery';
+  static const mcp_modal_oauth_device_code_title =
+      'mcp_modal.oauth.device_code_title';
+  static const mcp_modal_oauth_device_code_instructions =
+      'mcp_modal.oauth.device_code_instructions';
   static const mcp_modal_oauth_section_title = 'mcp_modal.oauth_section_title';
+  static const mcp_modal_advanced_settings = 'mcp_modal.advanced_settings';
   static const mcp_modal_bearer_section_title =
       'mcp_modal.bearer_section_title';
   static const mcp_modal_fields_name_label = 'mcp_modal.fields.name.label';
@@ -954,6 +972,8 @@ abstract class LocaleKeys {
       'mcp_modal.fields.client_id.label';
   static const mcp_modal_fields_client_id_placeholder =
       'mcp_modal.fields.client_id.placeholder';
+  static const mcp_modal_fields_client_id_hint =
+      'mcp_modal.fields.client_id.hint';
   static const mcp_modal_fields_token_endpoint_label =
       'mcp_modal.fields.token_endpoint.label';
   static const mcp_modal_fields_token_endpoint_placeholder =

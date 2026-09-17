@@ -61,7 +61,7 @@ final class McpFormNotifierProvider
   }
 }
 
-String _$mcpFormNotifierHash() => r'd63ad0b4f7ca1b54e87dc139c387e69ecac66e35';
+String _$mcpFormNotifierHash() => r'5efaf86c84b033b9b4fde9066eec460b932272df';
 
 /// Notifier for managing MCP form state.
 

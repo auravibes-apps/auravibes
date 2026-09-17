@@ -20,6 +20,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -333,6 +334,8 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
+    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
+    bool Function()? isOAuthCancelled,
   }) async {
     _prepareWorkspace(workspaceId);
     await _discardPreparedMcpConnectionsForWorkspace(workspaceId);
@@ -346,7 +349,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       return await _prepareCloudMcpConnection(request, serverToCreate);
     }
 
-    return await _prepareLocalMcpConnection(request, serverToCreate);
+    return await _prepareLocalMcpConnection(
+      request,
+      serverToCreate,
+      onOAuthDeviceCode: onOAuthDeviceCode,
+      isOAuthCancelled: isOAuthCancelled,
+    );
   }
 
   /// Persist a previously prepared MCP connection.
@@ -693,10 +701,16 @@ extension _McpPreparationOperations on McpConnectionNotifier {
 
   Future<McpConnectionVerification> _prepareLocalMcpConnection(
     _McpPrepareRequest request,
-    McpServerFormToCreate server,
-  ) async {
+    McpServerFormToCreate server, {
+    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
+    bool Function()? isOAuthCancelled,
+  }) async {
     final manager = _requiredMcpManager;
-    final serverInfo = await _buildMcpServerInfo(server);
+    final serverInfo = await _buildMcpServerInfo(
+      server,
+      onOAuthDeviceCode: onOAuthDeviceCode,
+      isOAuthCancelled: isOAuthCancelled,
+    );
 
     return await _connectPreparedLocalMcp(request, manager, serverInfo);
   }
@@ -857,6 +871,7 @@ String _mcpConnectionFingerprint(McpServerFormToCreate server) {
     'transport': server.transport.toJson(),
     'authenticationType': server.authenticationType.name,
     'bearerTokenDigest': sha256.convert(utf8.encode(bearerToken)).toString(),
+    'oauthClientId': server.oauthClientId?.trim() ?? '',
   });
 }
 
@@ -894,13 +909,18 @@ McpAuthenticationType _preparedMcpAuthentication(
 }
 
 extension _McpConnectionAddOperations on McpConnectionNotifier {
-  Future<McpServerToCreate> _buildMcpServerInfo(McpServerFormToCreate server) =>
-      BuildMcpServerToCreateUseCase(
-        authenticator: .new(
-          callbackUrlScheme: 'me-auravibes',
-          clientName: 'Aura Vibes MCP Client',
-        ),
-      ).call(server);
+  Future<McpServerToCreate> _buildMcpServerInfo(
+    McpServerFormToCreate server, {
+    void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
+    bool Function()? isOAuthCancelled,
+  }) => BuildMcpServerToCreateUseCase(
+    authenticator: .new(
+      callbackUrlScheme: 'me-auravibes',
+      clientName: 'Aura Vibes MCP Client',
+    ),
+    onDeviceCode: onOAuthDeviceCode,
+    isOAuthCancelled: isOAuthCancelled,
+  ).call(server);
 
   Future<String?> _createMcpServiceConnection(
     ServiceConnectionRepository serviceConnectionRepository,

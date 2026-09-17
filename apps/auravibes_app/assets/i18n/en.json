@@ -771,7 +771,21 @@
       "oauth": "OAuth",
       "bearer_token": "Bearer Token"
     },
+    "oauth": {
+      "configuration": "MCP OAuth is not configured.",
+      "client_id_required": "This MCP's OAuth provider needs a public client ID. Open Advanced settings and enter the client ID provided by the provider, then try again. If the provider offers another authentication method, you can use that instead.",
+      "registration_failed": "Automatic OAuth registration failed for this MCP. Open Advanced settings and enter a public client ID registered with the provider, or check the provider's OAuth setup.",
+      "malformed": "MCP OAuth returned an invalid response.",
+      "cancelled": "MCP OAuth authorization was cancelled.",
+      "expired": "MCP OAuth authorization expired.",
+      "issuer_mismatch": "MCP OAuth issuer validation failed.",
+      "token_exchange": "MCP OAuth token exchange failed.",
+      "discovery": "AuraVibes could not find usable OAuth settings for this MCP. Check the server URL and confirm that the provider supports OAuth.",
+      "device_code_title": "Complete authorization",
+      "device_code_instructions": "Use this code in the opened browser window:"
+    },
     "oauth_section_title": "OAuth Configuration",
+    "advanced_settings": "Advanced settings",
     "bearer_section_title": "Bearer Token",
     "fields": {
       "name": {
@@ -798,8 +812,9 @@
         "hint": "Enable HTTP/2 protocol for better performance"
       },
       "client_id": {
-        "label": "Client ID",
-        "placeholder": "your-client-id"
+        "label": "Public OAuth client ID (optional)",
+        "placeholder": "Provided by your OAuth provider",
+        "hint": "Usually discovered or registered automatically. Enter one only when the provider requires a pre-registered client."
       },
       "token_endpoint": {
         "label": "Token Endpoint",

@@ -458,6 +458,8 @@ ServiceConnectionMetadata _oauthMetadataFromValues(
   List<String>? scopes,
 ) => ServiceConnectionMetadata(
   clientId: authenticationType.clientId,
+  issuer: authenticationType.issuer,
+  resource: authenticationType.resource,
   authorizationEndpoint: authenticationType.authorizationEndpoint,
   tokenEndpoint: authenticationType.tokenEndpoint,
   scopes: scopes ?? const [],

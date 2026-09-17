@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -27,8 +28,10 @@ abstract class const McpFormState._() with _$McpFormState {
     @Default(McpAuthenticationTypeOptions.none)
     McpAuthenticationTypeOptions authenticationType,
     @Default('') String bearerToken,
+    @Default('') String oauthClientId,
     @Default(false) bool useHttp2,
     @Default(false) bool isSubmitting,
+    McpOAuthDeviceCode? oauthDeviceCode,
     @Default(false) bool isTestingConnection,
     @Default(false) bool isConnectionVerified,
     @Default(0) int verifiedToolCount,
@@ -52,6 +55,7 @@ abstract class const McpFormState._() with _$McpFormState {
       transport: toTransportType(),
       authenticationType: authenticationType,
       bearerToken: normalizedBearerToken(),
+      oauthClientId: normalizedOAuthClientId(),
       description: normalizedDescription(),
     );
   }
@@ -59,6 +63,10 @@ abstract class const McpFormState._() with _$McpFormState {
   /// Return the bearer token with surrounding whitespace removed.
   String? normalizedBearerToken() =>
       bearerToken.trim().isEmpty ? null : bearerToken.trim();
+
+  /// Return the OAuth client ID with surrounding whitespace removed.
+  String? normalizedOAuthClientId() =>
+      oauthClientId.trim().isEmpty ? null : oauthClientId.trim();
 
   /// Return the description with surrounding whitespace removed.
   String? normalizedDescription() =>
@@ -107,6 +115,7 @@ class McpFormNotifier extends _$McpFormNotifier {
   Timer? _verificationExpiryTimer;
   var _connectionVersion = 0;
   var _isDisposed = false;
+  var _oauthCancelled = false;
 
   McpFormState get _formState => state;
 
@@ -126,7 +135,11 @@ class McpFormNotifier extends _$McpFormNotifier {
   McpFormState build(String workspaceId) {
     _workspaceId = workspaceId;
     _isDisposed = false;
-    final _ = ref.onDispose(() => _disposeMcpFormNotifier(this));
+    _oauthCancelled = false;
+    final _ = ref.onDispose(() {
+      _oauthCancelled = true;
+      _disposeMcpFormNotifier(this);
+    });
 
     return const McpFormState();
   }
@@ -172,6 +185,7 @@ extension McpFormNotifierWorkflowActions on McpFormNotifier {
     _verificationId = null;
     _verificationExpiryTimer?.cancel();
     _verificationExpiryTimer = null;
+    _clearOAuthDeviceCode();
     if (discard && verificationId != null) {
       unawaited(_discardPreparedVerification(verificationId));
     }
@@ -189,6 +203,7 @@ extension McpFormNotifierWorkflowActions on McpFormNotifier {
     _verificationId = null;
     _verificationExpiryTimer?.cancel();
     _verificationExpiryTimer = null;
+    _clearOAuthDeviceCode();
     unawaited(_discardPreparedVerification(verificationId));
     if (_isDisposed) return;
     _formState = _formState.copyWith(
@@ -196,6 +211,12 @@ extension McpFormNotifierWorkflowActions on McpFormNotifier {
       verifiedToolCount: 0,
       errorMessage: LocaleKeys.mcp_modal_verification_expired,
     );
+  }
+
+  void _clearOAuthDeviceCode() {
+    if (_formState.oauthDeviceCode != null) {
+      _formState = _formState.copyWith(oauthDeviceCode: null);
+    }
   }
 }
 
@@ -213,7 +234,10 @@ extension McpFormNotifierConnectionActions on McpFormNotifier {
   void setAuthenticationType(McpAuthenticationTypeOptions value) {
     _requireAuthenticationCapability(value);
     if (value == _formState.authenticationType) return;
-    _formState = _formState.copyWith(authenticationType: value);
+    _formState = _formState.copyWith(
+      authenticationType: value,
+      oauthDeviceCode: null,
+    );
     _invalidateConnectionVerification();
   }
 }
@@ -239,6 +263,17 @@ extension McpFormNotifierFieldActions on McpFormNotifier {
     _formState = _formState.copyWith(bearerToken: value);
     _invalidateConnectionVerification();
   }
+
+  /// Update the optional OAuth client ID field.
+  void setOAuthClientId(String value) {
+    if (value == _formState.oauthClientId) return;
+    _formState = _formState.copyWith(oauthClientId: value);
+    _invalidateConnectionVerification();
+  }
+
+  /// Show the current OAuth device-code instructions.
+  void setOAuthDeviceCode(McpOAuthDeviceCode value) =>
+      _formState = _formState.copyWith(oauthDeviceCode: value);
 
   /// Update the HTTP/2 toggle.
   void setUseHttp2({required bool value}) {
@@ -316,7 +351,9 @@ Future<bool> _runMcpFormSubmit(
 }
 
 Future<bool> _runMcpFormConnectionTest(McpFormNotifier notifier) async {
-  notifier._invalidateConnectionVerification();
+  notifier
+    .._invalidateConnectionVerification()
+    .._oauthCancelled = false;
   final connectionVersion = notifier._connectionVersion;
   _setMcpTesting(notifier, value: true);
   _clearMcpError(notifier);
@@ -358,6 +395,8 @@ Future<McpConnectionVerification> _prepareMcpFormConnection(
 ) => connection.prepareMcpConnection(
   notifier._formState.toCreateEntity(),
   workspaceId: notifier._workspaceId,
+  onOAuthDeviceCode: notifier.setOAuthDeviceCode,
+  isOAuthCancelled: () => notifier._oauthCancelled,
 );
 
 Future<bool> _finishMcpFormConnectionTest(
@@ -374,6 +413,7 @@ Future<bool> _finishMcpFormConnectionTest(
   }
 
   final verified = _setMcpVerification(notifier, verification);
+  notifier._clearOAuthDeviceCode();
   _setMcpTesting(notifier, value: false);
 
   return verified;
@@ -432,12 +472,17 @@ extension McpFormNotifierSubmitFailureActions on McpFormNotifier {
 
   bool _rejectSubmission(Exception error, StackTrace stackTrace) {
     _logSubmissionFailure(error, stackTrace);
-    if (error is McpVerificationRequiredException) {
-      _clearVerification(discard: false);
-      _setMcpError(this, LocaleKeys.mcp_modal_verification_required);
-    } else {
-      _setMcpError(this, LocaleKeys.tools_screen_mcp_error);
-    }
+    _clearOAuthDeviceCode();
+    final errorMessage = switch (error) {
+      McpVerificationRequiredException() => () {
+        _clearVerification(discard: false);
+
+        return LocaleKeys.mcp_modal_verification_required;
+      }(),
+      McpOAuthException(:final localizationKey) => localizationKey,
+      _ => LocaleKeys.tools_screen_mcp_error,
+    };
+    _setMcpError(this, errorMessage);
     _setMcpSubmitting(this, value: false);
 
     return false;
@@ -446,8 +491,10 @@ extension McpFormNotifierSubmitFailureActions on McpFormNotifier {
   void _logSubmissionFailure(Exception error, StackTrace stackTrace) {
     _logger.severe(
       'MCP form submit failed workspace=$_workspaceId '
+      'endpoint=${_safeMcpLogUrl(_formState.url)} '
       'transport=${_formState.transport.name} '
-      'auth=${_formState.authenticationType.name}',
+      'auth=${_formState.authenticationType.name} '
+      'errorType=${error.runtimeType}',
       LogRedaction.redact(error.toString()),
       stackTrace,
     );
@@ -459,12 +506,15 @@ extension McpFormNotifierConnectionTestActions on McpFormNotifier {
     if (_isDisposed) return false;
     _logger.warning(
       'MCP form connection test failed workspace=$_workspaceId '
+      'endpoint=${_safeMcpLogUrl(_formState.url)} '
       'transport=${_formState.transport.name} '
-      'auth=${_formState.authenticationType.name}',
+      'auth=${_formState.authenticationType.name} '
+      'errorType=${error.runtimeType}',
       LogRedaction.redact(error.toString()),
       stackTrace,
     );
     _clearVerification(discard: false);
+    _clearOAuthDeviceCode();
     _setMcpError(this, _redactedConnectionTestError(error));
     _setMcpTesting(this, value: false);
 
@@ -520,12 +570,24 @@ void _markMcpVerification(McpFormNotifier notifier, int toolCount) {
 }
 
 String _redactedConnectionTestError(Object error) {
+  if (error case McpOAuthException(:final localizationKey)) {
+    return localizationKey;
+  }
   final message = LogRedaction.redact(error.toString()).trim();
   if (message.isEmpty || message == 'Exception') {
     return LocaleKeys.tools_screen_mcp_error;
   }
 
   return message;
+}
+
+String _safeMcpLogUrl(String value) {
+  final uri = Uri.tryParse(value);
+  if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+    return '<invalid-url>';
+  }
+
+  return '${uri.origin}${uri.path.isEmpty ? '/' : uri.path}';
 }
 
 WorkspaceMcpTransport _mcpTransportCapability(McpTransportTypeOptions value) =>
