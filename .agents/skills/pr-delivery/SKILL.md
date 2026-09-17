@@ -52,9 +52,13 @@ editing this skill.
 1. Confirm repository root, worktree status, current branch, latest commit,
    remotes, GitHub authentication, and repository default branch. Use the
    read-only commands already documented by `AGENTS.md` and `review-pr`.
-2. Stop on a detached head, protected integration branch, missing `gh` auth,
-   or a mixed worktree that contains unrelated user changes. Preserve those
-   changes. Never rewrite history or force-push.
+2. If `git branch --show-current` is empty, do not block. Derive a short
+   descriptive branch name from the delivery request and changed files, then
+   create it from the current `HEAD` with `git switch -c <type>/<summary>`
+   before continuing. Use `fix/`, `feat/`, `chore/`, or `docs/` as appropriate.
+   If the current branch has a name, keep it. Stop on a protected integration
+   branch, missing `gh` auth, or a mixed worktree that contains unrelated user
+   changes. Preserve those changes. Never rewrite history or force-push.
 3. Find the open PR for the current branch. If none exists, check for a closed
    or merged PR before creating another one. Do not create a duplicate without
    the user's decision.
@@ -89,8 +93,10 @@ Build a short plan by reading the applicable workflow jobs:
   hide drift.
 
 Finish local validation with the repository's documented status and diff
-checks. Stage named intended files only. Use the required Conventional Commit
-form from `AGENTS.md`.
+checks. If intended work remains, stage and commit it using explicit file
+paths only; never use `git add .`, `git add -A`, or `git add --all`. Use the
+required Conventional Commit form from `AGENTS.md`. Leave unrelated changes
+unstaged.
 
 ## Push and create or update the PR
 
