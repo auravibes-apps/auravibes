@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/agent_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/agents_repository.dart';
@@ -151,6 +153,31 @@ void main() {
     expect(await fixture.agentsRepository.getAgentById(updated.id), isNotNull);
     expect(await fixture.agentsRepository.deleteAgent(updated.id), isTrue);
     expect(await fixture.agentsRepository.getAgentById(updated.id), isNull);
+  });
+
+  test('streams agents created after subscription', () async {
+    final fixture = await _AgentsRepositoryFixture.create();
+    addTearDown(fixture.close);
+
+    final iterator = StreamIterator(
+      fixture.agentsRepository.watchAgentsByWorkspace(fixture.workspaceId),
+    );
+    addTearDown(iterator.cancel);
+
+    expect(await iterator.moveNext(), isTrue);
+    expect(iterator.current, isEmpty);
+
+    final created = await fixture.agentsRepository.createAgent(
+      fixture.workspaceId,
+      const AgentToCreate(
+        name: 'Helper',
+        description: 'Use for helper work',
+        content: 'Prompt',
+      ),
+    );
+
+    expect(await iterator.moveNext(), isTrue);
+    expect(iterator.current.single.id, created.id);
   });
 
   test(
