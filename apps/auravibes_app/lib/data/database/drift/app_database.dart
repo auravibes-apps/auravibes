@@ -11,6 +11,7 @@ import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.da
 import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/recent_model_selections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credentials_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_template_tools_dao.dart';
@@ -32,6 +33,7 @@ import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/message_attachments.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
+import 'package:auravibes_app/data/database/drift/tables/recent_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_credential_definitions.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
@@ -55,6 +57,7 @@ export 'daos/conversation_skills_dao.dart';
 export 'daos/conversation_tools_dao.dart';
 export 'daos/message_dao.dart';
 export 'daos/model_connections_dao.dart';
+export 'daos/recent_model_selections_dao.dart';
 export 'daos/skill_credentials_dao.dart';
 export 'daos/workspace_compaction_settings_dao.dart';
 export 'daos/workspace_dao.dart';
@@ -89,6 +92,7 @@ part 'app_database.g.dart';
     SkillTemplateTools,
     ConversationSkills,
     AppSkillWorkspaceSettings,
+    RecentModelSelections,
   ],
   daos: [
     WorkspaceDao,
@@ -111,6 +115,7 @@ part 'app_database.g.dart';
     SkillTemplateToolsDao,
     ConversationSkillsDao,
     AppSkillWorkspaceSettingsDao,
+    RecentModelSelectionsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -122,8 +127,9 @@ class AppDatabase extends _$AppDatabase {
   static const _conversationListSchemaVersion = 8;
   static const int _conversationPinOrderingSchemaVersion =
       _conversationListSchemaVersion + 1;
-  static const int _forkSchemaVersion =
+  static const int _recentModelSelectionsSchemaVersion =
       _conversationPinOrderingSchemaVersion + 1;
+  static const int _forkSchemaVersion = _recentModelSelectionsSchemaVersion + 1;
   static const int _currentSchemaVersion = _forkSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
@@ -168,6 +174,7 @@ extension on AppDatabase {
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
     await _upgradeConversationListSchema(from);
+    await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
   }
 
@@ -233,6 +240,11 @@ extension on AppDatabase {
     );
   }
 
+  Future<void> _upgradeRecentModelSelectionsSchema(Migrator m) async {
+    if (await _tableExists('recent_model_selections')) return;
+    await m.createTable(recentModelSelections);
+  }
+
   Future<void> _backfillAgentDescriptions(int from) async {
     if (from >= AppDatabase._cloudWorkspaceSchemaVersion) return;
     await customStatement(
@@ -244,10 +256,26 @@ extension on AppDatabase {
   Future<void> _upgradeForkSchema(Migrator m, int from) async {
     if (from >= AppDatabase._forkSchemaVersion) return;
     if (!await _tableExists('conversations')) return;
-    await m.addColumn(conversations, conversations.forkSourceConversationId);
-    await m.addColumn(conversations, conversations.forkSourceTitle);
-    await m.addColumn(conversations, conversations.forkThroughMessageId);
-    await m.addColumn(conversations, conversations.forkMaterializedAt);
+    await _addConversationColumnIfMissing(
+      m,
+      'fork_source_conversation_id',
+      conversations.forkSourceConversationId,
+    );
+    await _addConversationColumnIfMissing(
+      m,
+      'fork_source_title',
+      conversations.forkSourceTitle,
+    );
+    await _addConversationColumnIfMissing(
+      m,
+      'fork_through_message_id',
+      conversations.forkThroughMessageId,
+    );
+    await _addConversationColumnIfMissing(
+      m,
+      'fork_materialized_at',
+      conversations.forkMaterializedAt,
+    );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS conversations_fork_source_idx '
       'ON conversations (fork_source_conversation_id)',
@@ -256,6 +284,15 @@ extension on AppDatabase {
 }
 
 extension on AppDatabase {
+  Future<void> _addConversationColumnIfMissing<T extends Object>(
+    Migrator m,
+    String columnName,
+    GeneratedColumn<T> column,
+  ) async {
+    if (await _columnExists('conversations', columnName)) return;
+    await m.addColumn(conversations, column);
+  }
+
   Future<void> _upgradeToSchema4(Migrator m) async {
     await m.addColumn(conversations, conversations.parentConversationId);
     await m.createTable(messageAttachments);

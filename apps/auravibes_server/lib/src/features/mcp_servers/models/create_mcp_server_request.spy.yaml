@@ -8,3 +8,4 @@ fields:
   useHttp2: bool
   description: String?
   bearerToken: String?
+  verificationReceipt: String?

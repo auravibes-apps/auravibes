@@ -40,10 +40,18 @@ class _SubmittingMcpFormNotifier extends McpFormNotifier {
 
 class _SuccessfulMcpFormNotifier extends McpFormNotifier {
   @override
-  McpFormState build(String workspaceId) => const McpFormState();
+  McpFormState build(String workspaceId) => const McpFormState(
+    name: 'Test MCP',
+    url: 'https://mcp.example.com',
+    isConnectionVerified: true,
+    verifiedToolCount: 2,
+  );
 
   @override
   Future<bool> submit() async => true;
+
+  @override
+  Future<bool> testConnection() async => true;
 }
 
 class _ErrorMcpFormNotifier extends McpFormNotifier {
@@ -158,11 +166,23 @@ void main() {
       expect(find.byType(AddMcpModal), findsNothing);
     });
 
-    testWidgets('renders cancel and save buttons', (tester) async {
+    testWidgets('renders cancel, test, and save buttons', (tester) async {
       await _pumpAndInit(tester, const _Subject());
       await _showDialog(tester);
 
-      expect(find.byType(AuraButton), findsNWidgets(2));
+      expect(find.byType(AuraButton), findsNWidgets(3));
+    });
+
+    testWidgets('save is disabled until connection is verified', (
+      tester,
+    ) async {
+      await _pumpAndInit(tester, const _Subject());
+      await _showDialog(tester);
+
+      final saveButton = tester.widget<AuraButton>(
+        find.byType(AuraButton).last,
+      );
+      expect(saveButton.disabled, isTrue);
     });
 
     testWidgets('cancel button dismisses dialog', (tester) async {
@@ -351,12 +371,37 @@ void main() {
       );
       await _showDialog(tester);
 
+      final saveButton = tester.widget<AuraButton>(
+        find.byType(AuraButton).last,
+      );
+      expect(saveButton.disabled, isFalse);
       await tester.tap(find.byType(AuraButton).last);
       await tester.pump();
       await tester.pump();
 
       expect(find.text('MCP server configuration saved'), findsOneWidget);
       expect(find.byType(AddMcpModal), findsNothing);
+    });
+
+    testWidgets('test connection shows success message and keeps dialog open', (
+      tester,
+    ) async {
+      await _pumpAndInit(
+        tester,
+        const _Subject(formNotifier: _SuccessfulMcpFormNotifier.new),
+      );
+      await _showDialog(tester);
+
+      await tester.tap(find.text('Verify connection'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Connection verified'), findsOneWidget);
+      expect(
+        find.text(LocaleKeys.mcp_modal_verification_success.tr(args: ['2'])),
+        findsOneWidget,
+      );
+      expect(find.byType(AddMcpModal), findsOneWidget);
     });
   });
 }

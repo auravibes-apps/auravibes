@@ -99,6 +99,10 @@ import 'package:auravibes_server/src/generated/features/mcp_servers/models/disco
     as _imtqkt48;
 import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_result.dart'
     as _i3ijx64u;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/verify_mcp_server_request.dart'
+    as _iqyjig0z;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/verify_mcp_server_result.dart'
+    as _itziva9n;
 import 'package:auravibes_server/src/generated/features/model_connections/models/api_model.dart'
     as _il9jpql1;
 import 'package:auravibes_server/src/generated/features/model_connections/models/api_model_provider.dart'
@@ -109,12 +113,16 @@ import 'package:auravibes_server/src/generated/features/model_connections/models
     as _ikucadiy;
 import 'package:auravibes_server/src/generated/features/model_connections/models/list_model_connections_request.dart'
     as _ii4wbihw;
+import 'package:auravibes_server/src/generated/features/model_connections/models/list_recent_model_selections_request.dart'
+    as _itstzlin;
 import 'package:auravibes_server/src/generated/features/model_connections/models/list_workspace_model_selections_request.dart'
     as _infwdxn7;
 import 'package:auravibes_server/src/generated/features/model_connections/models/model_connection_view.dart'
     as _imf0a6vt;
 import 'package:auravibes_server/src/generated/features/model_connections/models/model_sync_result.dart'
     as _is6egp24;
+import 'package:auravibes_server/src/generated/features/model_connections/models/record_recent_model_selection_request.dart'
+    as _i87c7wxl;
 import 'package:auravibes_server/src/generated/features/model_connections/models/test_and_sync_model_connection_request.dart'
     as _iskhxh94;
 import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
@@ -1593,6 +1601,35 @@ class _McpServerEndpoint {
 
   final _is.SerializationManager _serializationManager;
 
+  _ida.Future<_itziva9n.VerifyMcpServerResult> verify(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iqyjig0z.VerifyMcpServerRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'mcpServer',
+            method: 'verify',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'mcpServer',
+          methodName: 'verify',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_itziva9n.VerifyMcpServerResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<_i3p8mp89.CreateMcpServerResult> create(
     _ist.TestSessionBuilder sessionBuilder,
     _ij06ag3u.CreateMcpServerRequest request,
@@ -1886,6 +1923,64 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ipmnqqs6.WorkspaceModelSelectionView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<String>> listRecentSelections(
+    _ist.TestSessionBuilder sessionBuilder,
+    _itstzlin.ListRecentModelSelectionsRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'listRecentSelections',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'listRecentSelections',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<String>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> recordRecentSelection(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i87c7wxl.RecordRecentModelSelectionRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'recordRecentSelection',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'recordRecentSelection',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

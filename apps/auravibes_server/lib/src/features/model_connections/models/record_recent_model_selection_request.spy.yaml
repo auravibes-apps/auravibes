@@ -1,0 +1,4 @@
+class: RecordRecentModelSelectionRequest
+fields:
+  workspaceId: int
+  selectionId: String

@@ -140,6 +140,9 @@ import 'features/mcp_servers/models/discover_mcp_server_result.dart'
     as _i5i328k3;
 import 'features/mcp_servers/models/discovered_mcp_tool.dart' as _igzjg3pi;
 import 'features/mcp_servers/models/mcp_server_health.dart' as _iw1ftww6;
+import 'features/mcp_servers/models/verify_mcp_server_request.dart'
+    as _ic37m0ag;
+import 'features/mcp_servers/models/verify_mcp_server_result.dart' as _ig6h5o5u;
 import 'features/model_connections/models/api_model.dart' as _i8ct1fsr;
 import 'features/model_connections/models/api_model_provider.dart' as _ioo5yu9z;
 import 'features/model_connections/models/create_model_connection_request.dart'
@@ -148,11 +151,17 @@ import 'features/model_connections/models/delete_model_connection_request.dart'
     as _im8o8464;
 import 'features/model_connections/models/list_model_connections_request.dart'
     as _iuwdkoab;
+import 'features/model_connections/models/list_recent_model_selections_request.dart'
+    as _i1bpxcgb;
 import 'features/model_connections/models/list_workspace_model_selections_request.dart'
     as _i926jgxf;
 import 'features/model_connections/models/model_connection_view.dart'
     as _ikk9qcnz;
 import 'features/model_connections/models/model_sync_result.dart' as _il1l34li;
+import 'features/model_connections/models/recent_model_selection.dart'
+    as _idnhust5;
+import 'features/model_connections/models/record_recent_model_selection_request.dart'
+    as _igm745lu;
 import 'features/model_connections/models/test_and_sync_model_connection_request.dart'
     as _ixyi2mo6;
 import 'features/model_connections/models/update_model_connection_request.dart'
@@ -333,14 +342,19 @@ export 'features/mcp_servers/models/discover_mcp_server_request.dart';
 export 'features/mcp_servers/models/discover_mcp_server_result.dart';
 export 'features/mcp_servers/models/discovered_mcp_tool.dart';
 export 'features/mcp_servers/models/mcp_server_health.dart';
+export 'features/mcp_servers/models/verify_mcp_server_request.dart';
+export 'features/mcp_servers/models/verify_mcp_server_result.dart';
 export 'features/model_connections/models/api_model.dart';
 export 'features/model_connections/models/api_model_provider.dart';
 export 'features/model_connections/models/create_model_connection_request.dart';
 export 'features/model_connections/models/delete_model_connection_request.dart';
 export 'features/model_connections/models/list_model_connections_request.dart';
+export 'features/model_connections/models/list_recent_model_selections_request.dart';
 export 'features/model_connections/models/list_workspace_model_selections_request.dart';
 export 'features/model_connections/models/model_connection_view.dart';
 export 'features/model_connections/models/model_sync_result.dart';
+export 'features/model_connections/models/recent_model_selection.dart';
+export 'features/model_connections/models/record_recent_model_selection_request.dart';
 export 'features/model_connections/models/test_and_sync_model_connection_request.dart';
 export 'features/model_connections/models/update_model_connection_request.dart';
 export 'features/model_connections/models/workspace_model_connection.dart';
@@ -650,6 +664,12 @@ class Protocol extends _isc.SerializationManager {
     if (t == _iw1ftww6.McpServerHealth) {
       return _iw1ftww6.McpServerHealth.fromJson(data) as T;
     }
+    if (t == _ic37m0ag.VerifyMcpServerRequest) {
+      return _ic37m0ag.VerifyMcpServerRequest.fromJson(data) as T;
+    }
+    if (t == _ig6h5o5u.VerifyMcpServerResult) {
+      return _ig6h5o5u.VerifyMcpServerResult.fromJson(data) as T;
+    }
     if (t == _i8ct1fsr.ApiModel) {
       return _i8ct1fsr.ApiModel.fromJson(data) as T;
     }
@@ -665,6 +685,9 @@ class Protocol extends _isc.SerializationManager {
     if (t == _iuwdkoab.ListModelConnectionsRequest) {
       return _iuwdkoab.ListModelConnectionsRequest.fromJson(data) as T;
     }
+    if (t == _i1bpxcgb.ListRecentModelSelectionsRequest) {
+      return _i1bpxcgb.ListRecentModelSelectionsRequest.fromJson(data) as T;
+    }
     if (t == _i926jgxf.ListWorkspaceModelSelectionsRequest) {
       return _i926jgxf.ListWorkspaceModelSelectionsRequest.fromJson(data) as T;
     }
@@ -673,6 +696,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _il1l34li.ModelSyncResult) {
       return _il1l34li.ModelSyncResult.fromJson(data) as T;
+    }
+    if (t == _idnhust5.RecentModelSelection) {
+      return _idnhust5.RecentModelSelection.fromJson(data) as T;
+    }
+    if (t == _igm745lu.RecordRecentModelSelectionRequest) {
+      return _igm745lu.RecordRecentModelSelectionRequest.fromJson(data) as T;
     }
     if (t == _ixyi2mo6.TestAndSyncModelConnectionRequest) {
       return _ixyi2mo6.TestAndSyncModelConnectionRequest.fromJson(data) as T;
@@ -1246,6 +1275,18 @@ class Protocol extends _isc.SerializationManager {
       return (data != null ? _iw1ftww6.McpServerHealth.fromJson(data) : null)
           as T;
     }
+    if (t == _isc.getType<_ic37m0ag.VerifyMcpServerRequest?>()) {
+      return (data != null
+              ? _ic37m0ag.VerifyMcpServerRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_ig6h5o5u.VerifyMcpServerResult?>()) {
+      return (data != null
+              ? _ig6h5o5u.VerifyMcpServerResult.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_i8ct1fsr.ApiModel?>()) {
       return (data != null ? _i8ct1fsr.ApiModel.fromJson(data) : null) as T;
     }
@@ -1271,6 +1312,12 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_i1bpxcgb.ListRecentModelSelectionsRequest?>()) {
+      return (data != null
+              ? _i1bpxcgb.ListRecentModelSelectionsRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_i926jgxf.ListWorkspaceModelSelectionsRequest?>()) {
       return (data != null
               ? _i926jgxf.ListWorkspaceModelSelectionsRequest.fromJson(data)
@@ -1285,6 +1332,18 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _isc.getType<_il1l34li.ModelSyncResult?>()) {
       return (data != null ? _il1l34li.ModelSyncResult.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_idnhust5.RecentModelSelection?>()) {
+      return (data != null
+              ? _idnhust5.RecentModelSelection.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_igm745lu.RecordRecentModelSelectionRequest?>()) {
+      return (data != null
+              ? _igm745lu.RecordRecentModelSelectionRequest.fromJson(data)
+              : null)
           as T;
     }
     if (t == _isc.getType<_ixyi2mo6.TestAndSyncModelConnectionRequest?>()) {
@@ -1784,6 +1843,9 @@ class Protocol extends _isc.SerializationManager {
               .toList()
           as T;
     }
+    if (t == List<String>) {
+      return (data as List).map((e) => deserialize<String>(e)).toList() as T;
+    }
     if (t == List<_ib73r5sl.CloudWorkspaceSummary>) {
       return (data as List)
               .map((e) => deserialize<_ib73r5sl.CloudWorkspaceSummary>(e))
@@ -1894,15 +1956,22 @@ class Protocol extends _isc.SerializationManager {
       _i5i328k3.DiscoverMcpServerResult => 'DiscoverMcpServerResult',
       _igzjg3pi.DiscoveredMcpTool => 'DiscoveredMcpTool',
       _iw1ftww6.McpServerHealth => 'McpServerHealth',
+      _ic37m0ag.VerifyMcpServerRequest => 'VerifyMcpServerRequest',
+      _ig6h5o5u.VerifyMcpServerResult => 'VerifyMcpServerResult',
       _i8ct1fsr.ApiModel => 'ApiModel',
       _ioo5yu9z.ApiModelProvider => 'ApiModelProvider',
       _i4akrsd1.CreateModelConnectionRequest => 'CreateModelConnectionRequest',
       _im8o8464.DeleteModelConnectionRequest => 'DeleteModelConnectionRequest',
       _iuwdkoab.ListModelConnectionsRequest => 'ListModelConnectionsRequest',
+      _i1bpxcgb.ListRecentModelSelectionsRequest =>
+        'ListRecentModelSelectionsRequest',
       _i926jgxf.ListWorkspaceModelSelectionsRequest =>
         'ListWorkspaceModelSelectionsRequest',
       _ikk9qcnz.ModelConnectionView => 'ModelConnectionView',
       _il1l34li.ModelSyncResult => 'ModelSyncResult',
+      _idnhust5.RecentModelSelection => 'RecentModelSelection',
+      _igm745lu.RecordRecentModelSelectionRequest =>
+        'RecordRecentModelSelectionRequest',
       _ixyi2mo6.TestAndSyncModelConnectionRequest =>
         'TestAndSyncModelConnectionRequest',
       _iw5yf4pd.UpdateModelConnectionRequest => 'UpdateModelConnectionRequest',
@@ -2130,6 +2199,10 @@ class Protocol extends _isc.SerializationManager {
         return 'DiscoveredMcpTool';
       case _iw1ftww6.McpServerHealth():
         return 'McpServerHealth';
+      case _ic37m0ag.VerifyMcpServerRequest():
+        return 'VerifyMcpServerRequest';
+      case _ig6h5o5u.VerifyMcpServerResult():
+        return 'VerifyMcpServerResult';
       case _i8ct1fsr.ApiModel():
         return 'ApiModel';
       case _ioo5yu9z.ApiModelProvider():
@@ -2140,12 +2213,18 @@ class Protocol extends _isc.SerializationManager {
         return 'DeleteModelConnectionRequest';
       case _iuwdkoab.ListModelConnectionsRequest():
         return 'ListModelConnectionsRequest';
+      case _i1bpxcgb.ListRecentModelSelectionsRequest():
+        return 'ListRecentModelSelectionsRequest';
       case _i926jgxf.ListWorkspaceModelSelectionsRequest():
         return 'ListWorkspaceModelSelectionsRequest';
       case _ikk9qcnz.ModelConnectionView():
         return 'ModelConnectionView';
       case _il1l34li.ModelSyncResult():
         return 'ModelSyncResult';
+      case _idnhust5.RecentModelSelection():
+        return 'RecentModelSelection';
+      case _igm745lu.RecordRecentModelSelectionRequest():
+        return 'RecordRecentModelSelectionRequest';
       case _ixyi2mo6.TestAndSyncModelConnectionRequest():
         return 'TestAndSyncModelConnectionRequest';
       case _iw5yf4pd.UpdateModelConnectionRequest():
@@ -2519,6 +2598,12 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'McpServerHealth') {
       return deserialize<_iw1ftww6.McpServerHealth>(data['data']);
     }
+    if (dataClassName == 'VerifyMcpServerRequest') {
+      return deserialize<_ic37m0ag.VerifyMcpServerRequest>(data['data']);
+    }
+    if (dataClassName == 'VerifyMcpServerResult') {
+      return deserialize<_ig6h5o5u.VerifyMcpServerResult>(data['data']);
+    }
     if (dataClassName == 'ApiModel') {
       return deserialize<_i8ct1fsr.ApiModel>(data['data']);
     }
@@ -2534,6 +2619,11 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'ListModelConnectionsRequest') {
       return deserialize<_iuwdkoab.ListModelConnectionsRequest>(data['data']);
     }
+    if (dataClassName == 'ListRecentModelSelectionsRequest') {
+      return deserialize<_i1bpxcgb.ListRecentModelSelectionsRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'ListWorkspaceModelSelectionsRequest') {
       return deserialize<_i926jgxf.ListWorkspaceModelSelectionsRequest>(
         data['data'],
@@ -2544,6 +2634,14 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'ModelSyncResult') {
       return deserialize<_il1l34li.ModelSyncResult>(data['data']);
+    }
+    if (dataClassName == 'RecentModelSelection') {
+      return deserialize<_idnhust5.RecentModelSelection>(data['data']);
+    }
+    if (dataClassName == 'RecordRecentModelSelectionRequest') {
+      return deserialize<_igm745lu.RecordRecentModelSelectionRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'TestAndSyncModelConnectionRequest') {
       return deserialize<_ixyi2mo6.TestAndSyncModelConnectionRequest>(

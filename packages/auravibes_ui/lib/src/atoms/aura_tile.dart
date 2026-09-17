@@ -107,7 +107,8 @@ class _AuraTileState extends State<AuraTile> {
 }
 
 extension on _AuraTileState {
-  bool get _canInteract => widget.enabled && !widget.isLoading;
+  bool get _canInteract =>
+      widget.enabled && !widget.isLoading && widget.onTap != null;
 
   _AuraTileAppearance _appearance(BuildContext context) => (
     tile: widget,

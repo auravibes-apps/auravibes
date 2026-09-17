@@ -49,6 +49,8 @@ abstract class LocaleKeys {
   static const models_screens_select_provider =
       'models_screens.select_provider';
   static const models_screens_select_model = 'models_screens.select_model';
+  static const models_screens_recent_models = 'models_screens.recent_models';
+  static const models_screens_all_models = 'models_screens.all_models';
   static const models_screens_select_provider_first =
       'models_screens.select_provider_first';
   static const models_screens_no_providers_configured =
@@ -268,7 +270,10 @@ abstract class LocaleKeys {
   static const agents_enabled_label = 'agents.enabled_label';
   static const agents_disabled_label = 'agents.disabled_label';
   static const agents_enabled_description = 'agents.enabled_description';
+  static const agents_visibility_update_error =
+      'agents.visibility_update_error';
   static const agents_visibility_label = 'agents.visibility_label';
+  static const agents_visibility_done = 'agents.visibility_done';
   static const agents_visibility_chat_selector =
       'agents.visibility_chat_selector';
   static const agents_visibility_sub_agent_list =
@@ -533,6 +538,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.context_usage.semantic_overflow';
   static const tools_screen_title = 'tools_screen.title';
   static const tools_screen_refresh_tooltip = 'tools_screen.refresh_tooltip';
+  static const tools_screen_reset_tool_permissions_title =
+      'tools_screen.reset_tool_permissions_title';
+  static const tools_screen_reset_tool_permissions_confirm =
+      'tools_screen.reset_tool_permissions_confirm';
+  static const tools_screen_reset_tool_permissions_tooltip =
+      'tools_screen.reset_tool_permissions_tooltip';
   static const tools_screen_workspace_ai_tools =
       'tools_screen.workspace_ai_tools';
   static const tools_screen_enable_configure_description =
@@ -966,6 +977,15 @@ abstract class LocaleKeys {
   static const mcp_modal_fields_bearer_token_hint =
       'mcp_modal.fields.bearer_token.hint';
   static const mcp_modal_save_success = 'mcp_modal.save_success';
+  static const mcp_modal_test_connection = 'mcp_modal.test_connection';
+  static const mcp_modal_test_connection_success =
+      'mcp_modal.test_connection_success';
+  static const mcp_modal_verification_success =
+      'mcp_modal.verification_success';
+  static const mcp_modal_verification_required =
+      'mcp_modal.verification_required';
+  static const mcp_modal_verification_expired =
+      'mcp_modal.verification_expired';
   static const compaction_settings_title = 'compaction.settings.title';
   static const compaction_settings_subtitle = 'compaction.settings.subtitle';
   static const compaction_settings_auto_enabled =

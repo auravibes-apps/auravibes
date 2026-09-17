@@ -33,6 +33,8 @@ class const ToolsScreen({required final String workspaceId, super.key})
       workspaceId: workspaceId,
       showAddToolButton: capabilities.nativeTools,
       onRefresh: () => ref.invalidate(workspaceToolsProvider(workspaceId)),
+      onReset: () =>
+          unawaited(_resetWorkspaceToolPermissions(context, ref, workspaceId)),
     );
   }
 }
@@ -41,6 +43,7 @@ class const _ToolsScreenView({
   required final String workspaceId,
   required final bool showAddToolButton,
   required final VoidCallback onRefresh,
+  required final VoidCallback onReset,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -52,6 +55,7 @@ class const _ToolsScreenView({
       appBar: _ToolsScreenAppBar(
         workspaceId: workspaceId,
         onRefresh: onRefresh,
+        onReset: onReset,
       ),
     );
   }
@@ -325,6 +329,7 @@ class const _AddToolButton({required final String workspaceId})
 class const _ToolsScreenAppBar({
   required final String workspaceId,
   required final VoidCallback onRefresh,
+  required final VoidCallback onReset,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -335,9 +340,24 @@ class const _ToolsScreenAppBar({
       title: const TextLocale(LocaleKeys.tools_screen_title),
       actions: [
         _AddMcpButton(workspaceId: workspaceId),
+        _ResetToolsButton(onPressed: onReset),
         _RefreshToolsButton(onPressed: onRefresh),
       ],
       leading: const _BackButton(),
+    );
+  }
+}
+
+class const _ResetToolsButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraIconButton(
+      icon: Icons.restore,
+      onPressed: onPressed,
+      tooltip: LocaleKeys.tools_screen_reset_tool_permissions_tooltip.tr(
+        context: context,
+      ),
     );
   }
 }
@@ -364,6 +384,42 @@ class const _RefreshToolsButton({required final VoidCallback onPressed})
       tooltip: LocaleKeys.tools_screen_refresh_tooltip.tr(context: context),
     );
   }
+}
+
+Future<void> _resetWorkspaceToolPermissions(
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+) async {
+  if (!await _confirmResetWorkspaceToolPermissions(context)) return;
+
+  await ref
+      .read(workspaceToolsProvider(workspaceId).notifier)
+      .resetToolPermissions();
+  if (!context.mounted) return;
+
+  ref
+    ..invalidate(workspaceToolsProvider(workspaceId))
+    ..invalidate(groupedToolsProvider(workspaceId));
+}
+
+Future<bool> _confirmResetWorkspaceToolPermissions(BuildContext context) async {
+  final confirmed = await AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(
+      LocaleKeys.tools_screen_reset_tool_permissions_title,
+    ),
+    message: const TextLocale(
+      LocaleKeys.tools_screen_reset_tool_permissions_confirm,
+    ),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.common_confirm),
+      cancelLabel: TextLocale(LocaleKeys.common_cancel),
+    ),
+    isDestructive: true,
+  );
+
+  return confirmed ?? false;
 }
 
 class const _BackButton() extends StatelessWidget {

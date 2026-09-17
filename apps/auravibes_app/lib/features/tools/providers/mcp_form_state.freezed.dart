@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$McpFormState {
 
- String get name; String get description; String get url; McpTransportTypeOptions get transport; McpAuthenticationTypeOptions get authenticationType; String get bearerToken; bool get useHttp2; bool get isSubmitting; String? get errorMessage;
+ String get name; String get description; String get url; McpTransportTypeOptions get transport; McpAuthenticationTypeOptions get authenticationType; String get bearerToken; bool get useHttp2; bool get isSubmitting; bool get isTestingConnection; bool get isConnectionVerified; int get verifiedToolCount; String? get errorMessage;
 /// Create a copy of McpFormState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,14 +27,14 @@ $McpFormStateCopyWith<McpFormState> get copyWith => _$McpFormStateCopyWithImpl<M
 @override
 bool operator ==(Object other) {
   final _this = this as McpFormState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpFormState&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.useHttp2, _this.useHttp2) || other.useHttp2 == _this.useHttp2)&&(identical(other.isSubmitting, _this.isSubmitting) || other.isSubmitting == _this.isSubmitting)&&(identical(other.errorMessage, _this.errorMessage) || other.errorMessage == _this.errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpFormState&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.useHttp2, _this.useHttp2) || other.useHttp2 == _this.useHttp2)&&(identical(other.isSubmitting, _this.isSubmitting) || other.isSubmitting == _this.isSubmitting)&&(identical(other.isTestingConnection, _this.isTestingConnection) || other.isTestingConnection == _this.isTestingConnection)&&(identical(other.isConnectionVerified, _this.isConnectionVerified) || other.isConnectionVerified == _this.isConnectionVerified)&&(identical(other.verifiedToolCount, _this.verifiedToolCount) || other.verifiedToolCount == _this.verifiedToolCount)&&(identical(other.errorMessage, _this.errorMessage) || other.errorMessage == _this.errorMessage));
 }
 
 
 @override
 int get hashCode {
   final _this = this as McpFormState;
-  return Object.hash(runtimeType,_this.name,_this.description,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.useHttp2,_this.isSubmitting,_this.errorMessage);
+  return Object.hash(runtimeType,_this.name,_this.description,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.useHttp2,_this.isSubmitting,_this.isTestingConnection,_this.isConnectionVerified,_this.verifiedToolCount,_this.errorMessage);
 }
 
 
@@ -46,7 +46,7 @@ abstract mixin class $McpFormStateCopyWith<$Res>  {
   factory $McpFormStateCopyWith(McpFormState value, $Res Function(McpFormState) _then) = _$McpFormStateCopyWithImpl;
 @useResult
 $Res call({
- String name, String description, String url, McpTransportTypeOptions transport, McpAuthenticationTypeOptions authenticationType, String bearerToken, bool useHttp2, bool isSubmitting, String? errorMessage
+ String name, String description, String url, McpTransportTypeOptions transport, McpAuthenticationTypeOptions authenticationType, String bearerToken, bool useHttp2, bool isSubmitting, bool isTestingConnection, bool isConnectionVerified, int verifiedToolCount, String? errorMessage
 });
 
 
@@ -63,7 +63,7 @@ class _$McpFormStateCopyWithImpl<$Res>
 
 /// Create a copy of McpFormState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? description = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = null,Object? useHttp2 = null,Object? isSubmitting = null,Object? errorMessage = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? description = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = null,Object? useHttp2 = null,Object? isSubmitting = null,Object? isTestingConnection = null,Object? isConnectionVerified = null,Object? verifiedToolCount = null,Object? errorMessage = freezed,}) {
   return _then(McpFormState(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -73,7 +73,10 @@ as McpTransportTypeOptions,authenticationType: null == authenticationType ? _sel
 as McpAuthenticationTypeOptions,bearerToken: null == bearerToken ? _self.bearerToken : bearerToken // ignore: cast_nullable_to_non_nullable
 as String,useHttp2: null == useHttp2 ? _self.useHttp2 : useHttp2 // ignore: cast_nullable_to_non_nullable
 as bool,isSubmitting: null == isSubmitting ? _self.isSubmitting : isSubmitting // ignore: cast_nullable_to_non_nullable
-as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as bool,isTestingConnection: null == isTestingConnection ? _self.isTestingConnection : isTestingConnection // ignore: cast_nullable_to_non_nullable
+as bool,isConnectionVerified: null == isConnectionVerified ? _self.isConnectionVerified : isConnectionVerified // ignore: cast_nullable_to_non_nullable
+as bool,verifiedToolCount: null == verifiedToolCount ? _self.verifiedToolCount : verifiedToolCount // ignore: cast_nullable_to_non_nullable
+as int,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -159,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String description,  String url,  McpTransportTypeOptions transport,  McpAuthenticationTypeOptions authenticationType,  String bearerToken,  bool useHttp2,  bool isSubmitting,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String description,  String url,  McpTransportTypeOptions transport,  McpAuthenticationTypeOptions authenticationType,  String bearerToken,  bool useHttp2,  bool isSubmitting,  bool isTestingConnection,  bool isConnectionVerified,  int verifiedToolCount,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpFormState() when $default != null:
-return $default(_that.name,_that.description,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.useHttp2,_that.isSubmitting,_that.errorMessage);case _:
+return $default(_that.name,_that.description,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.useHttp2,_that.isSubmitting,_that.isTestingConnection,_that.isConnectionVerified,_that.verifiedToolCount,_that.errorMessage);case _:
   return orElse();
 
 }
@@ -180,10 +183,10 @@ return $default(_that.name,_that.description,_that.url,_that.transport,_that.aut
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String description,  String url,  McpTransportTypeOptions transport,  McpAuthenticationTypeOptions authenticationType,  String bearerToken,  bool useHttp2,  bool isSubmitting,  String? errorMessage)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String description,  String url,  McpTransportTypeOptions transport,  McpAuthenticationTypeOptions authenticationType,  String bearerToken,  bool useHttp2,  bool isSubmitting,  bool isTestingConnection,  bool isConnectionVerified,  int verifiedToolCount,  String? errorMessage)  $default,) {final _that = this;
 switch (_that) {
 case _McpFormState():
-return $default(_that.name,_that.description,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.useHttp2,_that.isSubmitting,_that.errorMessage);case _:
+return $default(_that.name,_that.description,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.useHttp2,_that.isSubmitting,_that.isTestingConnection,_that.isConnectionVerified,_that.verifiedToolCount,_that.errorMessage);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +203,10 @@ return $default(_that.name,_that.description,_that.url,_that.transport,_that.aut
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String description,  String url,  McpTransportTypeOptions transport,  McpAuthenticationTypeOptions authenticationType,  String bearerToken,  bool useHttp2,  bool isSubmitting,  String? errorMessage)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String description,  String url,  McpTransportTypeOptions transport,  McpAuthenticationTypeOptions authenticationType,  String bearerToken,  bool useHttp2,  bool isSubmitting,  bool isTestingConnection,  bool isConnectionVerified,  int verifiedToolCount,  String? errorMessage)?  $default,) {final _that = this;
 switch (_that) {
 case _McpFormState() when $default != null:
-return $default(_that.name,_that.description,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.useHttp2,_that.isSubmitting,_that.errorMessage);case _:
+return $default(_that.name,_that.description,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.useHttp2,_that.isSubmitting,_that.isTestingConnection,_that.isConnectionVerified,_that.verifiedToolCount,_that.errorMessage);case _:
   return null;
 
 }
@@ -215,7 +218,7 @@ return $default(_that.name,_that.description,_that.url,_that.transport,_that.aut
 
 
 class _McpFormState extends McpFormState {
-  const _McpFormState({this.name = '', this.description = '', this.url = '', this.transport = McpTransportTypeOptions.streamableHttp, this.authenticationType = McpAuthenticationTypeOptions.none, this.bearerToken = '', this.useHttp2 = false, this.isSubmitting = false, this.errorMessage}): super._();
+  const _McpFormState({this.name = '', this.description = '', this.url = '', this.transport = McpTransportTypeOptions.streamableHttp, this.authenticationType = McpAuthenticationTypeOptions.none, this.bearerToken = '', this.useHttp2 = false, this.isSubmitting = false, this.isTestingConnection = false, this.isConnectionVerified = false, this.verifiedToolCount = 0, this.errorMessage}): super._();
   
 
 @override@JsonKey() final  String name;
@@ -226,6 +229,9 @@ class _McpFormState extends McpFormState {
 @override@JsonKey() final  String bearerToken;
 @override@JsonKey() final  bool useHttp2;
 @override@JsonKey() final  bool isSubmitting;
+@override@JsonKey() final  bool isTestingConnection;
+@override@JsonKey() final  bool isConnectionVerified;
+@override@JsonKey() final  int verifiedToolCount;
 @override final  String? errorMessage;
 
 /// Create a copy of McpFormState
@@ -238,13 +244,13 @@ _$McpFormStateCopyWith<_McpFormState> get copyWith => __$McpFormStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpFormState&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.useHttp2, useHttp2) || other.useHttp2 == useHttp2)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpFormState&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.useHttp2, useHttp2) || other.useHttp2 == useHttp2)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting)&&(identical(other.isTestingConnection, isTestingConnection) || other.isTestingConnection == isTestingConnection)&&(identical(other.isConnectionVerified, isConnectionVerified) || other.isConnectionVerified == isConnectionVerified)&&(identical(other.verifiedToolCount, verifiedToolCount) || other.verifiedToolCount == verifiedToolCount)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
+    return Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,isTestingConnection,isConnectionVerified,verifiedToolCount,errorMessage);
 }
 
 
@@ -256,7 +262,7 @@ abstract mixin class _$McpFormStateCopyWith<$Res> implements $McpFormStateCopyWi
   factory _$McpFormStateCopyWith(_McpFormState value, $Res Function(_McpFormState) _then) = __$McpFormStateCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String description, String url, McpTransportTypeOptions transport, McpAuthenticationTypeOptions authenticationType, String bearerToken, bool useHttp2, bool isSubmitting, String? errorMessage
+ String name, String description, String url, McpTransportTypeOptions transport, McpAuthenticationTypeOptions authenticationType, String bearerToken, bool useHttp2, bool isSubmitting, bool isTestingConnection, bool isConnectionVerified, int verifiedToolCount, String? errorMessage
 });
 
 
@@ -273,7 +279,7 @@ class __$McpFormStateCopyWithImpl<$Res>
 
 /// Create a copy of McpFormState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? description = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = null,Object? useHttp2 = null,Object? isSubmitting = null,Object? errorMessage = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? description = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = null,Object? useHttp2 = null,Object? isSubmitting = null,Object? isTestingConnection = null,Object? isConnectionVerified = null,Object? verifiedToolCount = null,Object? errorMessage = freezed,}) {
   return _then(_McpFormState(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -283,7 +289,10 @@ as McpTransportTypeOptions,authenticationType: null == authenticationType ? _sel
 as McpAuthenticationTypeOptions,bearerToken: null == bearerToken ? _self.bearerToken : bearerToken // ignore: cast_nullable_to_non_nullable
 as String,useHttp2: null == useHttp2 ? _self.useHttp2 : useHttp2 // ignore: cast_nullable_to_non_nullable
 as bool,isSubmitting: null == isSubmitting ? _self.isSubmitting : isSubmitting // ignore: cast_nullable_to_non_nullable
-as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as bool,isTestingConnection: null == isTestingConnection ? _self.isTestingConnection : isTestingConnection // ignore: cast_nullable_to_non_nullable
+as bool,isConnectionVerified: null == isConnectionVerified ? _self.isConnectionVerified : isConnectionVerified // ignore: cast_nullable_to_non_nullable
+as bool,verifiedToolCount: null == verifiedToolCount ? _self.verifiedToolCount : verifiedToolCount // ignore: cast_nullable_to_non_nullable
+as int,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

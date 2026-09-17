@@ -398,6 +398,13 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }
 
   @override
+  Future<List<WorkspaceToolEntity>> resetWorkspaceToolPermissions(
+    String workspaceId,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<WorkspaceToolEntity> setWorkspaceToolEnabled(
     String workspaceId,
     String toolType, {

@@ -140,6 +140,11 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
       updatedAt: .new(2024),
     );
   }
+
+  @override
+  Future<List<WorkspaceToolEntity>> resetWorkspaceToolPermissions(
+    String workspaceId,
+  ) async => [];
 }
 
 void main() {

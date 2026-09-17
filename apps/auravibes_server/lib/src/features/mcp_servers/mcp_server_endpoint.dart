@@ -8,6 +8,17 @@ import 'mcp_server_repository.dart';
 import 'mcp_server_use_cases.dart';
 
 class McpServerEndpoint extends Endpoint {
+  Future<VerifyMcpServerResult> verify(
+    Session session,
+    VerifyMcpServerRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return McpServerUseCases(
+      McpServerRepository(),
+      McpServerProbe(),
+    ).verify(session, userId: account.userId, request: request);
+  }
+
   Future<CreateMcpServerResult> create(
     Session session,
     CreateMcpServerRequest request,

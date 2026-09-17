@@ -87,6 +87,89 @@ final class ModelConnectionStoreFamily extends $Family
   String toString() => r'modelConnectionStoreProvider';
 }
 
+@ProviderFor(cloudModelGatewayForWorkspace)
+final cloudModelGatewayForWorkspaceProvider =
+    CloudModelGatewayForWorkspaceFamily._();
+
+final class CloudModelGatewayForWorkspaceProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CloudModelGateway?>,
+          CloudModelGateway?,
+          FutureOr<CloudModelGateway?>
+        >
+    with
+        $FutureModifier<CloudModelGateway?>,
+        $FutureProvider<CloudModelGateway?> {
+  CloudModelGatewayForWorkspaceProvider._({
+    required CloudModelGatewayForWorkspaceFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'cloudModelGatewayForWorkspaceProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$cloudModelGatewayForWorkspaceHash();
+
+  @override
+  String toString() {
+    return r'cloudModelGatewayForWorkspaceProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<CloudModelGateway?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CloudModelGateway?> create(Ref ref) {
+    final argument = this.argument as String;
+    return cloudModelGatewayForWorkspace(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CloudModelGatewayForWorkspaceProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$cloudModelGatewayForWorkspaceHash() =>
+    r'31c85fd1d310884a0907735b4747ffec9d9e5d97';
+
+final class CloudModelGatewayForWorkspaceFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<CloudModelGateway?>, String> {
+  CloudModelGatewayForWorkspaceFamily._()
+    : super(
+        retry: null,
+        name: r'cloudModelGatewayForWorkspaceProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  CloudModelGatewayForWorkspaceProvider call(String workspaceId) =>
+      CloudModelGatewayForWorkspaceProvider._(
+        argument: workspaceId,
+        from: this,
+      );
+
+  @override
+  String toString() => r'cloudModelGatewayForWorkspaceProvider';
+}
+
 @ProviderFor(modelSelectionStore)
 final modelSelectionStoreProvider = ModelSelectionStoreFamily._();
 

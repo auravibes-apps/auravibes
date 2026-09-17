@@ -139,7 +139,7 @@ abstract interface class ActiveSubAgentController {
   String? parentOf(String childId);
 }
 
-typedef _SubAgentCompletionRequest = ({
+typedef SubAgentCompletionRequest = ({
   String parentId,
   String childId,
   SubAgentCompletionStatus status,
@@ -170,7 +170,7 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
     return _AppSubAgentRequestHandle(this, parentId, childId);
   }
 
-  void finish(_SubAgentCompletionRequest request) {
+  void finish(SubAgentCompletionRequest request) {
     _completeChild(request);
 
     final children = {...state[request.parentId] ?? const <String>{}}
@@ -207,7 +207,7 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
 
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
 
-  void _completeChild(_SubAgentCompletionRequest request) {
+  void _completeChild(SubAgentCompletionRequest request) {
     final completion = _completionByChildId.remove(request.childId);
     _recordSubAgentFailure(_failureByChildId, request, completion);
     _updateSubAgentStoppedState(_stoppedChildIds, request);
@@ -230,7 +230,7 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
 
 void _recordSubAgentFailure(
   Map<String, SubAgentCompletionFailure> failures,
-  _SubAgentCompletionRequest request,
+  SubAgentCompletionRequest request,
   Completer<SubAgentCompletionStatus>? completion,
 ) {
   final error = request.error;
@@ -246,7 +246,7 @@ void _recordSubAgentFailure(
 
 void _updateSubAgentStoppedState(
   Set<String> stoppedChildIds,
-  _SubAgentCompletionRequest request,
+  SubAgentCompletionRequest request,
 ) {
   if (request.status == SubAgentCompletionStatus.stopped) {
     final _ = stoppedChildIds.add(request.childId);

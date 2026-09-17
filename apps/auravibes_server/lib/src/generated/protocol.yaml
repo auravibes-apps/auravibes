@@ -42,6 +42,7 @@ conversation:
   - cancelTurn:
   - compact:
 mcpServer:
+  - verify:
   - create:
   - delete:
   - discoverAndCheck:
@@ -53,6 +54,8 @@ modelConnection:
   - update:
   - delete:
   - listSelections:
+  - listRecentSelections:
+  - recordRecentSelection:
   - testAndSync:
 object:
   - beginUpload:

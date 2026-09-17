@@ -141,6 +141,9 @@ import 'features/mcp_servers/models/discover_mcp_server_result.dart'
     as _i5i328k3;
 import 'features/mcp_servers/models/discovered_mcp_tool.dart' as _igzjg3pi;
 import 'features/mcp_servers/models/mcp_server_health.dart' as _iw1ftww6;
+import 'features/mcp_servers/models/verify_mcp_server_request.dart'
+    as _ic37m0ag;
+import 'features/mcp_servers/models/verify_mcp_server_result.dart' as _ig6h5o5u;
 import 'features/model_connections/models/api_model.dart' as _i8ct1fsr;
 import 'features/model_connections/models/api_model_provider.dart' as _ioo5yu9z;
 import 'features/model_connections/models/create_model_connection_request.dart'
@@ -149,11 +152,17 @@ import 'features/model_connections/models/delete_model_connection_request.dart'
     as _im8o8464;
 import 'features/model_connections/models/list_model_connections_request.dart'
     as _iuwdkoab;
+import 'features/model_connections/models/list_recent_model_selections_request.dart'
+    as _i1bpxcgb;
 import 'features/model_connections/models/list_workspace_model_selections_request.dart'
     as _i926jgxf;
 import 'features/model_connections/models/model_connection_view.dart'
     as _ikk9qcnz;
 import 'features/model_connections/models/model_sync_result.dart' as _il1l34li;
+import 'features/model_connections/models/recent_model_selection.dart'
+    as _idnhust5;
+import 'features/model_connections/models/record_recent_model_selection_request.dart'
+    as _igm745lu;
 import 'features/model_connections/models/test_and_sync_model_connection_request.dart'
     as _ixyi2mo6;
 import 'features/model_connections/models/update_model_connection_request.dart'
@@ -334,14 +343,19 @@ export 'features/mcp_servers/models/discover_mcp_server_request.dart';
 export 'features/mcp_servers/models/discover_mcp_server_result.dart';
 export 'features/mcp_servers/models/discovered_mcp_tool.dart';
 export 'features/mcp_servers/models/mcp_server_health.dart';
+export 'features/mcp_servers/models/verify_mcp_server_request.dart';
+export 'features/mcp_servers/models/verify_mcp_server_result.dart';
 export 'features/model_connections/models/api_model.dart';
 export 'features/model_connections/models/api_model_provider.dart';
 export 'features/model_connections/models/create_model_connection_request.dart';
 export 'features/model_connections/models/delete_model_connection_request.dart';
 export 'features/model_connections/models/list_model_connections_request.dart';
+export 'features/model_connections/models/list_recent_model_selections_request.dart';
 export 'features/model_connections/models/list_workspace_model_selections_request.dart';
 export 'features/model_connections/models/model_connection_view.dart';
 export 'features/model_connections/models/model_sync_result.dart';
+export 'features/model_connections/models/recent_model_selection.dart';
+export 'features/model_connections/models/record_recent_model_selection_request.dart';
 export 'features/model_connections/models/test_and_sync_model_connection_request.dart';
 export 'features/model_connections/models/update_model_connection_request.dart';
 export 'features/model_connections/models/workspace_model_connection.dart';
@@ -2875,6 +2889,106 @@ class Protocol extends _is.DatabaseSerializationManager {
       managed: true,
     ),
     _isp.TableDefinition(
+      name: 'recent_model_selection',
+      dartName: 'RecentModelSelection',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'userId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'selectionId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'selectedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'recent_model_selection_fk_0',
+          columns: ['workspaceId'],
+          referenceTable: 'cloud_workspace',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'recent_model_selection_identity_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'userId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'selectionId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'recent_model_selection_order_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'userId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'selectedAt',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'selectionId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
       name: 'recurring_worker_schedule',
       dartName: 'RecurringWorkerSchedule',
       schema: 'public',
@@ -4372,6 +4486,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _iw1ftww6.McpServerHealth) {
       return _iw1ftww6.McpServerHealth.fromJson(data) as T;
     }
+    if (t == _ic37m0ag.VerifyMcpServerRequest) {
+      return _ic37m0ag.VerifyMcpServerRequest.fromJson(data) as T;
+    }
+    if (t == _ig6h5o5u.VerifyMcpServerResult) {
+      return _ig6h5o5u.VerifyMcpServerResult.fromJson(data) as T;
+    }
     if (t == _i8ct1fsr.ApiModel) {
       return _i8ct1fsr.ApiModel.fromJson(data) as T;
     }
@@ -4387,6 +4507,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _iuwdkoab.ListModelConnectionsRequest) {
       return _iuwdkoab.ListModelConnectionsRequest.fromJson(data) as T;
     }
+    if (t == _i1bpxcgb.ListRecentModelSelectionsRequest) {
+      return _i1bpxcgb.ListRecentModelSelectionsRequest.fromJson(data) as T;
+    }
     if (t == _i926jgxf.ListWorkspaceModelSelectionsRequest) {
       return _i926jgxf.ListWorkspaceModelSelectionsRequest.fromJson(data) as T;
     }
@@ -4395,6 +4518,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _il1l34li.ModelSyncResult) {
       return _il1l34li.ModelSyncResult.fromJson(data) as T;
+    }
+    if (t == _idnhust5.RecentModelSelection) {
+      return _idnhust5.RecentModelSelection.fromJson(data) as T;
+    }
+    if (t == _igm745lu.RecordRecentModelSelectionRequest) {
+      return _igm745lu.RecordRecentModelSelectionRequest.fromJson(data) as T;
     }
     if (t == _ixyi2mo6.TestAndSyncModelConnectionRequest) {
       return _ixyi2mo6.TestAndSyncModelConnectionRequest.fromJson(data) as T;
@@ -4968,6 +5097,18 @@ class Protocol extends _is.DatabaseSerializationManager {
       return (data != null ? _iw1ftww6.McpServerHealth.fromJson(data) : null)
           as T;
     }
+    if (t == _is.getType<_ic37m0ag.VerifyMcpServerRequest?>()) {
+      return (data != null
+              ? _ic37m0ag.VerifyMcpServerRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ig6h5o5u.VerifyMcpServerResult?>()) {
+      return (data != null
+              ? _ig6h5o5u.VerifyMcpServerResult.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_i8ct1fsr.ApiModel?>()) {
       return (data != null ? _i8ct1fsr.ApiModel.fromJson(data) : null) as T;
     }
@@ -4993,6 +5134,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_i1bpxcgb.ListRecentModelSelectionsRequest?>()) {
+      return (data != null
+              ? _i1bpxcgb.ListRecentModelSelectionsRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_i926jgxf.ListWorkspaceModelSelectionsRequest?>()) {
       return (data != null
               ? _i926jgxf.ListWorkspaceModelSelectionsRequest.fromJson(data)
@@ -5007,6 +5154,18 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _is.getType<_il1l34li.ModelSyncResult?>()) {
       return (data != null ? _il1l34li.ModelSyncResult.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_idnhust5.RecentModelSelection?>()) {
+      return (data != null
+              ? _idnhust5.RecentModelSelection.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_igm745lu.RecordRecentModelSelectionRequest?>()) {
+      return (data != null
+              ? _igm745lu.RecordRecentModelSelectionRequest.fromJson(data)
+              : null)
           as T;
     }
     if (t == _is.getType<_ixyi2mo6.TestAndSyncModelConnectionRequest?>()) {
@@ -5505,6 +5664,9 @@ class Protocol extends _is.DatabaseSerializationManager {
               .toList()
           as T;
     }
+    if (t == List<String>) {
+      return (data as List).map((e) => deserialize<String>(e)).toList() as T;
+    }
     if (t == List<_iyxk4tde.CloudWorkspaceSummary>) {
       return (data as List)
               .map((e) => deserialize<_iyxk4tde.CloudWorkspaceSummary>(e))
@@ -5618,15 +5780,22 @@ class Protocol extends _is.DatabaseSerializationManager {
       _i5i328k3.DiscoverMcpServerResult => 'DiscoverMcpServerResult',
       _igzjg3pi.DiscoveredMcpTool => 'DiscoveredMcpTool',
       _iw1ftww6.McpServerHealth => 'McpServerHealth',
+      _ic37m0ag.VerifyMcpServerRequest => 'VerifyMcpServerRequest',
+      _ig6h5o5u.VerifyMcpServerResult => 'VerifyMcpServerResult',
       _i8ct1fsr.ApiModel => 'ApiModel',
       _ioo5yu9z.ApiModelProvider => 'ApiModelProvider',
       _i4akrsd1.CreateModelConnectionRequest => 'CreateModelConnectionRequest',
       _im8o8464.DeleteModelConnectionRequest => 'DeleteModelConnectionRequest',
       _iuwdkoab.ListModelConnectionsRequest => 'ListModelConnectionsRequest',
+      _i1bpxcgb.ListRecentModelSelectionsRequest =>
+        'ListRecentModelSelectionsRequest',
       _i926jgxf.ListWorkspaceModelSelectionsRequest =>
         'ListWorkspaceModelSelectionsRequest',
       _ikk9qcnz.ModelConnectionView => 'ModelConnectionView',
       _il1l34li.ModelSyncResult => 'ModelSyncResult',
+      _idnhust5.RecentModelSelection => 'RecentModelSelection',
+      _igm745lu.RecordRecentModelSelectionRequest =>
+        'RecordRecentModelSelectionRequest',
       _ixyi2mo6.TestAndSyncModelConnectionRequest =>
         'TestAndSyncModelConnectionRequest',
       _iw5yf4pd.UpdateModelConnectionRequest => 'UpdateModelConnectionRequest',
@@ -5854,6 +6023,10 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'DiscoveredMcpTool';
       case _iw1ftww6.McpServerHealth():
         return 'McpServerHealth';
+      case _ic37m0ag.VerifyMcpServerRequest():
+        return 'VerifyMcpServerRequest';
+      case _ig6h5o5u.VerifyMcpServerResult():
+        return 'VerifyMcpServerResult';
       case _i8ct1fsr.ApiModel():
         return 'ApiModel';
       case _ioo5yu9z.ApiModelProvider():
@@ -5864,12 +6037,18 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'DeleteModelConnectionRequest';
       case _iuwdkoab.ListModelConnectionsRequest():
         return 'ListModelConnectionsRequest';
+      case _i1bpxcgb.ListRecentModelSelectionsRequest():
+        return 'ListRecentModelSelectionsRequest';
       case _i926jgxf.ListWorkspaceModelSelectionsRequest():
         return 'ListWorkspaceModelSelectionsRequest';
       case _ikk9qcnz.ModelConnectionView():
         return 'ModelConnectionView';
       case _il1l34li.ModelSyncResult():
         return 'ModelSyncResult';
+      case _idnhust5.RecentModelSelection():
+        return 'RecentModelSelection';
+      case _igm745lu.RecordRecentModelSelectionRequest():
+        return 'RecordRecentModelSelectionRequest';
       case _ixyi2mo6.TestAndSyncModelConnectionRequest():
         return 'TestAndSyncModelConnectionRequest';
       case _iw5yf4pd.UpdateModelConnectionRequest():
@@ -6247,6 +6426,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'McpServerHealth') {
       return deserialize<_iw1ftww6.McpServerHealth>(data['data']);
     }
+    if (dataClassName == 'VerifyMcpServerRequest') {
+      return deserialize<_ic37m0ag.VerifyMcpServerRequest>(data['data']);
+    }
+    if (dataClassName == 'VerifyMcpServerResult') {
+      return deserialize<_ig6h5o5u.VerifyMcpServerResult>(data['data']);
+    }
     if (dataClassName == 'ApiModel') {
       return deserialize<_i8ct1fsr.ApiModel>(data['data']);
     }
@@ -6262,6 +6447,11 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'ListModelConnectionsRequest') {
       return deserialize<_iuwdkoab.ListModelConnectionsRequest>(data['data']);
     }
+    if (dataClassName == 'ListRecentModelSelectionsRequest') {
+      return deserialize<_i1bpxcgb.ListRecentModelSelectionsRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'ListWorkspaceModelSelectionsRequest') {
       return deserialize<_i926jgxf.ListWorkspaceModelSelectionsRequest>(
         data['data'],
@@ -6272,6 +6462,14 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'ModelSyncResult') {
       return deserialize<_il1l34li.ModelSyncResult>(data['data']);
+    }
+    if (dataClassName == 'RecentModelSelection') {
+      return deserialize<_idnhust5.RecentModelSelection>(data['data']);
+    }
+    if (dataClassName == 'RecordRecentModelSelectionRequest') {
+      return deserialize<_igm745lu.RecordRecentModelSelectionRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'TestAndSyncModelConnectionRequest') {
       return deserialize<_ixyi2mo6.TestAndSyncModelConnectionRequest>(
@@ -6565,6 +6763,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return _i8ct1fsr.ApiModel.t;
       case _ioo5yu9z.ApiModelProvider:
         return _ioo5yu9z.ApiModelProvider.t;
+      case _idnhust5.RecentModelSelection:
+        return _idnhust5.RecentModelSelection.t;
       case _ihf3aqrg.WorkspaceModelConnection:
         return _ihf3aqrg.WorkspaceModelConnection.t;
       case _ii2nljpm.ObjectDeletion:

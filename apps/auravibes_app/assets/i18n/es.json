@@ -51,6 +51,8 @@
   "models_screens": {
     "select_provider": "Seleccionar Proveedor",
     "select_model": "Modelo",
+    "recent_models": "Modelos recientes",
+    "all_models": "Todos los modelos",
     "select_provider_first": "Selecciona proveedor primero",
     "no_providers_configured": "Sin modelo",
     "no_models_available": "No hay modelos disponibles",
@@ -211,7 +213,9 @@
     "enabled_label": "Activado",
     "disabled_label": "Desactivado",
     "enabled_description": "Los agentes desactivados quedan guardados, pero no se pueden seleccionar ni delegar.",
+    "visibility_update_error": "No se pudo actualizar la visibilidad del agente",
     "visibility_label": "Visible en",
+    "visibility_done": "Listo",
     "visibility_chat_selector": "Selector de chat",
     "visibility_sub_agent_list": "Lista de subagentes",
     "visibility_both": "Ambos",
@@ -384,6 +388,9 @@
   "tools_screen": {
     "title": "Herramientas del Espacio de Trabajo",
     "refresh_tooltip": "Actualizar herramientas",
+    "reset_tool_permissions_title": "Restablecer permisos de herramientas del espacio de trabajo",
+    "reset_tool_permissions_confirm": "Esto volverá a activar todas las herramientas de este espacio de trabajo y establecerá sus permisos en «Siempre preguntar». ¿Continuar?",
+    "reset_tool_permissions_tooltip": "Restablecer permisos de herramientas",
     "workspace_ai_tools": "Herramientas IA del Espacio de Trabajo",
     "enable_configure_description": "Activa y configura herramientas para este espacio de trabajo",
     "enabled_count": {
@@ -813,7 +820,12 @@
         "hint": "Este token se almacenará de forma segura"
       }
     },
-    "save_success": "Configuración del servidor MCP guardada"
+    "save_success": "Configuración del servidor MCP guardada",
+    "test_connection": "Verificar conexión",
+    "test_connection_success": "Conexión verificada",
+    "verification_success": "Conexión verificada · {} herramientas encontradas",
+    "verification_required": "Verifica la conexión antes de guardar.",
+    "verification_expired": "La verificación expiró. Verifica la conexión de nuevo."
   },
   "compaction": {
     "settings": {

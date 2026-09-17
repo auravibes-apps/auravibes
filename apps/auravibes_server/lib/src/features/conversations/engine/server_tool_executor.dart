@@ -93,6 +93,9 @@ PatchWorkspaceStateRequest cloudSkillSelectionPatchRequest({
 }
 
 typedef ServerToolExecutorInterlock = Future<void> Function();
+const _runCreateChildPhase = 'run.createChild';
+const _runCreatePromptPhase = 'run.createPrompt';
+const _runContinueAgentPhase = 'run.continueAgent';
 
 Future<Object?> runCompiledServiceSkillTool({
   required String skillSlug,
@@ -842,37 +845,14 @@ class const ServerToolExecutorService({
     }
 
     try {
-      final title = request.arguments['title'];
-      final prompt = request.arguments['prompt'];
-      final agentId = request.arguments['agentId'];
-      if (title is! String ||
-          title.trim().isEmpty ||
-          title.length > maxSubAgentTitleLength ||
-          prompt is! String ||
-          prompt.trim().isEmpty ||
-          prompt.length > maxSubAgentPromptLength ||
-          (agentId != null && agentId is! String)) {
-        throw const FormatException('Invalid sub-agent request.');
-      }
+      final input = _validatedSubAgentRequest(request.arguments);
       failurePhase = 'run.parentValidation';
-      final parent = await Conversation.db.findFirstRow(
-        session,
-        where: (table) =>
-            table.id.equals(turn.conversationId) &
-            table.workspaceId.equals(turn.workspaceId) &
-            table.deletedAt.equals(null),
-      );
-      if (parent == null || parent.parentConversationStableId != null) {
-        throw const ServerToolNotConfiguredException();
-      }
+      final parent = await _requireSubAgentParent(session, turn);
       failurePhase = 'run.agentValidation';
-      if (agentId is String &&
-          !await _isRunnableAgent(session, turn.workspaceId, agentId)) {
-        throw const ServerToolNotConfiguredException();
-      }
-      failurePhase = 'run.createChild';
+      await _validateSubAgentAgent(session, turn, input.agentId);
+      failurePhase = _runCreateChildPhase;
       await _throwIfCancelled(session, turn);
-      logLifecycle('run.createChild', state: 'started');
+      logLifecycle(_runCreateChildPhase, state: 'started');
       child = await useCases.create(
         session,
         userId: turn.initiatorUserId,
@@ -880,18 +860,22 @@ class const ServerToolExecutorService({
           workspaceId: turn.workspaceId,
           requestId: '$id:create',
           conversationId: id,
-          title: title.trim(),
+          title: input.title.trim(),
           isPinned: false,
           modelId:
               await _activeTurnModelSelectionId(session, turn) ??
               parent.modelId,
-          agentId: agentId as String?,
+          agentId: input.agentId,
           parentConversationId: parent.stableId,
         ),
       );
-      logLifecycle('run.createChild', childId: child.id, state: 'completed');
-      failurePhase = 'run.createPrompt';
-      logLifecycle('run.createPrompt', childId: child.id, state: 'started');
+      logLifecycle(
+        _runCreateChildPhase,
+        childId: child.id,
+        state: 'completed',
+      );
+      failurePhase = _runCreatePromptPhase;
+      logLifecycle(_runCreatePromptPhase, childId: child.id, state: 'started');
       final queued = await useCases.queueConversationMessage(
         session,
         userId: turn.initiatorUserId,
@@ -901,15 +885,23 @@ class const ServerToolExecutorService({
           conversationId: child.id,
           expectedProjectionRevision: child.revision,
           clientMessageId: '$id:user',
-          content: prompt.trim(),
+          content: input.prompt.trim(),
           attachmentIds: const [],
         ),
       );
-      logLifecycle('run.createPrompt', childId: child.id, state: 'completed');
+      logLifecycle(
+        _runCreatePromptPhase,
+        childId: child.id,
+        state: 'completed',
+      );
       failurePhase = 'run.beforeChildLaunch';
       await beforeChildLaunch?.call();
-      failurePhase = 'run.continueAgent';
-      logLifecycle('run.continueAgent', childId: child.id, state: 'started');
+      failurePhase = _runContinueAgentPhase;
+      logLifecycle(
+        _runContinueAgentPhase,
+        childId: child.id,
+        state: 'started',
+      );
       final started = await useCases.continueConversation(
         session,
         userId: turn.initiatorUserId,
@@ -922,7 +914,11 @@ class const ServerToolExecutorService({
         parentTurnId: turn.id,
         parentToolCallId: request.id,
       );
-      logLifecycle('run.continueAgent', childId: child.id, state: 'completed');
+      logLifecycle(
+        _runContinueAgentPhase,
+        childId: child.id,
+        state: 'completed',
+      );
       failurePhase = 'run.readResult';
       final execution = started.activeExecution;
       if (execution == null) throw const ServerToolNotConfiguredException();
@@ -1000,6 +996,56 @@ class const ServerToolExecutorService({
         childId: child?.id,
         agentId: child?.agentId ?? (rawAgentId is String ? rawAgentId : null),
       );
+    }
+  }
+
+  ({String title, String prompt, String? agentId}) _validatedSubAgentRequest(
+    Map<String, dynamic> arguments,
+  ) {
+    final title = arguments['title'];
+    final prompt = arguments['prompt'];
+    final agentId = arguments['agentId'];
+    if (title is! String ||
+        title.trim().isEmpty ||
+        title.length > maxSubAgentTitleLength ||
+        prompt is! String ||
+        prompt.trim().isEmpty ||
+        prompt.length > maxSubAgentPromptLength ||
+        (agentId != null && agentId is! String)) {
+      throw const FormatException('Invalid sub-agent request.');
+    }
+    return (
+      title: title,
+      prompt: prompt,
+      agentId: agentId as String?,
+    );
+  }
+
+  Future<Conversation> _requireSubAgentParent(
+    Session session,
+    ConversationTurn turn,
+  ) async {
+    final parent = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(turn.conversationId) &
+          table.workspaceId.equals(turn.workspaceId) &
+          table.deletedAt.equals(null),
+    );
+    if (parent == null || parent.parentConversationStableId != null) {
+      throw const ServerToolNotConfiguredException();
+    }
+    return parent;
+  }
+
+  Future<void> _validateSubAgentAgent(
+    Session session,
+    ConversationTurn turn,
+    String? agentId,
+  ) async {
+    if (agentId is String &&
+        !await _isRunnableAgent(session, turn.workspaceId, agentId)) {
+      throw const ServerToolNotConfiguredException();
     }
   }
 

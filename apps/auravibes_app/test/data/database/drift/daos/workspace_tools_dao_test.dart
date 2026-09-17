@@ -188,6 +188,41 @@ void main() {
       expect(enabled.firstOrNull?.toolId, equals('on'));
     });
 
+    test(
+      'resetWorkspaceToolPermissions restores defaults in one workspace',
+      () async {
+        final otherWorkspace = await fixture.database.workspaceDao
+            .insertWorkspace(.insert(name: 'Other', type: WorkspaceType.local));
+        await fixture.database.workspaceToolsDao.insertToolsBatch([
+          ToolsCompanion.insert(
+            workspaceId: workspaceId,
+            toolId: 'current-tool',
+            isEnabled: const .new(false),
+            permissions: const .new(PermissionAccess.denied),
+          ),
+          ToolsCompanion.insert(
+            workspaceId: otherWorkspace.id,
+            toolId: 'other-tool',
+            isEnabled: const .new(false),
+            permissions: const .new(PermissionAccess.denied),
+          ),
+        ]);
+
+        final reset = await fixture.database.workspaceToolsDao
+            .resetWorkspaceToolPermissions(workspaceId);
+        final current = await fixture.database.workspaceToolsDao
+            .getWorkspaceToolByToolId(workspaceId, 'current-tool');
+        final other = await fixture.database.workspaceToolsDao
+            .getWorkspaceToolByToolId(otherWorkspace.id, 'other-tool');
+
+        expect(reset, hasLength(1));
+        expect(current?.isEnabled, isTrue);
+        expect(current?.permissions, PermissionAccess.ask);
+        expect(other?.isEnabled, isFalse);
+        expect(other?.permissions, PermissionAccess.denied);
+      },
+    );
+
     test('getEnabledToolByToolName returns enabled tool in group', () async {
       final group = await fixture.database.toolsGroupsDao.insertToolsGroup(
         .insert(

@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/models/data/cloud_model_stores.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -16,6 +17,18 @@ Future<ModelConnectionStore> modelConnectionStore(Ref ref, String workspaceId) {
   final keepAlive = ref.keepAlive();
 
   return _connectionStore(ref, workspaceId).whenComplete(keepAlive.close);
+}
+
+@riverpod
+Future<CloudModelGateway?> cloudModelGatewayForWorkspace(
+  Ref ref,
+  String workspaceId,
+) async {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
+  );
+
+  return gateway == null ? null : CloudModelGateway(gateway);
 }
 
 @riverpod

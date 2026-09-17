@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/agents/providers/agent_list_notifier.dart
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/duplicate_agent_usecase.dart';
+import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -16,12 +17,16 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-typedef _AgentSelection = ({
+typedef _AgentActionContext = ({
   BuildContext context,
   WidgetRef ref,
-  String value,
-  String agentId,
+  String workspaceId,
 });
+
+typedef _AgentVisibilityChanged = Future<void> Function(
+  AgentListItem agent,
+  AgentVisibility visibility,
+);
 
 class const AgentsScreen({required final String workspaceId, super.key})
     extends ConsumerWidget {
@@ -117,116 +122,120 @@ class const _AgentsList({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final action = (context: context, ref: ref, workspaceId: workspaceId);
     if (state.agents.isEmpty && !state.hasFilters) {
-      return _AgentsEmptyState(onCreate: () => _openCreate(context, ref));
+      return _AgentsEmptyState(onCreate: _agentCreateCallback(action));
     }
 
     return _AgentsSearchList(
       state: state,
       workspaceId: workspaceId,
-      onTap: _openAgentCallback(context, ref),
-      onSelection: _selectionCallback(context, ref),
+      onTap: _agentOpenCallback(action),
+      onSelection: _agentMenuCallback(action),
+      onVisibilityChanged: _agentVisibilityCallback(action),
     );
   }
+}
 
-  ValueChanged<AgentListItem> _openAgentCallback(
-    BuildContext context,
-    WidgetRef ref,
-  ) {
-    return (agent) => _openAgent(context, ref, agent.id);
+VoidCallback _agentCreateCallback(_AgentActionContext action) =>
+    () => _openAgent(action, 'new');
+
+ValueChanged<AgentListItem> _agentOpenCallback(_AgentActionContext action) =>
+    (agent) => _openAgent(action, agent.id);
+
+void Function(String value, AgentListItem agent) _agentMenuCallback(
+  _AgentActionContext action,
+) =>
+    (value, agent) => _handleSelection(action, value, agent.id);
+
+_AgentVisibilityChanged _agentVisibilityCallback(_AgentActionContext action) =>
+    (agent, visibility) => _updateVisibility(action, agent.id, visibility);
+
+void _openAgent(_AgentActionContext action, String agentId) {
+  unawaited(_openAndRefresh(action, agentId));
+}
+
+void _handleSelection(
+  _AgentActionContext action,
+  String value,
+  String agentId,
+) {
+  switch (value) {
+    case 'edit':
+      _openAgent(action, agentId);
+    case 'duplicate':
+      unawaited(_duplicateAgent(action, agentId));
+    case 'delete':
+      unawaited(_confirmDelete(action, agentId));
+    case _:
+      break;
   }
+}
 
-  void Function(String value, AgentListItem agent) _selectionCallback(
-    BuildContext context,
-    WidgetRef ref,
-  ) {
-    return (value, agent) => _handleSelection((
-      context: context,
-      ref: ref,
-      value: value,
-      agentId: agent.id,
-    ));
-  }
-
-  void _openCreate(BuildContext context, WidgetRef ref) {
-    unawaited(_openAndRefresh(context, ref, 'new'));
-  }
-
-  void _openAgent(BuildContext context, WidgetRef ref, String agentId) {
-    unawaited(_openAndRefresh(context, ref, agentId));
-  }
-
-  void _handleSelection(_AgentSelection selection) {
-    switch (selection.value) {
-      case 'edit':
-        _openAgent(selection.context, selection.ref, selection.agentId);
-      case 'duplicate':
-        unawaited(
-          _duplicateAgent(selection.context, selection.ref, selection.agentId),
-        );
-      case 'delete':
-        unawaited(
-          _confirmDelete(selection.context, selection.ref, selection.agentId),
-        );
-      case _:
-        break;
-    }
-  }
-
-  Future<void> _duplicateAgent(
-    BuildContext context,
-    WidgetRef ref,
-    String agentId,
-  ) async {
-    try {
-      final _ = await ref
-          .read(duplicateAgentUsecaseProvider(workspaceId))
-          .call(agentId);
-    } on Object {
-      if (!context.mounted) return;
-      _showDuplicateError(context);
-
-      return;
-    }
-
-    final _ = ref.invalidate(agentsProvider(workspaceId));
-    await ref.read(agentListProvider(workspaceId).notifier).refresh();
-  }
-
-  Future<void> _confirmDelete(
-    BuildContext context,
-    WidgetRef ref,
-    String agentId,
-  ) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (_) => const _DeleteAgentDialog(),
-    );
-    if (shouldDelete != true) return;
-
-    await _deleteAgent(ref, agentId);
-  }
-
-  Future<void> _deleteAgent(WidgetRef ref, String agentId) async {
-    final _ = await ref
-        .read(deleteAgentUsecaseProvider(workspaceId))
+Future<void> _duplicateAgent(_AgentActionContext action, String agentId) async {
+  try {
+    final _ = await action.ref
+        .read(duplicateAgentUsecaseProvider(action.workspaceId))
         .call(agentId);
-    final _ = ref.invalidate(agentsProvider(workspaceId));
-    await ref.read(agentListProvider(workspaceId).notifier).refresh();
+  } on Object {
+    if (!action.context.mounted) return;
+    _showDuplicateError(action.context);
+
+    return;
   }
 
-  Future<void> _openAndRefresh(
-    BuildContext context,
-    WidgetRef ref,
-    String agentId,
-  ) async {
-    final changed = await context.push<bool>(
-      '/workspaces/$workspaceId/more/agents/$agentId',
-    );
-    if (changed != true) return;
-    final _ = ref.invalidate(agentsProvider(workspaceId));
-    await ref.read(agentListProvider(workspaceId).notifier).refresh();
+  await _refreshAgents(action);
+}
+
+Future<void> _confirmDelete(_AgentActionContext action, String agentId) async {
+  final shouldDelete = await showDialog<bool>(
+    context: action.context,
+    builder: (_) => const _DeleteAgentDialog(),
+  );
+  if (shouldDelete != true) return;
+
+  await _deleteAgent(action, agentId);
+}
+
+Future<void> _deleteAgent(_AgentActionContext action, String agentId) async {
+  final _ = await action.ref
+      .read(deleteAgentUsecaseProvider(action.workspaceId))
+      .call(agentId);
+  await _refreshAgents(action);
+}
+
+Future<void> _updateVisibility(
+  _AgentActionContext action,
+  String agentId,
+  AgentVisibility visibility,
+) async {
+  try {
+    final _ = await action.ref
+        .read(saveAgentUsecaseProvider(action.workspaceId))
+        .updateVisibility(agentId, visibility);
+  } on Object {
+    if (!action.context.mounted) return;
+    _showVisibilityUpdateError(action.context);
+
+    return;
   }
+
+  await _refreshAgents(action);
+}
+
+Future<void> _openAndRefresh(_AgentActionContext action, String agentId) async {
+  final changed = await action.context.push<bool>(
+    '/workspaces/${action.workspaceId}/more/agents/$agentId',
+  );
+  if (changed != true) return;
+  await _refreshAgents(action);
+}
+
+Future<void> _refreshAgents(_AgentActionContext action) async {
+  final _ = action.ref.invalidate(agentsProvider(action.workspaceId));
+  await action.ref
+      .read(agentListProvider(action.workspaceId).notifier)
+      .refresh();
 }
 
 void _showDuplicateError(BuildContext context) {
@@ -237,11 +246,20 @@ void _showDuplicateError(BuildContext context) {
   );
 }
 
+void _showVisibilityUpdateError(BuildContext context) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(LocaleKeys.agents_visibility_update_error),
+    variant: .error,
+  );
+}
+
 class const _AgentsSearchList({
   required final AgentListState state,
   required final String workspaceId,
   required final ValueChanged<AgentListItem> onTap,
   required final void Function(String value, AgentListItem agent) onSelection,
+  required final _AgentVisibilityChanged onVisibilityChanged,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -252,7 +270,11 @@ class const _AgentsSearchList({
       state: state,
       notifier: notifier,
       controller: controller,
-      interactions: (onTap: onTap, onSelection: onSelection),
+      interactions: (
+        onTap: onTap,
+        onSelection: onSelection,
+        onVisibilityChanged: onVisibilityChanged,
+      ),
     );
   }
 }
@@ -260,29 +282,38 @@ class const _AgentsSearchList({
 typedef _AgentInteractions = ({
   ValueChanged<AgentListItem> onTap,
   void Function(String value, AgentListItem agent) onSelection,
+  _AgentVisibilityChanged onVisibilityChanged,
 });
 
-class const _AgentSearchContent({
-  required final AgentListState state,
-  required final AgentListNotifier notifier,
-  required final TextEditingController controller,
-  required final _AgentInteractions interactions,
-}) extends StatelessWidget {
+class _AgentSearchContent extends StatelessWidget {
+  new({
+    required AgentListState state,
+    required AgentListNotifier notifier,
+    required TextEditingController controller,
+    required _AgentInteractions interactions,
+  }) : _child = _AgentSearchBody(
+         controls: _AgentSearchControls(
+           controller: controller,
+           notifier: notifier,
+           state: state,
+         ),
+         status: _AgentRetryStatus(state: state, notifier: notifier),
+         results: _AgentSearchResults(
+           agents: state.agents,
+           onTap: interactions.onTap,
+           onSelection: interactions.onSelection,
+           onVisibilityChanged: interactions.onVisibilityChanged,
+         ),
+         pagination: _AgentPagination(
+           state: state,
+           onPressed: notifier.loadMore,
+         ),
+       );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext _) => _AgentSearchBody(
-    controls: _AgentSearchControls(
-      controller: controller,
-      notifier: notifier,
-      state: state,
-    ),
-    status: _AgentRetryStatus(state: state, notifier: notifier),
-    results: _AgentSearchResults(
-      agents: state.agents,
-      onTap: interactions.onTap,
-      onSelection: interactions.onSelection,
-    ),
-    pagination: _AgentPagination(state: state, onPressed: notifier.loadMore),
-  );
+  Widget build(BuildContext _) => _child;
 }
 
 class const _AgentRetryStatus({
@@ -329,11 +360,17 @@ class const _AgentSearchResults({
   required final List<AgentListItem> agents,
   required final ValueChanged<AgentListItem> onTap,
   required final void Function(String value, AgentListItem agent) onSelection,
+  required final _AgentVisibilityChanged onVisibilityChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => agents.isEmpty
       ? const _AgentsSearchEmptyState()
-      : _AgentsListView(agents: agents, onTap: onTap, onSelection: onSelection);
+      : _AgentsListView(
+          agents: agents,
+          onTap: onTap,
+          onSelection: onSelection,
+          onVisibilityChanged: onVisibilityChanged,
+        );
 }
 
 class const _AgentPagination({
@@ -548,6 +585,7 @@ class const _AgentsListView({
   required final List<AgentListItem> agents,
   required final ValueChanged<AgentListItem> onTap,
   required final void Function(String value, AgentListItem agent) onSelection,
+  required final _AgentVisibilityChanged onVisibilityChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -564,6 +602,7 @@ class const _AgentsListView({
       agent: agents[index],
       onTap: onTap,
       onSelection: onSelection,
+      onVisibilityChanged: onVisibilityChanged,
     );
   }
 
@@ -611,17 +650,103 @@ class const _AgentListItem({
   required final AgentListItem agent,
   required final VoidCallback onTap,
   required final ValueChanged<String> onSelection,
+  required final Future<void> Function(AgentVisibility visibility)
+  onVisibilityChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraTile(
-      child: _AgentListItemDetails(agent: agent),
+  Widget build(BuildContext _) => LayoutBuilder(
+    builder: (context, constraints) => _AgentListItemLayout(
+      agent: agent,
+      isCompact: constraints.maxWidth < DesignBreakpoints.sm,
       onTap: onTap,
-      variant: .ghost,
-      leading: const AuraIcon(Icons.smart_toy_outlined),
-      trailing: _AgentMenu(onSelected: onSelection),
-    );
-  }
+      onSelection: onSelection,
+      onVisibilityChanged: onVisibilityChanged,
+    ),
+  );
+}
+
+class const _AgentListItemLayout({
+  required final AgentListItem agent,
+  required final bool isCompact,
+  required final VoidCallback onTap,
+  required final ValueChanged<String> onSelection,
+  required final Future<void> Function(AgentVisibility visibility)
+  onVisibilityChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraTile(
+    child: _AgentListItemSurface(
+      agent: agent,
+      isCompact: isCompact,
+      onTap: onTap,
+      onVisibilityChanged: onVisibilityChanged,
+    ),
+    variant: .ghost,
+    trailing: _AgentMenu(onSelected: onSelection),
+  );
+}
+
+class _AgentListItemSurface extends StatelessWidget {
+  new({
+    required AgentListItem agent,
+    required bool isCompact,
+    required VoidCallback onTap,
+    required Future<void> Function(AgentVisibility visibility)
+    onVisibilityChanged,
+  }) : _child = isCompact
+           ? AuraColumn(
+               children: [
+                 _AgentEditButton(agent: agent, onPressed: onTap),
+                 _AgentVisibilityControl(
+                   value: agent.visibility,
+                   compact: true,
+                   onChanged: onVisibilityChanged,
+                   key: ValueKey('agent-visibility-${agent.id}'),
+                 ),
+               ],
+               spacing: .sm,
+               crossAxisAlignment: .stretch,
+               mainAxisSize: .min,
+             )
+           : Row(
+               children: [
+                 Expanded(
+                   child: _AgentEditButton(agent: agent, onPressed: onTap),
+                 ),
+                 const AuraSizedBox(width: .sm),
+                 _AgentVisibilityControl(
+                   value: agent.visibility,
+                   compact: false,
+                   onChanged: onVisibilityChanged,
+                   key: ValueKey('agent-visibility-${agent.id}'),
+                 ),
+               ],
+             );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext _) => _child;
+}
+
+class const _AgentEditButton({
+  required final AgentListItem agent,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onPressed,
+    child: Row(
+      children: [
+        const AuraIcon(Icons.smart_toy_outlined),
+        const AuraSizedBox(width: .sm),
+        Expanded(child: _AgentListItemDetails(agent: agent)),
+      ],
+    ),
+    variant: .ghost,
+    isFullWidth: true,
+    semanticLabel: agent.name,
+  );
 }
 
 class const _AgentListItemDetails({required final AgentListItem agent})
@@ -632,7 +757,6 @@ class const _AgentListItemDetails({required final AgentListItem agent})
       children: [
         _AgentNameRow(agent: agent),
         _AgentSkillCount(agent: agent),
-        _AgentVisibility(agent: agent),
       ],
       spacing: .xs,
       crossAxisAlignment: .start,
@@ -673,16 +797,284 @@ class const _AgentSkillCount({required final AgentListItem agent})
   }
 }
 
-class const _AgentVisibility({required final AgentListItem agent})
-    extends StatelessWidget {
+class _AgentVisibilityControl extends StatefulWidget {
+  const new({
+    required this.value,
+    required this.compact,
+    required this.onChanged,
+    super.key,
+  });
+
+  final AgentVisibility value;
+  final bool compact;
+  final Future<void> Function(AgentVisibility visibility) onChanged;
+
+  @override
+  State<_AgentVisibilityControl> createState() =>
+      _AgentVisibilityControlState();
+}
+
+class _AgentVisibilityControlState extends State<_AgentVisibilityControl> {
+  var _isSaving = false;
+
   @override
   Widget build(BuildContext context) {
-    return AuraText(
-      child: Text(agent.visibility.localizedLabel(context)),
-      style: .bodySmall,
+    if (widget.compact) {
+      return _AgentCompactVisibilityControl(
+        value: widget.value,
+        isLoading: _isSaving,
+        onPressed: () => unawaited(_openSheet()),
+      );
+    }
+
+    return _AgentWideVisibilityControl(
+      value: widget.value,
+      isLoading: _isSaving,
+      onChanged: (value) => unawaited(_save(value)),
+    );
+  }
+
+  Future<void> _openSheet() async {
+    if (_isSaving) return;
+
+    final selected = await _showSheet();
+    if (!mounted || selected == null || selected == widget.value) return;
+
+    await _save(selected);
+  }
+
+  Future<AgentVisibility?> _showSheet() =>
+      showModalBottomSheet<AgentVisibility>(
+        context: context,
+        builder: (context) => _AgentVisibilitySheet(value: widget.value),
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        useSafeArea: true,
+      );
+
+  Future<void> _save(AgentVisibility value) async {
+    if (_isSaving || value == widget.value) return;
+    setState(() => _isSaving = true);
+    try {
+      await widget.onChanged(value);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+}
+
+class const _AgentWideVisibilityControl({
+  required final AgentVisibility value,
+  required final bool isLoading,
+  required final ValueChanged<AgentVisibility> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.agents_visibility_label),
+        style: .bodySmall,
+      ),
+      AuraButtonGroup<AgentVisibility>.single(
+        items: _visibilityButtonItems(context),
+        selectedValue: value,
+        onChanged: onChanged,
+        size: .sm,
+        isLoading: isLoading,
+      ),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _AgentCompactVisibilityControl({
+  required final AgentVisibility value,
+  required final bool isLoading,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final summary = _visibilitySummary(context, value);
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 220),
+      child: AuraButton(
+        onPressed: onPressed,
+        child: _AgentCompactVisibilityButtonContent(summary: summary),
+        variant: .outlined,
+        size: .small,
+        isLoading: isLoading,
+        semanticLabel: summary,
+      ),
     );
   }
 }
+
+String _visibilitySummary(BuildContext context, AgentVisibility value) {
+  final label = LocaleKeys.agents_visibility_label.tr(context: context);
+  final visibility = value.localizedLabel(context);
+
+  return '$label: $visibility';
+}
+
+class const _AgentCompactVisibilityButtonContent({
+  required final String summary,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Row(
+    mainAxisSize: .min,
+    children: [
+      Flexible(child: Text(summary, overflow: .ellipsis, maxLines: 1)),
+      const AuraSizedBox(width: .xs),
+      const AuraIcon(Icons.keyboard_arrow_down, size: .small),
+    ],
+  );
+}
+
+class _AgentVisibilitySheet extends StatefulWidget {
+  const new({required this.value});
+
+  final AgentVisibility value;
+
+  @override
+  State<_AgentVisibilitySheet> createState() => _AgentVisibilitySheetState();
+}
+
+class _AgentVisibilitySheetState extends State<_AgentVisibilitySheet> {
+  AgentVisibility? _value;
+
+  AgentVisibility get _selectedValue => _value ?? widget.value;
+
+  @override
+  Widget build(BuildContext context) => _AgentVisibilitySheetSurface(
+    selectedValue: _selectedValue,
+    onChanged: _setValue,
+    onDone: () => Navigator.of(context).pop(_value),
+  );
+
+  void _setValue(List<AgentVisibility> values) {
+    final selected = values.firstOrNull;
+    if (selected == null) return;
+    setState(() => _value = selected);
+  }
+}
+
+class const _AgentVisibilitySheetSurface({
+  required final AgentVisibility selectedValue,
+  required final ValueChanged<List<AgentVisibility>> onChanged,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _AgentVisibilitySheetFrame(
+    maxHeight: MediaQuery.sizeOf(context).height * 0.75,
+    color: context.auraColors.surface,
+    borderRadius: .vertical(
+      top: .circular(context.auraTheme.fromBorderRadius(.xl)),
+    ),
+    child: _AgentVisibilitySheetContent(
+      selectedValue: selectedValue,
+      onChanged: onChanged,
+      onDone: onDone,
+    ),
+  );
+}
+
+class const _AgentVisibilitySheetFrame({
+  required final double maxHeight,
+  required final Color color,
+  required final BorderRadius borderRadius,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => ConstrainedBox(
+    constraints: .new(maxHeight: maxHeight),
+    child: Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      decoration: BoxDecoration(color: color, borderRadius: borderRadius),
+      child: child,
+    ),
+  );
+}
+
+class const _AgentVisibilitySheetContent({
+  required final AgentVisibility selectedValue,
+  required final ValueChanged<List<AgentVisibility>> onChanged,
+  required final VoidCallback onDone,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => SingleChildScrollView(
+    child: AuraColumn(
+      children: [
+        const _AgentVisibilitySheetTitle(),
+        const AuraSizedBox(height: .md),
+        _AgentVisibilitySheetPicker(
+          selectedValue: selectedValue,
+          onChanged: onChanged,
+        ),
+        const AuraSizedBox(height: .md),
+        _AgentVisibilitySheetDoneButton(onPressed: onDone),
+      ],
+      crossAxisAlignment: .stretch,
+      mainAxisSize: .min,
+    ),
+  );
+}
+
+class const _AgentVisibilitySheetTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => const AuraText(
+    child: TextLocale(LocaleKeys.agents_visibility_label),
+    style: .heading5,
+  );
+}
+
+class const _AgentVisibilitySheetPicker({
+  required final AgentVisibility selectedValue,
+  required final ValueChanged<List<AgentVisibility>> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraChoicePicker<AgentVisibility>(
+    options: _visibilityChoiceOptions(context),
+    value: [selectedValue],
+    onChanged: onChanged,
+    semanticLabel: LocaleKeys.agents_visibility_label.tr(context: context),
+  );
+}
+
+class const _AgentVisibilitySheetDoneButton({
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(LocaleKeys.agents_visibility_done),
+    key: const ValueKey('agent-visibility-done'),
+    isFullWidth: true,
+  );
+}
+
+List<AuraButtonGroupItem<AgentVisibility>> _visibilityButtonItems(
+  BuildContext context,
+) => [
+  for (final value in AgentVisibility.values)
+    AuraButtonGroupItem(
+      value: value,
+      child: TextLocale(_visibilityLabelKey(value)),
+      semanticLabel: _visibilityLabelKey(value).tr(context: context),
+    ),
+];
+
+List<AuraChoiceOption<AgentVisibility>> _visibilityChoiceOptions(
+  BuildContext context,
+) => [
+  for (final value in AgentVisibility.values)
+    AuraChoiceOption(
+      value: value,
+      label: TextLocale(_visibilityLabelKey(value)),
+      semanticLabel: _visibilityLabelKey(value).tr(context: context),
+    ),
+];
 
 class const _AgentMenu({required final ValueChanged<String> onSelected})
     extends StatelessWidget {
@@ -705,6 +1097,7 @@ class const _AgentListItemBuilder({
   required final AgentListItem agent,
   required final ValueChanged<AgentListItem> onTap,
   required final void Function(String value, AgentListItem agent) onSelection,
+  required final _AgentVisibilityChanged onVisibilityChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -712,6 +1105,8 @@ class const _AgentListItemBuilder({
       agent: agent,
       onTap: () => onTap(agent),
       onSelection: (value) => onSelection(value, agent),
+      onVisibilityChanged: (visibility) =>
+          onVisibilityChanged(agent, visibility),
     );
   }
 }
@@ -731,14 +1126,12 @@ class const _DeleteAgentDialog() extends StatelessWidget {
 
 extension _AgentVisibilityLabel on AgentVisibility {
   String localizedLabel(BuildContext context) {
-    return switch (this) {
-      .chatSelector => LocaleKeys.agents_visibility_chat_selector.tr(
-        context: context,
-      ),
-      .subAgentList => LocaleKeys.agents_visibility_sub_agent_list.tr(
-        context: context,
-      ),
-      .both => LocaleKeys.agents_visibility_both.tr(context: context),
-    };
+    return _visibilityLabelKey(this).tr(context: context);
   }
 }
+
+String _visibilityLabelKey(AgentVisibility value) => switch (value) {
+  .chatSelector => LocaleKeys.agents_visibility_chat_selector,
+  .subAgentList => LocaleKeys.agents_visibility_sub_agent_list,
+  .both => LocaleKeys.agents_visibility_both,
+};

@@ -41,4 +41,7 @@ abstract interface class WorkspaceToolsRepositoryWriteContract {
     String id, {
     required ToolPermissionMode permissionMode,
   });
+  Future<List<WorkspaceToolEntity>> resetWorkspaceToolPermissions(
+    String workspaceId,
+  );
 }

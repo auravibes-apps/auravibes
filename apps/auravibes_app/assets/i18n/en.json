@@ -51,6 +51,8 @@
   "models_screens": {
     "select_provider": "Select Provider",
     "select_model": "Model",
+    "recent_models": "Recent models",
+    "all_models": "All models",
     "select_provider_first": "Select provider first",
     "no_providers_configured": "No model",
     "no_models_available": "No models available",
@@ -211,7 +213,9 @@
     "enabled_label": "Enabled",
     "disabled_label": "Disabled",
     "enabled_description": "Disabled agents stay saved but cannot be selected or delegated to.",
+    "visibility_update_error": "Unable to update agent visibility",
     "visibility_label": "Visible in",
+    "visibility_done": "Done",
     "visibility_chat_selector": "Chat selector",
     "visibility_sub_agent_list": "Sub-agent list",
     "visibility_both": "Both",
@@ -384,6 +388,9 @@
   "tools_screen": {
     "title": "Workspace Tools",
     "refresh_tooltip": "Refresh tools",
+    "reset_tool_permissions_title": "Reset Workspace Tool Permissions",
+    "reset_tool_permissions_confirm": "This will enable all tools in this workspace and set their permissions to Always Ask. Continue?",
+    "reset_tool_permissions_tooltip": "Reset tool permissions",
     "workspace_ai_tools": "Workspace AI Tools",
     "enable_configure_description": "Enable and configure tools for this workspace",
     "enabled_count": {
@@ -813,7 +820,12 @@
         "hint": "This token will be stored securely"
       }
     },
-    "save_success": "MCP server configuration saved"
+    "save_success": "MCP server configuration saved",
+    "test_connection": "Verify connection",
+    "test_connection_success": "Connection verified",
+    "verification_success": "Connection verified · {} tools found",
+    "verification_required": "Verify the connection before saving.",
+    "verification_expired": "Verification expired. Verify the connection again."
   },
   "compaction": {
     "settings": {
