@@ -1,6 +1,8 @@
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -10,6 +12,55 @@ import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/riverpod.dart';
 
 import '../../../helpers/test_app.dart';
+
+const _workspaceId = 'ws-1';
+
+WorkspaceToolEntity _tool({
+  String id = 't1',
+  String toolId = 'custom_tool',
+  String? description,
+  bool isEnabled = true,
+}) {
+  return WorkspaceToolEntity(
+    id: id,
+    workspaceId: _workspaceId,
+    toolId: toolId,
+    isEnabled: isEnabled,
+    permissionMode: .alwaysAsk,
+    createdAt: .new(2026),
+    updatedAt: .new(2026),
+    description: description,
+  );
+}
+
+ConversationToolState _toolState({
+  String id = 't1',
+  String toolId = 'custom_tool',
+  String? description,
+  bool isEnabled = true,
+}) {
+  final tool = _tool(
+    id: id,
+    toolId: toolId,
+    description: description,
+    isEnabled: isEnabled,
+  );
+
+  return ConversationToolState(
+    tool: tool,
+    isEnabled: isEnabled,
+    permissionMode: .alwaysAsk,
+    isWorkspaceEnabled: true,
+  );
+}
+
+ConversationToolsGroupWithTools _defaultGroup(
+  List<ConversationToolState> tools,
+) => ConversationToolsGroupWithTools(
+  group: null,
+  tools: tools,
+  defaultGroupType: .builtIn,
+);
 
 class _MockConversationToolsNotifier extends ConversationToolsNotifier {
   @override
@@ -26,6 +77,48 @@ class _MockGroupedConversationToolsNotifier
     required String workspaceId,
     String? conversationId,
   }) async => [];
+}
+
+class _DataGroupedConversationToolsNotifier(
+  final List<ConversationToolsGroupWithTools> groups,
+) extends GroupedConversationToolsNotifier {
+  @override
+  Future<List<ConversationToolsGroupWithTools>> build({
+    required String workspaceId,
+    String? conversationId,
+  }) async => groups;
+}
+
+Future<void> _pumpModal(
+  WidgetTester tester,
+  List<ConversationToolsGroupWithTools> groups,
+) async {
+  await tester.runAsync(() async {
+    await tester.pumpWidget(
+      TestableApp(
+        child: Theme(
+          data: .new(extensions: [AuraTheme.light]),
+          child: const ToolsManagementModal(workspaceId: _workspaceId),
+        ),
+        overrides: [
+          conversationToolsProvider(workspaceId: _workspaceId)
+              .overrideWith(_MockConversationToolsNotifier.new),
+          groupedConversationToolsProvider(
+            workspaceId: _workspaceId,
+          ).overrideWith(() => _DataGroupedConversationToolsNotifier(groups)),
+          workspaceSessionForRouteProvider(_workspaceId).overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+              ),
+            ),
+          ),
+        ],
+        workspaceId: _workspaceId,
+      ),
+    );
+  });
+  final _ = await tester.pumpAndSettle();
 }
 
 void main() {
@@ -75,6 +168,62 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.byType(ToolsManagementModal), findsOneWidget);
       expect(find.byType(Dialog), findsOneWidget);
+    });
+
+    testWidgets('filters conversation tools by name or description', (
+      tester,
+    ) async {
+      await _pumpModal(tester, [
+        _defaultGroup([
+          _toolState(toolId: 'search_files', description: 'Reads local files'),
+          _toolState(id: 't2', toolId: 'calendar', description: 'Plans events'),
+        ]),
+      ]);
+
+      expect(find.byType(AuraInput), findsOneWidget);
+      await tester.enterText(find.byType(AuraInput), 'local files');
+      await tester.pump();
+      final _ = await tester.tap(find.byType(IconButton).last);
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byType(ConversationToolTile), findsOneWidget);
+      expect(find.text('calendar'), findsNothing);
+    });
+
+    testWidgets('search preserves conversation tool enablement', (
+      tester,
+    ) async {
+      await _pumpModal(tester, [
+        _defaultGroup([
+          _toolState(id: 'enabled', toolId: 'alpha'),
+          _toolState(id: 'disabled', toolId: 'beta', isEnabled: false),
+        ]),
+      ]);
+
+      await tester.enterText(find.byType(AuraInput), 'built-in');
+      await tester.pump();
+      final _ = await tester.tap(find.byType(IconButton).last);
+      final _ = await tester.pumpAndSettle();
+
+      final tiles = tester
+          .widgetList<ConversationToolTile>(find.byType(ConversationToolTile))
+          .toList();
+      expect(tiles, hasLength(2));
+      expect(tiles.map((tile) => tile.toolState.isEnabled), [true, false]);
+    });
+
+    testWidgets('shows no-results state when no conversation tool matches', (
+      tester,
+    ) async {
+      await _pumpModal(tester, [
+        _defaultGroup([_toolState()]),
+      ]);
+
+      await tester.enterText(find.byType(AuraInput), 'not-found');
+      await tester.pump();
+
+      expect(find.byIcon(Icons.search_off), findsOneWidget);
+      expect(find.byType(ConversationToolTile), findsNothing);
     });
   });
 }
