@@ -308,6 +308,14 @@ void main() {
 
       expect(find.text('Workspace A'), findsOneWidget);
       expect(find.text('Workspace B'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('workspace_select_ws-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('workspace_select_ws-2')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows sign-in recovery for an expired cloud session', (
@@ -332,6 +340,10 @@ void main() {
       expect(find.text('Needs sign in'), findsOneWidget);
       expect(find.text('Session expired. Sign in again.'), findsOneWidget);
       expect(find.text('Sign in again'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('workspace_cloud_account_sign_in')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows routed create action without inline form', (
@@ -345,6 +357,10 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Create Workspace'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('workspace_create')),
+        findsOneWidget,
+      );
       expect(find.byType(TextField), findsNothing);
       expect(find.byType(AuraPopupMenuButton), findsOneWidget);
     });
@@ -354,6 +370,10 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('workspace_management_back')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('tapping back button does not crash', (tester) async {

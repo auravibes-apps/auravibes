@@ -22,9 +22,13 @@ class const AuraAppBarWithDrawer({
       bottom: bottom,
       leading:
           leading ??
-          AuraIconButton(
-            icon: Icons.menu,
-            onPressed: () => _toggleDrawer(context),
+          Semantics(
+            key: const ValueKey<String>('app_drawer_menu'),
+            child: AuraIconButton(
+              icon: Icons.menu,
+              onPressed: () => _toggleDrawer(context),
+            ),
+            identifier: 'app_drawer_menu',
           ),
     );
   }

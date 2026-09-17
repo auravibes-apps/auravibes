@@ -116,12 +116,20 @@ class const _MoreTile({
   required final String workspaceId,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _SectionTile(
-    icon: spec.icon,
-    titleKey: spec.titleKey,
-    subtitleKey: spec.subtitleKey,
-    onTap: () => context.push(spec.location(workspaceId)),
-  );
+  Widget build(BuildContext context) {
+    final selectorId = 'more_${spec.kind.name}';
+
+    return Semantics(
+      key: ValueKey<String>(selectorId),
+      child: _SectionTile(
+        icon: spec.icon,
+        titleKey: spec.titleKey,
+        subtitleKey: spec.subtitleKey,
+        onTap: () => context.push(spec.location(workspaceId)),
+      ),
+      identifier: selectorId,
+    );
+  }
 }
 
 class const _SectionTile({

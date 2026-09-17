@@ -434,7 +434,11 @@ class _ChatInputFieldView extends StatelessWidget {
   final AuraInput input;
 
   @override
-  Widget build(BuildContext context) => input;
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('chat_composer'),
+    child: input,
+    identifier: 'chat_composer',
+  );
 }
 
 class const _ChatInputAgentSelector({
@@ -445,13 +449,17 @@ class const _ChatInputAgentSelector({
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: GestureDetector(
-        child: compactControl,
-        onTap: () => _showSelectorSheet(
-          context: context,
-          title: const TextLocale(LocaleKeys.agents_title),
-          child: sheetControl,
+      child: Semantics(
+        key: const ValueKey<String>('chat_agent_selector'),
+        child: GestureDetector(
+          child: compactControl,
+          onTap: () => _showSelectorSheet(
+            context: context,
+            title: const TextLocale(LocaleKeys.agents_title),
+            child: sheetControl,
+          ),
         ),
+        identifier: 'chat_agent_selector',
       ),
     );
   }
@@ -1332,6 +1340,7 @@ class const _ChatInputAudioControl({required final _ChatInputState state})
           onPressed: state.actions.startRecording,
           disabled: state.input.disabled,
           tooltip: _recordVoiceKey.tr(),
+          selectorId: 'chat_voice_button',
         ),
         const AuraSizedBox(width: .xs),
       ],
@@ -1362,10 +1371,15 @@ class const _AttachmentMenu({required final _ChatInputState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraPopupMenuButton(
-      items: _attachmentMenuItems(state),
-      icon: Icons.tune_rounded,
-      tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip.tr(),
+    return Semantics(
+      key: const ValueKey<String>('chat_attachment_options_button'),
+      child: AuraPopupMenuButton(
+        items: _attachmentMenuItems(state),
+        icon: Icons.tune_rounded,
+        tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
+            .tr(),
+      ),
+      identifier: 'chat_attachment_options_button',
     );
   }
 }
@@ -1376,13 +1390,17 @@ class const _ModelSelectorButton({required final _ChatInputState state})
   Widget build(BuildContext context) {
     final input = state.input;
 
-    return GestureDetector(
-      child: input.modelCompactControl,
-      onTap: () => _showSelectorSheet(
-        context: context,
-        title: const TextLocale(LocaleKeys.models_screens_select_model),
-        child: input.modelSheetControl,
+    return Semantics(
+      key: const ValueKey<String>('chat_model_selector'),
+      child: GestureDetector(
+        child: input.modelCompactControl,
+        onTap: () => _showSelectorSheet(
+          context: context,
+          title: const TextLocale(LocaleKeys.models_screens_select_model),
+          child: input.modelSheetControl,
+        ),
       ),
+      identifier: 'chat_model_selector',
     );
   }
 }
@@ -1393,18 +1411,25 @@ class const _RecordingButton({
   required final bool disabled,
   required final String tooltip,
   final AuraTint? tint,
+  final String? selectorId,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: AuraIconButton(
-        icon: icon,
-        onPressed: onPressed,
-        disabled: disabled,
-        tint: tint,
-        tooltip: tooltip,
+    final selectorId = this.selectorId;
+
+    return Semantics(
+      key: selectorId == null ? null : ValueKey<String>(selectorId),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: AuraIconButton(
+          icon: icon,
+          onPressed: onPressed,
+          disabled: disabled,
+          tint: tint,
+          tooltip: tooltip,
+        ),
       ),
+      identifier: selectorId,
     );
   }
 }
@@ -1418,6 +1443,7 @@ class const _RecordingCancelButton({required final _ChatInputState state})
       onPressed: state.actions.cancelRecording,
       disabled: state.hooks.recording.isStartingRecording.value,
       tooltip: _cancelRecordingKey.tr(),
+      selectorId: 'chat_voice_cancel_button',
     );
   }
 }
@@ -1432,6 +1458,7 @@ class const _RecordingStopButton({required final _ChatInputState state})
       disabled: state.hooks.recording.isStartingRecording.value,
       tooltip: _stopRecordingKey.tr(),
       tint: .error,
+      selectorId: 'chat_voice_stop_button',
     );
   }
 }
@@ -1458,12 +1485,16 @@ class const _StopGenerationButtonContent({required final VoidCallback onStop})
   Widget build(BuildContext context) {
     return AuraTooltip(
       message: LocaleKeys.chats_screens_chat_conversation_stop_generation.tr(),
-      child: AuraButton(
-        onPressed: onStop,
-        child: const AuraIcon(Icons.stop_rounded),
-        variant: .outlined,
-        tint: .error,
-        size: .small,
+      child: Semantics(
+        key: const ValueKey<String>('chat_stop_generation'),
+        child: AuraButton(
+          onPressed: onStop,
+          child: const AuraIcon(Icons.stop_rounded),
+          variant: .outlined,
+          tint: .error,
+          size: .small,
+        ),
+        identifier: 'chat_stop_generation',
       ),
     );
   }
@@ -1484,11 +1515,15 @@ class const _ChatInputSendButtonView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraButton(
-      onPressed: onPressed,
-      child: const AuraIcon(Icons.arrow_upward),
-      size: .small,
-      disabled: disabled,
+    return Semantics(
+      key: const ValueKey<String>('chat_send_button'),
+      child: AuraButton(
+        onPressed: onPressed,
+        child: const AuraIcon(Icons.arrow_upward),
+        size: .small,
+        disabled: disabled,
+      ),
+      identifier: 'chat_send_button',
     );
   }
 }

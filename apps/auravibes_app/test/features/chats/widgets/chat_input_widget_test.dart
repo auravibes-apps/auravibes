@@ -154,6 +154,39 @@ void main() {
     expect(find.byType(AuraInput), findsOneWidget);
   });
 
+  testWidgets('exposes stable selectors for composer controls', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text', 'audio'],
+        modelCompactControl: const Text('compact model'),
+        modelSheetControl: const Text('sheet model'),
+        agentCompactControl: const Text('compact agent'),
+        agentSheetControl: const Text('sheet agent'),
+        showStopButton: true,
+        onStop: _noop,
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+      ),
+    );
+
+    for (final selector in [
+      'chat_composer',
+      'chat_agent_selector',
+      'chat_model_selector',
+      'chat_attachment_options_button',
+      'chat_send_button',
+      'chat_stop_generation',
+    ]) {
+      expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
+    }
+    expect(
+      find.byKey(const ValueKey<String>('chat_voice_button')),
+      kIsWeb ? findsNothing : findsOneWidget,
+    );
+  });
+
   testWidgets('clears text as soon as send is accepted', (tester) async {
     final sendCompleter = Completer<void>();
     ChatDraft? sentDraft;

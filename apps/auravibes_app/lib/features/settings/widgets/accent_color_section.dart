@@ -98,15 +98,19 @@ class const _AccentColorTile({
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraTile(
-    child: const AuraText(
-      child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
-      style: .bodyLarge,
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('settings_accent_color'),
+    child: AuraTile(
+      child: const AuraText(
+        child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
+        style: .bodyLarge,
+      ),
+      onTap: onTap,
+      variant: .ghost,
+      leading: const _AccentColorTileLeading(),
+      trailing: _AccentColorTileTrailing(hue: hue),
     ),
-    onTap: onTap,
-    variant: .ghost,
-    leading: const _AccentColorTileLeading(),
-    trailing: _AccentColorTileTrailing(hue: hue),
+    identifier: 'settings_accent_color',
   );
 }
 

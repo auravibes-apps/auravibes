@@ -61,6 +61,14 @@ void main() {
     expect(find.text('Credential Definitions'), findsOneWidget);
     expect(find.text('Tools'), findsOneWidget);
     expect(find.text('Skills'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('more_workspaces')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('more_serviceConnections')),
+      findsOneWidget,
+    );
     expect(find.byIcon(Icons.workspaces_outlined), findsOneWidget);
     expect(find.byIcon(Icons.hub_outlined), findsOneWidget);
     expect(find.byIcon(Icons.key_outlined), findsOneWidget);

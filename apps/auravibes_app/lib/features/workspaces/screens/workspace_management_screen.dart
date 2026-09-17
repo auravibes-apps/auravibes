@@ -91,9 +91,13 @@ class const _WorkspaceManagementAppBar()
   Widget build(BuildContext context) {
     return AuraAppBar(
       title: const TextLocale(LocaleKeys.workspace_management_title),
-      leading: AuraIconButton(
-        icon: Icons.arrow_back,
-        onPressed: () => Navigator.of(context).pop(),
+      leading: Semantics(
+        key: const ValueKey<String>('workspace_management_back'),
+        child: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        identifier: 'workspace_management_back',
       ),
     );
   }
@@ -493,9 +497,15 @@ class const _CreateWorkspaceButton({required final VoidCallback onPressed})
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
-      child: AuraButton(
-        onPressed: onPressed,
-        child: const TextLocale(LocaleKeys.workspace_management_create_button),
+      child: Semantics(
+        key: const ValueKey<String>('workspace_create'),
+        child: AuraButton(
+          onPressed: onPressed,
+          child: const TextLocale(
+            LocaleKeys.workspace_management_create_button,
+          ),
+        ),
+        identifier: 'workspace_create',
       ),
     );
   }
@@ -768,14 +778,16 @@ class const _CloudAccountDisconnectedText() extends StatelessWidget {
 class const _CloudAccountSignInButton({required final String workspaceId})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraButton(
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('workspace_cloud_account_sign_in'),
+    child: AuraButton(
       onPressed: () =>
           context.go(CloudAccountLoginRoute(workspaceId: workspaceId).location),
       child: const TextLocale(LocaleKeys.cloud_accounts_sign_in_again),
       variant: .outlined,
-    );
-  }
+    ),
+    identifier: 'workspace_cloud_account_sign_in',
+  );
 }
 
 class const _AvailableCloudWorkspaceList({
@@ -893,11 +905,17 @@ class const _LocalWorkspaceTile({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraTile(
-      child: _WorkspaceName(name: workspace.name, isActive: isActive),
-      onTap: () => actions.switchWorkspace(workspace.id),
-      variant: .ghost,
-      trailing: _LocalWorkspaceMenu(workspace: workspace, actions: actions),
+    final selectorId = 'workspace_select_${workspace.id}';
+
+    return Semantics(
+      key: ValueKey<String>(selectorId),
+      child: AuraTile(
+        child: _WorkspaceName(name: workspace.name, isActive: isActive),
+        onTap: () => actions.switchWorkspace(workspace.id),
+        variant: .ghost,
+        trailing: _LocalWorkspaceMenu(workspace: workspace, actions: actions),
+      ),
+      identifier: selectorId,
     );
   }
 }
@@ -908,9 +926,15 @@ class const _LocalWorkspaceMenu({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraPopupMenuButton(
-      items: [_editItem(), _deleteItem()],
-      tooltip: LocaleKeys.common_show_more.tr(),
+    final selectorId = 'workspace_menu_${workspace.id}';
+
+    return Semantics(
+      key: ValueKey<String>(selectorId),
+      child: AuraPopupMenuButton(
+        items: [_editItem(), _deleteItem()],
+        tooltip: LocaleKeys.common_show_more.tr(),
+      ),
+      identifier: selectorId,
     );
   }
 
@@ -938,15 +962,24 @@ class const _ConnectedWorkspaceTile({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraTile(
-      child: _ConnectedWorkspaceDetails(
-        workspace: workspace,
-        accountEmail: accountEmail,
-        isActive: isActive,
+    final selectorId = 'workspace_select_${workspace.id}';
+
+    return Semantics(
+      key: ValueKey<String>(selectorId),
+      child: AuraTile(
+        child: _ConnectedWorkspaceDetails(
+          workspace: workspace,
+          accountEmail: accountEmail,
+          isActive: isActive,
+        ),
+        onTap: () => actions.switchWorkspace(workspace.id),
+        variant: .ghost,
+        trailing: _ConnectedWorkspaceMenu(
+          workspace: workspace,
+          actions: actions,
+        ),
       ),
-      onTap: () => actions.switchWorkspace(workspace.id),
-      variant: .ghost,
-      trailing: _ConnectedWorkspaceMenu(workspace: workspace, actions: actions),
+      identifier: selectorId,
     );
   }
 }
@@ -978,9 +1011,15 @@ class const _ConnectedWorkspaceMenu({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraPopupMenuButton(
-      items: [_detailsItem(), _removeItem()],
-      tooltip: LocaleKeys.common_show_more.tr(),
+    final selectorId = 'workspace_menu_${workspace.id}';
+
+    return Semantics(
+      key: ValueKey<String>(selectorId),
+      child: AuraPopupMenuButton(
+        items: [_detailsItem(), _removeItem()],
+        tooltip: LocaleKeys.common_show_more.tr(),
+      ),
+      identifier: selectorId,
     );
   }
 
@@ -1059,9 +1098,15 @@ class const _AvailableWorkspaceMenu({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraPopupMenuButton(
-      items: [_detailsItem(), _connectItem()],
-      tooltip: LocaleKeys.common_show_more.tr(),
+    final selectorId = 'workspace_available_menu_${accountId}_${workspace.id}';
+
+    return Semantics(
+      key: ValueKey<String>(selectorId),
+      child: AuraPopupMenuButton(
+        items: [_detailsItem(), _connectItem()],
+        tooltip: LocaleKeys.common_show_more.tr(),
+      ),
+      identifier: selectorId,
     );
   }
 
@@ -1206,25 +1251,29 @@ class const _WorkspaceSaveButton({
   required final ValueChanged<String> onSave,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraIconButton(
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('workspace_save'),
+    child: AuraIconButton(
       icon: Icons.check,
       onPressed: () => onSave(controller.text.trim()),
       tooltip: LocaleKeys.common_save.tr(),
-    );
-  }
+    ),
+    identifier: 'workspace_save',
+  );
 }
 
 class const _WorkspaceCancelButton({required final VoidCallback onCancel})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraIconButton(
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('workspace_cancel'),
+    child: AuraIconButton(
       icon: Icons.close,
       onPressed: onCancel,
       tooltip: LocaleKeys.common_cancel.tr(),
-    );
-  }
+    ),
+    identifier: 'workspace_cancel',
+  );
 }
 
 void _openDetails(

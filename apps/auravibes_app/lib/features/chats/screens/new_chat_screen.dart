@@ -368,13 +368,17 @@ class const _WorkspaceSelector({required final String workspaceId})
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaces = ref.watch(allWorkspacesProvider);
 
-    return SizedBox(
-      width: 240,
-      child: _WorkspaceSelectorValue(
-        workspaces: workspaces,
-        workspaceId: workspaceId,
-        onChanged: (value) => _switchWorkspace(ref, value),
+    return Semantics(
+      key: const ValueKey<String>('workspace_selector'),
+      child: SizedBox(
+        width: 240,
+        child: _WorkspaceSelectorValue(
+          workspaces: workspaces,
+          workspaceId: workspaceId,
+          onChanged: (value) => _switchWorkspace(ref, value),
+        ),
       ),
+      identifier: 'workspace_selector',
     );
   }
 
@@ -511,13 +515,19 @@ class const _NoModelProviderColumn({required final String workspaceId})
 class const _AddModelProviderButton({required final String workspaceId})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraButton(
-    onPressed: () => unawaited(
-      ServiceConnectionCreateRoute(
-        workspaceId: workspaceId,
-        type: 'modelProvider',
-      ).push<void>(context),
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('workspace_add_model_provider'),
+    child: AuraButton(
+      onPressed: () => unawaited(
+        ServiceConnectionCreateRoute(
+          workspaceId: workspaceId,
+          type: 'modelProvider',
+        ).push<void>(context),
+      ),
+      child: const TextLocale(
+        LocaleKeys.models_screens_add_provider_open_button,
+      ),
     ),
-    child: const TextLocale(LocaleKeys.models_screens_add_provider_open_button),
+    identifier: 'workspace_add_model_provider',
   );
 }
