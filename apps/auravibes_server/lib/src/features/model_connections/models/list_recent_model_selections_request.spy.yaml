@@ -1,0 +1,3 @@
+class: ListRecentModelSelectionsRequest
+fields:
+  workspaceId: int

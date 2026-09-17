@@ -43,6 +43,45 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
+  testWidgets('shows warning actions for risky connections', (tester) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(
+          name: 'Expiring MCP',
+          displayStatus: .expiringSoon,
+          canRefresh: true,
+          canReconnect: true,
+        ),
+        _mcpConnection(
+          name: 'Expired MCP',
+          displayStatus: .expired,
+          canReconnect: true,
+        ),
+        _mcpConnection(
+          name: 'Healthy MCP',
+          displayStatus: .connected,
+          canRefresh: true,
+          canReconnect: true,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+
+    expect(find.text('This connection expires soon.'), findsOneWidget);
+    expect(find.text('This connection has expired.'), findsOneWidget);
+    expect(find.text('Refresh token'), findsOneWidget);
+    expect(find.text('Reconnect'), findsOneWidget);
+    expect(find.byType(AuraCallout), findsNWidgets(2));
+    expect(
+      find.text('Authentication failed for this connection.'),
+      findsNothing,
+    );
+  });
+
   testWidgets('syncs the local model catalog with visible progress', (
     tester,
   ) async {
@@ -327,7 +366,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_vert).first);
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Reconnect'), findsOneWidget);
+    expect(find.text('Reconnect'), findsNWidgets(2));
     expect(find.text('Refresh token'), findsOneWidget);
     expect(find.text('Delete'), findsNothing);
 
@@ -338,6 +377,7 @@ void main() {
 ProviderContainer _syncTestContainer(
   ModelSyncService service, {
   WorkspaceSession? session,
+  List<ServiceConnectionListItem> connections = const [],
 }) {
   final workspaceSession =
       session ??
@@ -349,13 +389,36 @@ ProviderContainer _syncTestContainer(
     overrides: [
       workspaceSessionForRouteProvider(_syncWorkspaceId)
           .overrideWithValue(AsyncData(workspaceSession)),
-      serviceConnectionsProvider(
-        _syncWorkspaceId,
-      ).overrideWith((_) => Stream.value(const <ServiceConnectionListItem>[])),
+      serviceConnectionsProvider(_syncWorkspaceId)
+          .overrideWith((_) => Stream.value(connections)),
       modelSyncServiceProvider.overrideWithValue(service),
     ],
   );
 }
+
+ServiceConnectionListItem _mcpConnection({
+  required String name,
+  required ServiceConnectionDisplayStatus displayStatus,
+  bool canRefresh = false,
+  bool canReconnect = false,
+}) => ServiceConnectionListItem(
+  id: name,
+  workspaceId: _syncWorkspaceId,
+  name: name,
+  serviceName: 'mcp.example.com',
+  kind: .mcpServer,
+  keySuffix: null,
+  credentialDefinitionId: null,
+  mcpServerId: '$name-server',
+  authenticationType: 'oauth2',
+  displayStatus: displayStatus,
+  expiresAt: null,
+  lastRefreshedAt: null,
+  lastAuthError: null,
+  metadataValues: const [],
+  canRefresh: canRefresh,
+  canReconnect: canReconnect,
+);
 
 Future<void> _pumpScreen(
   WidgetTester tester,

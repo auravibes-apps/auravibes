@@ -138,6 +138,26 @@ void main() {
       },
     );
 
+    test('maps expired OAuth credentials as expired', () async {
+      final fixture = await _createFixture();
+      addTearDown(fixture.close);
+      await _insertMcpCredential(
+        fixture,
+        metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
+          const ServiceConnectionMetadata(clientId: 'client-id'),
+        ),
+        expiresAt: .new(2025, 12, 31, 23, 59),
+      );
+      final usecase = _createUsecase(fixture, now: () => DateTime(2026));
+
+      final items = await usecase(fixture.workspace.id).first;
+
+      expect(
+        items.single.displayStatus,
+        ServiceConnectionDisplayStatus.expired,
+      );
+    });
+
     test('maps MCP auth error metadata and failed status', () async {
       final fixture = await _createFixture();
       addTearDown(fixture.close);
@@ -148,7 +168,7 @@ void main() {
         ),
         expiresAt: .new(2026, 1, 1, 12, 30),
         lastRefreshedAt: .new(2026, 1, 1, 11),
-        lastAuthError: 'Refresh failed',
+        lastAuthError: 'Authorization: Bearer secret-token',
         authStatus: .failed,
       );
       final usecase = _createUsecase(
@@ -167,6 +187,12 @@ void main() {
           ServiceConnectionMetadataKey.lastRefreshedAt,
           ServiceConnectionMetadataKey.lastAuthError,
         ]),
+      );
+      expect(mcpItem.lastAuthError, contains('[REDACTED]'));
+      expect(mcpItem.lastAuthError, isNot(contains('secret-token')));
+      expect(
+        mcpItem.metadataValues.map((value) => value.value),
+        everyElement(isNot(contains('secret-token'))),
       );
     });
   });

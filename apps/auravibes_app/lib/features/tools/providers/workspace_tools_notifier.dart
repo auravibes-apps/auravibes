@@ -91,6 +91,13 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     _replaceTools([newTool]);
   }
 
+  /// Restores default enabled and permission values for this workspace.
+  Future<void> resetToolPermissions() async {
+    final resetTools = await _requiredWorkspaceToolsRepository(this)
+        .resetWorkspaceToolPermissions(_workspaceId);
+    _replaceTools(resetTools);
+  }
+
   void _replaceTools(List<WorkspaceToolEntity> workspaceTools) {
     if (state case AsyncData(:final value)) {
       state = AsyncData(_mergeWorkspaceTools(value, workspaceTools));

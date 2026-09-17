@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:collection/collection.dart';
 
@@ -520,19 +521,35 @@ extension MessageRepositoryMutationOperations on MessageRepository {
     String? conversationId,
   }) async {
     _validateMessagePatch(message);
-    final existing = await _database.messageDao.getMessageById(id);
-    if (existing == null) throw MessageNotFoundException(id);
-    _validatePatchOwnership(existing, conversationId);
-    _validateTerminalPatch(existing, message);
-    await _validateSentMessage(id, message);
-
-    final updatedMessage = await _patchMessageRow(id, message);
+    final updatedMessage = await _database.transaction(
+      () => _patchMessageInTransaction(id, message, conversationId),
+    );
+    if (updatedMessage == null) throw MessageNotFoundException(id);
 
     return await _mapToMessageWithAttachments(updatedMessage);
   }
 }
 
 extension on MessageRepository {
+  Future<MessagesTable?> _patchMessageInTransaction(
+    String id,
+    MessagePatch message,
+    String? conversationId,
+  ) async {
+    final existing = await _database.messageDao.getMessageById(id);
+    if (existing == null) throw MessageNotFoundException(id);
+    _validatePatchOwnership(existing, conversationId);
+    _validateTerminalPatch(existing, message);
+    await _validateSentMessage(id, message);
+
+    final patch = await _mergeToolCallMetadataPatch(id, message);
+
+    return await _database.messageDao.patchMessage(
+      id,
+      _mapPatchToMessagesCompanion(patch),
+    );
+  }
+
   void _validatePatchOwnership(MessagesTable existing, String? conversationId) {
     if (conversationId != null && existing.conversationId != conversationId) {
       throw const MessageValidationException('Fork reference is read-only');
@@ -561,17 +578,22 @@ extension on MessageRepository {
           ?.hasPendingToolCalls ??
       false;
 
-  Future<MessagesTable> _patchMessageRow(
+  Future<MessagePatch> _mergeToolCallMetadataPatch(
     String id,
-    MessagePatch message,
+    MessagePatch patch,
   ) async {
-    final updated = await _database.messageDao.patchMessage(
-      id,
-      _mapPatchToMessagesCompanion(message),
-    );
-    if (updated == null) throw MessageNotFoundException(id);
+    final incomingMetadata = patch.metadata;
+    if (incomingMetadata == null) return patch;
 
-    return updated;
+    final currentMessage = await _database.messageDao.getMessageById(id);
+    final currentMetadata = MessageMetadataEntity.fromJsonString(
+      currentMessage?.metadata,
+    );
+    if (currentMetadata == null) return patch;
+
+    return patch.copyWith(
+      metadata: _mergeToolCallMetadata(currentMetadata, incomingMetadata),
+    );
   }
 
   Future<void> _validateSentMessage(String id, MessagePatch message) async {
@@ -596,6 +618,61 @@ extension on MessageRepository {
         message.attachments.isEmpty &&
         !_hasMessagePayload(metadata);
   }
+}
+
+MessageMetadataEntity _mergeToolCallMetadata(
+  MessageMetadataEntity current,
+  MessageMetadataEntity incoming,
+) {
+  if (current.toolCalls.isEmpty) return incoming;
+  if (incoming.toolCalls.isEmpty) {
+    return incoming.copyWith(toolCalls: current.toolCalls);
+  }
+
+  return incoming.copyWith(
+    toolCalls: _mergeToolCalls(current.toolCalls, incoming.toolCalls),
+  );
+}
+
+List<MessageToolCallEntity> _mergeToolCalls(
+  List<MessageToolCallEntity> current,
+  List<MessageToolCallEntity> incoming,
+) {
+  final currentById = {for (final toolCall in current) toolCall.id: toolCall};
+  final incomingIds = incoming.map((toolCall) => toolCall.id).toSet();
+
+  return [
+    for (final toolCall in incoming)
+      _mergeToolCall(currentById[toolCall.id], toolCall),
+    for (final toolCall in current)
+      if (!incomingIds.contains(toolCall.id)) toolCall,
+  ];
+}
+
+MessageToolCallEntity _mergeToolCall(
+  MessageToolCallEntity? current,
+  MessageToolCallEntity incoming,
+) {
+  if (current == null) return incoming;
+
+  return incoming.copyWith(
+    resultStatus: _mergeToolCallResultStatus(
+      current.resultStatus,
+      incoming.resultStatus,
+    ),
+    responseRaw: incoming.responseRaw ?? current.responseRaw,
+  );
+}
+
+ToolCallResultStatus? _mergeToolCallResultStatus(
+  ToolCallResultStatus? current,
+  ToolCallResultStatus? incoming,
+) {
+  if (current == null) return incoming;
+  if (incoming == null) return current;
+  if (current != .running) return current;
+
+  return incoming;
 }
 
 extension MessageRepositoryStateOperations on MessageRepository {

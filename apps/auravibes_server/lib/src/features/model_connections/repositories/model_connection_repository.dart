@@ -37,6 +37,70 @@ class ModelConnectionRepository {
         table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
   );
 
+  Future<List<RecentModelSelection>> listRecentSelections(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required int limit,
+    Transaction? transaction,
+  }) => RecentModelSelection.db.find(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) & table.userId.equals(userId),
+    orderByList: (table) => [
+      table.selectedAt.desc(),
+      table.selectionId.asc(),
+    ],
+    limit: limit,
+    transaction: transaction,
+  );
+
+  Future<RecentModelSelection?> findRecentSelection(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required String selectionId,
+    required Transaction transaction,
+  }) => RecentModelSelection.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.userId.equals(userId) &
+        table.selectionId.equals(selectionId),
+    transaction: transaction,
+    lockMode: LockMode.forUpdate,
+  );
+
+  Future<RecentModelSelection> insertRecentSelection(
+    Session session,
+    RecentModelSelection selection, {
+    required Transaction transaction,
+  }) => RecentModelSelection.db.insertRow(
+    session,
+    selection,
+    transaction: transaction,
+  );
+
+  Future<RecentModelSelection> updateRecentSelection(
+    Session session,
+    RecentModelSelection selection, {
+    required Transaction transaction,
+  }) => RecentModelSelection.db.updateRow(
+    session,
+    selection,
+    transaction: transaction,
+  );
+
+  Future<RecentModelSelection> deleteRecentSelection(
+    Session session,
+    RecentModelSelection selection, {
+    required Transaction transaction,
+  }) => RecentModelSelection.db.deleteRow(
+    session,
+    selection,
+    transaction: transaction,
+  );
+
   Future<WorkspaceModelConnection> insertConnection(
     Session session,
     WorkspaceModelConnection connection, {

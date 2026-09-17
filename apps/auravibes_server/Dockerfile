@@ -2,7 +2,7 @@
 # docker build -f auravibes_server_server/Dockerfile .
 
 # Build stage
-FROM dart:3.13.3 AS build
+FROM dart:3.13.4 AS build
 
 # Create a minimal workspace that preserves locked server dependency versions.
 WORKDIR /app
@@ -54,4 +54,4 @@ EXPOSE 8081
 EXPOSE 8082
 
 # Define the entrypoint command
-ENTRYPOINT ./server --mode=$runmode --server-id=$serverid --logging=$logging --role=$role
+ENTRYPOINT ["sh", "-c", "exec ./server --mode=\"$runmode\" --server-id=\"$serverid\" --logging=\"$logging\" --role=\"$role\""]

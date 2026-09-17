@@ -51,6 +51,8 @@
   "models_screens": {
     "select_provider": "Seleccionar Proveedor",
     "select_model": "Modelo",
+    "recent_models": "Modelos recientes",
+    "all_models": "Todos los modelos",
     "select_provider_first": "Selecciona proveedor primero",
     "no_providers_configured": "Sin modelo",
     "no_models_available": "No hay modelos disponibles",
@@ -155,9 +157,16 @@
     "status": {
       "connected": "Conectado",
       "expiring_soon": "Expira pronto",
+      "expired": "Expirada",
       "needs_reauth": "Necesita reconexión",
       "failed": "Falló",
       "unknown": "Desconocido"
+    },
+    "warning": {
+      "expiring_soon": "Esta conexión expira pronto.",
+      "expired": "Esta conexión ha expirado.",
+      "needs_reauth": "Esta conexión necesita reconectarse.",
+      "failed": "La autenticación de esta conexión falló."
     },
     "metadata": {
       "issuer": "Emisor",
@@ -368,6 +377,7 @@
       "options_tooltip": "Más opciones",
       "error_workspace_mismatch": "Esta conversación pertenece a un espacio de trabajo diferente",
       "error_not_found": "Conversación no encontrada",
+      "view_sub_agent_run": "Ver ejecución",
       "context_usage": {
         "label": "Uso de ventana de contexto",
         "limit_unavailable": "El límite de contexto no está disponible para este modelo.",
@@ -386,6 +396,9 @@
   "tools_screen": {
     "title": "Herramientas del Espacio de Trabajo",
     "refresh_tooltip": "Actualizar herramientas",
+    "reset_tool_permissions_title": "Restablecer permisos de herramientas del espacio de trabajo",
+    "reset_tool_permissions_confirm": "Esto volverá a activar todas las herramientas de este espacio de trabajo y establecerá sus permisos en «Siempre preguntar». ¿Continuar?",
+    "reset_tool_permissions_tooltip": "Restablecer permisos de herramientas",
     "workspace_ai_tools": "Herramientas IA del Espacio de Trabajo",
     "enable_configure_description": "Activa y configura herramientas para este espacio de trabajo",
     "enabled_count": {

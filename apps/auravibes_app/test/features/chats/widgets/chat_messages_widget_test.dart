@@ -29,6 +29,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show DataPath;
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -44,6 +45,7 @@ Widget buildSubject({
   bool showThinking = false,
   ConversationEntity? conversation,
   AuraTheme? theme,
+  Widget Function(BuildContext context, Widget child)? appBuilder,
 }) {
   return _ChatMessagesTestSubject(
     conversationId: conversationId,
@@ -54,6 +56,7 @@ Widget buildSubject({
     messageEntitiesById: messageEntitiesById,
     conversation: conversation,
     theme: theme,
+    appBuilder: appBuilder,
   );
 }
 
@@ -2193,7 +2196,7 @@ void main() {
       },
     );
 
-    testWidgets('keeps sub-agent navigation beside inline tool details', (
+    testWidgets('opens a sub-agent run without replacing the main chat', (
       tester,
     ) async {
       const toolCall = MessageToolCallEntity(
@@ -2208,11 +2211,38 @@ void main() {
         isUser: false,
         metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
       );
+      Widget? mainChat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            builder: (_, _) => mainChat ?? const SizedBox.shrink(),
+            routes: [
+              GoRoute(
+                path: 'sub-agents/:subAgentConversationId',
+                builder: (_, _) =>
+                    const Material(child: Center(child: Text('Sub-agent run'))),
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
 
       await pumpAndInit(
         tester,
         buildSubject(
           messages: ['msg-1'],
+          messageEntitiesById: {message.id: message},
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
           overrides: [
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
@@ -2223,6 +2253,16 @@ void main() {
               ),
             ),
           ],
+          appBuilder: (context, child) {
+            mainChat = child;
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
         ),
       );
 
@@ -2248,6 +2288,20 @@ void main() {
         find.byKey(const ValueKey('activity_open_sub_agent_tc-1')),
         findsOneWidget,
       );
+
+      expect(find.text('View run'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('activity_open_sub_agent_tc-1')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sub-agent run'), findsOneWidget);
+
+      router.pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text('View run'), findsOneWidget);
     });
 
     testWidgets('renders failed sub-agent calls as errors with child ID', (
@@ -2451,39 +2505,44 @@ void main() {
       expect(find.byType(AuraMessageBubble), findsNothing);
     });
 
-    testWidgets('renders unresolved running tool call', (tester) async {
-      const toolCall = MessageToolCallEntity(
-        id: 'tc-1',
-        name: 'built_in_1_calculator',
-        argumentsRaw: '{}',
-      );
-      final message = _createMessage(
-        content: '',
-        isUser: false,
-        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
-      );
+    testWidgets(
+      'renders unresolved tool call as pending without approval projection',
+      (tester) async {
+        const toolCall = MessageToolCallEntity(
+          id: 'tc-1',
+          name: 'built_in_1_calculator',
+          argumentsRaw: '{}',
+        );
+        final message = _createMessage(
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+        );
 
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          messages: ['msg-1'],
-          overrides: [
-            messageConversationByIdProvider.overrideWith((ref, id) => message),
-            isMessageStreamingProvider.overrideWith((ref, id) => false),
-            conversationBusyStateProvider.overrideWith(
-              (ref, _) async => const ConversationBusyState(
-                isStreaming: false,
-                hasPendingTools: true,
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: ['msg-1'],
+            overrides: [
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => message,
               ),
-            ),
-          ],
-        ),
-      );
+              isMessageStreamingProvider.overrideWith((ref, id) => false),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: true,
+                ),
+              ),
+            ],
+          ),
+        );
 
-      expect(find.text('Running...'), findsOneWidget);
-      expect(find.byIcon(Icons.sync), findsOneWidget);
-      expect(find.byType(AuraMessageBubble), findsNothing);
-    });
+        expect(find.text('Awaiting confirmation'), findsOneWidget);
+        expect(find.byIcon(Icons.hourglass_empty), findsOneWidget);
+        expect(find.byType(AuraMessageBubble), findsNothing);
+      },
+    );
 
     testWidgets('renders tool call with skipped status', (tester) async {
       const toolCall = MessageToolCallEntity(
@@ -2887,6 +2946,7 @@ class const _ChatMessagesTestSubject({
   final bool showThinking = false,
   final ConversationEntity? conversation,
   final AuraTheme? theme,
+  final Widget Function(BuildContext context, Widget child)? appBuilder,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -2913,24 +2973,27 @@ class const _ChatMessagesTestSubject({
       child: EasyLocalization(
         child: Builder(
           builder: (context) {
-            return MaterialApp(
-              home: Theme(
-                data: ThemeData(extensions: [theme ?? AuraTheme.light]),
-                child: Material(
-                  child: ChatMessagesWidget(
-                    workspaceId: 'ws-1',
-                    conversationId: conversationId,
-                    messages: messages,
-                    messageEntitiesById: messageEntitiesById,
-                    pendingToolCalls: pendingToolCalls,
-                    showThinking: showThinking,
-                  ),
+            final child = Theme(
+              data: ThemeData(extensions: [theme ?? AuraTheme.light]),
+              child: Material(
+                child: ChatMessagesWidget(
+                  workspaceId: 'ws-1',
+                  conversationId: conversationId,
+                  messages: messages,
+                  messageEntitiesById: messageEntitiesById,
+                  pendingToolCalls: pendingToolCalls,
+                  showThinking: showThinking,
                 ),
               ),
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
             );
+
+            return appBuilder?.call(context, child) ??
+                MaterialApp(
+                  home: child,
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                );
           },
         ),
         supportedLocales: const [Locale('en')],

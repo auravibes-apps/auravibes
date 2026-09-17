@@ -42,6 +42,10 @@ mixin _WorkspaceToolsDaoCoreApi {
       WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
           .setWorkspaceToolEnabledById(id, isEnabled: isEnabled);
 
+  Future<List<ToolsTable>> resetWorkspaceToolPermissions(String workspaceId) =>
+      WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
+          .resetWorkspaceToolPermissions(workspaceId);
+
   Future<List<ToolsTable>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolId,
@@ -198,6 +202,17 @@ extension WorkspaceToolsDaoCoreMethods on WorkspaceToolsDao {
 
     return await (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
   }
+
+  Future<List<ToolsTable>> resetWorkspaceToolPermissions(String workspaceId) =>
+      (update(
+        tools,
+      )..where((tbl) => tbl.workspaceId.equals(workspaceId))).writeReturning(
+        ToolsCompanion(
+          updatedAt: .new(DateTime.now()),
+          isEnabled: const .new(true),
+          permissions: const .new(PermissionAccess.ask),
+        ),
+      );
 
   Future<List<ToolsTable>> patchWorkspaceToolConfig(
     String workspaceId,

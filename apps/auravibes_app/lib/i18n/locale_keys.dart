@@ -49,6 +49,8 @@ abstract class LocaleKeys {
   static const models_screens_select_provider =
       'models_screens.select_provider';
   static const models_screens_select_model = 'models_screens.select_model';
+  static const models_screens_recent_models = 'models_screens.recent_models';
+  static const models_screens_all_models = 'models_screens.all_models';
   static const models_screens_select_provider_first =
       'models_screens.select_provider_first';
   static const models_screens_no_providers_configured =
@@ -202,12 +204,22 @@ abstract class LocaleKeys {
       'service_connections.status.connected';
   static const service_connections_status_expiring_soon =
       'service_connections.status.expiring_soon';
+  static const service_connections_status_expired =
+      'service_connections.status.expired';
   static const service_connections_status_needs_reauth =
       'service_connections.status.needs_reauth';
   static const service_connections_status_failed =
       'service_connections.status.failed';
   static const service_connections_status_unknown =
       'service_connections.status.unknown';
+  static const service_connections_warning_expiring_soon =
+      'service_connections.warning.expiring_soon';
+  static const service_connections_warning_expired =
+      'service_connections.warning.expired';
+  static const service_connections_warning_needs_reauth =
+      'service_connections.warning.needs_reauth';
+  static const service_connections_warning_failed =
+      'service_connections.warning.failed';
   static const service_connections_metadata_issuer =
       'service_connections.metadata.issuer';
   static const service_connections_metadata_client_id =
@@ -512,6 +524,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.error_workspace_mismatch';
   static const chats_screens_chat_conversation_error_not_found =
       'chats_screens.chat_conversation.error_not_found';
+  static const chats_screens_chat_conversation_view_sub_agent_run =
+      'chats_screens.chat_conversation.view_sub_agent_run';
   static const chats_screens_chat_conversation_context_usage_label =
       'chats_screens.chat_conversation.context_usage.label';
   static const chats_screens_chat_conversation_context_usage_limit_unavailable =
@@ -536,6 +550,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.context_usage.semantic_overflow';
   static const tools_screen_title = 'tools_screen.title';
   static const tools_screen_refresh_tooltip = 'tools_screen.refresh_tooltip';
+  static const tools_screen_reset_tool_permissions_title =
+      'tools_screen.reset_tool_permissions_title';
+  static const tools_screen_reset_tool_permissions_confirm =
+      'tools_screen.reset_tool_permissions_confirm';
+  static const tools_screen_reset_tool_permissions_tooltip =
+      'tools_screen.reset_tool_permissions_tooltip';
   static const tools_screen_workspace_ai_tools =
       'tools_screen.workspace_ai_tools';
   static const tools_screen_enable_configure_description =

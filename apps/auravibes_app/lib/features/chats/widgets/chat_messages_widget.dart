@@ -167,7 +167,6 @@ class const ChatMessagesWidget({
         isCompacting: isCompacting,
         thinkingCount: thinkingCount,
         compactionCount: compactionCount,
-        pendingToolCalls: pendingToolCalls,
         disclosureController: controller,
         onDisclosureChanged: updateDisclosure,
         parentConversationId: parentConversationId,
@@ -309,7 +308,6 @@ Widget _buildChatTimelineItem({
   required bool isCompacting,
   required int thinkingCount,
   required int compactionCount,
-  required List<PendingToolCall> pendingToolCalls,
   required _DisclosureScrollController disclosureController,
   required void Function(VoidCallback update) onDisclosureChanged,
   required String parentConversationId,
@@ -337,7 +335,6 @@ Widget _buildChatTimelineItem({
     _ActivityRunTimelineItem(:final run) => _AssistantActivityRun(
       key: ValueKey('activity_trace_${run.id}'),
       run: run,
-      pendingToolCalls: pendingToolCalls,
       onDisclosureChanged: onDisclosureChanged,
       parentConversationId: parentConversationId,
       childConversations: childConversations,
@@ -348,7 +345,6 @@ Widget _buildChatTimelineItem({
         key: ValueKey(source.message.id),
         source: source,
         activityRenderedInRun: activityRenderedInRun,
-        pendingToolCalls: pendingToolCalls,
         onDisclosureChanged: onDisclosureChanged,
         parentConversationId: parentConversationId,
         childConversations: childConversations,
@@ -513,7 +509,6 @@ bool _isErrorSystemMessage(MessageEntity message) =>
 class const _ChatMessageTimelineItem({
   required final _ResolvedChatMessage source,
   required final bool activityRenderedInRun,
-  required final List<PendingToolCall> pendingToolCalls,
   required final void Function(VoidCallback update) onDisclosureChanged,
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
@@ -551,7 +546,6 @@ class const _ChatMessageTimelineItem({
           _AssistantActivityRun(
             key: ValueKey('activity_trace_${message.id}'),
             run: _ActivityRun([source]),
-            pendingToolCalls: pendingToolCalls,
             onDisclosureChanged: onDisclosureChanged,
             parentConversationId: parentConversationId,
             childConversations: childConversations,
@@ -711,18 +705,6 @@ Color _userMessageSelectionColor(AuraColorScheme colors) {
       : Colors.white;
   return Color.alphaBlend(overlayColor.withValues(alpha: .24), colors.primary);
 }
-
-bool _isAwaitingApproval(
-  List<PendingToolCall> pendingToolCalls,
-  String messageId,
-  MessageToolCallEntity toolCall,
-  bool isForkReference,
-) => pendingToolCalls.any(
-  (pending) =>
-      !isForkReference &&
-      pending.messageId == messageId &&
-      pending.toolCall.id == toolCall.id,
-);
 
 AuraMessageDeliveryStatus _mapMessageStatus(
   MessageStatus status,
@@ -1188,7 +1170,6 @@ class const _AiMessageContent({
 
 class const _AssistantActivityRun({
   required final _ActivityRun run,
-  required final List<PendingToolCall> pendingToolCalls,
   required final void Function(VoidCallback update) onDisclosureChanged,
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
@@ -1302,12 +1283,6 @@ class const _AssistantActivityRun({
           key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
           toolCall: activityToolCall.toolCall,
           displayName: activityToolCall.displayName,
-          isAwaitingApproval: _isAwaitingApproval(
-            pendingToolCalls,
-            activityToolCall.messageId,
-            activityToolCall.toolCall,
-            activityToolCall.isForkReference,
-          ),
           isExpanded: expandedToolIds.value.contains(
             activityToolCall.toolCall.id,
           ),
@@ -1544,7 +1519,7 @@ VoidCallback? _openSubAgent({
     workspaceId: workspaceId,
     chatId: parentConversationId,
     subAgentConversationId: subAgentConversationId,
-  ).go(context);
+  ).push(context);
 }
 
 class const _ActivityTraceDisclosure({
@@ -1747,7 +1722,6 @@ void _toggleDisclosure({
 class const _ActivityToolCallRow({
   required final MessageToolCallEntity toolCall,
   required final String displayName,
-  required final bool isAwaitingApproval,
   required final bool isExpanded,
   required final VoidCallback onToggle,
   required final VoidCallback? openSubAgent,
@@ -1761,6 +1735,7 @@ class const _ActivityToolCallRow({
         decodedArgs?.isNotEmpty == true || decodedResponse?.isNotEmpty == true;
     final statusKey = _statusLocaleKey();
     final statusColor = _statusColor(context);
+    final onOpenSubAgent = openSubAgent;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1825,14 +1800,23 @@ class const _ActivityToolCallRow({
                 ),
               ),
             ),
-            if (openSubAgent != null)
-              AuraIconButton(
+            if (onOpenSubAgent != null)
+              AuraButton(
                 key: ValueKey('activity_open_sub_agent_${toolCall.id}'),
-                icon: Icons.open_in_new,
-                onPressed: openSubAgent,
-                tooltip: LocaleKeys
-                    .chats_screens_chat_conversation_activity_open_sub_agent
-                    .tr(),
+                onPressed: onOpenSubAgent,
+                child: const AuraRow(
+                  children: [
+                    TextLocale(
+                      LocaleKeys
+                          .chats_screens_chat_conversation_view_sub_agent_run,
+                    ),
+                    AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
+                  ],
+                  spacing: .xs,
+                  mainAxisSize: .min,
+                ),
+                variant: .ghost,
+                size: .small,
               ),
           ],
         ),
@@ -1851,15 +1835,13 @@ class const _ActivityToolCallRow({
     final status = toolCall.resultStatus;
     if (status != null) return status.localeKey;
 
-    return isAwaitingApproval
-        ? LocaleKeys.tool_call_status_pending
-        : LocaleKeys.tool_call_status_running;
+    return LocaleKeys.tool_call_status_pending;
   }
 
   IconData _statusIcon() {
     final status = toolCall.resultStatus;
     if (status == null) {
-      return isAwaitingApproval ? Icons.hourglass_empty : Icons.sync;
+      return Icons.hourglass_empty;
     }
 
     return switch (status) {
@@ -1880,7 +1862,7 @@ class const _ActivityToolCallRow({
     final status = toolCall.resultStatus;
     final colors = context.auraColors;
     if (status == null) {
-      return isAwaitingApproval ? colors.warning : colors.primary;
+      return colors.warning;
     }
 
     return switch (status) {

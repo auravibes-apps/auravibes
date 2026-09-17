@@ -632,6 +632,7 @@ class const _ConnectionTileContent({
       _ConnectionTitle(name: connection.name),
       _ConnectionSubtitle(value: subtitle),
       _ConnectionTileDetails(connection: connection),
+      _ConnectionWarning(connection: connection),
     ],
     spacing: .xs,
     crossAxisAlignment: .start,
@@ -667,6 +668,135 @@ class const _ConnectionTileDetails({
     mainAxisSize: .min,
   );
 }
+
+typedef _ConnectionWarningData = ({String titleKey, AuraTint tint});
+
+typedef _ConnectionWarningAction = ({String labelKey, bool refresh});
+
+class const _ConnectionWarning({
+  required final ServiceConnectionListItem connection,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final warning = _connectionWarning(connection);
+    if (warning == null) return const SizedBox.shrink();
+
+    return _ConnectionWarningBody(connection: connection, warning: warning);
+  }
+}
+
+class const _ConnectionWarningBody({
+  required final ServiceConnectionListItem connection,
+  required final _ConnectionWarningData warning,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final action = _connectionWarningAction(connection);
+
+    return AuraColumn(
+      children: [
+        _ConnectionWarningCallout(warning: warning),
+        if (action case final action?)
+          _ConnectionWarningActionButton(
+            connection: connection,
+            action: action,
+          ),
+      ],
+      spacing: .xs,
+      crossAxisAlignment: .stretch,
+      mainAxisSize: .min,
+    );
+  }
+}
+
+class const _ConnectionWarningCallout({
+  required final _ConnectionWarningData warning,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCallout(
+    title: warning.titleKey.tr(context: context),
+    icon: Icons.warning_amber_outlined,
+    tint: warning.tint,
+  );
+}
+
+class const _ConnectionWarningActionButton({
+  required final ServiceConnectionListItem connection,
+  required final _ConnectionWarningAction action,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Align(
+    alignment: .centerRight,
+    child: AuraButton(
+      onPressed: () => unawaited(
+        _runConnectionWarningAction(context, ref, connection, action.refresh),
+      ),
+      child: TextLocale(action.labelKey),
+      variant: .outlined,
+      size: .small,
+    ),
+  );
+}
+
+_ConnectionWarningData? _connectionWarning(
+  ServiceConnectionListItem connection,
+) => switch (connection.displayStatus) {
+  .expiringSoon => (
+    titleKey: LocaleKeys.service_connections_warning_expiring_soon,
+    tint: .warning,
+  ),
+  .expired => (
+    titleKey: LocaleKeys.service_connections_warning_expired,
+    tint: .error,
+  ),
+  .needsReauth => (
+    titleKey: LocaleKeys.service_connections_warning_needs_reauth,
+    tint: .error,
+  ),
+  .failed => (
+    titleKey: LocaleKeys.service_connections_warning_failed,
+    tint: .error,
+  ),
+  .connected || .unknown => null,
+};
+
+_ConnectionWarningAction? _connectionWarningAction(
+  ServiceConnectionListItem connection,
+) {
+  final status = connection.displayStatus;
+  if (status == .expiringSoon || status == .expired) {
+    if (connection.canRefresh) {
+      return (
+        labelKey: LocaleKeys.service_connections_action_refresh_token,
+        refresh: true,
+      );
+    }
+  }
+
+  if (connection.canReconnect) {
+    return (
+      labelKey: LocaleKeys.service_connections_action_reconnect,
+      refresh: false,
+    );
+  }
+  if (connection.canRefresh) {
+    return (
+      labelKey: LocaleKeys.service_connections_action_refresh_token,
+      refresh: true,
+    );
+  }
+
+  return null;
+}
+
+Future<void> _runConnectionWarningAction(
+  BuildContext context,
+  WidgetRef ref,
+  ServiceConnectionListItem connection,
+  bool refresh,
+) => refresh
+    ? _refreshToken(context, ref, connection)
+    : _reconnectMcpServer(context, ref, connection);
 
 class const _ConnectionTileMenu({
   required final ServiceConnectionListItem connection,
@@ -1136,6 +1266,7 @@ class const _ConnectionStatusBadge({
     return switch (status) {
       .connected => colors.primary,
       .expiringSoon => colors.tertiary,
+      .expired => colors.error,
       .needsReauth => colors.error,
       .failed => colors.error,
       .unknown => colors.outline,
@@ -1210,6 +1341,7 @@ String _statusLabel(
   final key = switch (status) {
     .connected => LocaleKeys.service_connections_status_connected,
     .expiringSoon => LocaleKeys.service_connections_status_expiring_soon,
+    .expired => LocaleKeys.service_connections_status_expired,
     .needsReauth => LocaleKeys.service_connections_status_needs_reauth,
     .failed => LocaleKeys.service_connections_status_failed,
     .unknown => LocaleKeys.service_connections_status_unknown,

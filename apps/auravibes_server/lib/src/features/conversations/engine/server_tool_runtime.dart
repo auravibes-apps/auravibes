@@ -20,6 +20,8 @@ enum ServerToolReplayAction { execute, pause, skip, awaitingSubAgents }
 // Exceeds current 90s provider and 30s skill I/O bounds; tolerates clock drift.
 // ponytail: timestamp lease; add owner tokens if tool runtimes exceed this bound.
 const serverToolRunningRecoveryTimeout = Duration(minutes: 2);
+const _subAgentFailedMessage = 'Sub-agent failed.';
+const _subAgentCancelledMessage = 'Sub-agent cancelled.';
 
 bool serverToolRunningIsStale({
   required DateTime updatedAt,
@@ -1409,7 +1411,7 @@ class ServerToolRuntime({
         session,
         call,
         'executionError',
-        _boundedJson({'content': 'Sub-agent failed.'}),
+        _boundedJson({'content': _subAgentFailedMessage}),
       );
       return ServerToolDisposition.completed;
     }
@@ -1423,11 +1425,14 @@ class ServerToolRuntime({
       if (result == null) return ServerToolDisposition.awaitingSubAgents;
       results.add(result);
     }
-    final status = results.every((result) => result['status'] == 'success')
-        ? 'success'
-        : results.any((result) => result['status'] == 'cancelled')
-        ? 'cancelled'
-        : 'executionError';
+    final status = switch ((
+      results.every((result) => result['status'] == 'success'),
+      results.any((result) => result['status'] == 'cancelled'),
+    )) {
+      (true, _) => 'success',
+      (_, true) => 'cancelled',
+      _ => 'executionError',
+    };
     await _finish(
       session,
       call,
@@ -1447,7 +1452,7 @@ class ServerToolRuntime({
     final conversationId = child['conversationId'];
     final executionId = child['turnId'];
     if (conversationId is! String || executionId is! String) {
-      return {'status': 'error', 'content': 'Sub-agent failed.'};
+      return {'status': 'error', 'content': _subAgentFailedMessage};
     }
     final childConversation = await Conversation.db.findFirstRow(
       session,
@@ -1460,7 +1465,7 @@ class ServerToolRuntime({
       return {
         'conversationId': conversationId,
         'status': 'error',
-        'content': 'Sub-agent failed.',
+        'content': _subAgentFailedMessage,
         if (child['agentId'] is String) 'agentId': child['agentId'],
       };
     }
@@ -1487,11 +1492,11 @@ class ServerToolRuntime({
     return {
       'conversationId': conversationId,
       'status': status,
-      'content': status == 'success'
-          ? assistant?.content ?? ''
-          : status == 'cancelled'
-          ? 'Sub-agent cancelled.'
-          : 'Sub-agent failed.',
+      'content': switch (status) {
+        'success' => assistant?.content ?? '',
+        'cancelled' => _subAgentCancelledMessage,
+        _ => _subAgentFailedMessage,
+      },
       if (child['agentId'] is String) 'agentId': child['agentId'],
     };
   }
@@ -1531,6 +1536,6 @@ class ServerToolRuntime({
   String _boundedRawJson(String value) {
     return value.length <= maxResultCharacters
         ? value
-        : _boundedJson({'content': 'Sub-agent failed.'});
+        : _boundedJson({'content': _subAgentFailedMessage});
   }
 }

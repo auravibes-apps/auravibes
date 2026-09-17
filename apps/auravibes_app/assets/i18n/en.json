@@ -51,6 +51,8 @@
   "models_screens": {
     "select_provider": "Select Provider",
     "select_model": "Model",
+    "recent_models": "Recent models",
+    "all_models": "All models",
     "select_provider_first": "Select provider first",
     "no_providers_configured": "No model",
     "no_models_available": "No models available",
@@ -155,9 +157,16 @@
     "status": {
       "connected": "Connected",
       "expiring_soon": "Expiring soon",
+      "expired": "Expired",
       "needs_reauth": "Needs reconnect",
       "failed": "Failed",
       "unknown": "Unknown"
+    },
+    "warning": {
+      "expiring_soon": "This connection expires soon.",
+      "expired": "This connection has expired.",
+      "needs_reauth": "This connection needs to be reconnected.",
+      "failed": "Authentication failed for this connection."
     },
     "metadata": {
       "issuer": "Issuer",
@@ -368,6 +377,7 @@
       "options_tooltip": "More options",
       "error_workspace_mismatch": "This conversation belongs to a different workspace",
       "error_not_found": "Conversation not found",
+      "view_sub_agent_run": "View run",
       "context_usage": {
         "label": "Context window usage",
         "limit_unavailable": "Context window limit unavailable for this model.",
@@ -386,6 +396,9 @@
   "tools_screen": {
     "title": "Workspace Tools",
     "refresh_tooltip": "Refresh tools",
+    "reset_tool_permissions_title": "Reset Workspace Tool Permissions",
+    "reset_tool_permissions_confirm": "This will enable all tools in this workspace and set their permissions to Always Ask. Continue?",
+    "reset_tool_permissions_tooltip": "Reset tool permissions",
     "workspace_ai_tools": "Workspace AI Tools",
     "enable_configure_description": "Enable and configure tools for this workspace",
     "enabled_count": {

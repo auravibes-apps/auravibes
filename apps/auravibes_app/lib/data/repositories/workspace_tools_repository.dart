@@ -113,6 +113,15 @@ class WorkspaceToolsRepository(final AppDatabase _database)
   }
 
   @override
+  Future<List<WorkspaceToolEntity>> resetWorkspaceToolPermissions(
+    String workspaceId,
+  ) async {
+    final tables = await _dao.resetWorkspaceToolPermissions(workspaceId);
+
+    return tables.map(_tableToEntity).toList();
+  }
+
+  @override
   Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
     required String toolGroupId,
     required String toolName,
